@@ -1,0 +1,22 @@
+
+body {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    margin: 0;
+}
+
+.text_input {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    font-size: 20px;
+    padding: 15px 10px;
+    border: 2px solid #555;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    outline: none;
+}
+.text_input:focus {
+    border-color: blue;
+}
