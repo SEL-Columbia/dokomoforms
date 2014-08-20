@@ -5,7 +5,7 @@
 CREATE DOMAIN question_type_domain
   AS text
   COLLATE pg_catalog."default"
-  CONSTRAINT question_type_domain_check CHECK (VALUE = ANY (ARRAY['text'::text, 'integer'::text, 'decimal'::text, 'multiple_choice'::text, 'multiple_choice_with_other'::text, 'checkboxes'::text, 'scale'::text, 'date'::text, 'time'::text]));
+  CONSTRAINT question_type_domain_check CHECK (VALUE = ANY (ARRAY['text'::text, 'integer'::text, 'decimal'::text, 'boolean'::text, 'multiple_choice'::text, 'multiple_choice_with_other'::text, 'checkboxes'::text, 'scale'::text, 'date'::text, 'time'::text]));
 ALTER DOMAIN question_type_domain
   OWNER TO postgres;
 
