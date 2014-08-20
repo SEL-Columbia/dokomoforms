@@ -12,8 +12,8 @@ begin
     into the_question_type
   FROM question
   WHERE question.id = NEW.question_id;
-  IF the_question_type != 'text_question' THEN
-    raise exception 'text_question questions must have answer_text answers';
+  IF the_question_type != 'text' THEN
+    raise exception 'text questions must have answer_text answers';
   end if;
 RETURN NEW;
 END;
