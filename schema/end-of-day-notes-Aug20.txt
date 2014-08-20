@@ -1,0 +1,3 @@
+The survey (with branching logic) is a directed acyclic graph, so let's represent it as one:
+    A question has an id and a reference to the id of the next question. If there is a branch, each option is associated with a choice.
+    In the database, you just have a table associating choices with next-question id.
