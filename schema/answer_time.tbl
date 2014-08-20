@@ -1,0 +1,21 @@
+-- Table: answer_time
+
+-- DROP TABLE answer_time;
+
+CREATE TABLE answer_time
+(
+  id                  integer             NOT NULL,
+  answer              time with time zone NOT NULL,
+  question_id         integer             NOT NULL,
+
+  CONSTRAINT answer_time_pkey             PRIMARY KEY (id),
+  CONSTRAINT answer_time_question_id_fkey FOREIGN KEY (question_id)
+      REFERENCES question (id) MATCH SIMPLE
+      ON UPDATE CASCADE ON DELETE CASCADE
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE answer_time
+  OWNER TO postgres;
+

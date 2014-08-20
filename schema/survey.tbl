@@ -1,0 +1,20 @@
+-- Table: survey
+
+-- DROP TABLE survey;
+
+CREATE TABLE survey
+(
+  id           integer   NOT NULL,
+  title        some_text NOT NULL,
+  survey_owner some_text NOT NULL,
+  survey_group some_text NOT NULL,
+
+  CONSTRAINT survey_pkey                                PRIMARY KEY (id),
+  CONSTRAINT survey_title_survey_owner_survey_group_key UNIQUE (title, survey_owner, survey_group)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE survey
+  OWNER TO postgres;
+

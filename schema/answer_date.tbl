@@ -1,0 +1,20 @@
+-- Table: answer_date
+
+-- DROP TABLE answer_date;
+
+CREATE TABLE answer_date
+(
+  id                  integer            NOT NULL,
+  answer              date               NOT NULL,
+  question_id         integer            NOT NULL,
+  CONSTRAINT answer_date_pkey             PRIMARY KEY (id),
+  CONSTRAINT answer_date_question_id_fkey FOREIGN KEY (question_id)
+      REFERENCES question (id) MATCH SIMPLE
+      ON UPDATE CASCADE ON DELETE CASCADE
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE answer_date
+  OWNER TO postgres;
+

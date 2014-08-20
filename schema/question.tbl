@@ -1,0 +1,24 @@
+-- Table: question
+
+-- DROP TABLE question;
+
+CREATE TABLE question
+(
+  id            integer              NOT NULL,
+  question_name some_text            NOT NULL,
+  description   text                 NOT NULL,
+  hint          text                 NOT NULL,
+  question_type question_type_domain NOT NULL,
+  survey_id     integer              NOT NULL,
+
+  CONSTRAINT question_pkey           PRIMARY KEY (id),
+  CONSTRAINT question_survey_id_fkey FOREIGN KEY (survey_id)
+      REFERENCES survey (id) MATCH SIMPLE
+      ON UPDATE CASCADE ON DELETE CASCADE
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE question
+  OWNER TO postgres;
+

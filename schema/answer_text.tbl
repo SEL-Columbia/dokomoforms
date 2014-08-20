@@ -1,0 +1,21 @@
+-- Table: answer_text
+
+-- DROP TABLE answer_text;
+
+CREATE TABLE answer_text
+(
+  id          integer NOT NULL,
+  answer      text    NOT NULL,
+  question_id integer NOT NULL,
+
+  CONSTRAINT answer_text_pkey             PRIMARY KEY (id),
+  CONSTRAINT answer_text_question_id_fkey FOREIGN KEY (question_id)
+      REFERENCES question (id) MATCH SIMPLE
+      ON UPDATE CASCADE ON DELETE CASCADE
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE answer_text
+  OWNER TO postgres;
+

@@ -1,0 +1,20 @@
+-- Table: answer_decimal
+
+-- DROP TABLE answer_decimal;
+
+CREATE TABLE answer_decimal
+(
+  id          integer NOT NULL,
+  answer      numeric NOT NULL,
+  question_id integer NOT NULL,
+  CONSTRAINT answer_decimal_pkey             PRIMARY KEY (id),
+  CONSTRAINT answer_decimal_question_id_fkey FOREIGN KEY (question_id)
+      REFERENCES question (id) MATCH SIMPLE
+      ON UPDATE CASCADE ON DELETE CASCADE
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE answer_decimal
+  OWNER TO postgres;
+
