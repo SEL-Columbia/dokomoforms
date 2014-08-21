@@ -29,8 +29,7 @@ CREATE TABLE answer
   CHECK((CASE WHEN question_type_id = 7          AND answer_intarray  IS NOT NULL                              THEN 1 ELSE 0 END) = 1),
   CHECK((CASE WHEN question_type_id = 8          AND (answer_intarray IS NOT NULL OR answer_text IS NOT NULL)  THEN 1 ELSE 0 END) = 1),
   CHECK((CASE WHEN question_type_id = 10         AND answer_date      IS NOT NULL                              THEN 1 ELSE 0 END) = 1),
-  CHECK((CASE WHEN question_type_id = 11         AND answer_time      IS NOT NULL                              THEN 1 ELSE 0 END) = 1),
-  
+  CHECK((CASE WHEN question_type_id = 11         AND answer_time      IS NOT NULL                              THEN 1 ELSE 0 END) = 1) 
 )
 WITH (
   OIDS=FALSE

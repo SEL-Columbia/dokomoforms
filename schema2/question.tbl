@@ -17,7 +17,7 @@ CREATE TABLE question
   PRIMARY KEY(question_id, question_type_id),
 
   CHECK((CASE WHEN question_type_id IN (5, 6, 7, 8, 9)      AND choices IS NOT NULL THEN 1 ELSE 0 END) = 1),
-  CHECK((CASE WHEN question_type_id IN (1, 2, 3, 4, 10, 11) AND choices IS NULL     THEN 1 ELSE 0 END) = 1),
+  CHECK((CASE WHEN question_type_id IN (1, 2, 3, 4, 10, 11) AND choices IS NULL     THEN 1 ELSE 0 END) = 1)
 )
 WITH (
   OIDS=FALSE
