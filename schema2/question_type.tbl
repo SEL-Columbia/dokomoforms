@@ -4,7 +4,7 @@
 
 CREATE TABLE question_type
 (
-  question_type_id   uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  question_type_id   serial PRIMARY KEY,
 
   question_type_name text UNIQUE NOT NULL,
 )
@@ -14,14 +14,15 @@ WITH (
 ALTER TABLE question_type
   OWNER TO postgres;
 
--- 0 text
--- 1 integer
--- 2 decimal
--- 3 boolean
--- 4 multiple_choice
--- 5 multiple_choice_with_other
--- 6 checkboxes
--- 7 scale
--- 8 date
--- 9 time
+-- 01 text
+-- 02 integer
+-- 03 decimal
+-- 04 boolean
+-- 05 multiple_choice
+-- 06 multiple_choice_with_other
+-- 07 checkboxes
+-- 08 scale
+-- 09 date
+-- 10 time
+-- 11 media_path 
 

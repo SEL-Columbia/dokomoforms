@@ -14,8 +14,9 @@ CREATE TABLE answer
   answer_time        time with time zone,
   answer_intarray    integer[],
 
-  question_id        uuid REFERENCES question   NOT NULL ON UPDATE CASCADE ON DELETE CASCADE,
-  submission_id      uuid REFERENCES submission NOT NULL ON UPDATE CASCADE ON DELETE CASCADE,
+  answer_type_id     integer REFERENCES answer_type NOT NULL ON UPDATE CASCADE ON DELETE CASCADE,
+  question_id        uuid    REFERENCES question    NOT NULL ON UPDATE CASCADE ON DELETE CASCADE,
+  submission_id      uuid    REFERENCES submission  NOT NULL ON UPDATE CASCADE ON DELETE CASCADE,
 )
 WITH (
   OIDS=FALSE

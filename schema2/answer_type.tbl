@@ -1,0 +1,24 @@
+-- Table: answer_type
+
+-- DROP TABLE answer_type;
+
+CREATE TABLE answer_type
+(
+  answer_type_id   serial PRIMARY KEY,
+
+  answer_type_name text UNIQUE NOT NULL,
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE answer_type
+  OWNER TO postgres;
+
+-- 01 text
+-- 02 boolean
+-- 03 integer
+-- 04 decimal
+-- 05 date
+-- 06 time
+-- 07 integer[]
+
