@@ -32,6 +32,7 @@ CREATE TABLE answer
     (CASE WHEN question_type_id = 10         AND answer_date      IS NOT NULL                              THEN 1 ELSE 0 END) +
     (CASE WHEN question_type_id = 11         AND answer_time      IS NOT NULL                              THEN 1 ELSE 0 END)  
   = 1)
+)
 WITH (
   OIDS=FALSE
 );
