@@ -9,7 +9,7 @@ CREATE TABLE survey
   title        text NOT NULL,
   survey_owner text NOT NULL,
 
-  CONSTRAINT survey_title_survey_owner__key UNIQUE (title, survey_owner)
+  CONSTRAINT survey_title_survey_owner_key UNIQUE (title, survey_owner)
 )
 WITH (
   OIDS=FALSE
