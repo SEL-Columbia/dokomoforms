@@ -1,0 +1,25 @@
+-- Table: answer
+
+-- DROP TABLE answer;
+
+CREATE TABLE answer
+(
+  answer_id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  answer_text        text,
+  answer_boolean     boolean,
+  answer_integer     integer,
+  answer_decimal     decimal,
+  answer_date        date,
+  answer_time        time with time zone,
+  answer_intarray    integer[],
+
+  question_id        uuid REFERENCES question   NOT NULL ON UPDATE CASCADE ON DELETE CASCADE,
+  submission_id      uuid REFERENCES submission NOT NULL ON UPDATE CASCADE ON DELETE CASCADE,
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE answer
+  OWNER TO postgres;
+

@@ -1,0 +1,20 @@
+-- Table: question
+
+-- DROP TABLE question;
+
+CREATE TABLE question
+(
+  question_id      uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  title            text NOT NULL,
+  hint             text NOT NULL,
+
+  question_type_id uuid REFERENCES question_type NOT NULL ON UPDATE CASCADE ON DELETE CASCADE,
+  survey_id        uuid REFERENCES survey        NOT NULL ON UPDATE CASCADE ON DELETE CASCADE,
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE question
+  OWNER TO postgres;
+

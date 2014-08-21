@@ -1,0 +1,19 @@
+-- Table: submission
+
+-- DROP TABLE submission;
+
+CREATE TABLE submission
+(
+  submission_id    uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  latitude         decimal                  NOT NULL,
+  longitude        decimal                  NOT NULL,
+  submission_time  timestamp with time zone NOT NULL,
+  submitter        text                     NOT NULL,
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE submission
+  OWNER TO postgres;
+
