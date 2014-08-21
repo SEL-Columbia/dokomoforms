@@ -21,6 +21,8 @@ CREATE TABLE answer
 
   FOREIGN KEY(question_id, question_type_id) REFERENCES question (question_id, question_type_id) ON UPDATE CASCADE ON DELETE CASCADE,
 
+  CONSTRAINT answer_question_id_submission_id UNIQUE(question_id, submission_id), -- You can't answer the same question twice in one submission
+
   CHECK(
     (CASE WHEN question_type_id = 1          AND answer_text      IS NOT NULL                              THEN 1 ELSE 0 END) +
     (CASE WHEN question_type_id IN (2, 5, 9) AND answer_integer   IS NOT NULL                              THEN 1 ELSE 0 END) +
