@@ -11,8 +11,8 @@ CREATE TABLE question
 
   choices   text[],
 
-  question_type_id integer REFERENCES question_type NOT NULL ON UPDATE CASCADE ON DELETE CASCADE,
-  survey_id        uuid    REFERENCES survey        NOT NULL ON UPDATE CASCADE ON DELETE CASCADE,
+  question_type_id integer REFERENCES question_type ON UPDATE CASCADE ON DELETE CASCADE,
+  survey_id        uuid    REFERENCES survey        ON UPDATE CASCADE ON DELETE CASCADE,
 
   PRIMARY KEY(question_id, question_type_id),
 
