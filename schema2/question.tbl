@@ -4,16 +4,20 @@
 
 CREATE TABLE question
 (
-  question_id      uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  question_id      uuid DEFAULT uuid_generate_v4(),
 
   title     text    NOT NULL,
   hint      text    NOT NULL,
 
   choices   text[],
-  has_other boolean,
 
   question_type_id integer REFERENCES question_type NOT NULL ON UPDATE CASCADE ON DELETE CASCADE,
   survey_id        uuid    REFERENCES survey        NOT NULL ON UPDATE CASCADE ON DELETE CASCADE,
+
+  PRIMARY KEY(question_id, question_type_id),
+
+  CHECK((CASE WHEN question_type_id IN (5, 6, 7, 8, 9)      AND choices IS NOT NULL THEN 1 ELSE 0 END) = 1),
+  CHECK((CASE WHEN question_type_id IN (1, 2, 3, 4, 10, 11) AND choices IS NULL     THEN 1 ELSE 0 END) = 1),
 )
 WITH (
   OIDS=FALSE

@@ -21,8 +21,8 @@ ALTER TABLE question_type
 -- 05 multiple_choice
 -- 06 multiple_choice_with_other
 -- 07 checkboxes
--- 08 scale
--- 09 date
--- 10 time
--- 11 media_path 
+-- 08 checkboxes_with_other
+-- 09 scale
+-- 10 date
+-- 11 time
 
