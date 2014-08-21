@@ -21,16 +21,17 @@ CREATE TABLE answer
 
   FOREIGN KEY(question_id, question_type_id) REFERENCES question (question_id, question_type_id) ON UPDATE CASCADE ON DELETE CASCADE,
 
-  CHECK((CASE WHEN question_type_id = 1          AND answer_text      IS NOT NULL                              THEN 1 ELSE 0 END) = 1),
-  CHECK((CASE WHEN question_type_id IN (2, 5, 9) AND answer_integer   IS NOT NULL                              THEN 1 ELSE 0 END) = 1),
-  CHECK((CASE WHEN question_type_id = 3          AND answer_decimal   IS NOT NULL                              THEN 1 ELSE 0 END) = 1),
-  CHECK((CASE WHEN question_type_id = 4          AND answer_boolean   IS NOT NULL                              THEN 1 ELSE 0 END) = 1),
-  CHECK((CASE WHEN question_type_id = 6          AND (answer_integer  IS NULL != answer_text IS NULL)          THEN 1 ELSE 0 END) = 1), -- XOR
-  CHECK((CASE WHEN question_type_id = 7          AND answer_intarray  IS NOT NULL                              THEN 1 ELSE 0 END) = 1),
-  CHECK((CASE WHEN question_type_id = 8          AND (answer_intarray IS NOT NULL OR answer_text IS NOT NULL)  THEN 1 ELSE 0 END) = 1),
-  CHECK((CASE WHEN question_type_id = 10         AND answer_date      IS NOT NULL                              THEN 1 ELSE 0 END) = 1),
-  CHECK((CASE WHEN question_type_id = 11         AND answer_time      IS NOT NULL                              THEN 1 ELSE 0 END) = 1) 
-)
+  CHECK(
+    (CASE WHEN question_type_id = 1          AND answer_text      IS NOT NULL                              THEN 1 ELSE 0 END) +
+    (CASE WHEN question_type_id IN (2, 5, 9) AND answer_integer   IS NOT NULL                              THEN 1 ELSE 0 END) +
+    (CASE WHEN question_type_id = 3          AND answer_decimal   IS NOT NULL                              THEN 1 ELSE 0 END) +
+    (CASE WHEN question_type_id = 4          AND answer_boolean   IS NOT NULL                              THEN 1 ELSE 0 END) +
+    (CASE WHEN question_type_id = 6          AND (answer_integer  IS NULL != answer_text IS NULL)          THEN 1 ELSE 0 END) + -- XOR
+    (CASE WHEN question_type_id = 7          AND answer_intarray  IS NOT NULL                              THEN 1 ELSE 0 END) +
+    (CASE WHEN question_type_id = 8          AND (answer_intarray IS NOT NULL OR answer_text IS NOT NULL)  THEN 1 ELSE 0 END) +
+    (CASE WHEN question_type_id = 10         AND answer_date      IS NOT NULL                              THEN 1 ELSE 0 END) +
+    (CASE WHEN question_type_id = 11         AND answer_time      IS NOT NULL                              THEN 1 ELSE 0 END)  
+  = 1)
 WITH (
   OIDS=FALSE
 );
