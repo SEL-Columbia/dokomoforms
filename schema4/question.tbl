@@ -1,0 +1,90 @@
+-- Table: question
+
+-- DROP TABLE question;
+
+CREATE TABLE question
+(
+  question_id                    uuid DEFAULT uuid_generate_v4(),
+
+  title                          text      NOT NULL,
+  hint                           text      NOT NULL DEFAULT '',
+
+  -- The sequence number determines the order of the questions in a survey.
+  -- Sequence numbers don't have to be consecutive, just unique. Without
+  -- branching, the order of the questions goes from lowest sequence number to
+  -- highest.
+  sequence_number                integer   NOT NULL,
+
+  -- If a question doesn't need choices, this should be an empty array.
+  choices                        text[]    NOT NULL DEFAULT ARRAY[]::text[],
+
+  -- Set is_branching to TRUE if the subsequent question depends on the answer
+  -- to this question.
+  is_branching                   boolean   NOT NULL DEFAULT FALSE,
+
+  -- If is_branching is TRUE, this is an array of sequence numbers for the
+  -- subsequent question. The numbers correspond to each choice in the choices
+  -- column, or {FALSE, TRUE} for a boolean question. A subsequent question's
+  -- sequence number must be greater than this question's sequence number.
+  next_question_sequence_numbers integer[],
+
+  question_type_name    text REFERENCES question_type (question_type_name)
+                                                      ON UPDATE CASCADE
+                                                      ON DELETE CASCADE,
+  survey_id             uuid REFERENCES survey        ON UPDATE CASCADE
+                                                      ON DELETE CASCADE,
+
+  PRIMARY KEY(question_id, question_type_name),
+
+  CONSTRAINT question_survey_id_sequence_number_key UNIQUE (survey_id,
+                                                            sequence_number),
+
+  -- You can't have an empty title.
+  CONSTRAINT non_empty_title CHECK (title != ''),
+  CONSTRAINT number_of_choices_matches_question_type CHECK (
+    (CASE WHEN question_type_name IN ('multiple_choice',
+                                      'multiple_choice_with_other',
+                                      'checkboxes',
+                                      'checkboxes_with_other') AND
+               -- Require at least one choice.
+               ARRAY_UPPER(choices, 1) IS NOT NULL THEN 1 ELSE 0 END) + 
+    (CASE WHEN question_type_name =   'scale' AND
+               -- There must be a choice for the each end of the scale.
+               ARRAY_UPPER(choices, 1) = 2         THEN 1 ELSE 0 END) +
+    (CASE WHEN question_type_name IN ('text',
+                                      'integer',
+                                      'decimal',
+                                      'boolean',
+                                      'date',
+                                      'time') AND 
+               -- These questions don't require choices.
+               ARRAY_UPPER(choices, 1) IS NULL     THEN 1 ELSE 0 END)
+  = 1),
+  CONSTRAINT number_of_branches_matches_question_type CHECK (
+    (CASE WHEN is_branching AND
+               ( ( -- Either a question is boolean and has two branches...
+                 question_type_name = 'boolean' AND
+                 ARRAY_UPPER(next_question_sequence_numbers, 1) = 2)
+               OR
+                 ( -- ... or you specify a subsequent question for each choice.
+                 ARRAY_UPPER(choices, 1) = 
+                   ARRAY_UPPER(next_question_sequence_numbers, 1)) AND
+                 -- Require at least one choice.
+                 ARRAY_UPPER(choices, 1)                        IS NOT NULL AND
+                 next_question_sequence_numbers                 IS NOT NULL AND
+                 ARRAY_UPPER(next_question_sequence_numbers, 1) IS NOT NULL 
+               ) AND
+               -- A subsequent question cannot have a lower sequence number
+               -- than this question.
+               sequence_number <
+                   all(next_question_sequence_numbers) THEN 1 ELSE 0 END) +
+    (CASE WHEN NOT is_branching AND
+                   next_question_sequence_numbers IS NULL THEN 1 ELSE 0 END)
+  = 1)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE question
+  OWNER TO postgres;
+
