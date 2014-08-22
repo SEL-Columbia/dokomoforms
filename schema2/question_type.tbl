@@ -4,7 +4,7 @@
 
 CREATE TABLE question_type
 (
-  question_type_id   serial PRIMARY KEY,
+  question_type_id   uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 
   question_type_name text UNIQUE NOT NULL
 )
