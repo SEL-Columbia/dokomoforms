@@ -23,9 +23,9 @@ CREATE TABLE question
   is_branching                   boolean   NOT NULL DEFAULT FALSE,
 
   -- If is_branching is TRUE, this is an array of sequence numbers for the
-  -- subsequent question corresponding to each choice in the choices column.
-  -- A subsequent question's sequence number must be greater than this
-  -- question's sequence number.
+  -- subsequent question. The numbers correspond to each choice in the choices
+  -- column, or {FALSE, TRUE} for a boolean question. A subsequent question's
+  -- sequence number must be greater than this question's sequence number.
   next_question_sequence_numbers integer[],
 
   question_type_name    text REFERENCES question_type (question_type_name)
@@ -62,12 +62,17 @@ CREATE TABLE question
   = 1),
   CHECK(
     (CASE WHEN is_branching AND
-               -- Require at least one choice.
-               ARRAY_UPPER(choices, 1) > 0 AND
-               -- You must specify the subsequent question for every choice.
-               ARRAY_UPPER(choices, 1) = 
-                   ARRAY_UPPER(next_question_sequence_numbers, 1) AND
-               -- The subsequent question cannot have a lower sequence number
+               ( ( -- Either a question is boolean and has two branches...
+                 question_type_name = 'boolean' AND
+                 ARRAY_UPPER(next_question_sequence_numbers, 1) = 2)
+               OR
+                 ( -- ... or you specify a subsequent question for each choice.
+                 ARRAY_UPPER(choices, 1) = 
+                   ARRAY_UPPER(next_question_sequence_numbers, 1)) AND
+                 -- Require at least one choice.
+                 ARRAY_UPPER(choices, 1) > 0
+               ) AND
+               -- A subsequent question cannot have a lower sequence number
                -- than this question.
                sequence_number <
                    all(next_question_sequence_numbers) THEN 1 ELSE 0 END) +
