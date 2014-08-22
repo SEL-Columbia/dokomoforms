@@ -6,6 +6,8 @@ CREATE TABLE answer
 (
   answer_id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 
+  -- These are all the possible answer types... the ones that are not NULL are
+  -- determined by the CHECK constraint on the question_type_name.
   answer_text        text,
   answer_boolean     boolean,
   answer_integer     integer,
