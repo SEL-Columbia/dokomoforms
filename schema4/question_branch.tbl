@@ -10,7 +10,7 @@ CREATE TABLE question_branch
   question_type_name text NOT NULL,
 
   to_question_id     uuid NOT NULL,
-  to_question_type   text NOT NULLm
+  to_question_type   text NOT NULL,
 
   question_choice_id uuid REFERENCES question_choice ON UPDATE CASCADE
                                                      ON DELETE CASCADE,
