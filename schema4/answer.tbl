@@ -8,13 +8,14 @@ CREATE TABLE answer
 
   -- These are all the possible answer types... the ones that are not NULL are
   -- determined by the CHECK constraint on the question_type_name.
+  -- Checkbox answers are in the answer_checkbox table
   answer_text        text,
   answer_boolean     boolean,
   answer_integer     integer,
   answer_decimal     decimal,
   answer_date        date,
   answer_time        time with time zone,
-  answer_intarray    integer[],
+--answer_intarray    integer[],
 
   question_id        uuid NOT NULL,
   question_type_name text NOT NULL,
@@ -44,11 +45,11 @@ CREATE TABLE answer
     (CASE WHEN question_type_name =   'multiple_choice_with_other' AND
               (answer_integer  IS NULL != answer_text IS NULL) -- XOR
                                            THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name =   'checkboxes'                 AND
-               answer_intarray IS NOT NULL THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name =   'checkboxes_with_other'      AND
-              (answer_intarray IS NOT NULL OR answer_text IS NOT NULL)
-                                           THEN 1 ELSE 0 END) +
+--    (CASE WHEN question_type_name =   'checkboxes'                 AND
+--               answer_intarray IS NOT NULL THEN 1 ELSE 0 END) +
+--    (CASE WHEN question_type_name =   'checkboxes_with_other'      AND
+--              (answer_intarray IS NOT NULL OR answer_text IS NOT NULL)
+--                                           THEN 1 ELSE 0 END) +
     (CASE WHEN question_type_name =   'date'                       AND
                answer_date     IS NOT NULL THEN 1 ELSE 0 END) +
     (CASE WHEN question_type_name =   'time'                       AND
