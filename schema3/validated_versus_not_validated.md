@@ -6,7 +6,7 @@ What is validated:
 4. Questions in a survey have unique integer sequence numbers.
 5. A question that should have choices associated with it must provide choices.
 6. A question that introduces a branch must specify a sequence number for each choice.
-7. A sequence number specified for a question's choice must be larger than the sequence number of the question.
+7. A sequence number specified for a question's choice must be larger than the sequence number of the question (this prevents cycles in the graph).
 8. A user cannot have two surveys with the same name.
 
 What is not:
