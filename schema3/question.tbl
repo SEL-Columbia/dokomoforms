@@ -4,27 +4,33 @@
 
 CREATE TABLE question
 (
-  question_id        uuid DEFAULT uuid_generate_v4(),
+  question_id                    uuid DEFAULT uuid_generate_v4(),
 
-  title              text    NOT NULL,
-  hint               text    NOT NULL,
+  title                          text      NOT NULL,
+  hint                           text      NOT NULL,
+  sequence_number                integer   NOT NULL,
 
-  choices            text[],
+  choices                        text[]    NOT NULL,
+  is_branching                   boolean   NOT NULL DEFAULT FALSE,
+  next_question_sequence_numbers integer[],
 
-  question_type_name text REFERENCES question_type (question_type_name)
-                                                   ON UPDATE CASCADE
-                                                   ON DELETE CASCADE,
-  survey_id          uuid REFERENCES survey        ON UPDATE CASCADE
-                                                   ON DELETE CASCADE,
+  question_type_name    text REFERENCES question_type (question_type_name)
+                                                      ON UPDATE CASCADE
+                                                      ON DELETE CASCADE,
+  survey_id             uuid REFERENCES survey        ON UPDATE CASCADE
+                                                      ON DELETE CASCADE,
 
   PRIMARY KEY(question_id, question_type_name),
+
+  CONSTRAINT question_survey_id_sequence_number_key UNIQUE (survey_id,
+                                                            sequence_number),
 
   CHECK(
     (CASE WHEN question_type_name IN ('multiple_choice',
                                       'multiple_choice_with_other',
                                       'checkboxes',
                                       'checkboxes_with_other') AND
-               choices IS NOT NULL         THEN 1 ELSE 0 END) + 
+               ARRAY_UPPER(choices, 1) > 0 THEN 1 ELSE 0 END) + 
     (CASE WHEN question_type_name =   'scale' AND
                ARRAY_UPPER(choices, 1) = 2 THEN 1 ELSE 0 END) +
     (CASE WHEN question_type_name IN ('text',
@@ -33,7 +39,17 @@ CREATE TABLE question
                                       'boolean',
                                       'date',
                                       'time') AND 
-               choices IS NULL             THEN 1 ELSE 0 END)
+               ARRAY_UPPER(choices, 1) = 0 THEN 1 ELSE 0 END)
+  = 1),
+  CHECK(
+    (CASE WHEN is_branching AND
+               ARRAY_UPPER(choices, 1) > 0 AND
+               ARRAY_UPPER(choices, 1) = 
+                   ARRAY_UPPER(next_question_sequence_numbers, 1) AND
+               sequence_number <
+                   all(next_question_sequence_numbers) THEN 1 ELSE 0 END) +
+    (CASE WHEN NOT is_branching AND
+                   next_question_sequence_numbers IS NULL THEN 1 ELSE 0 END)
   = 1)
 )
 WITH (
