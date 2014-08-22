@@ -47,10 +47,10 @@ CREATE TABLE question
                                       'checkboxes',
                                       'checkboxes_with_other') AND
                -- Require at least one choice.
-               ARRAY_UPPER(choices, 1) > 0 THEN 1 ELSE 0 END) + 
+               ARRAY_UPPER(choices, 1) IS NOT NULL THEN 1 ELSE 0 END) + 
     (CASE WHEN question_type_name =   'scale' AND
                -- There must be a choice for the each end of the scale.
-               ARRAY_UPPER(choices, 1) = 2 THEN 1 ELSE 0 END) +
+               ARRAY_UPPER(choices, 1) = 2         THEN 1 ELSE 0 END) +
     (CASE WHEN question_type_name IN ('text',
                                       'integer',
                                       'decimal',
@@ -58,7 +58,7 @@ CREATE TABLE question
                                       'date',
                                       'time') AND 
                -- These questions don't require choices.
-               ARRAY_UPPER(choices, 1) = 0 THEN 1 ELSE 0 END)
+               ARRAY_UPPER(choices, 1) IS NULL     THEN 1 ELSE 0 END)
   = 1),
   CONSTRAINT number_of_branches_matches_question_type CHECK (
     (CASE WHEN is_branching AND
@@ -70,7 +70,9 @@ CREATE TABLE question
                  ARRAY_UPPER(choices, 1) = 
                    ARRAY_UPPER(next_question_sequence_numbers, 1)) AND
                  -- Require at least one choice.
-                 ARRAY_UPPER(choices, 1) > 0
+                 ARRAY_UPPER(choices, 1)                        IS NOT NULL AND
+                 next_question_sequence_numbers                 IS NOT NULL AND
+                 ARRAY_UPPER(next_question_sequence_numbers, 1) IS NOT NULL 
                ) AND
                -- A subsequent question cannot have a lower sequence number
                -- than this question.
