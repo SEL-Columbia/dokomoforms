@@ -22,9 +22,6 @@ CREATE TABLE question_branch
   -- You can't have two entries for the same choice.
   UNIQUE (from_question_id, question_choice_id),
  
-  -- A question can't have multiples of the same choice number. 
-  CONSTRAINT question_choice_question_id_choice_number_key UNIQUE (question_id,
-                                                                   choice),
   CONSTRAINT question_could_have_choices CHECK(
     question_type_name IN ('multiple_choice',
                            'multiple_choice_with_other',
