@@ -20,19 +20,19 @@ CREATE TABLE question
   PRIMARY KEY(question_id, question_type_name),
 
   CHECK(
-    (CASE WHEN question_type_name IN ("multiple_choice",
-                                      "multiple_choice_with_other",
-                                      "checkboxes",
-                                      "checkboxes_with_other") AND
+    (CASE WHEN question_type_name IN ('multiple_choice',
+                                      'multiple_choice_with_other',
+                                      'checkboxes',
+                                      'checkboxes_with_other') AND
                choices IS NOT NULL         THEN 1 ELSE 0 END) + 
-    (CASE WHEN question_type_name =   "scale" AND
+    (CASE WHEN question_type_name =   'scale' AND
                ARRAY_UPPER(choices, 1) = 2 THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name IN ("text",
-                                      "integer",
-                                      "decimal",
-                                      "boolean",
-                                      "date",
-                                      "time") AND 
+    (CASE WHEN question_type_name IN ('text',
+                                      'integer',
+                                      'decimal',
+                                      'boolean',
+                                      'date',
+                                      'time') AND 
                choices IS NULL             THEN 1 ELSE 0 END)
   = 1)
 )

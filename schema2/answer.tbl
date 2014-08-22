@@ -29,27 +29,27 @@ CREATE TABLE answer
                                                      submission_id),
 
   CHECK(
-    (CASE WHEN question_type_name =   "text"                       AND
+    (CASE WHEN question_type_name =   'text'                       AND
                answer_text     IS NOT NULL THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name IN ("integer",
-                                      "multiple_choice",
-                                      "scale")                     AND
+    (CASE WHEN question_type_name IN ('integer',
+                                      'multiple_choice',
+                                      'scale')                     AND
                answer_integer  IS NOT NULL THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name =   "decimal"                    AND
+    (CASE WHEN question_type_name =   'decimal'                    AND
                answer_decimal  IS NOT NULL THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name =   "boolean"                    AND
+    (CASE WHEN question_type_name =   'boolean'                    AND
                answer_boolean  IS NOT NULL THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name =   "multiple_choice_with_other" AND
+    (CASE WHEN question_type_name =   'multiple_choice_with_other' AND
               (answer_integer  IS NULL != answer_text IS NULL) -- XOR
                                            THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name =   "checkboxes"                 AND
+    (CASE WHEN question_type_name =   'checkboxes'                 AND
                answer_intarray IS NOT NULL THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name =   "checkboxes_with_other"      AND
+    (CASE WHEN question_type_name =   'checkboxes_with_other'      AND
               (answer_intarray IS NOT NULL OR answer_text IS NOT NULL)
                                            THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name =   "date"                       AND
+    (CASE WHEN question_type_name =   'date'                       AND
                answer_date     IS NOT NULL THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name =   "time"                       AND
+    (CASE WHEN question_type_name =   'time'                       AND
                answer_time     IS NOT NULL THEN 1 ELSE 0 END)  
   = 1)
 )
