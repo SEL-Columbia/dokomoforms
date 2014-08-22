@@ -40,8 +40,8 @@ CREATE TABLE question
                                                             sequence_number),
 
   -- You can't have an empty title.
-  CHECK(title != ''),
-  CHECK(
+  CHECK non_empty_title (title != ''),
+  CHECK number_of_choices_matches_question_type (
     (CASE WHEN question_type_name IN ('multiple_choice',
                                       'multiple_choice_with_other',
                                       'checkboxes',
@@ -60,7 +60,7 @@ CREATE TABLE question
                -- These questions don't require choices.
                ARRAY_UPPER(choices, 1) = 0 THEN 1 ELSE 0 END)
   = 1),
-  CHECK(
+  CHECK number_of_branches_matches_question_type(
     (CASE WHEN is_branching AND
                ( ( -- Either a question is boolean and has two branches...
                  question_type_name = 'boolean' AND
