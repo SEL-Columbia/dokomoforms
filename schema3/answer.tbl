@@ -30,7 +30,7 @@ CREATE TABLE answer
   CONSTRAINT answer_question_id_submission_id UNIQUE(question_id,
                                                      submission_id),
 
-  CHECK question_type_name_matches_answer_type (
+  CONSTRAINT question_type_name_matches_answer_type CHECK(
     (CASE WHEN question_type_name =   'text'                       AND
                answer_text     IS NOT NULL THEN 1 ELSE 0 END) +
     (CASE WHEN question_type_name IN ('integer',
