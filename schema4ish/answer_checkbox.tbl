@@ -15,7 +15,7 @@ CREATE TABLE answer_checkbox
                                                    ON DELETE CASCADE,
 
   FOREIGN KEY(question_choice_id, question_id, question_type_name)
-              REFERENCES question
+              REFERENCES question_choice
              (question_choice_id, question_id, question_type_name)
               ON UPDATE CASCADE ON DELETE CASCADE,
 
