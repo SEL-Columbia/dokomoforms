@@ -39,9 +39,9 @@ CREATE TABLE question_choice
                            'scale')
   ), 
   CONSTRAINT scale_question_has_two_choices CHECK(
-    (CASE question_type_name =  'scale' AND choice_number BETWEEN 0 AND 1
+    (CASE WHEN question_type_name =  'scale' AND choice_number BETWEEN 0 AND 1
                                         THEN 1 ELSE 0 END) +
-    (CASE question_type_name != 'scale' THEN 1 ELSE 0 END)
+    (CASE WHEN question_type_name != 'scale' THEN 1 ELSE 0 END)
   = 1 )
 )
 WITH (
