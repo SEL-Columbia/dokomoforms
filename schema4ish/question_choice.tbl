@@ -4,7 +4,7 @@
 
 CREATE TABLE question_choice
 (
-  question_choice_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  question_choice_id          uuid DEFAULT uuid_generate_v4(),
 
   choice                      text    NOT NULL,
   choice_number               integer NOT NULL,
@@ -12,6 +12,8 @@ CREATE TABLE question_choice
   question_id                 uuid    NOT NULL,
   question_type_name          text    NOT NULL,
   question_sequence_number    integer NOT NULL,
+
+  PRIMARY KEY(question_choice_id, question_id, question_type_name),
 
   FOREIGN KEY(question_id, question_type_name, question_sequence_number)
               REFERENCES question

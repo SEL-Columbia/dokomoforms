@@ -4,19 +4,17 @@ CREATE TABLE answer_pick_choice
 (
   answer_pick_choice_id uuid    PRIMARY KEY DEFAULT uuid_generate_v4(),
 
-  question_choice_id    uuid    REFERENCES question_choice ON UPDATE CASCADE
-                                                           ON DELETE CASCADE,
+  question_choice_id    uuid    NOT NULL,
 
   question_id           uuid    NOT NULL,
   question_type_name    text    NOT NULL,
-  sequence_number       integer NOT NULL,
 
   submission_id         uuid    REFERENCES submission ON UPDATE CASCADE
                                                       ON DELETE CASCADE,
 
-  FOREIGN KEY(question_id, question_type_name, sequence_number)
-              REFERENCES question
-             (question_id, question_type_name, sequence_number)
+  FOREIGN KEY(question_choice_id, question_id, question_type_name)
+              REFERENCES question_choice
+             (question_choice_id, question_id, question_type_name)
               ON UPDATE CASCADE ON DELETE CASCADE,
 
   -- Don't pick more than one choice for a question
