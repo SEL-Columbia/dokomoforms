@@ -1,0 +1,34 @@
+DROP TABLE answer_pick_choice;
+
+CREATE TABLE answer_pick_choice
+(
+  answer_pick_choice_id uuid    PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  question_choice_id    uuid    REFERENCES question_choice ON UPDATE CASCADE
+                                                           ON DELETE CASCADE,
+
+  question_id           uuid    NOT NULL,
+  question_type_name    text    NOT NULL,
+  sequence_number       integer NOT NULL,
+
+  submission_id         uuid    REFERENCES submission ON UPDATE CASCADE
+                                                      ON DELETE CASCADE,
+
+  FOREIGN KEY(question_id, question_type_name, sequence_number)
+              REFERENCES question
+             (question_id, question_type_name, sequence_number)
+              ON UPDATE CASCADE ON DELETE CASCADE,
+
+  -- Don't pick more than one choice for a question
+  UNIQUE(submission_id, question_id),
+
+  CONSTRAINT multiple_choice_answer_type_matches CHECK(
+    question_type_name IN ('multiple_choice', 'multiple_choice_with_other', scale')
+  )
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE answer
+  OWNER TO postgres;
+
