@@ -10,14 +10,20 @@ CREATE TABLE answer_checkbox
 
   question_id        uuid    NOT NULL,
   question_type_name text    NOT NULL,
-  
+  sequence_number    integer NOT NULL, 
+ 
   submission_id      uuid    REFERENCES submission ON UPDATE CASCADE
                                                    ON DELETE CASCADE,
 
-  FOREIGN KEY(question_choice_id, question_id, question_type_name)
-              REFERENCES question_choice
-             (question_choice_id, question_id, question_type_name)
-              ON UPDATE CASCADE ON DELETE CASCADE,
+  FOREIGN KEY(question_choice_id,
+              question_id,
+              question_type_name,
+              sequence_number)
+                REFERENCES question_choice
+             (question_choice_id,
+              question_id,
+              question_type_name,
+              question_sequence_number) ON UPDATE CASCADE ON DELETE CASCADE,
 
   -- Don't pick the same answer more than once in a submission.
   UNIQUE(question_choice_id, submission_id),
