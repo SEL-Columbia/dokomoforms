@@ -1,0 +1,37 @@
+-- Table: question
+
+-- DROP TABLE question;
+
+CREATE TABLE question
+(
+  question_id                    uuid DEFAULT uuid_generate_v4(),
+
+  title                          text      NOT NULL,
+  hint                           text      NOT NULL DEFAULT '',
+
+  -- The sequence number determines the order of the questions in a survey.
+  -- Sequence numbers don't have to be consecutive, just unique. Without
+  -- branching, the order of the questions goes from lowest sequence number to
+  -- highest.
+  sequence_number                integer   NOT NULL,
+
+  question_type_name    text REFERENCES question_type (question_type_name)
+                                                      ON UPDATE CASCADE
+                                                      ON DELETE CASCADE,
+  survey_id             uuid REFERENCES survey        ON UPDATE CASCADE
+                                                      ON DELETE CASCADE,
+
+  PRIMARY KEY(question_id, question_type_name, sequence_number),
+
+  CONSTRAINT question_survey_id_sequence_number_key UNIQUE (survey_id,
+                                                            sequence_number),
+
+  -- You can't have an empty title.
+  CONSTRAINT non_empty_title CHECK (title != '')
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE question
+  OWNER TO postgres;
+

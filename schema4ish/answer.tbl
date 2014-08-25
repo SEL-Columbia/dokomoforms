@@ -1,0 +1,60 @@
+-- Table: answer
+
+-- DROP TABLE answer;
+
+CREATE TABLE answer
+(
+  answer_id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  -- These are all the possible answer types... the ones that are not NULL are
+  -- determined by the CHECK constraint on the question_type_name.
+  -- Checkbox answers are in the answer_checkbox table
+  answer_text        text,
+  answer_boolean     boolean,
+  answer_integer     integer,
+  answer_decimal     decimal,
+  answer_date        date,
+  answer_time        time with time zone,
+
+  question_id        uuid    NOT NULL,
+  question_type_name text    NOT NULL,
+  sequence_number    integer NOT NULL,
+  
+  submission_id      uuid    REFERENCES submission ON UPDATE CASCADE
+                                                   ON DELETE CASCADE,
+
+  FOREIGN KEY(question_id, question_type_name, sequence_number)
+              REFERENCES question
+             (question_id, question_type_name, sequence_number)
+              ON UPDATE CASCADE ON DELETE CASCADE,
+
+  -- You can't answer the same question twice in one submission
+  CONSTRAINT answer_question_id_submission_id UNIQUE(question_id,
+                                                     submission_id),
+
+  CONSTRAINT question_type_name_matches_answer_type CHECK(
+    (CASE WHEN question_type_name =   'text'                       AND
+               answer_text     IS NOT NULL THEN 1 ELSE 0 END) +
+    (CASE WHEN question_type_name IN ('integer',
+                                      'multiple_choice',
+                                      'scale')                     AND
+               answer_integer  IS NOT NULL THEN 1 ELSE 0 END) +
+    (CASE WHEN question_type_name =   'decimal'                    AND
+               answer_decimal  IS NOT NULL THEN 1 ELSE 0 END) +
+    (CASE WHEN question_type_name =   'boolean'                    AND
+               answer_boolean  IS NOT NULL THEN 1 ELSE 0 END) +
+    (CASE WHEN question_type_name =   'multiple_choice_with_other' AND
+              (answer_integer  IS NULL != answer_text IS NULL) -- XOR
+                                           THEN 1 ELSE 0 END) +
+    (CASE WHEN question_type_name =   'date'                       AND
+               answer_date     IS NOT NULL THEN 1 ELSE 0 END) +
+    (CASE WHEN question_type_name =   'time'                       AND
+               answer_time     IS NOT NULL THEN 1 ELSE 0 END)  
+  = 1)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE answer
+  OWNER TO postgres;
+
