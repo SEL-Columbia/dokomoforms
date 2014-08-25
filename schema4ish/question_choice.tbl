@@ -17,7 +17,7 @@ CREATE TABLE question_choice
   PRIMARY KEY(question_choice_id,
               question_id,
               question_type_name,
-              question_sequence_number
+              question_sequence_number,
               survey_id),
 
   FOREIGN KEY(question_id,
