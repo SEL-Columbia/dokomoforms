@@ -23,7 +23,7 @@ CREATE TABLE answer_pick_choice
   UNIQUE(submission_id, question_id),
 
   CONSTRAINT multiple_choice_answer_type_matches CHECK(
-    question_type_name IN ('multiple_choice', 'multiple_choice_with_other', scale')
+    question_type_name IN ('multiple_choice', 'multiple_choice_with_other', 'scale')
   )
 )
 WITH (
