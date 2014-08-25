@@ -12,15 +12,20 @@ CREATE TABLE question_choice
   question_id                 uuid    NOT NULL,
   question_type_name          text    NOT NULL,
   question_sequence_number    integer NOT NULL,
+  survey_id                   uuid    NOT NULL,
 
   PRIMARY KEY(question_choice_id,
               question_id,
               question_type_name,
-              question_sequence_number),
+              question_sequence_number
+              survey_id),
 
-  FOREIGN KEY(question_id, question_type_name, question_sequence_number)
-              REFERENCES question
-             (question_id, question_type_name, sequence_number)
+  FOREIGN KEY(question_id,
+              question_type_name,
+              question_sequence_number,
+              survey_id)
+                REFERENCES question
+             (question_id, question_type_name, sequence_number, survey_id)
               ON UPDATE CASCADE ON DELETE CASCADE,
  
   -- A question can't have multiples of the same choice number. 
