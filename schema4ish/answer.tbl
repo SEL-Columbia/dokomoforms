@@ -20,13 +20,14 @@ CREATE TABLE answer
   question_id        uuid    NOT NULL,
   question_type_name text    NOT NULL,
   sequence_number    integer NOT NULL,
-  
+  survey_id          uuid    NOT NULL,
+ 
   submission_id      uuid    REFERENCES submission ON UPDATE CASCADE
                                                    ON DELETE CASCADE,
 
-  FOREIGN KEY(question_id, question_type_name, sequence_number)
+  FOREIGN KEY(question_id, question_type_name, sequence_number, survey_id)
               REFERENCES question
-             (question_id, question_type_name, sequence_number)
+             (question_id, question_type_name, sequence_number, survey_id)
               ON UPDATE CASCADE ON DELETE CASCADE,
 
   -- You can't answer the same question twice in one submission
