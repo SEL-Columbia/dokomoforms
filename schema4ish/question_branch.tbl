@@ -7,7 +7,7 @@ CREATE TABLE question_branch
   question_branch_id   uuid    PRIMARY KEY DEFAULT uuid_generate_v4(),
 
   from_question_id     uuid    NOT NULL,
-  question_type_name   text    NOT NULL,
+  from_question_type   text    NOT NULL,
   from_sequence_number integer NOT NULL,
 
   to_question_id       uuid    NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE question_branch
   question_choice_id uuid REFERENCES question_choice ON UPDATE CASCADE
                                                      ON DELETE CASCADE,
 
-  FOREIGN KEY(from_question_id, question_type_name, from_sequence_number)
+  FOREIGN KEY(from_question_id, from_question_type, from_sequence_number)
               REFERENCES question
              (question_id, question_type_name, sequence_number)
               ON UPDATE CASCADE ON DELETE CASCADE,
@@ -34,7 +34,7 @@ CREATE TABLE question_branch
   ),
 
   CONSTRAINT question_could_have_choices CHECK(
-    question_type_name IN ('multiple_choice',
+    from_question_type IN ('multiple_choice',
                            'multiple_choice_with_other',
                            'checkboxes',
                            'checkboxes_with_other',
