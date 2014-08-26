@@ -1,6 +1,7 @@
 import argparse
 import json
 import psycopg2 as pg
+import urllib2
 
 
 def bool_to_str(input_bool):
@@ -13,23 +14,24 @@ def main():
     """Submaximal laziness"""
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', 'dbname', default='test')
-    parser.add_argument('-h', 'host', default='localhost')
-    parser.add_argument('-u', 'user', default='postgres')
-    parser.add_argument('-p', 'password')
-    parser.add_argument('-f', 'file_path')
-    parser.add_argument('-s', 'survey_name')
+    parser.add_argument('-d', '--dbname', default='test')
+    parser.add_argument('-h', '--host', default='localhost')
+    parser.add_argument('-u', '--user', default='postgres')
+    parser.add_argument('-p', '--password', required=True)
+    parser.add_argument('-f', '--file_url', required=True)
     args = parser.parse_args()
 
     con = pg.connect(dbname=args.dbname, host=args.host, user=args.user, password=args.password)
     cursor = con.cursor()
     
-    query = "insert into survey (title, survey_owner) values ('{}', 'postgres');".format(args.survey_name)
+    query = "insert into survey (title, survey_owner) values ('health_mopup', 'postgres');"
     cursor.execute(query)
 
-    cursor.execute("select survey_id from survey;")
+    # TODO: change this later
+    cursor.execute("select survey_id from survey where title='health_mopup';")
     survey_id = cursor.fetchone()[0]
 
+    cursor.execute("delete from question_type where question_type_name in ('boolean', 'integer');")
     query = "insert into question_type (question_type_name) values ('boolean'), ('integer');"
     cursor.execute(query)
 
@@ -61,7 +63,7 @@ def main():
     question_ids = [row[0] for row in cursor.fetchall()]
     
 
-    data = json.load(open(SOMETHING))
+    data = json.load(urllib2.urlopen(args.file_url))
     val = data['values']
     for index in xrange(len(val)):
         cursor.execute("insert into submission (latitude, longitude, submitter) values (0, 0, 'postgres{}')".format(index))
