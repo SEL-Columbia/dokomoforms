@@ -46,14 +46,16 @@ CREATE TABLE answer
     (CASE WHEN question_type_name = 'date'    AND answer_date    IS NOT NULL
       THEN 1 ELSE 0 END) +
     (CASE WHEN question_type_name = 'time'    AND answer_time    IS NOT NULL
-      THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name NOT IN ('multiple_choice',
-                                          'multiple_choice_with_other',
-                                          'scale',
-                                          'checkboxes',
-                                          'checkboxes_with_other')
-                                           THEN 1 ELSE 0 END)
+      THEN 1 ELSE 0 END)
   = 1)
+
+  CONSTRAINT question_type_should_have_one_answer CHECK(
+    question_type_name NOT IN ('multiple_choice',
+                               'multiple_choice_with_other',
+                               'scale',
+                               'checkboxes',
+                               'checkboxes_with_other')
+  )
 )
 WITH (
   OIDS=FALSE
