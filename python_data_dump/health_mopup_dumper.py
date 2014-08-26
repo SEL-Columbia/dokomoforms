@@ -15,7 +15,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--dbname', default='test')
-    parser.add_argument('-h', '--host', default='localhost')
+    parser.add_argument('-l', '--host', default='localhost')
     parser.add_argument('-u', '--user', default='postgres')
     parser.add_argument('-p', '--password', required=True)
     parser.add_argument('-f', '--file_url', required=True)
@@ -27,7 +27,6 @@ def main():
     query = "insert into survey (title, survey_owner) values ('health_mopup', 'postgres');"
     cursor.execute(query)
 
-    # TODO: change this later
     cursor.execute("select survey_id from survey where title='health_mopup';")
     survey_id = cursor.fetchone()[0]
 
