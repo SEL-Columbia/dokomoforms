@@ -44,31 +44,16 @@ def main():
     cursor.execute("select survey_id from survey where title='health_mopup';")
     survey_id = cursor.fetchone()[0]
 
-    query = "insert into question_type (question_type_name) values ('boolean'), ('integer'), ('multiple_choice');"
+    query = "insert into question_type (question_type_name) values ('integer'), ('multiple_choice');"
     cursor.execute(query)
 
     query =  "insert into question (title, sequence_number, question_type_name, survey_id) values "
     query += "('antenatal_care_yn', 0, 'multiple_choice', '{}'),".format(survey_id)
-    query += "('facility_list_yn', 1, 'boolean', '{}'),".format(survey_id)
-    query += "('num_doctors_fulltime', 2, 'integer', '{}'),".format(survey_id)
-    query += "('num_midwives_fulltime', 3, 'integer', '{}'),".format(survey_id)
-    query += "('num_nurses_fulltime', 4, 'integer', '{}'),".format(survey_id)
-    query += "('num_chews_fulltime', 5, 'integer', '{}'),".format(survey_id)
-    query += "('improved_water_supply.handpump', 6, 'boolean', '{}'),".format(survey_id)
-    query += "('improved_water_supply.tap', 7, 'boolean', '{}'),".format(survey_id)
-    query += "('improved_water_supply.protected_well', 8, 'boolean', '{}'),".format(survey_id)
-    query += "('improved_water_supply.rainwater', 9, 'boolean', '{}'),".format(survey_id)
-    query += "('improved_water_supply.none', 10, 'boolean', '{}'),".format(survey_id)
-    query += "('improved_sanitation.vip_latrine', 11, 'boolean', '{}'),".format(survey_id)
-    query += "('improved_sanitation.pit_latrine_with_slab', 12, 'boolean', '{}'),".format(survey_id)
-    query += "('improved_sanitation.flush', 13, 'boolean', '{}'),".format(survey_id)
-    query += "('improved_sanitation.none', 14, 'boolean', '{}'),".format(survey_id)
-    query += "('num_toilets_total', 15, 'integer', '{}'),".format(survey_id)
-    query += "('power_sources.grid', 16, 'boolean', '{}'),".format(survey_id)
-    query += "('power_sources.solar_system', 17, 'boolean', '{}'),".format(survey_id)
-    query += "('power_sources.generator', 18, 'boolean', '{}'),".format(survey_id)
-    query += "('power_sources.none', 19, 'boolean', '{}'),".format(survey_id)
-    query += "('phcn_electricity', 20, 'boolean', '{}');".format(survey_id)
+    query += "('num_doctors_fulltime', 1, 'integer', '{}'),".format(survey_id)
+    query += "('num_midwives_fulltime', 2, 'integer', '{}'),".format(survey_id)
+    query += "('num_nurses_fulltime', 3, 'integer', '{}'),".format(survey_id)
+    query += "('num_chews_fulltime', 4, 'integer', '{}'),".format(survey_id)
+    query += "('num_toilets_total', 5, 'integer', '{}'),".format(survey_id)
     cursor.execute(query)
 
     cursor.execute("select question_id from question;")
@@ -109,27 +94,12 @@ def main():
         cursor.execute("select submission_id from submission where submitter = 'postgres{}'".format(index))
         submission_id = cursor.fetchone()[0]
         
-        query = "insert into answer (answer_boolean, answer_integer, submission_id, question_id, question_type_name, sequence_number, survey_id) values "
-        query += "({}, NULL, '{}', '{}', 'boolean', {}, '{}'),".format(bool_to_str(val[index]['facility_list_yn'][0]), submission_id, question_ids[1], 1, survey_id)
-        query += "(NULL, {}, '{}', '{}', 'integer', {}, '{}'),".format(none_to_zero(val[index]['num_doctors_fulltime'][0]), submission_id, question_ids[2], 2, survey_id)
-        query += "(NULL, {}, '{}', '{}', 'integer', {}, '{}'),".format(none_to_zero(val[index]['num_midwives_fulltime'][0]), submission_id, question_ids[3], 3, survey_id)
-        query += "(NULL, {}, '{}', '{}', 'integer', {}, '{}'),".format(none_to_zero(val[index]['num_nurses_fulltime'][0]), submission_id, question_ids[4], 4, survey_id)
-        query += "(NULL, {}, '{}', '{}', 'integer', {}, '{}'),".format(none_to_zero(val[index]['num_chews_fulltime'][0]), submission_id, question_ids[5], 5, survey_id)
-        query += "({}, NULL, '{}', '{}', 'boolean', {}, '{}'),".format(bool_to_str(val[index]['improved_water_supply.handpump'][0]), submission_id, question_ids[6], 6, survey_id)
-        query += "({}, NULL, '{}', '{}', 'boolean', {}, '{}'),".format(bool_to_str(val[index]['improved_water_supply.tap'][0]), submission_id, question_ids[7], 7, survey_id)
-        query += "({}, NULL, '{}', '{}', 'boolean', {}, '{}'),".format(bool_to_str(val[index]['improved_water_supply.protected_well'][0]), submission_id, question_ids[8], 8, survey_id)
-        query += "({}, NULL, '{}', '{}', 'boolean', {}, '{}'),".format(bool_to_str(val[index]['improved_water_supply.rainwater'][0]), submission_id, question_ids[9], 9, survey_id)
-        query += "({}, NULL, '{}', '{}', 'boolean', {}, '{}'),".format(bool_to_str(val[index]['improved_water_supply.none'][0]), submission_id, question_ids[10], 10, survey_id)
-        query += "({}, NULL, '{}', '{}', 'boolean', {}, '{}'),".format(bool_to_str(val[index]['improved_sanitation.vip_latrine'][0]), submission_id, question_ids[11], 11, survey_id)
-        query += "({}, NULL, '{}', '{}', 'boolean', {}, '{}'),".format(bool_to_str(val[index]['improved_sanitation.pit_latrine_with_slab'][0]), submission_id, question_ids[12], 12, survey_id)
-        query += "({}, NULL, '{}', '{}', 'boolean', {}, '{}'),".format(bool_to_str(val[index]['improved_sanitation.flush'][0]), submission_id, question_ids[13], 13, survey_id)
-        query += "({}, NULL, '{}', '{}', 'boolean', {}, '{}'),".format(bool_to_str(val[index]['improved_sanitation.none'][0]), submission_id, question_ids[14], 14, survey_id)
-        query += "(NULL, {}, '{}', '{}', 'integer', {}, '{}'),".format(none_to_zero(val[index]['num_toilets_total'][0]), submission_id, question_ids[15], 15, survey_id)
-        query += "({}, NULL, '{}', '{}', 'boolean', {}, '{}'),".format(bool_to_str(val[index]['power_sources.grid'][0]), submission_id, question_ids[16], 16, survey_id)
-        query += "({}, NULL, '{}', '{}', 'boolean', {}, '{}'),".format(bool_to_str(val[index]['power_sources.solar_system'][0]), submission_id, question_ids[17], 17, survey_id)
-        query += "({}, NULL, '{}', '{}', 'boolean', {}, '{}'),".format(bool_to_str(val[index]['power_sources.generator'][0]), submission_id, question_ids[18], 18, survey_id)
-        query += "({}, NULL, '{}', '{}', 'boolean', {}, '{}'),".format(bool_to_str(val[index]['power_sources.none'][0]), submission_id, question_ids[19], 19, survey_id)
-        query += "({}, NULL, '{}', '{}', 'boolean', {}, '{}');".format(bool_to_str(val[index]['phcn_electricity'][0]), submission_id, question_ids[20], 20, survey_id)
+        query = "insert into answer (answer_integer, submission_id, question_id, question_type_name, sequence_number, survey_id) values "
+        query += "({}, '{}', '{}', 'integer', {}, '{}'),".format(none_to_zero(val[index]['num_doctors_fulltime'][0]), submission_id, question_ids[1], 1, survey_id)
+        query += "({}, '{}', '{}', 'integer', {}, '{}'),".format(none_to_zero(val[index]['num_midwives_fulltime'][0]), submission_id, question_ids[2], 2, survey_id)
+        query += "({}, '{}', '{}', 'integer', {}, '{}'),".format(none_to_zero(val[index]['num_nurses_fulltime'][0]), submission_id, question_ids[3], 3, survey_id)
+        query += "({}, '{}', '{}', 'integer', {}, '{}'),".format(none_to_zero(val[index]['num_chews_fulltime'][0]), submission_id, question_ids[4], 4, survey_id)
+        query += "({}, '{}', '{}', 'integer', {}, '{}'),".format(none_to_zero(val[index]['num_toilets_total'][0]), submission_id, question_ids[5], 5, survey_id)
         cursor.execute(query)
         
         query =  "insert into answer_pick_choice (question_choice_id, question_id, question_type_name, sequence_number, survey_id, submission_id) values "
