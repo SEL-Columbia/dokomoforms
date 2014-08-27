@@ -53,7 +53,7 @@ def main():
     query += "('num_midwives_fulltime', 2, 'integer', '{}'),".format(survey_id)
     query += "('num_nurses_fulltime', 3, 'integer', '{}'),".format(survey_id)
     query += "('num_chews_fulltime', 4, 'integer', '{}'),".format(survey_id)
-    query += "('num_toilets_total', 5, 'integer', '{}'),".format(survey_id)
+    query += "('num_toilets_total', 5, 'integer', '{}');".format(survey_id)
     cursor.execute(query)
 
     cursor.execute("select question_id from question;")
@@ -99,7 +99,7 @@ def main():
         query += "({}, '{}', '{}', 'integer', {}, '{}'),".format(none_to_zero(val[index]['num_midwives_fulltime'][0]), submission_id, question_ids[2], 2, survey_id)
         query += "({}, '{}', '{}', 'integer', {}, '{}'),".format(none_to_zero(val[index]['num_nurses_fulltime'][0]), submission_id, question_ids[3], 3, survey_id)
         query += "({}, '{}', '{}', 'integer', {}, '{}'),".format(none_to_zero(val[index]['num_chews_fulltime'][0]), submission_id, question_ids[4], 4, survey_id)
-        query += "({}, '{}', '{}', 'integer', {}, '{}'),".format(none_to_zero(val[index]['num_toilets_total'][0]), submission_id, question_ids[5], 5, survey_id)
+        query += "({}, '{}', '{}', 'integer', {}, '{}');".format(none_to_zero(val[index]['num_toilets_total'][0]), submission_id, question_ids[5], 5, survey_id)
         cursor.execute(query)
         
         query =  "insert into answer_pick_choice (question_choice_id, question_id, question_type_name, sequence_number, survey_id, submission_id) values "
