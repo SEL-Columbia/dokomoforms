@@ -11,7 +11,6 @@ CREATE TABLE answer
   -- Multiple choice answers are in the answer_pick_choice table.
   -- Checkbox answers are in the answer_checkbox table.
   answer_text        text,
-  answer_boolean     boolean,
   answer_integer     integer,
   answer_decimal     decimal,
   answer_date        date,
@@ -43,8 +42,6 @@ CREATE TABLE answer
     (CASE WHEN question_type_name =   'integer' AND answer_integer IS NOT NULL
       THEN 1 ELSE 0 END) +
     (CASE WHEN question_type_name =   'decimal' AND answer_decimal IS NOT NULL
-      THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name =   'boolean' AND answer_boolean IS NOT NULL
       THEN 1 ELSE 0 END) +
     (CASE WHEN question_type_name =   'date'    AND answer_date    IS NOT NULL
       THEN 1 ELSE 0 END) +
