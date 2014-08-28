@@ -50,10 +50,7 @@ CREATE TABLE question_branch
 
   CONSTRAINT question_could_have_choices CHECK(
     from_question_type IN ('multiple_choice',
-                           'multiple_choice_with_other',
-                           'checkboxes',
-                           'checkboxes_with_other',
-                           'scale')
+                           'multiple_choice_with_other')
   ) 
 )
 WITH (

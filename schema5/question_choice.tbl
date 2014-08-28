@@ -37,12 +37,7 @@ CREATE TABLE question_choice
                            'checkboxes',
                            'checkboxes_with_other',
                            'scale')
-  ), 
-  CONSTRAINT scale_question_has_two_choices CHECK(
-    (CASE WHEN question_type_name =  'scale' AND choice_number BETWEEN 0 AND 1
-                                        THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name != 'scale' THEN 1 ELSE 0 END)
-  = 1 )
+  ) 
 )
 WITH (
   OIDS=FALSE

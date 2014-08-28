@@ -11,7 +11,6 @@ CREATE TABLE answer
   -- Multiple choice answers are in the answer_pick_choice table.
   -- Checkbox answers are in the answer_checkbox table.
   answer_text        text,
-  answer_boolean     boolean,
   answer_integer     integer,
   answer_decimal     decimal,
   answer_date        date,
@@ -35,25 +34,26 @@ CREATE TABLE answer
                                                      submission_id),
 
   CONSTRAINT question_type_name_matches_answer_type CHECK(
-    (CASE WHEN question_type_name = 'text'    AND answer_text    IS NOT NULL
+    (CASE WHEN question_type_name in ('text',
+                                      'multiple_choice_with_other',
+                                      'checkboxes_with_other')
+                                                AND answer_text    IS NOT NULL
       THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name = 'integer' AND answer_integer IS NOT NULL
+    (CASE WHEN question_type_name =   'integer' AND answer_integer IS NOT NULL
       THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name = 'decimal' AND answer_decimal IS NOT NULL
+    (CASE WHEN question_type_name =   'decimal' AND answer_decimal IS NOT NULL
       THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name = 'boolean' AND answer_boolean IS NOT NULL
+    (CASE WHEN question_type_name =   'date'    AND answer_date    IS NOT NULL
       THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name = 'date'    AND answer_date    IS NOT NULL
-      THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name = 'time'    AND answer_time    IS NOT NULL
-      THEN 1 ELSE 0 END) +
-    (CASE WHEN question_type_name NOT IN ('multiple_choice',
-                                          'multiple_choice_with_other',
-                                          'scale',
-                                          'checkboxes',
-                                          'checkboxes_with_other')
-                                           THEN 1 ELSE 0 END)
-  = 1)
+    (CASE WHEN question_type_name =   'time'    AND answer_time    IS NOT NULL
+      THEN 1 ELSE 0 END)
+  = 1),
+
+  CONSTRAINT question_type_should_have_one_answer CHECK(
+    question_type_name NOT IN ('multiple_choice',
+                               'scale',
+                               'checkboxes')
+  )
 )
 WITH (
   OIDS=FALSE
