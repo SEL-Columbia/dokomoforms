@@ -8,8 +8,7 @@ CREATE TABLE answer
 
   -- These are all the possible answer types... the one that is not NULL is
   -- determined by the CHECK constraint on the question_type_name.
-  -- Multiple choice answers are in the answer_pick_choice table.
-  -- Checkbox answers are in the answer_checkbox table.
+  -- Multiple choice answers are in the answer_choice table.
   answer_text        text,
   answer_integer     integer,
   answer_decimal     decimal,
@@ -19,24 +18,27 @@ CREATE TABLE answer
   question_id        uuid    NOT NULL,
   question_type_name text    NOT NULL,
   sequence_number    integer NOT NULL,
+  allow_multiple     boolean NOT NULL,
   survey_id          uuid    NOT NULL,
  
   submission_id      uuid    REFERENCES submission ON UPDATE CASCADE
                                                    ON DELETE CASCADE,
 
-  FOREIGN KEY(question_id, question_type_name, sequence_number, survey_id)
-              REFERENCES question
-             (question_id, question_type_name, sequence_number, survey_id)
-              ON UPDATE CASCADE ON DELETE CASCADE,
-
-  -- You can't answer the same question twice in one submission
-  CONSTRAINT answer_question_id_submission_id UNIQUE(question_id,
-                                                     submission_id),
+  FOREIGN KEY(question_id,
+              question_type_name,
+              sequence_number,
+              allow_multiple,
+              survey_id)
+    REFERENCES question
+             (question_id,
+              question_type_name,
+              sequence_number,
+              allow_multiple,
+              survey_id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
 
   CONSTRAINT question_type_name_matches_answer_type CHECK(
-    (CASE WHEN question_type_name in ('text',
-                                      'multiple_choice_with_other',
-                                      'checkboxes_with_other')
+    (CASE WHEN question_type_name in ('text', 'multiple_choice_with_other')
                                                 AND answer_text    IS NOT NULL
       THEN 1 ELSE 0 END) +
     (CASE WHEN question_type_name =   'integer' AND answer_integer IS NOT NULL
@@ -49,15 +51,16 @@ CREATE TABLE answer
       THEN 1 ELSE 0 END)
   = 1),
 
-  CONSTRAINT question_type_should_have_one_answer CHECK(
-    question_type_name NOT IN ('multiple_choice',
-                               'scale',
-                               'checkboxes')
+  CONSTRAINT this_goes_in_another_table CHECK(
+    question_type_name != 'multiple_choice')
   )
 )
 WITH (
   OIDS=FALSE
 );
+CREATE UNIQUE INDEX only_one_answer_allowed
+  ON answer (question_id, submission_id)
+  WHERE NOT allow_multiple;
+
 ALTER TABLE answer
   OWNER TO postgres;
-

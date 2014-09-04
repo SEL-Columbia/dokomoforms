@@ -17,12 +17,8 @@ ALTER TABLE question_type
 -- 01 text
 -- 02 integer
 -- 03 decimal
--- 04 boolean
--- 05 multiple_choice
--- 06 multiple_choice_with_other
--- 07 checkboxes
--- 08 checkboxes_with_other
--- 09 scale
--- 10 date
--- 11 time
+-- 04 multiple_choice
+-- 05 multiple_choice_with_other
+-- 06 date
+-- 07 time
 

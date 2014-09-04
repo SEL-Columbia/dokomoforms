@@ -6,6 +6,7 @@ CREATE TABLE submission
 (
   submission_id    uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 
+  --Add actual geolocation support
   latitude         decimal                  NOT NULL,
   longitude        decimal                  NOT NULL,
   submission_time  timestamp with time zone NOT NULL DEFAULT NOW(),
