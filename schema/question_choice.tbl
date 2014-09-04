@@ -25,7 +25,7 @@ CREATE TABLE question_choice
   FOREIGN KEY(question_id,
               question_type_name,
               question_sequence_number,
-              allow multiple,
+              allow_multiple,
               survey_id)
                 REFERENCES question
              (question_id,
