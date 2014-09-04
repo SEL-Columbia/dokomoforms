@@ -4,13 +4,13 @@
 
 CREATE TABLE survey
 (
-  id           integer   NOT NULL,
-  title        some_text NOT NULL,
-  survey_owner some_text NOT NULL,
-  survey_group some_text NOT NULL,
+  survey_id    uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 
-  CONSTRAINT survey_pkey                                PRIMARY KEY (id),
-  CONSTRAINT survey_title_survey_owner_survey_group_key UNIQUE (title, survey_owner, survey_group)
+  title        text                     NOT NULL,
+  survey_owner text                     NOT NULL,
+  created_on   timestamp with time zone NOT NULL default now(),
+
+  CONSTRAINT survey_title_survey_owner_key UNIQUE (title, survey_owner)
 )
 WITH (
   OIDS=FALSE

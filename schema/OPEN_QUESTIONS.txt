@@ -1,4 +1,0 @@
-1. How to include conditional logic?
-2. How to represent choices in the question? json? Will we ever need to filter/aggregate/etc across choices?
-3. How to group a set of answers as a single form submission to a survey?
-
