@@ -1,4 +1,4 @@
-#[Schema](relationships.real.large.png)
+#[Schema](relationships.real.large.png) (click for diagram)
 
 ##High level
 
