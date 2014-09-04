@@ -4,29 +4,29 @@
 
 CREATE TABLE answer_choice
 (
-  answer_choice_id      uuid    PRIMARY KEY DEFAULT uuid_generate_v4(),
+  answer_choice_id        uuid    PRIMARY KEY DEFAULT uuid_generate_v4(),
 
-  question_choice_id    uuid    NOT NULL,
+  question_choice_id      uuid    NOT NULL,
 
-  question_id           uuid    NOT NULL,
-  question_type_name    text    NOT NULL,
-  sequence_number       integer NOT NULL,
-  allow_multiple        boolean NOT NULL,
-  survey_id             uuid    NOT NULL,
+  question_id             uuid    NOT NULL,
+  type_constraint_name    text    NOT NULL,
+  sequence_number         integer NOT NULL,
+  allow_multiple          boolean NOT NULL,
+  survey_id               uuid    NOT NULL,
 
-  submission_id         uuid    REFERENCES submission ON UPDATE CASCADE
-                                                      ON DELETE CASCADE,
+  submission_id           uuid    REFERENCES submission ON UPDATE CASCADE
+                                                        ON DELETE CASCADE,
 
   FOREIGN KEY(question_choice_id,
               question_id,
-              question_type_name,
+              type_constraint_name,
               sequence_number,
               allow_multiple,
               survey_id)
                 REFERENCES question_choice
              (question_choice_id,
               question_id,
-              question_type_name,
+              type_constraint_name,
               question_sequence_number,
               allow_multiple,
               survey_id) ON UPDATE CASCADE ON DELETE CASCADE,
@@ -34,7 +34,7 @@ CREATE TABLE answer_choice
   UNIQUE(question_choice_id, submission_id),
 
   CONSTRAINT multiple_choice_answer_type_matches CHECK(
-    question_type_name IN ('multiple_choice', 'multiple_choice_with_other')
+    type_constraint_name IN ('multiple_choice', 'multiple_choice_with_other')
   )
 )
 WITH (

@@ -4,43 +4,43 @@
 
 CREATE TABLE question_branch
 (
-  question_branch_id   uuid    PRIMARY KEY DEFAULT uuid_generate_v4(),
+  question_branch_id     uuid    PRIMARY KEY DEFAULT uuid_generate_v4(),
 
-  question_choice_id   uuid    NOT NULL,
-  from_question_id     uuid    NOT NULL,
-  from_question_type   text    NOT NULL,
-  from_sequence_number integer NOT NULL,
-  from_allow_multiple  boolean NOT NULL,
-  from_survey_id       uuid    NOT NULL,
+  question_choice_id     uuid    NOT NULL,
+  from_question_id       uuid    NOT NULL,
+  from_type_constraint   text    NOT NULL,
+  from_sequence_number   integer NOT NULL,
+  from_allow_multiple    boolean NOT NULL,
+  from_survey_id         uuid    NOT NULL,
 
-  to_question_id       uuid    NOT NULL,
-  to_question_type     text    NOT NULL,
-  to_allow_multiple    boolean NOT NULL,
-  to_sequence_number   integer NOT NULL,
-  to_survey_id         uuid    NOT NULL,
+  to_question_id         uuid    NOT NULL,
+  to_type_constraint     text    NOT NULL,
+  to_allow_multiple      boolean NOT NULL,
+  to_sequence_number     integer NOT NULL,
+  to_survey_id           uuid    NOT NULL,
 
   FOREIGN KEY(question_choice_id,
               from_question_id,
-              from_question_type,
+              from_type_constraint,
               from_sequence_number,
               from_allow_multiple,
               from_survey_id)
                 REFERENCES question_choice
              (question_choice_id,
               question_id,
-              question_type_name,
+              type_constraint_name,
               question_sequence_number,
               allow_multiple,
               survey_id) ON UPDATE CASCADE ON DELETE CASCADE,
 
   FOREIGN KEY(to_question_id,
-              to_question_type,
+              to_type_constraint,
               to_sequence_number,
               to_allow_multiple,
               to_survey_id)
                 REFERENCES question
              (question_id,
-              question_type_name,
+              type_constraint_name,
               sequence_number,
               allow_multiple,
               survey_id) ON UPDATE CASCADE ON DELETE CASCADE,
@@ -57,7 +57,7 @@ CREATE TABLE question_branch
   ),
 
   CONSTRAINT question_could_have_choices CHECK(
-    from_question_type IN ('multiple_choice', 'multiple_choice_with_other')
+    from_type_constraint IN ('multiple_choice', 'multiple_choice_with_other')
   ) 
 )
 WITH (

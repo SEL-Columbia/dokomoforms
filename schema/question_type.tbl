@@ -1,17 +1,17 @@
--- Table: question_type
+-- Table: type_constraint
 
--- DROP TABLE question_type;
+-- DROP TABLE type_constraint;
 
-CREATE TABLE question_type
+CREATE TABLE type_constraint
 (
-  question_type_id   uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  type_constraint_id   uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 
-  question_type_name text UNIQUE NOT NULL
+  type_constraint_name text UNIQUE NOT NULL
 )
 WITH (
   OIDS=FALSE
 );
-ALTER TABLE question_type
+ALTER TABLE type_constraint
   OWNER TO postgres;
 
 -- 01 text
