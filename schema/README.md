@@ -1,4 +1,4 @@
-#Schema
+#[Schema](relationships.real.large.png)
 
 ##High level
 
