@@ -52,7 +52,7 @@ CREATE TABLE answer
   = 1),
 
   CONSTRAINT this_goes_in_another_table CHECK(
-    question_type_name != 'multiple_choice')
+    question_type_name != 'multiple_choice'
   )
 )
 WITH (
