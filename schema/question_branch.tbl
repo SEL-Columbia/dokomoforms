@@ -19,6 +19,8 @@ CREATE TABLE question_branch
   to_sequence_number     integer NOT NULL,
   to_survey_id           uuid    NOT NULL,
 
+  last_update_time       timestamp with time zone NOT NULL DEFAULT NOW(),
+
   FOREIGN KEY(question_choice_id,
               from_question_id,
               from_type_constraint,

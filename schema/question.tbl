@@ -28,6 +28,8 @@ CREATE TABLE question
   survey_id             uuid REFERENCES survey          ON UPDATE CASCADE
                                                         ON DELETE CASCADE,
 
+  last_update_time      timestamp with time zone NOT NULL DEFAULT NOW(),
+
   PRIMARY KEY(question_id,
               type_constraint_name,
               sequence_number,

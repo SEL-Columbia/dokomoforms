@@ -10,7 +10,9 @@ CREATE TABLE submission
   latitude         decimal                  NOT NULL,
   longitude        decimal                  NOT NULL,
   submission_time  timestamp with time zone NOT NULL DEFAULT NOW(),
-  submitter        text                     NOT NULL
+  submitter        text                     NOT NULL,
+
+  last_update_time timestamp with time zone NOT NULL DEFAULT NOW(),
 )
 WITH (
   OIDS=FALSE

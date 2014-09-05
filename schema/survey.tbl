@@ -10,7 +10,7 @@ CREATE TABLE survey
   survey_owner text                     NOT NULL,
   created_on   timestamp with time zone NOT NULL default now(),
 
-  --Add auto-populated submission user and time
+  last_update_time     timestamp with time zone NOT NULL DEFAULT NOW(),
 
   CONSTRAINT survey_title_survey_owner_key UNIQUE (title, survey_owner)
 )
