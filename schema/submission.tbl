@@ -12,7 +12,8 @@ CREATE TABLE submission
   submission_time  timestamp with time zone NOT NULL DEFAULT NOW(),
   submitter        text                     NOT NULL,
 
-  last_update_time timestamp with time zone NOT NULL DEFAULT NOW(),
+  field_update_time timestamp with time zone NOT NULL DEFAULT NOW(),
+  last_update_time  timestamp with time zone NOT NULL DEFAULT NOW()
 )
 WITH (
   OIDS=FALSE
