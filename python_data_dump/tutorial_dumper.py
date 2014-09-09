@@ -1,6 +1,9 @@
 import argparse
 import psycopg2 as pg
 import urllib2
+import itertools
+from random import randint
+from random import random
 
 
 def main():
@@ -26,8 +29,7 @@ def main():
 
     # Types
     cursor.execute('delete from type_constraint')
-    query = "insert into type_constraint (type_constraint_name) values ('integer'), "
-            "('multiple_choice'), ('text'), ('multiple_choice_with_other'), ('decimal'), ('date'), ('time');"
+    query = "insert into type_constraint (type_constraint_name) values ('integer'), ('multiple_choice'), ('text'), ('multiple_choice_with_other'), ('decimal'), ('date'), ('time');"
 
     cursor.execute(query)
 
@@ -49,14 +51,14 @@ def main():
 
     # XXX: Make some of these branchable 
 
-    # No multiples questions
+    # Multiples questions
     query =  "insert into question (title, sequence_number, type_constraint_name, question_variety_name, allow_multiple, survey_id) values "
     query += "('Select your fears and/or fill in your own', 6, 'multiple_choice_with_other', 'scary', true, '{}');".format(survey_id)
     cursor.execute(query)
 
     
     # get ids for questions
-    cursor.execute("select question_id from question;")
+    cursor.execute("select question_id from question JOIN survey ON survey.survey_id = question.survey_id where survey.title = 'tutorial';")
     question_ids = [row[0] for row in cursor.fetchall()]
 
     # colour choices
@@ -64,7 +66,7 @@ def main():
     query += "('red', 1, '{}', false, 'multiple_choice', 1, '{}'),".format(question_ids[1], survey_id)
     query += "('green',  2, '{}', false, 'multiple_choice', 1, '{}'),".format(question_ids[1], survey_id)
     query += "('blue', 3, '{}', false, 'multiple_choice', 1, '{}'),".format(question_ids[1], survey_id)
-    query += "('fear',  4, '{}', false, 'multiple_choice', 1, '{}');".format(question_ids[1], survey_id)
+    query += "('fear itself',  4, '{}', false, 'multiple_choice', 1, '{}');".format(question_ids[1], survey_id)
     cursor.execute(query)
     
     # fear factors
@@ -76,7 +78,7 @@ def main():
     cursor.execute(query)
 
     # build choice name -> uuid dict
-    cursor.execute("select question_choice_id from question_choice;")
+    cursor.execute("select question_choice_id, choice from question_choice JOIN survey ON survey.survey_id = question_choice.survey_id where survey.title = 'tutorial';")
     choices = {}
     for row in cursor.fetchall():
         choices[row[1]] = row[0]
@@ -89,25 +91,63 @@ def main():
     #query += "from_sequence_number, from_survey_id, to_question_id, to_allow_multiple, to_type_constraint, to_sequence_number, to_survey_id) values "
     #query += "('{}', '{}', false, 'multiple_choice', 0, '{}', '{}', false, 'integer', 2, '{}');".format(choice_id, question_ids[0], survey_id, question_ids[2], survey_id)
     #cursor.execute(query)
+    
+    colour_wheel = itertools.cycle(['red', 'green', 'blue', 'fear itself'])
+    fears = itertools.cycle(['clowns', 'balloons', 'vijays', 'fear', None])
 
     for index in xrange(1000):
+        fear = next(fears)
+        colour = next(colour_wheel)
+
         cursor.execute("insert into submission (latitude, longitude, submitter) values (0, 0, 'postgres_tut{}')".format(index))
         
         cursor.execute("select submission_id from submission where submitter = 'postgres_tut{}'".format(index))
         submission_id = cursor.fetchone()[0]
-        
+       
+        # Question 0 - how old
         query = "insert into answer (answer_integer, submission_id, question_id, allow_multiple, type_constraint_name, sequence_number, survey_id) values "
-        query += "({}, '{}', '{}', false, 'integer', {}, '{}'),".format(none_to_zero(val[index]['num_doctors_fulltime'][0]), submission_id, question_ids[1], 1, survey_id)
-        query += "({}, '{}', '{}', false, 'integer', {}, '{}'),".format(none_to_zero(val[index]['num_midwives_fulltime'][0]), submission_id, question_ids[2], 2, survey_id)
-        query += "({}, '{}', '{}', false, 'integer', {}, '{}'),".format(none_to_zero(val[index]['num_nurses_fulltime'][0]), submission_id, question_ids[3], 3, survey_id)
-        query += "({}, '{}', '{}', false, 'integer', {}, '{}'),".format(none_to_zero(val[index]['num_chews_fulltime'][0]), submission_id, question_ids[4], 4, survey_id)
-        query += "({}, '{}', '{}', false, 'integer', {}, '{}');".format(none_to_zero(val[index]['num_toilets_total'][0]), submission_id, question_ids[5], 5, survey_id)
-        cursor.execute(query)
-        
-        query =  "insert into answer_choice (question_choice_id, question_id, allow_multiple, type_constraint_name, sequence_number, survey_id, submission_id) values "
-        query += "('{}', '{}', false, 'multiple_choice', 0, '{}', '{}');".format(get_choice_id(val[index]['antenatal_care_yn'][0]), question_ids[0], survey_id, submission_id)
+        query += "({}, '{}', '{}', false, 'integer', 0, '{}');".format(randint(0,65), submission_id, question_ids[0], survey_id)
         cursor.execute(query)
 
+        # Question 1 - cooler
+        query =  "insert into answer_choice (question_choice_id, question_id, allow_multiple, type_constraint_name, sequence_number, survey_id, submission_id) values "
+        query += "('{}', '{}', false, 'multiple_choice', 1, '{}', '{}');".format(choices[colour], question_ids[1], survey_id, submission_id)
+        cursor.execute(query)
+
+        # Question 2 - write fear 
+        query = "insert into answer (answer_text, submission_id, question_id, allow_multiple, type_constraint_name, sequence_number, survey_id) values "
+        query += "('{}', '{}', '{}', false, 'text', 2, '{}');".format("Im really afraid of : " + str(fear) + " and you", submission_id, question_ids[2], survey_id)
+        cursor.execute(query)
+
+        # Question 3 - rate fear 
+        query = "insert into answer (answer_decimal, submission_id, question_id, allow_multiple, type_constraint_name, sequence_number, survey_id) values "
+        query += "({}, '{}', '{}', false, 'decimal', 3, '{}');".format(random(), submission_id, question_ids[3], survey_id)
+        cursor.execute(query)
+
+        # Question 4 - date 
+        query = "insert into answer (answer_date, submission_id, question_id, allow_multiple, type_constraint_name, sequence_number, survey_id) values "
+        query += "({}, '{}', '{}', false, 'date', 4, '{}');".format("date '2001-09-28' + integer '{}'".format(randint(-50,50)), submission_id, question_ids[4], survey_id)
+        cursor.execute(query)
+
+        # Question 5 - time 
+        query = "insert into answer (answer_time, submission_id, question_id, allow_multiple, type_constraint_name, sequence_number, survey_id) values "
+        query += "({}, '{}', '{}', false, 'time',  5, '{}');".format("now()", submission_id, question_ids[5], survey_id)
+        cursor.execute(query)
+
+        # Question 6 - select fear
+        if fear:
+            query =  "insert into answer_choice (question_choice_id, question_id, allow_multiple, type_constraint_name, sequence_number, survey_id, submission_id) values "
+            query += "('{}', '{}', true, 'multiple_choice_with_other', 6, '{}', '{}');".format(choices[fear], question_ids[6], survey_id, submission_id)
+            cursor.execute(query)
+        else:
+            query =  "insert into answer_choice (question_choice_id, question_id, allow_multiple, type_constraint_name, sequence_number, survey_id, submission_id) values "
+            query += "('{}', '{}', true, 'multiple_choice_with_other', 6, '{}', '{}');".format(choices['fear'], question_ids[6], survey_id, submission_id)
+            cursor.execute(query)
+
+            query = "insert into answer (answer_text, submission_id, question_id, allow_multiple, type_constraint_name, sequence_number, survey_id) values "
+            query += "('{} is sooo scary', '{}', '{}', true, 'multiple_choice_with_other', 6, '{}');".format(randint(0, 2), submission_id, question_ids[6], survey_id)
+            cursor.execute(query)
+        
     con.commit()
 
     
