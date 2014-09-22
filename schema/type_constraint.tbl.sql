@@ -22,4 +22,4 @@ ALTER TABLE type_constraint
 -- 05 multiple_choice_with_other
 -- 06 date
 -- 07 time
-
+-- 08 note (no answer)
