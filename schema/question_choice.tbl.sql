@@ -15,7 +15,7 @@ CREATE TABLE question_choice
   allow_multiple           boolean NOT NULL,
   survey_id                uuid    NOT NULL,
 
-  last_update_time         timestamp with time zone NOT NULL DEFAULT NOW(),
+  last_update_time         timestamp with time zone NOT NULL DEFAULT now(),
 
   PRIMARY KEY(question_choice_id,
               question_id,

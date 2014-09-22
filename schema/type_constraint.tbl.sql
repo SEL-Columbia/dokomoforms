@@ -7,7 +7,7 @@ CREATE TABLE type_constraint
   type_constraint_id   uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   type_constraint_name text UNIQUE NOT NULL,
 
-  last_update_time     timestamp with time zone NOT NULL DEFAULT NOW()
+  last_update_time     timestamp with time zone NOT NULL DEFAULT now()
 )
 WITH (
   OIDS=FALSE

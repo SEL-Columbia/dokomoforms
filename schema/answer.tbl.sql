@@ -24,7 +24,7 @@ CREATE TABLE answer
   submission_id        uuid    REFERENCES submission ON UPDATE CASCADE
                                                      ON DELETE CASCADE,
 
-  last_update_time     timestamp with time zone NOT NULL DEFAULT NOW(),
+  last_update_time     timestamp with time zone NOT NULL DEFAULT now(),
 
   FOREIGN KEY(question_id,
               type_constraint_name,

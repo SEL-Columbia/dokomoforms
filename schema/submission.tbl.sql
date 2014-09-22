@@ -9,11 +9,11 @@ CREATE TABLE submission
   --Add actual geolocation support
   latitude         decimal                  NOT NULL,
   longitude        decimal                  NOT NULL,
-  submission_time  timestamp with time zone NOT NULL DEFAULT NOW(),
+  submission_time  timestamp with time zone NOT NULL DEFAULT now(),
   submitter        text                     NOT NULL,
 
-  field_update_time timestamp with time zone NOT NULL DEFAULT NOW(),
-  last_update_time  timestamp with time zone NOT NULL DEFAULT NOW()
+  field_update_time timestamp with time zone NOT NULL DEFAULT now(),
+  last_update_time  timestamp with time zone NOT NULL DEFAULT now()
 )
 WITH (
   OIDS=FALSE

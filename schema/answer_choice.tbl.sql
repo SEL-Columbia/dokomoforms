@@ -17,7 +17,7 @@ CREATE TABLE answer_choice
   submission_id           uuid    REFERENCES submission ON UPDATE CASCADE
                                                         ON DELETE CASCADE,
 
-  last_update_time        timestamp with time zone NOT NULL DEFAULT NOW(),
+  last_update_time        timestamp with time zone NOT NULL DEFAULT now(),
 
   FOREIGN KEY(question_choice_id,
               question_id,
@@ -25,7 +25,7 @@ CREATE TABLE answer_choice
               sequence_number,
               allow_multiple,
               survey_id)
-                REFERENCES question_choice
+                         REFERENCES question_choice
              (question_choice_id,
               question_id,
               type_constraint_name,

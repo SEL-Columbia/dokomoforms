@@ -7,6 +7,7 @@ CREATE TABLE question_branch
   question_branch_id     uuid    PRIMARY KEY DEFAULT uuid_generate_v4(),
 
   question_choice_id     uuid    NOT NULL,
+
   from_question_id       uuid    NOT NULL,
   from_type_constraint   text    NOT NULL,
   from_sequence_number   integer NOT NULL,
@@ -19,7 +20,7 @@ CREATE TABLE question_branch
   to_sequence_number     integer NOT NULL,
   to_survey_id           uuid    NOT NULL,
 
-  last_update_time       timestamp with time zone NOT NULL DEFAULT NOW(),
+  last_update_time       timestamp with time zone NOT NULL DEFAULT now(),
 
   FOREIGN KEY(question_choice_id,
               from_question_id,
