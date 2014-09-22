@@ -56,6 +56,10 @@ CREATE TABLE answer
   CONSTRAINT this_goes_in_another_table CHECK(
     type_constraint_name != 'multiple_choice'
   )
+
+  CONSTRAINT note_questions_cannot_be_answered CHECK(
+    type_constraint_name != 'note'
+  )
 )
 WITH (
   OIDS=FALSE
