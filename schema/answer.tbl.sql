@@ -20,11 +20,11 @@ CREATE TABLE answer
   sequence_number      integer NOT NULL,
   allow_multiple       boolean NOT NULL,
   survey_id            uuid    NOT NULL,
- 
+
   submission_id        uuid    REFERENCES submission ON UPDATE CASCADE
                                                      ON DELETE CASCADE,
 
-  last_update_time     timestamp with time zone NOT NULL DEFAULT now(),
+  answer_last_update_time timestamp with time zone NOT NULL DEFAULT now(),
 
   FOREIGN KEY(question_id,
               type_constraint_name,
@@ -55,7 +55,7 @@ CREATE TABLE answer
 
   CONSTRAINT this_goes_in_another_table CHECK(
     type_constraint_name != 'multiple_choice'
-  )
+  ),
 
   CONSTRAINT note_questions_cannot_be_answered CHECK(
     type_constraint_name != 'note'

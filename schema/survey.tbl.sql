@@ -11,7 +11,7 @@ CREATE TABLE survey
                                ON UPDATE CASCADE ON DELETE CASCADE,
   created_on       timestamp with time zone NOT NULL DEFAULT now(),
 
-  last_update_time timestamp with time zone NOT NULL DEFAULT now(),
+  survey_last_update_time timestamp with time zone NOT NULL DEFAULT now(),
 
   CONSTRAINT survey_title_survey_owner_key UNIQUE (title, auth_user_id)
 )

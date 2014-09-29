@@ -10,7 +10,7 @@ CREATE TABLE auth_user
   password         text                            NOT NULL,
   created_on       timestamp with time zone        NOT NULL DEFAULT now(),
 
-  last_update_time timestamp with time zone        NOT NULL DEFAULT now()
+  auth_user_last_update_time timestamp with time zone NOT NULL DEFAULT now()
 
 )
 WITH (

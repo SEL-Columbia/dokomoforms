@@ -7,7 +7,8 @@ CREATE TABLE question_variety
   question_variety_id   uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   question_variety_name text UNIQUE,
 
-  last_update_time      timestamp with time zone NOT NULL DEFAULT now()
+  question_variety_last_update_time timestamp with time zone NOT NULL
+                                      DEFAULT now()
 
 )
 WITH (

@@ -1,0 +1,4 @@
+DROP EXTENSION "uuid-ossp" CASCADE;
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+
