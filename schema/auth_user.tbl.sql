@@ -8,7 +8,6 @@ CREATE TABLE auth_user
 
   email            text                     UNIQUE NOT NULL,
   password         text                            NOT NULL,
-  created_on       timestamp with time zone        NOT NULL DEFAULT now(),
 
   auth_user_last_update_time timestamp with time zone NOT NULL DEFAULT now()
 
