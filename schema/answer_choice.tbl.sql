@@ -14,8 +14,8 @@ CREATE TABLE answer_choice
   allow_multiple          boolean NOT NULL,
   survey_id               uuid    NOT NULL,
 
-  submission_id           uuid    REFERENCES submission ON UPDATE CASCADE
-                                                        ON DELETE CASCADE,
+  submission_id           uuid    NOT NULL REFERENCES submission
+                                   ON UPDATE CASCADE ON DELETE CASCADE,
 
   answer_choice_last_update_time timestamp with time zone NOT NULL
                                    DEFAULT now(),

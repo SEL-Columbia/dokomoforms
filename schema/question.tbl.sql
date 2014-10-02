@@ -22,7 +22,7 @@ CREATE TABLE question
   type_constraint_name  text REFERENCES type_constraint (type_constraint_name) 
                                                         ON UPDATE CASCADE
                                                         ON DELETE CASCADE,
-  question_variety_name text REFERENCES question_variety
+  question_variety_name text NOT NULL REFERENCES question_variety
                                        (question_variety_name)
                                                         ON UPDATE CASCADE
                                                         ON DELETE CASCADE,

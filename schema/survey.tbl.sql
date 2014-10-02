@@ -7,8 +7,8 @@ CREATE TABLE survey
   survey_id        uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 
   title            text                     NOT NULL,
-  auth_user_id     uuid                     REFERENCES auth_user
-                               ON UPDATE CASCADE ON DELETE CASCADE,
+  auth_user_id     uuid                     NOT NULL REFERENCES auth_user
+                                           ON UPDATE CASCADE ON DELETE CASCADE,
   created_on       timestamp with time zone NOT NULL DEFAULT now(),
 
   survey_last_update_time timestamp with time zone NOT NULL DEFAULT now(),
