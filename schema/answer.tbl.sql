@@ -39,6 +39,14 @@ CREATE TABLE answer
               survey_id)
     ON UPDATE CASCADE ON DELETE CASCADE,
 
+  CONSTRAINT this_goes_in_another_table CHECK(
+    type_constraint_name != 'multiple_choice'
+  ),
+
+  CONSTRAINT note_questions_cannot_be_answered CHECK(
+    type_constraint_name != 'note'
+  ),
+
   CONSTRAINT type_constraint_name_matches_answer_type CHECK(
     (CASE WHEN type_constraint_name in ('text', 'multiple_choice_with_other')
                                                   AND answer_text    IS NOT NULL
@@ -51,15 +59,7 @@ CREATE TABLE answer
       THEN 1 ELSE 0 END) +
     (CASE WHEN type_constraint_name =   'time'    AND answer_time    IS NOT NULL
       THEN 1 ELSE 0 END)
-  = 1),
-
-  CONSTRAINT this_goes_in_another_table CHECK(
-    type_constraint_name != 'multiple_choice'
-  ),
-
-  CONSTRAINT note_questions_cannot_be_answered CHECK(
-    type_constraint_name != 'note'
-  )
+  = 1)
 )
 WITH (
   OIDS=FALSE

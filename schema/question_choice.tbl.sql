@@ -4,7 +4,7 @@
 
 CREATE TABLE question_choice
 (
-  question_choice_id       uuid DEFAULT uuid_generate_v4(),
+  question_choice_id       uuid UNIQUE DEFAULT uuid_generate_v4(),
 
   choice                   text    NOT NULL,
   choice_number            integer NOT NULL,

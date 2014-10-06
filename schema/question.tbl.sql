@@ -4,7 +4,7 @@
 
 CREATE TABLE question
 (
-  question_id           uuid DEFAULT uuid_generate_v4(),
+  question_id           uuid UNIQUE DEFAULT uuid_generate_v4(),
 
   title                 text      NOT NULL,
   hint                  text      NOT NULL DEFAULT '',
