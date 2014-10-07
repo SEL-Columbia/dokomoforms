@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ebola Response</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+    <link href="/static/style.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <symbol id="icon-sync" viewBox="0 0 512 512">
+            <path d="m392 237c6 41-7 84-39 115-47 47-119 52-173 17l38-36-138-19 19 134 42-40c76 55 183 50 251-18 40-39 58-91 56-142z m-233-77c47-46 119-52 173-17l-38 36 138 19-19-134-42 40c-76-55-183-50-251 18-40 39-58 91-56 142l56 11c-6-41 7-84 39-115z"/>
+        </symbol>
+        <symbol id="icon-chevron-left" viewBox="0 0 512 512">
+            <path d="m303 449l-186-186c-7-7-10-15-10-25c0-11 3-19 10-26l186-186c7-7 16-11 26-11c10 0 19 4 26 11l22 21c7 7 10 16 10 26c0 10-3 19-10 26l-139 139l139 138c7 8 10 16 10 26c0 10-3 19-10 26l-22 21c-7 7-16 11-26 11c-10 0-19-4-26-11z"/>
+        </symbol>
+        <symbol id="icon-chevron-right" viewBox="0 0 512 512">
+            <path d="m405 238c0 10-3 18-10 26l-186 186c-7 7-16 10-26 10c-10 0-19-3-26-10l-22-22c-7-7-10-16-10-26c0-10 3-18 10-25l139-139l-139-139c-7-7-10-16-10-26c0-10 3-19 10-26l22-21c7-7 16-11 26-11c10 0 19 4 26 11l186 186c7 7 10 16 10 26z"/>
+        </symbol>
+    </svg>
+    
+    <div class="nav">
+        <svg class="icon nav__sync">
+            <use xlink:href="#icon-sync"></use>
+        </svg>
+        <div class="nav__title">EbolaResponse</div>
+    </div>
+    
+    <div class="pages">
+        <div class="pages__page pages--active">
+            <div class="question">What is the name of the clinic?</div>
+            <input class="text_input" name="clinic_name" type="text">
+        </div>
+        <div class="pages__page">
+            <div class="question">What is the phone number of the clinic?</div>
+            <input class="text_input" type="text" name="phone_number">
+        </div>
+        <div class="pages__page">
+            <div class="question">How many patients are being treated at the clinic?</div>
+            <input class="text_input" type="number" value="0">
+        </div>
+        <div class="pages__page">
+            <div class="question">What supplies are you in need of?</div>
+            <textfield class="text_input" type="text" value="0">
+        </div>
+        <div class="pages__page">
+            <div class="question">How many nurses work at the clinic?</div>
+            <input class="text_input" type="number" value="0">
+        </div>
+    </div>
+    
+    <div class="page_nav">
+        <div class="page_nav__center">
+            <svg class="icon page_nav__btn page_nav__prev">
+                <use xlink:href="#icon-chevron-left"></use>
+            </svg>
+            <svg class="icon page_nav__btn page_nav__next">
+                <use xlink:href="#icon-chevron-right"></use>
+            </svg>
+            <div class="page_nav__progress">1 / 5</div>
+        </div>
+    </div>
+    
+    <script src="/static/lib.js"></script>
+    <script src="/static/app.js"></script>
+</body>
+
+</html>
+
