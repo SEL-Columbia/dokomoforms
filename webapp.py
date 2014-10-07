@@ -11,11 +11,7 @@ class Index(tornado.web.RequestHandler):
     def post(self):
         uuid = self.get_argument('uuid')
         data = json.loads(self.get_argument('data'))
-        data['uuid'] = uuid
-        
-        (db.table('facilities')
-            .insert(data)
-            .run())
+
 
 
 config = {
