@@ -2,11 +2,7 @@ import logging
 
 import tornado.web
 import tornado.ioloop
-import rethinkdb as r
 
-
-r.connect('localhost', 28015).repl()
-db = r.db('ebolaresponse')
 
 class Index(tornado.web.RequestHandler):
     def get(self):
