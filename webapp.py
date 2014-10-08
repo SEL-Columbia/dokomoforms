@@ -1,7 +1,17 @@
-import logging
+#!/usr/bin/env python3
+
+"""
+This tornado server creates the client app by serving html/css/js and
+it also functions as the wsgi container for accepting survey form post
+requests back from the client app.
+
+"""
 
 import tornado.web
 import tornado.ioloop
+
+from utils.logger import setup_custom_logger
+logger = setup_custom_logger('dokomo')
 
 
 class Index(tornado.web.RequestHandler):
@@ -26,8 +36,7 @@ app = tornado.web.Application([
 ], **config)
 app.listen(8888, '0.0.0.0')
 
-print('starting server on port 8888')
+logger.info('starting server on port 8888')
 
-logging.getLogger().setLevel(logging.INFO)
 tornado.ioloop.IOLoop.current().start()
 
