@@ -21,6 +21,12 @@ body {
     -webkit-tap-highlight-color: transparent;
 }
 
+@media (max-height: 380px) {
+    body {
+        padding: 20px 0;
+    }
+}
+
 
 /* Global styles
 =================================================*/
@@ -92,7 +98,7 @@ body {
     bottom: 0;
     left: 0;
     width: 100%;
-    background: rgba(0,0,0,0.1);
+    background: rgb(210, 210, 210);
     padding: 10px;
     box-sizing: border-box;
 }
