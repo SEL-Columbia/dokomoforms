@@ -7,7 +7,7 @@ requests back from the client app.
 
 """
 
-from sqlalchemy import Table, Metadata
+from sqlalchemy import Table, Metadata, create_engine
 
 import tornado.web
 import tornado.ioloop
