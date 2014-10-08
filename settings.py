@@ -16,6 +16,12 @@ LOG_LEVEL = ERROR # for testing, use DEBUG in a local_settings.py file instead
 
 
 #
+# Tornado webapp
+
+WEBAPP_PORT = 8888
+
+
+#
 # Testing
 
 # Allow overrides from a local config file,

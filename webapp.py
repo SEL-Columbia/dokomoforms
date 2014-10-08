@@ -10,6 +10,8 @@ requests back from the client app.
 import tornado.web
 import tornado.ioloop
 
+import settings
+
 from utils.logger import setup_custom_logger
 logger = setup_custom_logger('dokomo')
 
@@ -40,9 +42,9 @@ def startserver():
     app = tornado.web.Application([
         (r'/', Index)
     ], **config)
-    app.listen(8888, '0.0.0.0')
+    app.listen(settings.WEBAPP_PORT, '0.0.0.0')
 
-    logger.info('starting server on port 8888')
+    logger.info('starting server on port '+str(settings.WEBAPP_PORT))
 
     tornado.ioloop.IOLoop.current().start()
 
