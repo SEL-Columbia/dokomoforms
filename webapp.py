@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 """
 This tornado server creates the client app by serving html/css/js and
@@ -31,12 +31,20 @@ config = {
     'debug': True
 }
 
-app = tornado.web.Application([
-    (r'/', Index)
-], **config)
-app.listen(8888, '0.0.0.0')
+def startserver():
+    """It's good practice to put all the startup logic
+    in a class or function, invoked via '__main__'
+    instead of just starting on import, which, among
+    other things, fubars the tests"""
 
-logger.info('starting server on port 8888')
+    app = tornado.web.Application([
+        (r'/', Index)
+    ], **config)
+    app.listen(8888, '0.0.0.0')
 
-tornado.ioloop.IOLoop.current().start()
+    logger.info('starting server on port 8888')
 
+    tornado.ioloop.IOLoop.current().start()
+
+if __name__ == '__main__':
+    startserver()
