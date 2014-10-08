@@ -7,6 +7,8 @@ requests back from the client app.
 
 """
 
+from sqlalchemy import Table, Metadata
+
 import tornado.web
 import tornado.ioloop
 
@@ -21,8 +23,16 @@ class Index(tornado.web.RequestHandler):
         self.render('index.html')
     
     def post(self):
+        # viktor here, uuid may be absorbed into data
         uuid = self.get_argument('uuid')
         data = json.loads(self.get_argument('data'))
+
+        survey_table = Table('survey', MetaData(bind=engine))
+        # Hard code survey id... for now
+        # TODO: fix it 
+        # TODO: pep8
+        survey = survey_table.select().where(survey_table.c.survey_id=='bcf89427-87d4-43ba-807e-9ffc8a095759').execute().first()
+        
 
 
 
@@ -32,6 +42,9 @@ config = {
     'xsrf_cookies': False,
     'debug': True
 }
+
+# Good old database
+engine = create_engine(settings.CONNECTION_STRING, convert_unicode=True)
 
 def startserver():
     """It's good practice to put all the startup logic
