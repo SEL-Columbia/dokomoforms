@@ -21,7 +21,7 @@ body {
     -webkit-tap-highlight-color: transparent;
 }
 
-@media (max-height: 380px) {
+@media (max-height: 500px) {
     body {
         padding: 20px 0;
     }
