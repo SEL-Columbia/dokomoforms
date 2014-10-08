@@ -1,3 +1,5 @@
+
+```sql
 doko=# select survey_id from survey;
               survey_id               
 --------------------------------------
@@ -22,3 +24,4 @@ doko=# select question_id, sequence_number, title, type_constraint_name, allow_m
  791bc15b-daf9-4cc1-8842-5be6195cb836 |              14 | Which of the following IMPROVED water points are used by the facility and located within 100 meters of the facility?                                                            | multiple_choice      | t
  06665066-0abe-4797-82f2-73bd28be866b |              15 | How many rooms are in this facility?                                                                                                                                            | integer              | f
  e1fe3ece-7eec-494d-aee4-d4025514c654 |              16 | How many beds are in this facility?                                                                                                                                             | integer              | f
+```
