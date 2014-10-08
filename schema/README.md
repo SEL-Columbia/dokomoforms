@@ -13,7 +13,7 @@ Questions have:
 - a type (to constrain valid response types)
 
 ###Submission
-At the top level, there is the submission table, which answers must reference by foreign key.
+At the top level, there is the submission table, which references a survey by foreign key and which answers must reference by foreign key.
 
 ####Answer
 The answer table contains one row per answer, which must be associated with a valid submission and question. The answer type is constrained by the question type.
