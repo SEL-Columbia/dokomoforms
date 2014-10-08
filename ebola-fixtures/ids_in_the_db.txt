@@ -59,3 +59,9 @@ doko=# select question_choice_id, choice, question_id from question_choice order
  a3f14cab-c187-416c-b46e-af3390088f12 | Tap(s)                                                                    | 791bc15b-daf9-4cc1-8842-5be6195cb836
  b66fe2d1-f2a8-4893-a365-0317a9fcd50a | Protected well with tight-fitting cover that fully covers well opening    | 791bc15b-daf9-4cc1-8842-5be6195cb836
  639f4306-b55b-45e8-a289-1a97138afdc7 | Rainwater harvesting system                                               | 791bc15b-daf9-4cc1-8842-5be6195cb836
+
+doko=# select question_choice_id, choice, from_question_id, to_question_id from question_branch natural join question_choice;
+          question_choice_id          | choice |           from_question_id           |            to_question_id            
+--------------------------------------+--------+--------------------------------------+--------------------------------------
+ 2f6f3f5a-0252-40bf-823b-486f440d6f0f | Yes    | 147a09b1-1148-4161-b2d1-0514c1e6ee67 | 4e8451a6-d8b9-4942-9193-ab411ccf154e
+
