@@ -2,3 +2,4 @@
 *.swp
 *.sqlite
 *.pyc
+local_settings.py
