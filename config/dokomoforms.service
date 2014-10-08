@@ -4,8 +4,12 @@ After=syslog.target
 
 [Service]
 User=dokomo
-ExecStartPre=cd /home/dokomo/dokomoforms
+Group=dokomo
+WorkingDirectory=/home/dokomo/dokomoforms
 ExecStart=/usr/bin/python3 webapp.py
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=dokomoforms
 Restart=always
 KillSignal=SIGQUIT
 Type=notify
