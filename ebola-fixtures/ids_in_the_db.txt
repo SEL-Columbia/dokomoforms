@@ -63,5 +63,4 @@ doko=# select question_choice_id, choice, question_id from question_choice order
 doko=# select question_choice_id, choice, from_question_id, to_question_id from question_branch natural join question_choice;
           question_choice_id          | choice |           from_question_id           |            to_question_id            
 --------------------------------------+--------+--------------------------------------+--------------------------------------
- 2f6f3f5a-0252-40bf-823b-486f440d6f0f | Yes    | 147a09b1-1148-4161-b2d1-0514c1e6ee67 | 4e8451a6-d8b9-4942-9193-ab411ccf154e
-
+ ebabdff4-b4b7-48d3-92f2-f73098fc7559 | No     | 147a09b1-1148-4161-b2d1-0514c1e6ee67 | 8618fd08-f809-42f1-b1cd-715a8fa1d94a
