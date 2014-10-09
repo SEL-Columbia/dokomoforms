@@ -140,7 +140,7 @@ body {
     padding: 50px 25px;
     box-sizing: border-box;
 }
-.question__label {
+.question__title {
     text-align: center;
     font-size: 25px;
 }
