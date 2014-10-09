@@ -1,3 +1,4 @@
+"""Set up database access."""
 from sqlalchemy import create_engine
 
 from settings import CONNECTION_STRING
