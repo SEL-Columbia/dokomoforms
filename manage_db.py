@@ -1,12 +1,14 @@
-"""Module for creating/tearing down the database."""
-from os.path import join
+"""
+Module for creating/tearing down the database, both
+for the real production server and unit tests.
 
+"""
+
+import sys
+from os.path import join
 from sqlalchemy import create_engine
 
 from settings import CONNECTION_STRING
-
-
-engine = create_engine(CONNECTION_STRING, convert_unicode=True)
 
 killall = 'killall.sql'
 extensions = ['uuid.sql']
@@ -24,7 +26,7 @@ fixtures = ['type_constraint_fixture.sql',
             'question_variety_fixture.sql']
 
 
-def init_db():
+def init_db(engine):
     """Create all the tables and insert the fixtures."""
     with engine.begin() as connection:
         for file_path in extensions + tables + fixtures:
@@ -32,8 +34,30 @@ def init_db():
                 connection.execute(sqlfile.read())
 
 
-def kill_db():
+def kill_db(engine):
     """Drop the database."""
     with engine.begin() as connection:
         with open(join('schema', killall)) as sqlfile:
             connection.execute(sqlfile.read())
+
+
+if __name__ == "__main__":
+    """Create a command-line main() entry point"""
+
+    if len(sys.argv) < 2:
+        # Define the usage 
+        print sys.argv[0], '--create (default) or --drop', '[CONNECTION STRING (optional, defaults to one specified in settings.py)]'
+    else:
+        # determine the db engine
+        try:
+            # see if there was a custom connection string specified
+            eng = create_engine(sys.argv[2], convert_unicode=True)
+        except IndexError:
+            # use the default connection string from settings.py
+            eng = create_engine(CONNECTION_STRING, convert_unicode=True)
+
+        # do the specified action
+        if sys.argv[1].lower() == '--drop':
+            kill_db(eng)
+        else:
+            init_db(eng)
