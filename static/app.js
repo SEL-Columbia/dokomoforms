@@ -1,8 +1,8 @@
 (function() {
 
 
-App = function(questions) {
-    Page.questions = questions;
+App = function(survey) {
+    Page.questions = survey.questions;
     Page.events();
     Page.render(0);
 };
