@@ -63,6 +63,39 @@
         </div>
     </div>
     
+    <div id="widget_text" type="text/html">
+        <div class="question__label"><%- question.label %></div>
+        <input class="text_input" type="text"
+            value="<%- question.default || '' %>">
+    </div>
+    
+    <div id="widget_number" type="text/html">
+        <div class="question__label"><%- question.label %></div>
+        <input class="text_input" type="number"
+            value="<%- question.value || question.default || '' %>"
+            <% if (question.min != null){ %>
+                min="<%- question.min %>"
+            <% } %>
+            <% if (question.max != null){ %>
+                max="<%- question.max %>"
+            <% } %>
+            >
+    </div>
+    
+    <div id="widget_location" type="text/html">
+        <div class="question__label"><%- question.label %></div>
+        <input class="text_input" type="text"
+            value="<%- question.value || question.default || '' %>"
+            <% if (question.min != null){ %>
+                min="<%- question.min %>"
+            <% } %>
+            <% if (question.max != null){ %>
+                max="<%- question.max %>"
+            <% } %>
+            >
+        <div class="question__btn">Find location</div>
+    </div>
+    
     <script src="/static/lib.js"></script>
     <script src="/static/app.js"></script>
 </body>
