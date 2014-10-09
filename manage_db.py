@@ -46,8 +46,8 @@ if __name__ == "__main__":
 
     # TODO: use argparse?
     if len(sys.argv) < 2:
-        # Define the usage 
-        print sys.argv[0], '--create (default) or --drop', '[CONNECTION STRING (optional, defaults to one specified in settings.py)]'
+        # Define the usage
+        print(sys.argv[0], '--create (default) or --drop', '[CONNECTION STRING (optional, defaults to one specified in settings.py)]')
     else:
         # determine the db engine
         try:
