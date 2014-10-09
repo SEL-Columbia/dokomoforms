@@ -136,18 +136,11 @@ body {
 
 /* Pages
 ==================================================*/
-.pages {
-}
-.pages__page {
-    display: none;
+.page {
     padding: 50px 25px;
     box-sizing: border-box;
 }
-.pages--active {
-    display: block;
-}
-
-.question {
+.question__label {
     text-align: center;
     font-size: 25px;
 }
