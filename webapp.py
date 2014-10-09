@@ -44,7 +44,7 @@ class Index(tornado.web.RequestHandler):
                                  'submitter': '',
                                  'survey_id': survey_id
                                 }
-            result = connection.execute(submission_insert(submission_values))
+            result = connection.execute(submission_insert(**submission_values))
             submission_id = result.inserted_primary_key[0]
 
             for answer_dict in responses:
@@ -55,7 +55,7 @@ class Index(tornado.web.RequestHandler):
                                  'submission_id': submission_id,
                                  'survey_id': survey_id
                                 }
-                connection.execute(answer_insert(answer_values))
+                connection.execute(answer_insert(**answer_values))
 
         return submission_id
 
