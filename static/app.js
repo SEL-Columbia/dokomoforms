@@ -4,73 +4,73 @@
 var App = {
     questions: [
         {
-            name: 'facility_name',
+            id: 'facility_name',
             label: 'Health facility name',
             type: 'text'
         },
         {
-            name: 'facility_location',
+            id: 'facility_location',
             label: 'Facility location',
             type: 'location'
         },
         {
-            name: 'bed_capacity',
+            id: 'bed_capacity',
             label: 'Bed Capacity?',
-            type: 'integer',
+            type: 'number',
             min: 0
         },
         {
-            name: 'suspected_cases',
+            id: 'suspected_cases',
             label: 'Number of suspected Ebola cases',
-            type: 'integer',
+            type: 'number',
             min: 0
         },
         {
-            name: 'confirmed_cases',
+            id: 'confirmed_cases',
             label: 'Number of confirmed Ebola cases',
-            type: 'integer',
+            type: 'number',
             min: 0
         },
         {
-            name: 'confirmed_deaths',
+            id: 'confirmed_deaths',
             label: 'Number of confirmed Ebola deaths',
-            type: 'integer',
+            type: 'number',
             min: 0
         },
         {
-            name: 'recovered_cases',
+            id: 'recovered_cases',
             label: 'Number of recovered and released Ebola cases',
-            type: 'integer',
+            type: 'number',
             min: 0
         },
         {
-            name: 'litres_bleach',
+            id: 'litres_bleach',
             label: 'Liters of bleach',
-            type: 'integer',
+            type: 'number',
             min: 0
         },
         {
-            name: 'num_gloves',
+            id: 'num_gloves',
             label: 'Number of gloves',
-            type: 'integer',
+            type: 'number',
             min: 0
         },
         {
-            name: 'face_shields',
+            id: 'face_shields',
             label: 'Number of face shields',
-            type: 'integer',
+            type: 'number',
             min: 0
         },
         {
-            name: 'num_respirators',
+            id: 'num_respirators',
             label: 'Number of N95 respirators',
-            type: 'integer',
+            type: 'number',
             min: 0
         },
         {
-            name: 'num_goggles',
+            id: 'num_goggles',
             label: 'Number of goggles',
-            type: 'integer',
+            type: 'number',
             min: 0
         }
     ]
