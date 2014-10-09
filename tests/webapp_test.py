@@ -62,7 +62,7 @@ class TestDokomoWebapp(unittest.TestCase):
         tornado.ioloop.IOLoop.instance().start()
         self.failIf(self.response.error)
         # not sure what to expect in successful reply yet...
-        print self.response.body
+        print(self.response.body)
 
 if __name__ == '__main__':
     unittest.main()
