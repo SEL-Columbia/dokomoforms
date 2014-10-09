@@ -77,11 +77,18 @@ var App = {
 };
 
 
+var Page = {};
+Page.render = function() {
+    
+};
+
+Page.next = function() {
+    
+};
+
+
 var Widgets = {};
 Widgets.text = {
-    render: function(data) {
-        return '<input type="text">'
-    },
     events: function(data, page) {
         
     },
@@ -91,10 +98,6 @@ Widgets.text = {
 }
 
 Widgets.location = {
-    render: function(data) {
-        var value = data.value || '';
-        return '<input type="text">';
-    },
     events: function(data) {
         function findLocation() {
             navigator.geolocation.getCurrentPosition(
@@ -109,6 +112,9 @@ Widgets.location = {
                     maximumAge: 0
                 });
         }
+    },
+    getData: function(data, page) {
+        
     }
 };
 
