@@ -28,28 +28,7 @@
         <div class="nav__title">EbolaResponse</div>
     </div>
     
-    <div class="pages">
-        <div class="pages__page pages--active">
-            <div class="question">What is the name of the clinic?</div>
-            <input class="text_input" name="clinic_name" type="text">
-        </div>
-        <div class="pages__page">
-            <div class="question">What is the phone number of the clinic?</div>
-            <input class="text_input" type="text" name="phone_number">
-        </div>
-        <div class="pages__page">
-            <div class="question">How many patients are being treated at the clinic?</div>
-            <input class="text_input" type="number" value="0">
-        </div>
-        <div class="pages__page">
-            <div class="question">What supplies are you in need of?</div>
-            <textfield class="text_input" type="text" value="0">
-        </div>
-        <div class="pages__page">
-            <div class="question">How many nurses work at the clinic?</div>
-            <input class="text_input" type="number" value="0">
-        </div>
-    </div>
+    <div class="page"></div>
     
     <div class="page_nav">
         <div class="page_nav__center">
@@ -63,13 +42,13 @@
         </div>
     </div>
     
-    <div id="widget_text" type="text/html">
+    <script id="widget_text" type="text/html">
         <div class="question__label"><%- question.label %></div>
         <input class="text_input" type="text"
             value="<%- question.default || '' %>">
-    </div>
+    </script>
     
-    <div id="widget_number" type="text/html">
+    <script id="widget_number" type="text/html">
         <div class="question__label"><%- question.label %></div>
         <input class="text_input" type="number"
             value="<%- question.value || question.default || '' %>"
@@ -80,13 +59,13 @@
                 max="<%- question.max %>"
             <% } %>
             >
-    </div>
+    </script>
     
-    <div id="widget_location" type="text/html">
+    <script id="widget_location" type="text/html">
         <div class="question__label"><%- question.label %></div>
         <input class="text_input" type="text">
         <div class="question__btn">Find location</div>
-    </div>
+    </script>
     
     <script src="/static/lib.js"></script>
     <script src="/static/app.js"></script>
