@@ -2,83 +2,13 @@
 
 
 App = function(questions) {
+    Page.questions = questions;
     Page.events();
     Page.render(0);
 };
 
 var Page = {
-    questions: [
-        {
-            id: 'facility_name',
-            label: 'Health facility name',
-            type: 'text'
-        },
-        {
-            id: 'facility_location',
-            label: 'Facility location',
-            type: 'location'
-        },
-        {
-            id: 'bed_capacity',
-            label: 'Bed Capacity?',
-            type: 'number',
-            min: 0
-        },
-        {
-            id: 'suspected_cases',
-            label: 'Number of suspected Ebola cases',
-            type: 'number',
-            min: 0
-        },
-        {
-            id: 'confirmed_cases',
-            label: 'Number of confirmed Ebola cases',
-            type: 'number',
-            min: 0
-        },
-        {
-            id: 'confirmed_deaths',
-            label: 'Number of confirmed Ebola deaths',
-            type: 'number',
-            min: 0
-        },
-        {
-            id: 'recovered_cases',
-            label: 'Number of recovered and released Ebola cases',
-            type: 'number',
-            min: 0
-        },
-        {
-            id: 'litres_bleach',
-            label: 'Liters of bleach',
-            type: 'number',
-            min: 0
-        },
-        {
-            id: 'num_gloves',
-            label: 'Number of gloves',
-            type: 'number',
-            min: 0
-        },
-        {
-            id: 'face_shields',
-            label: 'Number of face shields',
-            type: 'number',
-            min: 0
-        },
-        {
-            id: 'num_respirators',
-            label: 'Number of N95 respirators',
-            type: 'number',
-            min: 0
-        },
-        {
-            id: 'num_goggles',
-            label: 'Number of goggles',
-            type: 'number',
-            min: 0
-        }
-    ]
+    questions: []
 };
 
 Page.events = function() {
@@ -95,7 +25,8 @@ Page.events = function() {
 
 Page.render = function(index) {
     var question = this.questions[index];
-    var template = _.template('#widget_' + question.type);
+    var templateHTML = $('#widget_' + question.type).html();
+    var template = _.template(templateHTML);
     var html = template({question: question});
     
     // Render question
