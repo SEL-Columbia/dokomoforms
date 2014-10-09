@@ -30,13 +30,13 @@ Page.render = function(index) {
     var html = template({question: question});
     
     // Render question
-    $('.page')
+    var page = $('.page')
         .empty()
         .data('index', index)
         .html(html);
     
     // Attach widget events
-    Widgets[question.type]();
+    Widgets[question.type](question, page);
     
     // Update nav
     $('.page_nav__progress')
