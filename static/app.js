@@ -25,7 +25,8 @@ Page.events = function() {
 
 Page.render = function(index) {
     var question = this.questions[index];
-    var template = _.template('#widget_' + question.type);
+    var templateHTML = $('#widget_' + question.type).html();
+    var template = _.template(templateHTML);
     var html = template({question: question});
     
     // Render question
