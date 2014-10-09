@@ -13,6 +13,10 @@ before_install:
 install:
   - pip install -r requirements.txt
 
+# database
+before_script:
+  - psql -c 'create database doko;' -U postgres
+
 # command to run tests
 script: 
   - /bin/bash run_tests.bash
