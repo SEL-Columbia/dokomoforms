@@ -12,7 +12,7 @@ VALUES ('Guinea Health Facility Survey', the_auth_user_id)
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-type_constraint_name, question_variety_name, allow_multiple)
+type_constraint_name, logical_constraint_name, allow_multiple)
 VALUES (the_survey_id, 1, 'What is the bed capacity?', 'integer', '', False),
        (the_survey_id, 2, 'What is the number of new suspected cases?',
                                                        'integer', '', False),

@@ -24,7 +24,7 @@ def _get_fields(question: RowProxy) -> dict:
             'required': question.required,
             'allow_multiple': question.allow_multiple,
             'type_constraint_name': question.type_constraint_name,
-            'question_variety_name': question.question_variety_name}
+            'logical_constraint_name': question.logical_constraint_name}
 
 
 def survey_json(survey_id: str) -> str:

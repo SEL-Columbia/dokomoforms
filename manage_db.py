@@ -15,7 +15,7 @@ extensions = ['uuid.sql']
 tables = ['auth_user.tbl.sql',
           'survey.tbl.sql',
           'type_constraint.tbl.sql',
-          'question_variety.tbl.sql',
+          'logical_constraint.tbl.sql',
           'submission.tbl.sql',
           'question.tbl.sql',
           'question_choice.tbl.sql',
@@ -23,7 +23,7 @@ tables = ['auth_user.tbl.sql',
           'answer.tbl.sql',
           'answer_choice.tbl.sql']
 fixtures = ['type_constraint_fixture.sql',
-            'question_variety_fixture.sql']
+            'logical_constraint_fixture.sql']
 
 
 def init_db(engine):
