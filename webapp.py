@@ -36,7 +36,7 @@ class Index(tornado.web.RequestHandler):
 
         with engine.begin as connection:
             submission_values = {'latitude': 0,
-                                 'longitude': '0',
+                                 'longitude': 0,
                                  'submitter': '',
                                  'survey_id': survey_id
                                 }
