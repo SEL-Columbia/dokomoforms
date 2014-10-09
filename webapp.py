@@ -30,7 +30,7 @@ class Index(tornado.web.RequestHandler):
         data = json.loads(self.get_argument('data'))
 
         survey_id = data['survey_id']
-        answers = data['answers']
+        responses = data['responses']
 
         submission_id = None
 
@@ -43,10 +43,10 @@ class Index(tornado.web.RequestHandler):
             result = connection.execute(submission_insert(submission_values))
             submission_id = result.inserted_primary_key[0]
 
-            for answer_dict in answers:
+            for answer_dict in responses:
                 question_id = answer_dict['question_id']
-                answer = answer_dict['answer']
-                answer_values = {'answer': answer,
+                response = answer_dict['response']
+                answer_values = {'answer': response,
                                  'question_id': question_id,
                                  'submission_id': submission_id,
                                  'survey_id': survey_id
