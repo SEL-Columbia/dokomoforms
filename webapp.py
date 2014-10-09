@@ -24,7 +24,7 @@ logger = setup_custom_logger('dokomo')
 class Index(tornado.web.RequestHandler):
     def get(self):
         # temporarily hard-coded
-        survey_id = 'bcf89427-87d4-43ba-807e-9ffc8a095759'
+        survey_id = '11e3f9b1-eb9d-47dd-8569-93b4ae10de09'
         survey = survey_json(survey_id)
         self.render('index.html', survey=survey)
 
