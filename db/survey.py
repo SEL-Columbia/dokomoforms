@@ -2,6 +2,7 @@
 import json
 
 from sqlalchemy import Table, MetaData
+from sqlalchemy.engine import RowProxy
 
 from db import engine
 from db.question import get_questions
@@ -10,7 +11,13 @@ from db.question import get_questions
 survey_table = Table('survey', MetaData(bind=engine), autoload=True)
 
 
-def _get_fields(question):
+def _get_fields(question: RowProxy) -> dict:
+    """
+    Extract the relevant fields from a record in the question table.
+
+    :param question: A RowProxy for a record in the question table.
+    :return: A dictionary of the fields.
+    """
     return {'question_id': question.question_id,
             'title': question.title,
             'hint': question.hint,
@@ -20,10 +27,16 @@ def _get_fields(question):
             'question_variety_name': question.question_variety_name}
 
 
-def survey_json(survey_id) -> str:
+def survey_json(survey_id: str) -> str:
+    """
+    Create a json representation of a survey.
+
+    :param survey_id: The UUID of the survey.
+    :return: A json string.
+    """
     questions = get_questions(survey_id)
-    questions_dict = {}
-    questions_dict['survey_id'] = survey_id
+    questions_dict = {'survey_id': survey_id}
+
     # TODO: deal with question branching
     question_fields = [_get_fields(question) for question in questions]
 
