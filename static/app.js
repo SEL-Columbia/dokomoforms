@@ -1,7 +1,12 @@
 (function() {
 
 
-var App = {
+App = function(questions) {
+    Page.events();
+    Page.render(0);
+};
+
+var Page = {
     questions: [
         {
             id: 'facility_name',
@@ -76,34 +81,77 @@ var App = {
     ]
 };
 
-
-var Page = {};
-Page.render = function() {
-    
+Page.events = function() {
+    var self = this;
+    $('.page_nav__prev, .page_nav__next').click(function() {
+        var offset = this.classList.contains('page_nav__prev') ? -1 : 1;
+        var index = $('.page').data('index') + offset;
+        if (index >= 0 && index < self.questions.length) {
+            self.render(index);
+        }
+        return false;
+    });
 };
 
-Page.next = function() {
+Page.render = function(index) {
+    var question = this.questions[index];
+    var template = _.template('#widget_' + question.type);
+    var html = template({question: question});
     
+    // Render question
+    $('.page')
+        .empty()
+        .data('index', index)
+        .html(html);
+    
+    // Attach widget events
+    Widgets[question.type]();
+    
+    // Update nav
+    $('.page_nav__progress')
+        .text((index + 1) + ' / ' + this.questions.length);
 };
 
 
 var Widgets = {};
-Widgets.text = {
-    events: function(data, page) {
-        
-    },
-    getData: function(data, page) {
-        
-    }
-}
+Widgets.text = function(question, page) {
+    // This widget's events. Called after page template rendering.
+    // Responsible for setting the question object's answer
+    //
+    // question: question data
+    // page: page container, DOM element
+    $(page)
+        .find('input')
+        .on('keyup', function() {
+            question.answer = this.value;
+        });
+};
 
-Widgets.location = {
-    events: function(data) {
-        function findLocation() {
+Widgets.number = function(question, page) {
+    $(page)
+        .find('input')
+        .keyup(function() {
+            question.answer = parseInt(this.value);
+        });
+};
+
+Widgets.location = function(question, page) {
+    // TODO: add location status
+    
+    var input = $(page)
+        .find('input')
+        .keydown(function() {
+            return false;
+        });
+    
+    $(page)
+        .find('question__btn')
+        .click(function() {
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
                     var coords = position.coords;
-                    alert(coords.latitude + ', ' + coords.longitude);
+                    question.answer = coords;
+                    input.val(coords.latitude + ', ' + coords.longitude);
                 }, function error() {
                     alert('error')
                 }, {
@@ -111,40 +159,8 @@ Widgets.location = {
                     timeout: 20000,
                     maximumAge: 0
                 });
-        }
-    },
-    getData: function(data, page) {
-        
-    }
+        });
 };
-
-
-
-
-
-$('.page_nav__prev, .page_nav__next').click(function() {
-    var active = $('.pages--active');
-    if (this.classList.contains('page_nav__prev')) {
-        var switched = active.prev('.pages__page')
-            .addClass('pages--active');
-    } else {
-        var switched = active.next('.pages__page')
-            .addClass('pages--active');
-    }
-    if (switched.length) {
-        active.removeClass('pages--active');
-        updateProgress();
-    }
-    return false;
-});
-
-
-function updateProgress() {
-    var active = $('.pages--active');
-    var total = $('.pages__page').length;
-    var completed = active.prevAll('.pages__page').length + 1;
-    $('.page_nav__progress').text(completed + ' / ' + total);
-}
 
 
     
