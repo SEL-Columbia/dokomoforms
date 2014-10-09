@@ -7,11 +7,12 @@ requests back from the client app.
 
 """
 
-from sqlalchemy import Table, MetaData, create_engine
-
 import tornado.web
 import tornado.ioloop
 import json
+from db import engine
+from db.answer import answer_insert
+from db.submission import submission_insert
 
 import settings
 
@@ -22,18 +23,37 @@ logger = setup_custom_logger('dokomo')
 class Index(tornado.web.RequestHandler):
     def get(self):
         self.render('index.html')
-    
+
     def post(self):
         # viktor here, uuid may be absorbed into data
         uuid = self.get_argument('uuid')
         data = json.loads(self.get_argument('data'))
 
-        survey_table = Table('survey', MetaData(bind=engine))
-        # Hard code survey id... for now
-        # TODO: fix it 
-        # TODO: pep8
-        survey = survey_table.select().where(survey_table.c.survey_id=='bcf89427-87d4-43ba-807e-9ffc8a095759').execute().first()
-        
+        survey_id = data['survey_id']
+        answers = data['answers']
+
+        submission_id = None
+
+        with engine.begin as connection:
+            submission_values = {'latitude': 0,
+                                 'longitude': '0',
+                                 'submitter': '',
+                                 'survey_id': survey_id
+                                }
+            result = connection.execute(submission_insert(submission_values))
+            submission_id = result.inserted_primary_key[0]
+
+            for answer_dict in answers:
+                question_id = answer_dict['question_id']
+                answer = answer_dict['answer']
+                answer_values = {'answer': answer,
+                                 'question_id': question_id,
+                                 'submission_id': submission_id,
+                                 'survey_id': survey_id
+                                }
+                connection.execute(answer_insert(answer_values))
+
+        return submission_id
 
 
 
@@ -45,7 +65,7 @@ config = {
 }
 
 # Good old database
-engine = create_engine(settings.CONNECTION_STRING, convert_unicode=True)
+# engine = create_engine(settings.CONNECTION_STRING, convert_unicode=True)
 
 def startserver():
     """It's good practice to put all the startup logic
