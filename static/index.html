@@ -42,13 +42,13 @@
         </div>
     </div>
     
-    <div id="widget_text" type="text/html">
+    <script id="widget_text" type="text/html">
         <div class="question__label"><%- question.label %></div>
         <input class="text_input" type="text"
             value="<%- question.default || '' %>">
-    </div>
+    </script>
     
-    <div id="widget_number" type="text/html">
+    <script id="widget_number" type="text/html">
         <div class="question__label"><%- question.label %></div>
         <input class="text_input" type="number"
             value="<%- question.value || question.default || '' %>"
@@ -59,13 +59,13 @@
                 max="<%- question.max %>"
             <% } %>
             >
-    </div>
+    </script>
     
-    <div id="widget_location" type="text/html">
+    <script id="widget_location" type="text/html">
         <div class="question__label"><%- question.label %></div>
         <input class="text_input" type="text">
         <div class="question__btn">Find location</div>
-    </div>
+    </script>
     
     <script src="/static/lib.js"></script>
     <script src="/static/app.js"></script>
