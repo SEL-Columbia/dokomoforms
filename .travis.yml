@@ -2,9 +2,21 @@ language: python
 python:
   - "3.3"
 
+# prerequisite 
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install postgresql-contrib
+  - sudo /etc/init.d/postgresql stop
+  - sudo /etc/init.d/postgresql start
+
 # command to install dependencies
 install:
   - pip install -r requirements.txt
+
+# database
+before_script:
+  - psql -c 'create database doko_test;' -U postgres
+  - psql -U postgres -c 'create extension "uuid-ossp";' -d doko_test
 
 # command to run tests
 script: 
