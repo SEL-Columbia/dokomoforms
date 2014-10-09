@@ -8,7 +8,7 @@ import tornado.httpserver
 import tornado.httpclient
 import tornado.ioloop
 import tornado.web
-from urllib import urlencode
+from urllib.parse import urlencode
 import json
 
 import unittest
