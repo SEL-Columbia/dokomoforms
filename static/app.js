@@ -76,7 +76,7 @@ Widgets.location = function(question, page) {
         });
     
     $(page)
-        .find('question__btn')
+        .find('.question__btn')
         .click(function() {
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
