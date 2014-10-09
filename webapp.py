@@ -13,6 +13,7 @@ import json
 from db import engine
 from db.answer import answer_insert
 from db.submission import submission_insert
+from db.survey import survey_json
 
 import settings
 
@@ -22,7 +23,10 @@ logger = setup_custom_logger('dokomo')
 
 class Index(tornado.web.RequestHandler):
     def get(self):
-        self.render('index.html')
+        # temporarily hard-coded
+        survey_id = 'bcf89427-87d4-43ba-807e-9ffc8a095759'
+        survey = survey_json(survey_id)
+        self.render('index.html', survey=survey)
 
     def post(self):
         # viktor here, uuid may be absorbed into data
