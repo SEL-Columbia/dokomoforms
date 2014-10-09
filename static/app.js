@@ -25,7 +25,7 @@ Page.events = function() {
 
 Page.render = function(index) {
     var question = this.questions[index];
-    var templateHTML = $('#widget_' + question.type).html();
+    var templateHTML = $('#widget_' + question.type_constraint_name).html();
     var template = _.template(templateHTML);
     var html = template({question: question});
     
@@ -36,7 +36,7 @@ Page.render = function(index) {
         .html(html);
     
     // Attach widget events
-    Widgets[question.type](question, page);
+    Widgets[question.type_constraint_name](question, page);
     
     // Update nav
     $('.page_nav__progress')
@@ -58,7 +58,7 @@ Widgets.text = function(question, page) {
         });
 };
 
-Widgets.number = function(question, page) {
+Widgets.integer = function(question, page) {
     $(page)
         .find('input')
         .keyup(function() {
