@@ -23,4 +23,4 @@ def get_question(question_id: str) -> RowProxy:
 def get_questions(survey_id) -> ResultProxy:
     select_stmt = question_table.select()
     where_stmt = select_stmt.where(question_table.c.survey_id == survey_id)
-    return where_stmt.order_by('sequence_number asc').excute()
+    return where_stmt.order_by('sequence_number asc').execute()
