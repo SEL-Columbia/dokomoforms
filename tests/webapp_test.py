@@ -12,8 +12,12 @@ from urllib.parse import urlencode
 import json
 
 import unittest
+from db.question import question_table
+from db.submission import submission_table
 
 from webapp import Index, config
+
+from db.survey import survey_table
 
 TEST_PORT = 8001 # just to show you can test the same
                  # container on a different port 
@@ -43,13 +47,13 @@ class TestDokomoWebapp(unittest.TestCase):
         http_client = tornado.httpclient.AsyncHTTPClient()
         http_client.fetch( 'http://localhost:%d/' % TEST_PORT, self.handle_request)
         tornado.ioloop.IOLoop.instance().start()
-        self.failIf(self.response.error)
+        self.assertFalse(self.response.error)
         # Test contents of response
         self.assertIn(u'<title>Ebola Response</title>', str(self.response.body))
 
     def testFormPost(self):
-        # not sure what should be here yet...
-        test_submission = {'uuid':'8b1d023e-b716-4075-bff6-b0aa06d44a18', 
+        assert False, "Can't test this without a test fixture."
+        test_submission = {'uuid':'8b1d023e-b716-4075-bff6-b0aa06d44a18',
                            'data': json.dumps({'question_uuid':'answer'})}
 
         # prepare the POST request
@@ -60,7 +64,7 @@ class TestDokomoWebapp(unittest.TestCase):
                                              body=urlencode(test_submission))
         http_client.fetch(req, self.handle_request)
         tornado.ioloop.IOLoop.instance().start()
-        self.failIf(self.response.error)
+        self.assertFalse(self.response.error)
         # not sure what to expect in successful reply yet...
 
 if __name__ == '__main__':
