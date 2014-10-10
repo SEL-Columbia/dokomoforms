@@ -146,6 +146,15 @@ body {
     text-align: center;
     font-size: 25px;
 }
+.question__btn {
+    display: block;
+    padding: 15px 20px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 7px;
+    text-align: center;
+    margin: auto;
+    width: 120px;
+}
 
 
 

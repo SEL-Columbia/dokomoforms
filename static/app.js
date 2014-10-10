@@ -73,7 +73,7 @@ Survey.submit = function() {
         answers: self.questions
     };
     console.log(data);
-    $.post('', data, function() {
+    $.post('', {data: JSON.stringify(data)}, function() {
         console.log('done');
     });
 };
