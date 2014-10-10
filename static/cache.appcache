@@ -1,0 +1,10 @@
+CACHE MANIFEST
+# Version 0.001
+
+/
+/static/lib.js
+/static/app.js
+/static/style.css
+
+NETWORK:
+*

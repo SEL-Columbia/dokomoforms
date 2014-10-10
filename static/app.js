@@ -5,6 +5,11 @@ App = function(survey) {
     Page.questions = survey.questions;
     Page.events();
     Page.render(0);
+    
+    window.applicationCache.addEventListener('updateready', function() {
+        alert('app updated, reloading...');
+        window.location.reload();
+    });
 };
 
 var Page = {
