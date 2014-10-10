@@ -31,29 +31,33 @@ class Index(tornado.web.RequestHandler):
         uuid = self.get_argument('uuid')
         data = json.loads(self.get_argument('data'))
 
-        survey_id = data['survey_id']
-        responses = data['responses']
-
         submission_id = None
 
-        with engine.begin as connection:
-            submission_values = {'latitude': 0,
-                                 'longitude': 0,
-                                 'submitter': '',
-                                 'survey_id': survey_id
-                                }
-            result = connection.execute(submission_insert(**submission_values))
-            submission_id = result.inserted_primary_key[0]
+        try:            
+            survey_id = data['survey_id']
+            responses = data['responses']
 
-            for answer_dict in responses:
-                question_id = answer_dict['question_id']
-                response = answer_dict['response']
-                answer_values = {'answer': response,
-                                 'question_id': question_id,
-                                 'submission_id': submission_id,
-                                 'survey_id': survey_id
-                                }
-                connection.execute(answer_insert(**answer_values))
+
+            with engine.begin as connection:
+                submission_values = {'latitude': 0,
+                                     'longitude': 0,
+                                     'submitter': '',
+                                     'survey_id': survey_id
+                                    }
+                result = connection.execute(submission_insert(**submission_values))
+                submission_id = result.inserted_primary_key[0]
+
+                for answer_dict in responses:
+                    question_id = answer_dict['question_id']
+                    response = answer_dict['response']
+                    answer_values = {'answer': response,
+                                     'question_id': question_id,
+                                     'submission_id': submission_id,
+                                     'survey_id': survey_id
+                                    }
+                    connection.execute(answer_insert(**answer_values))
+        except KeyError:
+            pass
 
         return submission_id
 
