@@ -15,4 +15,5 @@ In the following commands, rather than `psql -U postgres` you can `sudo su postg
 1. `$ psql -U postgres -d doko -f insert_fixture.sql` (Assuming system user postgres with access to the "doko" database -- these go in the connection string in [settings.py](https://github.com/SEL-Columbia/dokomoforms/blob/002dc3de3e285f13b407731418ee481ff89428f7/settings.py#L20-21))
 2. `$ psql -U postgres -d doko`
 3. `doko=# select survey_id from survey;`
-4. Put this survey_id into [webapp.py](https://github.com/SEL-Columbia/dokomoforms/blob/002dc3de3e285f13b407731418ee481ff89428f7/webapp.py#L27) (the relevant line is highlighted). Note that this step will not be necessary once dynamic survey loading is enabled.
+4. Put this SURVEY_ID into local_settings.py
+
