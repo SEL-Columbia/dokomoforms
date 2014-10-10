@@ -45,7 +45,7 @@ class TestDokomoWebapp(unittest.TestCase):
         tornado.ioloop.IOLoop.instance().start()
         self.failIf(self.response.error)
         # Test contents of response
-        self.assertIn(u'<title>Ebola Response</title>', self.response.body)
+        self.assertIn(u'<title>Ebola Response</title>', str(self.response.body))
 
     def testFormPost(self):
         # not sure what should be here yet...
