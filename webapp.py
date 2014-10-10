@@ -28,38 +28,36 @@ class Index(tornado.web.RequestHandler):
 
     def post(self):
         # viktor here, uuid may be absorbed into data
-        uuid = self.get_argument('uuid')
+        #uuid = self.get_argument('uuid')
         data = json.loads(self.get_argument('data'))
 
         submission_id = None
 
-        try:            
-            survey_id = data['survey_id']
-            responses = data['responses']
+                    
+        survey_id = data['survey_id']
+        all_answers = data['answers']
+        # Filter out the skipped questions in the submission.
+        answers = (ans for ans in all_answers if 'answer' in ans)
 
 
-            with engine.begin as connection:
-                submission_values = {'latitude': 0,
-                                     'longitude': 0,
-                                     'submitter': '',
-                                     'survey_id': survey_id
-                                    }
-                result = connection.execute(submission_insert(**submission_values))
-                submission_id = result.inserted_primary_key[0]
+        with engine.begin() as connection:
+            submission_values = {'latitude': 0,
+                                 'longitude': 0,
+                                 'submitter': '',
+                                 'survey_id': survey_id}
+            result = connection.execute(submission_insert(**submission_values))
+            submission_id = result.inserted_primary_key[0]
 
-                for answer_dict in responses:
-                    question_id = answer_dict['question_id']
-                    response = answer_dict['response']
-                    answer_values = {'answer': response,
-                                     'question_id': question_id,
-                                     'submission_id': submission_id,
-                                     'survey_id': survey_id
-                                    }
-                    connection.execute(answer_insert(**answer_values))
-        except KeyError:
-            pass
+            for answer_dict in answers:
+                question_id = answer_dict['question_id']
+                answer = answer_dict['answer']
+                answer_values = {'answer': answer,
+                                 'question_id': question_id,
+                                 'submission_id': submission_id,
+                                 'survey_id': survey_id}
+                connection.execute(answer_insert(**answer_values))
 
-        return submission_id
+        #return submission_id
 
 
 

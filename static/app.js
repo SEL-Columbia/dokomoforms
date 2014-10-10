@@ -4,11 +4,6 @@
 App = function(survey) {
     Survey.id = survey.survey_id;
     Survey.questions = survey.questions;
-    Survey.questions.unshift({
-        title: "What's your location?",
-        id: 'no_id_yet',
-        type_constraint_name: 'location'
-    });
     Survey.events();
     Survey.render(0);
     
