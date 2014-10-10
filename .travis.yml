@@ -15,8 +15,7 @@ install:
 
 # database
 before_script:
-  - psql -c 'create database doko_test;' -U postgres
-  - psql -U postgres -c 'create extension "uuid-ossp";' -d doko_test
+  - psql -c 'create database doko;' -U postgres
 
 # command to run tests
 script: 

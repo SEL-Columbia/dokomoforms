@@ -7,6 +7,8 @@
 DOKO="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export PYTHONPATH=$PYTHONPATH:$DOKO:$DOKO/config:$DOKO/db:$DOKO/schema:$DOKO/tests:$DOKO/utils
 
+/usr/bin/env python $DOKO/manage_db.py --create
+
 tests=`ls $DOKO/tests/*.py`
 for test in $tests
 do
