@@ -12,5 +12,5 @@ export PYTHONPATH=$PYTHONPATH:$DOKO:$DOKO/config:$DOKO/db:$DOKO/schema:$DOKO/tes
 tests=`ls $DOKO/tests/*.py`
 for test in $tests
 do
-   /usr/bin/env python $test
+   /usr/bin/env python3 $test
 done
