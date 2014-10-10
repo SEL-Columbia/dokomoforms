@@ -28,7 +28,7 @@
         <div class="nav__title">EbolaResponse</div>
     </div>
     
-    <div class="page"></div>
+    <div class="survey"></div>
     
     <div class="page_nav">
         <div class="page_nav__center">
@@ -65,6 +65,13 @@
         <div class="question__title"><%- question.title %></div>
         <input class="text_input" type="text" value="<%- question.answer || question.default || '' %>">
         <div class="question__btn">Find location</div>
+    </script>
+    
+    <script id="template_submit" type="text/html">
+        <div class="question__title">
+            Submit Survey
+        </div>
+        <div class="question__btn">Submit</div>
     </script>
     
     <script src="/static/lib.js"></script>

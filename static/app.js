@@ -2,15 +2,15 @@
 
 
 App = function(survey) {
-    Page.questions = survey.questions;
-    Page.questions.unshift({
+    Survey.id = survey.survey_id;
+    Survey.questions = survey.questions;
+    Survey.questions.unshift({
         title: "What's your location?",
         id: 'no_id_yet',
         type_constraint_name: 'location'
     });
-    alert('5')
-    Page.events();
-    Page.render(0);
+    Survey.events();
+    Survey.render(0);
     
     window.applicationCache.addEventListener('updateready', function() {
         alert('app updated, reloading...');
@@ -18,75 +18,99 @@ App = function(survey) {
     });
 };
 
-var Page = {
+var Survey = {
+    id: null,
     questions: []
 };
 
-Page.events = function() {
+Survey.events = function() {
     var self = this;
     $('.page_nav__prev, .page_nav__next').click(function() {
         var offset = this.classList.contains('page_nav__prev') ? -1 : 1;
-        var index = $('.page').data('index') + offset;
-        if (index >= 0 && index < self.questions.length) {
+        var index = $('.survey').data('index') + offset;
+        if (index >= 0 && index <= self.questions.length) {
             self.render(index);
         }
         return false;
     });
 };
 
-Page.render = function(index) {
+Survey.render = function(index) {
     var question = this.questions[index];
-    var templateHTML = $('#widget_' + question.type_constraint_name).html();
-    var template = _.template(templateHTML);
-    var html = template({question: question});
+    var survey = $('.survey');
     
-    // Render question
-    var page = $('.page')
-        .empty()
-        .data('index', index)
-        .html(html);
-    
-    // Attach widget events
-    Widgets[question.type_constraint_name](question, page);
+    if (question) {
+        // Show widget
+        var templateHTML = $('#widget_' + question.type_constraint_name).html();
+        var template = _.template(templateHTML);
+        var html = template({question: question});
+        
+        // Render question
+        survey.empty()
+            .data('index', index)
+            .html(html);
+        
+        // Attach widget events
+        Widgets[question.type_constraint_name](question, survey);
+    } else {
+        // Show submit page
+        survey.empty()
+            .data('index', index)
+            .html($('#template_submit').html())
+            .find('.question__btn')
+            .click(this.submit);
+    }
     
     // Update nav
     $('.page_nav__progress')
-        .text((index + 1) + ' / ' + this.questions.length);
+        .text((index + 1) + ' / ' + (this.questions.length + 1));
+};
+
+Survey.submit = function() {
+    var self = Survey;
+    var data = {
+        survey_id: self.id,
+        answers: self.questions
+    };
+    console.log(data);
+    $.post('', data, function() {
+        console.log('done');
+    });
 };
 
 
 var Widgets = {};
-Widgets.text = function(question, page) {
-    // This widget's events. Called after page template rendering.
+Widgets.text = function(question, survey) {
+    // This widget's events. Called after survey template rendering.
     // Responsible for setting the question object's answer
     //
     // question: question data
-    // page: page container, DOM element
-    $(page)
+    // survey: survey container, DOM element
+    $(survey)
         .find('input')
         .on('keyup', function() {
             question.answer = this.value;
         });
 };
 
-Widgets.integer = function(question, page) {
-    $(page)
+Widgets.integer = function(question, survey) {
+    $(survey)
         .find('input')
         .keyup(function() {
             question.answer = parseInt(this.value);
         });
 };
 
-Widgets.location = function(question, page) {
+Widgets.location = function(question, survey) {
     // TODO: add location status
     
-    var input = $(page)
+    var input = $(survey)
         .find('input')
         .keydown(function() {
             return false;
         });
     
-    $(page)
+    $(survey)
         .find('.question__btn')
         .click(function() {
             navigator.geolocation.getCurrentPosition(
@@ -103,6 +127,7 @@ Widgets.location = function(question, page) {
                 });
         });
 };
+
 
 
     
