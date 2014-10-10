@@ -112,6 +112,8 @@ body {
     font-size: 20px;
     text-align: center;
     padding: 15px 0;
+    width: 50%;
+    margin: auto;
 }
 .page_nav__btn {
     width: 25px;
