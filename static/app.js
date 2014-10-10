@@ -3,6 +3,12 @@
 
 App = function(survey) {
     Page.questions = survey.questions;
+    Page.questions.unshift({
+        title: "What's your location?",
+        id: 'no_id_yet',
+        type_constraint_name: 'location'
+    });
+    alert('5')
     Page.events();
     Page.render(0);
     
