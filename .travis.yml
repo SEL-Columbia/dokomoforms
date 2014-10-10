@@ -20,3 +20,6 @@ before_script:
 # command to run tests
 script: 
   - /bin/bash run_tests.bash
+
+notifications:
+  irc: "irc.freenode.org#sel-columbia"
