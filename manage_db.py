@@ -3,12 +3,13 @@ Module for creating/tearing down the database, both
 for the real production server and unit tests.
 
 """
-
-import sys
+from argparse import ArgumentParser
 from os.path import join
+
 from sqlalchemy import create_engine
 
 from settings import CONNECTION_STRING
+
 
 killall = 'killall.sql'
 extensions = ['uuid.sql']
@@ -42,23 +43,23 @@ def kill_db(engine):
 
 
 if __name__ == "__main__":
-    """Create a command-line main() entry point"""
+    parser = ArgumentParser(description='Create or kill the database.')
 
-    # TODO: use argparse?
-    if len(sys.argv) < 2:
-        # Define the usage
-        print(sys.argv[0], '--create (default) or --drop', '[CONNECTION STRING (optional, defaults to one specified in settings.py)]')
-    else:
-        # determine the db engine
-        try:
-            # see if there was a custom connection string specified
-            eng = create_engine(sys.argv[2], convert_unicode=True)
-        except IndexError:
-            # use the default connection string from settings.py
-            eng = create_engine(CONNECTION_STRING, convert_unicode=True)
+    group = parser.add_mutually_exclusive_group()  # create xor drop
+    chelp = 'The default choice. Create the db using the connection string.'
+    group.add_argument('-c', '--create', action='store_true', help=chelp)
+    dhelp = 'Drop the db using the connection string.'
+    group.add_argument('-d', '--drop', action='store_true', help=dhelp)
 
-        # do the specified action
-        if sys.argv[1].lower() == '--drop':
-            kill_db(eng)
-        else:
-            init_db(eng)
+    connhelp = 'Optional, defaults to the one specified in settings.py'
+    parser.add_argument('CONNECTION_STRING', nargs='?', help=connhelp)
+
+    args = parser.parse_args()
+
+    # Create the engine using the user-given connection string, if provided
+    args_conn = args.CONNECTION_STRING
+    conn = args_conn if args_conn is not None else CONNECTION_STRING
+    eng = create_engine(conn, convert_unicode=True)
+
+    # Create or kill the db, according to the user's choice
+    kill_db(eng) if args.drop else init_db(eng)
