@@ -57,6 +57,7 @@ class Index(tornado.web.RequestHandler):
                                  'survey_id': survey_id}
                 connection.execute(answer_insert(**answer_values))
 
+        self.write(submission_id)
         #return submission_id
 
 
