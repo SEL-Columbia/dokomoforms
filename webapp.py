@@ -27,8 +27,6 @@ class Index(tornado.web.RequestHandler):
         self.render('index.html', survey=survey)
 
     def post(self):
-        # viktor here, uuid may be absorbed into data
-        #uuid = self.get_argument('uuid')
         data = json.loads(self.get_argument('data'))
 
         submission_id = None
@@ -58,7 +56,6 @@ class Index(tornado.web.RequestHandler):
                 connection.execute(answer_insert(**answer_values))
 
         self.write(submission_id)
-        #return submission_id
 
 
 
