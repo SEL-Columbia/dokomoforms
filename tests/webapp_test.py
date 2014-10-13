@@ -12,7 +12,7 @@ from urllib.parse import urlencode
 import json
 
 import unittest
-from db.question import question_table
+from db.question import question_table, get_questions
 from db.submission import submission_table
 
 from webapp import Index, config
@@ -20,7 +20,7 @@ from webapp import Index, config
 from db.survey import survey_table
 
 TEST_PORT = 8001 # just to show you can test the same
-                 # container on a different port 
+                 # container on a different port
 
 POST_HDRS = {"Content-type": "application/x-www-form-urlencoded",
              "Accept": "text/plain"}
@@ -31,10 +31,10 @@ class TestDokomoWebapp(unittest.TestCase):
 
     def setUp(self):
         application = tornado.web.Application([
-                (r'/', Index), 
+                (r'/', Index),
                 ], **config)
         self.http_server = tornado.httpserver.HTTPServer(application)
-        self.http_server.listen(TEST_PORT) 
+        self.http_server.listen(TEST_PORT)
 
     def tearDown(self):
         self.http_server.stop()
@@ -52,9 +52,11 @@ class TestDokomoWebapp(unittest.TestCase):
         self.assertIn(u'<title>Ebola Response</title>', str(self.response.body))
 
     def testFormPost(self):
-        assert False, "Can't test this without a test fixture."
-        test_submission = {'uuid':'8b1d023e-b716-4075-bff6-b0aa06d44a18',
-                           'data': json.dumps({'question_uuid':'answer'})}
+        survey_id = survey_table.select().execute().first().survey_id
+        answer_json = {'survey_id': survey_id, 'answers': [
+            {'question_id': get_questions(survey_id).first().question_id,
+             'answer': 1}]}
+        test_submission = {'data': json.dumps(answer_json)}
 
         # prepare the POST request
         http_client = tornado.httpclient.AsyncHTTPClient()
@@ -65,7 +67,11 @@ class TestDokomoWebapp(unittest.TestCase):
         http_client.fetch(req, self.handle_request)
         tornado.ioloop.IOLoop.instance().start()
         self.assertFalse(self.response.error)
-        # not sure what to expect in successful reply yet...
+        result_submission_id = self.response.body.decode('utf-8')
+        condition = submission_table.c.submission_id == result_submission_id
+        self.assertEqual(
+            submission_table.select().where(condition).execute().rowcount, 1)
 
 if __name__ == '__main__':
     unittest.main()
+
