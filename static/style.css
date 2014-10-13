@@ -86,7 +86,7 @@ body {
     from {transform:rotate(0deg);}
     to {transform:rotate(360deg);}
 }
-.nav--syncing {
+.nav__sync--syncing {
     animation: spin 1.5s linear infinite;
     -webkit-animation: spin 1.5s linear infinite;
     -moz-animation: spin 1.5s linear infinite;

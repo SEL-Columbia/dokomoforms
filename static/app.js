@@ -1,11 +1,13 @@
-(function() {
 
 
-App = function(survey) {
-    Survey.id = survey.survey_id;
-    Survey.questions = survey.questions;
-    Survey.events();
-    Survey.render(0);
+App = {};
+App.init = function(survey) {
+    this.survey = new Survey(survey.survey_id, survey.questions);
+    
+    $('.nav__sync')
+        .click(function() {
+            App.sync();
+        });
     
     window.applicationCache.addEventListener('updateready', function() {
         alert('app updated, reloading...');
@@ -13,13 +15,40 @@ App = function(survey) {
     });
 };
 
-var Survey = {
-    id: null,
-    questions: []
+App.sync = function() {
+    var sync = $('.nav__sync')[0];
+    var data = {
+        survey_id: this.survey.id,
+        answers: this.survey.questions
+    };
+    console.log(data);
+    
+    sync.classList.add('nav__sync--syncing');
+    
+    $.post('', {data: JSON.stringify(data)}, function() {
+            console.log('done');
+        })
+        .fail(function() {
+            alert('Update failed, please try syncing later');
+        })
+        .done(function() {
+            setTimeout(function() {
+                sync.classList.remove('nav__sync--syncing');
+            }, 1000);
+        });
 };
 
-Survey.events = function() {
+
+function Survey(id, questions) {
     var self = this;
+    this.id = id;
+    this.questions = questions;
+    
+    var answers = JSON.parse(localStorage[this.id] || '{}');
+    this.questions.forEach(function(question) {
+        question.answer = answers[question.question_id] || null;
+    });
+    
     $('.page_nav__prev, .page_nav__next').click(function() {
         var offset = this.classList.contains('page_nav__prev') ? -1 : 1;
         var index = $('.survey').data('index') + offset;
@@ -28,9 +57,12 @@ Survey.events = function() {
         }
         return false;
     });
+    
+    this.render(0);
 };
 
-Survey.render = function(index) {
+Survey.prototype.render = function(index) {
+    var self = this;
     var question = this.questions[index];
     var survey = $('.survey');
     
@@ -53,24 +85,19 @@ Survey.render = function(index) {
             .data('index', index)
             .html($('#template_submit').html())
             .find('.question__btn')
-            .click(this.submit);
+                .click(function() {
+                    var answers = {};
+                    self.questions.forEach(function(question) {
+                        answers[question.question_id] = question.answer;
+                    });
+                    localStorage[self.id] = JSON.stringify(answers);
+                    App.sync();
+                });
     }
     
     // Update nav
     $('.page_nav__progress')
         .text((index + 1) + ' / ' + (this.questions.length + 1));
-};
-
-Survey.submit = function() {
-    var self = Survey;
-    var data = {
-        survey_id: self.id,
-        answers: self.questions
-    };
-    console.log(data);
-    $.post('', {data: JSON.stringify(data)}, function() {
-        console.log('done');
-    });
 };
 
 
@@ -126,4 +153,3 @@ Widgets.location = function(question, survey) {
 
 
     
-})();
