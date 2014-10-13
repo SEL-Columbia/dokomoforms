@@ -1,5 +1,4 @@
 """Allow access to the submission table."""
-from _ast import Tuple
 from collections import Iterator
 from heapq import merge
 import json
@@ -35,7 +34,7 @@ def submission_insert(*, latitude: float, longitude: float, submitter: str,
     return submission_table.insert().values(values)
 
 
-def _get_comparable(answers: ResultProxy) -> Iterator[Tuple[int, RowProxy]]:
+def _get_comparable(answers: ResultProxy) -> Iterator:
     """
     This crazy function allows records from the answer or answer_choice
     tables to be ordered by sequence number.
