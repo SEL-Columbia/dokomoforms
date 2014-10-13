@@ -17,7 +17,7 @@ install:
 before_script:
   - psql -c 'create database doko;' -U postgres
   - python3 manage_db.py
-  - psql -U postgres -d doko -f ebola-fixtures/insert_fixture.sql
+  - psql -U postgres -d doko -f tests/fixtures/all-encompassing.sql
 
 # command to run tests
 script: 
