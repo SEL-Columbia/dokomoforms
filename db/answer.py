@@ -1,5 +1,6 @@
 """Allow access to the answer table."""
 from sqlalchemy import Table, MetaData
+from sqlalchemy.engine import ResultProxy
 from sqlalchemy.sql.dml import Insert
 
 from db import engine
@@ -37,3 +38,17 @@ def answer_insert(*, answer, question_id: str, submission_id: str,
               'allow_multiple': question.allow_multiple,
               'survey_id': survey_id}
     return answer_table.insert().values(values)
+
+
+def get_answers(submission_id: str) -> ResultProxy:
+    """
+    Get all the records from the answer table identified by submission_id
+    ordered by sequence number.
+
+    :param submission_id: foreign key
+    :return: an iterable of the answers (RowProxy)
+    """
+    select_stmt = answer_table.select()
+    where_stmt = select_stmt.where(
+        answer_table.c.submission_id == submission_id)
+    return where_stmt.order_by('sequence_number asc').execute()
