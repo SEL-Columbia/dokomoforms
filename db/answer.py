@@ -10,7 +10,9 @@ from db.question import get_question
 answer_table = Table('answer', MetaData(bind=engine), autoload=True)
 
 
-def answer_insert(*, answer, question_id: str, submission_id: str,
+def answer_insert(*,
+                  answer, question_id: str,
+                  submission_id: str,
                   survey_id: str) -> Insert:
     """
     Insert a record into the answer table. An answer is associated with a

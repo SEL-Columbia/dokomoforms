@@ -11,7 +11,9 @@ answer_choice_table = Table('answer_choice', MetaData(bind=engine),
                             autoload=True)
 
 
-def answer_choice_insert(*, question_choice_id: str, question_id: str,
+def answer_choice_insert(*,
+                         question_choice_id: str,
+                         question_id: str,
                          submission_id: str,
                          survey_id: str) -> Insert:
     """
