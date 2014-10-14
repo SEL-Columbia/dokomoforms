@@ -6,9 +6,36 @@ from sqlalchemy.engine import RowProxy
 
 from db import engine
 from db.question import get_questions
+from db.question_branch import get_branches
+from db.question_choice import get_choices
 
 
 survey_table = Table('survey', MetaData(bind=engine), autoload=True)
+
+
+# TODO: survey insert
+
+def _get_choice_fields(choice: RowProxy) -> dict:
+    """
+    Extract the relevant fields from a record in the question_choice table.
+
+    :param choice: A RowProxy for a record in the question_choice table.
+    :return: A dictionary of the fields.
+    """
+    return {'question_choice_id': choice.question_choice_id,
+            'choice': choice.choice,
+            'choice_number': choice.choice_number}
+
+
+def _get_branch_fields(branch: RowProxy) -> dict:
+    """
+    Extract the relevant fields from a record in the question_branch table.
+
+    :param branch: A RowProxy for a record in the question_branch table.
+    :return: A dictionary of the fields.
+    """
+    return {'question_choice_id': branch.question_choice_id,
+            'to_question_id': branch.to_question_id}
 
 
 def _get_fields(question: RowProxy) -> dict:
@@ -18,13 +45,21 @@ def _get_fields(question: RowProxy) -> dict:
     :param question: A RowProxy for a record in the question table.
     :return: A dictionary of the fields.
     """
-    return {'question_id': question.question_id,
-            'title': question.title,
-            'hint': question.hint,
-            'required': question.required,
-            'allow_multiple': question.allow_multiple,
-            'type_constraint_name': question.type_constraint_name,
-            'logical_constraint_name': question.logical_constraint_name}
+    result = {'question_id': question.question_id,
+              'title': question.title,
+              'hint': question.hint,
+              'required': question.required,
+              'sequence_number': question.sequence_number,
+              'allow_multiple': question.allow_multiple,
+              'type_constraint_name': question.type_constraint_name,
+              'logical_constraint_name': question.logical_constraint_name}
+    if question.type_constraint_name.startswith('multiple_choice'):
+        choices = get_choices(question.question_id)
+        result['choices'] = [_get_choice_fields(choice) for choice in choices]
+        branches = get_branches(question.question_id)
+        if branches.rowcount > 0:
+            result['branches'] = [_get_branch_fields(brn) for brn in branches]
+    return result
 
 
 def survey_json(survey_id: str) -> str:
@@ -37,7 +72,6 @@ def survey_json(survey_id: str) -> str:
     questions = get_questions(survey_id)
     questions_dict = {'survey_id': survey_id}
 
-    # TODO: deal with question branching
     question_fields = [_get_fields(question) for question in questions]
 
     questions_dict['questions'] = question_fields

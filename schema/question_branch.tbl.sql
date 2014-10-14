@@ -16,8 +16,8 @@ CREATE TABLE question_branch
 
   to_question_id         uuid    NOT NULL,
   to_type_constraint     text    NOT NULL,
-  to_allow_multiple      boolean NOT NULL,
   to_sequence_number     integer NOT NULL,
+  to_allow_multiple      boolean NOT NULL,
   to_survey_id           uuid    NOT NULL,
 
   last_update_time       timestamp with time zone NOT NULL DEFAULT now(),
@@ -50,6 +50,8 @@ CREATE TABLE question_branch
 
   -- You can't have two entries for the same choice.
   UNIQUE(from_question_id, question_choice_id),
+
+  CONSTRAINT cannot_allow_multiple CHECK(NOT from_allow_multiple),
 
   CONSTRAINT cannot_point_backward CHECK(
     to_sequence_number > from_sequence_number

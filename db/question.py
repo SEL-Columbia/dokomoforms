@@ -20,7 +20,14 @@ def get_question(question_id: str) -> RowProxy:
     return where_stmt.execute().first()
 
 
-def get_questions(survey_id) -> ResultProxy:
+def get_questions(survey_id: str) -> ResultProxy:
+    """
+    Get all the questions for a survey identified by survey_id ordered by
+    sequence number.
+
+    :param survey_id: foreign key
+    :return: an iterable of the questions (RowProxy)
+    """
     select_stmt = question_table.select()
     where_stmt = select_stmt.where(question_table.c.survey_id == survey_id)
     return where_stmt.order_by('sequence_number asc').execute()
