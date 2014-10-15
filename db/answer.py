@@ -1,7 +1,8 @@
 """Allow access to the answer table."""
-from sqlalchemy import Table, MetaData
-from sqlalchemy.engine import ResultProxy
+from sqlalchemy import Table, MetaData, text
+from sqlalchemy.engine import ResultProxy, RowProxy
 from sqlalchemy.sql.dml import Insert
+from sqlalchemy.sql import func
 
 from db import engine
 from db.question import get_question
@@ -10,8 +11,26 @@ from db.question import get_question
 answer_table = Table('answer', MetaData(bind=engine), autoload=True)
 
 
+def _sanitize_answer(answer: str, type_constraint_name: str) -> str:
+    """
+    Certain question types require some massaging in order to go into the
+    database properly. This function does that massaging.
+
+    location: uses the ST_GeomFromText function in the database. The input
+    must be in the form 'LON LAT'
+
+    :param answer: The answer value.
+    :param type_constraint_name: The type constraint for the question
+    :return: The answer in a form that is insertable
+    """
+    if type_constraint_name == 'location':
+        return text("ST_GeomFromText('POINT({})', 4326)".format(answer))
+    return answer
+
+
 def answer_insert(*,
-                  answer, question_id: str,
+                  answer,
+                  question_id: str,
                   submission_id: str,
                   survey_id: str) -> Insert:
     """
@@ -23,7 +42,8 @@ def answer_insert(*,
                    integer,
                    decimal,
                    date,
-                   time
+                   time,
+                   location (given as 'LON LAT')
     :param question_id: The UUID of the question.
     :param submission_id: The UUID of the submission.
     :param survey_id: The UUID of the survey.
@@ -32,7 +52,7 @@ def answer_insert(*,
     question = get_question(question_id)
     type_constraint_name = question.type_constraint_name
     answer_type = 'answer_' + type_constraint_name
-    values = {answer_type: answer,
+    values = {answer_type: _sanitize_answer(answer, type_constraint_name),
               'question_id': question_id,
               'submission_id': submission_id,
               'type_constraint_name': type_constraint_name,
@@ -54,3 +74,16 @@ def get_answers(submission_id: str) -> ResultProxy:
     where_stmt = select_stmt.where(
         answer_table.c.submission_id == submission_id)
     return where_stmt.order_by('sequence_number asc').execute()
+
+
+def get_geo_json(answer: RowProxy) -> str:
+    """
+    The default string representation of a geometry in PostGIS is some
+    garbage. This function converts the garbage into a GeoJSON string that
+    looks like this:
+    {'coordinates': [LON, LAT], 'type': 'Point'}
+
+    :param answer: a RowProxy object for a record in the answer table
+    :return: a GeoJSON string representing the answer's value
+    """
+    return engine.execute(func.ST_AsGeoJSON(answer.answer_location)).scalar()
