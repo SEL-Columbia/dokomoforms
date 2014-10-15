@@ -3,6 +3,7 @@
 App = {
     unsynced: [] // unsynced surveys
 };
+
 App.init = function(survey) {
     var self = this;
     self.survey = new Survey(survey.survey_id, survey.questions);
@@ -19,6 +20,7 @@ App.init = function(survey) {
             _.each(self.unsynced, function(survey) {
                 survey.submit();
             });
+            self.unsynced = [];
         }
     }, 10000);
     
