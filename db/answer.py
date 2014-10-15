@@ -25,6 +25,7 @@ def _sanitize_answer(answer: str, type_constraint_name: str) -> str:
     :param type_constraint_name: The type constraint for the question
     :return: The answer in a form that is insertable
     """
+    # TODO: consider using a namedtuple instead of the 'LON LAT' string
     if type_constraint_name == 'location':
         return text("ST_GeomFromText('POINT({})', 4326)".format(answer))
     return answer
