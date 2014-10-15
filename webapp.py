@@ -35,7 +35,7 @@ class Index(tornado.web.RequestHandler):
         survey_id = data['survey_id']
         all_answers = data['answers']
         # Filter out the skipped questions in the submission.
-        answers = (ans for ans in all_answers if 'answer' in ans)
+        answers = (ans for ans in all_answers if ans['answer'] is not None)
 
 
         with engine.begin() as connection:

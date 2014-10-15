@@ -12,6 +12,7 @@ from urllib.parse import urlencode
 import json
 
 import unittest
+from db.answer import get_answers
 from db.question import question_table, get_questions
 from db.submission import submission_table
 
@@ -72,6 +73,8 @@ class TestDokomoWebapp(unittest.TestCase):
         condition = submission_table.c.submission_id == result_submission_id
         self.assertEqual(
             submission_table.select().where(condition).execute().rowcount, 1)
+        sub_answers = get_answers(result_submission_id)
+        self.assertEqual(sub_answers.rowcount, 1)
 
 if __name__ == '__main__':
     unittest.main()
