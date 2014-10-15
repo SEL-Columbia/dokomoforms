@@ -165,7 +165,7 @@ Widgets.location = function(question, page) {
         .click(function() {
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
-                    var coords = position.coords.latitude + ' ' + position.coords.longitude;
+                    var coords = position.coords.longitude + ' ' + position.coords.latitude;
                     question.answer = coords;
                     input.val(coords);
                 }, function error() {
