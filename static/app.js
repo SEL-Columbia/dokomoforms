@@ -95,14 +95,13 @@ Survey.prototype.submit = function() {
     var save_btn = $('.question__saving')[0];
     var answers = {};
     
-    // Fetch answers
+    // Save answers locally
     _.each(self.questions, function(question) {
         answers[question.question_id] = question.answer;
     });
-    
-    // Save a copy locally
     localStorage[self.id] = JSON.stringify(answers);
 
+    // Prepare POST request
     var data = {
         survey_id: self.id,
         answers: self.questions
