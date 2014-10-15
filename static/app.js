@@ -105,7 +105,7 @@ Survey.prototype.submit = function() {
 
     var data = {
         survey_id: self.id,
-        answers: answers
+        answers: self.questions
     };
     
     sync.classList.add('icon--spin');
