@@ -24,8 +24,7 @@ class TestAnswer(unittest.TestCase):
     def testInsertAnswerAndDelete(self):
         survey_id = survey_table.select().execute().first().survey_id
         question_id = get_questions(survey_id).first().question_id
-        submission_exec = submission_insert(latitude=0, longitude=0,
-                                            submitter='test_submitter',
+        submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = answer_insert(answer=1, question_id=question_id,
@@ -41,8 +40,7 @@ class TestAnswer(unittest.TestCase):
     def testGetAnswers(self):
         survey_id = survey_table.select().execute().first().survey_id
         question_id = get_questions(survey_id).first().question_id
-        submission_exec = submission_insert(latitude=0, longitude=0,
-                                            submitter='test_submitter',
+        submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = answer_insert(answer=1, question_id=question_id,
@@ -60,8 +58,7 @@ class TestAnswerChoice(unittest.TestCase):
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'multiple_choice')
         question_id = q_where.execute().first().question_id
-        submission_exec = submission_insert(latitude=0, longitude=0,
-                                            submitter='test_submitter',
+        submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
         choices = get_choices(question_id)
@@ -84,8 +81,7 @@ class TestAnswerChoice(unittest.TestCase):
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'multiple_choice')
         question_id = q_where.execute().first().question_id
-        submission_exec = submission_insert(latitude=0, longitude=0,
-                                            submitter='test_submitter',
+        submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
         choices = get_choices(question_id)
@@ -137,8 +133,7 @@ class TestSubmission(unittest.TestCase):
 
     def testSubmissionInsert(self):
         survey_id = survey_table.select().execute().first().survey_id
-        submission_exec = submission_insert(latitude=0, longitude=0,
-                                            submitter='test_submitter',
+        submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
         sub_exec = submission_table.select().where(
@@ -149,8 +144,7 @@ class TestSubmission(unittest.TestCase):
     def testSubmissionJson(self):
         survey_id = survey_table.select().execute().first().survey_id
         question_id = get_questions(survey_id).first().question_id
-        submission_exec = submission_insert(latitude=0, longitude=0,
-                                            submitter='test_submitter',
+        submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = answer_insert(answer=1, question_id=question_id,
