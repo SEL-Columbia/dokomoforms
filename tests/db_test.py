@@ -5,15 +5,13 @@ Tests for the dokomo database
 import json
 import unittest
 
-from db.answer import answer_insert, answer_table, get_answers
-from db.answer_choice import answer_choice_insert, answer_choice_table, \
-    get_answer_choices
+from db.answer import answer_insert, answer_table, get_answers, get_geo_json
+from db.answer_choice import answer_choice_insert, get_answer_choices
 from db.question import get_questions, get_question, question_table
 from db.question_branch import get_branches
 from db.question_choice import get_choices
 from db.submission import submission_insert, submission_table, submission_json
 from db.survey import survey_table, survey_json
-
 
 # TODO: write tests for integrity errors
 
@@ -21,11 +19,10 @@ class TestAnswer(unittest.TestCase):
     def tearDown(self):
         submission_table.delete().execute()
 
-    def testInsertAnswerAndDelete(self):
+    def testInsertAnswer(self):
         survey_id = survey_table.select().execute().first().survey_id
         question_id = get_questions(survey_id).first().question_id
-        submission_exec = submission_insert(latitude=0, longitude=0,
-                                            submitter='test_submitter',
+        submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = answer_insert(answer=1, question_id=question_id,
@@ -33,16 +30,29 @@ class TestAnswer(unittest.TestCase):
                                     survey_id=survey_id).execute()
         answer_id = answer_exec.inserted_primary_key[0]
         self.assertIsNotNone(answer_id)
+
+    def testInsertLocation(self):
+        survey_id = survey_table.select().execute().first().survey_id
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'location')
+        question_id = q_where.execute().first().question_id
+        submission_exec = submission_insert(submitter='test_submitter',
+                                            survey_id=survey_id).execute()
+        submission_id = submission_exec.inserted_primary_key[0]
+        answer_exec = answer_insert(answer='90 0', question_id=question_id,
+                                    submission_id=submission_id,
+                                    survey_id=survey_id).execute()
+        answer_id = answer_exec.inserted_primary_key[0]
+        self.assertIsNotNone(answer_id)
         condition = answer_table.c.answer_id == answer_id
-        answer_table.delete().where(condition).execute()
-        self.assertEqual(
-            answer_table.select().where(condition).execute().rowcount, 0)
+        answer = answer_table.select().where(condition).execute().first()
+        location = json.loads(get_geo_json(answer))['coordinates']
+        self.assertEqual(location, [90, 0])
 
     def testGetAnswers(self):
         survey_id = survey_table.select().execute().first().survey_id
         question_id = get_questions(survey_id).first().question_id
-        submission_exec = submission_insert(latitude=0, longitude=0,
-                                            submitter='test_submitter',
+        submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = answer_insert(answer=1, question_id=question_id,
@@ -60,8 +70,7 @@ class TestAnswerChoice(unittest.TestCase):
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'multiple_choice')
         question_id = q_where.execute().first().question_id
-        submission_exec = submission_insert(latitude=0, longitude=0,
-                                            submitter='test_submitter',
+        submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
         choices = get_choices(question_id)
@@ -73,19 +82,13 @@ class TestAnswerChoice(unittest.TestCase):
             survey_id=survey_id).execute()
         answer_id = exec_stmt.inserted_primary_key[0]
         self.assertIsNotNone(answer_id)
-        condition = answer_choice_table.c.answer_choice_id == answer_id
-        answer_choice_table.delete().where(condition).execute()
-        self.assertEqual(
-            answer_choice_table.select().where(condition).execute().rowcount,
-            0)
 
     def testGetAnswerChoices(self):
         survey_id = survey_table.select().execute().first().survey_id
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'multiple_choice')
         question_id = q_where.execute().first().question_id
-        submission_exec = submission_insert(latitude=0, longitude=0,
-                                            submitter='test_submitter',
+        submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
         choices = get_choices(question_id)
@@ -137,8 +140,7 @@ class TestSubmission(unittest.TestCase):
 
     def testSubmissionInsert(self):
         survey_id = survey_table.select().execute().first().survey_id
-        submission_exec = submission_insert(latitude=0, longitude=0,
-                                            submitter='test_submitter',
+        submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
         sub_exec = submission_table.select().where(
@@ -149,8 +151,7 @@ class TestSubmission(unittest.TestCase):
     def testSubmissionJson(self):
         survey_id = survey_table.select().execute().first().survey_id
         question_id = get_questions(survey_id).first().question_id
-        submission_exec = submission_insert(latitude=0, longitude=0,
-                                            submitter='test_submitter',
+        submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = answer_insert(answer=1, question_id=question_id,

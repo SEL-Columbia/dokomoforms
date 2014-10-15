@@ -38,6 +38,7 @@ class TestDokomoWebapp(unittest.TestCase):
 
     def tearDown(self):
         self.http_server.stop()
+        submission_table.delete().execute()
 
     def handle_request(self, response):
         self.response = response

@@ -12,7 +12,7 @@ from settings import CONNECTION_STRING
 
 
 killall = 'killall.sql'
-extensions = ['uuid.sql']
+extensions = ['uuid.sql', 'postgis.sql']
 tables = ['auth_user.tbl.sql',
           'survey.tbl.sql',
           'type_constraint.tbl.sql',

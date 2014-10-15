@@ -31,7 +31,7 @@ class Index(tornado.web.RequestHandler):
 
         submission_id = None
 
-                    
+
         survey_id = data['survey_id']
         all_answers = data['answers']
         # Filter out the skipped questions in the submission.
@@ -39,9 +39,7 @@ class Index(tornado.web.RequestHandler):
 
 
         with engine.begin() as connection:
-            submission_values = {'latitude': 0,
-                                 'longitude': 0,
-                                 'submitter': '',
+            submission_values = {'submitter': '',
                                  'survey_id': survey_id}
             result = connection.execute(submission_insert(**submission_values))
             submission_id = result.inserted_primary_key[0]
