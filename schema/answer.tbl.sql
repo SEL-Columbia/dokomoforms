@@ -14,6 +14,7 @@ CREATE TABLE answer
   answer_decimal       decimal,
   answer_date          date,
   answer_time          time with time zone,
+  answer_location      geometry,
 
   question_id          uuid    NOT NULL,
   type_constraint_name text    NOT NULL,
