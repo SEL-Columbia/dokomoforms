@@ -130,44 +130,44 @@ Survey.prototype.submit = function() {
 
 
 var Widgets = {};
-Widgets.text = function(question, survey) {
-    // This widget's events. Called after survey template rendering.
+Widgets.text = function(question, page) {
+    // This widget's events. Called after page template rendering.
     // Responsible for setting the question object's answer
     //
     // question: question data
-    // survey: survey container, DOM element
-    $(survey)
+    // page: the widget container DOM element
+    $(page)
         .find('input')
         .on('keyup', function() {
             question.answer = this.value;
         });
 };
 
-Widgets.integer = function(question, survey) {
-    $(survey)
+Widgets.integer = function(question, page) {
+    $(page)
         .find('input')
         .keyup(function() {
             question.answer = parseInt(this.value);
         });
 };
 
-Widgets.location = function(question, survey) {
+Widgets.location = function(question, page) {
     // TODO: add location status
     
-    var input = $(survey)
+    var input = $(page)
         .find('input')
         .keydown(function() {
             return false;
         });
     
-    $(survey)
+    $(page)
         .find('.question__btn')
         .click(function() {
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
-                    var coords = position.coords;
+                    var coords = position.coords.latitude + ' ' + position.coords.longitude;
                     question.answer = coords;
-                    input.val(coords.latitude + ', ' + coords.longitude);
+                    input.val(coords);
                 }, function error() {
                     alert('error')
                 }, {
