@@ -39,7 +39,7 @@ function Survey(id, questions) {
     
     // Load answers from localStorage
     var answers = JSON.parse(localStorage[this.id] || '{}');
-    this.questions.forEach(function(question) {
+    _.each(this.questions, function(question) {
         question.answer = answers[question.question_id] || null;
     });
     
@@ -153,21 +153,17 @@ Widgets.integer = function(question, page) {
 
 Widgets.location = function(question, page) {
     // TODO: add location status
-    
-    var input = $(page)
-        .find('input')
-        .keydown(function() {
-            return false;
-        });
-    
+        
     $(page)
         .find('.question__btn')
         .click(function() {
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
-                    var coords = position.coords.longitude + ' ' + position.coords.latitude;
+                    // Server accepts [lon, lat]
+                    var coords = [position.coords.longitude, position.coords.latitude];
                     question.answer = coords;
-                    input.val(coords);
+                    $(page).find('.location__lat').val(coords[1]);
+                    $(page).find('.location__lon').val(coords[]);
                 }, function error() {
                     alert('error')
                 }, {
