@@ -4,7 +4,7 @@ for the real production server and unit tests.
 
 """
 from argparse import ArgumentParser
-from os.path import join
+import os.path
 
 from sqlalchemy import create_engine
 
@@ -26,19 +26,20 @@ tables = ['auth_user.tbl.sql',
 fixtures = ['type_constraint_fixture.sql',
             'logical_constraint_fixture.sql']
 
+schema_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'schema')
 
 def init_db(engine):
     """Create all the tables and insert the fixtures."""
     with engine.begin() as connection:
         for file_path in extensions + tables + fixtures:
-            with open(join('schema', file_path)) as sqlfile:
+            with open(os.path.join(schema_dir, file_path)) as sqlfile:
                 connection.execute(sqlfile.read())
 
 
 def kill_db(engine):
     """Drop the database."""
     with engine.begin() as connection:
-        with open(join('schema', killall)) as sqlfile:
+        with open(os.path.join(schema_dir, killall)) as sqlfile:
             connection.execute(sqlfile.read())
 
 
