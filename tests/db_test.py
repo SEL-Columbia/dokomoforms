@@ -13,6 +13,7 @@ from db.question_choice import get_choices
 from db.submission import submission_insert, submission_table, submission_json
 from db.survey import survey_table, survey_json
 
+
 # TODO: write tests for integrity errors
 
 class TestAnswer(unittest.TestCase):
@@ -41,7 +42,7 @@ class TestAnswer(unittest.TestCase):
         submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
-        answer_exec = answer_insert(answer='90 0', question_id=question_id,
+        answer_exec = answer_insert(answer=[90, 0], question_id=question_id,
                                     submission_id=submission_id,
                                     survey_id=survey_id).execute()
         answer_id = answer_exec.inserted_primary_key[0]
@@ -73,7 +74,7 @@ class TestAnswerChoice(unittest.TestCase):
         survey_id = survey_table.select().execute().first().survey_id
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'multiple_choice')
-        question_id = q_where.execute().first().question_id
+        question_id = q_where.execvute().first().question_id
         submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
