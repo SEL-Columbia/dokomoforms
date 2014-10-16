@@ -162,8 +162,8 @@ Widgets.location = function(question, page) {
                     // Server accepts [lon, lat]
                     var coords = [position.coords.longitude, position.coords.latitude];
                     question.answer = coords;
-                    $(page).find('.location__lat').val(coords[1]);
-                    $(page).find('.location__lon').val(coords[]);
+                    $(page).find('.question__lat').val(coords[1]);
+                    $(page).find('.question__lon').val(coords[0]);
                 }, function error() {
                     alert('error')
                 }, {
