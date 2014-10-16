@@ -7,8 +7,15 @@ Dokomo [どこも](http://tangorin.com/general/%E3%81%A9%E3%81%93%E3%82%82) Form
 # Installation
 
 ## How to run the thing
-1. `$ pip-python3 install -r requirements.txt` (or whatever the command is on your distribution)
-2. Install and start PostgreSQL. You may also need to install PostGIS.
+1. Install PostgreSQL, the contributed packages, PostGIS, and the PostgreSQL server development packages:
+
+   ```sh
+   sudo apt-get install postgresql postgresql-contrib postgis postgresql-server-dev-all
+   ```
+   
+   (or whatever the command is on your distribution)
+   
+2. `$ pip-python3 install -r requirements.txt` (or whatever the command is on your distribution)
 3. Create a "doko" database (or whatever other name you want) and a system user (if desired -- the postgres default user should work fine) with access to that database.
 4. Edit the [settings.py](settings.py) file with the correct PostgreSQL connection string.
 5. `$ python3 manage_db.py --create`
