@@ -21,7 +21,9 @@ class TestAnswer(unittest.TestCase):
 
     def testInsertAnswer(self):
         survey_id = survey_table.select().execute().first().survey_id
-        question_id = get_questions(survey_id).first().question_id
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'integer')
+        question_id = q_where.execute().first().question_id
         submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
@@ -51,13 +53,15 @@ class TestAnswer(unittest.TestCase):
 
     def testGetAnswers(self):
         survey_id = survey_table.select().execute().first().survey_id
-        question_id = get_questions(survey_id).first().question_id
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'integer')
+        question_id = q_where.execute().first().question_id
         submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
-        answer_exec = answer_insert(answer=1, question_id=question_id,
-                                    submission_id=submission_id,
-                                    survey_id=survey_id).execute()
+        answer_insert(answer=1, question_id=question_id,
+                      submission_id=submission_id,
+                      survey_id=survey_id).execute()
         self.assertEqual(get_answers(submission_id).rowcount, 1)
 
 
@@ -93,7 +97,7 @@ class TestAnswerChoice(unittest.TestCase):
         submission_id = submission_exec.inserted_primary_key[0]
         choices = get_choices(question_id)
         the_choice = choices.first()
-        exec_stmt = answer_choice_insert(
+        answer_choice_insert(
             question_choice_id=the_choice.question_choice_id,
             question_id=question_id,
             submission_id=submission_id,
@@ -150,13 +154,15 @@ class TestSubmission(unittest.TestCase):
 
     def testSubmissionJson(self):
         survey_id = survey_table.select().execute().first().survey_id
-        question_id = get_questions(survey_id).first().question_id
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'integer')
+        question_id = q_where.execute().first().question_id
         submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
-        answer_exec = answer_insert(answer=1, question_id=question_id,
-                                    submission_id=submission_id,
-                                    survey_id=survey_id).execute()
+        answer_insert(answer=1, question_id=question_id,
+                      submission_id=submission_id,
+                      survey_id=survey_id).execute()
         data = submission_json(submission_id)
         json_data = json.loads(data)
         self.assertIsNotNone(json_data['submission_id'])
