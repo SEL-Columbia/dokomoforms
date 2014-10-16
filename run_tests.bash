@@ -11,4 +11,8 @@ tests=`ls $DOKO/tests/*.py`
 for test in $tests
 do
    /usr/bin/env python3 $test
+   rc=$?
+   if [[ $rc != 0 ]] ; then
+       exit $rc
+   fi
 done
