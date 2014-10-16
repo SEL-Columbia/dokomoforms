@@ -66,8 +66,8 @@
     
     <script id="widget_location" type="text/html">
         <div class="question__title"><%- question.title %></div>
-        <input class="text_input location__lat" type="text" value="<%- (question.answer && question.answer[0]) || '' %>">
-        <input class="text_input location__lon" type="text" value="<%- (question.answer && question.answer[1]) || '' %>">
+        <input class="text_input question__lat" type="text" value="<%- (question.answer && question.answer[0]) || '' %>">
+        <input class="text_input question__lon" type="text" value="<%- (question.answer && question.answer[1]) || '' %>">
         <div class="question__btn">Find location</div>
     </script>
     
