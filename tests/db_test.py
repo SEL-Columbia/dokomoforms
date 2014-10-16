@@ -74,7 +74,7 @@ class TestAnswerChoice(unittest.TestCase):
         survey_id = survey_table.select().execute().first().survey_id
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'multiple_choice')
-        question_id = q_where.execvute().first().question_id
+        question_id = q_where.execute().first().question_id
         submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
