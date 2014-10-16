@@ -13,7 +13,7 @@ RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
 type_constraint_name, logical_constraint_name, allow_multiple)
-VALUES (the_survey_id, 1, 'What is the location of the facility',
+VALUES (the_survey_id, 1, 'What is the location of the facility?',
                                                        'location', '', False),
        (the_survey_id, 2, 'What is the bed capacity?', 'integer', '', False),
        (the_survey_id, 3, 'What is the number of new suspected cases?',

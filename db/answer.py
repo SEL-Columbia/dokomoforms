@@ -11,13 +11,13 @@ from db.question import get_question
 answer_table = Table('answer', MetaData(bind=engine), autoload=True)
 
 
-def _sanitize_answer(answer: str, type_constraint_name: str) -> str:
+def _sanitize_answer(answer, type_constraint_name: str) -> str:
     """
     Certain question types require some massaging in order to go into the
     database properly. This function does that massaging.
 
     location: uses the ST_GeomFromText function in the database. The input
-    must be in the form 'LON LAT'. Uses SRID 4326 (AKA WGS 84
+    must be in the form [LON, LAT]. Uses SRID 4326 (AKA WGS 84
     http://en.wikipedia.org/wiki/World_Geodetic_System), which should work with
     the coordinates given by Android phones.
 
@@ -25,9 +25,9 @@ def _sanitize_answer(answer: str, type_constraint_name: str) -> str:
     :param type_constraint_name: The type constraint for the question
     :return: The answer in a form that is insertable
     """
-    # TODO: consider using a namedtuple instead of the 'LON LAT' string
     if type_constraint_name == 'location':
-        return text("ST_GeomFromText('POINT({})', 4326)".format(answer))
+        db_input = "ST_GeomFromText('POINT({ans[0]} {ans[1]})', 4326)"
+        return text(db_input.format(ans=answer))
     return answer
 
 
@@ -46,7 +46,7 @@ def answer_insert(*,
                    decimal,
                    date,
                    time,
-                   location (given as 'LON LAT')
+                   location (given as [LON, LAT])
     :param question_id: The UUID of the question.
     :param submission_id: The UUID of the submission.
     :param survey_id: The UUID of the survey.
