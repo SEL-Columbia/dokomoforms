@@ -32,11 +32,12 @@ def get_free_sequence_number(survey_id: str) -> int:
     return coalesce(query.filter(condition).scalar(), 0) + 1
 
 
-def question_insert(*, hint='',
+def question_insert(*,
                     sequence_number: int=None,
-                    required=False,
-                    allow_multiple=False,
-                    logical_constraint_name='',
+                    hint: str,
+                    required: bool,
+                    allow_multiple: bool,
+                    logical_constraint_name: str,
                     title: str,
                     type_constraint_name: str,
                     survey_id: str) -> Insert:
