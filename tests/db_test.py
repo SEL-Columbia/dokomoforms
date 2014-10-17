@@ -7,11 +7,15 @@ import unittest
 
 from db.answer import answer_insert, answer_table, get_answers, get_geo_json
 from db.answer_choice import answer_choice_insert, get_answer_choices
+from db.logical_constraint import logical_constraint_table, \
+    logical_constraint_exists, insert_logical_constraint_name
 from db.question import get_questions, get_question, question_table
 from db.question_branch import get_branches
 from db.question_choice import get_choices
 from db.submission import submission_insert, submission_table, submission_json
 from db.survey import survey_table, survey_json
+
+
 
 
 # TODO: write tests for integrity errors
@@ -107,6 +111,24 @@ class TestAnswerChoice(unittest.TestCase):
 
 
 # TODO: test auth_user.py
+
+class TestLogicalConstraint(unittest.TestCase):
+    def tearDown(self):
+        column = logical_constraint_table.c.logical_constraint_name
+        condition = column == 'test'
+        logical_constraint_table.delete().where(condition).execute()
+
+    def testLogicalConstraintExists(self):
+        self.assertTrue(logical_constraint_exists(''))
+        self.assertFalse(logical_constraint_exists('does not exist'))
+
+    def testInsertLogicalConstraintName(self):
+        insert_logical_constraint_name('test').execute()
+        column = logical_constraint_table.c.logical_constraint_name
+        condition = column == 'test'
+        exec_stmt = logical_constraint_table.select().where(condition)
+        self.assertEqual(exec_stmt.execute().rowcount, 1)
+
 
 class TestQuestion(unittest.TestCase):
     def testGetQuestion(self):

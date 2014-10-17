@@ -19,8 +19,11 @@ def logical_constraint_exists(logical_constraint_name: str) -> bool:
     """
     table_column = logical_constraint_table.c.logical_constraint_name
     exist_stmt = exists().where(table_column == logical_constraint_name)
-    # engine.execute expects a list or something... don't ask me
-    (does_exist, ) = engine.execute((select(exist_stmt),))
+
+    # select expects a list or something... don't ask me
+    select_argument = (exist_stmt,)
+    # and engine.execute returns something crazy
+    (does_exist, ), = engine.execute(select(select_argument))
     return does_exist
 
 
