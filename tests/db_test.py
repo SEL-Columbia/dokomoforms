@@ -14,7 +14,9 @@ from db.question import get_questions, get_question, question_table, \
 from db.question_branch import get_branches
 from db.question_choice import get_choices
 from db.submission import submission_insert, submission_table, submission_json
-from db.survey import survey_table, survey_json
+from db.survey import survey_table, survey_json, survey_insert
+
+
 
 
 
@@ -214,6 +216,17 @@ class TestSubmission(unittest.TestCase):
 
 
 class TestSurvey(unittest.TestCase):
+    def tearDown(self):
+        survey_table.delete().where(
+            survey_table.c.title == 'test insert').execute()
+
+    def testSurveyInsert(self):
+        stmt = survey_insert(title='test insert')
+        survey_id = stmt.execute().inserted_primary_key[0]
+        condition = survey_table.c.title == 'test insert'
+        get_stmt = survey_table.select().where(condition).execute().first()
+        self.assertEqual(get_stmt.survey_id, survey_id)
+
     def testSurveyJson(self):
         survey_id = survey_table.select().execute().first().survey_id
         data = survey_json(survey_id)
