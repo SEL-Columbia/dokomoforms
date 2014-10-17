@@ -7,7 +7,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.functions import max as sqlmax
 
 from db import engine
-from db.logical_constraint import insert_logical_constraint_if_necessary
+from db.logical_constraint import insert_logical_constraint_name, \
+    logical_constraint_exists, LogicalConstraintDoesNotExist
 
 
 question_table = Table('question', MetaData(bind=engine), autoload=True)
@@ -71,7 +72,8 @@ def question_insert(*,
     if sequence_number is None:
         sequence_number = get_free_sequence_number(survey_id)
     tcn = type_constraint_name
-    insert_logical_constraint_if_necessary(logical_constraint_name)
+    if not logical_constraint_exists(logical_constraint_name):
+        raise LogicalConstraintDoesNotExist(logical_constraint_name)
     lcn = logical_constraint_name
     return question_table.insert().values(title=title,
                                           hint=hint,
