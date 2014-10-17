@@ -16,11 +16,6 @@ from db.question_choice import get_choices
 from db.submission import submission_insert, submission_table, submission_json
 from db.survey import survey_table, survey_json, survey_insert
 
-
-
-
-
-
 # TODO: write tests for integrity errors
 
 class TestAnswer(unittest.TestCase):

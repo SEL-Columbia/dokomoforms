@@ -51,6 +51,8 @@ def _add_optional_values(values: dict, **kwargs) -> dict:
 
 
 def question_insert(*,
+                    choices: list=None,
+                    branches: list=None,
                     sequence_number: int=None,
                     hint: str,
                     required: bool,
@@ -63,6 +65,10 @@ def question_insert(*,
     Insert a record into the question table. A question is associated with a
     survey. Make sure to use a transaction!
 
+    :param choices: unused parameter. convenient for taking parameters from
+                    the front-end
+    :param branches: unused parameter, convenient for taking parameters from
+                     the front-end
     :param hint: an optional hint for the question
     :param sequence_number: the sequence number of the question. If None or
                             not supplied, this defaults to the next available

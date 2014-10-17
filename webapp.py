@@ -10,14 +10,13 @@ requests back from the client app.
 import tornado.web
 import tornado.ioloop
 import json
-from db import engine
-from db.answer import answer_insert
-from db.submission import submission_insert
 from db.survey import survey_json
 
 import settings
 
 from utils.logger import setup_custom_logger
+from views.submission import submit
+
 logger = setup_custom_logger('dokomo')
 
 
@@ -29,32 +28,7 @@ class Index(tornado.web.RequestHandler):
     def post(self):
         data = json.loads(self.get_argument('data'))
 
-        submission_id = None
-
-
-        survey_id = data['survey_id']
-        all_answers = data['answers']
-        # Filter out the skipped questions in the submission.
-        answers = (ans for ans in all_answers if ans['answer'] is not None)
-
-
-        with engine.begin() as connection:
-            submission_values = {'submitter': '',
-                                 'survey_id': survey_id}
-            result = connection.execute(submission_insert(**submission_values))
-            submission_id = result.inserted_primary_key[0]
-
-            for answer_dict in answers:
-                question_id = answer_dict['question_id']
-                answer = answer_dict['answer']
-                answer_values = {'answer': answer,
-                                 'question_id': question_id,
-                                 'submission_id': submission_id,
-                                 'survey_id': survey_id}
-                connection.execute(answer_insert(**answer_values))
-
-        self.write(submission_id)
-
+        self.write(submit(data))
 
 
 config = {
