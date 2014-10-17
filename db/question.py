@@ -7,8 +7,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.functions import max as sqlmax
 
 from db import engine
-from db.logical_constraint import insert_logical_constraint_name, \
-    logical_constraint_exists, LogicalConstraintDoesNotExist
+from db.logical_constraint import logical_constraint_exists, \
+    LogicalConstraintDoesNotExist
 
 
 question_table = Table('question', MetaData(bind=engine), autoload=True)
@@ -26,11 +26,28 @@ def get_free_sequence_number(survey_id: str) -> int:
     # through to find the maximum value...
 
     # Not sure why you need a session
-    session = sessionmaker(bind=engine)
+    session = sessionmaker(bind=engine)()
     query = session.query(sqlmax(question_table.c.sequence_number))
     condition = question_table.c.survey_id == survey_id
     # Without coalesce, this would fall over in the no-questions case.
-    return coalesce(query.filter(condition).scalar(), 0) + 1
+    coal = coalesce(query.filter(condition).scalar(), 0)
+    return engine.execute(coal).scalar() + 1
+
+
+def _add_optional_values(values: dict, **kwargs) -> dict:
+    """
+    Given a dict of values for the insert statement, add entries for the
+    values which are not None.
+
+    :param values: the existing dict
+    :param kwargs: the values to add if not None
+    :return: the dict with the values added
+    """
+    result = values.copy()
+    for key, value in kwargs.items():
+        if value is not None:
+            result[key] = value
+    return result
 
 
 def question_insert(*,
@@ -69,20 +86,25 @@ def question_insert(*,
     :param survey_id: the UUID of the survey
     :return: the Insert object. Execute this!
     """
+
+    # If no sequence number is supplied, pick up the next available one
     if sequence_number is None:
         sequence_number = get_free_sequence_number(survey_id)
     tcn = type_constraint_name
-    if not logical_constraint_exists(logical_constraint_name):
-        raise LogicalConstraintDoesNotExist(logical_constraint_name)
+    # These values must be provided in the insert statement
+    values = {'title': title,
+              'type_constraint_name': tcn,
+              'survey_id': survey_id,
+              'sequence_number': sequence_number}
     lcn = logical_constraint_name
-    return question_table.insert().values(title=title,
-                                          hint=hint,
-                                          sequence_number=sequence_number,
-                                          required=required,
-                                          allow_multiple=allow_multiple,
-                                          type_constraint_name=tcn,
-                                          logical_constraint_name=lcn,
-                                          survey_id=survey_id)
+    if lcn is not None and not logical_constraint_exists(lcn):
+        raise LogicalConstraintDoesNotExist(lcn)
+    # These values will only be inserted if they were supplied (since they
+    # have default values in the db)
+    values = _add_optional_values(values, hint=hint, required=required,
+                                  allow_multiple=allow_multiple,
+                                  logical_constraint_name=lcn)
+    return question_table.insert().values(values)
 
 
 def get_question(question_id: str) -> RowProxy:

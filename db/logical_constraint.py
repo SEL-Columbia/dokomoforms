@@ -27,7 +27,7 @@ def logical_constraint_exists(logical_constraint_name: str) -> bool:
     return does_exist
 
 
-def insert_logical_constraint_name(logical_constraint_name: str) -> Insert:
+def logical_constraint_name_insert(logical_constraint_name: str) -> Insert:
     """
     Create a new record in the logical_constraint table.
 

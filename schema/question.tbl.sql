@@ -25,7 +25,8 @@ CREATE TABLE question
   logical_constraint_name text NOT NULL REFERENCES logical_constraint
                                        (logical_constraint_name)
                                                         ON UPDATE CASCADE
-                                                        ON DELETE CASCADE,
+                                                        ON DELETE CASCADE
+                               DEFAULT '',
   survey_id             uuid REFERENCES survey          ON UPDATE CASCADE
                                                         ON DELETE CASCADE,
 

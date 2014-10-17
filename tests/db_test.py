@@ -8,8 +8,9 @@ import unittest
 from db.answer import answer_insert, answer_table, get_answers, get_geo_json
 from db.answer_choice import answer_choice_insert, get_answer_choices
 from db.logical_constraint import logical_constraint_table, \
-    logical_constraint_exists, insert_logical_constraint_name
-from db.question import get_questions, get_question, question_table
+    logical_constraint_exists, logical_constraint_name_insert
+from db.question import get_questions, get_question, question_table, \
+    get_free_sequence_number, question_insert
 from db.question_branch import get_branches
 from db.question_choice import get_choices
 from db.submission import submission_insert, submission_table, submission_json
@@ -122,8 +123,8 @@ class TestLogicalConstraint(unittest.TestCase):
         self.assertTrue(logical_constraint_exists(''))
         self.assertFalse(logical_constraint_exists('does not exist'))
 
-    def testInsertLogicalConstraintName(self):
-        insert_logical_constraint_name('test').execute()
+    def testLogicalConstraintNameInsert(self):
+        logical_constraint_name_insert('test').execute()
         column = logical_constraint_table.c.logical_constraint_name
         condition = column == 'test'
         exec_stmt = logical_constraint_table.select().where(condition)
@@ -131,6 +132,10 @@ class TestLogicalConstraint(unittest.TestCase):
 
 
 class TestQuestion(unittest.TestCase):
+    def tearDown(self):
+        condition = question_table.c.title == 'test insert'
+        question_table.delete().where(condition).execute()
+
     def testGetQuestion(self):
         survey_id = survey_table.select().execute().first().survey_id
         question_id = get_questions(survey_id).first().question_id
@@ -141,6 +146,22 @@ class TestQuestion(unittest.TestCase):
         survey_id = survey_table.select().execute().first().survey_id
         questions = get_questions(survey_id)
         self.assertGreater(questions.rowcount, 0)
+
+    def testGetFreeSequenceNumber(self):
+        survey_id = survey_table.select().execute().first().survey_id
+        self.assertEqual(get_free_sequence_number(survey_id), 10)
+
+    def testQuestionInsert(self):
+        survey_id = survey_table.select().execute().first().survey_id
+        stmt = question_insert(hint=None, required=None, allow_multiple=None,
+                               logical_constraint_name=None,
+                               title='test insert',
+                               type_constraint_name='text',
+                               survey_id=survey_id)
+        question_id = stmt.execute().inserted_primary_key[0]
+        condition = question_table.c.title == 'test insert'
+        self.assertEqual(question_table.select().where(
+            condition).execute().first().question_id, question_id)
 
 
 class TestQuestionBranch(unittest.TestCase):
