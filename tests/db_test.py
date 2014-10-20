@@ -4,6 +4,7 @@ Tests for the dokomo database
 """
 import json
 import unittest
+from db import update_record, delete_record
 
 from db.answer import answer_insert, answer_table, get_answers, get_geo_json
 from db.answer_choice import answer_choice_insert, get_answer_choices
@@ -228,6 +229,28 @@ class TestSurvey(unittest.TestCase):
         json_data = json.loads(data)
         self.assertIsNotNone(json_data['survey_id'])
         self.assertIsNotNone(json_data['questions'])
+
+
+class TestUtils(unittest.TestCase):
+    def testDeleteRecord(self):
+        exec_stmt = survey_insert(title='delete me').execute()
+        survey_id = exec_stmt.inserted_primary_key[0]
+        delete_record(survey_table, 'survey_id', survey_id).execute()
+        condition = survey_table.c.survey_id == survey_id
+        self.assertEqual(
+            survey_table.select().where(condition).execute().rowcount, 0)
+
+    def testUpdateRecord(self):
+        exec_stmt = survey_insert(title='update me').execute()
+        survey_id = exec_stmt.inserted_primary_key[0]
+        update_record(survey_table, 'survey_id', survey_id,
+                      title='updated').execute()
+        condition = survey_table.c.survey_id == survey_id
+        new_record = survey_table.select().where(condition).execute().first()
+        self.assertEqual(new_record.title, 'updated')
+        self.assertNotEqual(new_record.survey_last_update_time,
+                            new_record.created_on)
+        delete_record(survey_table, 'survey_id', survey_id).execute()
 
 
 if __name__ == '__main__':
