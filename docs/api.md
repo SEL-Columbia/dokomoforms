@@ -93,6 +93,18 @@ Request data:
 ```
 
 ### Delete Survey
+`DELETE /surveys/<UUID>`
+or 
+`POST /surveys/<UUID>` with argument `_method=DELETE`
+
+
+## Survey Responses
+
+### Submit Survey
+`POST /surveys/<UUID>/responses`
+
+
+
 
 
 ### Question & Answer Objects
