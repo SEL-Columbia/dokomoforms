@@ -102,16 +102,21 @@ or
 
 ## Survey Responses
 
-### Submit Survey
+### List Responses
+`GET /surveys/<UUID>/responses`
+
+### Get Response
+`GET /surveys/<UUID>/responses/<UUID>`
+
+### Submit Response
 `POST /surveys/<UUID>/responses`
 
 
 
 
+## Question & Answer Objects
 
-### Question & Answer Objects
-
-#### Location
+### Location
 ```
 // Question
 {
@@ -128,7 +133,7 @@ or
 ```
 
 
-#### Integer
+### Integer
 ```
 // Question
 {
@@ -148,7 +153,7 @@ or
 }
 ```
 
-#### Text
+### Text
 ```
 // Question
 {
@@ -165,7 +170,7 @@ or
 ```
 
 
-#### Multiple Choice
+### Multiple Choice
 ```
 // Question
 {
