@@ -1,4 +1,4 @@
-"""View functions for submitting a survey."""
+"""Functions for interacting with surveys."""
 from db import engine
 from db.question import question_insert
 from db.survey import survey_insert

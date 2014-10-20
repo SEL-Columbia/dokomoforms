@@ -7,15 +7,16 @@ requests back from the client app.
 
 """
 
+import json
+
 import tornado.web
 import tornado.ioloop
-import json
+
 from db.survey import survey_json
-
 import settings
-
 from utils.logger import setup_custom_logger
-from views.submission import submit
+from api.submission import submit
+
 
 logger = setup_custom_logger('dokomo')
 

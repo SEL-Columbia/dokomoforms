@@ -1,17 +1,16 @@
 """
-Tests for the dokomo database
+Tests for the dokomo JSON api
 
 """
 import unittest
-import json
+
 from sqlalchemy import and_
+
+from api.survey import create
+from api.submission import submit
 from db.question import question_table
-
-from views.submission import submit
-
 from db.submission import submission_table
 from db.survey import survey_table
-from views.survey import create
 
 
 class TestSubmission(unittest.TestCase):
