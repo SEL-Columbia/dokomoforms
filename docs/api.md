@@ -19,7 +19,7 @@ On error, the server will respond with the corresponding HTTP response code.
 
 ## Surveys
 
-### List surveys
+### List Surveys
 
 `GET /surveys`
 
@@ -38,7 +38,7 @@ Response:
 ]
 ```
 
-### Get survey
+### Get Survey
 `GET /surveys/<UUID>`
 
 Response:
@@ -55,10 +55,10 @@ Response:
 ```
 
 
-### Create survey
+### Create Survey
 `POST /surveys`
 
-Request:
+Request data:
 ```
 {
     "name": "Batcave inventory",
@@ -70,10 +70,10 @@ Request:
 }
 ```
 
-### Update survey
+### Update Survey
 `POST /surveys/<UUID>`
 
-Request:
+Request data:
 ```
 {
     "id": "<UUID>",
@@ -92,20 +92,21 @@ Request:
 }
 ```
 
+### Delete Survey
 
-### Question/Answer Objects
+
+### Question & Answer Objects
 
 #### Location
-Question:
 ```
+// Question
 {
     "id": "<UUID>",
     "label": "Location",
     "type": "location"
 }
-```
-Answer:
-```
+
+// Answer
 {
     "id": "<UUID>",
     "answer": [<longitude>, <latitude>]
@@ -113,8 +114,9 @@ Answer:
 ```
 
 
-**Integer question**
+#### Integer
 ```
+// Question
 {
     "id": "<UUID>",
     "label": "Number from 5 to 10",
@@ -124,27 +126,24 @@ Answer:
     "default": 1,
     "name": "num"
 }
-```
 
-**Integer answer**
-```
+// Answer
 {
     "id": "<UUID>",
     "answer": 6
 }
 ```
 
-**Text question**
+#### Text
 ```
+// Question
 {
     "id": "<UUID>",
     "label": "Description"
     "type": "text"
 }
-```
 
-**Text answer**
-```
+// Answer
 {
     "id": "<UUID>",
     "answer": "Howdy!"
@@ -152,18 +151,17 @@ Answer:
 ```
 
 
-**Multiple choice question**
+#### Multiple Choice
 ```
+// Question
 {
     "id": "<UUID>",
     "label": "Pick one",
     "type": "choice",
     "choices": ["Banana", "Apple", "Pear"]
 }
-```
 
-**Multiple choice answer**
-```
+// Answer
 {
     "id": "<UUID>",
     "answer": "Banana"
