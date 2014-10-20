@@ -35,7 +35,3 @@ def logical_constraint_name_insert(logical_constraint_name: str) -> Insert:
     """
     lc = logical_constraint_name
     return logical_constraint_table.insert().values(logical_constraint_name=lc)
-
-
-class LogicalConstraintDoesNotExist(Exception):
-    pass

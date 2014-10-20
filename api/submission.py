@@ -4,7 +4,7 @@ from db.answer import answer_insert
 from db.submission import submission_insert
 
 
-def submit(data: str) -> str:
+def submit(data: dict) -> dict:
     """
     Create a submission with answers.
 
@@ -31,4 +31,4 @@ def submit(data: str) -> str:
             value_dict['survey_id'] = survey_id
             connection.execute(answer_insert(**value_dict))
 
-    return submission_id
+    return {'submission_id': submission_id}

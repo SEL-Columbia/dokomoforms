@@ -15,7 +15,7 @@ from db.question import get_questions, get_question, question_table, \
 from db.question_branch import get_branches
 from db.question_choice import get_choices
 from db.submission import submission_insert, submission_table, submission_json
-from db.survey import survey_table, survey_insert
+from db.survey import survey_table, survey_insert, survey_select
 
 # TODO: write tests for integrity errors
 
@@ -215,6 +215,11 @@ class TestSurvey(unittest.TestCase):
     def tearDown(self):
         survey_table.delete().where(
             survey_table.c.title == 'test insert').execute()
+
+    def testSurveySelect(self):
+        survey = survey_table.select().execute().first()
+        self.assertEqual(survey, survey_select(survey.survey_id))
+
 
     def testSurveyInsert(self):
         stmt = survey_insert(title='test insert')

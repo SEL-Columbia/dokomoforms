@@ -1,20 +1,21 @@
 """Functions for interacting with surveys."""
-import json
 
 from sqlalchemy.engine import RowProxy
 
 from db import engine
+from db.logical_constraint import logical_constraint_name_insert, \
+    logical_constraint_exists
 from db.question import question_insert, get_questions
 from db.question_branch import get_branches
 from db.question_choice import get_choices
-from db.survey import survey_insert
+from db.survey import survey_insert, survey_select, survey_table
 
 
-def create(data: str) -> str:
+def create(data: dict) -> dict:
     """
     Create a survey with questions.
 
-    :param data: a representation of the survey (from json.loads)
+    :param data: a JSON representation of the survey
     :return: the UUID of the survey in the database
     """
     survey_id = None
@@ -33,6 +34,9 @@ def create(data: str) -> str:
             # Add fields to the question_dict
             values_dict = question_dict.copy()
             values_dict['survey_id'] = survey_id
+            lcn = values_dict['logical_constraint_name']
+            if not logical_constraint_exists(lcn):
+                connection.execute(logical_constraint_name_insert(lcn))
             q_exec = connection.execute(question_insert(**values_dict))
             question_id = q_exec.inserted_primary_key[0]
             if 'choices' in question_dict:
@@ -41,7 +45,7 @@ def create(data: str) -> str:
                     # TODO: branching
                     pass
 
-    return survey_id
+    return {'survey_id': survey_id}
 
 
 def _get_choice_fields(choice: RowProxy) -> dict:
@@ -91,17 +95,39 @@ def _get_fields(question: RowProxy) -> dict:
     return result
 
 
-def get(data: str) -> str:
+def _to_json(survey: RowProxy) -> dict:
+    """
+    Return the JSON representation of the given survey
+
+    :param survey: the survey object
+    :return: a JSON dict representation
+    """
+    questions = get_questions(survey.survey_id)
+    question_fields = [_get_fields(question) for question in questions]
+    return {'survey_id': survey.survey_id,
+            'title': survey.title,
+            'questions': question_fields}
+
+
+def get_one(data: dict) -> dict:
     """
     Get a JSON representation of a survey.
 
-    :param data: JSON containing the UUID of the survey.
-    :return: The JSON string representation.
+    :param data: JSON containing the UUID of the survey
+    :return: the JSON representation.
     """
-    questions = get_questions(data['survey_id'])
-    questions_dict = {'survey_id': data['survey_id']}
+    survey = survey_select(data['survey_id'])
+    return _to_json(survey)
 
-    question_fields = [_get_fields(question) for question in questions]
 
-    questions_dict['questions'] = question_fields
-    return json.dumps(questions_dict)
+# TODO: restrict this by user
+# def get_many(data: dict) -> dict:
+def get_many() -> dict:
+    """
+    Return a JSON representation of all the surveys. In the future this will
+    be on a per-user basis.
+
+    :return: the JSON string representation
+    """
+    surveys = survey_table.select().execute()
+    return [_to_json(survey) for survey in surveys]

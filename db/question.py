@@ -7,8 +7,6 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.functions import max as sqlmax
 
 from db import engine
-from db.logical_constraint import logical_constraint_exists, \
-    LogicalConstraintDoesNotExist
 
 
 question_table = Table('question', MetaData(bind=engine), autoload=True)
@@ -103,8 +101,6 @@ def question_insert(*,
               'survey_id': survey_id,
               'sequence_number': sequence_number}
     lcn = logical_constraint_name
-    if lcn is not None and not logical_constraint_exists(lcn):
-        raise LogicalConstraintDoesNotExist(lcn)
     # These values will only be inserted if they were supplied (since they
     # have default values in the db)
     values = _add_optional_values(values, hint=hint, required=required,

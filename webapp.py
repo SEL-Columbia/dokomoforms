@@ -13,9 +13,9 @@ import tornado.web
 import tornado.ioloop
 
 import api.survey
+import api.submission
 import settings
 from utils.logger import setup_custom_logger
-from api.submission import submit
 
 
 logger = setup_custom_logger('dokomo')
@@ -23,13 +23,13 @@ logger = setup_custom_logger('dokomo')
 
 class Index(tornado.web.RequestHandler):
     def get(self):
-        survey = api.survey.get({'survey_id': settings.SURVEY_ID})
+        survey = api.survey.get_one({'survey_id': settings.SURVEY_ID})
         self.render('index.html', survey=survey)
 
     def post(self):
         data = json.loads(self.get_argument('data'))
 
-        self.write(submit(data))
+        self.write(api.submission.submit(data))
 
 
 config = {
