@@ -94,7 +94,9 @@ Request data:
 
 ### Delete Survey
 `DELETE /surveys/<UUID>`
-or 
+
+or
+
 `POST /surveys/<UUID>` with argument `_method=DELETE`
 
 
