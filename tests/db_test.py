@@ -4,8 +4,8 @@ Tests for the dokomo database
 """
 import json
 import unittest
-from db import update_record, delete_record
 
+from db import update_record, delete_record
 from db.answer import answer_insert, answer_table, get_answers, get_geo_json
 from db.answer_choice import answer_choice_insert, get_answer_choices
 from db.logical_constraint import logical_constraint_table, \
@@ -15,7 +15,7 @@ from db.question import get_questions, get_question, question_table, \
 from db.question_branch import get_branches
 from db.question_choice import get_choices
 from db.submission import submission_insert, submission_table, submission_json
-from db.survey import survey_table, survey_json, survey_insert
+from db.survey import survey_table, survey_insert
 
 # TODO: write tests for integrity errors
 
@@ -222,13 +222,6 @@ class TestSurvey(unittest.TestCase):
         condition = survey_table.c.title == 'test insert'
         get_stmt = survey_table.select().where(condition).execute().first()
         self.assertEqual(get_stmt.survey_id, survey_id)
-
-    def testSurveyJson(self):
-        survey_id = survey_table.select().execute().first().survey_id
-        data = survey_json(survey_id)
-        json_data = json.loads(data)
-        self.assertIsNotNone(json_data['survey_id'])
-        self.assertIsNotNone(json_data['questions'])
 
 
 class TestUtils(unittest.TestCase):

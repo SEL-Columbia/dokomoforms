@@ -12,7 +12,7 @@ import json
 import tornado.web
 import tornado.ioloop
 
-from db.survey import survey_json
+import api.survey
 import settings
 from utils.logger import setup_custom_logger
 from api.submission import submit
@@ -23,7 +23,7 @@ logger = setup_custom_logger('dokomo')
 
 class Index(tornado.web.RequestHandler):
     def get(self):
-        survey = survey_json(settings.SURVEY_ID)
+        survey = api.survey.get({'survey_id': settings.SURVEY_ID})
         self.render('index.html', survey=survey)
 
     def post(self):
@@ -49,13 +49,14 @@ def startserver():
     other things, fubars the tests"""
 
     app = tornado.web.Application([
-        (r'/', Index)
-    ], **config)
+                                      (r'/', Index)
+                                  ], **config)
     app.listen(settings.WEBAPP_PORT, '0.0.0.0')
 
-    logger.info('starting server on port '+str(settings.WEBAPP_PORT))
+    logger.info('starting server on port ' + str(settings.WEBAPP_PORT))
 
     tornado.ioloop.IOLoop.current().start()
+
 
 if __name__ == '__main__':
     startserver()

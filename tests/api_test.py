@@ -2,12 +2,13 @@
 Tests for the dokomo JSON api
 
 """
+import json
 import unittest
 
 from sqlalchemy import and_
 
-from api.survey import create
-from api.submission import submit
+import api.survey
+import api.submission
 from db.question import question_table
 from db.submission import submission_table
 from db.survey import survey_table
@@ -25,7 +26,7 @@ class TestSubmission(unittest.TestCase):
             and_cond).execute().first().question_id
         data = {'survey_id': survey_id,
                 'answers': [{'question_id': question_id, 'answer': 1}]}
-        submission_id = submit(data)
+        submission_id = api.submission.submit(data)
         condition = submission_table.c.submission_id == submission_id
         self.assertEqual(
             submission_table.select().where(condition).execute().rowcount, 1)
@@ -35,6 +36,13 @@ class TestSurvey(unittest.TestCase):
     def tearDown(self):
         survey_table.delete().where(
             survey_table.c.title == 'view title').execute()
+
+    def testGet(self):
+        survey_id = survey_table.select().execute().first().survey_id
+        data = api.survey.get({'survey_id': survey_id})
+        json_data = json.loads(data)
+        self.assertIsNotNone(json_data['survey_id'])
+        self.assertIsNotNone(json_data['questions'])
 
     def testCreate(self):
         questions = [{'title': 'view question',
@@ -46,7 +54,7 @@ class TestSurvey(unittest.TestCase):
                       'logical_constraint_name': None}]
         data = {'title': 'view title',
                 'questions': questions}
-        survey_id = create(data)
+        survey_id = api.survey.create(data)
         condition = survey_table.c.survey_id == survey_id
         self.assertEqual(
             survey_table.select().where(condition).execute().rowcount, 1)
