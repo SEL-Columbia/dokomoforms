@@ -14,16 +14,14 @@ POST requests should include the **data** argument with the value as a JSON obje
 
 The server will always return a JSON object as a response.
 
-On error, the server will respond with the correct HTTP response code.
+On error, the server will respond with the corresponding HTTP response code.
 
 
 ## Surveys
 
 ### List surveys
 
-Method: `GET`
-
-URL: `/surveys`
+`GET /surveys`
 
 Response:
 ```
@@ -41,9 +39,7 @@ Response:
 ```
 
 ### Get survey
-Method: `GET`
-
-URL: `/surveys/<UUID>`
+`GET /surveys/<UUID>`
 
 Response:
 ```
@@ -60,9 +56,7 @@ Response:
 
 
 ### Create survey
-Method: `POST`
-
-URL: `/surveys`
+`POST /surveys`
 
 Request:
 ```
@@ -77,9 +71,7 @@ Request:
 ```
 
 ### Update survey
-Method: `POST`
-
-URL: `/surveys/<UUID>`
+`POST /surveys/<UUID>`
 
 Request:
 ```
@@ -103,7 +95,8 @@ Request:
 
 ### Question/Answer Objects
 
-**Location question**
+#### Location
+Question:
 ```
 {
     "id": "<UUID>",
@@ -111,8 +104,7 @@ Request:
     "type": "location"
 }
 ```
-
-**Location answer**
+Answer:
 ```
 {
     "id": "<UUID>",
