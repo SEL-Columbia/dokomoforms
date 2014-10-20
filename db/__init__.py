@@ -41,6 +41,14 @@ def update_record(table: Table,
 
     Make sure you use a transaction!
 
+    >>> update_record(survey_table, 'survey_id', survey_id, title='new_title')
+    <sqlalchemy.sql.dml.Update object at 0x...>
+
+    >>> update_record(survey_table, 'survey_id', survey_id,
+    {'title':'new_title'})
+    <sqlalchemy.sql.dml.Update object at 0x...>
+
+
     :param table: The SQLAlchemy table
     :param uuid_column_name: The UUID primary key column name
     :param uuid_value: The UUID specifying the record
@@ -71,6 +79,9 @@ def delete_record(table: Table,
     """
     Delete a record in the specified table identified by the given primary
     key name and value.
+
+    >>> delete_record(survey_table, 'survey_id', survey_id)
+    <sqlalchemy.sql.dml.Delete object at 0x...>
 
     Make sure you use a transaction!
 
