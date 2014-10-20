@@ -49,8 +49,8 @@ def startserver():
     other things, fubars the tests"""
 
     app = tornado.web.Application([
-                                      (r'/', Index)
-                                  ], **config)
+        (r'/', Index)
+    ], **config)
     app.listen(settings.WEBAPP_PORT, '0.0.0.0')
 
     logger.info('starting server on port ' + str(settings.WEBAPP_PORT))
