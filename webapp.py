@@ -23,7 +23,7 @@ logger = setup_custom_logger('dokomo')
 
 class Index(tornado.web.RequestHandler):
     def get(self):
-        survey = api.survey.get_one({'survey_id': settings.SURVEY_ID})
+        survey = api.survey.get_one(settings.SURVEY_ID)
         self.render('index.html', survey=survey)
 
     def post(self):

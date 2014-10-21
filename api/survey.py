@@ -109,14 +109,14 @@ def _to_json(survey: RowProxy) -> dict:
             'questions': question_fields}
 
 
-def get_one(data: dict) -> dict:
+def get_one(survey_id: str) -> dict:
     """
     Get a JSON representation of a survey.
 
     :param data: JSON containing the UUID of the survey
     :return: the JSON representation.
     """
-    survey = survey_select(data['survey_id'])
+    survey = survey_select(survey_id)
     return _to_json(survey)
 
 
@@ -176,6 +176,8 @@ def update(data: dict):
                         # TODO: branching
                         pass
 
+    return get_one(survey_id)
+
 
 def delete(survey_id: str):
     """
@@ -185,3 +187,4 @@ def delete(survey_id: str):
     """
     with engine.connect() as connection:
         connection.execute(delete_record(survey_table, 'survey_id', survey_id))
+    return {'message': 'Survey deleted'}

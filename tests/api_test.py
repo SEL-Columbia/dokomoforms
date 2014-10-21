@@ -76,7 +76,7 @@ class TestSurvey(unittest.TestCase):
 
     def testGetOne(self):
         survey_id = survey_table.select().execute().first().survey_id
-        data = api.survey.get_one({'survey_id': survey_id})
+        data = api.survey.get_one(survey_id)
         self.assertIsNotNone(data['survey_id'])
         self.assertIsNotNone(data['questions'])
 

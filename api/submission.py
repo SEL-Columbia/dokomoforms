@@ -39,7 +39,7 @@ def submit(data: dict) -> dict:
             value_dict['survey_id'] = survey_id
             connection.execute(answer_insert(**value_dict))
 
-    return {'submission_id': submission_id}
+    return get(submission_id)
 
 
 def _get_comparable(answers: ResultProxy) -> Iterator:
@@ -52,6 +52,23 @@ def _get_comparable(answers: ResultProxy) -> Iterator:
     :return: A generator of (sequence number, RowProxy) pairs
     """
     return ((answer.sequence_number, answer) for answer in answers)
+
+
+def _jsonify(answer: RowProxy, type_constraint_name: str) -> object:
+    """
+    This function returns a "nice" representation of an answer which can be
+    serialized as JSON.
+
+    :param answer: a record from the answer table
+    :param type_constraint_name: the type constraint name
+    :return: the nice representation
+    """
+    if type_constraint_name == 'location':
+        return get_geo_json(answer)
+    elif type_constraint_name in {'date', 'time'}:
+        return answer['answer_' + type_constraint_name].isoformat()
+    else:
+        return answer['answer_' + type_constraint_name]
 
 
 def _get_fields(answer: RowProxy) -> dict:
@@ -71,9 +88,7 @@ def _get_fields(answer: RowProxy) -> dict:
         type_constraint_name = answer.type_constraint_name
         if type_constraint_name == 'multiple_choice_with_other':
             type_constraint_name = 'text'
-        loc = type_constraint_name == 'location'
-        ans_type = 'answer_' + type_constraint_name
-        answer_field = get_geo_json(answer) if loc else answer[ans_type]
+        answer_field = _jsonify(answer, type_constraint_name)
     # TODO: determine which fields to return
     return {'answer_id': answer.answer_id, 'answer': answer_field}
 
@@ -93,7 +108,7 @@ def get(submission_id: str) -> dict:
     result = merge(answers, choices)
     answers_dict = {'submission_id': submission_id,
                     'submitter': submission.submitter,
-                    'submission_time': submission.submission_time,
+                    'submission_time': submission.submission_time.isoformat(),
                     'answers': [_get_fields(answer) for num, answer in result]}
     return answers_dict
 
