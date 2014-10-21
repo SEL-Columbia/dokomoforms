@@ -14,7 +14,8 @@ from db.question import get_questions, get_question, question_table, \
     get_free_sequence_number, question_insert
 from db.question_branch import get_branches
 from db.question_choice import get_choices
-from db.submission import submission_insert, submission_table, submission_json
+from db.submission import submission_table, submission_insert, \
+    submission_select, get_submissions
 from db.survey import survey_table, survey_insert, survey_select
 
 # TODO: write tests for integrity errors
@@ -184,6 +185,23 @@ class TestSubmission(unittest.TestCase):
     def tearDown(self):
         submission_table.delete().execute()
 
+    def testSubmissionSelect(self):
+        survey_id = survey_table.select().execute().first().survey_id
+        submission_exec = submission_insert(submitter='test_submitter',
+                                            survey_id=survey_id).execute()
+        submission_id = submission_exec.inserted_primary_key[0]
+        submission = submission_select(submission_id)
+        self.assertEqual(submission_id, submission.submission_id)
+
+    def testGetSubmissions(self):
+        survey_id = survey_table.select().execute().first().survey_id
+        for _ in range(2):
+            submission_exec = submission_insert(submitter='test_submitter',
+                                                survey_id=survey_id).execute()
+            submission_id = submission_exec.inserted_primary_key[0]
+        submissions = get_submissions(survey_id)
+        self.assertEqual(submissions.rowcount, 2)
+
     def testSubmissionInsert(self):
         survey_id = survey_table.select().execute().first().survey_id
         submission_exec = submission_insert(submitter='test_submitter',
@@ -193,22 +211,6 @@ class TestSubmission(unittest.TestCase):
             submission_table.c.submission_id == submission_id).execute()
         submission = sub_exec.first()
         self.assertEqual(submission_id, submission.submission_id)
-
-    def testSubmissionJson(self):
-        survey_id = survey_table.select().execute().first().survey_id
-        q_where = question_table.select().where(
-            question_table.c.type_constraint_name == 'integer')
-        question_id = q_where.execute().first().question_id
-        submission_exec = submission_insert(submitter='test_submitter',
-                                            survey_id=survey_id).execute()
-        submission_id = submission_exec.inserted_primary_key[0]
-        answer_insert(answer=1, question_id=question_id,
-                      submission_id=submission_id,
-                      survey_id=survey_id).execute()
-        data = submission_json(submission_id)
-        json_data = json.loads(data)
-        self.assertIsNotNone(json_data['submission_id'])
-        self.assertIsNotNone(json_data['answers'])
 
 
 class TestSurvey(unittest.TestCase):

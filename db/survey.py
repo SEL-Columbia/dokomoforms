@@ -32,6 +32,7 @@ def survey_select(survey_id: str) -> RowProxy:
 
     :param survey_id: the UUID of the survey
     :return: the corresponding record
+    :raise SurveyDoesNotExistError: if the UUID is not in the table
     """
     survey = survey_table.select().where(
         survey_table.c.survey_id == survey_id).execute().first()

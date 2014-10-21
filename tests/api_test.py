@@ -8,9 +8,10 @@ from sqlalchemy import and_
 
 import api.survey
 import api.submission
+from db.answer import answer_insert
 from db.logical_constraint import logical_constraint_table
 from db.question import question_table, get_questions
-from db.submission import submission_table
+from db.submission import submission_table, submission_insert
 from db.survey import survey_table, survey_select, SurveyDoesNotExistError
 
 
@@ -30,6 +31,38 @@ class TestSubmission(unittest.TestCase):
         condition = submission_table.c.submission_id == submission_id
         self.assertEqual(
             submission_table.select().where(condition).execute().rowcount, 1)
+
+    def testGet(self):
+        survey_id = survey_table.select().execute().first().survey_id
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'integer')
+        question_id = q_where.execute().first().question_id
+        submission_exec = submission_insert(submitter='test_submitter',
+                                            survey_id=survey_id).execute()
+        submission_id = submission_exec.inserted_primary_key[0]
+        answer_insert(answer=1, question_id=question_id,
+                      submission_id=submission_id,
+                      survey_id=survey_id).execute()
+        data = api.submission.get(submission_id)
+        self.assertIsNotNone(data['submission_id'])
+        self.assertIsNotNone(data['answers'])
+
+    def testGetForSurvey(self):
+        survey_id = survey_table.select().execute().first().survey_id
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'integer')
+        question_id = q_where.execute().first().question_id
+        for i in range(2):
+            submission_exec = submission_insert(submitter='test_submitter',
+                                                survey_id=survey_id).execute()
+            submission_id = submission_exec.inserted_primary_key[0]
+            answer_insert(answer=i, question_id=question_id,
+                          submission_id=submission_id,
+                          survey_id=survey_id).execute()
+        data = api.submission.get_for_survey(survey_id)
+        self.assertIsNotNone(data['survey_id'])
+        self.assertGreater(len(data['submissions']), 0)
+
 
 
 class TestSurvey(unittest.TestCase):
