@@ -88,11 +88,16 @@ Response:
 ```
 {
     "survey_id": "<UUID>",
-    "name": "Batcave inventory",
+    "title": "Batcave inventory",
     "questions": [{
         "question_id": "<UUID>"
-        "label": "Batmobile jet fuel reserves (L)",
-        "type": "integer"
+        "title": "Batmobile jet fuel reserves (L)",
+        "type_constraint_name": "integer",
+        "sequence_number": 1,
+        "hint": "",
+        "required": false,
+        "allow_multiple": false,
+        "logical_constraint_name": ""
     }]
 }
 ```
@@ -108,7 +113,7 @@ Request data:
     "title": "Batcave inventory v2",
     "questions": [
         {
-            "quesiton_id": "<UUID>"
+            "question_id": "<UUID>"
             "title": "Update this question (has an id)",
         },
         {
@@ -128,17 +133,27 @@ Response:
 ```
 {
     "survey_id": "<UUID>",
-    "name": "Batcave inventory v2",
+    "title": "Batcave inventory v2",
     "questions": [
         {
             "question_id": "<UUID>"
-            "label": "Update this question (has an id)",
-            "type": "integer"
+            "title": "Update this question (has an id)",
+            "type_constraint_name": "integer",
+            "sequence_number": 1,
+            "hint": "",
+            "required": false,
+            "allow_multiple": false,
+            "logical_constraint_name": ""
         },
         {
             "question_id": "<UUID>",
-            "label": "Add a new question (no id)",
-            "type": "text"
+            "title": "Add a new question (no id)",
+            "type_constraint_name": "text",
+            "sequence_number": 2,
+            "hint": "",
+            "required": false,
+            "allow_multiple": false,
+            "logical_constraint_name": ""
         }
     ]
 }
@@ -171,8 +186,12 @@ Response:
     {
         "submission_id": "<UUID>",
         "survey_id": "<UUID>",
+        "submitter": "<submitter>",
+        "submission_time": "<ISO time>",
         "answers": [{
+            "answer_id": "<UUID>",
             "question_id": "<UUID>",
+            "type_constraint_name": "integer",
             "answer": 6
         }]
     }
@@ -188,8 +207,12 @@ Response:
 {
     "submission_id": "<UUID>",
     "survey_id": "<UUID>",
+    "submitter": "<submitter>",
+    "submission_time": "<ISO time>",
     "answers": [{
+        "answer_id": "<UUID>",
         "question_id": "<UUID>",
+        "type_constraint_name": "integer",
         "answer": 6
     }]
 }
@@ -202,6 +225,7 @@ Request:
 ```
 {
     "survey_id": "<UUID>",
+    "submitter": "<submitter>",
     "answers": [{
         "question_id": "<UUID>",
         "answer": 6
@@ -214,8 +238,12 @@ Response:
 {
     "submission_id": "<UUID>",
     "survey_id": "<UUID>",
+    "submitter": "<submitter>",
+    "submission_time": "<ISO time>",
     "answers": [{
+        "answer_id": "<UUID>",
         "question_id": "<UUID>",
+        "type_constraint_name": "integer",
         "answer": 6
     }]
 }

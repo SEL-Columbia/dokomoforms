@@ -12,7 +12,8 @@ import api.submission
 from db.answer import answer_insert
 from db.logical_constraint import logical_constraint_table
 from db.question import question_table, get_questions
-from db.submission import submission_table, submission_insert
+from db.submission import submission_table, submission_insert, \
+    SubmissionDoesNotExistError, submission_select
 from db.survey import survey_table, survey_select, SurveyDoesNotExistError
 
 
@@ -61,9 +62,16 @@ class TestSubmission(unittest.TestCase):
                           submission_id=submission_id,
                           survey_id=survey_id).execute()
         data = api.submission.get_for_survey(survey_id)
-        self.assertIsNotNone(data['survey_id'])
-        self.assertGreater(len(data['submissions']), 0)
+        self.assertGreater(len(data), 0)
 
+    def testDelete(self):
+        survey_id = survey_table.select().execute().first().survey_id
+        data = {'survey_id': survey_id,
+                'answers': [{'answer': None}]}
+        submission_id = api.submission.submit(data)['submission_id']
+        api.submission.delete(submission_id)
+        self.assertRaises(SubmissionDoesNotExistError, submission_select,
+                          submission_id)
 
 
 class TestSurvey(unittest.TestCase):
@@ -136,8 +144,6 @@ class TestSurvey(unittest.TestCase):
         survey_id = api.survey.create(data)['survey_id']
         api.survey.delete(survey_id)
         self.assertRaises(SurveyDoesNotExistError, survey_select, survey_id)
-
-
 
 
 if __name__ == '__main__':

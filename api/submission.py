@@ -4,10 +4,12 @@ from collections import Iterator
 
 from sqlalchemy.engine import ResultProxy, RowProxy
 
-from db import engine
+from db import engine, delete_record
 from db.answer import answer_insert, get_answers, get_geo_json
 from db.answer_choice import get_answer_choices
-from db.submission import submission_insert, submission_select, get_submissions
+from db.submission import submission_insert, submission_select, \
+    get_submissions, \
+    submission_table
 from db.question import get_question
 
 
@@ -64,7 +66,7 @@ def _jsonify(answer: RowProxy, type_constraint_name: str) -> object:
     :return: the nice representation
     """
     if type_constraint_name == 'location':
-        return get_geo_json(answer)
+        return get_geo_json(answer)['coordinates']
     elif type_constraint_name in {'date', 'time'}:
         return answer['answer_' + type_constraint_name].isoformat()
     else:
@@ -90,7 +92,10 @@ def _get_fields(answer: RowProxy) -> dict:
             type_constraint_name = 'text'
         answer_field = _jsonify(answer, type_constraint_name)
     # TODO: determine which fields to return
-    return {'answer_id': answer.answer_id, 'answer': answer_field}
+    return {'answer_id': answer.answer_id,
+            'question_id': answer.question_id,
+            'type_constraint_name': type_constraint_name,
+            'answer': answer_field}
 
 
 # TODO: Figure out if this function should take a survey_id as a parameter
@@ -107,6 +112,7 @@ def get(submission_id: str) -> dict:
     # The merge is necessary to get the answers in sequence number order.
     result = merge(answers, choices)
     answers_dict = {'submission_id': submission_id,
+                    'survey_id': submission.survey_id,
                     'submitter': submission.submitter,
                     'submission_time': submission.submission_time.isoformat(),
                     'answers': [_get_fields(answer) for num, answer in result]}
@@ -121,5 +127,16 @@ def get_for_survey(survey_id: str) -> dict:
     :return: a JSON dict
     """
     submissions = get_submissions(survey_id)
-    return {'survey_id': survey_id,
-            'submissions': [get(sub.submission_id) for sub in submissions]}
+    return [get(sub.submission_id) for sub in submissions]
+
+
+def delete(submission_id: str):
+    """
+    Delete the submission specified by the given submission_id
+
+    :param submission_id: the UUID of the submission
+    """
+    with engine.connect() as connection:
+        connection.execute(
+            delete_record(submission_table, 'submission_id', submission_id))
+    return {'message': 'Submission deleted'}
