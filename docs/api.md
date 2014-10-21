@@ -84,6 +84,20 @@ Request data:
 }
 ```
 
+Response:
+```
+{
+    "survey_id": "<UUID>",
+    "name": "Batcave inventory",
+    "questions": [{
+        "question_id": "<UUID>"
+        "label": "Batmobile jet fuel reserves (L)",
+        "type": "integer"
+    }]
+}
+```
+
+
 ### Update Survey
 `POST /surveys/<UUID>`
 
@@ -110,6 +124,26 @@ Request data:
 }
 ```
 
+Response:
+```
+{
+    "survey_id": "<UUID>",
+    "name": "Batcave inventory v2",
+    "questions": [
+        {
+            "question_id": "<UUID>"
+            "label": "Update this question (has an id)",
+            "type": "integer"
+        },
+        {
+            "question_id": "<UUID>",
+            "label": "Add a new question (no id)",
+            "type": "text"
+        }
+    ]
+}
+```
+
 ### Delete Survey
 `DELETE /surveys/<UUID>`
 
@@ -118,18 +152,87 @@ or
 `POST /surveys/<UUID>` with argument `_method=DELETE`
 
 
+Response:
+```
+{
+    "message": "Survey deleted"
+}
+```
+
+
 ## Survey Submissions
 
 ### List submissions
 `GET /surveys/<UUID>/submissions`
 
+Response:
+```
+[
+    {
+        "submission_id": "<UUID>",
+        "survey_id": "<UUID>",
+        "answers": [{
+            "question_id": "<UUID>",
+            "answer": 6
+        }]
+    }
+]
+```
+
+
 ### Get Submission
-`GET /surveys/<UUID>/submissions/<UUID>`
+`GET /submissions/<UUID>`
 
-### Submit Submission
-`POST /surveys/<UUID>/submissions`
+Response:
+```
+{
+    "submission_id": "<UUID>",
+    "survey_id": "<UUID>",
+    "answers": [{
+        "question_id": "<UUID>",
+        "answer": 6
+    }]
+}
+```
 
+### New Submission
+`POST /submissions`
 
+Request:
+```
+{
+    "survey_id": "<UUID>",
+    "answers": [{
+        "question_id": "<UUID>",
+        "answer": 6
+    }]
+}
+```
+
+Response:
+```
+{
+    "submission_id": "<UUID>",
+    "survey_id": "<UUID>",
+    "answers": [{
+        "question_id": "<UUID>",
+        "answer": 6
+    }]
+}
+```
+
+### Delete Submission
+`DELETE /submissions/<UUID>`
+
+or
+
+`POST /submissions/<UUID>` with argument `_method=DELETE`
+
+```
+{
+    "message": "Submission deleted"
+}
+```
 
 
 ## Question & Answer Objects
@@ -151,7 +254,7 @@ or
 // Answer
 {
     "answer_id": "<UUID>",
-    "answer": {"coordinates": [<longitude>, <latitude>], "type": "Point"}
+    "answer": [<longitude>, <latitude>]
 }
 ```
 
@@ -169,15 +272,6 @@ Need to consider what exactly to do about logical constraints.
     "allow_multiple": false,
     "type_constraint_name": "integer",
     "logical_constraint_name": ""
-
-
-    "id": "<UUID>",
-    "label": "Number from 5 to 10",
-    "type": "integer",
-    "min": 5,
-    "max": 10,
-    "default": 1,
-    "name": "num"
 }
 
 // Answer
