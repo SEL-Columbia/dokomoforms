@@ -11,7 +11,7 @@ import api.submission
 from db.logical_constraint import logical_constraint_table
 from db.question import question_table, get_questions
 from db.submission import submission_table
-from db.survey import survey_table, survey_select
+from db.survey import survey_table, survey_select, SurveyDoesNotExistError
 
 
 class TestSubmission(unittest.TestCase):
@@ -96,6 +96,14 @@ class TestSurvey(unittest.TestCase):
         self.assertEqual(upd_survey.title, 'updated survey title')
         self.assertEqual(upd_questions[0].title, 'updated question title')
         self.assertEqual(upd_questions[1].title, 'second question')
+
+    def testDelete(self):
+        data = {'title': 'api_test survey'}
+        survey_id = api.survey.create(data)['survey_id']
+        api.survey.delete(survey_id)
+        self.assertRaises(SurveyDoesNotExistError, survey_select, survey_id)
+
+
 
 
 if __name__ == '__main__':

@@ -2,7 +2,7 @@
 
 from sqlalchemy.engine import RowProxy
 
-from db import engine, update_record
+from db import engine, update_record, delete_record
 from db.logical_constraint import logical_constraint_name_insert, \
     logical_constraint_exists
 from db.question import question_insert, get_questions, question_table
@@ -22,7 +22,7 @@ def create(data: dict) -> dict:
 
     # user_id = json_data['auth_user_id']
     title = data['title']
-    questions = data.get('questions', None)
+    questions = data.get('questions', [])
 
     with engine.begin() as connection:
         survey_values = {  # 'auth_user_id': user_id,
@@ -147,13 +147,13 @@ def update(data: dict):
             values = {'title': data['title']}
             s_upd = update_record(survey_table, 'survey_id', survey_id, values)
             connection.execute(s_upd)
-        for question_dict in data.get('questions', None):
+        for question_dict in data.get('questions', []):
             values_dict = question_dict.copy()
             if 'question_id' in question_dict:
                 # update existing question
                 q_id = values_dict.pop('question_id')
-                choices = values_dict.pop('choices', None)
-                branches = values_dict.pop('branches', None)
+                choices = values_dict.pop('choices', [])
+                branches = values_dict.pop('branches', [])
                 q_upd = update_record(question_table, 'question_id', q_id,
                                       values_dict)
                 connection.execute(q_upd)
@@ -177,3 +177,11 @@ def update(data: dict):
                         pass
 
 
+def delete(survey_id: str):
+    """
+    Delete the survey specified by the given survey_id
+
+    :param survey_id: the UUID of the survey
+    """
+    with engine.connect() as connection:
+        connection.execute(delete_record(survey_table, 'survey_id', survey_id))
