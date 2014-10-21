@@ -5,7 +5,7 @@ from collections import Iterator
 from sqlalchemy.engine import ResultProxy, RowProxy
 
 from db import engine
-from db.answer import answer_insert, get_answers
+from db.answer import answer_insert, get_answers, get_geo_json
 from db.answer_choice import get_answer_choices
 from db.submission import submission_insert, submission_select, get_submissions
 from db.question import get_question
@@ -71,12 +71,11 @@ def _get_fields(answer: RowProxy) -> dict:
         type_constraint_name = answer.type_constraint_name
         if type_constraint_name == 'multiple_choice_with_other':
             type_constraint_name = 'text'
-        answer_field = answer['answer_' + type_constraint_name]
+        loc = type_constraint_name == 'location'
+        ans_type = 'answer_' + type_constraint_name
+        answer_field = get_geo_json(answer) if loc else answer[ans_type]
     # TODO: determine which fields to return
-    return {'question_id': answer.question_id,
-            'title': question.title,
-            'answer': answer_field,
-            'type_constraint_name': type_constraint_name}
+    return {'answer_id': answer.answer_id, 'answer': answer_field}
 
 
 # TODO: Figure out if this function should take a survey_id as a parameter

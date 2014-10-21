@@ -2,6 +2,7 @@
 Tests for the dokomo JSON api
 
 """
+import json
 import unittest
 
 from sqlalchemy import and_
@@ -35,12 +36,12 @@ class TestSubmission(unittest.TestCase):
     def testGet(self):
         survey_id = survey_table.select().execute().first().survey_id
         q_where = question_table.select().where(
-            question_table.c.type_constraint_name == 'integer')
+            question_table.c.type_constraint_name == 'location')
         question_id = q_where.execute().first().question_id
         submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
-        answer_insert(answer=1, question_id=question_id,
+        answer_insert(answer=[90, 0], question_id=question_id,
                       submission_id=submission_id,
                       survey_id=survey_id).execute()
         data = api.submission.get(submission_id)

@@ -53,7 +53,7 @@ class TestAnswer(unittest.TestCase):
         self.assertIsNotNone(answer_id)
         condition = answer_table.c.answer_id == answer_id
         answer = answer_table.select().where(condition).execute().first()
-        location = json.loads(get_geo_json(answer))['coordinates']
+        location = get_geo_json(answer)['coordinates']
         self.assertEqual(location, [90, 0])
 
     def testGetAnswers(self):

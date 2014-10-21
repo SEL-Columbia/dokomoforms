@@ -27,12 +27,17 @@ Response:
 ```
 [
     {
-        "id": "<UUID>",
-        "name": "Batcave inventory",
+        "survey_id": "<UUID>",
+        "title": "Batcave inventory",
         "questions": [{
-            "id": "<UUID>"
-            "label": "Batmobile jet fuel reserves (L)",
-            "type": "integer"
+            "question_id": "<UUID>",
+            "title": "Batmobile jet fuel reserves (L)",
+            "hint": "",
+            "required": false,
+            "sequence_number": 1,
+            "allow_multiple": false,
+            "type_constraint_name": "integer",
+            "logical_constraint_name": ""
         }]
     }
 ]
@@ -44,12 +49,17 @@ Response:
 Response:
 ```
 {
-    "id": "<UUID>",
-    "name": "Batcave inventory",
+    "survey_id": "<UUID>",
+    "title": "Batcave inventory",
     "questions": [{
-        "id": "<UUID>"
-        "label": "Batmobile jet fuel reserves (L)",
-        "type": "integer"
+        "question_id": "<UUID>",
+        "title": "Batmobile jet fuel reserves (L)",
+        "hint": "",
+        "required": false,
+        "sequence_number": 1,
+        "allow_multiple": false,
+        "type_constraint_name": "integer",
+        "logical_constraint_name": ""
     }]
 }
 ```
@@ -61,11 +71,15 @@ Response:
 Request data:
 ```
 {
-    "name": "Batcave inventory",
+    "title": "Batcave inventory",
     "questions": [{
-        "id": "<UUID>"
-        "label": "Batmobile jet fuel reserves (L)",
-        "type": "integer"
+        "title": "Batmobile jet fuel reserves (L)",
+        "type_constraint_name": "integer",
+        "sequence_number": null,
+        "hint": null,
+        "required": null,
+        "allow_multiple": null,
+        "logical_constraint_name": null
     }]
 }
 ```
@@ -76,17 +90,21 @@ Request data:
 Request data:
 ```
 {
-    "id": "<UUID>",
-    "name": "Batcave inventory v2",
+    "survey_id": "<UUID>",
+    "title": "Batcave inventory v2",
     "questions": [
         {
-            "id": "<UUID>"
-            "label": "Update this question (has an id)",
-            "type": "integer"
+            "quesiton_id": "<UUID>"
+            "title": "Update this question (has an id)",
         },
         {
-            "label": "Add a new question (no id)",
-            "type": "text"
+            "title": "Add a new question (no id)",
+            "type_constraint_name": "text",
+            "sequence_number": null,
+            "hint": null,
+            "required": null,
+            "allow_multiple": null,
+            "logical_constraint_name": null
         }
     ]
 }
@@ -100,16 +118,16 @@ or
 `POST /surveys/<UUID>` with argument `_method=DELETE`
 
 
-## Survey Responses
+## Survey Submissions
 
-### List Responses
-`GET /surveys/<UUID>/responses`
+### List submissions
+`GET /surveys/<UUID>/submissions`
 
-### Get Response
-`GET /surveys/<UUID>/responses/<UUID>`
+### Get Submission
+`GET /surveys/<UUID>/submissions/<UUID>`
 
-### Submit Response
-`POST /surveys/<UUID>/responses`
+### Submit Submission
+`POST /surveys/<UUID>/submissions`
 
 
 
@@ -120,23 +138,39 @@ or
 ```
 // Question
 {
-    "id": "<UUID>",
-    "label": "Location",
-    "type": "location"
+    "question_id": "<UUID>",
+    "title": "Location",
+    "hint": "",
+    "required": false,
+    "sequence_number": 1,
+    "allow_multiple": false,
+    "type_constraint_name": "location",
+    "logical_constraint_name": ""
 }
 
 // Answer
 {
-    "id": "<UUID>",
-    "answer": [<longitude>, <latitude>]
+    "answer_id": "<UUID>",
+    "answer": {"coordinates": [<longitude>, <latitude>], "type": "Point"}
 }
 ```
 
 
 ### Integer
+Need to consider what exactly to do about logical constraints.
 ```
 // Question
 {
+    "question_id": "<UUID>",
+    "title": "Number from 5 to 10",
+    "hint": "",
+    "required": false,
+    "sequence_number": 1,
+    "allow_multiple": false,
+    "type_constraint_name": "integer",
+    "logical_constraint_name": ""
+
+
     "id": "<UUID>",
     "label": "Number from 5 to 10",
     "type": "integer",
@@ -148,7 +182,7 @@ or
 
 // Answer
 {
-    "id": "<UUID>",
+    "answer_id": "<UUID>",
     "answer": 6
 }
 ```
@@ -157,20 +191,26 @@ or
 ```
 // Question
 {
-    "id": "<UUID>",
-    "label": "Description"
-    "type": "text"
+    "question_id": "<UUID>",
+    "title": "Description",
+    "hint": "",
+    "required": false,
+    "sequence_number": 1,
+    "allow_multiple": false,
+    "type_constraint_name": "text",
+    "logical_constraint_name": ""
 }
 
 // Answer
 {
-    "id": "<UUID>",
+    "answer_id": "<UUID>",
     "answer": "Howdy!"
 }
 ```
 
 
 ### Multiple Choice
+Still need to figure out what to do about these in the code.
 ```
 // Question
 {
@@ -186,5 +226,4 @@ or
     "answer": "Banana"
 }
 ```
-
 
