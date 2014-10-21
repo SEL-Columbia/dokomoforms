@@ -2,10 +2,10 @@
 
 from sqlalchemy.engine import RowProxy
 
-from db import engine
+from db import engine, update_record
 from db.logical_constraint import logical_constraint_name_insert, \
     logical_constraint_exists
-from db.question import question_insert, get_questions
+from db.question import question_insert, get_questions, question_table
 from db.question_branch import get_branches
 from db.question_choice import get_choices
 from db.survey import survey_insert, survey_select, survey_table
@@ -22,7 +22,7 @@ def create(data: dict) -> dict:
 
     # user_id = json_data['auth_user_id']
     title = data['title']
-    questions = data['questions']
+    questions = data.get('questions', None)
 
     with engine.begin() as connection:
         survey_values = {  # 'auth_user_id': user_id,
@@ -35,7 +35,7 @@ def create(data: dict) -> dict:
             values_dict = question_dict.copy()
             values_dict['survey_id'] = survey_id
             lcn = values_dict['logical_constraint_name']
-            if not logical_constraint_exists(lcn):
+            if lcn is not None and not logical_constraint_exists(lcn):
                 connection.execute(logical_constraint_name_insert(lcn))
             q_exec = connection.execute(question_insert(**values_dict))
             question_id = q_exec.inserted_primary_key[0]
@@ -131,3 +131,49 @@ def get_many() -> dict:
     """
     surveys = survey_table.select().execute()
     return [_to_json(survey) for survey in surveys]
+
+
+# TODO: look into refactoring this
+def update(data: dict):
+    """
+    Update a survey (title, questions). You can also add questions here.
+
+    :param data: JSON containing the UUID of the survey and fields to update.
+    """
+    survey_id = data['survey_id']
+
+    with engine.connect() as connection:
+        if 'title' in data:
+            values = {'title': data['title']}
+            s_upd = update_record(survey_table, 'survey_id', survey_id, values)
+            connection.execute(s_upd)
+        for question_dict in data.get('questions', None):
+            values_dict = question_dict.copy()
+            if 'question_id' in question_dict:
+                # update existing question
+                q_id = values_dict.pop('question_id')
+                choices = values_dict.pop('choices', None)
+                branches = values_dict.pop('branches', None)
+                q_upd = update_record(question_table, 'question_id', q_id,
+                                      values_dict)
+                connection.execute(q_upd)
+                if choices:
+                    # TODO: choices update or insert
+                    if branches:
+                        pass
+                        # TODO: branches update or insert
+            else:
+                # create new question
+                values_dict['survey_id'] = survey_id
+                lcn = values_dict['logical_constraint_name']
+                if lcn is not None and not logical_constraint_exists(lcn):
+                    connection.execute(logical_constraint_name_insert(lcn))
+                q_exec = connection.execute(question_insert(**values_dict))
+                question_id = q_exec.inserted_primary_key[0]
+                if 'choices' in question_dict:
+                    # TODO: multiple_choice questions
+                    if 'branches' in question_dict:
+                        # TODO: branching
+                        pass
+
+
