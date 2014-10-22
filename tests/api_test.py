@@ -135,6 +135,7 @@ class TestSurvey(unittest.TestCase):
         self.assertEqual(upd_survey.title, 'updated survey title')
         self.assertEqual(upd_questions[0].title, 'updated question title')
         self.assertEqual(upd_questions[1].title, 'second question')
+        self.assertEqual(upd_questions[1].logic, {})
 
     def testDelete(self):
         data = {'title': 'api_test survey'}
