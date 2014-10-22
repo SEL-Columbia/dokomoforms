@@ -2,16 +2,12 @@ language: python
 python:
   - "3.3"
 
-# Necessary because of the JSON column type
-addons:
-  postgresql: 9.3
-
 # prerequisite 
 before_install:
   - sudo apt-get update
   - sudo apt-get install postgresql-contrib
   - sudo /etc/init.d/postgresql stop
-  - sudo /etc/init.d/postgresql start
+  - sudo /etc/init.d/postgresql start 9.3
 
 # command to install dependencies
 install:
