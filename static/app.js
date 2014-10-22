@@ -31,6 +31,16 @@ App.init = function(survey) {
     });
 };
 
+App.message = function(text) {
+    // Shows a message to user
+    // E.g. "Your survey has been submitted"
+    $('.message')
+        .clearQueue()
+        .text(text)
+        .fadeIn('fast')
+        .delay(3000)
+        .fadeOut('fast');
+};
 
 function Survey(id, questions) {
     var self = this;
@@ -114,10 +124,10 @@ Survey.prototype.submit = function() {
     
     $.post('', {data: JSON.stringify(data)})
         .success(function() {
-            console.log('Survey submitted successfully.');
+            App.message('Survey submitted!');
         })
         .fail(function() {
-            console.log('Submission failed, will try again later.');
+            App.message('Submission failed, will try again later.');
             App.unsynced.push(self);
         })
         .done(function() {
@@ -125,6 +135,7 @@ Survey.prototype.submit = function() {
                 sync.classList.remove('icon--spin');
                 save_btn.classList.remove('icon--spin');
             }, 1000);
+            App.message('Survey submitted!');
         });
 };
 
