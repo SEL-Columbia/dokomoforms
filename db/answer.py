@@ -1,5 +1,6 @@
 """Allow access to the answer table."""
 import json
+
 from sqlalchemy import Table, MetaData, text
 from sqlalchemy.engine import ResultProxy, RowProxy
 from sqlalchemy.sql.dml import Insert
@@ -27,8 +28,11 @@ def _sanitize_answer(answer, type_constraint_name: str) -> str:
     :return: The answer in a form that is insertable
     """
     if type_constraint_name == 'location':
-        db_input = "ST_GeomFromText('POINT({ans[0]} {ans[1]})', 4326)"
-        return text(db_input.format(ans=answer))
+        if answer is None:
+            return text("ST_GeomFromText('GEOMETRYCOLLECTION EMPTY', 4326)")
+        else:
+            db_input = "ST_GeomFromText('POINT({ans[0]} {ans[1]})', 4326)"
+            return text(db_input.format(ans=answer))
     return answer
 
 
