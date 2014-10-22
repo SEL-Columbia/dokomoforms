@@ -91,7 +91,7 @@ Survey.prototype.render = function(index) {
             .data('index', index)
             .html($('#template_submit').html())
             .find('.question__btn')
-                .click(function() {
+                .one('click', function() {
                     self.submit();
                 });
     }
@@ -134,8 +134,9 @@ Survey.prototype.submit = function() {
             setTimeout(function() {
                 sync.classList.remove('icon--spin');
                 save_btn.classList.remove('icon--spin');
+                App.message('Survey submitted!');
+                self.render(0);
             }, 1000);
-            App.message('Survey submitted!');
         });
 };
 
