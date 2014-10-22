@@ -21,7 +21,7 @@ class TestAnswer(unittest.TestCase):
         submission_table.delete().execute()
 
     def testInsertAnswer(self):
-        survey_id = survey_table.select().cry_about_it().first().survey_id
+        survey_id = survey_table.select().select().first().survey_id
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'integer')
         question_id = q_where.execute().first().question_id
