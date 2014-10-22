@@ -8,8 +8,6 @@ import unittest
 from db import update_record, delete_record
 from db.answer import answer_insert, answer_table, get_answers, get_geo_json
 from db.answer_choice import answer_choice_insert, get_answer_choices
-from db.logical_constraint import logical_constraint_table, \
-    logical_constraint_exists, logical_constraint_name_insert
 from db.question import get_questions, get_question, question_table, \
     get_free_sequence_number, question_insert
 from db.question_branch import get_branches
@@ -112,24 +110,6 @@ class TestAnswerChoice(unittest.TestCase):
 
 # TODO: test auth_user.py
 
-class TestLogicalConstraint(unittest.TestCase):
-    def tearDown(self):
-        column = logical_constraint_table.c.logical_constraint_name
-        condition = column == 'test'
-        logical_constraint_table.delete().where(condition).execute()
-
-    def testLogicalConstraintExists(self):
-        self.assertTrue(logical_constraint_exists(''))
-        self.assertFalse(logical_constraint_exists('does not exist'))
-
-    def testLogicalConstraintNameInsert(self):
-        logical_constraint_name_insert('test').execute()
-        column = logical_constraint_table.c.logical_constraint_name
-        condition = column == 'test'
-        exec_stmt = logical_constraint_table.select().where(condition)
-        self.assertEqual(exec_stmt.execute().rowcount, 1)
-
-
 class TestQuestion(unittest.TestCase):
     def tearDown(self):
         condition = question_table.c.title == 'test insert'
@@ -153,7 +133,7 @@ class TestQuestion(unittest.TestCase):
     def testQuestionInsert(self):
         survey_id = survey_table.select().execute().first().survey_id
         stmt = question_insert(hint=None, required=None, allow_multiple=None,
-                               logical_constraint_name=None,
+                               logic=None,
                                title='test insert',
                                type_constraint_name='text',
                                survey_id=survey_id)

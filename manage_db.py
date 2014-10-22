@@ -16,15 +16,13 @@ extensions = ['uuid.sql', 'postgis.sql']
 tables = ['auth_user.tbl.sql',
           'survey.tbl.sql',
           'type_constraint.tbl.sql',
-          'logical_constraint.tbl.sql',
           'submission.tbl.sql',
           'question.tbl.sql',
           'question_choice.tbl.sql',
           'question_branch.tbl.sql',
           'answer.tbl.sql',
           'answer_choice.tbl.sql']
-fixtures = ['type_constraint_fixture.sql',
-            'logical_constraint_fixture.sql']
+fixtures = ['type_constraint_fixture.sql']
 
 schema_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'schema')
 
