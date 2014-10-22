@@ -24,4 +24,10 @@ script:
   - /bin/bash run_tests.bash
 
 notifications:
-  irc: "irc.freenode.org#sel-columbia"
+  irc:
+    channels: "irc.freenode.org#sel-columbia"
+    template:
+      - "%{repository}@%{branch}: %{message} (%{build_url})"
+    on_success: change
+    on_failure: change
+    skip_join: true
