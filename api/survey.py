@@ -40,7 +40,7 @@ def create(data: dict) -> dict:
                     # TODO: branching
                     pass
 
-    return {'survey_id': survey_id}
+    return get_one(survey_id)
 
 
 def _get_choice_fields(choice: RowProxy) -> dict:
