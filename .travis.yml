@@ -30,4 +30,3 @@ notifications:
       - "%{repository}@%{branch}: %{message} (%{build_url})"
     on_success: change
     on_failure: change
-    skip_join: true
