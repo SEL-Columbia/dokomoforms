@@ -4,7 +4,7 @@ python:
 
 # Necessary because of the JSON column type
 addons:
-  - postgresql: 9.3
+  postgresql: 9.3
 
 # prerequisite 
 before_install:
