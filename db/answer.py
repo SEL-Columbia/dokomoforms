@@ -1,4 +1,6 @@
 """Allow access to the answer table."""
+import json
+
 from sqlalchemy import Table, MetaData, text
 from sqlalchemy.engine import ResultProxy, RowProxy
 from sqlalchemy.sql.dml import Insert
@@ -26,8 +28,11 @@ def _sanitize_answer(answer, type_constraint_name: str) -> str:
     :return: The answer in a form that is insertable
     """
     if type_constraint_name == 'location':
-        db_input = "ST_GeomFromText('POINT({ans[0]} {ans[1]})', 4326)"
-        return text(db_input.format(ans=answer))
+        if answer is None:
+            return text("ST_GeomFromText('GEOMETRYCOLLECTION EMPTY', 4326)")
+        else:
+            db_input = "ST_GeomFromText('POINT({ans[0]} {ans[1]})', 4326)"
+            return text(db_input.format(ans=answer))
     return answer
 
 
@@ -79,14 +84,15 @@ def get_answers(submission_id: str) -> ResultProxy:
     return where_stmt.order_by('sequence_number asc').execute()
 
 
-def get_geo_json(answer: RowProxy) -> str:
+def get_geo_json(answer: RowProxy) -> dict:
     """
     The default string representation of a geometry in PostGIS is some
-    garbage. This function converts the garbage into a GeoJSON string that
+    garbage. This function converts the garbage into a GeoJSON dict that
     looks like this:
     {'coordinates': [LON, LAT], 'type': 'Point'}
 
     :param answer: a RowProxy object for a record in the answer table
-    :return: a GeoJSON string representing the answer's value
+    :return: a GeoJSON dict representing the answer's value
     """
-    return engine.execute(func.ST_AsGeoJSON(answer.answer_location)).scalar()
+    result = engine.execute(func.ST_AsGeoJSON(answer.answer_location)).scalar()
+    return json.loads(result)

@@ -7,54 +7,36 @@ requests back from the client app.
 
 """
 
+import json
+
 import tornado.web
 import tornado.ioloop
-import json
-from db import engine
-from db.answer import answer_insert
-from db.submission import submission_insert
-from db.survey import survey_json
 
+import api.survey
+import api.submission
 import settings
-
 from utils.logger import setup_custom_logger
+
+
 logger = setup_custom_logger('dokomo')
 
 
 class Index(tornado.web.RequestHandler):
     def get(self):
-        survey = survey_json(settings.SURVEY_ID)
+        survey = api.survey.get_one(settings.SURVEY_ID)
         self.render('index.html', survey=survey)
 
     def post(self):
         data = json.loads(self.get_argument('data'))
 
-        submission_id = None
+        self.write(api.submission.submit(data))
 
+class CreateSurvey(tornado.web.RequestHandler):
+    def get(self):
+        self.render('viktor-create-survey.html')
 
-        survey_id = data['survey_id']
-        all_answers = data['answers']
-        # Filter out the skipped questions in the submission.
-        answers = (ans for ans in all_answers if ans['answer'] is not None)
-
-
-        with engine.begin() as connection:
-            submission_values = {'submitter': '',
-                                 'survey_id': survey_id}
-            result = connection.execute(submission_insert(**submission_values))
-            submission_id = result.inserted_primary_key[0]
-
-            for answer_dict in answers:
-                question_id = answer_dict['question_id']
-                answer = answer_dict['answer']
-                answer_values = {'answer': answer,
-                                 'question_id': question_id,
-                                 'submission_id': submission_id,
-                                 'survey_id': survey_id}
-                connection.execute(answer_insert(**answer_values))
-
-        self.write(submission_id)
-
+    def post(self):
+        self.write(api.survey.create({'title': self.get_argument('title')}))
 
 
 config = {
@@ -74,13 +56,15 @@ def startserver():
     other things, fubars the tests"""
 
     app = tornado.web.Application([
-        (r'/', Index)
+        (r'/', Index),
+        (r'/viktor-create-survey', CreateSurvey)
     ], **config)
     app.listen(settings.WEBAPP_PORT, '0.0.0.0')
 
-    logger.info('starting server on port '+str(settings.WEBAPP_PORT))
+    logger.info('starting server on port ' + str(settings.WEBAPP_PORT))
 
     tornado.ioloop.IOLoop.current().start()
+
 
 if __name__ == '__main__':
     startserver()

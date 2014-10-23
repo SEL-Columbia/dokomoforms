@@ -15,6 +15,7 @@ import unittest
 from db.answer import get_answers
 from db.question import question_table, get_questions
 from db.submission import submission_table
+import settings
 
 from webapp import Index, config
 
@@ -46,6 +47,8 @@ class TestDokomoWebapp(unittest.TestCase):
         tornado.ioloop.IOLoop.instance().stop()
 
     def testGetIndex(self):
+        survey_id = survey_table.select().execute().first().survey_id
+        settings.SURVEY_ID = survey_id
         http_client = tornado.httpclient.AsyncHTTPClient()
         http_client.fetch( 'http://localhost:%d/' % TEST_PORT, self.handle_request)
         tornado.ioloop.IOLoop.instance().start()
@@ -69,7 +72,8 @@ class TestDokomoWebapp(unittest.TestCase):
         http_client.fetch(req, self.handle_request)
         tornado.ioloop.IOLoop.instance().start()
         self.assertFalse(self.response.error)
-        result_submission_id = self.response.body.decode('utf-8')
+        result = self.response.body.decode('utf-8')
+        result_submission_id = json.loads(result)['submission_id']
         condition = submission_table.c.submission_id == result_submission_id
         self.assertEqual(
             submission_table.select().where(condition).execute().rowcount, 1)
@@ -78,4 +82,3 @@ class TestDokomoWebapp(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
