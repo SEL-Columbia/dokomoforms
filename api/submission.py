@@ -6,11 +6,27 @@ from sqlalchemy.engine import ResultProxy, RowProxy
 
 from db import engine, delete_record
 from db.answer import answer_insert, get_answers, get_geo_json
-from db.answer_choice import get_answer_choices
+from db.answer_choice import get_answer_choices, answer_choice_insert
+from db.question import question_select
+from db.question_choice import question_choice_select
 from db.submission import submission_insert, submission_select, \
-    get_submissions, \
-    submission_table
-from db.question import get_question
+    get_submissions, submission_table
+
+
+def _filter_skipped_questions(answers: list) -> Iterator:
+    """
+    Given a list of dictionaries that could look like {'answer': ...} or {
+    'question_choice_id': ...}, yield the dictionaries that contain a
+    not-None value.
+
+    :param answers: a list of JSON dictionaries containing answers
+    :return: an iterable of the dictionaries that contain answers
+    """
+    for answer in answers:
+        answer_value = answer.get('answer', None)
+        choice_value = answer.get('question_choice_id', None)
+        if (answer_value is not None) or (choice_value is not None):
+            yield answer
 
 
 def submit(data: dict) -> dict:
@@ -20,12 +36,9 @@ def submit(data: dict) -> dict:
     :param data: representation of the submission (from json.loads)
     :return: the UUID of the submission in the database
     """
-    submission_id = None
-
     survey_id = data['survey_id']
     all_answers = data['answers']
-    # Filter out the skipped questions in the submission.
-    answers = (ans for ans in all_answers if ans['answer'] is not None)
+    answers = _filter_skipped_questions(all_answers)
 
     with engine.begin() as connection:
         submission_values = {'submitter': '',
@@ -34,12 +47,19 @@ def submit(data: dict) -> dict:
         submission_id = result.inserted_primary_key[0]
 
         for answer_dict in answers:
-            # TODO: Deal with multiple choice
             # Add a few fields to the answer_dict
             value_dict = answer_dict.copy()
             value_dict['submission_id'] = submission_id
             value_dict['survey_id'] = survey_id
-            connection.execute(answer_insert(**value_dict))
+            question = question_select(value_dict['question_id'])
+            value_dict['type_constraint_name'] = question.type_constraint_name
+            value_dict['sequence_number'] = question.sequence_number
+            value_dict['allow_multiple'] = question.allow_multiple
+
+            # determine whether this is a choice selection
+            is_choice = 'question_choice_id' in value_dict
+            insert = answer_choice_insert if is_choice else answer_insert
+            connection.execute(insert(**value_dict))
 
     return get(submission_id)
 
@@ -81,21 +101,25 @@ def _get_fields(answer: RowProxy) -> dict:
     :param answer: A record in the answer or answer_choice table
     :return: A dictionary of the fields.
     """
-    question = get_question(answer.question_id)
+    result_dict = {'question_id': answer.question_id,
+                   'type_constraint_name': answer.type_constraint_name}
+    tcn = answer.type_constraint_name
     try:
         # Get the choice for a multiple choice question
-        answer_field = answer.question_choice_id
+        choice_id = answer.question_choice_id
+        result_dict['question_choice_id'] = choice_id
+        result_dict['answer_id'] = answer.answer_choice_id
+        
+        choice = question_choice_select(choice_id)
+        result_dict['choice'] = choice.choice
+        result_dict['choice_number'] = choice.choice_number
     except AttributeError:
         # The answer is not a choice
-        type_constraint_name = answer.type_constraint_name
-        if type_constraint_name == 'multiple_choice_with_other':
-            type_constraint_name = 'text'
-        answer_field = _jsonify(answer, type_constraint_name)
-    # TODO: determine which fields to return
-    return {'answer_id': answer.answer_id,
-            'question_id': answer.question_id,
-            'type_constraint_name': type_constraint_name,
-            'answer': answer_field}
+        if tcn == 'multiple_choice_with_other':
+            tcn = 'text'
+        result_dict['answer'] = _jsonify(answer, tcn)
+        result_dict['answer_id'] = answer.answer_id
+    return result_dict
 
 
 # TODO: Figure out if this function should take a survey_id as a parameter
@@ -111,12 +135,12 @@ def get(submission_id: str) -> dict:
     choices = _get_comparable(get_answer_choices(submission_id))
     # The merge is necessary to get the answers in sequence number order.
     result = merge(answers, choices)
-    answers_dict = {'submission_id': submission_id,
-                    'survey_id': submission.survey_id,
-                    'submitter': submission.submitter,
-                    'submission_time': submission.submission_time.isoformat(),
-                    'answers': [_get_fields(answer) for num, answer in result]}
-    return answers_dict
+    sub_dict = {'submission_id': submission_id,
+                'survey_id': submission.survey_id,
+                'submitter': submission.submitter,
+                'submission_time': submission.submission_time.isoformat(),
+                'answers': [_get_fields(answer) for num, answer in result]}
+    return sub_dict
 
 
 def get_for_survey(survey_id: str) -> dict:

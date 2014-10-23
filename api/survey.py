@@ -3,9 +3,11 @@
 from sqlalchemy.engine import RowProxy
 
 from db import engine, update_record, delete_record
-from db.question import question_insert, get_questions, question_table
+from db.question import question_insert, get_questions, question_table, \
+    get_free_sequence_number, question_select
 from db.question_branch import get_branches
-from db.question_choice import get_choices
+from db.question_choice import get_choices, question_choice_insert, \
+    question_choice_table
 from db.survey import survey_insert, survey_select, survey_table
 
 
@@ -28,15 +30,32 @@ def create(data: dict) -> dict:
         result = connection.execute(survey_insert(**survey_values))
         survey_id = result.inserted_primary_key[0]
 
+        cur_sequence_number = 1
         for question_dict in questions:
             # Add fields to the question_dict
             values_dict = question_dict.copy()
+            sequence_number = values_dict['sequence_number']
+            if sequence_number is None:
+                values_dict['sequence_number'] = cur_sequence_number
+                cur_sequence_number += 1
             values_dict['survey_id'] = survey_id
             q_exec = connection.execute(question_insert(**values_dict))
             question_id = q_exec.inserted_primary_key[0]
-            if 'choices' in question_dict:
-                # TODO: multiple_choice questions
-                if 'branches' in question_dict:
+            for number, choice in enumerate(values_dict.get('choices', [])):
+                tcn = values_dict['type_constraint_name']
+                seq = values_dict['sequence_number']
+                mul = values_dict['allow_multiple']
+                if mul is None:
+                    mul = False
+                choice_dict = {'question_id': question_id,
+                               'survey_id': survey_id,
+                               'choice': choice,
+                               'choice_number': number,
+                               'type_constraint_name': tcn,
+                               'question_sequence_number': seq,
+                               'allow_multiple': mul}
+                connection.execute(question_choice_insert(**choice_dict))
+                if 'branches' in values_dict:
                     # TODO: branching
                     pass
 
@@ -136,12 +155,14 @@ def update(data: dict):
     :param data: JSON containing the UUID of the survey and fields to update.
     """
     survey_id = data['survey_id']
+    cur_sequence_number = get_free_sequence_number(survey_id)
 
     with engine.connect() as connection:
         if 'title' in data:
             values = {'title': data['title']}
             s_upd = update_record(survey_table, 'survey_id', survey_id, values)
             connection.execute(s_upd)
+
         for question_dict in data.get('questions', []):
             values_dict = question_dict.copy()
             if 'question_id' in question_dict:
@@ -153,17 +174,36 @@ def update(data: dict):
                                       values_dict)
                 connection.execute(q_upd)
                 if choices:
-                    # TODO: choices update or insert
+                    # delete the existing choices and replace them with the
+                    # new ones
+                    for ch_id in list(get_choices(q_id)):
+                        tbl = question_choice_table
+                        d_ch = delete_record(tbl, 'question_choice_id', ch_id)
+                        connection.execute(d_ch)
+                    for choice, number in enumerate(choices):
+                        choice_dict = {'question_id': q_id,
+                                       'survey_id': survey_id,
+                                       'choice': choice,
+                                       'choice_number': number}
+                    connection.execute(question_choice_insert(**choice_dict))
                     if branches:
                         pass
                         # TODO: branches update or insert
             else:
                 # create new question
                 values_dict['survey_id'] = survey_id
+                if values_dict['sequence_number'] is None:
+                    values_dict['sequence_number'] = cur_sequence_number
+                    cur_sequence_number += 1
                 q_exec = connection.execute(question_insert(**values_dict))
                 question_id = q_exec.inserted_primary_key[0]
-                if 'choices' in question_dict:
-                    # TODO: multiple_choice questions
+                choices = values_dict.get('choices', [])
+                for choice, number in enumerate(choices):
+                    choice_dict = {'question_id': question_id,
+                                   'survey_id': survey_id,
+                                   'choice': choice,
+                                   'choice_number': number}
+                    connection.execute(question_choice_insert(**choice_dict))
                     if 'branches' in question_dict:
                         # TODO: branching
                         pass

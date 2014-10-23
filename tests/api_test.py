@@ -2,7 +2,6 @@
 Tests for the dokomo JSON api
 
 """
-import json
 import unittest
 
 from sqlalchemy import and_
@@ -11,6 +10,7 @@ import api.survey
 import api.submission
 from db.answer import answer_insert
 from db.question import question_table, get_questions
+from db.question_choice import question_choice_table, get_choices
 from db.submission import submission_table, submission_insert, \
     SubmissionDoesNotExistError, submission_select
 from db.survey import survey_table, survey_select, SurveyDoesNotExistError
@@ -26,24 +26,42 @@ class TestSubmission(unittest.TestCase):
                         question_table.c.type_constraint_name == 'integer')
         question_id = question_table.select().where(
             and_cond).execute().first().question_id
+        second_cond = and_(question_table.c.survey_id == survey_id,
+                           question_table.c.type_constraint_name ==
+                           'multiple_choice')
+        second_q_id = question_table.select().where(
+            second_cond).execute().first().question_id
+        choice_cond = question_choice_table.c.question_id == second_q_id
+        choice_id = question_choice_table.select().where(
+            choice_cond).execute().first().question_choice_id
         data = {'survey_id': survey_id,
-                'answers': [{'question_id': question_id, 'answer': 1}]}
+                'answers':
+                    [{'question_id': question_id, 'answer': 1},
+                     {'question_id': second_q_id,
+                      'question_choice_id': choice_id}]}
         submission_id = api.submission.submit(data)['submission_id']
         condition = submission_table.c.submission_id == submission_id
         self.assertEqual(
             submission_table.select().where(condition).execute().rowcount, 1)
+        data = api.submission.get(submission_id)
+        self.assertEqual(data['answers'][1]['question_choice_id'], choice_id)
 
     def testGet(self):
         survey_id = survey_table.select().execute().first().survey_id
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'location')
-        question_id = q_where.execute().first().question_id
+        question = q_where.execute().first()
+        question_id = question.question_id
+        tcn = question.type_constraint_name
+        seq = question.sequence_number
+        mul = question.allow_multiple
         submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
         answer_insert(answer=[90, 0], question_id=question_id,
                       submission_id=submission_id,
-                      survey_id=survey_id).execute()
+                      survey_id=survey_id, type_constraint_name=tcn,
+                      sequence_number=seq, allow_multiple=mul).execute()
         data = api.submission.get(submission_id)
         self.assertIsNotNone(data['submission_id'])
         self.assertIsNotNone(data['answers'])
@@ -52,14 +70,19 @@ class TestSubmission(unittest.TestCase):
         survey_id = survey_table.select().execute().first().survey_id
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'integer')
-        question_id = q_where.execute().first().question_id
+        question = q_where.execute().first()
+        question_id = question.question_id
+        tcn = question.type_constraint_name
+        seq = question.sequence_number
+        mul = question.allow_multiple
         for i in range(2):
             submission_exec = submission_insert(submitter='test_submitter',
                                                 survey_id=survey_id).execute()
             submission_id = submission_exec.inserted_primary_key[0]
             answer_insert(answer=i, question_id=question_id,
                           submission_id=submission_id,
-                          survey_id=survey_id).execute()
+                          survey_id=survey_id, type_constraint_name=tcn,
+                          sequence_number=seq, allow_multiple=mul).execute()
         data = api.submission.get_for_survey(survey_id)
         self.assertGreater(len(data), 0)
 
@@ -95,14 +118,26 @@ class TestSurvey(unittest.TestCase):
                       'hint': None,
                       'required': None,
                       'allow_multiple': None,
-                      'logic': {'min': 3}}]
+                      'logic': {'min': 3}},
+                     {'title': 'api_test mc question',
+                      'type_constraint_name': 'multiple_choice',
+                      'sequence_number': None,
+                      'hint': None,
+                      'required': None,
+                      'allow_multiple': None,
+                      'logic': {},
+                      'choices': ['choice 1', 'choice 2']
+                     }]
         data = {'title': 'api_test survey',
                 'questions': questions}
         survey_id = api.survey.create(data)['survey_id']
         condition = survey_table.c.survey_id == survey_id
         self.assertEqual(
             survey_table.select().where(condition).execute().rowcount, 1)
-        self.assertEqual(get_questions(survey_id).first().logic, {'min': 3})
+        questions = list(get_questions(survey_id))
+        self.assertEqual(questions[0].logic, {'min': 3})
+        self.assertEqual(get_choices(questions[1].question_id).first().choice,
+                         'choice 1')
 
     def testUpdate(self):
         questions = [{'title': 'api_test question',
