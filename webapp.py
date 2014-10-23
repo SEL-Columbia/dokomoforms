@@ -31,6 +31,13 @@ class Index(tornado.web.RequestHandler):
 
         self.write(api.submission.submit(data))
 
+class CreateSurvey(tornado.web.RequestHandler):
+    def get(self):
+        self.render('viktor-create-survey.html')
+
+    def post(self):
+        self.write(api.survey.create({'title': self.get_argument('title')}))
+
 
 config = {
     'template_path': 'static',
@@ -49,7 +56,8 @@ def startserver():
     other things, fubars the tests"""
 
     app = tornado.web.Application([
-        (r'/', Index)
+        (r'/', Index),
+        (r'/viktor-create-survey', CreateSurvey)
     ], **config)
     app.listen(settings.WEBAPP_PORT, '0.0.0.0')
 
