@@ -204,8 +204,16 @@ Response:
 ]
 ```
 
-If `type_constraint_name` is `multiple_choice` or `multiple_choice_with_other`, `answer` can be `question_choice_id` instead.
+If `type_constraint_name` is `multiple_choice` or `multiple_choice_with_other`, an entry in the `answers` list will look like this:
 
+```
+"answer_id": "<UUID>",
+"question_id": "<UUID>",
+"type_constraint_name": "multiple_choice",
+"question_choice_id: "<UUID>",
+"choice": "bananas",
+"choice_number": 1
+```
 
 ### Get Submission
 `GET /submissions/<UUID>`

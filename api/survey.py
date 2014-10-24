@@ -25,11 +25,14 @@ def create(data: dict) -> dict:
     questions = data.get('questions', [])
 
     with engine.begin() as connection:
+        # First, create an entry in the survey table
         survey_values = {  # 'auth_user_id': user_id,
                            'title': title}
         result = connection.execute(survey_insert(**survey_values))
         survey_id = result.inserted_primary_key[0]
 
+        # Now insert questions. We need to do some trickery with the
+        # sequence numbers.
         cur_sequence_number = 1
         for question_dict in questions:
             # Add fields to the question_dict
@@ -41,7 +44,11 @@ def create(data: dict) -> dict:
             values_dict['survey_id'] = survey_id
             q_exec = connection.execute(question_insert(**values_dict))
             question_id = q_exec.inserted_primary_key[0]
-            for number, choice in enumerate(values_dict.get('choices', [])):
+
+            # Having inserted the question, we need to insert the choices (
+            # if there are any)
+            enum = enumerate(values_dict.get('choices', []), start=1)
+            for number, choice in enum:
                 tcn = values_dict['type_constraint_name']
                 seq = values_dict['sequence_number']
                 mul = values_dict['allow_multiple']
@@ -180,7 +187,7 @@ def update(data: dict):
                         tbl = question_choice_table
                         d_ch = delete_record(tbl, 'question_choice_id', ch_id)
                         connection.execute(d_ch)
-                    for choice, number in enumerate(choices):
+                    for number, choice in enumerate(choices, start=1):
                         choice_dict = {'question_id': q_id,
                                        'survey_id': survey_id,
                                        'choice': choice,
@@ -198,7 +205,7 @@ def update(data: dict):
                 q_exec = connection.execute(question_insert(**values_dict))
                 question_id = q_exec.inserted_primary_key[0]
                 choices = values_dict.get('choices', [])
-                for choice, number in enumerate(choices):
+                for number, choice in enumerate(choices, start=1):
                     choice_dict = {'question_id': question_id,
                                    'survey_id': survey_id,
                                    'choice': choice,
