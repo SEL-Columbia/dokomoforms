@@ -112,22 +112,24 @@ class TestSurvey(unittest.TestCase):
         self.assertGreater(len(surveys), 0)
 
     def testCreate(self):
-        questions = [{'title': 'api_test question',
-                      'type_constraint_name': 'text',
-                      'sequence_number': None,
-                      'hint': None,
-                      'required': None,
-                      'allow_multiple': None,
-                      'logic': {'min': 3}},
-                     {'title': 'api_test mc question',
+        questions = [{'title': 'api_test mc question',
                       'type_constraint_name': 'multiple_choice',
                       'sequence_number': None,
                       'hint': None,
                       'required': None,
                       'allow_multiple': None,
                       'logic': {},
-                      'choices': ['choice 1', 'choice 2']
-                     }]
+                      'choices': ['choice 1', 'choice 2'],
+                      'branches': [{'choice_number': 0,
+                                    'to_question_number': 1}]
+                     },
+                     {'title': 'api_test question',
+                      'type_constraint_name': 'text',
+                      'sequence_number': None,
+                      'hint': None,
+                      'required': None,
+                      'allow_multiple': None,
+                      'logic': {'min': 3}}]
         data = {'title': 'api_test survey',
                 'questions': questions}
         survey_id = api.survey.create(data)['survey_id']
@@ -135,8 +137,8 @@ class TestSurvey(unittest.TestCase):
         self.assertEqual(
             survey_table.select().where(condition).execute().rowcount, 1)
         questions = list(get_questions(survey_id))
-        self.assertEqual(questions[0].logic, {'min': 3})
-        self.assertEqual(get_choices(questions[1].question_id).first().choice,
+        self.assertEqual(questions[1].logic, {'min': 3})
+        self.assertEqual(get_choices(questions[0].question_id).first().choice,
                          'choice 1')
 
     def testUpdate(self):

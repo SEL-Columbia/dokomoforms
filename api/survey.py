@@ -51,11 +51,7 @@ def create(data: dict) -> dict:
             mul = values_dict['allow_multiple']
             if mul is None:
                 mul = False
-            questions.append({'question_id': question_id,
-                              'type_constraint_name': tcn,
-                              'sequence_number': pk[2],
-                              'allow_multiple': mul})
-            choices_ids = []
+            choice_ids = []
             for number, choice in enum:
                 choice_dict = {'question_id': question_id,
                                'survey_id': survey_id,
@@ -65,14 +61,20 @@ def create(data: dict) -> dict:
                                'question_sequence_number': question_number,
                                'allow_multiple': mul}
                 ch = connection.execute(question_choice_insert(**choice_dict))
-                choices_ids.append(ch.inserted_primary_key[0])
+                choice_ids.append(ch.inserted_primary_key[0])
+            questions.append({'question_id': question_id,
+                              'type_constraint_name': tcn,
+                              'sequence_number': pk[2],
+                              'allow_multiple': mul,
+                              'choice_ids': choice_ids})
         for index, question_dict in enumerate(data_questions):
             for branch in question_dict.get('branches', []):
                 choice_index = branch['choice_number']
-                question_choice_id = choices_ids[choice_index]
-                from_question_id = questions[index]['question_id']
+                from_dict = questions[index]
+                question_choice_id = from_dict['choice_ids'][choice_index]
+                from_question_id = from_dict['question_id']
                 from_tcn = question_dict['type_constraint_name']
-                from_mul = questions[index]['allow_multiple']
+                from_mul = from_dict['allow_multiple']
                 to_question_index = branch['to_question_number']
                 to_question_id = questions[to_question_index]['question_id']
                 to_tcn = questions[to_question_index]['type_constraint_name']

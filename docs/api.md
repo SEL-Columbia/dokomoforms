@@ -43,6 +43,25 @@ Response:
 ]
 ```
 
+If `type_constraint_name` is `multiple_choice` or `multiple_choice_with_other`, there will be a `choices` field like this:
+
+```
+"choices": [{
+             "question_choice_id": "<UUID>",
+             "choice": "bananas",
+             "choice_number": "0"
+            }]
+```
+
+If `type_constraint_name` is `multiple_choice` or `multiple_choice_with_other`, there can be a `branches` field like this:
+
+```
+"branches": [{
+             "question_choice_id": "<UUID>",
+             "to_question_id": "<UUID>"
+            }]
+```
+
 ### Get Survey
 `GET /surveys/<UUID>`
 
@@ -88,6 +107,15 @@ If `type_constraint_name` is `multiple_choice` or `multiple_choice_with_other`, 
 
 ```
 "choices": ["choice 0", "choice 1", "choice 2"]
+```
+
+If you are creating a multiple choice question with branching, the question dict should also contain (everything is 0-indexed)
+
+```
+"branches": [{
+              "choice_number":"0",
+              "to_question_number":"1"
+             }]
 ```
 
 Response:
