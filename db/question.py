@@ -51,7 +51,7 @@ def _add_optional_values(values: dict, **kwargs) -> dict:
 def question_insert(*,
                     choices: list=None,
                     branches: list=None,
-                    sequence_number: int=None,
+                    sequence_number: int,
                     hint: str,
                     required: bool,
                     allow_multiple: bool,
@@ -68,9 +68,7 @@ def question_insert(*,
     :param branches: unused parameter, convenient for taking parameters from
                      the front-end
     :param hint: an optional hint for the question
-    :param sequence_number: the sequence number of the question. If None or
-                            not supplied, this defaults to the next available
-                            sequence number.
+    :param sequence_number: the sequence number of the question
     :param required: whether this is a required question. Default False.
     :param allow_multiple: whether you can give multiple responses. Default
                            False.
@@ -89,10 +87,6 @@ def question_insert(*,
     :param survey_id: the UUID of the survey
     :return: the Insert object. Execute this!
     """
-
-    # If no sequence number is supplied, pick up the next available one
-    if sequence_number is None:
-        sequence_number = get_free_sequence_number(survey_id)
     tcn = type_constraint_name
     # These values must be provided in the insert statement
     values = {'title': title,
@@ -106,16 +100,23 @@ def question_insert(*,
     return question_table.insert().values(values)
 
 
-def get_question(question_id: str) -> RowProxy:
+def question_select(question_id: str) -> RowProxy:
     """
-    Get a record from the question table identified by question_id.
+    Get a record from the question table.
 
-    :param question_id: primary key
-    :return: the record
+    :param question_id: the UUID of the question
+    :return: the corresponding record
+    :raise QuestionDoesNotExistError: if the UUID is not in the table
     """
-    select_stmt = question_table.select()
-    where_stmt = select_stmt.where(question_table.c.question_id == question_id)
-    return where_stmt.execute().first()
+    question = question_table.select().where(
+        question_table.c.question_id == question_id).execute().first()
+    if question is None:
+        raise QuestionDoesNotExistError(question_id)
+    return question
+
+
+class QuestionDoesNotExistError(Exception):
+    pass
 
 
 def get_questions(survey_id: str) -> ResultProxy:

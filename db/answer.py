@@ -7,7 +7,7 @@ from sqlalchemy.sql.dml import Insert
 from sqlalchemy.sql import func
 
 from db import engine
-from db.question import get_question
+from db.question import question_select
 
 
 answer_table = Table('answer', MetaData(bind=engine), autoload=True)
@@ -40,6 +40,9 @@ def answer_insert(*,
                   answer,
                   question_id: str,
                   submission_id: str,
+                  type_constraint_name: str,
+                  sequence_number: int,
+                  allow_multiple: bool,
                   survey_id: str) -> Insert:
     """
     Insert a record into the answer table. An answer is associated with a
@@ -54,18 +57,21 @@ def answer_insert(*,
                    location (given as [LON, LAT])
     :param question_id: The UUID of the question.
     :param submission_id: The UUID of the submission.
+    :param type_constraint_name: the type constraint
+    :param sequence_number: the sequence number
+    :param allow_multiple: whether there can be multiple answers
     :param survey_id: The UUID of the survey.
     :return: The Insert object. Execute this!
     """
-    question = get_question(question_id)
-    type_constraint_name = question.type_constraint_name
+    if type_constraint_name == 'multiple_choice_with_other':
+        type_constraint_name = 'text'
     answer_type = 'answer_' + type_constraint_name
     values = {answer_type: _sanitize_answer(answer, type_constraint_name),
               'question_id': question_id,
               'submission_id': submission_id,
               'type_constraint_name': type_constraint_name,
-              'sequence_number': question.sequence_number,
-              'allow_multiple': question.allow_multiple,
+              'sequence_number': sequence_number,
+              'allow_multiple': allow_multiple,
               'survey_id': survey_id}
     return answer_table.insert().values(values)
 

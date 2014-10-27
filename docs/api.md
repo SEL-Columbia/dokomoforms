@@ -84,6 +84,12 @@ Request data:
 }
 ```
 
+If `type_constraint_name` is `multiple_choice` or `multiple_choice_with_other`, the question dict should also contain
+
+```
+"choices": ["choice 1", "choice 2", "choice 3"]
+```
+
 Response:
 ```
 {
@@ -198,6 +204,16 @@ Response:
 ]
 ```
 
+If `type_constraint_name` is `multiple_choice` or `multiple_choice_with_other`, an entry in the `answers` list will look like this:
+
+```
+"answer_id": "<UUID>",
+"question_id": "<UUID>",
+"type_constraint_name": "multiple_choice",
+"question_choice_id: "<UUID>",
+"choice": "bananas",
+"choice_number": 1
+```
 
 ### Get Submission
 `GET /submissions/<UUID>`
@@ -232,6 +248,8 @@ Request:
     }]
 }
 ```
+
+If the question to be answered is a `multiple_choice` or `multiple_choice_with_other` question, `answer` can be `question_choice_id` instead.
 
 Response:
 ```
@@ -282,6 +300,8 @@ or
 // Answer
 {
     "answer_id": "<UUID>",
+    "question_id": "<UUID>",
+    "type_constraint_name": "location",
     "answer": [<longitude>, <latitude>]
 }
 ```
@@ -305,6 +325,8 @@ Need to consider what exactly to do about logical constraints.
 // Answer
 {
     "answer_id": "<UUID>",
+    "question_id": "<UUID>",
+    "type_constraint_name": "integer",
     "answer": 6
 }
 ```
@@ -326,26 +348,93 @@ Need to consider what exactly to do about logical constraints.
 // Answer
 {
     "answer_id": "<UUID>",
+    "question_id": "<UUID>",
+    "type_constraint_name": "text",
     "answer": "Howdy!"
 }
 ```
 
 
 ### Multiple Choice
-Still need to figure out what to do about these in the code.
 ```
 // Question
 {
-    "id": "<UUID>",
-    "label": "Pick one",
-    "type": "choice",
-    "choices": ["Banana", "Apple", "Pear"]
+    "question_id": "<UUID>",
+    "title": "Pick one",
+    "hint": "",
+    "required": false,
+    "sequence_number": 1,
+    "allow_multiple": false,    
+    "type_constraint_name": "multiple_choice",
+    "choices": [{
+                     "question_choice_id": "<UUID>",
+                     "choice": "bananas"
+                },
+                {
+                     "question_choice_id": "<UUID>",
+                     "choice": "apples"
+                },
+                {
+                     "question_choice_id": "<UUID>",
+                     "choice": "pears"
+                }]
 }
 
 // Answer
 {
-    "id": "<UUID>",
-    "answer": "Banana"
+    "answer_id": "<UUID>",
+    "question_id": "<UUID>",
+    "type_constraint_name": "multiple_choice",
+    "question_choice_id": "<UUID>",
+    "choice": "bananas",
+    "choice_number": 0
+}
+```
+
+
+### Multiple Choice with Other
+```
+// Question
+{
+    "question_id": "<UUID>",
+    "title": "Pick one or write in 'other'.",
+    "hint": "",
+    "required": false,
+    "sequence_number": 1,
+    "allow_multiple": false,    
+    "type_constraint_name": "multiple_choice_with_other",
+    "choices": [{
+                     "question_choice_id": "<UUID>",
+                     "choice": "bananas"
+                },
+                {
+                     "question_choice_id": "<UUID>",
+                     "choice": "apples"
+                },
+                {
+                     "question_choice_id": "<UUID>",
+                     "choice": "pears"
+                }]
+}
+
+// Answer
+Choice selected:
+{
+    "answer_id": "<UUID>",
+    "question_id": "<UUID>",
+    "type_constraint_name": "multiple_choice_with_other",
+    "question_choice_id": "<UUID>",
+    "choice": "bananas",
+    "choice_number": 0
+}
+
+OR
+other:
+{
+    "answer_id": "<UUID>",
+    "question_id": "<UUID>",
+    "type_constraint_name": "multiple_choice_with_other",
+    "answer": "cherries"
 }
 ```
 
