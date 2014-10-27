@@ -37,7 +37,7 @@ Response:
             "sequence_number": 1,
             "allow_multiple": false,
             "type_constraint_name": "integer",
-            "logical_constraint_name": ""
+            "logic": {}
         }]
     }
 ]
@@ -59,7 +59,7 @@ Response:
         "sequence_number": 1,
         "allow_multiple": false,
         "type_constraint_name": "integer",
-        "logical_constraint_name": ""
+        "logic": {}
     }]
 }
 ```
@@ -79,7 +79,7 @@ Request data:
         "hint": null,
         "required": null,
         "allow_multiple": null,
-        "logical_constraint_name": null
+        "logic": null
     }]
 }
 ```
@@ -97,7 +97,7 @@ Response:
         "hint": "",
         "required": false,
         "allow_multiple": false,
-        "logical_constraint_name": ""
+        "logic": "{}"
     }]
 }
 ```
@@ -123,7 +123,7 @@ Request data:
             "hint": null,
             "required": null,
             "allow_multiple": null,
-            "logical_constraint_name": null
+            "logic": null
         }
     ]
 }
@@ -143,7 +143,7 @@ Response:
             "hint": "",
             "required": false,
             "allow_multiple": false,
-            "logical_constraint_name": ""
+            "logic": {}
         },
         {
             "question_id": "<UUID>",
@@ -153,7 +153,7 @@ Response:
             "hint": "",
             "required": false,
             "allow_multiple": false,
-            "logical_constraint_name": ""
+            "logic": {}
         }
     ]
 }
@@ -276,7 +276,7 @@ or
     "sequence_number": 1,
     "allow_multiple": false,
     "type_constraint_name": "location",
-    "logical_constraint_name": ""
+    "logic": {}
 }
 
 // Answer
@@ -299,7 +299,7 @@ Need to consider what exactly to do about logical constraints.
     "sequence_number": 1,
     "allow_multiple": false,
     "type_constraint_name": "integer",
-    "logical_constraint_name": ""
+    "logic": {}
 }
 
 // Answer
@@ -320,7 +320,7 @@ Need to consider what exactly to do about logical constraints.
     "sequence_number": 1,
     "allow_multiple": false,
     "type_constraint_name": "text",
-    "logical_constraint_name": ""
+    "logic": {}
 }
 
 // Answer

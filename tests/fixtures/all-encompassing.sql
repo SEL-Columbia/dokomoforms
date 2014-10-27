@@ -15,22 +15,22 @@ VALUES ('test_title', the_auth_user_id)
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, logical_constraint_name, allow_multiple)
-VALUES (the_survey_id, 1, 'integer question', 'integer', '', False),
-       (the_survey_id, 5, 'time question', 'time', '', False),
-       (the_survey_id, 6, 'location question', 'location', '', False),
-       (the_survey_id, 7, 'text question', 'text', '', True),
-       (the_survey_id, 9, 'note', 'note', '', False);
+    type_constraint_name, allow_multiple)
+VALUES (the_survey_id, 1, 'integer question', 'integer', False),
+       (the_survey_id, 5, 'time question', 'time', False),
+       (the_survey_id, 6, 'location question', 'location', False),
+       (the_survey_id, 7, 'text question', 'text', True),
+       (the_survey_id, 9, 'note', 'note', False);
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, logical_constraint_name, allow_multiple)
-VALUES (the_survey_id, 2, 'multiple choice question', 'multiple_choice', '',
+    type_constraint_name, allow_multiple)
+VALUES (the_survey_id, 2, 'multiple choice question', 'multiple_choice', 
            False)
 RETURNING question_id into the_from_question_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, logical_constraint_name, allow_multiple)
-VALUES (the_survey_id, 3, 'decimal question', 'decimal', '', False)
+    type_constraint_name, allow_multiple)
+VALUES (the_survey_id, 3, 'decimal question', 'decimal', False)
 RETURNING question_id into the_to_question_id;
 
 INSERT INTO question_choice (choice, choice_number, question_id,
@@ -48,8 +48,8 @@ VALUES (the_question_choice_id, the_from_question_id, 'multiple_choice', 2,
     the_survey_id);
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, logical_constraint_name, allow_multiple)
-VALUES (the_survey_id, 4, 'date question', 'date', '', False)
+    type_constraint_name, allow_multiple)
+VALUES (the_survey_id, 4, 'date question', 'date', False)
 RETURNING question_id into the_to_question_id;
 
 INSERT INTO question_choice (choice, choice_number, question_id,
@@ -67,9 +67,9 @@ VALUES (the_question_choice_id, the_from_question_id, 'multiple_choice', 2,
     the_survey_id);
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, logical_constraint_name, allow_multiple)
+    type_constraint_name, allow_multiple)
 VALUES (the_survey_id, 8, 'multiple choice with other question',
-           'multiple_choice_with_other', '', False)
+           'multiple_choice_with_other', False)
 RETURNING question_id into the_from_question_id;
 
 INSERT INTO question_choice (choice, choice_number, question_id,

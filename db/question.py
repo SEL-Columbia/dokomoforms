@@ -55,7 +55,7 @@ def question_insert(*,
                     hint: str,
                     required: bool,
                     allow_multiple: bool,
-                    logical_constraint_name: str,
+                    logic: dict,
                     title: str,
                     type_constraint_name: str,
                     survey_id: str) -> Insert:
@@ -74,8 +74,7 @@ def question_insert(*,
     :param required: whether this is a required question. Default False.
     :param allow_multiple: whether you can give multiple responses. Default
                            False.
-    :param logical_constraint_name: The logical constraint (age, volume,
-                                    population, etc.)
+    :param logic: the logical constraint (min or max value, etc) as JSON
     :param title: the question title (for example, 'What is your name?')
     :param type_constraint_name: The type of the question. Can be:
                                  text
@@ -100,12 +99,10 @@ def question_insert(*,
               'type_constraint_name': tcn,
               'survey_id': survey_id,
               'sequence_number': sequence_number}
-    lcn = logical_constraint_name
     # These values will only be inserted if they were supplied (since they
     # have default values in the db)
     values = _add_optional_values(values, hint=hint, required=required,
-                                  allow_multiple=allow_multiple,
-                                  logical_constraint_name=lcn)
+                                  allow_multiple=allow_multiple, logic=logic)
     return question_table.insert().values(values)
 
 

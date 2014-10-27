@@ -3,8 +3,6 @@
 from sqlalchemy.engine import RowProxy
 
 from db import engine, update_record, delete_record
-from db.logical_constraint import logical_constraint_name_insert, \
-    logical_constraint_exists
 from db.question import question_insert, get_questions, question_table
 from db.question_branch import get_branches
 from db.question_choice import get_choices
@@ -34,9 +32,6 @@ def create(data: dict) -> dict:
             # Add fields to the question_dict
             values_dict = question_dict.copy()
             values_dict['survey_id'] = survey_id
-            lcn = values_dict['logical_constraint_name']
-            if lcn is not None and not logical_constraint_exists(lcn):
-                connection.execute(logical_constraint_name_insert(lcn))
             q_exec = connection.execute(question_insert(**values_dict))
             question_id = q_exec.inserted_primary_key[0]
             if 'choices' in question_dict:
@@ -85,7 +80,7 @@ def _get_fields(question: RowProxy) -> dict:
               'sequence_number': question.sequence_number,
               'allow_multiple': question.allow_multiple,
               'type_constraint_name': question.type_constraint_name,
-              'logical_constraint_name': question.logical_constraint_name}
+              'logic': question.logic}
     if question.type_constraint_name.startswith('multiple_choice'):
         choices = get_choices(question.question_id)
         result['choices'] = [_get_choice_fields(choice) for choice in choices]
@@ -165,9 +160,6 @@ def update(data: dict):
             else:
                 # create new question
                 values_dict['survey_id'] = survey_id
-                lcn = values_dict['logical_constraint_name']
-                if lcn is not None and not logical_constraint_exists(lcn):
-                    connection.execute(logical_constraint_name_insert(lcn))
                 q_exec = connection.execute(question_insert(**values_dict))
                 question_id = q_exec.inserted_primary_key[0]
                 if 'choices' in question_dict:

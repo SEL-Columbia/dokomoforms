@@ -22,11 +22,7 @@ CREATE TABLE question
   type_constraint_name  text REFERENCES type_constraint (type_constraint_name) 
                                                         ON UPDATE CASCADE
                                                         ON DELETE CASCADE,
-  logical_constraint_name text NOT NULL REFERENCES logical_constraint
-                                       (logical_constraint_name)
-                                                        ON UPDATE CASCADE
-                                                        ON DELETE CASCADE
-                               DEFAULT '',
+  logic                 json      NOT NULL DEFAULT '{}',
   survey_id             uuid REFERENCES survey          ON UPDATE CASCADE
                                                         ON DELETE CASCADE,
 

@@ -94,11 +94,16 @@ body {
 }
 
 .message {
+    display: none;
     position: absolute;
     left: 20%;
-    width: 80%;
-    padding: 15px;
-    background: rgba(0,0,0,0.5);
+    width: 60%;
+    padding: 12px;
+    background: rgb(164, 231, 193);
+    box-sizing: border-box;
+    border-radius: 7px;
+    text-align: center;
+    font-size: 18px;
 }
 
 .content {

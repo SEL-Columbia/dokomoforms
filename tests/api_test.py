@@ -10,7 +10,6 @@ from sqlalchemy import and_
 import api.survey
 import api.submission
 from db.answer import answer_insert
-from db.logical_constraint import logical_constraint_table
 from db.question import question_table, get_questions
 from db.submission import submission_table, submission_insert, \
     SubmissionDoesNotExistError, submission_select
@@ -78,9 +77,6 @@ class TestSurvey(unittest.TestCase):
     def tearDown(self):
         survey_table.delete().where(
             survey_table.c.title != 'test_title').execute()
-        column = logical_constraint_table.c.logical_constraint_name
-        logical_constraint_table.delete().where(
-            column == 'does not exist').execute()
 
     def testGetOne(self):
         survey_id = survey_table.select().execute().first().survey_id
@@ -99,13 +95,14 @@ class TestSurvey(unittest.TestCase):
                       'hint': None,
                       'required': None,
                       'allow_multiple': None,
-                      'logical_constraint_name': 'does not exist'}]
+                      'logic': {'min': 3}}]
         data = {'title': 'api_test survey',
                 'questions': questions}
         survey_id = api.survey.create(data)['survey_id']
         condition = survey_table.c.survey_id == survey_id
         self.assertEqual(
             survey_table.select().where(condition).execute().rowcount, 1)
+        self.assertEqual(get_questions(survey_id).first().logic, {'min': 3})
 
     def testUpdate(self):
         questions = [{'title': 'api_test question',
@@ -114,7 +111,7 @@ class TestSurvey(unittest.TestCase):
                       'hint': None,
                       'required': None,
                       'allow_multiple': None,
-                      'logical_constraint_name': 'does not exist'}]
+                      'logic': None}]
         data = {'title': 'api_test survey',
                 'questions': questions}
         survey_id = api.survey.create(data)['survey_id']
@@ -130,7 +127,7 @@ class TestSurvey(unittest.TestCase):
                       'hint': None,
                       'required': None,
                       'allow_multiple': None,
-                      'logical_constraint_name': None}]
+                      'logic': None}]
         update_json['questions'] = questions
         api.survey.update(update_json)
         upd_survey = survey_select(survey_id)
@@ -138,6 +135,7 @@ class TestSurvey(unittest.TestCase):
         self.assertEqual(upd_survey.title, 'updated survey title')
         self.assertEqual(upd_questions[0].title, 'updated question title')
         self.assertEqual(upd_questions[1].title, 'second question')
+        self.assertEqual(upd_questions[1].logic, {})
 
     def testDelete(self):
         data = {'title': 'api_test survey'}
