@@ -197,17 +197,23 @@ def update(data: dict):
             s_upd = update_record(survey_table, 'survey_id', survey_id, values)
             connection.execute(s_upd)
 
+        question_ids = []
         for question_dict in data.get('questions', []):
             values_dict = question_dict.copy()
             if 'question_id' in values_dict:
                 # update existing question
                 q_id = values_dict.pop('question_id')
+                question_ids.append(q_id)
                 choices = values_dict.pop('choices', [])
                 values_dict.pop('branches', [])
-                q_upd = update_record(question_table, 'question_id', q_id,
-                                      values_dict)
-                connection.execute(q_upd)
+                # values_dict may now be empty if the only changes are to
+                # choices/branches
+                if values_dict:
+                    q_upd = update_record(question_table, 'question_id', q_id,
+                                          values_dict)
+                    connection.execute(q_upd)
                 if choices:
+                    question = question_select(q_id)
                     # delete the existing choices and replace them with the
                     # new ones
                     for choice in get_choices(q_id).fetchall():
@@ -216,11 +222,17 @@ def update(data: dict):
                         d_ch = delete_record(tbl, 'question_choice_id', ch_id)
                         connection.execute(d_ch)
                     for number, choice in enumerate(choices):
-                        choice_dict = {'question_id': q_id,
+                        tcn = question.type_constraint_name
+                        seq = question.sequence_number
+                        mul = question.allow_multiple
+                        ch_dict = {'question_id': q_id,
                                        'survey_id': survey_id,
                                        'choice': choice,
-                                       'choice_number': number}
-                    connection.execute(question_choice_insert(**choice_dict))
+                                       'choice_number': number,
+                                       'type_constraint_name': tcn,
+                                       'question_sequence_number': seq,
+                                       'allow_multiple': mul}
+                        connection.execute(question_choice_insert(**ch_dict))
             else:
                 # create new question
                 values_dict['survey_id'] = survey_id
@@ -229,15 +241,25 @@ def update(data: dict):
                     cur_sequence_number += 1
                 q_exec = connection.execute(question_insert(**values_dict))
                 question_id = q_exec.inserted_primary_key[0]
+                question_ids.append(question_id)
                 choices = values_dict.get('choices', [])
                 for number, choice in enumerate(choices):
+                    tcn = q_exec.inserted_primary_key[1]
+                    seq = q_exec.inserted_primary_key[2]
+                    mul = q_exec.inserted_primary_key[3]
                     choice_dict = {'question_id': question_id,
                                    'survey_id': survey_id,
                                    'choice': choice,
-                                   'choice_number': number}
+                                   'choice_number': number,
+                                   'type_constraint_name': tcn,
+                                   'question_sequence_number': seq,
+                                   'allow_multiple': mul}
                     connection.execute(question_choice_insert(**choice_dict))
         # deal with branches
-        for question_dict in data.get('questions', []):
+        for index, question_dict in enumerate(data.get('questions', [])):
+            from_question_id = question_ids[index]
+            from_question = question_select(from_question_id)
+            from_seq = from_question.sequence_number
             if 'branches' in question_dict:
                 # delete the existing branches
                 for old_branch in get_branches(from_question_id).fetchall():
@@ -245,9 +267,6 @@ def update(data: dict):
                     tbl = question_branch_table
                     d_br = delete_record(tbl, 'question_branch_id', b_id)
                     connection.execute(d_br)
-                from_question_id = question_dict['question_id']
-                from_question = question_select(from_question_id)
-                from_seq = from_question.sequence_number
             # insert the new branches
             for branch in question_dict.get('branches', []):
                 all_choices = get_choices(from_question_id).fetchall()
