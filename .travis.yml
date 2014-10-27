@@ -21,7 +21,7 @@ before_script:
 
 # command to run tests
 script: 
-  - /bin/bash run_tests.bash
+  - nosetests --with-coverage --cover-inclusive --cover-branches --cover-package=api,db,webapp
 
 notifications:
   irc:
