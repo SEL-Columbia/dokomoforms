@@ -4,7 +4,6 @@ from sqlalchemy.engine import ResultProxy
 from sqlalchemy.sql.dml import Insert
 
 from db import engine
-from db.question import question_select
 
 
 answer_choice_table = Table('answer_choice', MetaData(bind=engine),

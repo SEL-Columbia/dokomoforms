@@ -203,7 +203,7 @@ def update(data: dict):
                 # update existing question
                 q_id = values_dict.pop('question_id')
                 choices = values_dict.pop('choices', [])
-                branches = values_dict.pop('branches', [])
+                values_dict.pop('branches', [])
                 q_upd = update_record(question_table, 'question_id', q_id,
                                       values_dict)
                 connection.execute(q_upd)

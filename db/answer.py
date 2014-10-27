@@ -7,7 +7,6 @@ from sqlalchemy.sql.dml import Insert
 from sqlalchemy.sql import func
 
 from db import engine
-from db.question import question_select
 
 
 answer_table = Table('answer', MetaData(bind=engine), autoload=True)

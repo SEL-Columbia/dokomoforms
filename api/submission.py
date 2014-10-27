@@ -3,6 +3,7 @@ from heapq import merge
 from collections import Iterator
 
 from sqlalchemy.engine import ResultProxy, RowProxy
+from sqlalchemy.sql import Insert
 
 from db import engine, delete_record
 from db.answer import answer_insert, get_answers, get_geo_json
@@ -29,6 +30,30 @@ def _filter_skipped_questions(answers: list) -> Iterator:
             yield answer
 
 
+def _insert_answer(answer: dict, submission_id: str, survey_id: str) -> Insert:
+    """
+    Insert an answer from a submission into either the answer or
+    answer_choice table. Don't forget to use a transaction!
+
+    :param answer: a dictionary of the answer values
+    :param submission_id: the UUID of the submission
+    :param survey_id: the UUID of the survey
+    :return: the Insert object. Execute this!
+    """
+    # Add a few fields to the answer dict
+    value_dict = answer.copy()
+    value_dict['submission_id'] = submission_id
+    value_dict['survey_id'] = survey_id
+    question = question_select(value_dict['question_id'])
+    value_dict['type_constraint_name'] = question.type_constraint_name
+    value_dict['sequence_number'] = question.sequence_number
+    value_dict['allow_multiple'] = question.allow_multiple
+    # determine whether this is a choice selection
+    is_choice = 'question_choice_id' in value_dict
+    insert = answer_choice_insert if is_choice else answer_insert
+    return insert(**value_dict)
+
+
 def submit(data: dict) -> dict:
     """
     Create a submission with answers.
@@ -46,20 +71,8 @@ def submit(data: dict) -> dict:
         result = connection.execute(submission_insert(**submission_values))
         submission_id = result.inserted_primary_key[0]
 
-        for answer_dict in answers:
-            # Add a few fields to the answer_dict
-            value_dict = answer_dict.copy()
-            value_dict['submission_id'] = submission_id
-            value_dict['survey_id'] = survey_id
-            question = question_select(value_dict['question_id' ])
-            value_dict['type_constraint_name'] = question.type_constraint_name
-            value_dict['sequence_number'] = question.sequence_number
-            value_dict['allow_multiple'] = question.allow_multiple
-
-            # determine whether this is a choice selection
-            is_choice = 'question_choice_id' in value_dict
-            insert = answer_choice_insert if is_choice else answer_insert
-            connection.execute(insert(**value_dict))
+        for ans in answers:
+            connection.execute(_insert_answer(ans, submission_id, survey_id))
 
     return get(submission_id)
 
@@ -109,7 +122,7 @@ def _get_fields(answer: RowProxy) -> dict:
         choice_id = answer.question_choice_id
         result_dict['question_choice_id'] = choice_id
         result_dict['answer_id'] = answer.answer_choice_id
-        
+
         choice = question_choice_select(choice_id)
         result_dict['choice'] = choice.choice
         result_dict['choice_number'] = choice.choice_number
