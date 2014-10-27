@@ -4,3 +4,4 @@
 *.pyc
 local_settings.py
 .idea/
+.coverage
