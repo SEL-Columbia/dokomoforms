@@ -63,6 +63,26 @@ class TestSubmission(unittest.TestCase):
         self.assertEqual(data['answers'][2]['question_id'], third_q_id)
         self.assertEqual(data['answers'][3]['question_id'], third_q_id)
 
+    def testDateAndTime(self):
+        survey_id = survey_table.select().execute().first().survey_id
+        date_cond = and_(question_table.c.survey_id == survey_id,
+                         question_table.c.type_constraint_name == 'date')
+        date_question_id = question_table.select().where(
+            date_cond).execute().first().question_id
+        time_cond = and_(question_table.c.survey_id == survey_id,
+                         question_table.c.type_constraint_name == 'time')
+        time_question_id = question_table.select().where(
+            time_cond).execute().first().question_id
+        input_data = {'survey_id': survey_id,
+                      'answers':
+                          [{'question_id': date_question_id,
+                            'answer': '2014-10-27'},
+                           {'question_id': time_question_id,
+                            'answer': '11:26-04:00'}]}  # UTC-04:00
+        response = api.submission.submit(input_data)
+        self.assertEqual(response['answers'][0]['answer'], '2014-10-27')
+        self.assertEqual(response['answers'][1]['answer'], '11:26:00-04:00')
+
     def testOnlyAllowMultiple(self):
         survey_id = survey_table.select().execute().first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
