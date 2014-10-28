@@ -34,13 +34,32 @@ Response:
             "title": "Batmobile jet fuel reserves (L)",
             "hint": "",
             "required": false,
-            "sequence_number": 1,
+            "sequence_number": 0,
             "allow_multiple": false,
             "type_constraint_name": "integer",
             "logic": {}
         }]
     }
 ]
+```
+
+If `type_constraint_name` is `multiple_choice` or `multiple_choice_with_other`, there will be a `choices` field like this:
+
+```
+"choices": [{
+             "question_choice_id": "<UUID>",
+             "choice": "bananas",
+             "choice_number": "0"
+            }]
+```
+
+If `type_constraint_name` is `multiple_choice` or `multiple_choice_with_other`, there can be a `branches` field like this:
+
+```
+"branches": [{
+             "question_choice_id": "<UUID>",
+             "to_question_id": "<UUID>"
+            }]
 ```
 
 ### Get Survey
@@ -56,7 +75,7 @@ Response:
         "title": "Batmobile jet fuel reserves (L)",
         "hint": "",
         "required": false,
-        "sequence_number": 1,
+        "sequence_number": 0,
         "allow_multiple": false,
         "type_constraint_name": "integer",
         "logic": {}
@@ -87,7 +106,16 @@ Request data:
 If `type_constraint_name` is `multiple_choice` or `multiple_choice_with_other`, the question dict should also contain
 
 ```
-"choices": ["choice 1", "choice 2", "choice 3"]
+"choices": ["choice 0", "choice 1", "choice 2"]
+```
+
+If you are creating a multiple choice question with branching, the question dict should also contain (everything is 0-indexed)
+
+```
+"branches": [{
+              "choice_number":"0",
+              "to_question_number":"1"
+             }]
 ```
 
 Response:
@@ -99,7 +127,7 @@ Response:
         "question_id": "<UUID>"
         "title": "Batmobile jet fuel reserves (L)",
         "type_constraint_name": "integer",
-        "sequence_number": 1,
+        "sequence_number": 0,
         "hint": "",
         "required": false,
         "allow_multiple": false,
@@ -145,7 +173,7 @@ Response:
             "question_id": "<UUID>"
             "title": "Update this question (has an id)",
             "type_constraint_name": "integer",
-            "sequence_number": 1,
+            "sequence_number": 0,
             "hint": "",
             "required": false,
             "allow_multiple": false,
@@ -155,7 +183,7 @@ Response:
             "question_id": "<UUID>",
             "title": "Add a new question (no id)",
             "type_constraint_name": "text",
-            "sequence_number": 2,
+            "sequence_number": 1,
             "hint": "",
             "required": false,
             "allow_multiple": false,
@@ -212,7 +240,7 @@ If `type_constraint_name` is `multiple_choice` or `multiple_choice_with_other`, 
 "type_constraint_name": "multiple_choice",
 "question_choice_id: "<UUID>",
 "choice": "bananas",
-"choice_number": 1
+"choice_number": 0
 ```
 
 ### Get Submission
@@ -291,7 +319,7 @@ or
     "title": "Location",
     "hint": "",
     "required": false,
-    "sequence_number": 1,
+    "sequence_number": 0,
     "allow_multiple": false,
     "type_constraint_name": "location",
     "logic": {}
@@ -316,7 +344,7 @@ Need to consider what exactly to do about logical constraints.
     "title": "Number from 5 to 10",
     "hint": "",
     "required": false,
-    "sequence_number": 1,
+    "sequence_number": 0,
     "allow_multiple": false,
     "type_constraint_name": "integer",
     "logic": {}
@@ -339,7 +367,7 @@ Need to consider what exactly to do about logical constraints.
     "title": "Description",
     "hint": "",
     "required": false,
-    "sequence_number": 1,
+    "sequence_number": 0,
     "allow_multiple": false,
     "type_constraint_name": "text",
     "logic": {}
@@ -363,7 +391,7 @@ Need to consider what exactly to do about logical constraints.
     "title": "Pick one",
     "hint": "",
     "required": false,
-    "sequence_number": 1,
+    "sequence_number": 0,
     "allow_multiple": false,    
     "type_constraint_name": "multiple_choice",
     "choices": [{
@@ -400,7 +428,7 @@ Need to consider what exactly to do about logical constraints.
     "title": "Pick one or write in 'other'.",
     "hint": "",
     "required": false,
-    "sequence_number": 1,
+    "sequence_number": 0,
     "allow_multiple": false,    
     "type_constraint_name": "multiple_choice_with_other",
     "choices": [{

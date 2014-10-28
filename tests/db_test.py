@@ -10,7 +10,8 @@ from db.answer import answer_insert, answer_table, get_answers, get_geo_json
 from db.answer_choice import answer_choice_insert, get_answer_choices
 from db.question import get_questions, question_select, question_table, \
     get_free_sequence_number, question_insert
-from db.question_branch import get_branches
+from db.question_branch import get_branches, question_branch_insert, \
+    question_branch_table
 from db.question_choice import get_choices, question_choice_select, \
     question_choice_insert, question_choice_table
 from db.submission import submission_table, submission_insert, \
@@ -175,12 +176,46 @@ class TestQuestion(unittest.TestCase):
 
 
 class TestQuestionBranch(unittest.TestCase):
+    def tearDown(self):
+        survey_id = survey_table.select().execute().first().survey_id
+        to_question = get_questions(survey_id).fetchall()[-1]
+        question_branch_table.delete().where(
+            question_branch_table.c.to_question_id ==
+            to_question.question_id).execute()
+
     def testGetBranches(self):
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'multiple_choice')
         question_id = q_where.execute().first().question_id
         branches = get_branches(question_id)
         self.assertGreater(branches.rowcount, 0)
+
+    def testQuestionBranchInsert(self):
+        survey_id = survey_table.select().execute().first().survey_id
+        to_question = get_questions(survey_id).fetchall()[-1]
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name ==
+            'multiple_choice_with_other')
+        from_question = q_where.execute().first()
+        choice = get_choices(from_question.question_id).fetchall()[0]
+        from_tcn = from_question.type_constraint_name
+        branch_dict = {'question_choice_id': choice.question_choice_id,
+                       'from_question_id': from_question.question_id,
+                       'from_type_constraint': from_tcn,
+                       'from_sequence_number': from_question.sequence_number,
+                       'from_allow_multiple': from_question.allow_multiple,
+                       'from_survey_id': survey_id,
+                       'to_question_id': to_question.question_id,
+                       'to_type_constraint': to_question.type_constraint_name,
+                       'to_sequence_number': to_question.sequence_number,
+                       'to_allow_multiple': to_question.allow_multiple,
+                       'to_survey_id': survey_id}
+        branch_exec = question_branch_insert(**branch_dict).execute()
+        inserted_id = branch_exec.inserted_primary_key[0]
+        the_branch = question_branch_table.select().where(
+            question_branch_table.c.question_branch_id ==
+            inserted_id).execute().first()
+        self.assertEqual(the_branch.to_question_id, to_question.question_id)
 
 
 class TestQuestionChoice(unittest.TestCase):

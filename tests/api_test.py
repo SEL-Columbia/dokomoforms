@@ -10,6 +10,7 @@ import api.survey
 import api.submission
 from db.answer import answer_insert
 from db.question import question_table, get_questions
+from db.question_branch import get_branches
 from db.question_choice import question_choice_table, get_choices
 from db.submission import submission_table, submission_insert, \
     SubmissionDoesNotExistError, submission_select
@@ -112,22 +113,24 @@ class TestSurvey(unittest.TestCase):
         self.assertGreater(len(surveys), 0)
 
     def testCreate(self):
-        questions = [{'title': 'api_test question',
-                      'type_constraint_name': 'text',
-                      'sequence_number': None,
-                      'hint': None,
-                      'required': None,
-                      'allow_multiple': None,
-                      'logic': {'min': 3}},
-                     {'title': 'api_test mc question',
+        questions = [{'title': 'api_test mc question',
                       'type_constraint_name': 'multiple_choice',
                       'sequence_number': None,
                       'hint': None,
                       'required': None,
                       'allow_multiple': None,
                       'logic': {},
-                      'choices': ['choice 1', 'choice 2']
-                     }]
+                      'choices': ['choice 1', 'choice 2'],
+                      'branches': [{'choice_number': 0,
+                                    'to_question_number': 1}]
+                     },
+                     {'title': 'api_test question',
+                      'type_constraint_name': 'text',
+                      'sequence_number': None,
+                      'hint': None,
+                      'required': None,
+                      'allow_multiple': None,
+                      'logic': {'min': 3}}]
         data = {'title': 'api_test survey',
                 'questions': questions}
         survey_id = api.survey.create(data)['survey_id']
@@ -135,8 +138,8 @@ class TestSurvey(unittest.TestCase):
         self.assertEqual(
             survey_table.select().where(condition).execute().rowcount, 1)
         questions = list(get_questions(survey_id))
-        self.assertEqual(questions[0].logic, {'min': 3})
-        self.assertEqual(get_choices(questions[1].question_id).first().choice,
+        self.assertEqual(questions[1].logic, {'min': 3})
+        self.assertEqual(get_choices(questions[0].question_id).first().choice,
                          'choice 1')
 
     def testUpdate(self):
@@ -146,16 +149,37 @@ class TestSurvey(unittest.TestCase):
                       'hint': None,
                       'required': None,
                       'allow_multiple': None,
+                      'logic': None},
+                     {'title': 'api_test 2nd question',
+                      'type_constraint_name': 'multiple_choice',
+                      'sequence_number': None,
+                      'hint': None,
+                      'required': None,
+                      'allow_multiple': None,
+                      'logic': None,
+                      'choices': ['1', '2'],
+                      'branches': [
+                          {'choice_number': 0, 'to_question_number': 2}]},
+                     {'title': 'api_test 3rd question',
+                      'type_constraint_name': 'text',
+                      'sequence_number': None,
+                      'hint': None,
+                      'required': None,
+                      'allow_multiple': None,
                       'logic': None}]
         data = {'title': 'api_test survey',
                 'questions': questions}
         survey_id = api.survey.create(data)['survey_id']
-        question_id = get_questions(survey_id).first().question_id
+        inserted_questions = get_questions(survey_id).fetchall()
 
         update_json = {'survey_id': survey_id,
                        'title': 'updated survey title'}
-        questions = [{'question_id': question_id,
+        questions = [{'question_id': inserted_questions[0].question_id,
                       'title': 'updated question title'},
+                     {'question_id': inserted_questions[1].question_id,
+                      'choices': ['a', 'b'],
+                      'branches': [
+                          {'choice_number': 1, 'to_question_number': 3}]},
                      {'title': 'second question',
                       'type_constraint_name': 'integer',
                       'sequence_number': None,
@@ -166,11 +190,16 @@ class TestSurvey(unittest.TestCase):
         update_json['questions'] = questions
         api.survey.update(update_json)
         upd_survey = survey_select(survey_id)
-        upd_questions = list(get_questions(survey_id))
+        upd_questions = get_questions(survey_id).fetchall()
         self.assertEqual(upd_survey.title, 'updated survey title')
         self.assertEqual(upd_questions[0].title, 'updated question title')
-        self.assertEqual(upd_questions[1].title, 'second question')
-        self.assertEqual(upd_questions[1].logic, {})
+        choices = get_choices(inserted_questions[1].question_id).fetchall()
+        self.assertEqual(choices[0].choice, 'a')
+        self.assertEqual(choices[1].choice, 'b')
+        branch = get_branches(inserted_questions[1].question_id).first()
+        self.assertEqual(branch.to_question_id, upd_questions[3].question_id)
+        self.assertEqual(upd_questions[3].title, 'second question')
+        self.assertEqual(upd_questions[3].logic, {})
 
     def testDelete(self):
         data = {'title': 'api_test survey'}

@@ -51,7 +51,7 @@ def submit(data: dict) -> dict:
             value_dict = answer_dict.copy()
             value_dict['submission_id'] = submission_id
             value_dict['survey_id'] = survey_id
-            question = question_select(value_dict['question_id'])
+            question = question_select(value_dict['question_id' ])
             value_dict['type_constraint_name'] = question.type_constraint_name
             value_dict['sequence_number'] = question.sequence_number
             value_dict['allow_multiple'] = question.allow_multiple
