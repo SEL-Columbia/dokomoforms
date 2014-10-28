@@ -3,15 +3,18 @@ from heapq import merge
 from collections import Iterator
 
 from sqlalchemy.engine import ResultProxy, RowProxy
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import Insert
 
 from db import engine, delete_record
-from db.answer import answer_insert, get_answers, get_geo_json
+from db.answer import answer_insert, get_answers, get_geo_json, \
+    CannotAnswerMultipleTimes
 from db.answer_choice import get_answer_choices, answer_choice_insert
 from db.question import question_select
 from db.question_choice import question_choice_select
 from db.submission import submission_insert, submission_select, \
     get_submissions, submission_table
+from db.survey import SurveyDoesNotExistError
 
 
 def _filter_skipped_questions(answers: list) -> Iterator:
@@ -68,13 +71,25 @@ def submit(data: dict) -> dict:
     with engine.begin() as connection:
         submission_values = {'submitter': '',
                              'survey_id': survey_id}
-        result = connection.execute(submission_insert(**submission_values))
-        submission_id = result.inserted_primary_key[0]
+        try:
+            result = connection.execute(submission_insert(**submission_values))
+        except IntegrityError as exc:
+            error = str(exc.orig)
+            if 'submission_survey_id_fkey' in error:
+                raise SurveyDoesNotExistError(survey_id)
+            raise
+        sub_id = result.inserted_primary_key[0]
 
         for ans in answers:
-            connection.execute(_insert_answer(ans, submission_id, survey_id))
+            try:
+                connection.execute(_insert_answer(ans, sub_id, survey_id))
+            except IntegrityError as exc:
+                error = str(exc.orig)
+                if 'only_one_answer_allowed' in error:
+                    raise CannotAnswerMultipleTimes(ans['question_id'])
+                raise
 
-    return get(submission_id)
+    return get(sub_id)
 
 
 def _get_comparable(answers: ResultProxy) -> Iterator:

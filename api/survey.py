@@ -1,6 +1,7 @@
 """Functions for interacting with surveys."""
 
 from sqlalchemy.engine import RowProxy
+from sqlalchemy.exc import IntegrityError
 
 from db import engine, update_record, delete_record
 from db.question import question_insert, get_questions, question_table, \
@@ -9,7 +10,9 @@ from db.question_branch import get_branches, question_branch_insert, \
     question_branch_table
 from db.question_choice import get_choices, question_choice_insert, \
     question_choice_table
-from db.survey import survey_insert, survey_select, survey_table
+from db.survey import survey_insert, survey_select, survey_table, \
+    SurveyAlreadyExistsError
+from db.type_constraint import TypeConstraintDoesNotExistError
 
 
 def create(data: dict) -> dict:
@@ -29,7 +32,13 @@ def create(data: dict) -> dict:
         # First, create an entry in the survey table
         survey_values = {  # 'auth_user_id': user_id,
                            'title': title}
-        result = connection.execute(survey_insert(**survey_values))
+        try:
+            result = connection.execute(survey_insert(**survey_values))
+        except IntegrityError as exc:
+            error = str(exc.orig)
+            if 'survey_title_survey_owner_key' in error:
+                raise SurveyAlreadyExistsError(title)
+            raise
         survey_id = result.inserted_primary_key[0]
 
         # Now insert questions.  Inserting branches has to come afterward so
@@ -40,7 +49,14 @@ def create(data: dict) -> dict:
             values_dict = question_dict.copy()
             values_dict['sequence_number'] = question_number
             values_dict['survey_id'] = survey_id
-            q_exec = connection.execute(question_insert(**values_dict))
+            try:
+                q_exec = connection.execute(question_insert(**values_dict))
+            except IntegrityError as exc:
+                error = str(exc.orig)
+                if 'question_type_constraint_name_fkey' in error:
+                    tcn = values_dict['type_constraint_name']
+                    raise TypeConstraintDoesNotExistError(tcn)
+                raise
             pk = q_exec.inserted_primary_key
             question_id = pk[0]
 
