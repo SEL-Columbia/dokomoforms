@@ -2,7 +2,6 @@
 Tests for the dokomo database
 
 """
-import json
 import unittest
 
 from db import update_record, delete_record
@@ -18,7 +17,6 @@ from db.submission import submission_table, submission_insert, \
     submission_select, get_submissions
 from db.survey import survey_table, survey_insert, survey_select
 
-# TODO: write tests for integrity errors
 
 class TestAnswer(unittest.TestCase):
     def tearDown(self):
