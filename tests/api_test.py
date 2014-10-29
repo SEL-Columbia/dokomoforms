@@ -78,6 +78,7 @@ class TestSubmission(unittest.TestCase):
                           [{'question_id': question_id,
                             'answer': 'one'}]}
         self.assertRaises(DataError, api.submission.submit, input_data)
+        self.assertEqual(submission_table.select().execute().rowcount, 0)
 
     def testQuestionDoesNotExist(self):
         survey_id = survey_table.select().execute().first().survey_id
@@ -242,6 +243,9 @@ class TestSurvey(unittest.TestCase):
                                      'logic': {}}]}
         self.assertRaises(TypeConstraintDoesNotExistError, api.survey.create,
                           input_data)
+        condition = survey_table.c.title == 'type constraint error'
+        self.assertEqual(
+            survey_table.select().where(condition).execute().rowcount, 0)
 
     def testUpdate(self):
         questions = [{'title': 'api_test question',
