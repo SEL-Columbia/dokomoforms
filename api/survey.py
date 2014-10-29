@@ -205,7 +205,7 @@ def update(data: dict):
                 q_id = values_dict.pop('question_id')
                 question_ids.append(q_id)
                 choices = values_dict.pop('choices', [])
-                branches = values_dict.pop('branches', [])
+                values_dict.pop('branches', [])
                 # values_dict may now be empty if the only changes are to
                 # choices/branches
                 if values_dict:

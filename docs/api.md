@@ -211,6 +211,8 @@ Response:
 
 ## Survey Submissions
 
+A note for any submission: if a question has `allow_multiple` set to `True`, you can answer it more than once by including several `answer` entries in the submission JSON. This is also how the answers will be displayed.
+
 ### List submissions
 `GET /surveys/<UUID>/submissions`
 
