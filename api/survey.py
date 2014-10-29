@@ -18,15 +18,21 @@ from db.type_constraint import TypeConstraintDoesNotExistError
 
 def _create_choices(connection: Connection,
                     values: dict,
-                    question_id: str,
-                    question_number: int) -> Iterator:
+                    question_id: str) -> Iterator:
+    """
+    Create choices as part of a survey submission.
+
+    :param connection: the SQLAlchemy Connection object for the transaction
+    :param values: the dictionary of values associated with the question
+    :param question_id: the UUID of the question
+    """
     for number, choice in enumerate(values.get('choices', [])):
         choice_dict = {'question_id': question_id,
                        'survey_id': values['survey_id'],
                        'choice': choice,
                        'choice_number': number,
                        'type_constraint_name': values['type_constraint_name'],
-                       'question_sequence_number': question_number,
+                       'question_sequence_number': values['sequence_number'],
                        'allow_multiple': values['allow_multiple']}
         result = connection.execute(question_choice_insert(**choice_dict))
         yield result.inserted_primary_key[0]
@@ -35,6 +41,13 @@ def _create_choices(connection: Connection,
 def _create_questions(connection: Connection,
                       questions: list,
                       survey_id: str) -> Iterator:
+    """
+    Create questions as part of a survey submission.
+
+    :param connection: the SQLAlchemy Connection object for the transaction
+    :param questions: the dictionary of values associated with the question
+    :param survey_id: the UUID of the survey
+    """
     for number, question in enumerate(questions):
         values = question.copy()
         values['sequence_number'] = number
@@ -48,7 +61,7 @@ def _create_questions(connection: Connection,
         q_id = question_primary_key[0]
         if values['allow_multiple'] is None:
             values['allow_multiple'] = False
-        choices = list(_create_choices(connection, values, q_id, number))
+        choices = list(_create_choices(connection, values, q_id))
 
         yield {'question_id': q_id,
                'type_constraint_name': tcn,
@@ -58,9 +71,18 @@ def _create_questions(connection: Connection,
 
 
 def _create_branches(connection: Connection,
-                     questions_json: dict,
+                     questions_json: list,
                      question_dicts: list,
                      survey_id: str):
+    """
+    Create branches as part of a survey submission.
+
+    :param connection: the SQLAlchemy Connection object for the transaction
+    :param questions_json: a list of dictionaries coming from the JSON input
+    :param question_dicts: a list of dictionaries resulting from inserting
+                           the questions
+    :param survey_id: the UUID of the survey
+    """
     for index, question_dict in enumerate(questions_json):
         for branch in question_dict.get('branches', []):
             choice_index = branch['choice_number']
