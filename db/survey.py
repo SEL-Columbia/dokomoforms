@@ -1,7 +1,8 @@
 """Allow access to the survey table."""
-
+import re
 from sqlalchemy import Table, MetaData
-from sqlalchemy.engine import RowProxy
+
+from sqlalchemy.engine import RowProxy, ResultProxy
 from sqlalchemy.sql import Insert
 
 from db import engine
@@ -40,8 +41,46 @@ def survey_select(survey_id: str) -> RowProxy:
         raise SurveyDoesNotExistError(survey_id)
     return survey
 
+
+def _conflicting(title: str, surveys: ResultProxy) -> int:
+    """
+    Get the highest number conflict of the titles in the survey table.
+
+    :param title: the survey title in question
+    :param surveys: the surveys from the table
+    :return: the highest number conflict
+    """
+    for survey in surveys:
+        pattern = r'{}\((\d+)\)'.format(title)
+        match = re.match(pattern, survey.title)
+        if match:
+            yield int(match.groups()[0])
+
+
+def get_free_title(title: str) -> str:
+    """
+    Get a good version of the title to be inserted into the survey table. If
+    the title as given already exists, this function will append a number.
+    For example, when the title is "survey":
+    1. "survey" not in table -> "survey"
+    2. "survey" in table -> "survey(1)"
+    3. "survey(1)" in table -> "survey(2)"
+
+    :param title: the survey title
+    :return: a title that can be inserted safely
+    """
+    cond = survey_table.c.title.like(title + '%')
+    similar_surveys = survey_table.select().where(cond).execute().fetchall()
+    if not len(similar_surveys):
+        return title
+    conflicts = list(_conflicting(title, similar_surveys))
+    free_number = max(conflicts) + 1 if len(conflicts) else 1
+    return title + '({})'.format(free_number)
+
+
 class SurveyDoesNotExistError(Exception):
     pass
+
 
 class SurveyAlreadyExistsError(Exception):
     pass

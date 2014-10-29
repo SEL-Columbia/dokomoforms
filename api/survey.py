@@ -12,7 +12,7 @@ from db.question_branch import get_branches, question_branch_insert, \
 from db.question_choice import get_choices, question_choice_insert, \
     question_choice_table
 from db.survey import survey_insert, survey_select, survey_table, \
-    SurveyAlreadyExistsError
+    SurveyAlreadyExistsError, get_free_title
 from db.type_constraint import TypeConstraintDoesNotExistError
 
 
@@ -126,11 +126,11 @@ def create(data: dict) -> dict:
     with engine.begin() as connection:
         # First, create an entry in the survey table
         survey_values = {  # 'auth_user_id': user_id,
-                           'title': title}
+                           'title': get_free_title(title)}
         executable = survey_insert(**survey_values)
-        exceptions = [
+        exc = [
             ('survey_title_survey_owner_key', SurveyAlreadyExistsError(title))]
-        result = execute_with_exceptions(connection, executable, exceptions)
+        result = execute_with_exceptions(connection, executable, exc)
         survey_id = result.inserted_primary_key[0]
 
         # Now insert questions.  Inserting branches has to come afterward so

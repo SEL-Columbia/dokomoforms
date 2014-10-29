@@ -229,8 +229,12 @@ class TestSurvey(unittest.TestCase):
         survey_id = survey_table.select().execute().first().survey_id
         title = survey_select(survey_id).title
         input_data = {'title': title}
-        self.assertRaises(SurveyAlreadyExistsError, api.survey.create,
-                          input_data)
+        result = api.survey.create(input_data)
+        self.assertEqual(result['title'], 'test_title(1)')
+        result2 = api.survey.create(input_data)
+        self.assertEqual(result2['title'], 'test_title(2)')
+        result3 = api.survey.create({'title': 'test_title(1)'})
+        self.assertEqual(result3['title'], 'test_title(1)(1)')
 
     def testTypeConstraintDoesNotExist(self):
         input_data = {'title': 'type constraint error',
