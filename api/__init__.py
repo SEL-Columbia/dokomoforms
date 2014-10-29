@@ -1,5 +1,5 @@
 """The dokomo JSON API"""
-from _collections_abc import Iterable
+from collections import Iterator
 from sqlalchemy.engine import ResultProxy, Connection
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import Insert, Update
@@ -7,7 +7,7 @@ from sqlalchemy.sql import Insert, Update
 
 def execute_with_exceptions(connection: Connection,
                             executable: [Insert, Update],
-                            exceptions: Iterable) -> ResultProxy:
+                            exceptions: Iterator) -> ResultProxy:
     """
     Execute the given executable (a SQLAlchemy Insert or Update) within a
     transaction (provided by the Connection object), and raise meaningful

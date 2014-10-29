@@ -1,5 +1,5 @@
 """Functions for interacting with surveys."""
-from _collections_abc import Iterable
+from collections import Iterator
 
 from sqlalchemy.engine import RowProxy, Connection
 
@@ -19,7 +19,7 @@ from db.type_constraint import TypeConstraintDoesNotExistError
 def _create_choices(connection: Connection,
                     values: dict,
                     question_id: str,
-                    question_number: int) -> Iterable:
+                    question_number: int) -> Iterator:
     for number, choice in enumerate(values.get('choices', [])):
         choice_dict = {'question_id': question_id,
                        'survey_id': values['survey_id'],
@@ -34,7 +34,7 @@ def _create_choices(connection: Connection,
 
 def _create_questions(connection: Connection,
                       questions: list,
-                      survey_id: str) -> Iterable:
+                      survey_id: str) -> Iterator:
     for number, question in enumerate(questions):
         values = question.copy()
         values['sequence_number'] = number
