@@ -5,6 +5,7 @@ Tests for the dokomo JSON api
 import unittest
 
 from sqlalchemy import and_
+from sqlalchemy.exc import IntegrityError
 
 import api.survey
 import api.submission
@@ -35,17 +36,47 @@ class TestSubmission(unittest.TestCase):
         choice_cond = question_choice_table.c.question_id == second_q_id
         choice_id = question_choice_table.select().where(
             choice_cond).execute().first().question_choice_id
-        data = {'survey_id': survey_id,
-                'answers':
-                    [{'question_id': question_id, 'answer': 1},
-                     {'question_id': second_q_id,
-                      'question_choice_id': choice_id}]}
-        submission_id = api.submission.submit(data)['submission_id']
+        third_cond = second_cond = and_(
+            question_table.c.survey_id == survey_id,
+            question_table.c.type_constraint_name ==
+            'text')
+        third_q_id = question_table.select().where(
+            third_cond).execute().first().question_id
+        input_data = {'survey_id': survey_id,
+                      'answers':
+                          [{'question_id': question_id,
+                            'answer': 1},
+                           {'question_id': second_q_id,
+                            'question_choice_id': choice_id},
+                           {'question_id': third_q_id,
+                            'answer': 'answer one'},
+                           {'question_id': third_q_id,
+                            'answer': 'answer two'}]}
+        response = api.submission.submit(input_data)
+        submission_id = response['submission_id']
         condition = submission_table.c.submission_id == submission_id
         self.assertEqual(
             submission_table.select().where(condition).execute().rowcount, 1)
         data = api.submission.get(submission_id)
+        self.assertEqual(response, data)
         self.assertEqual(data['answers'][1]['question_choice_id'], choice_id)
+        self.assertEqual(data['answers'][2]['question_id'], third_q_id)
+        self.assertEqual(data['answers'][3]['question_id'], third_q_id)
+
+    def testOnlyAllowMultiple(self):
+        survey_id = survey_table.select().execute().first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        question_id = question_table.select().where(
+            and_cond).execute().first().question_id
+        input_data = {'survey_id': survey_id,
+                      'answers':
+                          [{'question_id': question_id,
+                            'answer': 1},
+                           {'question_id': question_id,
+                            'answer': 2}]}
+        self.assertRaises(IntegrityError, api.submission.submit, input_data)
+
 
     def testGet(self):
         survey_id = survey_table.select().execute().first().survey_id
