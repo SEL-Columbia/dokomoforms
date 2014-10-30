@@ -115,7 +115,7 @@ class TestSubmission(unittest.TestCase):
                           submission_id=submission_id,
                           survey_id=survey_id, type_constraint_name=tcn,
                           sequence_number=seq, allow_multiple=mul).execute()
-        data = api.submission.get_for_survey(survey_id)
+        data = api.submission.get_all(survey_id)
         self.assertGreater(len(data), 0)
 
     def testDelete(self):
