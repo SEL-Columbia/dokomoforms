@@ -72,5 +72,8 @@ def question_choice_insert(*,
     return question_choice_table.insert().values(values)
 
 
+class RepeatedChoiceError(Exception):
+    pass
+
 class QuestionChoiceDoesNotExistError(Exception):
     pass
