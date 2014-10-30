@@ -8,9 +8,9 @@ from db import engine, update_record, delete_record
 from db.question import question_insert, get_questions, question_table, \
     get_free_sequence_number, question_select
 from db.question_branch import get_branches, question_branch_insert, \
-    question_branch_table
+    question_branch_table, MultipleBranchError
 from db.question_choice import get_choices, question_choice_insert, \
-    question_choice_table
+    question_choice_table, RepeatedChoiceError
 from db.survey import survey_insert, survey_select, survey_table, \
     SurveyAlreadyExistsError, get_free_title
 from db.type_constraint import TypeConstraintDoesNotExistError
@@ -34,7 +34,10 @@ def _create_choices(connection: Connection,
                        'type_constraint_name': values['type_constraint_name'],
                        'question_sequence_number': values['sequence_number'],
                        'allow_multiple': values['allow_multiple']}
-        result = connection.execute(question_choice_insert(**choice_dict))
+        executable = question_choice_insert(**choice_dict)
+        exc = [('unique_choice_names', RepeatedChoiceError(choice))]
+        result = execute_with_exceptions(connection, executable, exc)
+
         yield result.inserted_primary_key[0]
 
 
@@ -107,7 +110,10 @@ def _create_branches(connection: Connection,
                            'to_sequence_number': to_seq,
                            'to_allow_multiple': to_mul,
                            'to_survey_id': survey_id}
-            connection.execute(question_branch_insert(**branch_dict))
+            executable = question_branch_insert(**branch_dict)
+            exc = [('question_branch_from_question_id_question_choice_id_key',
+                    MultipleBranchError(question_choice_id))]
+            execute_with_exceptions(connection, executable, exc)
 
 
 def create(data: dict) -> dict:
