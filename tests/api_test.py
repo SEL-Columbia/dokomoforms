@@ -139,8 +139,8 @@ class TestSurvey(unittest.TestCase):
         self.assertIsNotNone(data['survey_id'])
         self.assertIsNotNone(data['questions'])
 
-    def testGetMany(self):
-        surveys = api.survey.get_many()
+    def testGetAll(self):
+        surveys = api.survey.get_all()
         self.assertGreater(len(surveys), 0)
 
     def testCreate(self):
