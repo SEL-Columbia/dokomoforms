@@ -38,9 +38,11 @@ CREATE TABLE question_choice
               survey_id)
     ON UPDATE CASCADE ON DELETE CASCADE,
  
-  -- A question can't have multiples of the same choice number. 
-  CONSTRAINT question_choice_question_id_choice_number_key
+  -- A question can't have multiples of the same choice number or text.
+  CONSTRAINT unique_choice_number
     UNIQUE (question_id, choice_number),
+  CONSTRAINT unique_choice_names
+    UNIQUE (question_id, choice),
   CONSTRAINT question_should_have_choices CHECK(
     type_constraint_name IN ('multiple_choice', 'multiple_choice_with_other')
   )

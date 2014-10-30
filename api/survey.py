@@ -7,9 +7,9 @@ from api import execute_with_exceptions
 from db import engine, update_record, delete_record
 from db.question import question_insert, get_questions, question_table
 from db.question_branch import get_branches, question_branch_insert, \
-    question_branch_table
+    question_branch_table, MultipleBranchError
 from db.question_choice import get_choices, question_choice_insert, \
-    question_choice_table
+    question_choice_table, RepeatedChoiceError
 from db.survey import survey_insert, survey_select, survey_table, \
     SurveyAlreadyExistsError, get_free_title
 from db.type_constraint import TypeConstraintDoesNotExistError
@@ -40,10 +40,12 @@ def _create_or_update_choices(connection: Connection,
         if choice in existing_choices:
             choice_number, choice_id = existing_choices[choice]
             if choice_number != number:
-                connection.execute(update_record(question_choice_table,
-                                                 'question_choice_id',
-                                                 choice_id,
-                                                 {'choice_number': number}))
+                executable = update_record(question_choice_table,
+                                           'question_choice_id',
+                                           choice_id,
+                                           {'choice_number': number})
+                exc = [('unique_choice_names', RepeatedChoiceError(choice))]
+                execute_with_exceptions(connection, executable, exc)
             yield choice_id
         else:
             choice_dict = {'question_id': question_id,
@@ -55,7 +57,9 @@ def _create_or_update_choices(connection: Connection,
                            'question_sequence_number': values[
                                'sequence_number'],
                            'allow_multiple': values['allow_multiple']}
-            result = connection.execute(question_choice_insert(**choice_dict))
+            executable = question_choice_insert(**choice_dict)
+            exc = [('unique_choice_names', RepeatedChoiceError(choice))]
+            result = execute_with_exceptions(connection, executable, exc)
             yield result.inserted_primary_key[0]
 
 
@@ -172,7 +176,10 @@ def _create_or_update_branches(connection: Connection,
                            'to_sequence_number': to_seq,
                            'to_allow_multiple': to_mul,
                            'to_survey_id': survey_id}
-            connection.execute(question_branch_insert(**branch_dict))
+            executable = question_branch_insert(**branch_dict)
+            exc = [('question_branch_from_question_id_question_choice_id_key',
+                    MultipleBranchError(question_choice_id))]
+            execute_with_exceptions(connection, executable, exc)
 
 
 def create(data: dict) -> dict:

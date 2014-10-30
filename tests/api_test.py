@@ -13,8 +13,9 @@ import api.submission
 from db.answer import answer_insert, CannotAnswerMultipleTimes
 from db.question import question_table, get_questions, \
     QuestionDoesNotExistError
-from db.question_branch import get_branches
-from db.question_choice import question_choice_table, get_choices
+from db.question_branch import get_branches, MultipleBranchError
+from db.question_choice import question_choice_table, get_choices, \
+    RepeatedChoiceError
 from db.submission import submission_table, submission_insert, \
     SubmissionDoesNotExistError, submission_select
 from db.survey import survey_table, survey_select, SurveyDoesNotExistError, \
@@ -239,6 +240,48 @@ class TestSurvey(unittest.TestCase):
         api.survey.create({'title': 'not in conflict(1)'})
         result4 = api.survey.create({'title': 'not in conflict'})
         self.assertEqual(result4['title'], 'not in conflict')
+
+    def testTwoChoicesWithSameName(self):
+        input_data = {'title': 'choice error',
+                      'questions': [{'title': 'choice error',
+                                     'type_constraint_name': 'multiple_choice',
+                                     'sequence_number': None,
+                                     'hint': None,
+                                     'required': None,
+                                     'allow_multiple': None,
+                                     'logic': {},
+                                     'choices': ['a', 'a']}]}
+        self.assertRaises(RepeatedChoiceError, api.survey.create, input_data)
+
+    def testTwoBranchesFromOneChoice(self):
+        input_data = {'title': 'choice error',
+                      'questions': [{'title': 'choice error',
+                                     'type_constraint_name': 'multiple_choice',
+                                     'sequence_number': None,
+                                     'hint': None,
+                                     'required': None,
+                                     'allow_multiple': None,
+                                     'logic': None,
+                                     'choices': ['a', 'b'],
+                                     'branches': [{'choice_number': 0,
+                                                   'to_question_number': 1},
+                                                  {'choice_number': 0,
+                                                   'to_question_number': 2}]},
+                                    {'title': 'choice error',
+                                     'type_constraint_name': 'text',
+                                     'sequence_number': None,
+                                     'hint': None,
+                                     'required': None,
+                                     'allow_multiple': None,
+                                     'logic': None},
+                                    {'title': 'choice error',
+                                     'type_constraint_name': 'text',
+                                     'sequence_number': None,
+                                     'hint': None,
+                                     'required': None,
+                                     'allow_multiple': None,
+                                     'logic': None}]}
+        self.assertRaises(MultipleBranchError, api.survey.create, input_data)
 
     def testTypeConstraintDoesNotExist(self):
         input_data = {'title': 'type constraint error',

@@ -65,3 +65,6 @@ def question_branch_insert(*,
               'to_allow_multiple': to_allow_multiple,
               'to_survey_id': to_survey_id}
     return question_branch_table.insert().values(values)
+
+class MultipleBranchError(Exception):
+    pass
