@@ -39,3 +39,8 @@ postgres=# \q
    
 5. `$ python3 manage_db.py --create`
 6. `$ python3 webapp.py`
+
+# Running the tests
+
+1. `$ pip-python3 install nose coverage`
+2. `$ nosetests --with-coverage --cover-inclusive --cover-branches --cover-package=api,db,webapp`
