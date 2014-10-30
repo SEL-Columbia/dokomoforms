@@ -6,7 +6,6 @@ Dokomo [どこも](http://tangorin.com/general/%E3%81%A9%E3%81%93%E3%82%82) Form
  
 # Installation
 
-## How to run the thing
 1. Install PostgreSQL, the contributed packages, PostGIS, and the PostgreSQL server development packages:
 
    ```sh
