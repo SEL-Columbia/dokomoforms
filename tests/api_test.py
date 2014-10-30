@@ -236,6 +236,10 @@ class TestSurvey(unittest.TestCase):
         result3 = api.survey.create({'title': 'test_title(1)'})
         self.assertEqual(result3['title'], 'test_title(1)(1)')
 
+        api.survey.create({'title': 'not in conflict(1)'})
+        result4 = api.survey.create({'title': 'not in conflict'})
+        self.assertEqual(result4['title'], 'not in conflict')
+
     def testTypeConstraintDoesNotExist(self):
         input_data = {'title': 'type constraint error',
                       'questions': [{'title': 'type constraint error',

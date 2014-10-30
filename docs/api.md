@@ -103,6 +103,8 @@ Request data:
 }
 ```
 
+If you try to add a survey with a title that already exists for that user, a number surrounded by parentheses will be appended to the title. 
+
 If `type_constraint_name` is `multiple_choice` or `multiple_choice_with_other`, the question dict should also contain
 
 ```

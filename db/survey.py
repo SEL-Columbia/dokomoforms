@@ -1,5 +1,6 @@
 """Allow access to the survey table."""
 import re
+from collections import Iterator
 from sqlalchemy import Table, MetaData
 
 from sqlalchemy.engine import RowProxy, ResultProxy
@@ -42,19 +43,21 @@ def survey_select(survey_id: str) -> RowProxy:
     return survey
 
 
-def _conflicting(title: str, surveys: ResultProxy) -> int:
+def _conflicting(title: str, surveys: ResultProxy) -> Iterator:
     """
-    Get the highest number conflict of the titles in the survey table.
+    Get the appended number from conflicting titles in the survey table.
 
     :param title: the survey title in question
     :param surveys: the surveys from the table
-    :return: the highest number conflict
+    :return: the appended numbers from conflicting titles
     """
     for survey in surveys:
+        # Match things like "title(1)"
         pattern = r'{}\((\d+)\)'.format(title)
         match = re.match(pattern, survey.title)
         if match:
-            yield int(match.groups()[0])
+            number = match.groups()[0]
+            yield int(number)
 
 
 def get_free_title(title: str) -> str:
@@ -63,16 +66,17 @@ def get_free_title(title: str) -> str:
     the title as given already exists, this function will append a number.
     For example, when the title is "survey":
     1. "survey" not in table -> "survey"
-    2. "survey" in table -> "survey(1)"
-    3. "survey(1)" in table -> "survey(2)"
+    2. "survey" in table     -> "survey(1)"
+    3. "survey(1)" in table  -> "survey(2)"
 
     :param title: the survey title
     :return: a title that can be inserted safely
     """
+    eq_condition = survey_table.c.title == title
+    if survey_table.select().where(eq_condition).execute().rowcount == 0:
+        return title
     cond = survey_table.c.title.like(title + '%')
     similar_surveys = survey_table.select().where(cond).execute().fetchall()
-    if not len(similar_surveys):
-        return title
     conflicts = list(_conflicting(title, similar_surveys))
     free_number = max(conflicts) + 1 if len(conflicts) else 1
     return title + '({})'.format(free_number)
