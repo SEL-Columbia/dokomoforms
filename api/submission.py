@@ -156,7 +156,7 @@ def get(submission_id: str) -> dict:
     return sub_dict
 
 
-def get_for_survey(survey_id: str) -> dict:
+def get_all(survey_id: str) -> dict:
     """
     Create a JSON representation of the submissions to a given survey.
 

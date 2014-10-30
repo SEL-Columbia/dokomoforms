@@ -169,8 +169,8 @@ def get_one(survey_id: str) -> dict:
 
 
 # TODO: restrict this by user
-# def get_many(data: dict) -> dict:
-def get_many() -> dict:
+# def get_all(data: dict) -> dict:
+def get_all() -> dict:
     """
     Return a JSON representation of all the surveys. In the future this will
     be on a per-user basis.
