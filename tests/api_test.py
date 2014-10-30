@@ -98,7 +98,7 @@ class TestSubmission(unittest.TestCase):
         self.assertIsNotNone(data['submission_id'])
         self.assertIsNotNone(data['answers'])
 
-    def testGetForSurvey(self):
+    def testGetAll(self):
         survey_id = survey_table.select().execute().first().survey_id
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'integer')
