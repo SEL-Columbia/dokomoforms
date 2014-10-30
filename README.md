@@ -6,7 +6,6 @@ Dokomo [どこも](http://tangorin.com/general/%E3%81%A9%E3%81%93%E3%82%82) Form
  
 # Installation
 
-## How to run the thing
 1. Install PostgreSQL, the contributed packages, PostGIS, and the PostgreSQL server development packages:
 
    ```sh
@@ -39,3 +38,8 @@ postgres=# \q
    
 5. `$ python3 manage_db.py --create`
 6. `$ python3 webapp.py`
+
+# Running the tests
+
+1. `$ pip-python3 install nose coverage`
+2. `$ nosetests --with-coverage --cover-inclusive --cover-branches --cover-package=api,db,webapp`
