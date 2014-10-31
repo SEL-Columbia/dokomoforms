@@ -116,7 +116,13 @@ Survey.prototype.submit = function() {
     // Prepare POST request
     var data = {
         survey_id: self.id,
-        answers: self.questions
+        answers: _.map(self.questions, function(q) {
+            console.log('q', q);
+            return {
+                question_id: q.question_id,
+                answer: q.answer
+            };
+        })
     };
     
     sync.classList.add('icon--spin');
