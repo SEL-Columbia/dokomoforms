@@ -118,10 +118,17 @@ Survey.prototype.submit = function() {
         survey_id: self.id,
         answers: _.map(self.questions, function(q) {
             console.log('q', q);
-            return {
-                question_id: q.question_id,
-                answer: q.answer
-            };
+            if (typeof q.answer === 'undefined' || q.answer === null) {
+                return {
+                    question_id: q.question_id,
+                    question_choice_id: q.question_choice_id
+                };
+            } else {
+                return {
+                    question_id: q.question_id,
+                    answer: q.answer
+                };
+            }
         })
     };
     
@@ -192,6 +199,70 @@ Widgets.location = function(question, page) {
         });
 };
 
+Widgets.multiple_choice = function(question, page) {
+    $(page)
+        .find('select')
+        .change(function() {
+            if (this.value !== ''){
+                question.question_choice_id = this.value;
+            } else {
+                question.question_choice_id = undefined;
+            }
+        });
+};
 
+Widgets.decimal = function(question, page) {
+    $(page)
+        .find('input')
+        .keyup(function() {
+            question.answer = parseFloat(this.value);
+        });
+};
 
-    
+Widgets.date = function(question, page) {
+    $(page)
+        .find('input')
+        .keyup(function() {
+            if(this.value !== ''){
+                question.answer = this.value;
+            }
+      });
+};
+
+Widgets.time = function(question, page) {
+    $(page)
+        .find('input')
+        .keyup(function() {
+            if(this.value !== ''){
+                question.answer = this.value;
+            }
+      });
+};
+
+Widgets.multiple_choice_with_other = function(question, page) {
+    $(page)
+        .find('select')
+        .change(function() {
+            if (this.value !== ''){
+                question.question_choice_id = this.value;
+                if (typeof question.answer !== 'undefined' && question.answer !== '' && typeof question.question_choice_id !== 'undefined'){
+                   alert('You can\'t do both!');
+                }
+                question.answer = undefined;
+            } else {
+                question.question_choice_id = undefined;
+            }
+        });
+    $(page)
+        .find('input')
+        .on('keyup', function() {
+            question.answer = this.value;
+            if (typeof question.answer !== 'undefined' && question.answer !== '' && typeof question.question_choice_id !== 'undefined'){
+                alert('You can\'t do both!');
+            }
+            question.question_choice_id = undefined;
+        });
+};
+
+Widgets.note = function(question, page) {
+};
