@@ -1,6 +1,7 @@
 """Allow access to the submission table."""
 
 from sqlalchemy import Table, MetaData
+
 from sqlalchemy.engine import RowProxy, ResultProxy
 from sqlalchemy.sql.dml import Insert
 
