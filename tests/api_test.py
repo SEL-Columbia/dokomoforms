@@ -11,7 +11,7 @@ from sqlalchemy.exc import DataError
 import api.survey
 import api.submission
 from db.answer import answer_insert, CannotAnswerMultipleTimes, get_answers
-from db.answer_choice import get_answer_choices
+from db.answer_choice import get_answer_choices, answer_choice_table
 from db.question import question_table, get_questions, \
     QuestionDoesNotExistError
 from db.question_branch import get_branches, MultipleBranchError
@@ -388,6 +388,83 @@ class TestSurvey(unittest.TestCase):
         the_choice = get_answer_choices(new_submission.submission_id).first()
         self.assertEqual(the_choice.question_choice_id,
                          choices[2].question_choice_id)
+
+    def testUpdateTypeConstraintChange(self):
+        questions = [{'title': 'was text question',
+                      'type_constraint_name': 'text',
+                      'sequence_number': None,
+                      'hint': None,
+                      'required': None,
+                      'allow_multiple': None,
+                      'logic': None},
+                     {'title': 'was multiple choice',
+                      'type_constraint_name': 'multiple_choice',
+                      'sequence_number': None,
+                      'hint': None,
+                      'required': None,
+                      'allow_multiple': None,
+                      'logic': None,
+                      'choices': ['1', '2', '3']},
+                     {'title': 'was multiple choice 2',
+                      'type_constraint_name': 'multiple_choice',
+                      'sequence_number': None,
+                      'hint': None,
+                      'required': None,
+                      'allow_multiple': None,
+                      'logic': None,
+                      'choices': ['a', 'b', 'c']}]
+        data = {'title': 'to_be_updated',
+                'questions': questions}
+        survey_id = api.survey.create(data)['survey_id']
+        inserted_qs = get_questions(survey_id).fetchall()
+        choice_1 = get_choices(inserted_qs[1].question_id).first()
+        choice_1_id = choice_1.question_choice_id
+        choice_a = get_choices(inserted_qs[2].question_id).first()
+        choice_a_id = choice_a.question_choice_id
+
+        submission = {'survey_id': survey_id,
+                      'answers': [{'question_id': inserted_qs[0].question_id,
+                                   'answer': 'text answer'},
+                                  {'question_id': inserted_qs[1].question_id,
+                                   'question_choice_id': choice_1_id},
+                                  {'question_id': inserted_qs[2].question_id,
+                                   'question_choice_id': choice_a_id}]}
+
+        api.submission.submit(submission)
+
+        update_json = {'survey_id': survey_id,
+                       'title': 'updated'}
+
+        questions = [{'question_id': inserted_qs[0].question_id,
+                      'title': 'was text question, now multiple_choice',
+                      'type_constraint_name': 'multiple_choice',
+                      'allow_multiple': None,
+                      'hint': None,
+                      'required': None,
+                      'logic': None},
+                     {'question_id': inserted_qs[1].question_id,
+                      'title': 'was multiple choice, now location',
+                      'allow_multiple': None,
+                      'hint': None,
+                      'required': None,
+                      'logic': None,
+                      'type_constraint_name': 'location'},
+                     {'question_id': inserted_qs[2].question_id,
+                      'title': 'was multiple choice, now with other',
+                      'allow_multiple': None,
+                      'hint': None,
+                      'required': None,
+                      'logic': None,
+                      'type_constraint_name': 'multiple_choice_with_other',
+                      'choices': ['a']}]
+        update_json['questions'] = questions
+        new_survey = api.survey.update(update_json)
+        new_submissions = get_submissions(new_survey['survey_id']).fetchall()
+        self.assertEqual(len(new_submissions), 1)
+        choices = get_answer_choices(
+            new_submissions[0].submission_id).fetchall()
+        self.assertEqual(len(choices), 1)
+
 
     def testUpdateBadChoices(self):
         questions = [{'title': 'bad update question',

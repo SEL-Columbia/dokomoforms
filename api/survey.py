@@ -3,6 +3,7 @@ from collections import Iterator
 import datetime
 
 from sqlalchemy.engine import RowProxy, Connection
+from sqlalchemy.exc import IntegrityError, NoSuchColumnError
 
 from api import execute_with_exceptions
 from db import engine, delete_record, update_record
@@ -162,11 +163,19 @@ def _create_questions(connection: Connection,
                                'allow_multiple': result_ipk[3],
                                'survey_id': survey_id}
             for answer in get_answers_for_question(existing_q_id):
-                answer_values = question_fields.copy()
-                new_submission_id = submission_map[answer.submission_id]
-                answer_values['answer'] = answer['answer_' + result_ipk[1]]
-                answer_values['submission_id'] = new_submission_id
-                connection.execute(answer_insert(**answer_values))
+                try:
+                    answer_values = question_fields.copy()
+                    new_submission_id = submission_map[answer.submission_id]
+                    answer_values['answer'] = answer['answer_' + result_ipk[1]]
+                    answer_values['submission_id'] = new_submission_id
+                    connection.execute(answer_insert(**answer_values))
+                except NoSuchColumnError:
+                    pass
+                except IntegrityError as exc:
+                    error = str(exc.orig)
+                    if 'type_constraint_name_matches_answer_type' not in error:
+                        raise
+
 
         yield {'question_id': q_id,
                'type_constraint_name': tcn,
@@ -263,6 +272,7 @@ def _create_survey(connection: Connection, data: dict) -> str:
             SurveyAlreadyExistsError(safe_title))]
     result = execute_with_exceptions(connection, executable, exc)
     survey_id = result.inserted_primary_key[0]
+
 
     # a map of old submission_id to new submission_id
     submission_map = None
