@@ -22,7 +22,8 @@ from db.type_constraint import TypeConstraintDoesNotExistError
 def _create_choices(connection: Connection,
                     values: dict,
                     question_id: str,
-                    submission_map: dict) -> Iterator:
+                    submission_map: dict,
+                    existing_question_id: str=None) -> Iterator:
     """
     Create the choices of a survey question. If this is an update to an
     existing survey, it will also copy over answers to the questions.
@@ -31,17 +32,25 @@ def _create_choices(connection: Connection,
     :param values: the dictionary of values associated with the question
     :param question_id: the UUID of the question
     :param submission_map: a dictionary mapping old submission_id to new
+    :param existing_question_id: the UUID of the existing question (if this is
+                                 an update)
     :return: an iterable of the resultant choice fields
     """
-    old_choices = get_choices(question_id)
+    old_choices = []
+    if existing_question_id is not None:
+        old_choices = get_choices(existing_question_id)
     old_choice_dict = {ch.choice: ch.question_choice_id for ch in old_choices}
     new_choices = []
     updates = {}
+    old_choice_repeats = set()
     for entry in values.get('choices', []):
         try:
             old_choice = entry['old_choice']
             if old_choice not in old_choice_dict:
                 raise QuestionChoiceDoesNotExistError(old_choice)
+            if old_choice in old_choice_repeats:
+                raise RepeatedChoiceError(entry)
+            old_choice_repeats.add(old_choice)
             new_choice = entry['new_choice']
             new_choices.append(new_choice)
             updates[new_choice] = old_choice_dict[old_choice]
@@ -63,14 +72,15 @@ def _create_choices(connection: Connection,
         executable = question_choice_insert(**choice_dict)
         exc = [('unique_choice_names', RepeatedChoiceError(choice))]
         result = execute_with_exceptions(connection, executable, exc)
-        question_choice_id = result.inserted_primary_key[0]
+        result_ipk = result.inserted_primary_key
+        question_choice_id = result_ipk[0]
         yield question_choice_id
 
         if choice in updates:
             question_fields = {'question_id': question_id,
-                               'type_constraint_name': result[1],
-                               'sequence_number': result[2],
-                               'allow_multiple': result[3],
+                               'type_constraint_name': result_ipk[1],
+                               'sequence_number': result_ipk[2],
+                               'allow_multiple': result_ipk[3],
                                'survey_id': values['survey_id']}
             for answer in get_answer_choices_for_choice_id(updates[choice]):
                 answer_values = question_fields.copy()
@@ -78,38 +88,6 @@ def _create_choices(connection: Connection,
                 answer_values['question_choice_id'] = question_choice_id
                 answer_values['submission_id'] = new_submission_id
                 connection.execute(answer_insert(**answer_values))
-    #
-    # current = get_choices(question_id)
-    # existing_choices = {ch.choice: ch.question_choice_id for ch in current}
-    # data_choices = values.get('choices', [])
-    # # new_choices is a list of the surviving and to-be-created choices
-    # new_choices = []
-    # # updates is a dictionary for choices which are being renamed
-    # updates = {}
-    # for entry in data_choices:
-    #     try:
-    #         old_choice = entry['old_choice']
-    #         if old_choice not in existing_choices:
-    #             raise QuestionChoiceDoesNotExistError(old_choice)
-    #         new_choices.append(old_choice)
-    #         updates[entry['old_choice']] = entry['new_choice']
-    #     except TypeError:
-    #         new_choices.append(entry)
-    # new_choice_set = set(new_choices)
-    # if len(new_choice_set) != len(new_choices):
-    #     raise RepeatedChoiceError(new_choices)
-    # for number, choice in enumerate(new_choices):
-    #     choice_dict = {'question_id': question_id,
-    #                    'survey_id': values['survey_id'],
-    #                    'choice': choice,
-    #                    'choice_number': number,
-    #                    'type_constraint_name': values['type_constraint_name'],
-    #                    'question_sequence_number': values['sequence_number'],
-    #                    'allow_multiple': values['allow_multiple']}
-    #     executable = question_choice_insert(**choice_dict)
-    #     exc = [('unique_choice_names', RepeatedChoiceError(choice))]
-    #     result = execute_with_exceptions(connection, executable, exc)
-    #     yield result.inserted_primary_key[0]
 
 
 def _create_questions(connection: Connection,
@@ -134,25 +112,29 @@ def _create_questions(connection: Connection,
         if values['allow_multiple'] is None:
             values['allow_multiple'] = False
 
-        existing_question_id = values.pop('question_id', None)
+        existing_q_id = values.pop('question_id', None)
 
         executable = question_insert(**values)
         tcn = values['type_constraint_name']
         exceptions = [('question_type_constraint_name_fkey',
                        TypeConstraintDoesNotExistError(tcn))]
         result = execute_with_exceptions(connection, executable, exceptions)
-        q_id = result.inserted_primary_key[0]
+        result_ipk = result.inserted_primary_key
+        q_id = result_ipk[0]
 
-        choices = list(_create_choices(connection, values, q_id,
-                                       submission_map=submission_map))
+        choices = list(_create_choices(connection,
+                                       values,
+                                       q_id,
+                                       submission_map=submission_map,
+                                       existing_question_id=existing_q_id))
 
-        if existing_question_id is not None:
+        if existing_q_id is not None:
             question_fields = {'question_id': q_id,
-                               'type_constraint_name': result[1],
-                               'sequence_number': result[2],
-                               'allow_multiple': result[3],
+                               'type_constraint_name': result_ipk[1],
+                               'sequence_number': result_ipk[2],
+                               'allow_multiple': result_ipk[3],
                                'survey_id': survey_id}
-            for answer in get_answers_for_question(existing_question_id):
+            for answer in get_answers_for_question(existing_q_id):
                 answer_values = question_fields.copy()
                 new_submission_id = submission_map[answer.submission_id]
                 answer_values['answer_text'] = answer.answer_text
@@ -163,15 +145,6 @@ def _create_questions(connection: Connection,
                 answer_values['answer_location'] = answer.answer_location
                 answer_values['submission_id'] = new_submission_id
                 connection.execute(answer_insert(**answer_values))
-                # ans_choices = get_answer_choices_for_question(
-                # existing_question_id)
-                # for answer_choice in ans_choices:
-                # answer_values = question_fields.copy()
-                # new_submission_id = submission_map[
-                # answer_choice.submission_id]
-                # answer_values['question_choice_id'] = None
-                # answer_values['submission_id'] = new_submission_id
-                # connection.execute(answer_choice_insert(**answer_values))
 
         yield {'question_id': q_id,
                'type_constraint_name': tcn,
@@ -410,23 +383,6 @@ def update(data: dict):
         execute_with_exceptions(connection, executable, exc)
 
         new_survey_id = _create_survey(connection, data)
-        # data_q = data.get('questions', [])
-        # with engine.connect() as conn:
-        # if existing_survey.title != data['title']:
-        # safe_title = get_free_title(data['title'])
-        # executable = update_record(survey_table,
-        # 'survey_id',
-        # survey_id,
-        # title=safe_title)
-        # exc = [('survey_title_survey_owner_key',
-
-    # SurveyAlreadyExistsError(safe_title))]
-    # execute_with_exceptions(conn, executable, exc)
-    # # The branches need to be deleted first to avoid problems with the
-    # # constraint that a branch needs to point forward.
-    # _clear_branches(conn, survey_id)
-    # questions = list(_create_questions(conn, data_q, survey_id))
-    # _create_or_update_branches(conn, data_q, questions, survey_id)
 
     return get_one(new_survey_id)
 

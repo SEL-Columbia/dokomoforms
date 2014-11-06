@@ -356,16 +356,19 @@ class TestSurvey(unittest.TestCase):
                       'allow_multiple': None,
                       'logic': None}]
         update_json['questions'] = questions
-        api.survey.update(update_json)
-        upd_survey = survey_select(survey_id)
-        upd_questions = get_questions(survey_id).fetchall()
-        branch = get_branches(inserted_questions[1].question_id).first()
+        new_survey = api.survey.update(update_json)
+        new_survey_id = new_survey['survey_id']
+        upd_survey = survey_select(new_survey_id)
+        upd_questions = get_questions(new_survey_id).fetchall()
+        # branch = get_branches(inserted_questions[1].question_id).first()
+        branch = get_branches(upd_questions[0].question_id).first()
         self.assertEqual(branch.to_question_id, upd_questions[2].question_id)
         self.assertEqual(upd_questions[0].title, 'api_test 2nd question')
         self.assertEqual(upd_questions[0].logic, {'max': 'one'})
         self.assertEqual(upd_survey.title, 'updated survey title')
         self.assertEqual(upd_questions[1].title, 'updated question title')
-        choices = get_choices(inserted_questions[1].question_id).fetchall()
+        # choices = get_choices(inserted_questions[1].question_id).fetchall()
+        choices = get_choices(upd_questions[0].question_id).fetchall()
         self.assertEqual(choices[0].choice, 'b')
         self.assertEqual(choices[1].choice, 'a')
         self.assertEqual(choices[2].choice, '1')
