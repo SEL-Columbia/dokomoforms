@@ -412,7 +412,15 @@ class TestSurvey(unittest.TestCase):
                       'required': None,
                       'allow_multiple': None,
                       'logic': None,
-                      'choices': ['a', 'b', 'c']}]
+                      'choices': ['a', 'b', 'c']},
+                     {'title': 'was with other',
+                      'type_constraint_name': 'multiple_choice_with_other',
+                      'sequence_number': None,
+                      'hint': None,
+                      'required': None,
+                      'allow_multiple': True,
+                      'logic': None,
+                      'choices': ['use other']}]
         data = {'title': 'to_be_updated',
                 'questions': questions}
         survey_id = api.survey.create(data)['survey_id']
@@ -421,6 +429,8 @@ class TestSurvey(unittest.TestCase):
         choice_1_id = choice_1.question_choice_id
         choice_a = get_choices(inserted_qs[2].question_id).first()
         choice_a_id = choice_a.question_choice_id
+        other_choice = get_choices(inserted_qs[3].question_id).first()
+        other_choice_id = other_choice.question_choice_id
 
         submission = {'survey_id': survey_id,
                       'answers': [{'question_id': inserted_qs[0].question_id,
@@ -428,7 +438,11 @@ class TestSurvey(unittest.TestCase):
                                   {'question_id': inserted_qs[1].question_id,
                                    'question_choice_id': choice_1_id},
                                   {'question_id': inserted_qs[2].question_id,
-                                   'question_choice_id': choice_a_id}]}
+                                   'question_choice_id': choice_a_id},
+                                  {'question_id': inserted_qs[3].question_id,
+                                   'answer': 'my fancy other answer'},
+                                  {'question_id': inserted_qs[3].question_id,
+                                   'question_choice_id': other_choice_id}]}
 
         api.submission.submit(submission)
 
@@ -456,14 +470,24 @@ class TestSurvey(unittest.TestCase):
                       'required': None,
                       'logic': None,
                       'type_constraint_name': 'multiple_choice_with_other',
-                      'choices': ['a']}]
+                      'choices': ['a']},
+                     {'question_id': inserted_qs[3].question_id,
+                      'title': 'lost with other',
+                      'allow_multiple': None,
+                      'hint': None,
+                      'required': None,
+                      'logic': None,
+                      'type_constraint_name': 'multiple_choice',
+                      'choices': ['use other']}]
         update_json['questions'] = questions
         new_survey = api.survey.update(update_json)
         new_submissions = get_submissions(new_survey['survey_id']).fetchall()
         self.assertEqual(len(new_submissions), 1)
         choices = get_answer_choices(
             new_submissions[0].submission_id).fetchall()
-        self.assertEqual(len(choices), 1)
+        self.assertEqual(len(choices), 2)
+        answers = get_answers(new_submissions[0].submission_id).fetchall()
+        self.assertEqual(len(answers), 0)
 
 
     def testUpdateBadChoices(self):
