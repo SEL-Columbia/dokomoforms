@@ -173,7 +173,7 @@ Request data:
 
 Updates are non-destructive. Rather than updating in-place, a new survey will be created with the given title and existing submissions will be copied over. The existing survey will be renamed like so:
 
-`My fancy title &rarr; My fancy title (new version created on 2014-11-06T13:19:47.875324)`
+`My fancy title` &rarr; `My fancy title (new version created on 2014-11-06T13:19:47.875324)`
 
 The request for `update` is very similar to the one for `create`. The main difference is that if you want to update a question rather than create a new one, you need to supply the `question_id`. All other fields must be supplied as well.
 
