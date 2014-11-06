@@ -176,7 +176,6 @@ def _create_questions(connection: Connection,
                     if 'type_constraint_name_matches_answer_type' not in error:
                         raise
 
-
         yield {'question_id': q_id,
                'type_constraint_name': tcn,
                'sequence_number': values['sequence_number'],
@@ -240,6 +239,8 @@ def _copy_submission_entries(connection: Connection,
     """
     for submission in get_submissions(existing_survey_id):
         values = {'submitter': submission.submitter,
+                  'submission_time': submission.submission_time,
+                  'field_update_time': submission.field_update_time,
                   'survey_id': new_survey_id}
         result = connection.execute(submission_insert(**values))
         yield submission.submission_id, result.inserted_primary_key[0]
