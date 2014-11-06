@@ -20,6 +20,54 @@ from db.survey import survey_insert, survey_select, survey_table, \
 from db.type_constraint import TypeConstraintDoesNotExistError
 
 
+def _determine_choices(existing_question_id: str, choices: list) -> tuple:
+    """
+    Pre-process the choices coming from the survey JSON to determine which
+    choices to insert and which are updates.
+
+    :param existing_question_id: the UUID of the existing question (if this is
+                                 an update) or None otherwise
+    :param choices: the list of choices from the JSON submission
+    :return: a tuple of (list of new choices, dictionary of new choice : id of
+             old choice)
+    :raise RepeatedChoiceError: if a choice is supplied more than once
+    :raise QuestionChoiceDoesNotExistError: if an old_choice supplied does not
+                                            exist
+    """
+    # the choices associated with the existing question
+    old_choices = []
+    if existing_question_id is not None:
+        old_choices = get_choices(existing_question_id)
+    # a dictionary of choice text : choice id
+    old_choice_dict = {ch.choice: ch.question_choice_id for ch in old_choices}
+    # the choices to be inserted
+    new_choices = []
+    # a dictionary of new_choice : choice id
+    updates = {}
+    old_choice_repeats = set()
+    for entry in choices:
+        try:
+            # choice update
+            old_choice = entry['old_choice']
+            if old_choice not in old_choice_dict:
+                raise QuestionChoiceDoesNotExistError(old_choice)
+            if old_choice in old_choice_repeats:
+                raise RepeatedChoiceError(entry)
+            old_choice_repeats.add(old_choice)
+            new_choice = entry['new_choice']
+            new_choices.append(new_choice)
+            updates[new_choice] = old_choice_dict[old_choice]
+        except TypeError:
+            # new choice entry
+            new_choices.append(entry)
+            if entry in old_choice_dict:
+                updates[entry] = old_choice_dict[entry]
+    new_choice_set = set(new_choices)
+    if len(new_choice_set) != len(new_choices):
+        raise RepeatedChoiceError(new_choices)
+    return new_choices, updates
+
+
 def _create_choices(connection: Connection,
                     values: dict,
                     question_id: str,
@@ -37,31 +85,8 @@ def _create_choices(connection: Connection,
                                  an update)
     :return: an iterable of the resultant choice fields
     """
-    old_choices = []
-    if existing_question_id is not None:
-        old_choices = get_choices(existing_question_id)
-    old_choice_dict = {ch.choice: ch.question_choice_id for ch in old_choices}
-    new_choices = []
-    updates = {}
-    old_choice_repeats = set()
-    for entry in values.get('choices', []):
-        try:
-            old_choice = entry['old_choice']
-            if old_choice not in old_choice_dict:
-                raise QuestionChoiceDoesNotExistError(old_choice)
-            if old_choice in old_choice_repeats:
-                raise RepeatedChoiceError(entry)
-            old_choice_repeats.add(old_choice)
-            new_choice = entry['new_choice']
-            new_choices.append(new_choice)
-            updates[new_choice] = old_choice_dict[old_choice]
-        except TypeError:
-            new_choices.append(entry)
-            if entry in old_choice_dict:
-                updates[entry] = old_choice_dict[entry]
-    new_choice_set = set(new_choices)
-    if len(new_choice_set) != len(new_choices):
-        raise RepeatedChoiceError(new_choices)
+    choices = values.get('choices', [])
+    new_choices, updates = _determine_choices(existing_question_id, choices)
     for number, choice in enumerate(new_choices):
         choice_dict = {'question_id': question_id,
                        'survey_id': values['survey_id'],
@@ -75,7 +100,6 @@ def _create_choices(connection: Connection,
         result = execute_with_exceptions(connection, executable, exc)
         result_ipk = result.inserted_primary_key
         question_choice_id = result_ipk[0]
-        yield question_choice_id
 
         if choice in updates:
             question_fields = {'question_id': question_id,
@@ -89,6 +113,8 @@ def _create_choices(connection: Connection,
                 answer_values['question_choice_id'] = question_choice_id
                 answer_values['submission_id'] = new_submission_id
                 connection.execute(answer_choice_insert(**answer_values))
+
+        yield question_choice_id
 
 
 def _create_questions(connection: Connection,
@@ -139,12 +165,6 @@ def _create_questions(connection: Connection,
                 answer_values = question_fields.copy()
                 new_submission_id = submission_map[answer.submission_id]
                 answer_values['answer'] = answer['answer_' + result_ipk[1]]
-                # answer_values['answer_text'] = answer.answer_text
-                # answer_values['answer_integer'] = answer.answer_integer
-                # answer_values['answer_decimal'] = answer.answer_decimal
-                # answer_values['answer_date'] = answer.answer_date
-                # answer_values['answer_time'] = answer.answer_time
-                # answer_values['answer_location'] = answer.answer_location
                 answer_values['submission_id'] = new_submission_id
                 connection.execute(answer_insert(**answer_values))
 
@@ -244,6 +264,7 @@ def _create_survey(connection: Connection, data: dict) -> str:
     result = execute_with_exceptions(connection, executable, exc)
     survey_id = result.inserted_primary_key[0]
 
+    # a map of old submission_id to new submission_id
     submission_map = None
     if is_update:
         submission_map = {entry[0]: entry[1] for entry in
