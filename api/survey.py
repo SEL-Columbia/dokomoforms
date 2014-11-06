@@ -7,7 +7,8 @@ from sqlalchemy.engine import RowProxy, Connection
 from api import execute_with_exceptions
 from db import engine, delete_record, update_record
 from db.answer import get_answers_for_question, answer_insert
-from db.answer_choice import get_answer_choices_for_choice_id
+from db.answer_choice import get_answer_choices_for_choice_id, \
+    answer_choice_insert
 from db.question import question_insert, get_questions
 from db.question_branch import get_branches, question_branch_insert, \
     MultipleBranchError
@@ -78,16 +79,16 @@ def _create_choices(connection: Connection,
 
         if choice in updates:
             question_fields = {'question_id': question_id,
-                               'type_constraint_name': result_ipk[1],
-                               'sequence_number': result_ipk[2],
-                               'allow_multiple': result_ipk[3],
+                               'type_constraint_name': result_ipk[2],
+                               'sequence_number': result_ipk[3],
+                               'allow_multiple': result_ipk[4],
                                'survey_id': values['survey_id']}
             for answer in get_answer_choices_for_choice_id(updates[choice]):
                 answer_values = question_fields.copy()
                 new_submission_id = submission_map[answer.submission_id]
                 answer_values['question_choice_id'] = question_choice_id
                 answer_values['submission_id'] = new_submission_id
-                connection.execute(answer_insert(**answer_values))
+                connection.execute(answer_choice_insert(**answer_values))
 
 
 def _create_questions(connection: Connection,
@@ -137,12 +138,13 @@ def _create_questions(connection: Connection,
             for answer in get_answers_for_question(existing_q_id):
                 answer_values = question_fields.copy()
                 new_submission_id = submission_map[answer.submission_id]
-                answer_values['answer_text'] = answer.answer_text
-                answer_values['answer_integer'] = answer.answer_integer
-                answer_values['answer_decimal'] = answer.answer_decimal
-                answer_values['answer_date'] = answer.answer_date
-                answer_values['answer_time'] = answer.answer_time
-                answer_values['answer_location'] = answer.answer_location
+                answer_values['answer'] = answer['answer_' + result_ipk[1]]
+                # answer_values['answer_text'] = answer.answer_text
+                # answer_values['answer_integer'] = answer.answer_integer
+                # answer_values['answer_decimal'] = answer.answer_decimal
+                # answer_values['answer_date'] = answer.answer_date
+                # answer_values['answer_time'] = answer.answer_time
+                # answer_values['answer_location'] = answer.answer_location
                 answer_values['submission_id'] = new_submission_id
                 connection.execute(answer_insert(**answer_values))
 

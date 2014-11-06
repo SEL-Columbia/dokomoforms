@@ -10,14 +10,15 @@ from sqlalchemy.exc import DataError
 
 import api.survey
 import api.submission
-from db.answer import answer_insert, CannotAnswerMultipleTimes
+from db.answer import answer_insert, CannotAnswerMultipleTimes, get_answers
+from db.answer_choice import get_answer_choices
 from db.question import question_table, get_questions, \
     QuestionDoesNotExistError
 from db.question_branch import get_branches, MultipleBranchError
 from db.question_choice import question_choice_table, get_choices, \
     RepeatedChoiceError, QuestionChoiceDoesNotExistError
 from db.submission import submission_table, submission_insert, \
-    SubmissionDoesNotExistError, submission_select
+    SubmissionDoesNotExistError, submission_select, get_submissions
 from db.survey import survey_table, survey_select, SurveyDoesNotExistError
 from db.type_constraint import TypeConstraintDoesNotExistError
 
@@ -184,6 +185,7 @@ class TestSurvey(unittest.TestCase):
     def tearDown(self):
         survey_table.delete().where(
             survey_table.c.title != 'test_title').execute()
+        submission_table.delete().execute()
 
     def testGetOne(self):
         survey_id = survey_table.select().execute().first().survey_id
@@ -325,11 +327,20 @@ class TestSurvey(unittest.TestCase):
         data = {'title': 'api_test survey',
                 'questions': questions}
         survey_id = api.survey.create(data)['survey_id']
-        inserted_questions = get_questions(survey_id).fetchall()
+        inserted_qs = get_questions(survey_id).fetchall()
+        choice_1 = get_choices(inserted_qs[1].question_id).fetchall()[0]
+        choice_1_id = choice_1.question_choice_id
+
+        submission = {'survey_id': survey_id,
+                      'answers': [{'question_id': inserted_qs[0].question_id,
+                                   'answer': 'text answer'},
+                                  {'question_id': inserted_qs[1].question_id,
+                                   'question_choice_id': choice_1_id}]}
+        api.submission.submit(submission)
 
         update_json = {'survey_id': survey_id,
                        'title': 'updated survey title'}
-        questions = [{'question_id': inserted_questions[1].question_id,
+        questions = [{'question_id': inserted_qs[1].question_id,
                       'title': 'api_test 2nd question',
                       'type_constraint_name': 'multiple_choice',
                       'allow_multiple': None,
@@ -341,7 +352,7 @@ class TestSurvey(unittest.TestCase):
                                   '1'],
                       'branches': [
                           {'choice_number': 1, 'to_question_number': 2}]},
-                     {'question_id': inserted_questions[0].question_id,
+                     {'question_id': inserted_qs[0].question_id,
                       'title': 'updated question title',
                       'allow_multiple': None,
                       'hint': None,
@@ -360,19 +371,23 @@ class TestSurvey(unittest.TestCase):
         new_survey_id = new_survey['survey_id']
         upd_survey = survey_select(new_survey_id)
         upd_questions = get_questions(new_survey_id).fetchall()
-        # branch = get_branches(inserted_questions[1].question_id).first()
         branch = get_branches(upd_questions[0].question_id).first()
         self.assertEqual(branch.to_question_id, upd_questions[2].question_id)
         self.assertEqual(upd_questions[0].title, 'api_test 2nd question')
         self.assertEqual(upd_questions[0].logic, {'max': 'one'})
         self.assertEqual(upd_survey.title, 'updated survey title')
         self.assertEqual(upd_questions[1].title, 'updated question title')
-        # choices = get_choices(inserted_questions[1].question_id).fetchall()
         choices = get_choices(upd_questions[0].question_id).fetchall()
         self.assertEqual(choices[0].choice, 'b')
         self.assertEqual(choices[1].choice, 'a')
         self.assertEqual(choices[2].choice, '1')
         self.assertEqual(len(choices), 3)
+        new_submission = get_submissions(new_survey_id).first()
+        text_answer = get_answers(new_submission.submission_id).first()
+        self.assertEqual(text_answer.answer_text, 'text answer')
+        the_choice = get_answer_choices(new_submission.submission_id).first()
+        self.assertEqual(the_choice.question_choice_id,
+                         choices[2].question_choice_id)
 
     def testUpdateBadChoices(self):
         questions = [{'title': 'bad update question',
