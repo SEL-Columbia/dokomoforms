@@ -181,7 +181,7 @@ For `questions`, `choices`, and `branches`, any element "left out" (not present 
 
 Submission data will survive for choices that remain after the update (unchanged text).
 
-All sequence numbers will be reassigned after the update (so you can rearrange questions -- take care to updated the branches as well).
+All sequence numbers will be reassigned after the update (so you can rearrange questions -- take care to update the branches as well).
 
 
 
