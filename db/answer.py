@@ -100,3 +100,6 @@ def get_geo_json(answer: RowProxy) -> dict:
     """
     result = engine.execute(func.ST_AsGeoJSON(answer.answer_location)).scalar()
     return json.loads(result)
+
+class CannotAnswerMultipleTimes(Exception):
+    pass

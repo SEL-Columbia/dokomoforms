@@ -42,3 +42,6 @@ def survey_select(survey_id: str) -> RowProxy:
 
 class SurveyDoesNotExistError(Exception):
     pass
+
+class SurveyAlreadyExistsError(Exception):
+    pass
