@@ -337,6 +337,62 @@ or
 ```
 
 
+### Date
+```
+// Question
+{
+    "question_id": "<UUID>",
+    "title": "Date",
+    "hint": "",
+    "required": false,
+    "sequence_number": 0,
+    "allow_multiple": false,
+    "type_constraint_name": "date",
+    "logic": {}
+}
+
+// Answer
+{
+    "answer_id": "<UUID>",
+    "question_id": "<UUID>",
+    "type_constraint_name": "date",
+    "answer": "1970-01-15"
+}
+```
+
+The date should be given as `"YYYY-MM-DD"` - year, month, date
+
+
+### Time (with timezone)
+```
+// Question
+{
+    "question_id": "<UUID>",
+    "title": "Time",
+    "hint": "",
+    "required": false,
+    "sequence_number": 0,
+    "allow_multiple": false,
+    "type_constraint_name": "time",
+    "logic": {}
+}
+
+// Answer
+{
+    "answer_id": "<UUID>",
+    "question_id": "<UUID>",
+    "type_constraint_name": "time",
+    "answer": "12:59:00-04:00"
+}
+```
+
+The time should be given as `"HH:MM:SS{+,-}UTC"` - hour, minute, second, UTC offset. See http://en.wikipedia.org/wiki/ISO_8601
+
+If seconds are not provided (`HH:MM{+,-}UTC`, `12:59-04:00`), the default is 0. The response answer will look like `HH:MM:00{+,-}UTC`
+
+If the UTC offset is not provided, I believe the default is the time zone of the database... which is probably not what you want. At all.
+
+
 ### Integer
 Need to consider what exactly to do about logical constraints.
 ```
@@ -360,6 +416,7 @@ Need to consider what exactly to do about logical constraints.
     "answer": 6
 }
 ```
+
 
 ### Text
 ```
