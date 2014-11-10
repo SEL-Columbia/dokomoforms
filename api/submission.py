@@ -111,6 +111,8 @@ def _jsonify(answer: RowProxy, type_constraint_name: str) -> object:
         return get_geo_json(answer)['coordinates']
     elif type_constraint_name in {'date', 'time'}:
         return answer['answer_' + type_constraint_name].isoformat()
+    elif type_constraint_name == 'decimal':
+        return float(answer['answer_' + type_constraint_name])
     else:
         return answer['answer_' + type_constraint_name]
 
