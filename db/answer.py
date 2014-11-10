@@ -62,9 +62,8 @@ def answer_insert(*,
     :param survey_id: The UUID of the survey.
     :return: The Insert object. Execute this!
     """
-    if type_constraint_name == 'multiple_choice_with_other':
-        type_constraint_name = 'text'
-    answer_type = 'answer_' + type_constraint_name
+    other = type_constraint_name == 'multiple_choice_with_other'
+    answer_type = 'answer_text' if other else 'answer_' + type_constraint_name
     values = {answer_type: _sanitize_answer(answer, type_constraint_name),
               'question_id': question_id,
               'submission_id': submission_id,
