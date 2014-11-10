@@ -10,11 +10,15 @@ from db import engine, delete_record
 from db.answer import answer_insert, get_answers, get_geo_json, \
     CannotAnswerMultipleTimes
 from db.answer_choice import get_answer_choices, answer_choice_insert
-from db.question import question_select
+from db.question import question_select, get_required
 from db.question_choice import question_choice_select
 from db.submission import submission_insert, submission_select, \
     get_submissions, submission_table
 from db.survey import SurveyDoesNotExistError
+
+
+class RequiredQuestionSkipped(Exception):
+    pass
 
 
 def _filter_skipped_questions(answers: list) -> Iterator:
@@ -63,12 +67,16 @@ def submit(data: dict) -> dict:
 
     :param data: representation of the submission (from json.loads)
     :return: the UUID of the submission in the database
+    :raise RequiredQuestionSkipped: if there is no answer for a required
+                                    question
     """
     survey_id = data['survey_id']
     all_answers = data['answers']
     answers = _filter_skipped_questions(all_answers)
+    unanswered_required = {q.question_id for q in get_required(survey_id)}
 
     with engine.begin() as connection:
+        # create the submission and store its ID
         submission_values = {'submitter': '',
                              'survey_id': survey_id}
         executable = submission_insert(**submission_values)
@@ -77,11 +85,17 @@ def submit(data: dict) -> dict:
         result = execute_with_exceptions(connection, executable, exceptions)
         submission_id = result.inserted_primary_key[0]
 
+        # insert each answer
         for answer in answers:
             executable = _insert_answer(answer, submission_id, survey_id)
             exceptions = [('only_one_answer_allowed',
                            CannotAnswerMultipleTimes(answer['question_id']))]
             execute_with_exceptions(connection, executable, exceptions)
+            unanswered_required.discard(answer['question_id'])
+
+        # complain if any required questions were skipped
+        if unanswered_required:
+            raise RequiredQuestionSkipped(unanswered_required)
 
     return get(submission_id)
 
