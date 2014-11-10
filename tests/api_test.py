@@ -25,6 +25,8 @@ from db.type_constraint import TypeConstraintDoesNotExistError
 class TestSubmission(unittest.TestCase):
     def tearDown(self):
         submission_table.delete().execute()
+        survey_table.delete().where(
+            survey_table.c.title != 'test_title').execute()
 
     def testSubmit(self):
         survey_id = survey_table.select().execute().first().survey_id
@@ -78,6 +80,38 @@ class TestSubmission(unittest.TestCase):
                           [{'question_id': question_id,
                             'answer': 'one'}]}
         self.assertRaises(DataError, api.submission.submit, input_data)
+
+    def testSkippedQuestion(self):
+        questions = [{'title': 'required question',
+                      'type_constraint_name': 'integer',
+                      'sequence_number': None,
+                      'hint': None,
+                      'required': True,
+                      'allow_multiple': None,
+                      'logic': {}}]
+        data = {'title': 'survey with required question',
+                'questions': questions}
+        survey = api.survey.create(data)
+        survey_id = survey['survey_id']
+
+        submission = {'survey_id': survey_id,
+                      'answers': []}
+        self.assertRaises(api.submission.RequiredQuestionSkipped,
+                          api.submission.submit, submission)
+
+        question_id = survey['questions'][0]['question_id']
+        submission2 = {'survey_id': survey_id,
+                       'answers': [{'question_id': question_id}]}
+
+        self.assertRaises(api.submission.RequiredQuestionSkipped,
+                          api.submission.submit, submission2)
+
+        submission3 = {'survey_id': survey_id,
+                       'answers': [{'question_id': question_id,
+                                    'answer': None}]}
+
+        self.assertRaises(api.submission.RequiredQuestionSkipped,
+                          api.submission.submit, submission3)
 
     def testQuestionDoesNotExist(self):
         survey_id = survey_table.select().execute().first().survey_id
