@@ -2,6 +2,7 @@
 from sqlalchemy import Table, MetaData
 from sqlalchemy.engine import RowProxy, ResultProxy
 from sqlalchemy.sql.dml import Insert
+from sqlalchemy.sql.elements import and_
 from sqlalchemy.sql.functions import coalesce
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.functions import max as sqlmax
@@ -129,4 +130,12 @@ def get_questions(survey_id: str) -> ResultProxy:
     """
     select_stmt = question_table.select()
     where_stmt = select_stmt.where(question_table.c.survey_id == survey_id)
+    return where_stmt.order_by('sequence_number asc').execute()
+
+def get_required(survey_id: str) -> ResultProxy:
+    select_stmt = question_table.select()
+    survey_condition = question_table.c.survey_id == survey_id
+    required_condition = question_table.c.required
+    condition = and_(survey_condition, required_condition)
+    where_stmt = select_stmt.where(condition)
     return where_stmt.order_by('sequence_number asc').execute()
