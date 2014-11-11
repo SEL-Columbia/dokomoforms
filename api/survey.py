@@ -1,18 +1,119 @@
 """Functions for interacting with surveys."""
+from collections import Iterator
 
-from sqlalchemy.engine import RowProxy
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.engine import RowProxy, Connection
 
+from api import execute_with_exceptions
 from db import engine, update_record, delete_record
 from db.question import question_insert, get_questions, question_table, \
     get_free_sequence_number, question_select
 from db.question_branch import get_branches, question_branch_insert, \
-    question_branch_table
+    question_branch_table, MultipleBranchError
 from db.question_choice import get_choices, question_choice_insert, \
-    question_choice_table
+    question_choice_table, RepeatedChoiceError
 from db.survey import survey_insert, survey_select, survey_table, \
-    SurveyAlreadyExistsError
+    SurveyAlreadyExistsError, get_free_title
 from db.type_constraint import TypeConstraintDoesNotExistError
+
+
+def _create_choices(connection: Connection,
+                    values: dict,
+                    question_id: str) -> Iterator:
+    """
+    Create choices as part of a survey submission.
+
+    :param connection: the SQLAlchemy Connection object for the transaction
+    :param values: the dictionary of values associated with the question
+    :param question_id: the UUID of the question
+    """
+    for number, choice in enumerate(values.get('choices', [])):
+        choice_dict = {'question_id': question_id,
+                       'survey_id': values['survey_id'],
+                       'choice': choice,
+                       'choice_number': number,
+                       'type_constraint_name': values['type_constraint_name'],
+                       'question_sequence_number': values['sequence_number'],
+                       'allow_multiple': values['allow_multiple']}
+        executable = question_choice_insert(**choice_dict)
+        exc = [('unique_choice_names', RepeatedChoiceError(choice))]
+        result = execute_with_exceptions(connection, executable, exc)
+
+        yield result.inserted_primary_key[0]
+
+
+def _create_questions(connection: Connection,
+                      questions: list,
+                      survey_id: str) -> Iterator:
+    """
+    Create questions as part of a survey submission.
+
+    :param connection: the SQLAlchemy Connection object for the transaction
+    :param questions: the dictionary of values associated with the question
+    :param survey_id: the UUID of the survey
+    """
+    for number, question in enumerate(questions):
+        values = question.copy()
+        values['sequence_number'] = number
+        values['survey_id'] = survey_id
+        executable = question_insert(**values)
+        tcn = values['type_constraint_name']
+        exceptions = [('question_type_constraint_name_fkey',
+                       TypeConstraintDoesNotExistError(tcn))]
+        result = execute_with_exceptions(connection, executable, exceptions)
+        question_primary_key = result.inserted_primary_key
+        q_id = question_primary_key[0]
+        if values['allow_multiple'] is None:
+            values['allow_multiple'] = False
+        choices = list(_create_choices(connection, values, q_id))
+
+        yield {'question_id': q_id,
+               'type_constraint_name': tcn,
+               'sequence_number': question_primary_key[2],
+               'allow_multiple': values['allow_multiple'],
+               'choice_ids': choices}
+
+
+def _create_branches(connection: Connection,
+                     questions_json: list,
+                     question_dicts: list,
+                     survey_id: str):
+    """
+    Create branches as part of a survey submission.
+
+    :param connection: the SQLAlchemy Connection object for the transaction
+    :param questions_json: a list of dictionaries coming from the JSON input
+    :param question_dicts: a list of dictionaries resulting from inserting
+                           the questions
+    :param survey_id: the UUID of the survey
+    """
+    for index, question_dict in enumerate(questions_json):
+        for branch in question_dict.get('branches', []):
+            choice_index = branch['choice_number']
+            from_dict = question_dicts[index]
+            question_choice_id = from_dict['choice_ids'][choice_index]
+            from_question_id = from_dict['question_id']
+            from_tcn = question_dict['type_constraint_name']
+            from_mul = from_dict['allow_multiple']
+            to_question_index = branch['to_question_number']
+            to_question_id = question_dicts[to_question_index]['question_id']
+            to_tcn = question_dicts[to_question_index]['type_constraint_name']
+            to_seq = question_dicts[to_question_index]['sequence_number']
+            to_mul = question_dicts[to_question_index]['allow_multiple']
+            branch_dict = {'question_choice_id': question_choice_id,
+                           'from_question_id': from_question_id,
+                           'from_type_constraint': from_tcn,
+                           'from_sequence_number': index,
+                           'from_allow_multiple': from_mul,
+                           'from_survey_id': survey_id,
+                           'to_question_id': to_question_id,
+                           'to_type_constraint': to_tcn,
+                           'to_sequence_number': to_seq,
+                           'to_allow_multiple': to_mul,
+                           'to_survey_id': survey_id}
+            executable = question_branch_insert(**branch_dict)
+            exc = [('question_branch_from_question_id_question_choice_id_key',
+                    MultipleBranchError(question_choice_id))]
+            execute_with_exceptions(connection, executable, exc)
 
 
 def create(data: dict) -> dict:
@@ -26,88 +127,22 @@ def create(data: dict) -> dict:
 
     # user_id = json_data['auth_user_id']
     title = data['title']
-    data_questions = data.get('questions', [])
+    data_q = data.get('questions', [])
 
     with engine.begin() as connection:
         # First, create an entry in the survey table
         survey_values = {  # 'auth_user_id': user_id,
-                           'title': title}
-        try:
-            result = connection.execute(survey_insert(**survey_values))
-        except IntegrityError as exc:
-            error = str(exc.orig)
-            if 'survey_title_survey_owner_key' in error:
-                raise SurveyAlreadyExistsError(title)
-            raise
+                           'title': get_free_title(title)}
+        executable = survey_insert(**survey_values)
+        exc = [
+            ('survey_title_survey_owner_key', SurveyAlreadyExistsError(title))]
+        result = execute_with_exceptions(connection, executable, exc)
         survey_id = result.inserted_primary_key[0]
 
         # Now insert questions.  Inserting branches has to come afterward so
         # that the question_id values actually exist in the tables.
-        questions = []
-        for question_number, question_dict in enumerate(data_questions):
-            # Add fields to the question_dict
-            values_dict = question_dict.copy()
-            values_dict['sequence_number'] = question_number
-            values_dict['survey_id'] = survey_id
-            try:
-                q_exec = connection.execute(question_insert(**values_dict))
-            except IntegrityError as exc:
-                error = str(exc.orig)
-                if 'question_type_constraint_name_fkey' in error:
-                    tcn = values_dict['type_constraint_name']
-                    raise TypeConstraintDoesNotExistError(tcn)
-                raise
-            pk = q_exec.inserted_primary_key
-            question_id = pk[0]
-
-            # Having inserted the question, we need to insert the choices (
-            # if there are any)
-            enum = enumerate(values_dict.get('choices', []))
-            tcn = values_dict['type_constraint_name']
-            mul = values_dict['allow_multiple']
-            if mul is None:
-                mul = False
-            choice_ids = []
-            for number, choice in enum:
-                choice_dict = {'question_id': question_id,
-                               'survey_id': survey_id,
-                               'choice': choice,
-                               'choice_number': number,
-                               'type_constraint_name': tcn,
-                               'question_sequence_number': question_number,
-                               'allow_multiple': mul}
-                ch = connection.execute(question_choice_insert(**choice_dict))
-                choice_ids.append(ch.inserted_primary_key[0])
-            questions.append({'question_id': question_id,
-                              'type_constraint_name': tcn,
-                              'sequence_number': pk[2],
-                              'allow_multiple': mul,
-                              'choice_ids': choice_ids})
-        for index, question_dict in enumerate(data_questions):
-            for branch in question_dict.get('branches', []):
-                choice_index = branch['choice_number']
-                from_dict = questions[index]
-                question_choice_id = from_dict['choice_ids'][choice_index]
-                from_question_id = from_dict['question_id']
-                from_tcn = question_dict['type_constraint_name']
-                from_mul = from_dict['allow_multiple']
-                to_question_index = branch['to_question_number']
-                to_question_id = questions[to_question_index]['question_id']
-                to_tcn = questions[to_question_index]['type_constraint_name']
-                to_seq = questions[to_question_index]['sequence_number']
-                to_mul = questions[to_question_index]['allow_multiple']
-                branch_dict = {'question_choice_id': question_choice_id,
-                               'from_question_id': from_question_id,
-                               'from_type_constraint': from_tcn,
-                               'from_sequence_number': index,
-                               'from_allow_multiple': from_mul,
-                               'from_survey_id': survey_id,
-                               'to_question_id': to_question_id,
-                               'to_type_constraint': to_tcn,
-                               'to_sequence_number': to_seq,
-                               'to_allow_multiple': to_mul,
-                               'to_survey_id': survey_id}
-                connection.execute(question_branch_insert(**branch_dict))
+        questions = list(_create_questions(connection, data_q, survey_id))
+        _create_branches(connection, data_q, questions, survey_id)
 
     return get_one(survey_id)
 
@@ -197,7 +232,6 @@ def get_many() -> dict:
     return [_to_json(survey) for survey in surveys]
 
 
-# TODO: look into refactoring this
 def update(data: dict):
     """
     Update a survey (title, questions). You can also add questions here.
@@ -242,12 +276,12 @@ def update(data: dict):
                         seq = question.sequence_number
                         mul = question.allow_multiple
                         ch_dict = {'question_id': q_id,
-                                       'survey_id': survey_id,
-                                       'choice': choice,
-                                       'choice_number': number,
-                                       'type_constraint_name': tcn,
-                                       'question_sequence_number': seq,
-                                       'allow_multiple': mul}
+                                   'survey_id': survey_id,
+                                   'choice': choice,
+                                   'choice_number': number,
+                                   'type_constraint_name': tcn,
+                                   'question_sequence_number': seq,
+                                   'allow_multiple': mul}
                         connection.execute(question_choice_insert(**ch_dict))
             else:
                 # create new question

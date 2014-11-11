@@ -3,9 +3,9 @@ from heapq import merge
 from collections import Iterator
 
 from sqlalchemy.engine import ResultProxy, RowProxy
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import Insert
 
+from api import execute_with_exceptions
 from db import engine, delete_record
 from db.answer import answer_insert, get_answers, get_geo_json, \
     CannotAnswerMultipleTimes
@@ -76,34 +76,28 @@ def submit(data: dict) -> dict:
     unanswered_required = {q.question_id for q in get_required(survey_id)}
 
     with engine.begin() as connection:
+        # create the submission and store its ID
         submission_values = {'submitter': '',
                              'survey_id': survey_id}
-        # create the submission and store its ID
-        try:
-            result = connection.execute(submission_insert(**submission_values))
-        except IntegrityError as exc:
-            error = str(exc.orig)
-            if 'submission_survey_id_fkey' in error:
-                raise SurveyDoesNotExistError(survey_id)
-            raise
-        sub_id = result.inserted_primary_key[0]
+        executable = submission_insert(**submission_values)
+        exceptions = [
+            ('submission_survey_id_fkey', SurveyDoesNotExistError(survey_id))]
+        result = execute_with_exceptions(connection, executable, exceptions)
+        submission_id = result.inserted_primary_key[0]
 
         # insert each answer
-        for ans in answers:
-            try:
-                connection.execute(_insert_answer(ans, sub_id, survey_id))
-            except IntegrityError as exc:
-                error = str(exc.orig)
-                if 'only_one_answer_allowed' in error:
-                    raise CannotAnswerMultipleTimes(ans['question_id'])
-                raise
-            unanswered_required.discard(ans['question_id'])
+        for answer in answers:
+            executable = _insert_answer(answer, submission_id, survey_id)
+            exceptions = [('only_one_answer_allowed',
+                           CannotAnswerMultipleTimes(answer['question_id']))]
+            execute_with_exceptions(connection, executable, exceptions)
+            unanswered_required.discard(answer['question_id'])
 
         # complain if any required questions were skipped
         if unanswered_required:
             raise RequiredQuestionSkipped(unanswered_required)
 
-    return get(sub_id)
+    return get(submission_id)
 
 
 def _get_comparable(answers: ResultProxy) -> Iterator:
