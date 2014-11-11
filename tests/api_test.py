@@ -13,8 +13,9 @@ import api.submission
 from db.answer import answer_insert, CannotAnswerMultipleTimes
 from db.question import question_table, get_questions, \
     QuestionDoesNotExistError
-from db.question_branch import get_branches
-from db.question_choice import question_choice_table, get_choices
+from db.question_branch import get_branches, MultipleBranchError
+from db.question_choice import question_choice_table, get_choices, \
+    RepeatedChoiceError
 from db.submission import submission_table, submission_insert, \
     SubmissionDoesNotExistError, submission_select
 from db.survey import survey_table, survey_select, SurveyDoesNotExistError, \
@@ -80,6 +81,7 @@ class TestSubmission(unittest.TestCase):
                           [{'question_id': question_id,
                             'answer': 'one'}]}
         self.assertRaises(DataError, api.submission.submit, input_data)
+        self.assertEqual(submission_table.select().execute().rowcount, 0)
 
     def testSkippedQuestion(self):
         questions = [{'title': 'required question',
@@ -262,8 +264,16 @@ class TestSurvey(unittest.TestCase):
         survey_id = survey_table.select().execute().first().survey_id
         title = survey_select(survey_id).title
         input_data = {'title': title}
-        self.assertRaises(SurveyAlreadyExistsError, api.survey.create,
-                          input_data)
+        result = api.survey.create(input_data)
+        self.assertEqual(result['title'], 'test_title(1)')
+        result2 = api.survey.create(input_data)
+        self.assertEqual(result2['title'], 'test_title(2)')
+        result3 = api.survey.create({'title': 'test_title(1)'})
+        self.assertEqual(result3['title'], 'test_title(1)(1)')
+
+        api.survey.create({'title': 'not in conflict(1)'})
+        result4 = api.survey.create({'title': 'not in conflict'})
+        self.assertEqual(result4['title'], 'not in conflict')
 
     def testTwoChoicesWithSameName(self):
         input_data = {'title': 'choice error',
@@ -275,8 +285,7 @@ class TestSurvey(unittest.TestCase):
                                      'allow_multiple': None,
                                      'logic': {},
                                      'choices': ['a', 'a']}]}
-        self.assertRaises(IntegrityError, api.survey.create, input_data)
-        # self.assertRaises(RepeatedChoiceError, api.survey.create, input_data)
+        self.assertRaises(RepeatedChoiceError, api.survey.create, input_data)
 
     def testTwoBranchesFromOneChoice(self):
         input_data = {'title': 'choice error',
@@ -306,8 +315,7 @@ class TestSurvey(unittest.TestCase):
                                      'required': None,
                                      'allow_multiple': None,
                                      'logic': None}]}
-        self.assertRaises(IntegrityError, api.survey.create, input_data)
-        # self.assertRaises(MultipleBranchError, api.survey.create, input_data)
+        self.assertRaises(MultipleBranchError, api.survey.create, input_data)
 
     def testTypeConstraintDoesNotExist(self):
         input_data = {'title': 'type constraint error',
@@ -320,6 +328,9 @@ class TestSurvey(unittest.TestCase):
                                      'logic': {}}]}
         self.assertRaises(TypeConstraintDoesNotExistError, api.survey.create,
                           input_data)
+        condition = survey_table.c.title == 'type constraint error'
+        self.assertEqual(
+            survey_table.select().where(condition).execute().rowcount, 0)
 
     def testUpdate(self):
         questions = [{'title': 'api_test question',
