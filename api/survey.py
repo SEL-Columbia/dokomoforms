@@ -9,7 +9,7 @@ from db.question import question_insert, get_questions, question_table
 from db.question_branch import get_branches, question_branch_insert, \
     question_branch_table, MultipleBranchError
 from db.question_choice import get_choices, question_choice_insert, \
-    question_choice_table, RepeatedChoiceError
+    question_choice_table, RepeatedChoiceError, QuestionChoiceDoesNotExistError
 from db.survey import survey_insert, survey_select, survey_table, \
     SurveyAlreadyExistsError, get_free_title
 from db.type_constraint import TypeConstraintDoesNotExistError
@@ -28,10 +28,33 @@ def _create_or_update_choices(connection: Connection,
     current = get_choices(question_id)
     existing_choices = {ch.choice: (ch.choice_number,
                                     ch.question_choice_id) for ch in current}
-    new_choices = values.get('choices', [])
+    data_choices = values.get('choices', [])
+    # new_choices is a list of the surviving and to-be-created choices
+    new_choices = []
+    # updates is a dictionary for choices which are being renamed
+    updates = {}
+    for entry in data_choices:
+        try:
+            old_choice = entry['old_choice']
+            if old_choice not in existing_choices:
+                raise QuestionChoiceDoesNotExistError(old_choice)
+            new_choices.append(old_choice)
+            updates[entry['old_choice']] = entry['new_choice']
+        except TypeError:
+            new_choices.append(entry)
     new_choice_set = set(new_choices)
+    if len(new_choice_set) != len(new_choices):
+        raise RepeatedChoiceError(new_choices)
     # delete choices that don't exist anymore
+    # also, temporarily reassign choices with nonsensical choice numbers to
+    # avoid conflicts during the update
+    temp_choice_number = -1
     for choice in existing_choices:
+        connection.execute(update_record(question_choice_table,
+                                         'question_choice_id',
+                                         existing_choices[choice][1],
+                                         choice_number=temp_choice_number))
+        temp_choice_number -= 1
         if choice not in new_choice_set:
             connection.execute(delete_record(question_choice_table,
                                              'question_choice_id',
@@ -39,13 +62,19 @@ def _create_or_update_choices(connection: Connection,
     for number, choice in enumerate(new_choices):
         if choice in existing_choices:
             choice_number, choice_id = existing_choices[choice]
-            if choice_number != number:
-                executable = update_record(question_choice_table,
-                                           'question_choice_id',
-                                           choice_id,
-                                           {'choice_number': number})
-                exc = [('unique_choice_names', RepeatedChoiceError(choice))]
+            update_dict = {'choice_number': number}
+            if choice in updates:
+                update_dict['choice'] = updates[choice]
+            executable = update_record(question_choice_table,
+                                       'question_choice_id',
+                                       choice_id,
+                                       update_dict)
+            exc = [('unique_choice_names',
+                    RepeatedChoiceError(update_dict.get('choice', choice)))]
+            try:
                 execute_with_exceptions(connection, executable, exc)
+            except:
+                raise
             yield choice_id
         else:
             choice_dict = {'question_id': question_id,
@@ -75,12 +104,21 @@ def _create_or_update_questions(connection: Connection,
     :param survey_id: the UUID of the survey
     """
     # delete questions that don't exist anymore
+    # also, temporarily reassign questions with nonsensical sequence numbers to
+    # avoid conflicts during the update
     surviving_questions = {q.get('question_id', None) for q in questions}
+    temp_seq = -1
     for existing_question in get_questions(survey_id):
+        question_id = existing_question.question_id
+        connection.execute(update_record(question_table,
+                                         'question_id',
+                                         question_id,
+                                         sequence_number=temp_seq))
+        temp_seq -= 1
         if existing_question.question_id not in surviving_questions:
             connection.execute(delete_record(question_table,
                                              'question_id',
-                                             existing_question.question_id))
+                                             question_id))
     for number, question in enumerate(questions):
         values = question.copy()
         values['sequence_number'] = number
@@ -150,11 +188,6 @@ def _create_or_update_branches(connection: Connection,
     for index, question_dict in enumerate(questions_json):
         from_dict = question_dicts[index]
         from_q_id = from_dict['question_id']
-
-        # delete existing branches, if any
-        # this is safe to do for an update
-        condition = question_branch_table.c.from_question_id == from_q_id
-        connection.execute(question_branch_table.delete().where(condition))
         for branch in question_dict.get('branches', []):
             choice_index = branch['choice_number']
             question_choice_id = from_dict['choice_ids'][choice_index]
@@ -180,6 +213,20 @@ def _create_or_update_branches(connection: Connection,
             exc = [('question_branch_from_question_id_question_choice_id_key',
                     MultipleBranchError(question_choice_id))]
             execute_with_exceptions(connection, executable, exc)
+
+
+def _clear_branches(connection: Connection, survey_id: str):
+    """
+    Delete the branches in a survey, if any. To be used during an update to
+    avoid difficulties, especially due to the constraint that branches must
+    point forward.
+
+    :param connection: the SQLAlchemy Connection object for the transaction
+    :param survey_id: the UUID of the survey
+    """
+
+    condition = question_branch_table.c.from_survey_id == survey_id
+    connection.execute(question_branch_table.delete().where(condition))
 
 
 def create(data: dict) -> dict:
@@ -319,6 +366,9 @@ def update(data: dict):
             exc = [('survey_title_survey_owner_key',
                     SurveyAlreadyExistsError(safe_title))]
             execute_with_exceptions(conn, executable, exc)
+        # The branches need to be deleted first to avoid problems with the
+        # constraint that a branch needs to point forward.
+        _clear_branches(conn, survey_id)
         questions = list(_create_or_update_questions(conn, data_q, survey_id))
         _create_or_update_branches(conn, data_q, questions, survey_id)
 
