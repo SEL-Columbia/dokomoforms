@@ -365,11 +365,22 @@ class TestSurvey(unittest.TestCase):
         update_json = {'survey_id': survey_id,
                        'title': 'updated survey title'}
         questions = [{'question_id': inserted_questions[0].question_id,
-                      'title': 'updated question title'},
+                      'title': 'updated question title',
+                      'allow_multiple': None,
+                      'hint': None,
+                      'required': None,
+                      'logic': None,
+                      'type_constraint_name': 'text'},
                      {'question_id': inserted_questions[1].question_id,
+                      'title': 'api_test 2nd question',
+                      'type_constraint_name': 'multiple_choice',
+                      'allow_multiple': None,
+                      'hint': None,
+                      'required': None,
+                      'logic': {'max': 'one'},
                       'choices': ['a', 'b'],
                       'branches': [
-                          {'choice_number': 1, 'to_question_number': 3}]},
+                          {'choice_number': 1, 'to_question_number': 2}]},
                      {'title': 'second question',
                       'type_constraint_name': 'integer',
                       'sequence_number': None,
@@ -387,9 +398,9 @@ class TestSurvey(unittest.TestCase):
         self.assertEqual(choices[0].choice, 'a')
         self.assertEqual(choices[1].choice, 'b')
         branch = get_branches(inserted_questions[1].question_id).first()
-        self.assertEqual(branch.to_question_id, upd_questions[3].question_id)
-        self.assertEqual(upd_questions[3].title, 'second question')
-        self.assertEqual(upd_questions[3].logic, {})
+        self.assertEqual(branch.to_question_id, upd_questions[2].question_id)
+        self.assertEqual(upd_questions[1].title, 'api_test 2nd question')
+        self.assertEqual(upd_questions[1].logic, {'max': 'one'})
 
     def testDelete(self):
         data = {'title': 'api_test survey'}
