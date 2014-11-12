@@ -4,9 +4,9 @@ Tests for the dokomo JSON api
 """
 import unittest
 import uuid
-
 from sqlalchemy import and_
-from sqlalchemy.exc import IntegrityError, DataError
+
+from sqlalchemy.exc import DataError
 
 import api.survey
 import api.submission
@@ -15,11 +15,10 @@ from db.question import question_table, get_questions, \
     QuestionDoesNotExistError
 from db.question_branch import get_branches, MultipleBranchError
 from db.question_choice import question_choice_table, get_choices, \
-    RepeatedChoiceError
+    RepeatedChoiceError, QuestionChoiceDoesNotExistError
 from db.submission import submission_table, submission_insert, \
     SubmissionDoesNotExistError, submission_select
-from db.survey import survey_table, survey_select, SurveyDoesNotExistError, \
-    SurveyAlreadyExistsError
+from db.survey import survey_table, survey_select, SurveyDoesNotExistError
 from db.type_constraint import TypeConstraintDoesNotExistError
 
 
@@ -347,7 +346,7 @@ class TestSurvey(unittest.TestCase):
                       'required': None,
                       'allow_multiple': None,
                       'logic': None,
-                      'choices': ['1', '2'],
+                      'choices': ['1', '2', '3'],
                       'branches': [
                           {'choice_number': 0, 'to_question_number': 2}]},
                      {'title': 'api_test 3rd question',
@@ -364,23 +363,25 @@ class TestSurvey(unittest.TestCase):
 
         update_json = {'survey_id': survey_id,
                        'title': 'updated survey title'}
-        questions = [{'question_id': inserted_questions[0].question_id,
-                      'title': 'updated question title',
-                      'allow_multiple': None,
-                      'hint': None,
-                      'required': None,
-                      'logic': None,
-                      'type_constraint_name': 'text'},
-                     {'question_id': inserted_questions[1].question_id,
+        questions = [{'question_id': inserted_questions[1].question_id,
                       'title': 'api_test 2nd question',
                       'type_constraint_name': 'multiple_choice',
                       'allow_multiple': None,
                       'hint': None,
                       'required': None,
                       'logic': {'max': 'one'},
-                      'choices': ['a', 'b'],
+                      'choices': [{'old_choice': '2', 'new_choice': 'b'},
+                                  'a',
+                                  '1'],
                       'branches': [
                           {'choice_number': 1, 'to_question_number': 2}]},
+                     {'question_id': inserted_questions[0].question_id,
+                      'title': 'updated question title',
+                      'allow_multiple': None,
+                      'hint': None,
+                      'required': None,
+                      'logic': None,
+                      'type_constraint_name': 'text'},
                      {'title': 'second question',
                       'type_constraint_name': 'integer',
                       'sequence_number': None,
@@ -392,15 +393,86 @@ class TestSurvey(unittest.TestCase):
         api.survey.update(update_json)
         upd_survey = survey_select(survey_id)
         upd_questions = get_questions(survey_id).fetchall()
-        self.assertEqual(upd_survey.title, 'updated survey title')
-        self.assertEqual(upd_questions[0].title, 'updated question title')
-        choices = get_choices(inserted_questions[1].question_id).fetchall()
-        self.assertEqual(choices[0].choice, 'a')
-        self.assertEqual(choices[1].choice, 'b')
         branch = get_branches(inserted_questions[1].question_id).first()
         self.assertEqual(branch.to_question_id, upd_questions[2].question_id)
-        self.assertEqual(upd_questions[1].title, 'api_test 2nd question')
-        self.assertEqual(upd_questions[1].logic, {'max': 'one'})
+        self.assertEqual(upd_questions[0].title, 'api_test 2nd question')
+        self.assertEqual(upd_questions[0].logic, {'max': 'one'})
+        self.assertEqual(upd_survey.title, 'updated survey title')
+        self.assertEqual(upd_questions[1].title, 'updated question title')
+        choices = get_choices(inserted_questions[1].question_id).fetchall()
+        self.assertEqual(choices[0].choice, 'b')
+        self.assertEqual(choices[1].choice, 'a')
+        self.assertEqual(choices[2].choice, '1')
+        self.assertEqual(len(choices), 3)
+
+    def testUpdateBadChoices(self):
+        questions = [{'title': 'bad update question',
+                      'type_constraint_name': 'multiple_choice',
+                      'sequence_number': None,
+                      'hint': None,
+                      'required': None,
+                      'allow_multiple': None,
+                      'logic': None,
+                      'choices': ['one', 'two']}]
+        data = {'title': 'bad update survey',
+                'questions': questions}
+        survey_id = api.survey.create(data)['survey_id']
+        inserted_questions = get_questions(survey_id).fetchall()
+
+        update_json = {'survey_id': survey_id,
+                       'title': 'updated survey title'}
+        questions = [{'question_id': inserted_questions[0].question_id,
+                      'title': 'updated question title',
+                      'allow_multiple': None,
+                      'hint': None,
+                      'required': None,
+                      'logic': None,
+                      'type_constraint_name': 'multiple_choice',
+                      'choices': ['two', 'one', 'one']}]
+        update_json['questions'] = questions
+        self.assertRaises(RepeatedChoiceError, api.survey.update, update_json)
+
+        questions = [{'question_id': inserted_questions[0].question_id,
+                      'title': 'updated question title',
+                      'allow_multiple': None,
+                      'hint': None,
+                      'required': None,
+                      'logic': None,
+                      'type_constraint_name': 'multiple_choice',
+                      'choices': [
+                          {'old_choice': 'three', 'new_choice': 'four'}]}]
+
+        update_json['questions'] = questions
+        self.assertRaises(QuestionChoiceDoesNotExistError, api.survey.update,
+                          update_json)
+
+        questions = [{'question_id': inserted_questions[0].question_id,
+                      'title': 'updated question title',
+                      'allow_multiple': None,
+                      'hint': None,
+                      'required': None,
+                      'logic': None,
+                      'type_constraint_name': 'multiple_choice',
+                      'choices': [
+                          {'old_choice': 'one', 'new_choice': 'two'}, 'two']}]
+
+        update_json['questions'] = questions
+        self.assertRaises(RepeatedChoiceError, api.survey.update, update_json)
+
+        questions = [{'question_id': inserted_questions[0].question_id,
+                      'title': 'updated question title',
+                      'allow_multiple': None,
+                      'hint': None,
+                      'required': None,
+                      'logic': None,
+                      'type_constraint_name': 'multiple_choice',
+                      'choices': [
+                          {'old_choice': 'one', 'new_choice': 'two'},
+                          {'old_choice': 'one', 'new_choice': 'three'}]}]
+
+        update_json['questions'] = questions
+        self.assertRaises(RepeatedChoiceError, api.survey.update, update_json)
+
 
     def testDelete(self):
         data = {'title': 'api_test survey'}
