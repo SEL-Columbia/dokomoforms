@@ -55,3 +55,16 @@ def get_answer_choices(submission_id: str) -> ResultProxy:
     where_stmt = select_stmt.where(
         answer_choice_table.c.submission_id == submission_id)
     return where_stmt.order_by('sequence_number asc').execute()
+
+
+def get_answer_choices_for_choice_id(question_choice_id: str) -> ResultProxy:
+    """
+    Get all the records from the answer_choice table identified by question_id.
+
+    :param question_choice_id: foreign key
+    :return: an iterable of the answer choices (RowProxy)
+    """
+    select_stmt = answer_choice_table.select()
+    where_stmt = select_stmt.where(
+        answer_choice_table.c.question_choice_id == question_choice_id)
+    return where_stmt.execute()
