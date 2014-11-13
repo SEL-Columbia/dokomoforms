@@ -56,6 +56,8 @@ def check_login(*, email: str, raw_password: str) -> RowProxy:
     select_stmt = auth_user_table.select()
     where_stmt = select_stmt.where(auth_user_table.c.email == email)
     user = where_stmt.execute().first()
+    if user is None:
+        raise UserDoesNotExistError(email)
     if check_password_hash(user.password, raw_password):
         return user
     else:
@@ -76,6 +78,9 @@ def create_auth_user(*, email: str, raw_password: str) -> Insert:
     return auth_user_table.insert().values(email=email,
                                            password=hashed_password)
 
+class UserDoesNotExistError(Exception):
+    """The supplied e-mail address is not in the database."""
+    pass
 
 class IncorrectPasswordError(Exception):
     """The supplied password's hash doesn't match what's in the database."""

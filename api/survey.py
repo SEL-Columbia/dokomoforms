@@ -10,7 +10,7 @@ from db import engine, delete_record, update_record
 from db.answer import get_answers_for_question, answer_insert
 from db.answer_choice import get_answer_choices_for_choice_id, \
     answer_choice_insert
-from db.question import question_insert, get_questions
+from db.question import question_insert, get_questions, question_select
 from db.question_branch import get_branches, question_branch_insert, \
     MultipleBranchError
 from db.question_choice import get_choices, question_choice_insert, \
@@ -88,6 +88,7 @@ def _create_choices(connection: Connection,
     """
     choices = values.get('choices', [])
     new_choices, updates = _determine_choices(existing_question_id, choices)
+
     for number, choice in enumerate(new_choices):
         choice_dict = {'question_id': question_id,
                        'survey_id': values['survey_id'],
@@ -163,18 +164,17 @@ def _create_questions(connection: Connection,
                                'allow_multiple': result_ipk[3],
                                'survey_id': survey_id}
             for answer in get_answers_for_question(existing_q_id):
-                try:
-                    answer_values = question_fields.copy()
-                    new_submission_id = submission_map[answer.submission_id]
-                    answer_values['answer'] = answer['answer_' + result_ipk[1]]
-                    answer_values['submission_id'] = new_submission_id
-                    connection.execute(answer_insert(**answer_values))
-                except NoSuchColumnError:
-                    pass
-                except IntegrityError as exc:
-                    error = str(exc.orig)
-                    if 'type_constraint_name_matches_answer_type' not in error:
-                        raise
+                new_tcn = result_ipk[1]
+                old_tcn = question_select(existing_q_id).type_constraint_name
+                if new_tcn != old_tcn:
+                    continue
+                answer_values = question_fields.copy()
+                new_submission_id = submission_map[answer.submission_id]
+                if new_tcn == 'multiple_choice_with_other':
+                    new_tcn = 'text'
+                answer_values['answer'] = answer['answer_' + new_tcn]
+                answer_values['submission_id'] = new_submission_id
+                connection.execute(answer_insert(**answer_values))
 
         yield {'question_id': q_id,
                'type_constraint_name': tcn,

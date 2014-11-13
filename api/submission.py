@@ -8,7 +8,7 @@ from sqlalchemy.sql import Insert
 from api import execute_with_exceptions
 from db import engine, delete_record
 from db.answer import answer_insert, get_answers, get_geo_json, \
-    CannotAnswerMultipleTimes
+    CannotAnswerMultipleTimesError
 from db.answer_choice import get_answer_choices, answer_choice_insert
 from db.question import question_select, get_required
 from db.question_choice import question_choice_select
@@ -17,7 +17,8 @@ from db.submission import submission_insert, submission_select, \
 from db.survey import SurveyDoesNotExistError
 
 
-class RequiredQuestionSkipped(Exception):
+class RequiredQuestionSkippedError(Exception):
+    """A submission does not contain an answer to a required question."""
     pass
 
 
@@ -89,13 +90,13 @@ def submit(data: dict) -> dict:
         for answer in answers:
             executable = _insert_answer(answer, submission_id, survey_id)
             exceptions = [('only_one_answer_allowed',
-                           CannotAnswerMultipleTimes(answer['question_id']))]
+                           CannotAnswerMultipleTimesError(answer['question_id']))]
             execute_with_exceptions(connection, executable, exceptions)
             unanswered_required.discard(answer['question_id'])
 
         # complain if any required questions were skipped
         if unanswered_required:
-            raise RequiredQuestionSkipped(unanswered_required)
+            raise RequiredQuestionSkippedError(unanswered_required)
 
     return get(submission_id)
 

@@ -73,7 +73,9 @@ def question_choice_insert(*,
 
 
 class RepeatedChoiceError(Exception):
+    """The same choice was supplied twice for a question."""
     pass
 
 class QuestionChoiceDoesNotExistError(Exception):
+    """The specified question choice does not exist in the database."""
     pass
