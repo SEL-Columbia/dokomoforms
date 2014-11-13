@@ -472,7 +472,15 @@ class TestSurvey(unittest.TestCase):
                       'required': None,
                       'allow_multiple': True,
                       'logic': None,
-                      'choices': ['use other 2']}]
+                      'choices': ['use other 2']},
+                     {'title': 'was with other, lose choices',
+                      'type_constraint_name': 'multiple_choice_with_other',
+                      'sequence_number': None,
+                      'hint': None,
+                      'required': None,
+                      'allow_multiple': True,
+                      'logic': None,
+                      'choices': ['use other 3']}]
         data = {'title': 'to_be_updated',
                 'questions': questions}
         survey_id = api.survey.create(data)['survey_id']
@@ -500,7 +508,9 @@ class TestSurvey(unittest.TestCase):
                                   {'question_id': inserted_qs[4].question_id,
                                    'answer': 'my fancier other answer'},
                                   {'question_id': inserted_qs[4].question_id,
-                                   'question_choice_id': other_choice_2_id}]}
+                                   'question_choice_id': other_choice_2_id},
+                                  {'question_id': inserted_qs[5].question_id,
+                                   'answer': 'my super fancy other answer'}]}
 
         api.submission.submit(submission)
 
@@ -543,7 +553,14 @@ class TestSurvey(unittest.TestCase):
                       'hint': None,
                       'required': None,
                       'logic': None,
-                      'type_constraint_name': 'text'}]
+                      'type_constraint_name': 'text'},
+                     {'question_id': inserted_qs[5].question_id,
+                      'title': 'lost choices',
+                      'allow_multiple': None,
+                      'hint': None,
+                      'required': None,
+                      'logic': None,
+                      'type_constraint_name': 'multiple_choice_with_other'}]
         update_json['questions'] = questions
         new_survey = api.survey.update(update_json)
         new_submissions = get_submissions(new_survey['survey_id']).fetchall()
