@@ -46,12 +46,14 @@ class TestSubmission(unittest.TestCase):
         choice_cond = question_choice_table.c.question_id == second_q_id
         choice_id = question_choice_table.select().where(
             choice_cond).execute().first().question_choice_id
-        third_cond = second_cond = and_(
-            question_table.c.survey_id == survey_id,
-            question_table.c.type_constraint_name ==
-            'text')
+        third_cond = and_(question_table.c.survey_id == survey_id,
+                          question_table.c.type_constraint_name == 'text')
         third_q_id = question_table.select().where(
             third_cond).execute().first().question_id
+        fourth_cond = and_(question_table.c.survey_id == survey_id,
+                           question_table.c.type_constraint_name == 'decimal')
+        fourth_q_id = question_table.select().where(
+            fourth_cond).execute().first().question_id
         input_data = {'survey_id': survey_id,
                       'answers':
                           [{'question_id': question_id,
@@ -61,7 +63,9 @@ class TestSubmission(unittest.TestCase):
                            {'question_id': third_q_id,
                             'answer': 'answer one'},
                            {'question_id': third_q_id,
-                            'answer': 'answer two'}]}
+                            'answer': 'answer two'},
+                           {'question_id': fourth_q_id,
+                            'answer': 3.5}]}
         response = api.submission.submit(input_data)
         submission_id = response['submission_id']
         condition = submission_table.c.submission_id == submission_id
@@ -69,9 +73,11 @@ class TestSubmission(unittest.TestCase):
             submission_table.select().where(condition).execute().rowcount, 1)
         data = api.submission.get(submission_id)
         self.assertEqual(response, data)
+        self.assertEqual(data['answers'][0]['answer'], 1)
         self.assertEqual(data['answers'][1]['question_choice_id'], choice_id)
-        self.assertEqual(data['answers'][2]['question_id'], third_q_id)
-        self.assertEqual(data['answers'][3]['question_id'], third_q_id)
+        self.assertEqual(data['answers'][2]['answer'], 3.5)
+        self.assertEqual(data['answers'][3]['answer'], 'answer one')
+        self.assertEqual(data['answers'][4]['answer'], 'answer two')
 
     def testIncorrectType(self):
         survey_id = survey_table.select().execute().first().survey_id
