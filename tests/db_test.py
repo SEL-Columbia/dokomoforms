@@ -5,6 +5,7 @@ Tests for the dokomo database
 import unittest
 
 from db import update_record, delete_record
+import db
 from db.answer import answer_insert, answer_table, get_answers, get_geo_json
 from db.answer_choice import answer_choice_insert, get_answer_choices
 from db.question import get_questions, question_select, question_table, \
@@ -136,8 +137,6 @@ class TestAnswerChoice(unittest.TestCase):
             allow_multiple=mul).execute()
         self.assertEqual(get_answer_choices(submission_id).rowcount, 1)
 
-
-# TODO: test auth_user.py
 
 class TestQuestion(unittest.TestCase):
     def tearDown(self):
@@ -309,6 +308,13 @@ class TestSurvey(unittest.TestCase):
 
 
 class TestUtils(unittest.TestCase):
+    def testSetTestingEngine(self):
+        engine = db.engine
+        db.set_testing_engine(None)
+        self.assertIsNone(db.engine)
+        db.set_testing_engine(engine)
+        self.assertIsNotNone(db.engine)
+
     def testDeleteRecord(self):
         exec_stmt = survey_insert(title='delete me').execute()
         survey_id = exec_stmt.inserted_primary_key[0]
@@ -327,6 +333,14 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(new_record.title, 'updated')
         self.assertNotEqual(new_record.survey_last_update_time,
                             new_record.created_on)
+
+        self.assertRaises(TypeError, update_record, survey_table, 'survey_id',
+                          survey_id,
+                          values_dict={'title': 'updated2'},
+                          title='updated3')
+        self.assertRaises(TypeError, update_record, survey_table, 'survey_id',
+                          survey_id)
+
         delete_record(survey_table, 'survey_id', survey_id).execute()
 
 
