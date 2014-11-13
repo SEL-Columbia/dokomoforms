@@ -1,7 +1,7 @@
 """Allow access to the answer table."""
 import json
-
 from sqlalchemy import Table, MetaData, text
+
 from sqlalchemy.engine import ResultProxy, RowProxy
 from sqlalchemy.sql.dml import Insert
 from sqlalchemy.sql import func
@@ -88,6 +88,18 @@ def get_answers(submission_id: str) -> ResultProxy:
     return where_stmt.order_by('sequence_number asc').execute()
 
 
+def get_answers_for_question(question_id: str) -> ResultProxy:
+    """
+    Get all the records from the answer table identified by question_id.
+
+    :param question_id: foreign key
+    :return: an iterable of the answers (RowProxy)
+    """
+    select_stmt = answer_table.select()
+    where_stmt = select_stmt.where(answer_table.c.question_id == question_id)
+    return where_stmt.execute()
+
+
 def get_geo_json(answer: RowProxy) -> dict:
     """
     The default string representation of a geometry in PostGIS is some
@@ -100,6 +112,7 @@ def get_geo_json(answer: RowProxy) -> dict:
     """
     result = engine.execute(func.ST_AsGeoJSON(answer.answer_location)).scalar()
     return json.loads(result)
+
 
 class CannotAnswerMultipleTimes(Exception):
     pass
