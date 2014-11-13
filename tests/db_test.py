@@ -8,6 +8,10 @@ from db import update_record, delete_record
 import db
 from db.answer import answer_insert, answer_table, get_answers, get_geo_json
 from db.answer_choice import answer_choice_insert, get_answer_choices
+from db.auth_user import check_password_hash, hash_password, auth_user_table, \
+    get_auth_user, check_login, UserDoesNotExistError, \
+    IncorrectPasswordError, \
+    create_auth_user
 from db.question import get_questions, question_select, question_table, \
     get_free_sequence_number, question_insert
 from db.question_branch import get_branches, question_branch_insert, \
@@ -136,6 +140,38 @@ class TestAnswerChoice(unittest.TestCase):
             survey_id=survey_id, type_constraint_name=tcn, sequence_number=seq,
             allow_multiple=mul).execute()
         self.assertEqual(get_answer_choices(submission_id).rowcount, 1)
+
+
+class TestAuthUser(unittest.TestCase):
+    def tearDown(self):
+        auth_user_table.delete().where(
+            auth_user_table.c.email != 'test_email').execute()
+
+    def testCheckPasswordHash(self):
+        self.assertRaises(NotImplementedError, check_password_hash, None, None)
+
+    def testHashPassword(self):
+        self.assertRaises(NotImplementedError, hash_password, None)
+
+    def testGetAuthUser(self):
+        result = auth_user_table.insert(
+            {'email': 'a', 'password': 'a'}).execute()
+        user_id = result.inserted_primary_key[0]
+        user = get_auth_user(user_id)
+        self.assertEqual(user.email, 'a')
+
+    def testCheckLogin(self):
+        auth_user_table.insert({'email': 'a', 'password': 'a'}).execute()
+        self.assertRaises(UserDoesNotExistError, check_login, email='',
+                          raw_password='')
+        self.assertRaises(NotImplementedError, check_login, email='a',
+                          raw_password='')
+        self.assertRaises(NotImplementedError, check_login, email='a',
+                          raw_password='a')
+
+    def testCreateAuthUser(self):
+        self.assertRaises(NotImplementedError, create_auth_user, email='',
+                          raw_password='')
 
 
 class TestQuestion(unittest.TestCase):
