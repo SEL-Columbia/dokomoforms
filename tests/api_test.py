@@ -6,7 +6,7 @@ import unittest
 import uuid
 from sqlalchemy import and_
 
-from sqlalchemy.exc import DataError, InternalError
+from sqlalchemy.exc import DataError, InternalError, IntegrityError
 from api import execute_with_exceptions
 
 import api.survey
@@ -632,7 +632,7 @@ class TestUtils(unittest.TestCase):
             self.assertRaises(ValueError, execute_with_exceptions, connection,
                               executable, [('null value', ValueError)])
         with db.engine.begin() as connection:
-            self.assertRaises(InternalError, execute_with_exceptions,
+            self.assertRaises(IntegrityError, execute_with_exceptions,
                               connection, executable,
                               [('not in the error', ValueError)])
 
