@@ -1,124 +1,138 @@
 """Functions for interacting with surveys."""
 from collections import Iterator
+import datetime
 
 from sqlalchemy.engine import RowProxy, Connection
+from sqlalchemy.exc import IntegrityError, NoSuchColumnError
 
 from api import execute_with_exceptions
-from db import engine, update_record, delete_record
-from db.question import question_insert, get_questions, question_table
+from db import engine, delete_record, update_record
+from db.answer import get_answers_for_question, answer_insert
+from db.answer_choice import get_answer_choices_for_choice_id, \
+    answer_choice_insert
+from db.question import question_insert, get_questions
 from db.question_branch import get_branches, question_branch_insert, \
-    question_branch_table, MultipleBranchError
+    MultipleBranchError
 from db.question_choice import get_choices, question_choice_insert, \
-    question_choice_table, RepeatedChoiceError, QuestionChoiceDoesNotExistError
+    RepeatedChoiceError, QuestionChoiceDoesNotExistError
+from db.submission import get_submissions, submission_insert
 from db.survey import survey_insert, survey_select, survey_table, \
     SurveyAlreadyExistsError, get_free_title
 from db.type_constraint import TypeConstraintDoesNotExistError
 
 
-def _create_or_update_choices(connection: Connection,
-                              values: dict,
-                              question_id: str) -> Iterator:
+def _determine_choices(existing_question_id: str, choices: list) -> tuple:
     """
-    Create or update the choices of a survey question.
+    Pre-process the choices coming from the survey JSON to determine which
+    choices to insert and which are updates.
+
+    :param existing_question_id: the UUID of the existing question (if this is
+                                 an update) or None otherwise
+    :param choices: the list of choices from the JSON submission
+    :return: a tuple of (list of new choices, dictionary of new choice : id of
+             old choice)
+    :raise RepeatedChoiceError: if a choice is supplied more than once
+    :raise QuestionChoiceDoesNotExistError: if an old_choice supplied does not
+                                            exist
+    """
+    # the choices associated with the existing question
+    old_choices = []
+    if existing_question_id is not None:
+        old_choices = get_choices(existing_question_id)
+    # a dictionary of choice text : choice id
+    old_choice_dict = {ch.choice: ch.question_choice_id for ch in old_choices}
+    # the choices to be inserted
+    new_choices = []
+    # a dictionary of new_choice : choice id
+    updates = {}
+    old_choice_repeats = set()
+    for entry in choices:
+        try:
+            # choice update
+            old_choice = entry['old_choice']
+            if old_choice not in old_choice_dict:
+                raise QuestionChoiceDoesNotExistError(old_choice)
+            if old_choice in old_choice_repeats:
+                raise RepeatedChoiceError(entry)
+            old_choice_repeats.add(old_choice)
+            new_choice = entry['new_choice']
+            new_choices.append(new_choice)
+            updates[new_choice] = old_choice_dict[old_choice]
+        except TypeError:
+            # new choice entry
+            new_choices.append(entry)
+            if entry in old_choice_dict:
+                updates[entry] = old_choice_dict[entry]
+    new_choice_set = set(new_choices)
+    if len(new_choice_set) != len(new_choices):
+        raise RepeatedChoiceError(new_choices)
+    return new_choices, updates
+
+
+def _create_choices(connection: Connection,
+                    values: dict,
+                    question_id: str,
+                    submission_map: dict,
+                    existing_question_id: str=None) -> Iterator:
+    """
+    Create the choices of a survey question. If this is an update to an
+    existing survey, it will also copy over answers to the questions.
 
     :param connection: the SQLAlchemy Connection object for the transaction
     :param values: the dictionary of values associated with the question
     :param question_id: the UUID of the question
+    :param submission_map: a dictionary mapping old submission_id to new
+    :param existing_question_id: the UUID of the existing question (if this is
+                                 an update)
+    :return: an iterable of the resultant choice fields
     """
-    current = get_choices(question_id)
-    existing_choices = {ch.choice: (ch.choice_number,
-                                    ch.question_choice_id) for ch in current}
-    data_choices = values.get('choices', [])
-    # new_choices is a list of the surviving and to-be-created choices
-    new_choices = []
-    # updates is a dictionary for choices which are being renamed
-    updates = {}
-    for entry in data_choices:
-        try:
-            old_choice = entry['old_choice']
-            if old_choice not in existing_choices:
-                raise QuestionChoiceDoesNotExistError(old_choice)
-            new_choices.append(old_choice)
-            updates[entry['old_choice']] = entry['new_choice']
-        except TypeError:
-            new_choices.append(entry)
-    new_choice_set = set(new_choices)
-    if len(new_choice_set) != len(new_choices):
-        raise RepeatedChoiceError(new_choices)
-    # delete choices that don't exist anymore
-    # also, temporarily reassign choices with nonsensical choice numbers to
-    # avoid conflicts during the update
-    temp_choice_number = -1
-    for choice in existing_choices:
-        connection.execute(update_record(question_choice_table,
-                                         'question_choice_id',
-                                         existing_choices[choice][1],
-                                         choice_number=temp_choice_number))
-        temp_choice_number -= 1
-        if choice not in new_choice_set:
-            connection.execute(delete_record(question_choice_table,
-                                             'question_choice_id',
-                                             existing_choices[choice][1]))
+    choices = values.get('choices', [])
+    new_choices, updates = _determine_choices(existing_question_id, choices)
     for number, choice in enumerate(new_choices):
-        if choice in existing_choices:
-            choice_number, choice_id = existing_choices[choice]
-            update_dict = {'choice_number': number}
-            if choice in updates:
-                update_dict['choice'] = updates[choice]
-            executable = update_record(question_choice_table,
-                                       'question_choice_id',
-                                       choice_id,
-                                       update_dict)
-            exc = [('unique_choice_names',
-                    RepeatedChoiceError(update_dict.get('choice', choice)))]
-            try:
-                execute_with_exceptions(connection, executable, exc)
-            except:
-                raise
-            yield choice_id
-        else:
-            choice_dict = {'question_id': question_id,
-                           'survey_id': values['survey_id'],
-                           'choice': choice,
-                           'choice_number': number,
-                           'type_constraint_name': values[
-                               'type_constraint_name'],
-                           'question_sequence_number': values[
-                               'sequence_number'],
-                           'allow_multiple': values['allow_multiple']}
-            executable = question_choice_insert(**choice_dict)
-            exc = [('unique_choice_names', RepeatedChoiceError(choice))]
-            result = execute_with_exceptions(connection, executable, exc)
-            yield result.inserted_primary_key[0]
+        choice_dict = {'question_id': question_id,
+                       'survey_id': values['survey_id'],
+                       'choice': choice,
+                       'choice_number': number,
+                       'type_constraint_name': values['type_constraint_name'],
+                       'question_sequence_number': values['sequence_number'],
+                       'allow_multiple': values['allow_multiple']}
+        executable = question_choice_insert(**choice_dict)
+        exc = [('unique_choice_names', RepeatedChoiceError(choice))]
+        result = execute_with_exceptions(connection, executable, exc)
+        result_ipk = result.inserted_primary_key
+        question_choice_id = result_ipk[0]
+
+        if choice in updates:
+            question_fields = {'question_id': question_id,
+                               'type_constraint_name': result_ipk[2],
+                               'sequence_number': result_ipk[3],
+                               'allow_multiple': result_ipk[4],
+                               'survey_id': values['survey_id']}
+            for answer in get_answer_choices_for_choice_id(updates[choice]):
+                answer_values = question_fields.copy()
+                new_submission_id = submission_map[answer.submission_id]
+                answer_values['question_choice_id'] = question_choice_id
+                answer_values['submission_id'] = new_submission_id
+                connection.execute(answer_choice_insert(**answer_values))
+
+        yield question_choice_id
 
 
-def _create_or_update_questions(connection: Connection,
-                                questions: list,
-                                survey_id: str) -> Iterator:
+def _create_questions(connection: Connection,
+                      questions: list,
+                      survey_id: str,
+                      submission_map: dict=None) -> Iterator:
     """
-    Create or updates the questions of a survey.
+    Create the questions of a survey. If this is an update to an existing
+    survey, it will also copy over answers to the questions.
 
     :param connection: the SQLAlchemy Connection object for the transaction
     :param questions: a list of dictionaries, each containing the values
                       associated with a question
     :param survey_id: the UUID of the survey
+    :param submission_map: a dictionary mapping old submission_id to new
+    :return: an iterable of the resultant question fields
     """
-    # delete questions that don't exist anymore
-    # also, temporarily reassign questions with nonsensical sequence numbers to
-    # avoid conflicts during the update
-    surviving_questions = {q.get('question_id', None) for q in questions}
-    temp_seq = -1
-    for existing_question in get_questions(survey_id):
-        question_id = existing_question.question_id
-        connection.execute(update_record(question_table,
-                                         'question_id',
-                                         question_id,
-                                         sequence_number=temp_seq))
-        temp_seq -= 1
-        if existing_question.question_id not in surviving_questions:
-            connection.execute(delete_record(question_table,
-                                             'question_id',
-                                             question_id))
     for number, question in enumerate(questions):
         values = question.copy()
         values['sequence_number'] = number
@@ -126,45 +140,42 @@ def _create_or_update_questions(connection: Connection,
         if values['allow_multiple'] is None:
             values['allow_multiple'] = False
 
-        # Deal with creating or updating
-        is_update = 'question_id' in values
-        if is_update:
-            update_values = values.copy()
-            question_id = update_values.pop('question_id')
-            # Transform any fields supplied as null
-            if update_values['hint'] is None:
-                update_values['hint'] = ''
-            if update_values['required'] is None:
-                update_values['required'] = False
-            if update_values['logic'] is None:
-                update_values['logic'] = {}
-            seq = update_values['sequence_number']
-            mul = update_values['allow_multiple']
-            tcn = update_values['type_constraint_name']
-            executable = update_record(question_table,
-                                       'question_id',
-                                       question_id,
-                                       sequence_number=seq,
-                                       hint=update_values['hint'],
-                                       required=update_values['required'],
-                                       allow_multiple=mul,
-                                       logic=update_values['logic'],
-                                       title=update_values['title'],
-                                       type_constraint_name=tcn,
-                                       survey_id=update_values['survey_id'])
-        else:
-            executable = question_insert(**values)
+        existing_q_id = values.pop('question_id', None)
 
-        # Now actually execute the create or update
+        executable = question_insert(**values)
         tcn = values['type_constraint_name']
         exceptions = [('question_type_constraint_name_fkey',
                        TypeConstraintDoesNotExistError(tcn))]
         result = execute_with_exceptions(connection, executable, exceptions)
-        if is_update:
-            q_id = values['question_id']
-        else:
-            q_id = result.inserted_primary_key[0]
-        choices = list(_create_or_update_choices(connection, values, q_id))
+        result_ipk = result.inserted_primary_key
+        q_id = result_ipk[0]
+
+        choices = list(_create_choices(connection,
+                                       values,
+                                       q_id,
+                                       submission_map=submission_map,
+                                       existing_question_id=existing_q_id))
+
+        if existing_q_id is not None:
+            question_fields = {'question_id': q_id,
+                               'type_constraint_name': result_ipk[1],
+                               'sequence_number': result_ipk[2],
+                               'allow_multiple': result_ipk[3],
+                               'survey_id': survey_id}
+            for answer in get_answers_for_question(existing_q_id):
+                try:
+                    answer_values = question_fields.copy()
+                    new_submission_id = submission_map[answer.submission_id]
+                    answer_values['answer'] = answer['answer_' + result_ipk[1]]
+                    answer_values['submission_id'] = new_submission_id
+                    connection.execute(answer_insert(**answer_values))
+                except NoSuchColumnError:
+                    pass
+                except IntegrityError as exc:
+                    error = str(exc.orig)
+                    if 'type_constraint_name_matches_answer_type' not in error:
+                        raise
+
         yield {'question_id': q_id,
                'type_constraint_name': tcn,
                'sequence_number': values['sequence_number'],
@@ -172,12 +183,12 @@ def _create_or_update_questions(connection: Connection,
                'choice_ids': choices}
 
 
-def _create_or_update_branches(connection: Connection,
-                               questions_json: list,
-                               question_dicts: list,
-                               survey_id: str):
+def _create_branches(connection: Connection,
+                     questions_json: list,
+                     question_dicts: list,
+                     survey_id: str):
     """
-    Create or update the branches in a survey.
+    Create the branches in a survey.
 
     :param connection: the SQLAlchemy Connection object for the transaction
     :param questions_json: a list of dictionaries coming from the JSON input
@@ -215,49 +226,84 @@ def _create_or_update_branches(connection: Connection,
             execute_with_exceptions(connection, executable, exc)
 
 
-def _clear_branches(connection: Connection, survey_id: str):
+def _copy_submission_entries(connection: Connection,
+                             existing_survey_id: str,
+                             new_survey_id: str) -> tuple:
     """
-    Delete the branches in a survey, if any. To be used during an update to
-    avoid difficulties, especially due to the constraint that branches must
-    point forward.
+    Copy submissions from an existing survey to its updated copy.
 
-    :param connection: the SQLAlchemy Connection object for the transaction
-    :param survey_id: the UUID of the survey
+    :param connection: the SQLAlchemy connection used for the transaction
+    :param existing_survey_id: the UUID of the existing survey
+    :param new_survey_id: the UUID of the survey's updated copy
+    :return: a tuple containing the old and new submission IDs
     """
+    for submission in get_submissions(existing_survey_id):
+        values = {'submitter': submission.submitter,
+                  'submission_time': submission.submission_time,
+                  'field_update_time': submission.field_update_time,
+                  'survey_id': new_survey_id}
+        result = connection.execute(submission_insert(**values))
+        yield submission.submission_id, result.inserted_primary_key[0]
 
-    condition = question_branch_table.c.from_survey_id == survey_id
-    connection.execute(question_branch_table.delete().where(condition))
 
-
-def create(data: dict) -> dict:
+def _create_survey(connection: Connection, data: dict) -> str:
     """
-    Create a survey with questions.
+    Use the given connection to create a survey within a transaction. If
+    this is an update to an existing survey, it will also copy over existing
+    submissions.
 
+    :param connection: the SQLAlchemy connection used for the transaction
     :param data: a JSON representation of the survey
     :return: the UUID of the survey in the database
     """
+    is_update = 'survey_id' in data
+
     survey_id = None
 
     # user_id = json_data['auth_user_id']
     title = data['title']
     data_q = data.get('questions', [])
 
-    with engine.begin() as conn:
-        # First, create an entry in the survey table
-        safe_title = get_free_title(title)
-        survey_values = {  # 'auth_user_id': user_id,
-                           'title': safe_title}
-        executable = survey_insert(**survey_values)
-        exc = [
-            ('survey_title_survey_owner_key',
-             SurveyAlreadyExistsError(safe_title))]
-        result = execute_with_exceptions(conn, executable, exc)
-        survey_id = result.inserted_primary_key[0]
+    # First, create an entry in the survey table
+    safe_title = get_free_title(title)
+    survey_values = {  # 'auth_user_id': user_id,
+                       'title': safe_title}
+    executable = survey_insert(**survey_values)
+    exc = [('survey_title_survey_owner_key',
+            SurveyAlreadyExistsError(safe_title))]
+    result = execute_with_exceptions(connection, executable, exc)
+    survey_id = result.inserted_primary_key[0]
 
-        # Now insert questions.  Inserting branches has to come afterward so
-        # that the question_id values actually exist in the tables.
-        questions = list(_create_or_update_questions(conn, data_q, survey_id))
-        _create_or_update_branches(conn, data_q, questions, survey_id)
+
+    # a map of old submission_id to new submission_id
+    submission_map = None
+    if is_update:
+        submission_map = {entry[0]: entry[1] for entry in
+                          _copy_submission_entries(connection,
+                                                   data['survey_id'],
+                                                   survey_id)}
+
+    # Now insert questions.  Inserting branches has to come afterward so
+    # that the question_id values actually exist in the tables.
+    questions = list(_create_questions(connection, data_q, survey_id,
+                                       submission_map=submission_map))
+    _create_branches(connection, data_q, questions, survey_id)
+
+    return survey_id
+
+
+def create(data: dict) -> dict:
+    """
+    Create a survey with questions.
+
+    :param data: a JSON representation of the survey to be created
+    :return: a JSON representation of the created survey
+    """
+
+    survey_id = None
+
+    with engine.begin() as connection:
+        survey_id = _create_survey(connection, data)
 
     return get_one(survey_id)
 
@@ -349,30 +395,30 @@ def get_all() -> dict:
 
 def update(data: dict):
     """
-    Update a survey (title, questions). You can also add questions here.
+    Update a survey (title, questions). You can also add or modify questions
+    here. Note that this creates a new survey (with new submissions, etc),
+    copying everything from the old survey. The old survey's title will be
+    changed to end with "(new version created on <time>)".
 
     :param data: JSON containing the UUID of the survey and fields to update.
     """
     survey_id = data['survey_id']
     existing_survey = survey_select(survey_id)
-    data_q = data.get('questions', [])
-    with engine.connect() as conn:
-        if existing_survey.title != data['title']:
-            safe_title = get_free_title(data['title'])
-            executable = update_record(survey_table,
-                                       'survey_id',
-                                       survey_id,
-                                       title=safe_title)
-            exc = [('survey_title_survey_owner_key',
-                    SurveyAlreadyExistsError(safe_title))]
-            execute_with_exceptions(conn, executable, exc)
-        # The branches need to be deleted first to avoid problems with the
-        # constraint that a branch needs to point forward.
-        _clear_branches(conn, survey_id)
-        questions = list(_create_or_update_questions(conn, data_q, survey_id))
-        _create_or_update_branches(conn, data_q, questions, survey_id)
+    update_time = datetime.datetime.now()
 
-    return get_one(survey_id)
+    new_survey_id = None
+    with engine.connect() as connection:
+        new_title = '{} (new version created on {})'.format(
+            existing_survey.title, update_time.isoformat())
+        executable = update_record(survey_table, 'survey_id', survey_id,
+                                   title=new_title)
+        exc = [('survey_title_survey_owner_key',
+                SurveyAlreadyExistsError(new_title))]
+        execute_with_exceptions(connection, executable, exc)
+
+        new_survey_id = _create_survey(connection, data)
+
+    return get_one(new_survey_id)
 
 
 def delete(survey_id: str):
