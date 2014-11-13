@@ -3,6 +3,7 @@ Tests for the dokomo database
 
 """
 import unittest
+import uuid
 
 from db import update_record, delete_record
 import db
@@ -17,7 +18,8 @@ from db.question import get_questions, question_select, question_table, \
 from db.question_branch import get_branches, question_branch_insert, \
     question_branch_table
 from db.question_choice import get_choices, question_choice_select, \
-    question_choice_insert, question_choice_table
+    question_choice_insert, question_choice_table, \
+    QuestionChoiceDoesNotExistError
 from db.submission import submission_table, submission_insert, \
     submission_select, get_submissions
 from db.survey import survey_table, survey_insert, survey_select
@@ -270,6 +272,9 @@ class TestQuestionChoice(unittest.TestCase):
         choice_id = get_choices(question_id).first().question_choice_id
         choice = question_choice_select(choice_id)
         self.assertIsNotNone(choice)
+
+        self.assertRaises(QuestionChoiceDoesNotExistError,
+                          question_choice_select, str(uuid.uuid4()))
 
     def testQuestionChoiceInsert(self):
         survey_id = survey_table.select().execute().first().survey_id

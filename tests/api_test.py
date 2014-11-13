@@ -10,7 +10,7 @@ from sqlalchemy.exc import DataError
 
 import api.survey
 import api.submission
-from db.answer import answer_insert, CannotAnswerMultipleTimes, get_answers
+from db.answer import answer_insert, CannotAnswerMultipleTimesError, get_answers
 from db.answer_choice import get_answer_choices, answer_choice_table
 from db.question import question_table, get_questions, \
     QuestionDoesNotExistError
@@ -98,21 +98,21 @@ class TestSubmission(unittest.TestCase):
 
         submission = {'survey_id': survey_id,
                       'answers': []}
-        self.assertRaises(api.submission.RequiredQuestionSkipped,
+        self.assertRaises(api.submission.RequiredQuestionSkippedError,
                           api.submission.submit, submission)
 
         question_id = survey['questions'][0]['question_id']
         submission2 = {'survey_id': survey_id,
                        'answers': [{'question_id': question_id}]}
 
-        self.assertRaises(api.submission.RequiredQuestionSkipped,
+        self.assertRaises(api.submission.RequiredQuestionSkippedError,
                           api.submission.submit, submission2)
 
         submission3 = {'survey_id': survey_id,
                        'answers': [{'question_id': question_id,
                                     'answer': None}]}
 
-        self.assertRaises(api.submission.RequiredQuestionSkipped,
+        self.assertRaises(api.submission.RequiredQuestionSkippedError,
                           api.submission.submit, submission3)
 
     def testQuestionDoesNotExist(self):
@@ -161,7 +161,7 @@ class TestSubmission(unittest.TestCase):
                             'answer': 1},
                            {'question_id': question_id,
                             'answer': 2}]}
-        self.assertRaises(CannotAnswerMultipleTimes, api.submission.submit,
+        self.assertRaises(CannotAnswerMultipleTimesError, api.submission.submit,
                           input_data)
 
 

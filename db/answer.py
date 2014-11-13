@@ -114,5 +114,7 @@ def get_geo_json(answer: RowProxy) -> dict:
     return json.loads(result)
 
 
-class CannotAnswerMultipleTimes(Exception):
+class CannotAnswerMultipleTimesError(Exception):
+    """A submission contains multiple answers to a question with
+    allow_multiple == False."""
     pass
