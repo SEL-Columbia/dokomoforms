@@ -554,7 +554,7 @@ class TestSurvey(unittest.TestCase):
                       'required': None,
                       'logic': None,
                       'type_constraint_name': 'text'},
-                     {'question_id': inserted_qs[5].question_id,
+                     {'question_id': inserted_qs[4].question_id,
                       'title': 'lost choices',
                       'allow_multiple': None,
                       'hint': None,
@@ -569,7 +569,7 @@ class TestSurvey(unittest.TestCase):
             new_submissions[0].submission_id).fetchall()
         self.assertEqual(len(choices), 2)
         answers = get_answers(new_submissions[0].submission_id).fetchall()
-        self.assertEqual(len(answers), 0)
+        self.assertEqual(len(answers), 1)
 
 
     def testUpdateBadChoices(self):

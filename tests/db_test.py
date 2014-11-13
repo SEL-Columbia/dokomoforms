@@ -375,6 +375,12 @@ class TestUtils(unittest.TestCase):
         self.assertNotEqual(new_record.survey_last_update_time,
                             new_record.created_on)
 
+        update_record(survey_table, 'survey_id', survey_id,
+                      values_dict={'title': 'update2'}).execute()
+
+        new_record = survey_table.select().where(condition).execute().first()
+        self.assertEqual(new_record.title, 'update2')
+
         self.assertRaises(TypeError, update_record, survey_table, 'survey_id',
                           survey_id,
                           values_dict={'title': 'updated2'},
