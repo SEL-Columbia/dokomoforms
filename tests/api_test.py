@@ -6,11 +6,14 @@ import unittest
 import uuid
 from sqlalchemy import and_
 
-from sqlalchemy.exc import DataError
+from sqlalchemy.exc import DataError, InternalError
+from api import execute_with_exceptions
 
 import api.survey
 import api.submission
-from db.answer import answer_insert, CannotAnswerMultipleTimesError, get_answers
+import db
+from db.answer import answer_insert, CannotAnswerMultipleTimesError, \
+    get_answers
 from db.answer_choice import get_answer_choices, answer_choice_table
 from db.question import question_table, get_questions, \
     QuestionDoesNotExistError
@@ -161,7 +164,8 @@ class TestSubmission(unittest.TestCase):
                             'answer': 1},
                            {'question_id': question_id,
                             'answer': 2}]}
-        self.assertRaises(CannotAnswerMultipleTimesError, api.submission.submit,
+        self.assertRaises(CannotAnswerMultipleTimesError,
+                          api.submission.submit,
                           input_data)
 
 
@@ -619,6 +623,18 @@ class TestSurvey(unittest.TestCase):
         survey_id = api.survey.create(data)['survey_id']
         api.survey.delete(survey_id)
         self.assertRaises(SurveyDoesNotExistError, survey_select, survey_id)
+
+
+class TestUtils(unittest.TestCase):
+    def testExecuteWithExceptions(self):
+        executable = survey_table.insert({'title': ''})
+        with db.engine.begin() as connection:
+            self.assertRaises(ValueError, execute_with_exceptions, connection,
+                              executable, [('null value', ValueError)])
+        with db.engine.begin() as connection:
+            self.assertRaises(InternalError, execute_with_exceptions,
+                              connection, executable,
+                              [('not in the error', ValueError)])
 
 
 if __name__ == '__main__':
