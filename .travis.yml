@@ -12,7 +12,6 @@ before_install:
 # command to install dependencies
 install:
   - pip install -r requirements.txt
-  - pip install -U nose
   - pip install coverage
 
 # database
