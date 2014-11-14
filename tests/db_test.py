@@ -88,8 +88,7 @@ class TestAnswer(unittest.TestCase):
         condition_2 = answer_table.c.answer_id == answer_2_id
         answer_2 = answer_table.select().where(condition_2).execute().first()
         location_2 = get_geo_json(answer_2)
-        self.assertEqual(location_2,
-                         {'type': 'GeometryCollection', 'geometries': []})
+        self.assertEqual(location_2, {'coordinates': [], 'type': 'MultiPoint'})
 
     def testGetAnswers(self):
         survey_id = survey_table.select().execute().first().survey_id

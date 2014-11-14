@@ -28,7 +28,7 @@ def _sanitize_answer(answer, type_constraint_name: str) -> str:
     """
     if type_constraint_name == 'location':
         if answer is None:
-            return text("ST_GeomFromText('GEOMETRYCOLLECTION EMPTY', 4326)")
+            return text("ST_GeomFromText('POINT EMPTY', 4326)")
         else:
             db_input = "ST_GeomFromText('POINT({ans[0]} {ans[1]})', 4326)"
             return text(db_input.format(ans=answer))
@@ -109,7 +109,7 @@ def get_geo_json(answer: RowProxy) -> dict:
 
     UNLESS of course the point in question is empty, in which case it looks
     like this:
-    {'type': 'GeometryCollection', 'geometries': []}
+    {'coordinates': [], 'type': 'MultiPoint'}
 
     :param answer: a RowProxy object for a record in the answer table
     :return: a GeoJSON dict representing the answer's value
