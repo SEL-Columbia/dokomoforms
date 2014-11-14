@@ -28,7 +28,7 @@ def _sanitize_answer(answer, type_constraint_name: str) -> str:
     """
     if type_constraint_name == 'location':
         if answer is None:
-            return text("ST_GeomFromText('GEOMETRYCOLLECTION EMPTY', 4326)")
+            return text("ST_GeomFromText('POINT EMPTY', 4326)")
         else:
             db_input = "ST_GeomFromText('POINT({ans[0]} {ans[1]})', 4326)"
             return text(db_input.format(ans=answer))
@@ -103,9 +103,13 @@ def get_answers_for_question(question_id: str) -> ResultProxy:
 def get_geo_json(answer: RowProxy) -> dict:
     """
     The default string representation of a geometry in PostGIS is some
-    garbage. This function converts the garbage into a GeoJSON dict that
+    garbage. This function returns, instead of garbage, a GeoJSON dict that
     looks like this:
     {'coordinates': [LON, LAT], 'type': 'Point'}
+
+    UNLESS of course the point in question is empty, in which case it looks
+    like this:
+    {'coordinates': [], 'type': 'MultiPoint'}
 
     :param answer: a RowProxy object for a record in the answer table
     :return: a GeoJSON dict representing the answer's value
@@ -114,5 +118,7 @@ def get_geo_json(answer: RowProxy) -> dict:
     return json.loads(result)
 
 
-class CannotAnswerMultipleTimes(Exception):
+class CannotAnswerMultipleTimesError(Exception):
+    """A submission contains multiple answers to a question with
+    allow_multiple == False."""
     pass
