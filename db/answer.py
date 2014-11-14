@@ -103,9 +103,13 @@ def get_answers_for_question(question_id: str) -> ResultProxy:
 def get_geo_json(answer: RowProxy) -> dict:
     """
     The default string representation of a geometry in PostGIS is some
-    garbage. This function converts the garbage into a GeoJSON dict that
+    garbage. This function returns, instead of garbage, a GeoJSON dict that
     looks like this:
     {'coordinates': [LON, LAT], 'type': 'Point'}
+
+    UNLESS of course the point in question is empty, in which case it looks
+    like this:
+    {'type': 'GeometryCollection', 'geometries': []}
 
     :param answer: a RowProxy object for a record in the answer table
     :return: a GeoJSON dict representing the answer's value

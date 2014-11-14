@@ -29,7 +29,7 @@ class TestAnswer(unittest.TestCase):
     def tearDown(self):
         submission_table.delete().execute()
 
-    def testInsertAnswer(self):
+    def testAnswerInsert(self):
         survey_id = survey_table.select().execute().first().survey_id
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'integer')
@@ -74,6 +74,22 @@ class TestAnswer(unittest.TestCase):
         answer = answer_table.select().where(condition).execute().first()
         location = get_geo_json(answer)['coordinates']
         self.assertEqual(location, [90, 0])
+
+        submission_2_exec = submission_insert(submitter='test_submitter',
+                                              survey_id=survey_id).execute()
+        submission_2_id = submission_2_exec.inserted_primary_key[0]
+        answer_2_exec = answer_insert(answer=None, question_id=question_id,
+                                      submission_id=submission_2_id,
+                                      survey_id=survey_id,
+                                      type_constraint_name=tcn,
+                                      sequence_number=seq,
+                                      allow_multiple=mul).execute()
+        answer_2_id = answer_2_exec.inserted_primary_key[0]
+        condition_2 = answer_table.c.answer_id == answer_2_id
+        answer_2 = answer_table.select().where(condition_2).execute().first()
+        location_2 = get_geo_json(answer_2)
+        self.assertEqual(location_2,
+                         {'type': 'GeometryCollection', 'geometries': []})
 
     def testGetAnswers(self):
         survey_id = survey_table.select().execute().first().survey_id
