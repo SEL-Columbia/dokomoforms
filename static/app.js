@@ -223,10 +223,10 @@ Widgets.date = function(question, page) {
     $(page)
         .find('input')
         .keyup(function() {
-            if(this.value !== ''){
+            if (this.value !== '') {
                 question.answer = this.value;
             }
-      });
+        });
 };
 
 Widgets.time = function(question, page) {
@@ -239,29 +239,44 @@ Widgets.time = function(question, page) {
       });
 };
 
+
 Widgets.multiple_choice_with_other = function(question, page) {
-    $(page)
+    var $other = $(page)
+        .find('.text_input')
+        .keyup(function() {
+            question.question_choice_id = null;
+            question.answer = this.value;
+        })
+        .hide();
+    
+    var $select = $(page)
         .find('select')
         .change(function() {
-            if (this.value !== ''){
-                question.question_choice_id = this.value;
-                if (typeof question.answer !== 'undefined' && question.answer !== '' && typeof question.question_choice_id !== 'undefined'){
-                   alert('You can\'t do both!');
-                }
-                question.answer = undefined;
+            if (this.value == 'null') {
+                // No option chosen
+                question.question_choice_id = null;
+                question.answer = null;
+                $other.hide();
+            } else if (this.value == 'other') {
+                // Choice is text input
+                $other.show();
+                question.question_choice_id = null;
+                question.answer = $other.val();
             } else {
-                question.question_choice_id = undefined;
+                // Normal choice
+                question.question_choice_id = this.value;
+                question.answer = null;
+                $other.hide();
             }
         });
-    $(page)
-        .find('input')
-        .on('keyup', function() {
-            question.answer = this.value;
-            if (typeof question.answer !== 'undefined' && question.answer !== '' && typeof question.question_choice_id !== 'undefined'){
-                alert('You can\'t do both!');
-            }
-            question.question_choice_id = undefined;
-        });
+    
+    // Set the default/selected option
+    var option = question.question_choice_id ||
+        (question.answer ? 'other' : 'null');
+    $select
+        .find('option[value="' + option + '"]')
+        .prop('selected', true);
+    $select.change();
 };
 
 Widgets.note = function(question, page) {
