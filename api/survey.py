@@ -170,8 +170,14 @@ def _create_questions(connection: Connection,
                     continue
                 answer_values = question_fields.copy()
                 new_submission_id = submission_map[answer.submission_id]
-                if new_tcn == 'multiple_choice_with_other':
+                logic = values['logic']
+                other = False
+                if logic:
+                    other = logic.get('with_other', None)
+                if new_tcn == 'multiple_choice' and other:
                     new_tcn = 'text'
+                # if new_tcn == 'multiple_choice':
+                #     assert False, values
                 answer_values['answer'] = answer['answer_' + new_tcn]
                 answer_values['submission_id'] = new_submission_id
                 connection.execute(answer_insert(**answer_values))
