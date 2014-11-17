@@ -475,6 +475,7 @@ Need to consider what exactly to do about logical constraints.
     "sequence_number": 0,
     "allow_multiple": false,    
     "type_constraint_name": "multiple_choice",
+    "logic": {},
     "choices": [{
                      "question_choice_id": "<UUID>",
                      "choice": "bananas"
