@@ -43,7 +43,7 @@ Response:
 ]
 ```
 
-If `type_constraint_name` is `multiple_choice` or `multiple_choice_with_other`, there will be a `choices` field like this:
+If `type_constraint_name` is `multiple_choice` there will be a `choices` field like this:
 
 ```
 "choices": [{
@@ -53,7 +53,7 @@ If `type_constraint_name` is `multiple_choice` or `multiple_choice_with_other`, 
             }]
 ```
 
-If `type_constraint_name` is `multiple_choice` or `multiple_choice_with_other`, there can be a `branches` field like this:
+If `type_constraint_name` is `multiple_choice` there can be a `branches` field like this:
 
 ```
 "branches": [{
@@ -105,7 +105,7 @@ Request data:
 
 If you try to add a survey with a title that already exists for that user, a number surrounded by parentheses will be appended to the title. 
 
-If `type_constraint_name` is `multiple_choice` or `multiple_choice_with_other`, the question dict should also contain
+If `type_constraint_name` is `multiple_choice`, the question dict should also contain
 
 ```
 "choices": ["choice 0", "choice 1", "choice 2"]
@@ -256,7 +256,7 @@ Response:
 ]
 ```
 
-If `type_constraint_name` is `multiple_choice` or `multiple_choice_with_other`, an entry in the `answers` list will look like this:
+If `type_constraint_name` is `multiple_choice`, and a choice is selected, an entry in the `answers` list will look like this:
 
 ```
 "answer_id": "<UUID>",
@@ -301,7 +301,7 @@ Request:
 }
 ```
 
-If the question to be answered is a `multiple_choice` or `multiple_choice_with_other` question, `answer` can be `question_choice_id` instead.
+If the question to be answered is a `multiple_choice` question, `answer` can be `question_choice_id` instead.
 
 Response:
 ```
@@ -511,7 +511,8 @@ Need to consider what exactly to do about logical constraints.
     "required": false,
     "sequence_number": 0,
     "allow_multiple": false,    
-    "type_constraint_name": "multiple_choice_with_other",
+    "type_constraint_name": "multiple_choice",
+    "logic": {"with_other": true}
     "choices": [{
                      "question_choice_id": "<UUID>",
                      "choice": "bananas"
@@ -531,7 +532,7 @@ Choice selected:
 {
     "answer_id": "<UUID>",
     "question_id": "<UUID>",
-    "type_constraint_name": "multiple_choice_with_other",
+    "type_constraint_name": "multiple_choice",
     "question_choice_id": "<UUID>",
     "choice": "bananas",
     "choice_number": 0
@@ -542,7 +543,7 @@ other:
 {
     "answer_id": "<UUID>",
     "question_id": "<UUID>",
-    "type_constraint_name": "multiple_choice_with_other",
+    "type_constraint_name": "multiple_choice",
     "answer": "cherries"
 }
 ```

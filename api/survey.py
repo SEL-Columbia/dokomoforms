@@ -174,10 +174,11 @@ def _create_questions(connection: Connection,
                 other = False
                 if logic:
                     other = logic.get('with_other', None)
-                if new_tcn == 'multiple_choice' and other:
-                    new_tcn = 'text'
-                # if new_tcn == 'multiple_choice':
-                #     assert False, values
+                if new_tcn == 'multiple_choice':
+                    if not other:
+                        continue
+                    else:
+                        new_tcn == 'text'
                 answer_values['answer'] = answer['answer_' + new_tcn]
                 answer_values['submission_id'] = new_submission_id
                 connection.execute(answer_insert(**answer_values))
