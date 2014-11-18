@@ -62,7 +62,7 @@ CREATE TABLE question_branch
   ),
 
   CONSTRAINT question_could_have_choices CHECK(
-    from_type_constraint IN ('multiple_choice', 'multiple_choice_with_other')
+    from_type_constraint = 'multiple_choice'
   ) 
 )
 WITH (

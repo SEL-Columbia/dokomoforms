@@ -67,19 +67,19 @@ VALUES (the_question_choice_id, the_from_question_id, 'multiple_choice', 2,
     the_survey_id);
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
+    type_constraint_name, allow_multiple, logic)
 VALUES (the_survey_id, 8, 'multiple choice with other question',
-           'multiple_choice_with_other', False)
+           'multiple_choice', False, '{"with_other": true}')
 RETURNING question_id into the_from_question_id;
 
 INSERT INTO question_choice (choice, choice_number, question_id,
     type_constraint_name, question_sequence_number, allow_multiple, survey_id)
-VALUES ('choice a', 1, the_from_question_id, 'multiple_choice_with_other', 8,
+VALUES ('choice a', 1, the_from_question_id, 'multiple_choice', 8,
     False, the_survey_id);
 
 INSERT INTO question_choice (choice, choice_number, question_id,
     type_constraint_name, question_sequence_number, allow_multiple, survey_id)
-VALUES ('choice b', 2, the_from_question_id, 'multiple_choice_with_other', 8,
+VALUES ('choice b', 2, the_from_question_id, 'multiple_choice', 8,
     False, the_survey_id);
 
 END $$;

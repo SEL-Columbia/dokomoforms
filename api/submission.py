@@ -154,7 +154,8 @@ def _get_fields(answer: RowProxy) -> dict:
         result_dict['choice_number'] = choice.choice_number
     except AttributeError:
         # The answer is not a choice
-        if tcn == 'multiple_choice_with_other':
+        question = question_select(answer.question_id)
+        if question.logic.get('with_other', None):
             tcn = 'text'
         result_dict['answer'] = _jsonify(answer, tcn)
         result_dict['answer_id'] = answer.answer_id

@@ -7,6 +7,7 @@ from sqlalchemy.sql.dml import Insert
 from sqlalchemy.sql import func
 
 from db import engine
+from db.question import question_select
 
 
 answer_table = Table('answer', MetaData(bind=engine), autoload=True)
@@ -62,7 +63,8 @@ def answer_insert(*,
     :param survey_id: The UUID of the survey.
     :return: The Insert object. Execute this!
     """
-    other = type_constraint_name == 'multiple_choice_with_other'
+    question = question_select(question_id)
+    other = question.logic.get('with_other', None)
     answer_type = 'answer_text' if other else 'answer_' + type_constraint_name
     values = {answer_type: _sanitize_answer(answer, type_constraint_name),
               'question_id': question_id,
