@@ -170,8 +170,15 @@ def _create_questions(connection: Connection,
                     continue
                 answer_values = question_fields.copy()
                 new_submission_id = submission_map[answer.submission_id]
-                if new_tcn == 'multiple_choice_with_other':
-                    new_tcn = 'text'
+                logic = values['logic']
+                other = False
+                if logic:
+                    other = logic.get('with_other', False)
+                if new_tcn == 'multiple_choice':
+                    if not other:
+                        continue
+                    else:
+                        new_tcn = 'text'
                 answer_values['answer'] = answer['answer_' + new_tcn]
                 answer_values['submission_id'] = new_submission_id
                 connection.execute(answer_insert(**answer_values))
@@ -346,7 +353,7 @@ def _get_fields(question: RowProxy) -> dict:
               'allow_multiple': question.allow_multiple,
               'type_constraint_name': question.type_constraint_name,
               'logic': question.logic}
-    if question.type_constraint_name.startswith('multiple_choice'):
+    if question.type_constraint_name == 'multiple_choice':
         choices = get_choices(question.question_id)
         result['choices'] = [_get_choice_fields(choice) for choice in choices]
         branches = get_branches(question.question_id)

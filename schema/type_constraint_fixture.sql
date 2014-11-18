@@ -6,6 +6,5 @@ INSERT INTO type_constraint (type_constraint_name) VALUES
               ('time'),
               ('location'),
               ('multiple_choice'),
-              ('multiple_choice_with_other'),
               ('note')
 ;

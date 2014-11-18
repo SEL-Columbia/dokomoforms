@@ -4,6 +4,7 @@ Tests for the dokomo database
 """
 import unittest
 import uuid
+from sqlalchemy import cast, Text, Boolean
 
 from db import update_record, delete_record
 import db
@@ -244,8 +245,7 @@ class TestQuestionBranch(unittest.TestCase):
         survey_id = survey_table.select().execute().first().survey_id
         to_question = get_questions(survey_id).fetchall()[-1]
         q_where = question_table.select().where(
-            question_table.c.type_constraint_name ==
-            'multiple_choice_with_other')
+            cast(cast(question_table.c.logic['with_other'], Text), Boolean))
         from_question = q_where.execute().first()
         choice = get_choices(from_question.question_id).fetchall()[0]
         from_tcn = from_question.type_constraint_name
