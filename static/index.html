@@ -76,11 +76,16 @@
     <script id="widget_multiple_choice" type="text/html">
         <div class="question__title"><%- question.title %></div>
         <select>
-            <option value="">Choose one</option>
-            <% for (choice of question.choices){ %>
+            <option value="null">Please choose an option</option>
+            <% _.each(question.choices, function(choice) { %>
                 <option value="<%- choice.question_choice_id %>"><%- choice.choice %></option>
+            <% }); %>
+            <% if (question.logic['with_other']) { %>
+                <option value="other">Other</option>
             <% } %>
         </select>
+        <input class="text_input" type="text"
+            value="<%- question.answer || question.default || '' %>">
     </script>
 
     <script id="widget_decimal" type="text/html">
@@ -97,19 +102,6 @@
     <script id="widget_time" type="text/html">
         <div class="question__title"><%- question.title %></div>
         <input type="time" />
-    </script>
-
-    <script id="widget_multiple_choice_with_other" type="text/html">
-        <div class="question__title"><%- question.title %></div>
-        <select>
-            <option value="null">Please choose an option</option>
-            <% _.each(question.choices, function(choice) { %>
-                <option value="<%- choice.question_choice_id %>"><%- choice.choice %></option>
-            <% }); %>
-            <option value="other">Other</option>
-        </select>
-        <input class="text_input" type="text"
-            value="<%- question.answer || question.default || '' %>">
     </script>
 
     <script id="widget_note" type="text/html">

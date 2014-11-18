@@ -201,14 +201,56 @@ Widgets.location = function(question, page) {
 
 Widgets.multiple_choice = function(question, page) {
     $(page)
-        .find('select')
-        .change(function() {
-            if (this.value !== ''){
-                question.question_choice_id = this.value;
-            } else {
-                question.question_choice_id = undefined;
-            }
+        .find('.text_input')
+        .hide();
+    if(question.logic['with_other']){
+        var $other = $(page)
+            .find('.text_input')
+            .keyup(function() {
+                question.question_choice_id = null;
+                question.answer = this.value;
+            })
+            .hide();
+
+        var $select = $(page)
+            .find('select')
+            .change(function() {
+                if (this.value == 'null') {
+                    // No option chosen
+                    question.question_choice_id = null;
+                    question.answer = null;
+                    $other.hide();
+                } else if (this.value == 'other') {
+                    // Choice is text input
+                    $other.show();
+                    question.question_choice_id = null;
+                    question.answer = $other.val();
+                } else {
+                    // Normal choice
+                    question.question_choice_id = this.value;
+                    question.answer = null;
+                    $other.hide();
+                }
+            });
+
+        // Set the default/selected option
+        var option = question.question_choice_id ||
+            (question.answer ? 'other' : 'null');
+        $select
+            .find('option[value="' + option + '"]')
+            .prop('selected', true);
+        $select.change();
+    } else {
+        $(page)
+            .find('select')
+            .change(function() {
+                if (this.value !== ''){
+                    question.question_choice_id = this.value;
+                } else {
+                    question.question_choice_id = undefined;
+                }
         });
+    }
 };
 
 Widgets.decimal = function(question, page) {
@@ -237,46 +279,6 @@ Widgets.time = function(question, page) {
                 question.answer = this.value;
             }
       });
-};
-
-
-Widgets.multiple_choice_with_other = function(question, page) {
-    var $other = $(page)
-        .find('.text_input')
-        .keyup(function() {
-            question.question_choice_id = null;
-            question.answer = this.value;
-        })
-        .hide();
-    
-    var $select = $(page)
-        .find('select')
-        .change(function() {
-            if (this.value == 'null') {
-                // No option chosen
-                question.question_choice_id = null;
-                question.answer = null;
-                $other.hide();
-            } else if (this.value == 'other') {
-                // Choice is text input
-                $other.show();
-                question.question_choice_id = null;
-                question.answer = $other.val();
-            } else {
-                // Normal choice
-                question.question_choice_id = this.value;
-                question.answer = null;
-                $other.hide();
-            }
-        });
-    
-    // Set the default/selected option
-    var option = question.question_choice_id ||
-        (question.answer ? 'other' : 'null');
-    $select
-        .find('option[value="' + option + '"]')
-        .prop('selected', true);
-    $select.change();
 };
 
 Widgets.note = function(question, page) {
