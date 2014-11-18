@@ -44,7 +44,7 @@ CREATE TABLE question_choice
   CONSTRAINT unique_choice_names
     UNIQUE (question_id, choice),
   CONSTRAINT question_should_have_choices CHECK(
-    type_constraint_name IN ('multiple_choice', 'multiple_choice_with_other')
+    type_constraint_name = 'multiple_choice'
   )
 )
 WITH (

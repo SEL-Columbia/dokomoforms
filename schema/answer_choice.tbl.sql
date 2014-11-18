@@ -37,7 +37,7 @@ CREATE TABLE answer_choice
   UNIQUE(question_choice_id, submission_id),
 
   CONSTRAINT multiple_choice_answer_type_matches CHECK(
-    type_constraint_name IN ('multiple_choice', 'multiple_choice_with_other')
+    type_constraint_name = 'multiple_choice'
   )
 )
 WITH (

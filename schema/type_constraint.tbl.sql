@@ -20,9 +20,8 @@ ALTER TABLE type_constraint
 -- 02 integer
 -- 03 decimal
 -- 04 multiple_choice
--- 05 multiple_choice_with_other
--- 06 date
--- 07 time
--- 08 location
--- 09 note (no answer)
+-- 05 date
+-- 06 time
+-- 07 location
+-- 08 note (no answer)
 

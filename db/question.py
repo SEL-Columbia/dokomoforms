@@ -80,7 +80,6 @@ def question_insert(*,
                                  integer
                                  decimal
                                  multiple_choice
-                                 multiple_choice_with_other
                                  date
                                  time
                                  location
