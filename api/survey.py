@@ -353,7 +353,7 @@ def _get_fields(question: RowProxy) -> dict:
               'allow_multiple': question.allow_multiple,
               'type_constraint_name': question.type_constraint_name,
               'logic': question.logic}
-    if question.type_constraint_name.startswith('multiple_choice'):
+    if question.type_constraint_name == 'multiple_choice':
         choices = get_choices(question.question_id)
         result['choices'] = [_get_choice_fields(choice) for choice in choices]
         branches = get_branches(question.question_id)
