@@ -215,8 +215,8 @@ class TestQuestion(unittest.TestCase):
     def testQuestionInsert(self):
         survey_id = survey_table.select().execute().first().survey_id
         sequence_number = get_free_sequence_number(survey_id)
-        stmt = question_insert(hint=None, required=None, allow_multiple=None,
-                               logic=None, sequence_number=sequence_number,
+        stmt = question_insert(hint=None, allow_multiple=None, logic=None,
+                               sequence_number=sequence_number,
                                title='test insert',
                                type_constraint_name='text',
                                survey_id=survey_id)
@@ -294,9 +294,8 @@ class TestQuestionChoice(unittest.TestCase):
     def testQuestionChoiceInsert(self):
         survey_id = survey_table.select().execute().first().survey_id
         seq_number = get_free_sequence_number(survey_id)
-        stmt = question_insert(hint=None, required=None, allow_multiple=None,
-                               logic=None, sequence_number=seq_number,
-                               title='test choice',
+        stmt = question_insert(hint=None, allow_multiple=None, logic=None,
+                               sequence_number=seq_number, title='test choice',
                                type_constraint_name='multiple_choice',
                                survey_id=survey_id)
         question_id = stmt.execute().inserted_primary_key[0]

@@ -33,7 +33,6 @@ Response:
             "question_id": "<UUID>",
             "title": "Batmobile jet fuel reserves (L)",
             "hint": "",
-            "required": false,
             "sequence_number": 0,
             "allow_multiple": false,
             "type_constraint_name": "integer",
@@ -74,7 +73,6 @@ Response:
         "question_id": "<UUID>",
         "title": "Batmobile jet fuel reserves (L)",
         "hint": "",
-        "required": false,
         "sequence_number": 0,
         "allow_multiple": false,
         "type_constraint_name": "integer",
@@ -96,7 +94,6 @@ Request data:
         "type_constraint_name": "integer",
         "sequence_number": null,
         "hint": null,
-        "required": null,
         "allow_multiple": null,
         "logic": null
     }]
@@ -131,7 +128,6 @@ Response:
         "type_constraint_name": "integer",
         "sequence_number": 0,
         "hint": "",
-        "required": false,
         "allow_multiple": false,
         "logic": "{}"
     }]
@@ -154,7 +150,6 @@ Request data:
             "type_constraint_name": "text",
             "sequence_number": null,
             "hint": null,
-            "required": null,
             "allow_multiple": null,
             "logic": null
         },
@@ -163,7 +158,6 @@ Request data:
             "type_constraint_name": "text",
             "sequence_number": null,
             "hint": null,
-            "required": null,
             "allow_multiple": null,
             "logic": null
         }
@@ -197,7 +191,6 @@ Response:
             "type_constraint_name": "integer",
             "sequence_number": 0,
             "hint": "",
-            "required": false,
             "allow_multiple": false,
             "logic": {}
         },
@@ -207,7 +200,6 @@ Response:
             "type_constraint_name": "text",
             "sequence_number": 1,
             "hint": "",
-            "required": false,
             "allow_multiple": false,
             "logic": {}
         }
@@ -342,7 +334,6 @@ or
     "question_id": "<UUID>",
     "title": "Location",
     "hint": "",
-    "required": false,
     "sequence_number": 0,
     "allow_multiple": false,
     "type_constraint_name": "location",
@@ -366,7 +357,6 @@ or
     "question_id": "<UUID>",
     "title": "Date",
     "hint": "",
-    "required": false,
     "sequence_number": 0,
     "allow_multiple": false,
     "type_constraint_name": "date",
@@ -392,7 +382,6 @@ The date should be given as `"YYYY-MM-DD"` - year, month, date
     "question_id": "<UUID>",
     "title": "Time",
     "hint": "",
-    "required": false,
     "sequence_number": 0,
     "allow_multiple": false,
     "type_constraint_name": "time",
@@ -423,7 +412,6 @@ Need to consider what exactly to do about logical constraints.
     "question_id": "<UUID>",
     "title": "Number from 5 to 10",
     "hint": "",
-    "required": false,
     "sequence_number": 0,
     "allow_multiple": false,
     "type_constraint_name": "integer",
@@ -447,7 +435,6 @@ Need to consider what exactly to do about logical constraints.
     "question_id": "<UUID>",
     "title": "Description",
     "hint": "",
-    "required": false,
     "sequence_number": 0,
     "allow_multiple": false,
     "type_constraint_name": "text",
@@ -471,7 +458,6 @@ Need to consider what exactly to do about logical constraints.
     "question_id": "<UUID>",
     "title": "Pick one",
     "hint": "",
-    "required": false,
     "sequence_number": 0,
     "allow_multiple": false,    
     "type_constraint_name": "multiple_choice",
@@ -509,7 +495,6 @@ Need to consider what exactly to do about logical constraints.
     "question_id": "<UUID>",
     "title": "Pick one or write in 'other'.",
     "hint": "",
-    "required": false,
     "sequence_number": 0,
     "allow_multiple": false,    
     "type_constraint_name": "multiple_choice",

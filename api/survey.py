@@ -348,7 +348,6 @@ def _get_fields(question: RowProxy) -> dict:
     result = {'question_id': question.question_id,
               'title': question.title,
               'hint': question.hint,
-              'required': question.required,
               'sequence_number': question.sequence_number,
               'allow_multiple': question.allow_multiple,
               'type_constraint_name': question.type_constraint_name,
