@@ -117,6 +117,8 @@ If you are creating a multiple choice question with branching, the question dict
              }]
 ```
 
+If you want to make a question required, add `{"required": true}` in the `logic` field.
+
 Response:
 ```
 {
