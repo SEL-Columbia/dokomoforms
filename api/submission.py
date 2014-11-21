@@ -63,7 +63,6 @@ def submit(data: dict) -> dict:
     """
     survey_id = data['survey_id']
     all_answers = data['answers']
-    # answers = _filter_skipped_questions(all_answers)
     answers = filter(lambda answer: answer['answer'] is not None, all_answers)
     unanswered_required = {q.question_id for q in get_required(survey_id)}
 
