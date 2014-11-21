@@ -22,7 +22,7 @@ CREATE TABLE question
   type_constraint_name  text REFERENCES type_constraint (type_constraint_name) 
                                                         ON UPDATE CASCADE
                                                         ON DELETE CASCADE,
-  logic                 json      NOT NULL DEFAULT '{}',
+  logic                 json      NOT NULL DEFAULT '{"required": false, "with_other": false}',
   survey_id             uuid REFERENCES survey          ON UPDATE CASCADE
                                                         ON DELETE CASCADE,
 
@@ -37,7 +37,10 @@ CREATE TABLE question
   CONSTRAINT question_survey_id_sequence_number_key UNIQUE (survey_id,
                                                             sequence_number),
 
-  CONSTRAINT non_empty_title CHECK (title != '')
+  CONSTRAINT non_empty_title CHECK (title != ''),
+
+  CONSTRAINT minimal_logic CHECK (((logic->>'required')) IS NOT NULL AND
+                                  ((logic->>'with_other')) IS NOT NULL)
 )
 WITH (
   OIDS=FALSE

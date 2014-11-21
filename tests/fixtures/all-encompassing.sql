@@ -69,7 +69,7 @@ VALUES (the_question_choice_id, the_from_question_id, 'multiple_choice', 2,
 INSERT INTO question (survey_id, sequence_number, title,
     type_constraint_name, allow_multiple, logic)
 VALUES (the_survey_id, 8, 'multiple choice with other question',
-           'multiple_choice', False, '{"with_other": true}')
+           'multiple_choice', False, '{"required": false, "with_other": true}')
 RETURNING question_id into the_from_question_id;
 
 INSERT INTO question_choice (choice, choice_number, question_id,

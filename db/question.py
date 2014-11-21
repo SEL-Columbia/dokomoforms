@@ -87,6 +87,8 @@ def question_insert(*,
     :param survey_id: the UUID of the survey
     :return: the Insert object. Execute this!
     """
+    if logic is None:
+        raise TypeError('logic must not be None')
     tcn = type_constraint_name
     # These values must be provided in the insert statement
     values = {'title': title,
@@ -119,6 +121,10 @@ class QuestionDoesNotExistError(Exception):
     pass
 
 
+class MissingMinimalLogicError(Exception):
+    pass
+
+
 def get_questions(survey_id: str) -> ResultProxy:
     """
     Get all the questions for a survey identified by survey_id ordered by
@@ -130,6 +136,7 @@ def get_questions(survey_id: str) -> ResultProxy:
     select_stmt = question_table.select()
     where_stmt = select_stmt.where(question_table.c.survey_id == survey_id)
     return where_stmt.order_by('sequence_number asc').execute()
+
 
 def get_required(survey_id: str) -> ResultProxy:
     select_stmt = question_table.select()

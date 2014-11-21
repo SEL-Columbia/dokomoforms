@@ -216,7 +216,8 @@ class TestQuestion(unittest.TestCase):
         survey_id = survey_table.select().execute().first().survey_id
         sequence_number = get_free_sequence_number(survey_id)
         stmt = question_insert(hint=None, required=None, allow_multiple=None,
-                               logic=None, sequence_number=sequence_number,
+                               logic={'required': False, 'with_other': False},
+                               sequence_number=sequence_number,
                                title='test insert',
                                type_constraint_name='text',
                                survey_id=survey_id)
@@ -224,6 +225,19 @@ class TestQuestion(unittest.TestCase):
         condition = question_table.c.title == 'test insert'
         self.assertEqual(question_table.select().where(
             condition).execute().first().question_id, question_id)
+
+    def testNoLogic(self):
+        survey_id = survey_table.select().execute().first().survey_id
+        sequence_number = get_free_sequence_number(survey_id)
+        self.assertRaises(TypeError, question_insert,
+                          hint=None,
+                          required=None,
+                          allow_multiple=None,
+                          logic=None,
+                          sequence_number=sequence_number,
+                          title='test insert',
+                          type_constraint_name='text',
+                          survey_id=survey_id)
 
 
 class TestQuestionBranch(unittest.TestCase):
@@ -295,7 +309,8 @@ class TestQuestionChoice(unittest.TestCase):
         survey_id = survey_table.select().execute().first().survey_id
         seq_number = get_free_sequence_number(survey_id)
         stmt = question_insert(hint=None, required=None, allow_multiple=None,
-                               logic=None, sequence_number=seq_number,
+                               logic={'required': False, 'with_other': False},
+                               sequence_number=seq_number,
                                title='test choice',
                                type_constraint_name='multiple_choice',
                                survey_id=survey_id)

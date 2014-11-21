@@ -64,7 +64,7 @@ def answer_insert(*,
     :return: The Insert object. Execute this!
     """
     question = question_select(question_id)
-    other = question.logic.get('with_other', None)
+    other = question.logic['with_other']
     answer_type = 'answer_text' if other else 'answer_' + type_constraint_name
     values = {answer_type: _sanitize_answer(answer, type_constraint_name),
               'question_id': question_id,

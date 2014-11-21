@@ -60,7 +60,8 @@ class TestDokomoWebapp(unittest.TestCase):
         survey_id = survey_table.select().execute().first().survey_id
         answer_json = {'survey_id': survey_id, 'answers': [
             {'question_id': get_questions(survey_id).first().question_id,
-             'answer': 1}]}
+             'answer': 1,
+             'is_other': False}]}
         test_submission = {'data': json.dumps(answer_json)}
 
         # prepare the POST request
