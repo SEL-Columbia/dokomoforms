@@ -10,10 +10,8 @@ from db import update_record, delete_record
 import db
 from db.answer import answer_insert, answer_table, get_answers, get_geo_json
 from db.answer_choice import answer_choice_insert, get_answer_choices
-from db.auth_user import check_password_hash, hash_password, auth_user_table, \
-    get_auth_user, check_login, UserDoesNotExistError, \
-    IncorrectPasswordError, \
-    create_auth_user
+from db.auth_user import auth_user_table, get_auth_user, check_login, \
+    UserDoesNotExistError, create_auth_user, IncorrectPasswordError
 from db.question import get_questions, question_select, question_table, \
     get_free_sequence_number, question_insert
 from db.question_branch import get_branches, question_branch_insert, \
@@ -165,12 +163,6 @@ class TestAuthUser(unittest.TestCase):
         auth_user_table.delete().where(
             auth_user_table.c.email != 'test_email').execute()
 
-    def testCheckPasswordHash(self):
-        self.assertRaises(NotImplementedError, check_password_hash, None, None)
-
-    def testHashPassword(self):
-        self.assertRaises(NotImplementedError, hash_password, None)
-
     def testGetAuthUser(self):
         result = auth_user_table.insert(
             {'email': 'a', 'password': 'a'}).execute()
@@ -179,17 +171,17 @@ class TestAuthUser(unittest.TestCase):
         self.assertEqual(user.email, 'a')
 
     def testCheckLogin(self):
-        auth_user_table.insert({'email': 'a', 'password': 'a'}).execute()
+        create_auth_user(email='email', raw_password='a').execute()
         self.assertRaises(UserDoesNotExistError, check_login, email='',
                           raw_password='')
-        self.assertRaises(NotImplementedError, check_login, email='a',
-                          raw_password='')
-        self.assertRaises(NotImplementedError, check_login, email='a',
-                          raw_password='a')
+        self.assertRaises(IncorrectPasswordError, check_login, email='email',
+                          raw_password='b')
+        self.assertIsNotNone(check_login(email='email', raw_password='a'))
 
     def testCreateAuthUser(self):
-        self.assertRaises(NotImplementedError, create_auth_user, email='',
-                          raw_password='')
+        create_auth_user(email='a', raw_password='a').execute()
+        self.assertEqual(len(auth_user_table.select().where(
+            auth_user_table.c.email == 'a').execute().fetchall()), 1)
 
 
 class TestQuestion(unittest.TestCase):
