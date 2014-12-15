@@ -38,6 +38,10 @@ class CreateSurvey(tornado.web.RequestHandler):
     def post(self):
         self.write(api.survey.create({'title': self.get_argument('title')}))
 
+class PageRequiringLogin(tornado.web.RequestHandler):
+    def get(self):
+        self.render('requires-login.html')
+
 
 config = {
     'template_path': 'static',
@@ -57,7 +61,8 @@ def startserver():
 
     app = tornado.web.Application([
         (r'/', Index),
-        (r'/viktor-create-survey', CreateSurvey)
+        (r'/viktor-create-survey', CreateSurvey),
+        (r'/requires-login', PageRequiringLogin)
     ], **config)
     app.listen(settings.WEBAPP_PORT, '0.0.0.0')
 
