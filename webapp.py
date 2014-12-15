@@ -46,8 +46,8 @@ class PageRequiringLogin(tornado.web.RequestHandler):
 config = {
     'template_path': 'static',
     'static_path': 'static',
-    'xsrf_cookies': False,
-    'debug': True
+    'xsrf_cookies': True,
+    'debug': True # Remove this
 }
 
 # Good old database

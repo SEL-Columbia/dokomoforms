@@ -27,6 +27,7 @@
     
     <div class="content">
         <form method="post" action="/viktor-create-survey">
+            {% module xsrf_form_html() %}
             <div>What is the survey title?</div>
             <input type="text" name="title">
             <input type="submit" value="Create">
