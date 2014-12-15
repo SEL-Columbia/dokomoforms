@@ -1,5 +1,3 @@
 tornado==4.0.2
 SQLAlchemy==0.9.7
 psycopg2==2.5.4
-py-bcrypt>=0.4
-passlib>=1.6.2

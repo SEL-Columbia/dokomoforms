@@ -1,7 +1,5 @@
 """Allow access to the auth_user table."""
 
-from passlib.hash import bcrypt_sha256
-
 from sqlalchemy import Table, MetaData
 from sqlalchemy.sql.dml import Insert
 from sqlalchemy.engine import RowProxy
@@ -34,15 +32,7 @@ def check_login(*, email: str, raw_password: str) -> RowProxy:
     :return: the record from the auth_user table
     :raise IncorrectPasswordError: if the password's hash doesn't match
     """
-    select_stmt = auth_user_table.select()
-    where_stmt = select_stmt.where(auth_user_table.c.email == email)
-    user = where_stmt.execute().first()
-    if user is None:
-        raise UserDoesNotExistError(email)
-    if bcrypt_sha256.verify(raw_password, user.password):
-        return user
-    else:
-        raise IncorrectPasswordError(email)
+    raise NotImplementedError()
 
 
 def create_auth_user(*, email: str, raw_password: str) -> Insert:
@@ -55,9 +45,7 @@ def create_auth_user(*, email: str, raw_password: str) -> Insert:
                          salted and hashed.
     :return: The Insert object. Execute this!
     """
-    hashed_password = bcrypt_sha256.encrypt(raw_password)
-    return auth_user_table.insert().values(email=email,
-                                           password=hashed_password)
+    raise NotImplementedError()
 
 class UserDoesNotExistError(Exception):
     """The supplied e-mail address is not in the database."""

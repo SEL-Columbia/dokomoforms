@@ -10,8 +10,7 @@ from db import update_record, delete_record
 import db
 from db.answer import answer_insert, answer_table, get_answers, get_geo_json
 from db.answer_choice import answer_choice_insert, get_answer_choices
-from db.auth_user import auth_user_table, get_auth_user, check_login, \
-    UserDoesNotExistError, create_auth_user, IncorrectPasswordError
+from db.auth_user import auth_user_table, get_auth_user
 from db.question import get_questions, question_select, question_table, \
     get_free_sequence_number, question_insert
 from db.question_branch import get_branches, question_branch_insert, \
@@ -171,17 +170,10 @@ class TestAuthUser(unittest.TestCase):
         self.assertEqual(user.email, 'a')
 
     def testCheckLogin(self):
-        create_auth_user(email='email', raw_password='a').execute()
-        self.assertRaises(UserDoesNotExistError, check_login, email='',
-                          raw_password='')
-        self.assertRaises(IncorrectPasswordError, check_login, email='email',
-                          raw_password='b')
-        self.assertIsNotNone(check_login(email='email', raw_password='a'))
+        self.fail()
 
     def testCreateAuthUser(self):
-        create_auth_user(email='a', raw_password='a').execute()
-        self.assertEqual(len(auth_user_table.select().where(
-            auth_user_table.c.email == 'a').execute().fetchall()), 1)
+        self.fail()
 
 
 class TestQuestion(unittest.TestCase):
