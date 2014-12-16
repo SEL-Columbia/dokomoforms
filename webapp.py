@@ -24,12 +24,15 @@ logger = setup_custom_logger('dokomo')
 class Index(tornado.web.RequestHandler):
     def get(self):
         survey = api.survey.get_one(settings.SURVEY_ID)
+        self.xsrf_token # need to access it in order to set it...
         self.render('index.html', survey=json.dumps(survey))
 
     def post(self):
-        data = json.loads(self.get_argument('data'))
-
+        data = json.loads(self.request.body.decode('utf-8'))
         self.write(api.submission.submit(data))
+
+class LoginHandler(tornado.web.RequestHandler):
+    pass
 
 class CreateSurvey(tornado.web.RequestHandler):
     def get(self):
@@ -47,6 +50,8 @@ config = {
     'template_path': 'static',
     'static_path': 'static',
     'xsrf_cookies': True,
+    'login_url': '/login',
+    'cookie_secret': settings.COOKIE_SECRET,
     'debug': True # Remove this
 }
 
@@ -61,6 +66,7 @@ def startserver():
 
     app = tornado.web.Application([
         (r'/', Index),
+        (r'/login', LoginHandler),
         (r'/viktor-create-survey', CreateSurvey),
         (r'/requires-login', PageRequiringLogin)
     ], **config)

@@ -102,6 +102,11 @@ Survey.prototype.render = function(index) {
 };
 
 
+function getCookie(name) {
+    var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
+    return r ? r[1] : undefined;
+}
+
 Survey.prototype.submit = function() {
     var self = this;
     var sync = $('.nav__sync')[0];
@@ -123,15 +128,16 @@ Survey.prototype.submit = function() {
     sync.classList.add('icon--spin');
     save_btn.classList.add('icon--spin');
 
-    window.xsrf = self.xsrf_token;
     $.ajax({
         url: '',
-        type: 'post',
-        data: data,
+        type: 'POST',
+        contentType: 'application/json',
+        processData: false,
+        data: JSON.stringify(data),
         headers: {
-            "X-XSRFToken": self.xsrf_token
+            "X-XSRFToken": getCookie("_xsrf")
         },
-        datatype: 'json',
+        dataType: 'json',
         success: function() {
             App.message('Survey submitted!');
         },
@@ -148,22 +154,6 @@ Survey.prototype.submit = function() {
             }, 1000);
         }
     });
-//    $.post('', {data: JSON.stringify(data)})
-//        .success(function() {
-//            App.message('Survey submitted!');
-//        })
-//        .fail(function() {
-//            App.message('Submission failed, will try again later.');
-//            App.unsynced.push(self);
-//        })
-//        .done(function() {
-//            setTimeout(function() {
-//                sync.classList.remove('icon--spin');
-//                save_btn.classList.remove('icon--spin');
-//                App.message('Survey submitted!');
-//                self.render(0);
-//            }, 1000);
-//        });
 };
 
 
