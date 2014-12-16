@@ -8,6 +8,7 @@ requests back from the client app.
 """
 
 import json
+import urllib.parse
 
 import tornado.web
 import tornado.ioloop
@@ -20,6 +21,9 @@ from utils.logger import setup_custom_logger
 
 logger = setup_custom_logger('dokomo')
 
+class BaseHandler(tornado.web.RequestHandler):
+    def get_current_user(self):
+        return self.get_secure_cookie('user')
 
 class Index(tornado.web.RequestHandler):
     def get(self):
@@ -32,7 +36,40 @@ class Index(tornado.web.RequestHandler):
         self.write(api.submission.submit(data))
 
 class LoginHandler(tornado.web.RequestHandler):
-    pass
+    def check_xsrf_cookie(self):
+        return self.xsrf_token == self.request.xsrf_token
+
+    @tornado.web.asynchronous
+    def post(self):
+        if not self.check_xsrf_cookie():
+            raise tornado.web.HTTPError(400, "XSRF cookie mismatch")
+        assertion = self.get_argument('assertion')
+        http_client = tornado.httpclient.AsyncHTTPClient()
+        domain = 'localhost:8888'  # MAKE SURE YOU CHANGE THIS
+        url = 'https://verifier.login.persona.org/verify'
+        data = {
+            'assertion': assertion,
+            'audience': domain,
+        }
+        response = http_client.fetch(
+            url,
+            method='POST',
+            body=urllib.parse.urlencode(data),
+            callback=self.async_callback(self._on_response),
+
+        )
+
+    def _on_response(self, response):
+        struct = tornado.escape.json_decode(response.body)
+        if struct['status'] != 'okay':
+            raise tornado.web.HTTPError(400, "Failed assertion test")
+        email = struct['email']
+        self.set_secure_cookie('user', email,
+                               expires_days=1)
+        self.set_header("Content-Type", "application/json; charset=UTF-8")
+        response = {'next_url': '/'}
+        self.write(tornado.escape.json_encode(response))
+        self.finish()
 
 class CreateSurvey(tornado.web.RequestHandler):
     def get(self):
@@ -41,9 +78,21 @@ class CreateSurvey(tornado.web.RequestHandler):
     def post(self):
         self.write(api.survey.create({'title': self.get_argument('title')}))
 
-class PageRequiringLogin(tornado.web.RequestHandler):
+class LoginPage(tornado.web.RequestHandler):
     def get(self):
+        self.xsrf_token
+        self.render('login.html')
+
+class PageRequiringLogin(BaseHandler):
+    @tornado.web.authenticated
+    def get(self):
+        self.xsrf_token
         self.render('requires-login.html')
+
+class LogoutHandler(tornado.web.RequestHandler):
+    def post(self):
+        self.clear_cookie('user')
+        # self.redirect(self.get_argument('next', '/'))
 
 
 config = {
@@ -66,7 +115,9 @@ def startserver():
 
     app = tornado.web.Application([
         (r'/', Index),
-        (r'/login', LoginHandler),
+        (r'/login', LoginPage),
+        (r'/login/persona', LoginHandler),
+        (r'/logout', LogoutHandler),
         (r'/viktor-create-survey', CreateSurvey),
         (r'/requires-login', PageRequiringLogin)
     ], **config)
