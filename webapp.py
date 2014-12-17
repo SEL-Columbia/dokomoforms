@@ -9,6 +9,8 @@ requests back from the client app.
 
 import json
 import urllib.parse
+from tornado import httpclient
+import pprint
 
 import tornado.web
 import tornado.ioloop
@@ -21,42 +23,42 @@ from utils.logger import setup_custom_logger
 
 logger = setup_custom_logger('dokomo')
 
+
 class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
         return self.get_secure_cookie('user')
 
+class FreshXSRFTokenHandler(tornado.web.RequestHandler):
+    def get(self):
+        logged_in = self.get_secure_cookie('user') is not None
+        response = {'token': self.xsrf_token.decode('utf-8'),
+                    'logged_in': logged_in}
+        self.write(json.dumps(response))
+
 class Index(tornado.web.RequestHandler):
     def get(self):
         survey = api.survey.get_one(settings.SURVEY_ID)
-        self.xsrf_token # need to access it in order to set it...
+        self.xsrf_token  # need to access it in order to set it...
         self.render('index.html', survey=json.dumps(survey))
 
     def post(self):
         data = json.loads(self.request.body.decode('utf-8'))
         self.write(api.submission.submit(data))
 
-class LoginHandler(tornado.web.RequestHandler):
-    def check_xsrf_cookie(self):
-        return self.xsrf_token == self.request.xsrf_token
 
+class LoginHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     def post(self):
-        if not self.check_xsrf_cookie():
-            raise tornado.web.HTTPError(400, "XSRF cookie mismatch")
         assertion = self.get_argument('assertion')
-        http_client = tornado.httpclient.AsyncHTTPClient()
+        http_client = httpclient.AsyncHTTPClient()
         domain = 'localhost:8888'  # MAKE SURE YOU CHANGE THIS
         url = 'https://verifier.login.persona.org/verify'
-        data = {
-            'assertion': assertion,
-            'audience': domain,
-        }
+        data = {'assertion': assertion, 'audience': domain}
         response = http_client.fetch(
             url,
             method='POST',
             body=urllib.parse.urlencode(data),
-            callback=self.async_callback(self._on_response),
-
+            callback=self._on_response
         )
 
     def _on_response(self, response):
@@ -71,6 +73,7 @@ class LoginHandler(tornado.web.RequestHandler):
         self.write(tornado.escape.json_encode(response))
         self.finish()
 
+
 class CreateSurvey(tornado.web.RequestHandler):
     def get(self):
         self.render('viktor-create-survey.html')
@@ -78,10 +81,12 @@ class CreateSurvey(tornado.web.RequestHandler):
     def post(self):
         self.write(api.survey.create({'title': self.get_argument('title')}))
 
+
 class LoginPage(tornado.web.RequestHandler):
     def get(self):
         self.xsrf_token
         self.render('login.html')
+
 
 class PageRequiringLogin(BaseHandler):
     @tornado.web.authenticated
@@ -89,10 +94,14 @@ class PageRequiringLogin(BaseHandler):
         self.xsrf_token
         self.render('requires-login.html')
 
+
 class LogoutHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.redirect('/login')
+
     def post(self):
         self.clear_cookie('user')
-        # self.redirect(self.get_argument('next', '/'))
+
 
 
 config = {
@@ -101,7 +110,7 @@ config = {
     'xsrf_cookies': True,
     'login_url': '/login',
     'cookie_secret': settings.COOKIE_SECRET,
-    'debug': True # Remove this
+    'debug': True  # Remove this
 }
 
 # Good old database
@@ -114,13 +123,14 @@ def startserver():
     other things, fubars the tests"""
 
     app = tornado.web.Application([
-        (r'/', Index),
-        (r'/login', LoginPage),
-        (r'/login/persona', LoginHandler),
-        (r'/logout', LogoutHandler),
-        (r'/viktor-create-survey', CreateSurvey),
-        (r'/requires-login', PageRequiringLogin)
-    ], **config)
+                                      (r'/', Index),
+                                      (r'/login', LoginPage),
+                                      (r'/login/persona', LoginHandler),
+                                      (r'/logout', LogoutHandler),
+                                      (r'/viktor-create-survey', CreateSurvey),
+                                      (r'/requires-login', PageRequiringLogin),
+                                      (r'/csrf-token', FreshXSRFTokenHandler)
+                                  ], **config)
     app.listen(settings.WEBAPP_PORT, '0.0.0.0')
 
     logger.info('starting server on port ' + str(settings.WEBAPP_PORT))

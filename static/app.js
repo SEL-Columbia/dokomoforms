@@ -107,25 +107,36 @@ function getCookie(name) {
 }
 
 (function () {
-    var currentUser = getCookie("user");
+    var user = getCookie("user")
+    var currentUser = user ? user : null;
 
     navigator.id.watch({
       loggedInUser: currentUser,
       onlogin: function(assertion) {
-        // A user has logged in! Here you need to:
-        // 1. Send the assertion to your backend for verification and to create a session.
-        // 2. Update your UI.
-        $.ajax({ /* <-- This example uses jQuery, but you can use whatever you'd like */
-          type: 'POST',
-          url: '/login/persona', // This is a URL on your website.
-          data: {assertion: assertion},
-          headers: {
-            "X-XSRFToken": getCookie("_xsrf")
-          },
-          success: function(res, status, xhr) { window.location.reload(); },
-          error: function(xhr, status, err) {
-            navigator.id.logout();
-            alert("Login failure: " + err);
+        $.ajax({
+          type: 'GET',
+          url: '/csrf-token',
+          success: function (res, status, xhr) {
+            var response = JSON.parse(res);
+            var logged_in = response.logged_in;
+            var fresh_token = response.token;
+            if (!logged_in){
+              $.ajax({
+                type: 'POST',
+                url: '/login/persona',
+                data: {assertion:assertion},
+                headers: {
+                  "X-XSRFToken": fresh_token
+                },
+                success: function(res, status, xhr){
+                  location.href = decodeURIComponent(window.location.search.substring(6));
+                },
+                error: function(xhr, status, err) {
+                  navigator.id.logout();
+                  alert("Login failure: " + err);
+                }
+              });
+            }
           }
         });
       },
@@ -140,10 +151,13 @@ function getCookie(name) {
           headers: {
             "X-XSRFToken": getCookie("_xsrf")
           },
-          success: function(res, status, xhr) { window.location.reload(); },
-          error: function(xhr, status, err) { alert("Logout failure: " + err); }
+          success: function(res, status, xhr) {
+              window.location.reload();
+          },
+          error: function(xhr, status, err) { alert("Logout failure: " + err); },
         });
       }
+
     });
 
     var signinLink = document.getElementById('login');
