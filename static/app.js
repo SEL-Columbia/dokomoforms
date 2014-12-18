@@ -186,7 +186,20 @@ Survey.prototype.submit = function() {
     // Prepare POST request
     var data = {
         survey_id: self.id,
-        answers: self.questions
+        answers: _.map(self.questions, function(q) {
+            console.log('q', q);
+            if (typeof q.answer === 'undefined' || q.answer === null) {
+                return {
+                    question_id: q.question_id,
+                    question_choice_id: q.question_choice_id
+                };
+            } else {
+                return {
+                    question_id: q.question_id,
+                    answer: q.answer
+                };
+            }
+        })
     };
     
     sync.classList.add('icon--spin');
@@ -266,6 +279,87 @@ Widgets.location = function(question, page) {
         });
 };
 
+Widgets.multiple_choice = function(question, page) {
+    $(page)
+        .find('.text_input')
+        .hide();
+    if(question.logic['with_other']){
+        var $other = $(page)
+            .find('.text_input')
+            .keyup(function() {
+                question.question_choice_id = null;
+                question.answer = this.value;
+            })
+            .hide();
 
+        var $select = $(page)
+            .find('select')
+            .change(function() {
+                if (this.value == 'null') {
+                    // No option chosen
+                    question.question_choice_id = null;
+                    question.answer = null;
+                    $other.hide();
+                } else if (this.value == 'other') {
+                    // Choice is text input
+                    $other.show();
+                    question.question_choice_id = null;
+                    question.answer = $other.val();
+                } else {
+                    // Normal choice
+                    question.question_choice_id = this.value;
+                    question.answer = null;
+                    $other.hide();
+                }
+            });
 
-    
+        // Set the default/selected option
+        var option = question.question_choice_id ||
+            (question.answer ? 'other' : 'null');
+        $select
+            .find('option[value="' + option + '"]')
+            .prop('selected', true);
+        $select.change();
+    } else {
+        $(page)
+            .find('select')
+            .change(function() {
+                if (this.value !== ''){
+                    question.question_choice_id = this.value;
+                } else {
+                    question.question_choice_id = undefined;
+                }
+        });
+    }
+};
+
+Widgets.decimal = function(question, page) {
+    $(page)
+        .find('input')
+        .keyup(function() {
+            question.answer = parseFloat(this.value);
+        });
+};
+
+Widgets.date = function(question, page) {
+    $(page)
+        .find('input')
+        .keyup(function() {
+            if (this.value !== '') {
+                question.answer = this.value;
+            }
+        });
+};
+
+Widgets.time = function(question, page) {
+    $(page)
+        .find('input')
+        .keyup(function() {
+            if(this.value !== ''){
+                question.answer = this.value;
+            }
+      });
+};
+
+Widgets.note = function(question, page) {
+};

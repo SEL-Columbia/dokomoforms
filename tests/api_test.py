@@ -195,7 +195,7 @@ class TestSubmission(unittest.TestCase):
         self.assertIsNotNone(data['submission_id'])
         self.assertIsNotNone(data['answers'])
 
-    def testGetForSurvey(self):
+    def testGetAll(self):
         survey_id = survey_table.select().execute().first().survey_id
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'integer')
@@ -212,7 +212,7 @@ class TestSubmission(unittest.TestCase):
                           submission_id=submission_id,
                           survey_id=survey_id, type_constraint_name=tcn,
                           sequence_number=seq, allow_multiple=mul).execute()
-        data = api.submission.get_for_survey(survey_id)
+        data = api.submission.get_all(survey_id)
         self.assertGreater(len(data), 0)
 
     def testDelete(self):
@@ -237,8 +237,8 @@ class TestSurvey(unittest.TestCase):
         self.assertIsNotNone(data['survey_id'])
         self.assertIsNotNone(data['questions'])
 
-    def testGetMany(self):
-        surveys = api.survey.get_many()
+    def testGetAll(self):
+        surveys = api.survey.get_all()
         self.assertGreater(len(surveys), 0)
 
     def testCreate(self):
