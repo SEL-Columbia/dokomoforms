@@ -1,15 +1,14 @@
 """Allow access to the auth_user table."""
 
 from sqlalchemy import Table, MetaData
-from datetime import datetime
+from datetime import datetime, timedelta
+import uuid
 
 from sqlalchemy.sql.dml import Insert, Update
 from sqlalchemy.engine import RowProxy
-import uuid
+from passlib.hash import bcrypt_sha256
 
 from db import engine, update_record
-
-from passlib.hash import bcrypt_sha256
 
 
 auth_user_table = Table('auth_user', MetaData(bind=engine), autoload=True)
@@ -28,18 +27,6 @@ def get_auth_user(auth_user_id: str) -> RowProxy:
     return where_stmt.execute().first()
 
 
-def check_login(*, email: str, raw_password: str) -> RowProxy:
-    """
-    Return the user's details specified by the email and password.
-
-    :param email: the supplied e-mail address
-    :param raw_password: the supplied password
-    :return: the record from the auth_user table
-    :raise IncorrectPasswordError: if the password's hash doesn't match
-    """
-    raise NotImplementedError()
-
-
 def create_auth_user(*, email: str) -> Insert:
     """
     Create a user account in the database. Make sure to use a transaction!
@@ -56,7 +43,7 @@ def generate_api_token() -> str:
 
     :return: The token as an alphanumeric string.
     """
-    return ''.join(ch for ch in str(uuid.uuid4()).printable if ch.isalnum())
+    return ''.join(ch for ch in str(uuid.uuid4()) if ch.isalnum())
 
 
 def verify_api_token(*, token: str, auth_user_id: str) -> bool:
@@ -68,14 +55,15 @@ def verify_api_token(*, token: str, auth_user_id: str) -> bool:
     :return: whether the token is correct and not expired
     """
     auth_user = get_auth_user(auth_user_id)
-    token_is_fresh = auth_user.expires_on > datetime.now()
-    token_matches = bcrypt_sha256.verify(token, auth_user.token)
+    token_is_fresh = auth_user.expires_on >= datetime.now().date()
+    not_blank = auth_user.token != ''
+    token_matches = not_blank and bcrypt_sha256.verify(token, auth_user.token)
 
     return token_is_fresh and token_matches
 
 
 def set_api_token(*,
-                  expiration='60 days',
+                  expiration=timedelta(days=60),
                   token: str,
                   auth_user_id: str) -> Update:
     """
@@ -87,11 +75,12 @@ def set_api_token(*,
     :return: The Update object. Execute this!
     """
     hashed_token = bcrypt_sha256.encrypt(token)
+    expiration_time = datetime.now() + expiration
     return update_record(auth_user_table,
                          'auth_user_id',
                          auth_user_id,
                          token=hashed_token,
-                         expires_on="now() + INTERVAL '{}'".format(expiration))
+                         expires_on=expiration_time)
 
 
 class UserDoesNotExistError(Exception):
