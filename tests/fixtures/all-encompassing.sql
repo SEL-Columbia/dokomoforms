@@ -6,8 +6,8 @@ DECLARE the_auth_user_id       uuid;
         the_question_choice_id uuid;
 BEGIN
 
-INSERT INTO auth_user (email, password)
-VALUES ('test_email', 'test_password')
+INSERT INTO auth_user (email)
+VALUES ('test_email')
 RETURNING auth_user_id INTO the_auth_user_id;
 
 INSERT INTO survey (title, auth_user_id)
