@@ -47,26 +47,22 @@ class Index(tornado.web.RequestHandler):
 
 class LoginHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
+    @tornado.gen.engine
     def post(self):
         assertion = self.get_argument('assertion')
-        http_client = httpclient.AsyncHTTPClient()
-        domain = 'localhost:8888'  # MAKE SURE YOU CHANGE THIS
+        http_client = tornado.httpclient.AsyncHTTPClient()
         url = 'https://verifier.login.persona.org/verify'
-        data = {'assertion': assertion, 'audience': domain}
-        response = http_client.fetch(
+        data = {'assertion': assertion, 'audience': 'localhost:8888'}
+        response = yield tornado.gen.Task(
+            http_client.fetch,
             url,
             method='POST',
             body=urllib.parse.urlencode(data),
-            callback=self._on_response
         )
-
-    def _on_response(self, response):
-        struct = tornado.escape.json_decode(response.body)
-        if struct['status'] != 'okay':
+        data = tornado.escape.json_decode(response.body)
+        if data['status'] != "okay":
             raise tornado.web.HTTPError(400, "Failed assertion test")
-        email = struct['email']
-        self.set_secure_cookie('user', email,
-                               expires_days=1)
+        self.set_secure_cookie('user', data['email'], expires_days=1)
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         response = {'next_url': '/'}
         self.write(tornado.escape.json_encode(response))
