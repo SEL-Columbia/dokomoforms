@@ -85,6 +85,8 @@ def question_insert(*,
     :param survey_id: the UUID of the survey
     :return: the Insert object. Execute this!
     """
+    if logic is None:
+        raise TypeError('logic must not be None')
     tcn = type_constraint_name
     # These values must be provided in the insert statement
     values = {'title': title,
@@ -114,6 +116,10 @@ def question_select(question_id: str) -> RowProxy:
 
 
 class QuestionDoesNotExistError(Exception):
+    pass
+
+
+class MissingMinimalLogicError(Exception):
     pass
 
 

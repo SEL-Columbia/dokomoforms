@@ -36,11 +36,18 @@ Response:
             "sequence_number": 0,
             "allow_multiple": false,
             "type_constraint_name": "integer",
-            "logic": {}
+            "logic": {
+                "required": false,
+                "with_other": false
+            },
+            "choices": [],
+            "branches": []
         }]
     }
 ]
 ```
+
+The minimal amount of `logic` is always `required` and `with_other`.
 
 If `type_constraint_name` is `multiple_choice` there will be a `choices` field like this:
 
@@ -76,7 +83,12 @@ Response:
         "sequence_number": 0,
         "allow_multiple": false,
         "type_constraint_name": "integer",
-        "logic": {}
+        "logic": {
+            "required": false,
+            "with_other": false
+        },
+        "choices": [],
+        "branches": []
     }]
 }
 ```
@@ -95,7 +107,12 @@ Request data:
         "sequence_number": null,
         "hint": null,
         "allow_multiple": null,
-        "logic": null
+        "logic": {
+            "required": false,
+            "with_other": false
+        },
+        "choices": [],
+        "branches": []
     }]
 }
 ```
@@ -131,7 +148,12 @@ Response:
         "sequence_number": 0,
         "hint": "",
         "allow_multiple": false,
-        "logic": "{}"
+        "logic": {
+            "required": false,
+            "with_other": false
+        },
+        "choices": [],
+        "branches": []
     }]
 }
 ```
@@ -153,7 +175,12 @@ Request data:
             "sequence_number": null,
             "hint": null,
             "allow_multiple": null,
-            "logic": null
+            "logic": {
+                "required": false,
+                "with_other": false
+            },
+            "choices": [],
+            "branches": []
         },
         {
             "title": "Add a new question (no id)",
@@ -161,7 +188,12 @@ Request data:
             "sequence_number": null,
             "hint": null,
             "allow_multiple": null,
-            "logic": null
+            "logic": {
+                "required": false,
+                "with_other": false
+            },
+            "choices": [],
+            "branches": []
         }
     ]
 }
@@ -194,7 +226,12 @@ Response:
             "sequence_number": 0,
             "hint": "",
             "allow_multiple": false,
-            "logic": {}
+            "logic": {
+                "required": false,
+                "with_other": false
+            },
+            "choices": [],
+            "branches": []
         },
         {
             "question_id": "<UUID>",
@@ -203,7 +240,12 @@ Response:
             "sequence_number": 1,
             "hint": "",
             "allow_multiple": false,
-            "logic": {}
+            "logic": {
+                "required": false,
+                "with_other": false
+            },
+            "choices": [],
+            "branches": []
         }
     ]
 }
@@ -244,7 +286,10 @@ Response:
             "answer_id": "<UUID>",
             "question_id": "<UUID>",
             "type_constraint_name": "integer",
-            "answer": 6
+            "answer": 6,
+            "choice": null,
+            "choice_number: null,
+            "is_other": false
         }]
     }
 ]
@@ -256,10 +301,13 @@ If `type_constraint_name` is `multiple_choice`, and a choice is selected, an ent
 "answer_id": "<UUID>",
 "question_id": "<UUID>",
 "type_constraint_name": "multiple_choice",
-"question_choice_id: "<UUID>",
+"answer": "<UUID>",
 "choice": "bananas",
-"choice_number": 0
+"choice_number": 0,
+"is_other": false
 ```
+
+If `type_constraint_name` is `multiple_choices`, `with_other` in `logic` is `true`, and an "other" value was submitted instead of a choice, `is_other` will be `true`.
 
 ### Get Submission
 `GET /submissions/<UUID>`
@@ -275,7 +323,10 @@ Response:
         "answer_id": "<UUID>",
         "question_id": "<UUID>",
         "type_constraint_name": "integer",
-        "answer": 6
+        "answer": 6,
+        "choice": null,
+        "choice_number: null,
+        "is_other": false
     }]
 }
 ```
@@ -290,12 +341,13 @@ Request:
     "submitter": "<submitter>",
     "answers": [{
         "question_id": "<UUID>",
-        "answer": 6
+        "answer": 6,
+        "is_other: false
     }]
 }
 ```
 
-If the question to be answered is a `multiple_choice` question, `answer` can be `question_choice_id` instead.
+If the question to be answered is a `multiple_choice` question and `with_other` is true, and if an "other" value is supplied, `is_other` should be true.
 
 Response:
 ```
@@ -308,7 +360,10 @@ Response:
         "answer_id": "<UUID>",
         "question_id": "<UUID>",
         "type_constraint_name": "integer",
-        "answer": 6
+        "answer": 6,
+        "choice": null,
+        "choice_number: null,
+        "is_other": false
     }]
 }
 ```
@@ -339,7 +394,12 @@ or
     "sequence_number": 0,
     "allow_multiple": false,
     "type_constraint_name": "location",
-    "logic": {}
+    "logic": {
+        "required": false,
+        "with_other": false
+    },
+    "choices": [],
+    "branches": []
 }
 
 // Answer
@@ -347,7 +407,10 @@ or
     "answer_id": "<UUID>",
     "question_id": "<UUID>",
     "type_constraint_name": "location",
-    "answer": [<longitude>, <latitude>]
+    "answer": [<longitude>, <latitude>],
+    "choice": null,
+    "choice_number: null,
+    "is_other": false
 }
 ```
 
@@ -362,7 +425,12 @@ or
     "sequence_number": 0,
     "allow_multiple": false,
     "type_constraint_name": "date",
-    "logic": {}
+    "logic": {
+        "required": false,
+        "with_other": false
+    },
+    "choices": [],
+    "branches": []
 }
 
 // Answer
@@ -370,7 +438,10 @@ or
     "answer_id": "<UUID>",
     "question_id": "<UUID>",
     "type_constraint_name": "date",
-    "answer": "1970-01-15"
+    "answer": "1970-01-15",
+    "choice": null,
+    "choice_number: null,
+    "is_other": false
 }
 ```
 
@@ -387,7 +458,12 @@ The date should be given as `"YYYY-MM-DD"` - year, month, date
     "sequence_number": 0,
     "allow_multiple": false,
     "type_constraint_name": "time",
-    "logic": {}
+    "logic": {
+        "required": false,
+        "with_other": false
+    },
+    "choices": [],
+    "branches": []
 }
 
 // Answer
@@ -395,7 +471,10 @@ The date should be given as `"YYYY-MM-DD"` - year, month, date
     "answer_id": "<UUID>",
     "question_id": "<UUID>",
     "type_constraint_name": "time",
-    "answer": "12:59:00-04:00"
+    "answer": "12:59:00-04:00",
+    "choice": null,
+    "choice_number: null,
+    "is_other": false
 }
 ```
 
@@ -407,7 +486,6 @@ If the UTC offset is not provided, I believe the default is the time zone of the
 
 
 ### Integer
-Need to consider what exactly to do about logical constraints.
 ```
 // Question
 {
@@ -417,7 +495,12 @@ Need to consider what exactly to do about logical constraints.
     "sequence_number": 0,
     "allow_multiple": false,
     "type_constraint_name": "integer",
-    "logic": {}
+    "logic": {
+        "required": false,
+        "with_other": false
+    },
+    "choices": [],
+    "branches": []
 }
 
 // Answer
@@ -425,7 +508,10 @@ Need to consider what exactly to do about logical constraints.
     "answer_id": "<UUID>",
     "question_id": "<UUID>",
     "type_constraint_name": "integer",
-    "answer": 6
+    "answer": 6,
+    "choice": null,
+    "choice_number: null,
+    "is_other": false
 }
 ```
 
@@ -440,7 +526,12 @@ Need to consider what exactly to do about logical constraints.
     "sequence_number": 0,
     "allow_multiple": false,
     "type_constraint_name": "text",
-    "logic": {}
+    "logic": {
+        "required": false,
+        "with_other": false
+    },
+    "choices": [],
+    "branches": []
 }
 
 // Answer
@@ -448,7 +539,10 @@ Need to consider what exactly to do about logical constraints.
     "answer_id": "<UUID>",
     "question_id": "<UUID>",
     "type_constraint_name": "text",
-    "answer": "Howdy!"
+    "answer": "Howdy!",
+    "choice": null,
+    "choice_number: null,
+    "is_other": false
 }
 ```
 
@@ -463,7 +557,10 @@ Need to consider what exactly to do about logical constraints.
     "sequence_number": 0,
     "allow_multiple": false,    
     "type_constraint_name": "multiple_choice",
-    "logic": {},
+    "logic": {
+        "required": false,
+        "with_other": false
+    },
     "choices": [{
                      "question_choice_id": "<UUID>",
                      "choice": "bananas"
@@ -512,27 +609,20 @@ Need to consider what exactly to do about logical constraints.
                 {
                      "question_choice_id": "<UUID>",
                      "choice": "pears"
-                }]
+                }],
+    "branches": []
 }
 
 // Answer
-Choice selected:
 {
     "answer_id": "<UUID>",
     "question_id": "<UUID>",
     "type_constraint_name": "multiple_choice",
-    "question_choice_id": "<UUID>",
+    "answer": "<UUID>",
     "choice": "bananas",
-    "choice_number": 0
-}
-
-OR
-other:
-{
-    "answer_id": "<UUID>",
-    "question_id": "<UUID>",
-    "type_constraint_name": "multiple_choice",
-    "answer": "cherries"
+    "choice_number": 0,
+    "is_other": false
 }
 ```
 
+If `with_other` is true, an answer can either be a `question_choice_id` (if `is_other` is false) or an "other" value (if `is_other` is true). 

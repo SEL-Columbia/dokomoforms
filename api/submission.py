@@ -22,22 +22,6 @@ class RequiredQuestionSkippedError(Exception):
     pass
 
 
-def _filter_skipped_questions(answers: list) -> Iterator:
-    """
-    Given a list of dictionaries that could look like {'answer': ...} or {
-    'question_choice_id': ...}, yield the dictionaries that contain a
-    not-None value.
-
-    :param answers: a list of JSON dictionaries containing answers
-    :return: an iterable of the dictionaries that contain answers
-    """
-    for answer in answers:
-        answer_value = answer.get('answer', None)
-        choice_value = answer.get('question_choice_id', None)
-        if (answer_value is not None) or (choice_value is not None):
-            yield answer
-
-
 def _insert_answer(answer: dict, submission_id: str, survey_id: str) -> Insert:
     """
     Insert an answer from a submission into either the answer or
@@ -57,8 +41,14 @@ def _insert_answer(answer: dict, submission_id: str, survey_id: str) -> Insert:
     value_dict['sequence_number'] = question.sequence_number
     value_dict['allow_multiple'] = question.allow_multiple
     # determine whether this is a choice selection
-    is_choice = 'question_choice_id' in value_dict
-    insert = answer_choice_insert if is_choice else answer_insert
+    is_mc = question.type_constraint_name == 'multiple_choice'
+    is_other = value_dict.pop('is_other')
+    is_choice = is_mc and not is_other
+    if is_choice:
+        value_dict['question_choice_id'] = value_dict.pop('answer')
+        insert = answer_choice_insert
+    else:
+        insert = answer_insert
     return insert(**value_dict)
 
 
@@ -73,7 +63,7 @@ def submit(data: dict) -> dict:
     """
     survey_id = data['survey_id']
     all_answers = data['answers']
-    answers = _filter_skipped_questions(all_answers)
+    answers = filter(lambda answer: answer['answer'] is not None, all_answers)
     unanswered_required = {q.question_id for q in get_required(survey_id)}
 
     with engine.begin() as connection:
@@ -90,7 +80,8 @@ def submit(data: dict) -> dict:
         for answer in answers:
             executable = _insert_answer(answer, submission_id, survey_id)
             exceptions = [('only_one_answer_allowed',
-                           CannotAnswerMultipleTimesError(answer['question_id']))]
+                           CannotAnswerMultipleTimesError(
+                               answer['question_id']))]
             execute_with_exceptions(connection, executable, exceptions)
             unanswered_required.discard(answer['question_id'])
 
@@ -146,19 +137,25 @@ def _get_fields(answer: RowProxy) -> dict:
     try:
         # Get the choice for a multiple choice question
         choice_id = answer.question_choice_id
-        result_dict['question_choice_id'] = choice_id
+        result_dict['answer'] = choice_id
         result_dict['answer_id'] = answer.answer_choice_id
 
         choice = question_choice_select(choice_id)
         result_dict['choice'] = choice.choice
         result_dict['choice_number'] = choice.choice_number
+        result_dict['is_other'] = False
     except AttributeError:
         # The answer is not a choice
         question = question_select(answer.question_id)
-        if question.logic.get('with_other', None):
+        if question.logic['with_other']:
             tcn = 'text'
+            result_dict['is_other'] = True
+        else:
+            result_dict['is_other'] = False
         result_dict['answer'] = _jsonify(answer, tcn)
         result_dict['answer_id'] = answer.answer_id
+        result_dict['choice'] = None
+        result_dict['choice_number'] = None
     return result_dict
 
 

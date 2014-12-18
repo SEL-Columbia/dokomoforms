@@ -180,7 +180,6 @@ class TestAuthUser(unittest.TestCase):
     def testGenerateAPIToken(self):
         token_1 = generate_api_token()
         self.assertEqual(len(token_1), 32)
-
         token_2 = generate_api_token()
         self.assertNotEqual(token_1, token_2)
 
@@ -192,6 +191,7 @@ class TestAuthUser(unittest.TestCase):
         user = get_auth_user(user_id)
         self.assertTrue(bcrypt_sha256.verify(token, user.token))
 
+
     def testVerifyAPIToken(self):
         result = auth_user_table.insert({'email': 'a'}).execute()
         user_id = result.inserted_primary_key[0]
@@ -201,11 +201,13 @@ class TestAuthUser(unittest.TestCase):
         self.assertFalse(
             verify_api_token(token=generate_api_token(), auth_user_id=user_id))
 
+
     def testNoDefaultToken(self):
         result = auth_user_table.insert({'email': 'a'}).execute()
         user_id = result.inserted_primary_key[0]
         self.assertFalse(
             verify_api_token(token=generate_api_token(), auth_user_id=user_id))
+
 
     def testTokenExpires(self):
         result = auth_user_table.insert({'email': 'a'}).execute()
@@ -247,7 +249,8 @@ class TestQuestion(unittest.TestCase):
     def testQuestionInsert(self):
         survey_id = survey_table.select().execute().first().survey_id
         sequence_number = get_free_sequence_number(survey_id)
-        stmt = question_insert(hint=None, allow_multiple=None, logic=None,
+        stmt = question_insert(hint=None, allow_multiple=None,
+                               logic={'required': False, 'with_other': False},
                                sequence_number=sequence_number,
                                title='test insert',
                                type_constraint_name='text',
@@ -256,6 +259,18 @@ class TestQuestion(unittest.TestCase):
         condition = question_table.c.title == 'test insert'
         self.assertEqual(question_table.select().where(
             condition).execute().first().question_id, question_id)
+
+    def testNoLogic(self):
+        survey_id = survey_table.select().execute().first().survey_id
+        sequence_number = get_free_sequence_number(survey_id)
+        self.assertRaises(TypeError, question_insert,
+                          hint=None,
+                          allow_multiple=None,
+                          logic=None,
+                          sequence_number=sequence_number,
+                          title='test insert',
+                          type_constraint_name='text',
+                          survey_id=survey_id)
 
 
 class TestQuestionBranch(unittest.TestCase):
@@ -326,7 +341,8 @@ class TestQuestionChoice(unittest.TestCase):
     def testQuestionChoiceInsert(self):
         survey_id = survey_table.select().execute().first().survey_id
         seq_number = get_free_sequence_number(survey_id)
-        stmt = question_insert(hint=None, allow_multiple=None, logic=None,
+        stmt = question_insert(hint=None, allow_multiple=None,
+                               logic={'required': False, 'with_other': False},
                                sequence_number=seq_number, title='test choice',
                                type_constraint_name='multiple_choice',
                                survey_id=survey_id)

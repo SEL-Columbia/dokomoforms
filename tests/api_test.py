@@ -16,7 +16,7 @@ from db.answer import answer_insert, CannotAnswerMultipleTimesError, \
     get_answers
 from db.answer_choice import get_answer_choices, answer_choice_table
 from db.question import question_table, get_questions, \
-    QuestionDoesNotExistError
+    QuestionDoesNotExistError, MissingMinimalLogicError
 from db.question_branch import get_branches, MultipleBranchError
 from db.question_choice import question_choice_table, get_choices, \
     RepeatedChoiceError, QuestionChoiceDoesNotExistError
@@ -57,15 +57,20 @@ class TestSubmission(unittest.TestCase):
         input_data = {'survey_id': survey_id,
                       'answers':
                           [{'question_id': question_id,
-                            'answer': 1},
+                            'answer': 1,
+                            'is_other': False},
                            {'question_id': second_q_id,
-                            'question_choice_id': choice_id},
+                            'answer': choice_id,
+                            'is_other': False},
                            {'question_id': third_q_id,
-                            'answer': 'answer one'},
+                            'answer': 'answer one',
+                            'is_other': False},
                            {'question_id': third_q_id,
-                            'answer': 'answer two'},
+                            'answer': 'answer two',
+                            'is_other': False},
                            {'question_id': fourth_q_id,
-                            'answer': 3.5}]}
+                            'answer': 3.5,
+                            'is_other': False}]}
         response = api.submission.submit(input_data)
         submission_id = response['submission_id']
         condition = submission_table.c.submission_id == submission_id
@@ -74,7 +79,7 @@ class TestSubmission(unittest.TestCase):
         data = api.submission.get(submission_id)
         self.assertEqual(response, data)
         self.assertEqual(data['answers'][0]['answer'], 1)
-        self.assertEqual(data['answers'][1]['question_choice_id'], choice_id)
+        self.assertEqual(data['answers'][1]['answer'], choice_id)
         self.assertEqual(data['answers'][2]['answer'], 3.5)
         self.assertEqual(data['answers'][3]['answer'], 'answer one')
         self.assertEqual(data['answers'][4]['answer'], 'answer two')
@@ -88,7 +93,8 @@ class TestSubmission(unittest.TestCase):
         input_data = {'survey_id': survey_id,
                       'answers':
                           [{'question_id': question_id,
-                            'answer': 'one'}]}
+                            'answer': 'one',
+                            'is_other': False}]}
         self.assertRaises(DataError, api.submission.submit, input_data)
         self.assertEqual(submission_table.select().execute().rowcount, 0)
 
@@ -97,8 +103,10 @@ class TestSubmission(unittest.TestCase):
                       'type_constraint_name': 'integer',
                       'sequence_number': None,
                       'hint': None,
-                      'allow_multiple': None,
-                      'logic': {'required': True}}]
+                      'allow_multiple': False,
+                      'logic': {'required': True, 'with_other': False},
+                      'choices': None,
+                      'branches': None}]
         data = {'title': 'survey with required question',
                 'questions': questions}
         survey = api.survey.create(data)
@@ -110,18 +118,13 @@ class TestSubmission(unittest.TestCase):
                           api.submission.submit, submission)
 
         question_id = survey['questions'][0]['question_id']
+
         submission2 = {'survey_id': survey_id,
-                       'answers': [{'question_id': question_id}]}
-
-        self.assertRaises(api.submission.RequiredQuestionSkippedError,
-                          api.submission.submit, submission2)
-
-        submission3 = {'survey_id': survey_id,
                        'answers': [{'question_id': question_id,
                                     'answer': None}]}
 
         self.assertRaises(api.submission.RequiredQuestionSkippedError,
-                          api.submission.submit, submission3)
+                          api.submission.submit, submission2)
 
     def testQuestionDoesNotExist(self):
         survey_id = survey_table.select().execute().first().survey_id
@@ -150,14 +153,16 @@ class TestSubmission(unittest.TestCase):
         input_data = {'survey_id': survey_id,
                       'answers':
                           [{'question_id': date_question_id,
-                            'answer': '2014-10-27'},
+                            'answer': '2014-10-27',
+                            'is_other': False},
                            {'question_id': time_question_id,
-                            'answer': '11:26-04:00'}]}  # UTC-04:00
+                            'answer': '11:26-04:00',
+                            'is_other': False}]}  # UTC-04:00
         response = api.submission.submit(input_data)
         self.assertEqual(response['answers'][0]['answer'], '2014-10-27')
         self.assertEqual(response['answers'][1]['answer'], '11:26:00-04:00')
 
-    def testOnlyAllowMultiple(self):
+    def testMultipleAnswersNotAllowed(self):
         survey_id = survey_table.select().execute().first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
@@ -166,9 +171,11 @@ class TestSubmission(unittest.TestCase):
         input_data = {'survey_id': survey_id,
                       'answers':
                           [{'question_id': question_id,
-                            'answer': 1},
+                            'answer': 1,
+                            'is_other': False},
                            {'question_id': question_id,
-                            'answer': 2}]}
+                            'answer': 2,
+                            'is_other': False}]}
         self.assertRaises(CannotAnswerMultipleTimesError,
                           api.submission.submit,
                           input_data)
@@ -194,7 +201,7 @@ class TestSubmission(unittest.TestCase):
         self.assertIsNotNone(data['submission_id'])
         self.assertIsNotNone(data['answers'])
 
-    def testGetAll(self):
+    def testGetForSurvey(self):
         survey_id = survey_table.select().execute().first().survey_id
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'integer')
@@ -245,8 +252,8 @@ class TestSurvey(unittest.TestCase):
                       'type_constraint_name': 'multiple_choice',
                       'sequence_number': None,
                       'hint': None,
-                      'allow_multiple': None,
-                      'logic': {},
+                      'allow_multiple': False,
+                      'logic': {'required': False, 'with_other': False},
                       'choices': ['choice 1', 'choice 2'],
                       'branches': [{'choice_number': 0,
                                     'to_question_number': 1}]
@@ -255,8 +262,12 @@ class TestSurvey(unittest.TestCase):
                       'type_constraint_name': 'text',
                       'sequence_number': None,
                       'hint': None,
-                      'allow_multiple': None,
-                      'logic': {'min': 3}}]
+                      'allow_multiple': False,
+                      'logic': {'required': False,
+                                'with_other': False,
+                                'min': 3},
+                      'choices': None,
+                      'branches': None}]
         data = {'title': 'api_test survey',
                 'questions': questions}
         survey_id = api.survey.create(data)['survey_id']
@@ -264,23 +275,42 @@ class TestSurvey(unittest.TestCase):
         self.assertEqual(
             survey_table.select().where(condition).execute().rowcount, 1)
         questions = list(get_questions(survey_id))
-        self.assertEqual(questions[1].logic, {'min': 3})
+        self.assertEqual(questions[1].logic,
+                         {'required': False, 'with_other': False, 'min': 3})
         self.assertEqual(get_choices(questions[0].question_id).first().choice,
                          'choice 1')
+
+    def testLogicMissing(self):
+        questions = [{'title': 'api_test mc question',
+                      'type_constraint_name': 'multiple_choice',
+                      'sequence_number': None,
+                      'hint': None,
+                      'allow_multiple': False,
+                      'logic': {},
+                      'choices': ['choice 1', 'choice 2'],
+                      'branches': [{'choice_number': 0,
+                                    'to_question_number': 1}]
+                     }]
+        data = {'title': 'api_test survey',
+                'questions': questions}
+        self.assertRaises(MissingMinimalLogicError, api.survey.create, data)
+
 
     def testSurveyAlreadyExists(self):
         survey_id = survey_table.select().execute().first().survey_id
         title = survey_select(survey_id).title
-        input_data = {'title': title}
+        input_data = {'title': title, 'questions': []}
         result = api.survey.create(input_data)
         self.assertEqual(result['title'], 'test_title(1)')
         result2 = api.survey.create(input_data)
         self.assertEqual(result2['title'], 'test_title(2)')
-        result3 = api.survey.create({'title': 'test_title(1)'})
+        result3 = api.survey.create(
+            {'title': 'test_title(1)', 'questions': []})
         self.assertEqual(result3['title'], 'test_title(1)(1)')
 
-        api.survey.create({'title': 'not in conflict(1)'})
-        result4 = api.survey.create({'title': 'not in conflict'})
+        api.survey.create({'title': 'not in conflict(1)', 'questions': []})
+        result4 = api.survey.create(
+            {'title': 'not in conflict', 'questions': []})
         self.assertEqual(result4['title'], 'not in conflict')
 
     def testTwoChoicesWithSameName(self):
@@ -289,8 +319,9 @@ class TestSurvey(unittest.TestCase):
                                      'type_constraint_name': 'multiple_choice',
                                      'sequence_number': None,
                                      'hint': None,
-                                     'allow_multiple': None,
-                                     'logic': {},
+                                     'allow_multiple': False,
+                                     'logic': {'required': False,
+                                               'with_other': False},
                                      'choices': ['a', 'a']}]}
         self.assertRaises(RepeatedChoiceError, api.survey.create, input_data)
 
@@ -300,8 +331,9 @@ class TestSurvey(unittest.TestCase):
                                      'type_constraint_name': 'multiple_choice',
                                      'sequence_number': None,
                                      'hint': None,
-                                     'allow_multiple': None,
-                                     'logic': None,
+                                     'allow_multiple': False,
+                                     'logic': {'required': False,
+                                               'with_other': False},
                                      'choices': ['a', 'b'],
                                      'branches': [{'choice_number': 0,
                                                    'to_question_number': 1},
@@ -311,14 +343,20 @@ class TestSurvey(unittest.TestCase):
                                      'type_constraint_name': 'text',
                                      'sequence_number': None,
                                      'hint': None,
-                                     'allow_multiple': None,
-                                     'logic': None},
+                                     'allow_multiple': False,
+                                     'logic': {'required': False,
+                                               'with_other': False},
+                                     'choices': None,
+                                     'branches': None},
                                     {'title': 'choice error',
                                      'type_constraint_name': 'text',
                                      'sequence_number': None,
                                      'hint': None,
-                                     'allow_multiple': None,
-                                     'logic': None}]}
+                                     'allow_multiple': False,
+                                     'logic': {'required': False,
+                                               'with_other': False},
+                                     'choices': None,
+                                     'branches': None}]}
         self.assertRaises(MultipleBranchError, api.survey.create, input_data)
 
     def testTypeConstraintDoesNotExist(self):
@@ -327,8 +365,9 @@ class TestSurvey(unittest.TestCase):
                                      'type_constraint_name': 'not real',
                                      'sequence_number': None,
                                      'hint': None,
-                                     'allow_multiple': None,
-                                     'logic': {}}]}
+                                     'allow_multiple': False,
+                                     'logic': {'required': False,
+                                               'with_other': False}}]}
         self.assertRaises(TypeConstraintDoesNotExistError, api.survey.create,
                           input_data)
         condition = survey_table.c.title == 'type constraint error'
@@ -340,14 +379,16 @@ class TestSurvey(unittest.TestCase):
                       'type_constraint_name': 'text',
                       'sequence_number': None,
                       'hint': None,
-                      'allow_multiple': None,
-                      'logic': None},
+                      'allow_multiple': False,
+                      'logic': {'required': False, 'with_other': False},
+                      'choices': [],
+                      'branches': []},
                      {'title': 'api_test 2nd question',
                       'type_constraint_name': 'multiple_choice',
                       'sequence_number': None,
                       'hint': None,
-                      'allow_multiple': None,
-                      'logic': None,
+                      'allow_multiple': False,
+                      'logic': {'required': False, 'with_other': False},
                       'choices': ['1', '2', '3'],
                       'branches': [
                           {'choice_number': 0, 'to_question_number': 2}]},
@@ -355,8 +396,10 @@ class TestSurvey(unittest.TestCase):
                       'type_constraint_name': 'text',
                       'sequence_number': None,
                       'hint': None,
-                      'allow_multiple': None,
-                      'logic': None}]
+                      'allow_multiple': False,
+                      'logic': {'required': False, 'with_other': False},
+                      'choices': [],
+                      'branches': []}]
         data = {'title': 'api_test survey',
                 'questions': questions}
         survey_id = api.survey.create(data)['survey_id']
@@ -366,9 +409,11 @@ class TestSurvey(unittest.TestCase):
 
         submission = {'survey_id': survey_id,
                       'answers': [{'question_id': inserted_qs[0].question_id,
-                                   'answer': 'text answer'},
+                                   'answer': 'text answer',
+                                   'is_other': False},
                                   {'question_id': inserted_qs[1].question_id,
-                                   'question_choice_id': choice_1_id}]}
+                                   'answer': choice_1_id,
+                                   'is_other': False}]}
         api.submission.submit(submission)
 
         update_json = {'survey_id': survey_id,
@@ -376,9 +421,11 @@ class TestSurvey(unittest.TestCase):
         questions = [{'question_id': inserted_qs[1].question_id,
                       'title': 'api_test 2nd question',
                       'type_constraint_name': 'multiple_choice',
-                      'allow_multiple': None,
+                      'allow_multiple': False,
                       'hint': None,
-                      'logic': {'max': 'one'},
+                      'logic': {'required': False,
+                                'with_other': False,
+                                'max': 'one'},
                       'choices': [{'old_choice': '2', 'new_choice': 'b'},
                                   'a',
                                   '1'],
@@ -386,16 +433,20 @@ class TestSurvey(unittest.TestCase):
                           {'choice_number': 1, 'to_question_number': 2}]},
                      {'question_id': inserted_qs[0].question_id,
                       'title': 'updated question title',
-                      'allow_multiple': None,
+                      'allow_multiple': False,
                       'hint': None,
-                      'logic': None,
-                      'type_constraint_name': 'text'},
+                      'logic': {'required': False, 'with_other': False},
+                      'type_constraint_name': 'text',
+                      'choices': [],
+                      'branches': []},
                      {'title': 'second question',
                       'type_constraint_name': 'integer',
                       'sequence_number': None,
                       'hint': None,
-                      'allow_multiple': None,
-                      'logic': None}]
+                      'allow_multiple': False,
+                      'logic': {'required': False, 'with_other': False},
+                      'choices': [],
+                      'branches': []}]
         update_json['questions'] = questions
         new_survey = api.survey.update(update_json)
         new_survey_id = new_survey['survey_id']
@@ -404,7 +455,10 @@ class TestSurvey(unittest.TestCase):
         branch = get_branches(upd_questions[0].question_id).first()
         self.assertEqual(branch.to_question_id, upd_questions[2].question_id)
         self.assertEqual(upd_questions[0].title, 'api_test 2nd question')
-        self.assertEqual(upd_questions[0].logic, {'max': 'one'})
+        self.assertEqual(upd_questions[0].logic,
+                         {'required': False,
+                          'with_other': False,
+                          'max': 'one'})
         self.assertEqual(upd_survey.title, 'updated survey title')
         self.assertEqual(upd_questions[1].title, 'updated question title')
         choices = get_choices(upd_questions[0].question_id).fetchall()
@@ -424,43 +478,50 @@ class TestSurvey(unittest.TestCase):
                       'type_constraint_name': 'text',
                       'sequence_number': None,
                       'hint': None,
-                      'allow_multiple': None,
-                      'logic': None},
+                      'allow_multiple': False,
+                      'logic': {'required': False, 'with_other': False},
+                      'choices': [],
+                      'branches': []},
                      {'title': 'was multiple choice',
                       'type_constraint_name': 'multiple_choice',
                       'sequence_number': None,
                       'hint': None,
-                      'allow_multiple': None,
-                      'logic': None,
-                      'choices': ['1', '2', '3']},
+                      'allow_multiple': False,
+                      'logic': {'required': False, 'with_other': False},
+                      'choices': ['1', '2', '3'],
+                      'branches': []},
                      {'title': 'was multiple choice 2',
                       'type_constraint_name': 'multiple_choice',
                       'sequence_number': None,
                       'hint': None,
-                      'allow_multiple': None,
-                      'logic': None,
-                      'choices': ['a', 'b', 'c']},
+                      'allow_multiple': False,
+                      'logic': {'required': False, 'with_other': False},
+                      'choices': ['a', 'b', 'c'],
+                      'branches': []},
                      {'title': 'was with other',
                       'type_constraint_name': 'multiple_choice',
                       'sequence_number': None,
                       'hint': None,
                       'allow_multiple': True,
-                      'logic': {'with_other': True},
-                      'choices': ['use other']},
+                      'logic': {'required': False, 'with_other': True},
+                      'choices': ['use other'],
+                      'branches': []},
                      {'title': 'was with other 2',
                       'type_constraint_name': 'multiple_choice',
                       'sequence_number': None,
                       'hint': None,
                       'allow_multiple': True,
-                      'logic': {'with_other': True},
-                      'choices': ['use other 2']},
+                      'logic': {'required': False, 'with_other': True},
+                      'choices': ['use other 2'],
+                      'branches': []},
                      {'title': 'was with other, lose choices',
                       'type_constraint_name': 'multiple_choice',
                       'sequence_number': None,
                       'hint': None,
                       'allow_multiple': True,
-                      'logic': {'with_other': True},
-                      'choices': ['use other 3']}]
+                      'logic': {'required': False, 'with_other': True},
+                      'choices': ['use other 3'],
+                      'branches': []}]
         data = {'title': 'to_be_updated',
                 'questions': questions}
         survey_id = api.survey.create(data)['survey_id']
@@ -476,21 +537,29 @@ class TestSurvey(unittest.TestCase):
 
         submission = {'survey_id': survey_id,
                       'answers': [{'question_id': inserted_qs[0].question_id,
-                                   'answer': 'text answer'},
+                                   'answer': 'text answer',
+                                   'is_other': False},
                                   {'question_id': inserted_qs[1].question_id,
-                                   'question_choice_id': choice_1_id},
+                                   'answer': choice_1_id,
+                                   'is_other': False},
                                   {'question_id': inserted_qs[2].question_id,
-                                   'question_choice_id': choice_a_id},
+                                   'answer': choice_a_id,
+                                   'is_other': False},
                                   {'question_id': inserted_qs[3].question_id,
-                                   'answer': 'my fancy other answer'},
+                                   'answer': 'my fancy other answer',
+                                   'is_other': True},
                                   {'question_id': inserted_qs[3].question_id,
-                                   'question_choice_id': other_choice_id},
+                                   'answer': other_choice_id,
+                                   'is_other': False},
                                   {'question_id': inserted_qs[4].question_id,
-                                   'answer': 'my fancier other answer'},
+                                   'answer': 'my fancier other answer',
+                                   'is_other': True},
                                   {'question_id': inserted_qs[4].question_id,
-                                   'question_choice_id': other_choice_2_id},
+                                   'answer': other_choice_2_id,
+                                   'is_other': False},
                                   {'question_id': inserted_qs[5].question_id,
-                                   'answer': 'my super fancy other answer'}]}
+                                   'answer': 'my super fancy other answer',
+                                   'is_other': True}]}
 
         api.submission.submit(submission)
 
@@ -500,41 +569,51 @@ class TestSurvey(unittest.TestCase):
         questions = [{'question_id': inserted_qs[0].question_id,
                       'title': 'was text question, now multiple_choice',
                       'type_constraint_name': 'multiple_choice',
-                      'allow_multiple': None,
+                      'allow_multiple': False,
                       'hint': None,
-                      'logic': None},
+                      'logic': {'required': False, 'with_other': False},
+                      'choices': [],
+                      'branches': []},
                      {'question_id': inserted_qs[1].question_id,
                       'title': 'was multiple choice, now location',
-                      'allow_multiple': None,
+                      'allow_multiple': False,
                       'hint': None,
-                      'logic': None,
-                      'type_constraint_name': 'location'},
+                      'logic': {'required': False, 'with_other': False},
+                      'type_constraint_name': 'location',
+                      'choices': [],
+                      'branches': []},
                      {'question_id': inserted_qs[2].question_id,
                       'title': 'was multiple choice, now with other',
-                      'allow_multiple': None,
+                      'allow_multiple': False,
                       'hint': None,
-                      'logic': {'with_other': True},
+                      'logic': {'required': False, 'with_other': True},
                       'type_constraint_name': 'multiple_choice',
-                      'choices': ['a']},
+                      'choices': ['a'],
+                      'branches': []},
                      {'question_id': inserted_qs[3].question_id,
                       'title': 'lost with other',
-                      'allow_multiple': None,
+                      'allow_multiple': False,
                       'hint': None,
-                      'logic': None,
+                      'logic': {'required': False, 'with_other': False},
                       'type_constraint_name': 'multiple_choice',
-                      'choices': ['use other']},
+                      'choices': ['use other'],
+                      'branches': []},
                      {'question_id': inserted_qs[4].question_id,
                       'title': 'lost with other 2',
-                      'allow_multiple': None,
+                      'allow_multiple': False,
                       'hint': None,
-                      'logic': None,
-                      'type_constraint_name': 'text'},
+                      'logic': {'required': False, 'with_other': False},
+                      'type_constraint_name': 'text',
+                      'choices': [],
+                      'branches': []},
                      {'question_id': inserted_qs[4].question_id,
                       'title': 'lost choices',
-                      'allow_multiple': None,
+                      'allow_multiple': False,
                       'hint': None,
-                      'logic': {'with_other': True},
-                      'type_constraint_name': 'multiple_choice'}]
+                      'logic': {'required': False, 'with_other': True},
+                      'type_constraint_name': 'multiple_choice',
+                      'choices': [],
+                      'branches': []}]
         update_json['questions'] = questions
         new_survey = api.survey.update(update_json)
         new_submissions = get_submissions(new_survey['survey_id']).fetchall()
@@ -545,15 +624,37 @@ class TestSurvey(unittest.TestCase):
         answers = get_answers(new_submissions[0].submission_id).fetchall()
         self.assertEqual(len(answers), 1)
 
+    def testLyingAboutOther(self):
+        questions = [{'title': 'really with other',
+                      'type_constraint_name': 'multiple_choice',
+                      'sequence_number': None,
+                      'hint': None,
+                      'allow_multiple': False,
+                      'logic': {'required': False, 'with_other': True},
+                      'choices': ['use other'],
+                      'branches': []}]
+        data = {'title': 'to_be_updated',
+                'questions': questions}
+
+        survey_id = api.survey.create(data)['survey_id']
+        inserted_q_id = get_questions(survey_id).first().question_id
+
+        submission = {'survey_id': survey_id,
+                      'answers': [{'question_id': inserted_q_id,
+                                   'answer': 'text answer',
+                                   'is_other': False}]}
+
+        self.assertRaises(DataError, api.submission.submit, submission)
 
     def testUpdateBadChoices(self):
         questions = [{'title': 'bad update question',
                       'type_constraint_name': 'multiple_choice',
                       'sequence_number': None,
                       'hint': None,
-                      'allow_multiple': None,
-                      'logic': None,
-                      'choices': ['one', 'two']}]
+                      'allow_multiple': False,
+                      'logic': {'required': False, 'with_other': False},
+                      'choices': ['one', 'two'],
+                      'branches': []}]
         data = {'title': 'bad update survey',
                 'questions': questions}
         survey_id = api.survey.create(data)['survey_id']
@@ -563,22 +664,24 @@ class TestSurvey(unittest.TestCase):
                        'title': 'updated survey title'}
         questions = [{'question_id': inserted_questions[0].question_id,
                       'title': 'updated question title',
-                      'allow_multiple': None,
+                      'allow_multiple': False,
                       'hint': None,
-                      'logic': None,
+                      'logic': {'required': False, 'with_other': False},
                       'type_constraint_name': 'multiple_choice',
-                      'choices': ['two', 'one', 'one']}]
+                      'choices': ['two', 'one', 'one'],
+                      'branches': []}]
         update_json['questions'] = questions
         self.assertRaises(RepeatedChoiceError, api.survey.update, update_json)
 
         questions = [{'question_id': inserted_questions[0].question_id,
                       'title': 'updated question title',
-                      'allow_multiple': None,
+                      'allow_multiple': False,
                       'hint': None,
-                      'logic': None,
+                      'logic': {'required': False, 'with_other': False},
                       'type_constraint_name': 'multiple_choice',
                       'choices': [
-                          {'old_choice': 'three', 'new_choice': 'four'}]}]
+                          {'old_choice': 'three', 'new_choice': 'four'}],
+                      'branches': []}]
 
         update_json['questions'] = questions
         self.assertRaises(QuestionChoiceDoesNotExistError, api.survey.update,
@@ -586,32 +689,34 @@ class TestSurvey(unittest.TestCase):
 
         questions = [{'question_id': inserted_questions[0].question_id,
                       'title': 'updated question title',
-                      'allow_multiple': None,
+                      'allow_multiple': False,
                       'hint': None,
-                      'logic': None,
+                      'logic': {'required': False, 'with_other': False},
                       'type_constraint_name': 'multiple_choice',
                       'choices': [
-                          {'old_choice': 'one', 'new_choice': 'two'}, 'two']}]
+                          {'old_choice': 'one', 'new_choice': 'two'}, 'two'],
+                      'branches': []}]
 
         update_json['questions'] = questions
         self.assertRaises(RepeatedChoiceError, api.survey.update, update_json)
 
         questions = [{'question_id': inserted_questions[0].question_id,
                       'title': 'updated question title',
-                      'allow_multiple': None,
+                      'allow_multiple': False,
                       'hint': None,
-                      'logic': None,
+                      'logic': {'required': False, 'with_other': False},
                       'type_constraint_name': 'multiple_choice',
                       'choices': [
                           {'old_choice': 'one', 'new_choice': 'two'},
-                          {'old_choice': 'one', 'new_choice': 'three'}]}]
+                          {'old_choice': 'one', 'new_choice': 'three'}],
+                      'branches': []}]
 
         update_json['questions'] = questions
         self.assertRaises(RepeatedChoiceError, api.survey.update, update_json)
 
 
     def testDelete(self):
-        data = {'title': 'api_test survey'}
+        data = {'title': 'api_test survey', 'questions': []}
         survey_id = api.survey.create(data)['survey_id']
         api.survey.delete(survey_id)
         self.assertRaises(SurveyDoesNotExistError, survey_select, survey_id)

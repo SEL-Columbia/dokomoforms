@@ -3,14 +3,14 @@ from collections import Iterator
 import datetime
 
 from sqlalchemy.engine import RowProxy, Connection
-from sqlalchemy.exc import IntegrityError, NoSuchColumnError
 
 from api import execute_with_exceptions
 from db import engine, delete_record, update_record
 from db.answer import get_answers_for_question, answer_insert
 from db.answer_choice import get_answer_choices_for_choice_id, \
     answer_choice_insert
-from db.question import question_insert, get_questions, question_select
+from db.question import question_insert, MissingMinimalLogicError, \
+    question_select, get_questions
 from db.question_branch import get_branches, question_branch_insert, \
     MultipleBranchError
 from db.question_choice import get_choices, question_choice_insert, \
@@ -46,6 +46,8 @@ def _determine_choices(existing_question_id: str, choices: list) -> tuple:
     # a dictionary of new_choice : choice id
     updates = {}
     old_choice_repeats = set()
+    if choices is None:
+        return new_choices, updates
     for entry in choices:
         try:
             # choice update
@@ -86,7 +88,7 @@ def _create_choices(connection: Connection,
                                  an update)
     :return: an iterable of the resultant choice fields
     """
-    choices = values.get('choices', [])
+    choices = values['choices']
     new_choices, updates = _determine_choices(existing_question_id, choices)
 
     for number, choice in enumerate(new_choices):
@@ -138,15 +140,15 @@ def _create_questions(connection: Connection,
         values = question.copy()
         values['sequence_number'] = number
         values['survey_id'] = survey_id
-        if values['allow_multiple'] is None:
-            values['allow_multiple'] = False
 
         existing_q_id = values.pop('question_id', None)
 
         executable = question_insert(**values)
         tcn = values['type_constraint_name']
         exceptions = [('question_type_constraint_name_fkey',
-                       TypeConstraintDoesNotExistError(tcn))]
+                       TypeConstraintDoesNotExistError(tcn)),
+                      ('minimal_logic',
+                       MissingMinimalLogicError(values['logic']))]
         result = execute_with_exceptions(connection, executable, exceptions)
         result_ipk = result.inserted_primary_key
         q_id = result_ipk[0]
@@ -170,12 +172,9 @@ def _create_questions(connection: Connection,
                     continue
                 answer_values = question_fields.copy()
                 new_submission_id = submission_map[answer.submission_id]
-                logic = values['logic']
-                other = False
-                if logic:
-                    other = logic.get('with_other', False)
+                is_other = values['logic']['with_other']
                 if new_tcn == 'multiple_choice':
-                    if not other:
+                    if not is_other:
                         continue
                     else:
                         new_tcn = 'text'
@@ -206,7 +205,10 @@ def _create_branches(connection: Connection,
     for index, question_dict in enumerate(questions_json):
         from_dict = question_dicts[index]
         from_q_id = from_dict['question_id']
-        for branch in question_dict.get('branches', []):
+        branches = question_dict['branches']
+        if branches is None:
+            continue
+        for branch in branches:
             choice_index = branch['choice_number']
             question_choice_id = from_dict['choice_ids'][choice_index]
             from_tcn = question_dict['type_constraint_name']
@@ -269,7 +271,7 @@ def _create_survey(connection: Connection, data: dict) -> str:
 
     # user_id = json_data['auth_user_id']
     title = data['title']
-    data_q = data.get('questions', [])
+    data_q = data['questions']
 
     # First, create an entry in the survey table
     safe_title = get_free_title(title)

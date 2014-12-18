@@ -1,4 +1,3 @@
-
 """
 Tests for the dokomo webapp
 
@@ -29,7 +28,7 @@ POST_HDRS = {"Content-type": "application/x-www-form-urlencoded",
 
 new_config = config.copy()
 new_config['xsrf_cookies'] = False # convenient for testing...
-                                   # eventually we should use mock instead
+# eventually we should use mock instead
 
 class TestDokomoWebapp(unittest.TestCase):
     http_server = None
@@ -64,7 +63,8 @@ class TestDokomoWebapp(unittest.TestCase):
         survey_id = survey_table.select().execute().first().survey_id
         answer_json = {'survey_id': survey_id, 'answers': [
             {'question_id': get_questions(survey_id).first().question_id,
-             'answer': 1}]}
+             'answer': 1,
+             'is_other': False}]}
 
         # prepare the POST request
         http_client = tornado.httpclient.AsyncHTTPClient()
@@ -85,3 +85,4 @@ class TestDokomoWebapp(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
