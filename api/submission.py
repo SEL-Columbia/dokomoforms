@@ -43,8 +43,7 @@ def _insert_answer(answer: dict, submission_id: str, survey_id: str) -> Insert:
     # determine whether this is a choice selection
     is_mc = question.type_constraint_name == 'multiple_choice'
     is_other = value_dict.pop('is_other')
-    is_choice = is_mc and not is_other
-    if is_choice:
+    if is_mc and not is_other:
         value_dict['question_choice_id'] = value_dict.pop('answer')
         insert = answer_choice_insert
     else:

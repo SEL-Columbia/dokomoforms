@@ -188,17 +188,11 @@ Survey.prototype.submit = function() {
         survey_id: self.id,
         answers: _.map(self.questions, function(q) {
             console.log('q', q);
-            if (typeof q.answer === 'undefined' || q.answer === null) {
-                return {
-                    question_id: q.question_id,
-                    question_choice_id: q.question_choice_id
-                };
-            } else {
-                return {
-                    question_id: q.question_id,
-                    answer: q.answer
-                };
-            }
+            return {
+                question_id: q.question_id,
+                answer: q.answer,
+                is_other: q.is_other || false
+            };
         })
     };
     
@@ -287,7 +281,6 @@ Widgets.multiple_choice = function(question, page) {
         var $other = $(page)
             .find('.text_input')
             .keyup(function() {
-                question.question_choice_id = null;
                 question.answer = this.value;
             })
             .hide();
@@ -297,25 +290,24 @@ Widgets.multiple_choice = function(question, page) {
             .change(function() {
                 if (this.value == 'null') {
                     // No option chosen
-                    question.question_choice_id = null;
                     question.answer = null;
+                    question.is_other = true;
                     $other.hide();
                 } else if (this.value == 'other') {
                     // Choice is text input
                     $other.show();
-                    question.question_choice_id = null;
                     question.answer = $other.val();
+                    question.is_other = true;
                 } else {
                     // Normal choice
-                    question.question_choice_id = this.value;
-                    question.answer = null;
+                    question.answer = this.value;
+                    question.is_other = false;
                     $other.hide();
                 }
             });
 
         // Set the default/selected option
-        var option = question.question_choice_id ||
-            (question.answer ? 'other' : 'null');
+        var option = question.answer ? 'other' : 'null';
         $select
             .find('option[value="' + option + '"]')
             .prop('selected', true);
@@ -325,9 +317,9 @@ Widgets.multiple_choice = function(question, page) {
             .find('select')
             .change(function() {
                 if (this.value !== ''){
-                    question.question_choice_id = this.value;
+                    question.answer = this.value;
                 } else {
-                    question.question_choice_id = undefined;
+                    question.answer = undefined;
                 }
         });
     }
