@@ -2,6 +2,7 @@
 
 from sqlalchemy import Table, MetaData
 from datetime import datetime, timedelta
+from time import localtime
 import uuid
 
 from sqlalchemy.sql.dml import Insert, Update
@@ -55,7 +56,7 @@ def verify_api_token(*, token: str, auth_user_id: str) -> bool:
     :return: whether the token is correct and not expired
     """
     auth_user = get_auth_user(auth_user_id)
-    token_is_fresh = auth_user.expires_on >= datetime.now().date()
+    token_is_fresh = auth_user.expires_on.timetuple() >= localtime()
     not_blank = auth_user.token != ''
     token_matches = not_blank and bcrypt_sha256.verify(token, auth_user.token)
 
