@@ -1,5 +1,5 @@
 """Allow access to the question table."""
-from sqlalchemy import Table, MetaData
+from sqlalchemy import Table, MetaData, cast, Text, Boolean
 from sqlalchemy.engine import RowProxy, ResultProxy
 from sqlalchemy.sql.dml import Insert
 from sqlalchemy.sql.elements import and_
@@ -54,7 +54,6 @@ def question_insert(*,
                     branches: list=None,
                     sequence_number: int,
                     hint: str,
-                    required: bool,
                     allow_multiple: bool,
                     logic: dict,
                     title: str,
@@ -70,7 +69,6 @@ def question_insert(*,
                      the front-end
     :param hint: an optional hint for the question
     :param sequence_number: the sequence number of the question
-    :param required: whether this is a required question. Default False.
     :param allow_multiple: whether you can give multiple responses. Default
                            False.
     :param logic: the logical constraint (min or max value, etc) as JSON
@@ -97,7 +95,7 @@ def question_insert(*,
               'sequence_number': sequence_number}
     # These values will only be inserted if they were supplied (since they
     # have default values in the db)
-    values = _add_optional_values(values, hint=hint, required=required,
+    values = _add_optional_values(values, hint=hint,
                                   allow_multiple=allow_multiple, logic=logic)
     return question_table.insert().values(values)
 
@@ -139,9 +137,17 @@ def get_questions(survey_id: str) -> ResultProxy:
 
 
 def get_required(survey_id: str) -> ResultProxy:
+    """
+    Get all the required questions for a survey identified by survey_id ordered
+    by sequence number.
+
+    :param survey_id: foreign key
+    :return: an iterable of the questions (RowProxy)
+    """
     select_stmt = question_table.select()
     survey_condition = question_table.c.survey_id == survey_id
-    required_condition = question_table.c.required
+    required_condition = cast(cast(question_table.c.logic['required'], Text),
+                              Boolean)
     condition = and_(survey_condition, required_condition)
     where_stmt = select_stmt.where(condition)
     return where_stmt.order_by('sequence_number asc').execute()

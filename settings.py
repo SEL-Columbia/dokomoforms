@@ -30,6 +30,10 @@ WEBAPP_PORT = 8888
 
 
 #
+# Cookie secret
+COOKIE_SECRET = 'big secret'
+
+#
 # Testing
 
 # Allow overrides from a local config file,

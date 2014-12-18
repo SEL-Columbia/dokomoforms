@@ -15,7 +15,6 @@ CREATE TABLE question
   -- highest.
   sequence_number       integer   NOT NULL,
 
-  required              boolean   NOT NULL DEFAULT FALSE,
   -- Set this to true for questions like "list the books available at this
   -- facility."
   allow_multiple        boolean   NOT NULL DEFAULT FALSE,

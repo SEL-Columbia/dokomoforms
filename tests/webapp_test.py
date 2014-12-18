@@ -1,4 +1,3 @@
-
 """
 Tests for the dokomo webapp
 
@@ -27,6 +26,10 @@ TEST_PORT = 8001 # just to show you can test the same
 POST_HDRS = {"Content-type": "application/x-www-form-urlencoded",
              "Accept": "text/plain"}
 
+new_config = config.copy()
+new_config['xsrf_cookies'] = False # convenient for testing...
+# eventually we should use mock instead
+
 class TestDokomoWebapp(unittest.TestCase):
     http_server = None
     response = None
@@ -34,7 +37,7 @@ class TestDokomoWebapp(unittest.TestCase):
     def setUp(self):
         application = tornado.web.Application([
                 (r'/', Index),
-                ], **config)
+                ], **new_config)
         self.http_server = tornado.httpserver.HTTPServer(application)
         self.http_server.listen(TEST_PORT)
 
@@ -62,14 +65,13 @@ class TestDokomoWebapp(unittest.TestCase):
             {'question_id': get_questions(survey_id).first().question_id,
              'answer': 1,
              'is_other': False}]}
-        test_submission = {'data': json.dumps(answer_json)}
 
         # prepare the POST request
         http_client = tornado.httpclient.AsyncHTTPClient()
         req = tornado.httpclient.HTTPRequest(url='http://localhost:%d/' % TEST_PORT,
                                              method='POST',
                                              headers=POST_HDRS,
-                                             body=urlencode(test_submission))
+                                             body=json.dumps(answer_json))
         http_client.fetch(req, self.handle_request)
         tornado.ioloop.IOLoop.instance().start()
         self.assertFalse(self.response.error)
@@ -83,3 +85,4 @@ class TestDokomoWebapp(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

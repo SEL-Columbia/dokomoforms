@@ -33,7 +33,6 @@ Response:
             "question_id": "<UUID>",
             "title": "Batmobile jet fuel reserves (L)",
             "hint": "",
-            "required": false,
             "sequence_number": 0,
             "allow_multiple": false,
             "type_constraint_name": "integer",
@@ -81,7 +80,6 @@ Response:
         "question_id": "<UUID>",
         "title": "Batmobile jet fuel reserves (L)",
         "hint": "",
-        "required": false,
         "sequence_number": 0,
         "allow_multiple": false,
         "type_constraint_name": "integer",
@@ -108,7 +106,6 @@ Request data:
         "type_constraint_name": "integer",
         "sequence_number": null,
         "hint": null,
-        "required": null,
         "allow_multiple": null,
         "logic": {
             "required": false,
@@ -137,6 +134,8 @@ If you are creating a multiple choice question with branching, the question dict
              }]
 ```
 
+If you want to make a question required, add `{"required": true}` in the `logic` field.
+
 Response:
 ```
 {
@@ -148,7 +147,6 @@ Response:
         "type_constraint_name": "integer",
         "sequence_number": 0,
         "hint": "",
-        "required": false,
         "allow_multiple": false,
         "logic": {
             "required": false,
@@ -176,7 +174,6 @@ Request data:
             "type_constraint_name": "text",
             "sequence_number": null,
             "hint": null,
-            "required": null,
             "allow_multiple": null,
             "logic": {
                 "required": false,
@@ -190,7 +187,6 @@ Request data:
             "type_constraint_name": "text",
             "sequence_number": null,
             "hint": null,
-            "required": null,
             "allow_multiple": null,
             "logic": {
                 "required": false,
@@ -229,7 +225,6 @@ Response:
             "type_constraint_name": "integer",
             "sequence_number": 0,
             "hint": "",
-            "required": false,
             "allow_multiple": false,
             "logic": {
                 "required": false,
@@ -244,7 +239,6 @@ Response:
             "type_constraint_name": "text",
             "sequence_number": 1,
             "hint": "",
-            "required": false,
             "allow_multiple": false,
             "logic": {
                 "required": false,
@@ -397,7 +391,6 @@ or
     "question_id": "<UUID>",
     "title": "Location",
     "hint": "",
-    "required": false,
     "sequence_number": 0,
     "allow_multiple": false,
     "type_constraint_name": "location",
@@ -429,7 +422,6 @@ or
     "question_id": "<UUID>",
     "title": "Date",
     "hint": "",
-    "required": false,
     "sequence_number": 0,
     "allow_multiple": false,
     "type_constraint_name": "date",
@@ -463,7 +455,6 @@ The date should be given as `"YYYY-MM-DD"` - year, month, date
     "question_id": "<UUID>",
     "title": "Time",
     "hint": "",
-    "required": false,
     "sequence_number": 0,
     "allow_multiple": false,
     "type_constraint_name": "time",
@@ -501,7 +492,6 @@ If the UTC offset is not provided, I believe the default is the time zone of the
     "question_id": "<UUID>",
     "title": "Number from 5 to 10",
     "hint": "",
-    "required": false,
     "sequence_number": 0,
     "allow_multiple": false,
     "type_constraint_name": "integer",
@@ -533,7 +523,6 @@ If the UTC offset is not provided, I believe the default is the time zone of the
     "question_id": "<UUID>",
     "title": "Description",
     "hint": "",
-    "required": false,
     "sequence_number": 0,
     "allow_multiple": false,
     "type_constraint_name": "text",
@@ -565,7 +554,6 @@ If the UTC offset is not provided, I believe the default is the time zone of the
     "question_id": "<UUID>",
     "title": "Pick one",
     "hint": "",
-    "required": false,
     "sequence_number": 0,
     "allow_multiple": false,    
     "type_constraint_name": "multiple_choice",
@@ -573,6 +561,43 @@ If the UTC offset is not provided, I believe the default is the time zone of the
         "required": false,
         "with_other": false
     },
+    "choices": [{
+                     "question_choice_id": "<UUID>",
+                     "choice": "bananas"
+                },
+                {
+                     "question_choice_id": "<UUID>",
+                     "choice": "apples"
+                },
+                {
+                     "question_choice_id": "<UUID>",
+                     "choice": "pears"
+                }]
+}
+
+// Answer
+{
+    "answer_id": "<UUID>",
+    "question_id": "<UUID>",
+    "type_constraint_name": "multiple_choice",
+    "question_choice_id": "<UUID>",
+    "choice": "bananas",
+    "choice_number": 0
+}
+```
+
+
+### Multiple Choice with Other
+```
+// Question
+{
+    "question_id": "<UUID>",
+    "title": "Pick one or write in 'other'.",
+    "hint": "",
+    "sequence_number": 0,
+    "allow_multiple": false,    
+    "type_constraint_name": "multiple_choice",
+    "logic": {"with_other": true}
     "choices": [{
                      "question_choice_id": "<UUID>",
                      "choice": "bananas"

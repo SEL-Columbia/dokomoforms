@@ -101,6 +101,76 @@ Survey.prototype.render = function(index) {
         .text((index + 1) + ' / ' + (this.questions.length + 1));
 };
 
+function getCookie(name) {
+    var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
+    return r ? r[1] : undefined;
+}
+
+(function () {
+    var user = getCookie("user")
+    var currentUser = user ? user : null;
+
+    navigator.id.watch({
+      loggedInUser: currentUser,
+      onlogin: function(assertion) {
+        $.ajax({
+          type: 'GET',
+          url: '/csrf-token',
+          success: function (res, status, xhr) {
+            var response = JSON.parse(res);
+            var logged_in = response.logged_in;
+            var fresh_token = response.token;
+            if (!logged_in){
+              $.ajax({
+                type: 'POST',
+                url: '/login/persona',
+                data: {assertion:assertion},
+                headers: {
+                  "X-XSRFToken": fresh_token
+                },
+                success: function(res, status, xhr){
+                  location.href = decodeURIComponent(window.location.search.substring(6));
+                },
+                error: function(xhr, status, err) {
+                  navigator.id.logout();
+                  alert("Login failure: " + err);
+                }
+              });
+            }
+          }
+        });
+      },
+      onlogout: function() {
+        // A user has logged out! Here you need to:
+        // Tear down the user's session by redirecting the user or making a call to your backend.
+        // Also, make sure loggedInUser will get set to null on the next page load.
+        // (That's a literal JavaScript null. Not false, 0, or undefined. null.)
+        $.ajax({
+          type: 'POST',
+          url: '/logout', // This is a URL on your website.
+          headers: {
+            "X-XSRFToken": getCookie("_xsrf")
+          },
+          success: function(res, status, xhr) {
+              window.location.reload();
+          },
+          error: function(xhr, status, err) { alert("Logout failure: " + err); }
+        });
+      }
+
+    });
+
+    var signinLink = document.getElementById('login');
+    if (signinLink) {
+      signinLink.onclick = function() { navigator.id.request(); };
+    }
+
+    var signoutLink = document.getElementById('logout');
+    if (signoutLink) {
+      signoutLink.onclick = function() { navigator.id.logout(); };
+    }
+})();
+
 Survey.prototype.submit = function() {
     var self = this;
     var sync = $('.nav__sync')[0];
@@ -116,28 +186,51 @@ Survey.prototype.submit = function() {
     // Prepare POST request
     var data = {
         survey_id: self.id,
-        answers: self.questions
+        answers: _.map(self.questions, function(q) {
+            console.log('q', q);
+            if (typeof q.answer === 'undefined' || q.answer === null) {
+                return {
+                    question_id: q.question_id,
+                    question_choice_id: q.question_choice_id
+                };
+            } else {
+                return {
+                    question_id: q.question_id,
+                    answer: q.answer
+                };
+            }
+        })
     };
     
     sync.classList.add('icon--spin');
     save_btn.classList.add('icon--spin');
-    
-    $.post('', {data: JSON.stringify(data)})
-        .success(function() {
+
+    $.ajax({
+        url: '',
+        type: 'POST',
+        contentType: 'application/json',
+        processData: false,
+        data: JSON.stringify(data),
+        headers: {
+            "X-XSRFToken": getCookie("_xsrf")
+        },
+        dataType: 'json',
+        success: function() {
             App.message('Survey submitted!');
-        })
-        .fail(function() {
+        },
+        fail: function() {
             App.message('Submission failed, will try again later.');
             App.unsynced.push(self);
-        })
-        .done(function() {
+        },
+        done: function() {
             setTimeout(function() {
                 sync.classList.remove('icon--spin');
                 save_btn.classList.remove('icon--spin');
                 App.message('Survey submitted!');
                 self.render(0);
             }, 1000);
-        });
+        }
+    });
 };
 
 
@@ -186,6 +279,87 @@ Widgets.location = function(question, page) {
         });
 };
 
+Widgets.multiple_choice = function(question, page) {
+    $(page)
+        .find('.text_input')
+        .hide();
+    if(question.logic['with_other']){
+        var $other = $(page)
+            .find('.text_input')
+            .keyup(function() {
+                question.question_choice_id = null;
+                question.answer = this.value;
+            })
+            .hide();
 
+        var $select = $(page)
+            .find('select')
+            .change(function() {
+                if (this.value == 'null') {
+                    // No option chosen
+                    question.question_choice_id = null;
+                    question.answer = null;
+                    $other.hide();
+                } else if (this.value == 'other') {
+                    // Choice is text input
+                    $other.show();
+                    question.question_choice_id = null;
+                    question.answer = $other.val();
+                } else {
+                    // Normal choice
+                    question.question_choice_id = this.value;
+                    question.answer = null;
+                    $other.hide();
+                }
+            });
 
-    
+        // Set the default/selected option
+        var option = question.question_choice_id ||
+            (question.answer ? 'other' : 'null');
+        $select
+            .find('option[value="' + option + '"]')
+            .prop('selected', true);
+        $select.change();
+    } else {
+        $(page)
+            .find('select')
+            .change(function() {
+                if (this.value !== ''){
+                    question.question_choice_id = this.value;
+                } else {
+                    question.question_choice_id = undefined;
+                }
+        });
+    }
+};
+
+Widgets.decimal = function(question, page) {
+    $(page)
+        .find('input')
+        .keyup(function() {
+            question.answer = parseFloat(this.value);
+        });
+};
+
+Widgets.date = function(question, page) {
+    $(page)
+        .find('input')
+        .keyup(function() {
+            if (this.value !== '') {
+                question.answer = this.value;
+            }
+        });
+};
+
+Widgets.time = function(question, page) {
+    $(page)
+        .find('input')
+        .keyup(function() {
+            if(this.value !== ''){
+                question.answer = this.value;
+            }
+      });
+};
+
+Widgets.note = function(question, page) {
+};
