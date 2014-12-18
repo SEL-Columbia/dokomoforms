@@ -2,11 +2,10 @@
 Tests for the dokomo database
 
 """
-from time import sleep
 import unittest
 import uuid
 from sqlalchemy import cast, Text, Boolean
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from passlib.hash import bcrypt_sha256
 
@@ -212,13 +211,17 @@ class TestAuthUser(unittest.TestCase):
         result = auth_user_table.insert({'email': 'a'}).execute()
         user_id = result.inserted_primary_key[0]
         token = generate_api_token()
-        exp = timedelta(seconds=0.5)
+        exp = timedelta(hours=1)
         set_api_token(token=token,
                       auth_user_id=user_id,
                       expiration=exp).execute()
         self.assertTrue(verify_api_token(token=token, auth_user_id=user_id))
-        sleep(1.5)
-        self.assertFalse(verify_api_token(token=token, auth_user_id=user_id))
+        token2 = generate_api_token()
+        exp2 = timedelta(hours=-1)
+        set_api_token(token=token2,
+                      auth_user_id=user_id,
+                      expiration=exp2).execute()
+        self.assertFalse(verify_api_token(token=token2, auth_user_id=user_id))
 
 
 class TestQuestion(unittest.TestCase):
