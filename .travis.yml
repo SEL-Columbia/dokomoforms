@@ -5,6 +5,7 @@ python:
 # prerequisite 
 before_install:
   - sudo apt-get update -qq
+  - sudo apt-get autoclean -qq
   - sudo apt-get install -qq postgresql-contrib
   - sudo /etc/init.d/postgresql stop
   - sudo /etc/init.d/postgresql start 9.3
