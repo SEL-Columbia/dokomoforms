@@ -10,7 +10,6 @@ requests back from the client app.
 import json
 import urllib.parse
 from tornado import httpclient
-import pprint
 
 import tornado.web
 import tornado.ioloop
@@ -28,9 +27,9 @@ class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
         return self.get_secure_cookie('user')
 
-class FreshXSRFTokenHandler(tornado.web.RequestHandler):
+class FreshXSRFTokenHandler(BaseHandler):
     def get(self):
-        logged_in = self.get_secure_cookie('user') is not None
+        logged_in = self.get_current_user() is not None
         response = {'token': self.xsrf_token.decode('utf-8'),
                     'logged_in': logged_in}
         self.write(json.dumps(response))
@@ -82,7 +81,7 @@ class CreateSurvey(tornado.web.RequestHandler):
         self.write(api.survey.create({'title': self.get_argument('title')}))
 
 
-class LoginPage(tornado.web.RequestHandler):
+class LoginPage(BaseHandler):
     def get(self):
         self.xsrf_token
         self.render('login.html')
@@ -95,7 +94,7 @@ class PageRequiringLogin(BaseHandler):
         self.render('requires-login.html')
 
 
-class LogoutHandler(tornado.web.RequestHandler):
+class LogoutHandler(BaseHandler):
     def get(self):
         self.redirect('/login')
 

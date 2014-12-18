@@ -163,8 +163,7 @@ class TestAuthUser(unittest.TestCase):
             auth_user_table.c.email != 'test_email').execute()
 
     def testGetAuthUser(self):
-        result = auth_user_table.insert(
-            {'email': 'a', 'password': 'a'}).execute()
+        result = auth_user_table.insert({'email': 'a'}).execute()
         user_id = result.inserted_primary_key[0]
         user = get_auth_user(user_id)
         self.assertEqual(user.email, 'a')

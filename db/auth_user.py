@@ -82,9 +82,9 @@ def set_api_token(*,
     Set a new API token for the given user.
 
     :param expiration: how long the token will be valid, 60 days by default.
-    :param token:
-    :param auth_user_id:
-    :return: :rtype:
+    :param token: the token to set. Use generate_api_token()
+    :param auth_user_id: the id of the user
+    :return: The Update object. Execute this!
     """
     hashed_token = bcrypt_sha256.encrypt(token)
     return update_record(auth_user_table,

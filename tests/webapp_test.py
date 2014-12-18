@@ -27,6 +27,10 @@ TEST_PORT = 8001 # just to show you can test the same
 POST_HDRS = {"Content-type": "application/x-www-form-urlencoded",
              "Accept": "text/plain"}
 
+new_config = config.copy()
+new_config['xsrf_cookies'] = False # convenient for testing...
+                                   # eventually we should use mock instead
+
 class TestDokomoWebapp(unittest.TestCase):
     http_server = None
     response = None
@@ -34,7 +38,7 @@ class TestDokomoWebapp(unittest.TestCase):
     def setUp(self):
         application = tornado.web.Application([
                 (r'/', Index),
-                ], **config)
+                ], **new_config)
         self.http_server = tornado.httpserver.HTTPServer(application)
         self.http_server.listen(TEST_PORT)
 
