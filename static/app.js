@@ -154,7 +154,7 @@ function getCookie(name) {
           success: function(res, status, xhr) {
               window.location.reload();
           },
-          error: function(xhr, status, err) { alert("Logout failure: " + err); },
+          error: function(xhr, status, err) { alert("Logout failure: " + err); }
         });
       }
 

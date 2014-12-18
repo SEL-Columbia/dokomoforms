@@ -65,14 +65,13 @@ class TestDokomoWebapp(unittest.TestCase):
         answer_json = {'survey_id': survey_id, 'answers': [
             {'question_id': get_questions(survey_id).first().question_id,
              'answer': 1}]}
-        test_submission = {'data': json.dumps(answer_json)}
 
         # prepare the POST request
         http_client = tornado.httpclient.AsyncHTTPClient()
         req = tornado.httpclient.HTTPRequest(url='http://localhost:%d/' % TEST_PORT,
                                              method='POST',
                                              headers=POST_HDRS,
-                                             body=urlencode(test_submission))
+                                             body=json.dumps(answer_json))
         http_client.fetch(req, self.handle_request)
         tornado.ioloop.IOLoop.instance().start()
         self.assertFalse(self.response.error)
