@@ -14,6 +14,7 @@ import tornado.ioloop
 
 import api.survey
 import api.submission
+import api.api_token
 import settings
 from utils.logger import setup_custom_logger
 
@@ -27,7 +28,7 @@ class BaseHandler(tornado.web.RequestHandler):
         return self.get_secure_cookie('user')
 
 
-class Index(tornado.web.RequestHandler):
+class Index(BaseHandler):
     def get(self):
         survey = api.survey.get_one(settings.SURVEY_ID)
         self.xsrf_token  # need to access it in order to set it...
@@ -139,12 +140,21 @@ class PageRequiringLogin(BaseHandler):
         self.render('requires-login.html')
 
 
+class APITokenGenerator(BaseHandler):
+    @tornado.web.authenticated
+    def post(self):
+        data = json.loads(self.request.body.decode('utf-8'))
+
+        self.write(api.api_token.generate_token(data))
+
+
 class LogoutHandler(BaseHandler):
     def get(self):
         self.redirect('/login')
 
     def post(self):
         self.clear_cookie('user')
+
 
 config = {
     'template_path': 'static',
@@ -167,7 +177,8 @@ if __name__ == '__main__':
         (r'/login/persona', LoginHandler),
         (r'/logout', LogoutHandler),
         (r'/requires-login', PageRequiringLogin),
-        (r'/csrf-token', FreshXSRFTokenHandler)
+        (r'/csrf-token', FreshXSRFTokenHandler),
+        (r'/generate-api-token', APITokenGenerator)
     ], **config)
     app.listen(settings.WEBAPP_PORT, '0.0.0.0')
 

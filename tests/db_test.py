@@ -14,7 +14,7 @@ import db
 from db.answer import answer_insert, answer_table, get_answers, get_geo_json
 from db.answer_choice import answer_choice_insert, get_answer_choices
 from db.auth_user import auth_user_table, get_auth_user, create_auth_user, \
-    generate_api_token, set_api_token, verify_api_token
+    generate_api_token, set_api_token, verify_api_token, get_auth_user_by_email
 from db.question import get_questions, question_select, question_table, \
     get_free_sequence_number, question_insert
 from db.question_branch import get_branches, question_branch_insert, \
@@ -170,6 +170,11 @@ class TestAuthUser(unittest.TestCase):
         result = auth_user_table.insert({'email': 'a'}).execute()
         user_id = result.inserted_primary_key[0]
         user = get_auth_user(user_id)
+        self.assertEqual(user.email, 'a')
+
+    def testGetAuthUserByEmail(self):
+        result = auth_user_table.insert({'email': 'a'}).execute()
+        user = get_auth_user_by_email('a')
         self.assertEqual(user.email, 'a')
 
     def testCreateAuthUser(self):

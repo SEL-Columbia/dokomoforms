@@ -28,6 +28,19 @@ def get_auth_user(auth_user_id: str) -> RowProxy:
     return where_stmt.execute().first()
 
 
+def get_auth_user_by_email(email: str) -> RowProxy:
+    """
+    Get a record from the auth_user table identified by e-mail.
+
+    :param email: the user's e-mail address
+    :return: the record
+    """
+    select_stmt = auth_user_table.select()
+    where_stmt = select_stmt.where(
+        auth_user_table.c.email == email)
+    return where_stmt.execute().first()
+
+
 def create_auth_user(*, email: str) -> Insert:
     """
     Create a user account in the database. Make sure to use a transaction!
