@@ -2,7 +2,7 @@ Dokomoform's REST JSON API.
 
 ## Generating an API token
 
-POST a JSON message to the `/generate-api-token` endpoint in this format:
+POST a JSON message to the `/generate-api-token` endpoint (you must be logged in) in this format:
 
 ```
 {
