@@ -749,8 +749,8 @@ class TestAPIToken(unittest.TestCase):
         response = api.api_token.generate_token({'email': 'api_test_email'})
         user = get_auth_user(auth_user_id=user_id)
         self.assertTrue(bcrypt_sha256.verify(response['token'], user.token))
-        self.assertEqual(response['expires_on'].date(),
-                         (datetime.now() + timedelta(days=60)).date())
+        self.assertEqual(response['expires_on'][:10],
+                         str((datetime.now() + timedelta(days=60)).date()))
 
     def testGenerateTokenWithDuration(self):
         user_id = create_auth_user(
@@ -759,7 +759,8 @@ class TestAPIToken(unittest.TestCase):
                                                  'duration': 5.0})
         user = get_auth_user(auth_user_id=user_id)
         self.assertTrue(bcrypt_sha256.verify(response['token'], user.token))
-        self.assertEqual(response['expires_on'].date(), datetime.now().date())
+        self.assertEqual(response['expires_on'][:10],
+                         str(datetime.now().date()))
 
     def testTokenDurationTooLong(self):
         user_id = create_auth_user(

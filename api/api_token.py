@@ -26,8 +26,9 @@ def generate_token(data: dict) -> dict:
 
     with engine.begin() as connection:
         connection.execute(set_api_token(**params))
+    updated_user = get_auth_user_by_email(data['email'])
     return {'token': token,
-            'expires_on': get_auth_user_by_email(data['email']).expires_on}
+            'expires_on': updated_user.expires_on.isoformat()}
 
 
 class TokenDurationTooLong(Exception):
