@@ -216,7 +216,7 @@ Survey.prototype.submit = function() {
             App.message('Submission failed, will try again later.');
             App.unsynced.push(self);
         }
-    }).done(function(){
+    }).done(function() {
         setTimeout(function() {
             sync.classList.remove('icon--spin');
             save_btn.classList.remove('icon--spin');
