@@ -17,7 +17,7 @@ Response:
 ```
 {
     "token": "<API token>",
-    "expires_on: "<expiration time>"
+    "expires_on: "<ISO time>"
 }
 ```
 
