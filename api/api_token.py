@@ -6,7 +6,7 @@ from db.auth_user import get_auth_user_by_email, generate_api_token, \
     set_api_token
 
 
-def generate_token(data:dict) -> dict:
+def generate_token(data: dict) -> dict:
     """
     Generates a new API token for a user specified by e-mail address. You
     can supply a duration in seconds.
@@ -28,6 +28,7 @@ def generate_token(data:dict) -> dict:
         connection.execute(set_api_token(**params))
     return {'token': token,
             'expires_on': get_auth_user_by_email(data['email']).expires_on}
+
 
 class TokenDurationTooLong(Exception):
     """An API token cannot be valid for longer than 365 days."""
