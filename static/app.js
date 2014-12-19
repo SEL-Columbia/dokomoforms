@@ -215,15 +215,14 @@ Survey.prototype.submit = function() {
         fail: function() {
             App.message('Submission failed, will try again later.');
             App.unsynced.push(self);
-        },
-        done: function() {
-            setTimeout(function() {
-                sync.classList.remove('icon--spin');
-                save_btn.classList.remove('icon--spin');
-                App.message('Survey submitted!');
-                self.render(0);
-            }, 1000);
         }
+    }).done(function(){
+        setTimeout(function() {
+            sync.classList.remove('icon--spin');
+            save_btn.classList.remove('icon--spin');
+            App.message('Survey submitted!');
+            self.render(0);
+        }, 1000);
     });
 };
 
