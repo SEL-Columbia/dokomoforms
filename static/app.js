@@ -186,7 +186,14 @@ Survey.prototype.submit = function() {
     // Prepare POST request
     var data = {
         survey_id: self.id,
-        answers: self.questions
+        answers: _.map(self.questions, function(q) {
+            console.log('q', q);
+            return {
+                question_id: q.question_id,
+                answer: q.answer,
+                is_other: q.is_other || false
+            };
+        })
     };
     
     sync.classList.add('icon--spin');
@@ -208,15 +215,14 @@ Survey.prototype.submit = function() {
         fail: function() {
             App.message('Submission failed, will try again later.');
             App.unsynced.push(self);
-        },
-        done: function() {
-            setTimeout(function() {
-                sync.classList.remove('icon--spin');
-                save_btn.classList.remove('icon--spin');
-                App.message('Survey submitted!');
-                self.render(0);
-            }, 1000);
         }
+    }).done(function() {
+        setTimeout(function() {
+            sync.classList.remove('icon--spin');
+            save_btn.classList.remove('icon--spin');
+            App.message('Survey submitted!');
+            self.render(0);
+        }, 1000);
     });
 };
 
@@ -266,6 +272,85 @@ Widgets.location = function(question, page) {
         });
 };
 
+Widgets.multiple_choice = function(question, page) {
+    $(page)
+        .find('.text_input')
+        .hide();
+    if(question.logic['with_other']){
+        var $other = $(page)
+            .find('.text_input')
+            .keyup(function() {
+                question.answer = this.value;
+            })
+            .hide();
 
+        var $select = $(page)
+            .find('select')
+            .change(function() {
+                if (this.value == 'null') {
+                    // No option chosen
+                    question.answer = null;
+                    question.is_other = true;
+                    $other.hide();
+                } else if (this.value == 'other') {
+                    // Choice is text input
+                    $other.show();
+                    question.answer = $other.val();
+                    question.is_other = true;
+                } else {
+                    // Normal choice
+                    question.answer = this.value;
+                    question.is_other = false;
+                    $other.hide();
+                }
+            });
 
-    
+        // Set the default/selected option
+        var option = question.answer ? 'other' : 'null';
+        $select
+            .find('option[value="' + option + '"]')
+            .prop('selected', true);
+        $select.change();
+    } else {
+        $(page)
+            .find('select')
+            .change(function() {
+                if (this.value !== ''){
+                    question.answer = this.value;
+                } else {
+                    question.answer = undefined;
+                }
+        });
+    }
+};
+
+Widgets.decimal = function(question, page) {
+    $(page)
+        .find('input')
+        .keyup(function() {
+            question.answer = parseFloat(this.value);
+        });
+};
+
+Widgets.date = function(question, page) {
+    $(page)
+        .find('input')
+        .keyup(function() {
+            if (this.value !== '') {
+                question.answer = this.value;
+            }
+        });
+};
+
+Widgets.time = function(question, page) {
+    $(page)
+        .find('input')
+        .keyup(function() {
+            if(this.value !== ''){
+                question.answer = this.value;
+            }
+      });
+};
+
+Widgets.note = function(question, page) {
+};
