@@ -14,6 +14,7 @@ from api import execute_with_exceptions
 import api.survey
 import api.submission
 import api.api_token
+import api.user
 import db
 from db.answer import answer_insert, CannotAnswerMultipleTimesError, \
     get_answers
@@ -769,6 +770,20 @@ class TestAPIToken(unittest.TestCase):
                           api.api_token.generate_token,
                           {'email': 'api_test_email',
                            'duration': 999999999999999})
+
+
+class TestUser(unittest.TestCase):
+    def tearDown(self):
+        auth_user_table.delete().where(
+            auth_user_table.c.email == 'api_user_test_email').execute()
+
+    def testCreateUser(self):
+        self.assertEqual(
+            api.user.create_user({'email': 'api_user_test_email'}),
+            {'email': 'api_user_test_email', 'response': 'Created'})
+        self.assertEqual(
+            api.user.create_user({'email': 'api_user_test_email'}),
+            {'email': 'api_user_test_email', 'response': 'Already exists'})
 
 
 if __name__ == '__main__':

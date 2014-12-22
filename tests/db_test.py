@@ -202,16 +202,15 @@ class TestAuthUser(unittest.TestCase):
         user_id = result.inserted_primary_key[0]
         token = generate_api_token()
         set_api_token(token=token, auth_user_id=user_id).execute()
-        self.assertTrue(verify_api_token(token=token, auth_user_id=user_id))
+        self.assertTrue(verify_api_token(token=token, email='a'))
         self.assertFalse(
-            verify_api_token(token=generate_api_token(), auth_user_id=user_id))
+            verify_api_token(token=generate_api_token(), email='a'))
 
 
     def testNoDefaultToken(self):
-        result = auth_user_table.insert({'email': 'a'}).execute()
-        user_id = result.inserted_primary_key[0]
+        auth_user_table.insert({'email': 'a'}).execute()
         self.assertFalse(
-            verify_api_token(token=generate_api_token(), auth_user_id=user_id))
+            verify_api_token(token=generate_api_token(), email='a'))
 
 
     def testTokenExpires(self):
@@ -222,13 +221,13 @@ class TestAuthUser(unittest.TestCase):
         set_api_token(token=token,
                       auth_user_id=user_id,
                       expiration=exp).execute()
-        self.assertTrue(verify_api_token(token=token, auth_user_id=user_id))
+        self.assertTrue(verify_api_token(token=token, email='a'))
         token2 = generate_api_token()
         exp2 = timedelta(hours=-1)
         set_api_token(token=token2,
                       auth_user_id=user_id,
                       expiration=exp2).execute()
-        self.assertFalse(verify_api_token(token=token2, auth_user_id=user_id))
+        self.assertFalse(verify_api_token(token=token2, email='a'))
 
 
 class TestQuestion(unittest.TestCase):

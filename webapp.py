@@ -5,6 +5,7 @@ This tornado server creates the client app by serving html/css/js and
 it also functions as the wsgi container for accepting survey form post
 requests back from the client app.
 """
+import functools
 import json
 import urllib.parse
 from tornado import httpclient
@@ -15,6 +16,8 @@ import tornado.ioloop
 import api.survey
 import api.submission
 import api.api_token
+import api.user
+from db.auth_user import verify_api_token, get_auth_user_by_email
 import settings
 from utils.logger import setup_custom_logger
 
@@ -130,6 +133,8 @@ class LoginHandler(tornado.web.RequestHandler):
         data = tornado.escape.json_decode(response.body)
         if data['status'] != "okay":
             raise tornado.web.HTTPError(400, "Failed assertion test")
+        if not get_auth_user_by_email(data['email']):
+            api.user.create_user({'email': data['email']})
         self.set_secure_cookie('user', data['email'], expires_days=1)
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         response = {'next_url': '/'}
@@ -153,7 +158,10 @@ class PageRequiringLogin(BaseHandler):
 class APITokenGenerator(BaseHandler):
     @tornado.web.authenticated
     def get(self):
-        self.render('api-token.html')
+        # self.render('api-token.html')
+        self.write(
+            api.api_token.generate_token(
+                {'email': self.get_current_user().decode('utf-8')}))
 
 
     @tornado.web.authenticated
@@ -161,6 +169,25 @@ class APITokenGenerator(BaseHandler):
         data = json.loads(self.request.body.decode('utf-8'))
 
         self.write(api.api_token.generate_token(data))
+
+
+def api_authenticated(method):
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        if not self.current_user:
+            token = self.request.headers['Token']
+            email = self.request.headers['Email']
+            if not verify_api_token(token=token, email=email):
+                raise tornado.web.HTTPError(403)
+        return method(self, *args, **kwargs)
+    return wrapper
+
+
+class SurveysAPI(BaseHandler):
+    @api_authenticated
+    def get(self):
+        surveys = api.survey.get_all()
+        self.write(json.dumps(surveys))
 
 
 class LogoutHandler(BaseHandler):
@@ -194,7 +221,8 @@ if __name__ == '__main__':
         (r'/user/login/persona', LoginHandler),
         (r'/user/logout', LogoutHandler),
         (r'/user/csrf-token', FreshXSRFTokenHandler),
-        (r'/user/generate-api-token', APITokenGenerator)
+        (r'/user/generate-api-token', APITokenGenerator),
+        (r'/user/surveys', SurveysAPI)
     ], **config)
     app.listen(settings.WEBAPP_PORT, '0.0.0.0')
 

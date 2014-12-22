@@ -60,15 +60,15 @@ def generate_api_token() -> str:
     return ''.join(ch for ch in str(uuid.uuid4()) if ch.isalnum())
 
 
-def verify_api_token(*, token: str, auth_user_id: str) -> bool:
+def verify_api_token(*, token: str, email: str) -> bool:
     """
     Checks whether the supplied API token is valid for the specified user.
 
     :param token: the API token
-    :param auth_user_id: the id of the user
+    :param email: the e-mail address of the user
     :return: whether the token is correct and not expired
     """
-    auth_user = get_auth_user(auth_user_id)
+    auth_user = get_auth_user_by_email(email)
     token_is_fresh = auth_user.expires_on.timetuple() >= localtime()
     not_blank = auth_user.token != ''
     token_matches = not_blank and bcrypt_sha256.verify(token, auth_user.token)
