@@ -115,7 +115,7 @@ function getCookie(name) {
       onlogin: function(assertion) {
         $.ajax({
           type: 'GET',
-          url: '/csrf-token',
+          url: '/user/csrf-token',
           success: function (res, status, xhr) {
             var response = JSON.parse(res);
             var logged_in = response.logged_in;
@@ -123,7 +123,7 @@ function getCookie(name) {
             if (!logged_in){
               $.ajax({
                 type: 'POST',
-                url: '/login/persona',
+                url: '/user/login/persona',
                 data: {assertion:assertion},
                 headers: {
                   "X-XSRFToken": fresh_token
@@ -147,7 +147,7 @@ function getCookie(name) {
         // (That's a literal JavaScript null. Not false, 0, or undefined. null.)
         $.ajax({
           type: 'POST',
-          url: '/logout', // This is a URL on your website.
+          url: '/user/logout', // This is a URL on your website.
           headers: {
             "X-XSRFToken": getCookie("_xsrf")
           },

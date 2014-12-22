@@ -95,6 +95,13 @@ class Submissions(BaseHandler):
         pass
 
 
+class FrontPage(BaseHandler):
+    def get(self, *args, **kwargs):
+        if self.get_current_user() is not None:
+            self.render('profile-page.html')
+        else:
+            self.render('front-page.html')
+
 class FreshXSRFTokenHandler(BaseHandler):
     def get(self):
         logged_in = self.get_current_user() is not None
@@ -104,6 +111,9 @@ class FreshXSRFTokenHandler(BaseHandler):
 
 
 class LoginHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.redirect('/user/login')
+
     @tornado.web.asynchronous
     @tornado.gen.engine
     def post(self):
@@ -142,6 +152,11 @@ class PageRequiringLogin(BaseHandler):
 
 class APITokenGenerator(BaseHandler):
     @tornado.web.authenticated
+    def get(self):
+        self.render('api-token.html')
+
+
+    @tornado.web.authenticated
     def post(self):
         data = json.loads(self.request.body.decode('utf-8'))
 
@@ -150,7 +165,7 @@ class APITokenGenerator(BaseHandler):
 
 class LogoutHandler(BaseHandler):
     def get(self):
-        self.redirect('/login')
+        self.redirect('/user/login')
 
     def post(self):
         self.clear_cookie('user')
@@ -160,7 +175,7 @@ config = {
     'template_path': 'static',
     'static_path': 'static',
     'xsrf_cookies': True,
-    'login_url': '/login',
+    'login_url': '/user/login',
     'cookie_secret': settings.COOKIE_SECRET,
     'debug': True  # Remove this
 }
@@ -172,13 +187,14 @@ if __name__ == '__main__':
         (r'/surveys', Surveys),
         (r'/surveys/(.+)', Survey),
         (r'/surveys/(.+)/submissions', Submissions),
-        (r'/viktor-create-survey', CreateSurvey),
-        (r'/login', LoginPage),
-        (r'/login/persona', LoginHandler),
-        (r'/logout', LogoutHandler),
-        (r'/requires-login', PageRequiringLogin),
-        (r'/csrf-token', FreshXSRFTokenHandler),
-        (r'/generate-api-token', APITokenGenerator)
+        (r'/user', FrontPage),
+        (r'/user/requires-login', PageRequiringLogin),
+        (r'/user/viktor-create-survey', CreateSurvey),
+        (r'/user/login', LoginPage),
+        (r'/user/login/persona', LoginHandler),
+        (r'/user/logout', LogoutHandler),
+        (r'/user/csrf-token', FreshXSRFTokenHandler),
+        (r'/user/generate-api-token', APITokenGenerator)
     ], **config)
     app.listen(settings.WEBAPP_PORT, '0.0.0.0')
 
