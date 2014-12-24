@@ -18,6 +18,7 @@ import api.submission
 import api.api_token
 import api.user
 from db.auth_user import verify_api_token, get_auth_user_by_email
+from db.survey import AUTH_USER_ID
 import settings
 from utils.logger import setup_custom_logger
 
@@ -53,7 +54,7 @@ class CreateSurvey(BaseHandler):
 
 class Surveys(BaseHandler):
     def get(self):
-        surveys = api.survey.get_all()
+        surveys = api.survey.get_all(AUTH_USER_ID)
         self.write(json.dumps(surveys))
 
     def post(self):
@@ -186,7 +187,8 @@ def api_authenticated(method):
 class SurveysAPI(BaseHandler):
     @api_authenticated
     def get(self):
-        surveys = api.survey.get_all()
+        surveys = api.survey.get_all(
+            {'email': self.current_user.decode('utf-8')})
         self.write(json.dumps(surveys))
 
 

@@ -249,7 +249,8 @@ class TestSurvey(unittest.TestCase):
         self.assertIsNotNone(data['questions'])
 
     def testGetAll(self):
-        surveys = api.survey.get_all()
+        surveys = api.survey.get_all(
+            {'email': auth_user_table.select().execute().first().email})
         self.assertGreater(len(surveys), 0)
 
     def testCreate(self):

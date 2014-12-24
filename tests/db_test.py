@@ -24,7 +24,8 @@ from db.question_choice import get_choices, question_choice_select, \
     QuestionChoiceDoesNotExistError
 from db.submission import submission_table, submission_insert, \
     submission_select, get_submissions
-from db.survey import survey_table, survey_insert, survey_select
+from db.survey import survey_table, survey_insert, survey_select, \
+    get_surveys_for_user_by_email
 
 
 class TestAnswer(unittest.TestCase):
@@ -400,6 +401,14 @@ class TestSurvey(unittest.TestCase):
     def tearDown(self):
         survey_table.delete().where(
             survey_table.c.title == 'test insert').execute()
+
+    def testGetSurveysForUserByEmail(self):
+        user = auth_user_table.select().execute().first()
+        condition = survey_table.c.auth_user_id == user.auth_user_id
+        surveys = survey_table.select().where(condition).execute().fetchall()
+        surveys_by_email = get_surveys_for_user_by_email(user.email)
+        self.assertEqual(len(surveys), len(surveys_by_email))
+        self.assertEqual(surveys[0].survey_id, surveys_by_email[0].survey_id)
 
     def testSurveySelect(self):
         survey = survey_table.select().execute().first()
