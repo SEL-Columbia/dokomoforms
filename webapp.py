@@ -216,15 +216,15 @@ if __name__ == '__main__':
         (r'/surveys', Surveys),
         (r'/surveys/(.+)', Survey),
         (r'/surveys/(.+)/submissions', Submissions),
-        (r'/user', FrontPage),
-        (r'/user/requires-login', PageRequiringLogin),
-        (r'/user/viktor-create-survey', CreateSurvey),
-        (r'/user/login', LoginPage),
-        (r'/user/login/persona', LoginHandler),
-        (r'/user/logout', LogoutHandler),
-        (r'/user/csrf-token', FreshXSRFTokenHandler),
-        (r'/user/generate-api-token', APITokenGenerator),
-        (r'/user/surveys', SurveysAPI)
+        (r'/user/?', FrontPage),
+        (r'/user/requires-login/?', PageRequiringLogin),
+        (r'/user/viktor-create-survey/?', CreateSurvey),
+        (r'/user/login/?', LoginPage),
+        (r'/user/login/persona/?', LoginHandler),
+        (r'/user/logout/?', LogoutHandler),
+        (r'/user/csrf-token/?', FreshXSRFTokenHandler),
+        (r'/user/generate-api-token/?', APITokenGenerator),
+        (r'/user/surveys/?', SurveysAPI)
     ], **config)
     app.listen(settings.WEBAPP_PORT, '0.0.0.0')
 
