@@ -44,14 +44,6 @@ class Index(BaseHandler):
         self.write(api.submission.submit(data))
 
 
-class CreateSurvey(BaseHandler):
-    def get(self):
-        self.render('viktor-create-survey.html')
-
-    def post(self):
-        self.write(api.survey.create({'title': self.get_argument('title')}))
-
-
 class Surveys(BaseHandler):
     def get(self):
         surveys = api.survey.get_all(AUTH_USER_ID)
@@ -218,7 +210,6 @@ if __name__ == '__main__':
         (r'/surveys/(.+)/submissions', Submissions),
         (r'/user/?', FrontPage),
         (r'/user/requires-login/?', PageRequiringLogin),
-        (r'/user/viktor-create-survey/?', CreateSurvey),
         (r'/user/login/?', LoginPage),
         (r'/user/login/persona/?', LoginHandler),
         (r'/user/logout/?', LogoutHandler),
