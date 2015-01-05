@@ -107,28 +107,24 @@ function getCookie(name) {
 }
 
 (function () {
-    var user = getCookie("user")
-    var currentUser = user ? user : null;
-
     navigator.id.watch({
-      loggedInUser: currentUser,
+      loggedInUser: localStorage['email'] || null,
       onlogin: function(assertion) {
         $.ajax({
           type: 'GET',
-          url: '/user/csrf-token',
+          url: '',
           success: function (res, status, xhr) {
-            var response = JSON.parse(res);
-            var logged_in = response.logged_in;
-            var fresh_token = response.token;
-            if (!logged_in){
+            var user = localStorage['email'] || null;
+            if (user === null){
               $.ajax({
                 type: 'POST',
                 url: '/user/login/persona',
                 data: {assertion:assertion},
                 headers: {
-                  "X-XSRFToken": fresh_token
+                  "X-XSRFToken": getCookie("_xsrf")
                 },
                 success: function(res, status, xhr){
+                  localStorage['email'] = res.email;
                   location.href = decodeURIComponent(window.location.search.substring(6));
                 },
                 error: function(xhr, status, err) {
@@ -152,6 +148,7 @@ function getCookie(name) {
             "X-XSRFToken": getCookie("_xsrf")
           },
           success: function(res, status, xhr) {
+              localStorage.removeItem('email');
               window.location.reload();
           },
           error: function(xhr, status, err) { alert("Logout failure: " + err); }

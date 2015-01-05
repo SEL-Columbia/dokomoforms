@@ -44,20 +44,12 @@ class Index(BaseHandler):
 
 class FrontPage(BaseHandler):
     def get(self, *args, **kwargs):
+        self.xsrf_token
         if self.get_current_user() is not None:
             self.render('profile-page.html')
         else:
             self.render('front-page.html')
 
-''' 
-Necessary for persona 
-'''
-class FreshXSRFTokenHandler(BaseHandler):
-    def get(self):
-        logged_in = self.get_current_user() is not None
-        response = {'token': self.xsrf_token.decode('utf-8'),
-                    'logged_in': logged_in}
-        self.write(json.dumps(response))
 
 ''' 
 Necessary for persona 
@@ -86,7 +78,7 @@ class LoginHandler(tornado.web.RequestHandler):
             api.user.create_user({'email': data['email']})
         self.set_secure_cookie('user', data['email'], expires_days=1)
         self.set_header("Content-Type", "application/json; charset=UTF-8")
-        response = {'next_url': '/'}
+        response = {'next_url': '/', 'email': data['email']}
         self.write(tornado.escape.json_encode(response))
         self.finish()
 
@@ -142,6 +134,7 @@ class SurveysAPI(BaseHandler):
 
 class LogoutHandler(BaseHandler):
     def get(self):
+        self.xsrf_token
         self.redirect('/user/login')
 
     def post(self):
@@ -170,7 +163,6 @@ if __name__ == '__main__':
         (r'/user/login/?', LoginPage), #XXX: could be removed 
         (r'/user/login/persona/?', LoginHandler), # Post to persona by posting here
         (r'/user/logout/?', LogoutHandler),
-        (r'/user/csrf-token/?', FreshXSRFTokenHandler), # Magic
 
         # API tokens
         (r'/user/generate-api-token/?', APITokenGenerator),
