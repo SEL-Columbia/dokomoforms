@@ -34,62 +34,13 @@ class BaseHandler(tornado.web.RequestHandler):
 
 class Index(BaseHandler):
     def get(self):
-        survey = api.survey.get_one(settings.SURVEY_ID)
+        survey = api.survey.get_one(settings.SURVEY_ID) #XXX: get from url
         self.xsrf_token  # need to access it in order to set it...
         self.render('index.html', survey=json.dumps(survey))
 
     def post(self):
         data = json.loads(self.request.body.decode('utf-8'))
-
         self.write(api.submission.submit(data))
-
-
-class Surveys(BaseHandler):
-    def get(self):
-        surveys = api.survey.get_all(AUTH_USER_ID)
-        self.write(json.dumps(surveys))
-
-    def post(self):
-        pass
-
-
-class Survey(BaseHandler):
-    def get(self, id):
-        survey = api.survey.get_one(id)
-        self.write(json.dumps(survey))
-
-    def post(self, id):
-        # Backward compatability for older browsers
-        method = self.get_argument('_method', None)
-        if method == 'DELETE':
-            return self.delete(id)
-
-        try:
-            # Validate data
-            data = json.loads(self.get_argument('data'))
-            data['title']
-            for question in data['questions']:
-                question['title']
-                question['type_constraint_name']
-        except:
-            raise tornado.web.HTTPError(400)
-
-        survey = api.survey.create(data)
-        self.write(json.dumps(survey))
-
-    def delete(self, id):
-        msg = api.survey.delete()
-        self.write(json.dumps(msg))
-
-
-class Submissions(BaseHandler):
-    def get(self):
-        submissions = api.submission.get_all()
-        self.write(json.dumps(submissions))
-
-    def post(self):
-        pass
-
 
 class FrontPage(BaseHandler):
     def get(self, *args, **kwargs):
@@ -98,6 +49,9 @@ class FrontPage(BaseHandler):
         else:
             self.render('front-page.html')
 
+''' 
+Necessary for persona 
+'''
 class FreshXSRFTokenHandler(BaseHandler):
     def get(self):
         logged_in = self.get_current_user() is not None
@@ -105,7 +59,9 @@ class FreshXSRFTokenHandler(BaseHandler):
                     'logged_in': logged_in}
         self.write(json.dumps(response))
 
-
+''' 
+Necessary for persona 
+'''
 class LoginHandler(tornado.web.RequestHandler):
     def get(self):
         self.redirect('/user/login')
@@ -204,18 +160,24 @@ config = {
 
 if __name__ == '__main__':
     app = tornado.web.Application([
-        (r'/', Index),
-        (r'/surveys', Surveys),
-        (r'/surveys/(.+)', Survey),
-        (r'/surveys/(.+)/submissions', Submissions),
-        (r'/user/?', FrontPage),
-        (r'/user/requires-login/?', PageRequiringLogin),
-        (r'/user/login/?', LoginPage),
-        (r'/user/login/persona/?', LoginHandler),
+        # Survey Submissions
+        (r'/', Index), # Ebola front page
+        
+        # Dokomo App Homepage
+        (r'/user/?', FrontPage), # Ideal front page
+
+        # Auth
+        (r'/user/login/?', LoginPage), #XXX: could be removed 
+        (r'/user/login/persona/?', LoginHandler), # Post to persona by posting here
         (r'/user/logout/?', LogoutHandler),
-        (r'/user/csrf-token/?', FreshXSRFTokenHandler),
+        (r'/user/csrf-token/?', FreshXSRFTokenHandler), # Magic
+
+        # API tokens
         (r'/user/generate-api-token/?', APITokenGenerator),
-        (r'/user/surveys/?', SurveysAPI)
+
+        # Testing
+        (r'/user/surveys/?', SurveysAPI),
+        (r'/user/requires-login/?', PageRequiringLogin),
     ], **config)
     app.listen(settings.WEBAPP_PORT, '0.0.0.0')
 
