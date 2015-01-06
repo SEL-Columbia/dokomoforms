@@ -173,7 +173,7 @@ if __name__ == '__main__':
         (r'/user/generate-api-token/?', APITokenGenerator),
 
         # Testing
-        (r'/user/surveys/?', SurveysAPI),
+        (r'/api/surveys/?', SurveysAPI),
         (r'/user/requires-login/?', PageRequiringLogin),
     ], **config)
     app.listen(settings.WEBAPP_PORT, '0.0.0.0')
