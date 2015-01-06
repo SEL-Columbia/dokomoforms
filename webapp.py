@@ -27,20 +27,22 @@ logger = setup_custom_logger('dokomo')
 
 
 class BaseHandler(tornado.web.RequestHandler):
+    """Common handler functions here (e.g. user auth, template helpers)"""
+
     def get_current_user(self):
-        """Common handler functions here (e.g. user auth, template helpers)"""
         return self.get_secure_cookie('user')
 
 
 class Index(BaseHandler):
     def get(self):
-        survey = api.survey.get_one(settings.SURVEY_ID) #XXX: get from url
+        survey = api.survey.get_one(settings.SURVEY_ID)  # XXX: get from url
         self.xsrf_token  # need to access it in order to set it...
         self.render('index.html', survey=json.dumps(survey))
 
     def post(self):
         data = json.loads(self.request.body.decode('utf-8'))
         self.write(api.submission.submit(data))
+
 
 class FrontPage(BaseHandler):
     def get(self, *args, **kwargs):
@@ -120,6 +122,7 @@ def api_authenticated(method):
             if not verify_api_token(token=token, email=email):
                 raise tornado.web.HTTPError(403)
         return method(self, *args, **kwargs)
+
     return wrapper
 
 
