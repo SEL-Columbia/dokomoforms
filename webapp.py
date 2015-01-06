@@ -27,14 +27,15 @@ logger = setup_custom_logger('dokomo')
 
 
 class BaseHandler(tornado.web.RequestHandler):
+    """Common handler functions here (e.g. user auth, template helpers)"""
+
     def get_current_user(self):
-        """Common handler functions here (e.g. user auth, template helpers)"""
         return self.get_secure_cookie('user')
 
 
 class Index(BaseHandler):
     def get(self):
-        survey = api.survey.get_one(settings.SURVEY_ID) #XXX: get from url
+        survey = api.survey.get_one(settings.SURVEY_ID)  # XXX: get from url
         self.xsrf_token  # need to access it in order to set it...
         self.render('index.html', survey=json.dumps(survey))
 
@@ -42,22 +43,15 @@ class Index(BaseHandler):
         data = json.loads(self.request.body.decode('utf-8'))
         self.write(api.submission.submit(data))
 
+
 class FrontPage(BaseHandler):
     def get(self, *args, **kwargs):
+        self.xsrf_token
         if self.get_current_user() is not None:
             self.render('profile-page.html')
         else:
             self.render('front-page.html')
 
-''' 
-Necessary for persona 
-'''
-class FreshXSRFTokenHandler(BaseHandler):
-    def get(self):
-        logged_in = self.get_current_user() is not None
-        response = {'token': self.xsrf_token.decode('utf-8'),
-                    'logged_in': logged_in}
-        self.write(json.dumps(response))
 
 ''' 
 Necessary for persona 
@@ -82,11 +76,13 @@ class LoginHandler(tornado.web.RequestHandler):
         data = tornado.escape.json_decode(response.body)
         if data['status'] != "okay":
             raise tornado.web.HTTPError(400, "Failed assertion test")
-        if not get_auth_user_by_email(data['email']):
-            api.user.create_user({'email': data['email']})
-        self.set_secure_cookie('user', data['email'], expires_days=1)
+        api.user.create_user({'email': data['email']})
+        self.set_secure_cookie('user', data['email'], expires_days=None,
+                               # secure=True,
+                               httponly=True
+        )
         self.set_header("Content-Type", "application/json; charset=UTF-8")
-        response = {'next_url': '/'}
+        response = {'next_url': '/', 'email': data['email']}
         self.write(tornado.escape.json_encode(response))
         self.finish()
 
@@ -104,22 +100,6 @@ class PageRequiringLogin(BaseHandler):
         self.render('requires-login.html')
 
 
-class APITokenGenerator(BaseHandler):
-    @tornado.web.authenticated
-    def get(self):
-        # self.render('api-token.html')
-        self.write(
-            api.api_token.generate_token(
-                {'email': self.get_current_user().decode('utf-8')}))
-
-
-    @tornado.web.authenticated
-    def post(self):
-        data = json.loads(self.request.body.decode('utf-8'))
-
-        self.write(api.api_token.generate_token(data))
-
-
 def api_authenticated(method):
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
@@ -129,6 +109,7 @@ def api_authenticated(method):
             if not verify_api_token(token=token, email=email):
                 raise tornado.web.HTTPError(403)
         return method(self, *args, **kwargs)
+
     return wrapper
 
 
@@ -142,6 +123,7 @@ class SurveysAPI(BaseHandler):
 
 class LogoutHandler(BaseHandler):
     def get(self):
+        self.xsrf_token
         self.redirect('/user/login')
 
     def post(self):
@@ -170,13 +152,9 @@ if __name__ == '__main__':
         (r'/user/login/?', LoginPage), #XXX: could be removed 
         (r'/user/login/persona/?', LoginHandler), # Post to persona by posting here
         (r'/user/logout/?', LogoutHandler),
-        (r'/user/csrf-token/?', FreshXSRFTokenHandler), # Magic
-
-        # API tokens
-        (r'/user/generate-api-token/?', APITokenGenerator),
 
         # Testing
-        (r'/user/surveys/?', SurveysAPI),
+        (r'/api/surveys/?', SurveysAPI),
         (r'/user/requires-login/?', PageRequiringLogin),
     ], **config)
     app.listen(settings.WEBAPP_PORT, '0.0.0.0')
