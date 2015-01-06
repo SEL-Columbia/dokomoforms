@@ -77,7 +77,10 @@ class LoginHandler(tornado.web.RequestHandler):
         if data['status'] != "okay":
             raise tornado.web.HTTPError(400, "Failed assertion test")
         api.user.create_user({'email': data['email']})
-        self.set_secure_cookie('user', data['email'], expires_days=None)
+        self.set_secure_cookie('user', data['email'], expires_days=None,
+                               # secure=True,
+                               httponly=True
+        )
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         response = {'next_url': '/', 'email': data['email']}
         self.write(tornado.escape.json_encode(response))
