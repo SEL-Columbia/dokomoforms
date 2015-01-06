@@ -100,6 +100,22 @@ class PageRequiringLogin(BaseHandler):
         self.render('requires-login.html')
 
 
+class APITokenGenerator(BaseHandler):
+    @tornado.web.authenticated
+    def get(self):
+        # self.render('api-token.html')
+        self.write(
+            api.api_token.generate_token(
+                {'email': self.get_current_user().decode('utf-8')}))
+
+
+    @tornado.web.authenticated
+    def post(self):
+        data = json.loads(self.request.body.decode('utf-8'))
+
+        self.write(api.api_token.generate_token(data))
+
+
 def api_authenticated(method):
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
@@ -152,6 +168,9 @@ if __name__ == '__main__':
         (r'/user/login/?', LoginPage), #XXX: could be removed 
         (r'/user/login/persona/?', LoginHandler), # Post to persona by posting here
         (r'/user/logout/?', LogoutHandler),
+
+        # API tokens
+        (r'/user/generate-api-token/?', APITokenGenerator),
 
         # Testing
         (r'/api/surveys/?', SurveysAPI),
