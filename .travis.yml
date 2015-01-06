@@ -34,3 +34,8 @@ notifications:
   hipchat:
     rooms:
       secure: O1kfcW59uDkeCOj4NcxHpwCL77pfFxiRosfoRaXedMcV9llJZkZ7IYCc4HLIr52/sTN2eBrFetOoywRL3nrcrfaKIdbW+Dc+IdmesmOI1xMomsY+yWM79q38D1jiwkHbsGQIH4GTSsLSwTf8lFt7KfM3nKAgwEjApq8+zvnSM1w=
+    template:
+      - "%{repository}@%{branch}: %{message} (%{build_url})"
+    on_success: change
+    on_failure: change
+
