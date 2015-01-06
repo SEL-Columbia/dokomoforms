@@ -28,6 +28,20 @@ def survey_insert(*, auth_user_id=AUTH_USER_ID, title: str) -> Insert:
     return survey_table.insert().values(title=title, auth_user_id=auth_user_id)
 
 
+def get_surveys_for_user_by_email(email: str) -> ResultProxy:
+    """
+    Get all surveys for the specified user ordered by creation time.
+
+    :param email: the e-mail address of the user
+    :return: the corresponding survey records
+    """
+    condition = survey_table.c.auth_user_id == auth_user_table.c.auth_user_id
+    join_table = survey_table.join(auth_user_table, condition)
+    return join_table.select().where(
+        auth_user_table.c.email == email).order_by(
+        'created_on asc').execute().fetchall()
+
+
 def survey_select(survey_id: str) -> RowProxy:
     """
     Get a record from the survey table.

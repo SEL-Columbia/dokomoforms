@@ -5,6 +5,7 @@ This tornado server creates the client app by serving html/css/js and
 it also functions as the wsgi container for accepting survey form post
 requests back from the client app.
 """
+import functools
 import json
 import urllib.parse
 from tornado import httpclient
@@ -14,6 +15,10 @@ import tornado.ioloop
 
 import api.survey
 import api.submission
+import api.api_token
+import api.user
+from db.auth_user import verify_api_token, get_auth_user_by_email
+from db.survey import AUTH_USER_ID
 import settings
 from utils.logger import setup_custom_logger
 
@@ -22,87 +27,39 @@ logger = setup_custom_logger('dokomo')
 
 
 class BaseHandler(tornado.web.RequestHandler):
+    """Common handler functions here (e.g. user auth, template helpers)"""
+
     def get_current_user(self):
-        """Common handler functions here (e.g. user auth, template helpers)"""
         return self.get_secure_cookie('user')
 
 
-class Index(tornado.web.RequestHandler):
+class Index(BaseHandler):
     def get(self):
-        survey = api.survey.get_one(settings.SURVEY_ID)
+        survey = api.survey.get_one(settings.SURVEY_ID)  # XXX: get from url
         self.xsrf_token  # need to access it in order to set it...
         self.render('index.html', survey=json.dumps(survey))
 
     def post(self):
         data = json.loads(self.request.body.decode('utf-8'))
-
         self.write(api.submission.submit(data))
 
 
-class CreateSurvey(BaseHandler):
-    def get(self):
-        self.render('viktor-create-survey.html')
-
-    def post(self):
-        self.write(api.survey.create({'title': self.get_argument('title')}))
-
-
-class Surveys(BaseHandler):
-    def get(self):
-        surveys = api.survey.get_all()
-        self.write(json.dumps(surveys))
-
-    def post(self):
-        pass
+class FrontPage(BaseHandler):
+    def get(self, *args, **kwargs):
+        self.xsrf_token
+        if self.get_current_user() is not None:
+            self.render('profile-page.html')
+        else:
+            self.render('front-page.html')
 
 
-class Survey(BaseHandler):
-    def get(self, id):
-        survey = api.survey.get_one(id)
-        self.write(json.dumps(survey))
-
-    def post(self, id):
-        # Backward compatability for older browsers
-        method = self.get_argument('_method', None)
-        if method == 'DELETE':
-            return self.delete(id)
-
-        try:
-            # Validate data
-            data = json.loads(self.get_argument('data'))
-            data['title']
-            for question in data['questions']:
-                question['title']
-                question['type_constraint_name']
-        except:
-            raise tornado.web.HTTPError(400)
-
-        survey = api.survey.create(data)
-        self.write(json.dumps(survey))
-
-    def delete(self, id):
-        msg = api.survey.delete()
-        self.write(json.dumps(msg))
-
-
-class Submissions(BaseHandler):
-    def get(self):
-        submissions = api.submission.get_all()
-        self.write(json.dumps(submissions))
-
-    def post(self):
-        pass
-
-
-class FreshXSRFTokenHandler(BaseHandler):
-    def get(self):
-        logged_in = self.get_current_user() is not None
-        response = {'token': self.xsrf_token.decode('utf-8'),
-                    'logged_in': logged_in}
-        self.write(json.dumps(response))
-
-
+''' 
+Necessary for persona 
+'''
 class LoginHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.redirect('/user/login')
+
     @tornado.web.asynchronous
     @tornado.gen.engine
     def post(self):
@@ -119,9 +76,13 @@ class LoginHandler(tornado.web.RequestHandler):
         data = tornado.escape.json_decode(response.body)
         if data['status'] != "okay":
             raise tornado.web.HTTPError(400, "Failed assertion test")
-        self.set_secure_cookie('user', data['email'], expires_days=1)
+        api.user.create_user({'email': data['email']})
+        self.set_secure_cookie('user', data['email'], expires_days=None,
+                               # secure=True,
+                               httponly=True
+        )
         self.set_header("Content-Type", "application/json; charset=UTF-8")
-        response = {'next_url': '/'}
+        response = {'next_url': '/', 'email': data['email']}
         self.write(tornado.escape.json_encode(response))
         self.finish()
 
@@ -139,18 +100,41 @@ class PageRequiringLogin(BaseHandler):
         self.render('requires-login.html')
 
 
+def api_authenticated(method):
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        if not self.current_user:
+            token = self.request.headers['Token']
+            email = self.request.headers['Email']
+            if not verify_api_token(token=token, email=email):
+                raise tornado.web.HTTPError(403)
+        return method(self, *args, **kwargs)
+
+    return wrapper
+
+
+class SurveysAPI(BaseHandler):
+    @api_authenticated
+    def get(self):
+        surveys = api.survey.get_all(
+            {'email': self.current_user.decode('utf-8')})
+        self.write(json.dumps(surveys))
+
+
 class LogoutHandler(BaseHandler):
     def get(self):
-        self.redirect('/login')
+        self.xsrf_token
+        self.redirect('/user/login')
 
     def post(self):
         self.clear_cookie('user')
+
 
 config = {
     'template_path': 'static',
     'static_path': 'static',
     'xsrf_cookies': True,
-    'login_url': '/login',
+    'login_url': '/user/login',
     'cookie_secret': settings.COOKIE_SECRET,
     'debug': True  # Remove this
 }
@@ -158,16 +142,20 @@ config = {
 
 if __name__ == '__main__':
     app = tornado.web.Application([
-        (r'/', Index),
-        (r'/surveys', Surveys),
-        (r'/surveys/(.+)', Survey),
-        (r'/surveys/(.+)/submissions', Submissions),
-        (r'/viktor-create-survey', CreateSurvey),
-        (r'/login', LoginPage),
-        (r'/login/persona', LoginHandler),
-        (r'/logout', LogoutHandler),
-        (r'/requires-login', PageRequiringLogin),
-        (r'/csrf-token', FreshXSRFTokenHandler)
+        # Survey Submissions
+        (r'/', Index), # Ebola front page
+        
+        # Dokomo App Homepage
+        (r'/user/?', FrontPage), # Ideal front page
+
+        # Auth
+        (r'/user/login/?', LoginPage), #XXX: could be removed 
+        (r'/user/login/persona/?', LoginHandler), # Post to persona by posting here
+        (r'/user/logout/?', LogoutHandler),
+
+        # Testing
+        (r'/api/surveys/?', SurveysAPI),
+        (r'/user/requires-login/?', PageRequiringLogin),
     ], **config)
     app.listen(settings.WEBAPP_PORT, '0.0.0.0')
 

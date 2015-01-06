@@ -14,7 +14,7 @@ import db
 from db.answer import answer_insert, answer_table, get_answers, get_geo_json
 from db.answer_choice import answer_choice_insert, get_answer_choices
 from db.auth_user import auth_user_table, get_auth_user, create_auth_user, \
-    generate_api_token, set_api_token, verify_api_token
+    generate_api_token, set_api_token, verify_api_token, get_auth_user_by_email
 from db.question import get_questions, question_select, question_table, \
     get_free_sequence_number, question_insert
 from db.question_branch import get_branches, question_branch_insert, \
@@ -24,7 +24,8 @@ from db.question_choice import get_choices, question_choice_select, \
     QuestionChoiceDoesNotExistError
 from db.submission import submission_table, submission_insert, \
     submission_select, get_submissions
-from db.survey import survey_table, survey_insert, survey_select
+from db.survey import survey_table, survey_insert, survey_select, \
+    get_surveys_for_user_by_email
 
 
 class TestAnswer(unittest.TestCase):
@@ -172,6 +173,11 @@ class TestAuthUser(unittest.TestCase):
         user = get_auth_user(user_id)
         self.assertEqual(user.email, 'a')
 
+    def testGetAuthUserByEmail(self):
+        result = auth_user_table.insert({'email': 'a'}).execute()
+        user = get_auth_user_by_email('a')
+        self.assertEqual(user.email, 'a')
+
     def testCreateAuthUser(self):
         create_auth_user(email='a').execute()
         self.assertEqual(len(auth_user_table.select().where(
@@ -197,16 +203,15 @@ class TestAuthUser(unittest.TestCase):
         user_id = result.inserted_primary_key[0]
         token = generate_api_token()
         set_api_token(token=token, auth_user_id=user_id).execute()
-        self.assertTrue(verify_api_token(token=token, auth_user_id=user_id))
+        self.assertTrue(verify_api_token(token=token, email='a'))
         self.assertFalse(
-            verify_api_token(token=generate_api_token(), auth_user_id=user_id))
+            verify_api_token(token=generate_api_token(), email='a'))
 
 
     def testNoDefaultToken(self):
-        result = auth_user_table.insert({'email': 'a'}).execute()
-        user_id = result.inserted_primary_key[0]
+        auth_user_table.insert({'email': 'a'}).execute()
         self.assertFalse(
-            verify_api_token(token=generate_api_token(), auth_user_id=user_id))
+            verify_api_token(token=generate_api_token(), email='a'))
 
 
     def testTokenExpires(self):
@@ -217,13 +222,13 @@ class TestAuthUser(unittest.TestCase):
         set_api_token(token=token,
                       auth_user_id=user_id,
                       expiration=exp).execute()
-        self.assertTrue(verify_api_token(token=token, auth_user_id=user_id))
+        self.assertTrue(verify_api_token(token=token, email='a'))
         token2 = generate_api_token()
         exp2 = timedelta(hours=-1)
         set_api_token(token=token2,
                       auth_user_id=user_id,
                       expiration=exp2).execute()
-        self.assertFalse(verify_api_token(token=token2, auth_user_id=user_id))
+        self.assertFalse(verify_api_token(token=token2, email='a'))
 
 
 class TestQuestion(unittest.TestCase):
@@ -396,6 +401,14 @@ class TestSurvey(unittest.TestCase):
     def tearDown(self):
         survey_table.delete().where(
             survey_table.c.title == 'test insert').execute()
+
+    def testGetSurveysForUserByEmail(self):
+        user = auth_user_table.select().execute().first()
+        condition = survey_table.c.auth_user_id == user.auth_user_id
+        surveys = survey_table.select().where(condition).execute().fetchall()
+        surveys_by_email = get_surveys_for_user_by_email(user.email)
+        self.assertEqual(len(surveys), len(surveys_by_email))
+        self.assertEqual(surveys[0].survey_id, surveys_by_email[0].survey_id)
 
     def testSurveySelect(self):
         survey = survey_table.select().execute().first()

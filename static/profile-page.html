@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Viktor's Create a Survey Funhouse</title>
+    <title>Profile page</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="viewport" content="width=device-width, user-scalable=no">
@@ -23,12 +23,12 @@
         <svg class="icon nav__sync">
             <use xlink:href="#icon-sync"></use>
         </svg>
-        <a href="#" class="persona-button" id="login"><span>Sign in with your e-mail</span></a>
-        <div class="nav__title">Here is where you log in.</div>
+        <a href="/user/logout" class="persona-button" id="logout"><span>Logout</span></a>
+        <div class="nav__title">Profile page</div>
     </div>
 
     <div class="content">
-        Some content.
+        You are logged in as {{ current_user }}
     </div>
 
     <script src="https://login.persona.org/include.js"></script>

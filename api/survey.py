@@ -17,7 +17,7 @@ from db.question_choice import get_choices, question_choice_insert, \
     RepeatedChoiceError, QuestionChoiceDoesNotExistError
 from db.submission import get_submissions, submission_insert
 from db.survey import survey_insert, survey_select, survey_table, \
-    SurveyAlreadyExistsError, get_free_title
+    SurveyAlreadyExistsError, get_free_title, get_surveys_for_user_by_email
 from db.type_constraint import TypeConstraintDoesNotExistError
 
 
@@ -388,16 +388,14 @@ def get_one(survey_id: str) -> dict:
     return _to_json(survey)
 
 
-# TODO: restrict this by user
-# def get_all(data: dict) -> dict:
-def get_all() -> dict:
+def get_all(data: dict) -> dict:
     """
-    Return a JSON representation of all the surveys. In the future this will
-    be on a per-user basis.
+    Return a JSON representation of all the surveys for a user.
 
+    :param data: JSON containing the user's email.
     :return: the JSON string representation
     """
-    surveys = survey_table.select().execute()
+    surveys = get_surveys_for_user_by_email(data['email'])
     return [_to_json(survey) for survey in surveys]
 
 

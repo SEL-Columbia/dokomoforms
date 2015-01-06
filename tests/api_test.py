@@ -5,16 +5,21 @@ Tests for the dokomo JSON api
 import unittest
 import uuid
 from sqlalchemy import and_
+from datetime import datetime, timedelta
 
-from sqlalchemy.exc import DataError, InternalError, IntegrityError
+from sqlalchemy.exc import DataError, IntegrityError
+from passlib.hash import bcrypt_sha256
+
 from api import execute_with_exceptions
-
 import api.survey
 import api.submission
+import api.api_token
+import api.user
 import db
 from db.answer import answer_insert, CannotAnswerMultipleTimesError, \
     get_answers
-from db.answer_choice import get_answer_choices, answer_choice_table
+from db.answer_choice import get_answer_choices
+from db.auth_user import auth_user_table, create_auth_user, get_auth_user
 from db.question import question_table, get_questions, \
     QuestionDoesNotExistError, MissingMinimalLogicError
 from db.question_branch import get_branches, MultipleBranchError
@@ -244,7 +249,8 @@ class TestSurvey(unittest.TestCase):
         self.assertIsNotNone(data['questions'])
 
     def testGetAll(self):
-        surveys = api.survey.get_all()
+        surveys = api.survey.get_all(
+            {'email': auth_user_table.select().execute().first().email})
         self.assertGreater(len(surveys), 0)
 
     def testCreate(self):
@@ -732,6 +738,53 @@ class TestUtils(unittest.TestCase):
             self.assertRaises(IntegrityError, execute_with_exceptions,
                               connection, executable,
                               [('not in the error', ValueError)])
+
+
+class TestAPIToken(unittest.TestCase):
+    def tearDown(self):
+        auth_user_table.delete().where(
+            auth_user_table.c.email == 'api_test_email').execute()
+
+    def testGenerateToken(self):
+        user_id = create_auth_user(
+            email='api_test_email').execute().inserted_primary_key[0]
+        response = api.api_token.generate_token({'email': 'api_test_email'})
+        user = get_auth_user(auth_user_id=user_id)
+        self.assertTrue(bcrypt_sha256.verify(response['token'], user.token))
+        self.assertEqual(response['expires_on'][:10],
+                         str((datetime.now() + timedelta(days=60)).date()))
+
+    def testGenerateTokenWithDuration(self):
+        user_id = create_auth_user(
+            email='api_test_email').execute().inserted_primary_key[0]
+        response = api.api_token.generate_token({'email': 'api_test_email',
+                                                 'duration': 5.0})
+        user = get_auth_user(auth_user_id=user_id)
+        self.assertTrue(bcrypt_sha256.verify(response['token'], user.token))
+        self.assertEqual(response['expires_on'][:10],
+                         str(datetime.now().date()))
+
+    def testTokenDurationTooLong(self):
+        user_id = create_auth_user(
+            email='api_test_email').execute().inserted_primary_key[0]
+        self.assertRaises(api.api_token.TokenDurationTooLong,
+                          api.api_token.generate_token,
+                          {'email': 'api_test_email',
+                           'duration': 999999999999999})
+
+
+class TestUser(unittest.TestCase):
+    def tearDown(self):
+        auth_user_table.delete().where(
+            auth_user_table.c.email == 'api_user_test_email').execute()
+
+    def testCreateUser(self):
+        self.assertEqual(
+            api.user.create_user({'email': 'api_user_test_email'}),
+            {'email': 'api_user_test_email', 'response': 'Created'})
+        self.assertEqual(
+            api.user.create_user({'email': 'api_user_test_email'}),
+            {'email': 'api_user_test_email', 'response': 'Already exists'})
 
 
 if __name__ == '__main__':
