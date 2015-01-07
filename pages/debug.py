@@ -13,11 +13,10 @@ class DebugLoginHandler(BaseHandler):
     def post(self):
         email = self.get_argument('email')
         if get_auth_user_by_email(email) is not None:
-            self.set_secure_cookie('user', email,
-                                   expires_days=None,
+            self.set_secure_cookie('user', email, expires_days=None,
                                    # secure=True,
-                                   httponly=True
-            )
+                                   httponly=True,
+                                  )
             self.write('You are now logged in as {}'.format(email))
         else:
             self.write('No such user')
