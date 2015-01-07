@@ -1,5 +1,26 @@
 Dokomoform's REST JSON API.
 
+## Generating an API token
+
+POST a JSON message to the `/user/generate-api-token` endpoint (you must be logged in) in this format:
+
+```
+{
+    "email": "<e-mail address>",
+    "duration": <duration in seconds>
+}
+```
+
+The `duration` field is optional. Durations longer than 365 days are not allowed.
+
+Response:
+```
+{
+    "token": "<API token>",
+    "expires_on: "<ISO time>"
+}
+```
+
 ## Authentication
 
 Done through normal login + session cookies. Later we may add in HTTP Basic Auth to support other clients.

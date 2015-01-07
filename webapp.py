@@ -30,6 +30,10 @@ class BaseHandler(tornado.web.RequestHandler):
     """Common handler functions here (e.g. user auth, template helpers)"""
 
     tornado.web.RequestHandler.xsrf_token  # need to access it in order to set it...
+
+    def get(self):
+        raise tornado.web.HTTPError(404)
+
     def get_current_user(self):
         return self.get_secure_cookie('user')
 
@@ -97,6 +101,22 @@ class PageRequiringLogin(BaseHandler):
         self.render('requires-login.html')
 
 
+class APITokenGenerator(BaseHandler):
+    @tornado.web.authenticated
+    def get(self):
+        # self.render('api-token.html')
+        self.write(
+            api.api_token.generate_token(
+                {'email': self.get_current_user().decode('utf-8')}))
+
+
+    @tornado.web.authenticated
+    def post(self):
+        data = json.loads(self.request.body.decode('utf-8'))
+
+        self.write(api.api_token.generate_token(data))
+
+
 def api_authenticated(method):
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
@@ -127,6 +147,23 @@ class LogoutHandler(BaseHandler):
         self.clear_cookie('user')
 
 
+class DebugLoginHandler(BaseHandler):
+    def get(self):
+        self.render('debug-login.html')
+
+    def post(self):
+        email = self.get_argument('email')
+        if get_auth_user_by_email(email) is not None:
+            self.set_secure_cookie('user', email,
+                                   expires_days=None,
+                                   # secure=True,
+                                   httponly=True
+            )
+            self.write('You are now logged in as {}'.format(email))
+        else:
+            self.write('No such user')
+
+
 config = {
     'template_path': 'static',
     'static_path': 'static',
@@ -136,24 +173,31 @@ config = {
     'debug': True  # Remove this
 }
 
+pages = [# Survey Submissions
+    (r'/', Index),  # Ebola front page
+
+    # Dokomo App Homepage
+    (r'/user/?', FrontPage),  # Ideal front page
+
+    # Auth
+    (r'/user/login/?', LoginPage),  # XXX: could be removed
+    (r'/user/login/persona/?', LoginHandler),
+    # Post to persona by posting here
+    (r'/user/logout/?', LogoutHandler),
+
+    # API tokens
+    (r'/user/generate-api-token/?', APITokenGenerator),
+
+    # Testing
+    (r'/api/surveys/?', SurveysAPI),
+    (r'/user/requires-login/?', PageRequiringLogin),]
+
+if config.get('debug', False):
+    pages += [(r'/debug/login/?', DebugLoginHandler)]
+    config['login_url'] = '/debug/login'
 
 if __name__ == '__main__':
-    app = tornado.web.Application([
-        # Survey Submissions
-        (r'/', Index), # Ebola front page
-        
-        # Dokomo App Homepage
-        (r'/user/?', FrontPage), # Ideal front page
-
-        # Auth
-        (r'/user/login/?', LoginPage), #XXX: could be removed 
-        (r'/user/login/persona/?', LoginHandler), # Post to persona by posting here
-        (r'/user/logout/?', LogoutHandler),
-
-        # Testing
-        (r'/api/surveys/?', SurveysAPI),
-        (r'/user/requires-login/?', PageRequiringLogin),
-    ], **config)
+    app = tornado.web.Application(pages, **config)
     app.listen(settings.WEBAPP_PORT, '0.0.0.0')
 
     logger.info('starting server on port ' + str(settings.WEBAPP_PORT))

@@ -39,6 +39,8 @@ postgres=# \q
 5. `$ python3 manage_db.py --create`
 6. `$ python3 webapp.py`
 
+***Note that if `debug` is `True` in the `webapp.py` `config` variable, Anyone can log in as any user. DO NOT SET `debug` TO `True` IN PRODUCTION.**
+
 # Running the tests
 
 1. `$ pip-python3 install nose coverage`

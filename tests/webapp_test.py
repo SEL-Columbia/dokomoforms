@@ -7,12 +7,11 @@ import tornado.httpserver
 import tornado.httpclient
 import tornado.ioloop
 import tornado.web
-from urllib.parse import urlencode
 import json
 
 import unittest
 from db.answer import get_answers
-from db.question import question_table, get_questions
+from db.question import get_questions
 from db.submission import submission_table
 import settings
 
