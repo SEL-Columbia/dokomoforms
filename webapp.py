@@ -16,32 +16,46 @@ import api.submission
 import api.api_token
 import api.user
 from db.auth_user import verify_api_token
-from pages.auth import LoginPage, LoginHandler, LogoutHandler
+from pages.auth import LoginPage, LogoutHandler
 from pages.base import BaseHandler
 from pages.debug import DebugLoginHandler, DebugLogoutHandler
 import settings
 from utils.logger import setup_custom_logger
+
+from db.survey import SurveyDoesNotExistError, SurveyAlreadyExistsError
 
 
 logger = setup_custom_logger('dokomo')
 
 
 class Index(BaseHandler):
-    def get(self):
-        survey = api.survey.get_one(settings.SURVEY_ID)  # XXX: get from url
-        self.render('index.html', survey=json.dumps(survey))
+    def get(self, msg="Welcome"):
+        current_user = ""
+        if self.current_user:
+            current_user = self.current_user.decode('utf-8')
 
-    def post(self):
+        self.render('index.html', 
+                message=msg + " " + current_user,  # This is temporary don't panic
+                user=current_user)
+
+    def post(self, *args):
+        LogoutHandler.post(self) #TODO move to js
+        self.get("You logged out")
+
+class Survey(BaseHandler):
+    def get(self, uuid):
+        try:
+            survey = api.survey.get_one(uuid)
+            self.render('survey.html', 
+                    survey=json.dumps(survey), 
+                    title=survey['title'])
+
+        except SurveyDoesNotExistError:
+            Index.get(self, "Survey not found")
+
+    def post(self, *args):
         data = json.loads(self.request.body.decode('utf-8'))
         self.write(api.submission.submit(data))
-
-
-class FrontPage(BaseHandler):
-    def get(self, *args, **kwargs):
-        if self.current_user is not None:
-            self.render('profile-page.html')
-        else:
-            self.render('front-page.html')
 
 
 class PageRequiringLogin(BaseHandler):
@@ -91,21 +105,20 @@ config = {
     'template_path': 'static',
     'static_path': 'static',
     'xsrf_cookies': True,
-    'login_url': '/user/login',
+    'login_url': '/',
     'cookie_secret': settings.COOKIE_SECRET,
     'debug': True  # Remove this
 }
 
-pages = [  # Survey Submissions
+pages = [  
+           # Dokomo Forms
            (r'/', Index),  # Ebola front page
 
-           # Dokomo App Homepage
-           (r'/user/?', FrontPage),  # Ideal front page
+           # Survey Submissions
+           (r'/([a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12})', Survey),
 
            # Auth
-           (r'/user/login/?', LoginPage),  # XXX: could be removed
            (r'/user/login/persona/?', LoginHandler),  # Post to Persona here
-           (r'/user/logout/?', LogoutHandler),
 
            # API tokens
            (r'/user/generate-api-token/?', APITokenGenerator),
@@ -127,5 +140,4 @@ if __name__ == '__main__':
     logger.info('starting server on port ' + str(settings.WEBAPP_PORT))
 
     tornado.ioloop.IOLoop.current().start()
-
 

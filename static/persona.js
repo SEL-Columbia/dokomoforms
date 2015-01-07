@@ -40,13 +40,13 @@ function getCookie(name) {
         // (That's a literal JavaScript null. Not false, 0, or undefined. null.)
         $.ajax({
           type: 'POST',
-          url: '/user/logout', // This is a URL on your website.
+          url: '/', // This is a URL on your website.
           headers: {
             "X-XSRFToken": getCookie("_xsrf")
           },
           success: function(res, status, xhr) {
               localStorage.removeItem('email');
-              location.href = '/user';
+              location.href = '/';
           },
           error: function(xhr, status, err) { alert("Logout failure: " + err); }
         });

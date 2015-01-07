@@ -111,6 +111,13 @@ body {
     box-sizing: border-box;
 }
 
+.header {
+    text-align: center;
+    /*background: rgb(46, 204, 113);*/
+    color: rgb(10, 10, 10);
+    text-align: center;
+}
+
 .page_nav {
     position: absolute;
     bottom: 0;

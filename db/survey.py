@@ -9,7 +9,6 @@ from sqlalchemy.sql import Insert
 from db import engine
 from db.auth_user import auth_user_table
 
-
 survey_table = Table('survey', MetaData(bind=engine), autoload=True)
 
 # TODO: more than one user

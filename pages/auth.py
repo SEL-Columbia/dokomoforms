@@ -47,13 +47,6 @@ class LoginHandler(BaseHandler):
         self.finish()
 
 
-class LoginPage(BaseHandler):
-    """Trying to access a page requiring authentication sends you here."""
-
-    def get(self):
-        self.render('login.html')
-
-
 class LogoutHandler(BaseHandler):
     def post(self):
-        self.clear_cookie('user')
+        self.clear_cookie('user') #Move to js if possible
