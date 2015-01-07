@@ -2,6 +2,7 @@ CACHE MANIFEST
 # Version 0.00123
 
 /
+/static/persona.js
 /static/lib.js
 /static/app.js
 /static/style.css
