@@ -7,8 +7,6 @@ requests back from the client app.
 """
 import functools
 import json
-import urllib.parse
-from tornado import httpclient
 
 import tornado.web
 import tornado.ioloop
@@ -17,8 +15,10 @@ import api.survey
 import api.submission
 import api.api_token
 import api.user
-from db.auth_user import verify_api_token, get_auth_user_by_email
-from db.survey import AUTH_USER_ID
+from db.auth_user import verify_api_token
+from pages.auth import LoginPage, LoginHandler, LogoutHandler
+from pages.base import BaseHandler
+from pages.debug import DebugLoginHandler, DebugLogoutHandler
 import settings
 from utils.logger import setup_custom_logger
 
@@ -26,73 +26,22 @@ from utils.logger import setup_custom_logger
 logger = setup_custom_logger('dokomo')
 
 
-class BaseHandler(tornado.web.RequestHandler):
-    """Common handler functions here (e.g. user auth, template helpers)"""
-
-    tornado.web.RequestHandler.xsrf_token  # need to access it in order to set it...
-
-    def get(self):
-        raise tornado.web.HTTPError(404)
-
-    def get_current_user(self):
-        return self.get_secure_cookie('user')
-
-
 class Index(BaseHandler):
     def get(self):
         survey = api.survey.get_one(settings.SURVEY_ID)  # XXX: get from url
-        self.xsrf_token  # need to access it in order to set it...
         self.render('index.html', survey=json.dumps(survey))
 
     def post(self):
         data = json.loads(self.request.body.decode('utf-8'))
         self.write(api.submission.submit(data))
 
+
 class FrontPage(BaseHandler):
     def get(self, *args, **kwargs):
-        if self.get_current_user() is not None:
+        if self.current_user is not None:
             self.render('profile-page.html')
         else:
             self.render('front-page.html')
-
-
-''' 
-Necessary for persona 
-'''
-class LoginHandler(tornado.web.RequestHandler):
-    def get(self):
-        self.redirect('/user/login')
-
-    @tornado.web.asynchronous
-    @tornado.gen.engine
-    def post(self):
-        assertion = self.get_argument('assertion')
-        http_client = tornado.httpclient.AsyncHTTPClient()
-        url = 'https://verifier.login.persona.org/verify'
-        data = {'assertion': assertion, 'audience': 'localhost:8888'}
-        response = yield tornado.gen.Task(
-            http_client.fetch,
-            url,
-            method='POST',
-            body=urllib.parse.urlencode(data),
-        )
-        data = tornado.escape.json_decode(response.body)
-        if data['status'] != "okay":
-            raise tornado.web.HTTPError(400, "Failed assertion test")
-        api.user.create_user({'email': data['email']})
-        self.set_secure_cookie('user', data['email'], expires_days=None,
-                               # secure=True,
-                               httponly=True
-        )
-        self.set_header("Content-Type", "application/json; charset=UTF-8")
-        response = {'next_url': '/', 'email': data['email']}
-        self.write(tornado.escape.json_encode(response))
-        self.finish()
-
-
-class LoginPage(BaseHandler):
-    def get(self):
-        self.render('login.html')
 
 
 class PageRequiringLogin(BaseHandler):
@@ -107,7 +56,7 @@ class APITokenGenerator(BaseHandler):
         # self.render('api-token.html')
         self.write(
             api.api_token.generate_token(
-                {'email': self.get_current_user().decode('utf-8')}))
+                {'email': self.current_user.decode('utf-8')}))
 
 
     @tornado.web.authenticated
@@ -138,32 +87,6 @@ class SurveysAPI(BaseHandler):
         self.write(json.dumps(surveys))
 
 
-class LogoutHandler(BaseHandler):
-    def get(self):
-        self.xsrf_token
-        self.redirect('/user/login')
-
-    def post(self):
-        self.clear_cookie('user')
-
-
-class DebugLoginHandler(BaseHandler):
-    def get(self):
-        self.render('debug-login.html')
-
-    def post(self):
-        email = self.get_argument('email')
-        if get_auth_user_by_email(email) is not None:
-            self.set_secure_cookie('user', email,
-                                   expires_days=None,
-                                   # secure=True,
-                                   httponly=True
-            )
-            self.write('You are now logged in as {}'.format(email))
-        else:
-            self.write('No such user')
-
-
 config = {
     'template_path': 'static',
     'static_path': 'static',
@@ -173,28 +96,29 @@ config = {
     'debug': True  # Remove this
 }
 
-pages = [# Survey Submissions
-    (r'/', Index),  # Ebola front page
+pages = [  # Survey Submissions
+           (r'/', Index),  # Ebola front page
 
-    # Dokomo App Homepage
-    (r'/user/?', FrontPage),  # Ideal front page
+           # Dokomo App Homepage
+           (r'/user/?', FrontPage),  # Ideal front page
 
-    # Auth
-    (r'/user/login/?', LoginPage),  # XXX: could be removed
-    (r'/user/login/persona/?', LoginHandler),
-    # Post to persona by posting here
-    (r'/user/logout/?', LogoutHandler),
+           # Auth
+           (r'/user/login/?', LoginPage),  # XXX: could be removed
+           (r'/user/login/persona/?', LoginHandler),  # Post to Persona here
+           (r'/user/logout/?', LogoutHandler),
 
-    # API tokens
-    (r'/user/generate-api-token/?', APITokenGenerator),
+           # API tokens
+           (r'/user/generate-api-token/?', APITokenGenerator),
 
-    # Testing
-    (r'/api/surveys/?', SurveysAPI),
-    (r'/user/requires-login/?', PageRequiringLogin),]
+           # Testing
+           (r'/api/surveys/?', SurveysAPI),
+           (r'/user/requires-login/?', PageRequiringLogin),
+]
 
 if config.get('debug', False):
-    pages += [(r'/debug/login/?', DebugLoginHandler)]
-    config['login_url'] = '/debug/login'
+    pages += [(r'/debug/login/?', DebugLoginHandler),
+              (r'/debug/logout/?', DebugLogoutHandler),
+    ]
 
 if __name__ == '__main__':
     app = tornado.web.Application(pages, **config)

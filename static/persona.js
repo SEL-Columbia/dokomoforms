@@ -46,7 +46,7 @@ function getCookie(name) {
           },
           success: function(res, status, xhr) {
               localStorage.removeItem('email');
-              window.location.reload();
+              location.href = '/user';
           },
           error: function(xhr, status, err) { alert("Logout failure: " + err); }
         });
