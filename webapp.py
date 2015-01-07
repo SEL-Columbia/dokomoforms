@@ -29,6 +29,8 @@ logger = setup_custom_logger('dokomo')
 class BaseHandler(tornado.web.RequestHandler):
     """Common handler functions here (e.g. user auth, template helpers)"""
 
+    tornado.web.RequestHandler.xsrf_token  # need to access it in order to set it...
+
     def get(self):
         raise tornado.web.HTTPError(404)
 
@@ -46,10 +48,8 @@ class Index(BaseHandler):
         data = json.loads(self.request.body.decode('utf-8'))
         self.write(api.submission.submit(data))
 
-
 class FrontPage(BaseHandler):
     def get(self, *args, **kwargs):
-        self.xsrf_token
         if self.get_current_user() is not None:
             self.render('profile-page.html')
         else:
@@ -92,14 +92,12 @@ class LoginHandler(tornado.web.RequestHandler):
 
 class LoginPage(BaseHandler):
     def get(self):
-        self.xsrf_token
         self.render('login.html')
 
 
 class PageRequiringLogin(BaseHandler):
     @tornado.web.authenticated
     def get(self):
-        self.xsrf_token
         self.render('requires-login.html')
 
 
