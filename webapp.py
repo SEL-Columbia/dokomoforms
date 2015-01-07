@@ -16,7 +16,7 @@ import api.submission
 import api.api_token
 import api.user
 from db.auth_user import verify_api_token
-from pages.auth import LoginPage, LogoutHandler
+from pages.auth import LogoutHandler, LoginHandler
 from pages.base import BaseHandler
 from pages.debug import DebugLoginHandler, DebugLogoutHandler
 import settings
