@@ -15,7 +15,7 @@ from db.question import get_questions
 from db.submission import submission_table
 import settings
 
-from webapp import Index, config
+from webapp import Index, Survey, config
 
 from db.survey import survey_table
 
@@ -36,6 +36,7 @@ class TestDokomoWebapp(unittest.TestCase):
     def setUp(self):
         application = tornado.web.Application([
                 (r'/', Index),
+                (r'/([a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12})', Survey),
                 ], **new_config)
         self.http_server = tornado.httpserver.HTTPServer(application)
         self.http_server.listen(TEST_PORT)
@@ -56,7 +57,7 @@ class TestDokomoWebapp(unittest.TestCase):
         tornado.ioloop.IOLoop.instance().start()
         self.assertFalse(self.response.error)
         # Test contents of response
-        self.assertIn(u'<title>Ebola Response</title>', str(self.response.body))
+        self.assertIn(u'<title>Dokomo Forms</title>', str(self.response.body))
 
     def testFormPost(self):
         survey_id = survey_table.select().execute().first().survey_id
@@ -67,7 +68,7 @@ class TestDokomoWebapp(unittest.TestCase):
 
         # prepare the POST request
         http_client = tornado.httpclient.AsyncHTTPClient()
-        req = tornado.httpclient.HTTPRequest(url='http://localhost:%d/' % TEST_PORT,
+        req = tornado.httpclient.HTTPRequest(url='http://localhost:%d/%s' % (TEST_PORT, survey_id),
                                              method='POST',
                                              headers=POST_HDRS,
                                              body=json.dumps(answer_json))

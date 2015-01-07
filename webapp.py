@@ -53,7 +53,7 @@ class Survey(BaseHandler):
         except SurveyDoesNotExistError:
             Index.get(self, "Survey not found")
 
-    def post(self, *args):
+    def post(self, uuid):
         data = json.loads(self.request.body.decode('utf-8'))
         self.write(api.submission.submit(data))
 
