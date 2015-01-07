@@ -38,7 +38,7 @@
     </div>
     
     <div class="page_nav">
-        {% if not user %}
+        {% if not current_user %}
         <a href="#" class="persona-button" id="login"><span>Sign in with your e-mail</span></a>
         {% else %}
         <a href="#" class="persona-button" id="logout"><span>Logout</span></a>
@@ -50,7 +50,7 @@
     <script src="/static/lib.js"></script>
     <script src="/static/app.js"></script>
     <script>
-        App.message("{{ message }}");
+        App.message("{{ message }} {{ '' if current_user is None else current_user }}");
     </script>
 </body>
 

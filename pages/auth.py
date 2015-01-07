@@ -7,7 +7,7 @@ import tornado.gen
 import tornado.httpclient
 
 import api.user
-from pages.base import BaseHandler
+from pages.util.base import BaseHandler
 
 
 class LoginHandler(BaseHandler):

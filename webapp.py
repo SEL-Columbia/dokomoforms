@@ -5,7 +5,6 @@ This tornado server creates the client app by serving html/css/js and
 it also functions as the wsgi container for accepting survey form post
 requests back from the client app.
 """
-import functools
 import json
 
 import tornado.web
@@ -15,14 +14,14 @@ import api.survey
 import api.submission
 import api.api_token
 import api.user
-from db.auth_user import verify_api_token
 from pages.auth import LogoutHandler, LoginHandler
-from pages.base import BaseHandler
+from pages.api.submissions import SubmissionsAPI, SingleSubmissionAPI
+from pages.api.surveys import SurveysAPI, SingleSurveyAPI
+from pages.util.base import BaseHandler
 from pages.debug import DebugLoginHandler, DebugLogoutHandler
 import settings
 from utils.logger import setup_custom_logger
-
-from db.survey import SurveyDoesNotExistError, SurveyAlreadyExistsError
+from db.survey import SurveyDoesNotExistError
 
 
 logger = setup_custom_logger('dokomo')
@@ -30,28 +29,24 @@ logger = setup_custom_logger('dokomo')
 
 class Index(BaseHandler):
     def get(self, msg="Welcome"):
-        current_user = ""
-        if self.current_user:
-            current_user = self.current_user.decode('utf-8')
-
-        self.render('index.html', 
-                message=msg + " " + current_user,  # This is temporary don't panic
-                user=current_user)
+        self.render('index.html', message=msg)  # This is temporary don't panic
 
     def post(self, *args):
         LogoutHandler.post(self) #TODO move to js
         self.get("You logged out")
 
+
 class Survey(BaseHandler):
-    def get(self, uuid):
+    def get(self, survey_id: str):
         try:
-            survey = api.survey.get_one(uuid)
-            self.render('survey.html', 
-                    survey=json.dumps(survey), 
-                    title=survey['title'])
+            survey = api.survey.display_survey(survey_id)
+            self.render('survey.html',
+                        survey=json.dumps(survey),
+                        title=survey['title'])
 
         except SurveyDoesNotExistError:
-            Index.get(self, "Survey not found")
+            raise tornado.web.HTTPError(404) # Viktor -- I think this is better
+            #Index.get(self, "Survey not found")
 
     def post(self, uuid):
         data = json.loads(self.request.body.decode('utf-8'))
@@ -80,27 +75,6 @@ class APITokenGenerator(BaseHandler):
         self.write(api.api_token.generate_token(data))
 
 
-def api_authenticated(method):
-    @functools.wraps(method)
-    def wrapper(self, *args, **kwargs):
-        if not self.current_user:
-            token = self.request.headers['Token']
-            email = self.request.headers['Email']
-            if not verify_api_token(token=token, email=email):
-                raise tornado.web.HTTPError(403)
-        return method(self, *args, **kwargs)
-
-    return wrapper
-
-
-class SurveysAPI(BaseHandler):
-    @api_authenticated
-    def get(self):
-        surveys = api.survey.get_all(
-            {'email': self.current_user.decode('utf-8')})
-        self.write(json.dumps(surveys))
-
-
 config = {
     'template_path': 'static',
     'static_path': 'static',
@@ -110,12 +84,15 @@ config = {
     'debug': True  # Remove this
 }
 
-pages = [  
+uuid_regex = '[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[' \
+             'a-f0-9]{12}'
+
+pages = [
            # Dokomo Forms
            (r'/', Index),  # Ebola front page
 
            # Survey Submissions
-           (r'/([a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12})', Survey),
+           (r'/({})/?'.format(uuid_regex), Survey),
 
            # Auth
            (r'/user/login/persona/?', LoginHandler),  # Post to Persona here
@@ -125,6 +102,11 @@ pages = [
 
            # Testing
            (r'/api/surveys/?', SurveysAPI),
+           (r'/api/surveys/({})/?'.format(uuid_regex), SingleSurveyAPI),
+           (r'/api/surveys/({})/submissions/?'.format(uuid_regex),
+            SubmissionsAPI),
+           (r'/api/submissions/({})/?'.format(uuid_regex),
+            SingleSubmissionAPI),
            (r'/user/requires-login/?', PageRequiringLogin),
 ]
 
@@ -140,4 +122,3 @@ if __name__ == '__main__':
     logger.info('starting server on port ' + str(settings.WEBAPP_PORT))
 
     tornado.ioloop.IOLoop.current().start()
-

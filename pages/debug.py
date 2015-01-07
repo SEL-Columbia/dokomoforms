@@ -1,7 +1,7 @@
 """Pages pertaining to debug-specific functionality."""
 
 from db.auth_user import get_auth_user_by_email
-from pages.base import BaseHandler
+from pages.util.base import BaseHandler
 
 
 class DebugLoginHandler(BaseHandler):

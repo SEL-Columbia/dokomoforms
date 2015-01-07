@@ -4,19 +4,16 @@ from collections import Iterator
 from sqlalchemy import Table, MetaData
 
 from sqlalchemy.engine import RowProxy, ResultProxy
-from sqlalchemy.sql import Insert
+from sqlalchemy.sql import Insert, and_
 
 from db import engine
 from db.auth_user import auth_user_table
 
+
 survey_table = Table('survey', MetaData(bind=engine), autoload=True)
 
-# TODO: more than one user
-AUTH_USER_ID = auth_user_table.select().execute().first().auth_user_id
 
-
-# TODO: remove hardcoded user
-def survey_insert(*, auth_user_id=AUTH_USER_ID, title: str) -> Insert:
+def survey_insert(*, auth_user_id: str, title: str) -> Insert:
     """
     Insert a record into the survey table.
 
@@ -41,9 +38,9 @@ def get_surveys_for_user_by_email(email: str) -> ResultProxy:
         'created_on asc').execute().fetchall()
 
 
-def survey_select(survey_id: str) -> RowProxy:
+def display(survey_id: str) -> RowProxy:
     """
-    Get a record from the survey table.
+    Only use this to display a single survey for submission purposes.
 
     :param survey_id: the UUID of the survey
     :return: the corresponding record
@@ -54,6 +51,55 @@ def survey_select(survey_id: str) -> RowProxy:
     if survey is None:
         raise SurveyDoesNotExistError(survey_id)
     return survey
+
+
+def survey_select(survey_id: str,
+                  auth_user_id: str=None,
+                  email: str=None) -> RowProxy:
+    """
+    Get a record from the survey table. You must supply either the
+    auth_user_id or the email.
+
+    :param survey_id: the UUID of the survey
+    :param auth_user_id: the UUID of the user
+    :param email: the user's e-mail address
+    :return: the corresponding record
+    :raise SurveyDoesNotExistError: if the UUID is not in the table
+    """
+    if auth_user_id is not None:
+        if email is not None:
+            raise TypeError('You cannot specify both auth_user_id and email')
+        table = survey_table
+        condition = and_(survey_table.c.survey_id == survey_id,
+                         survey_table.c.auth_user_id == auth_user_id)
+    elif email is not None:
+        j_cond = survey_table.c.auth_user_id == auth_user_table.c.auth_user_id
+        table = survey_table.join(auth_user_table, j_cond)
+        condition = and_(survey_table.c.survey_id == survey_id,
+                         auth_user_table.c.email == email)
+    else:
+        raise TypeError('You must specify either auth_user_id or email')
+
+    survey = table.select().where(condition).execute().first()
+    if survey is None:
+        raise SurveyDoesNotExistError(survey_id)
+    return survey
+
+
+def get_email_address(survey_id: str) -> str:
+    """
+    Dangerous function! Do not use this to circumvent the restriction
+    that a survey can only be seen by its owner!
+
+    Gets the e-mail address associated with a survey.
+
+    :param survey_id: the UUID of the survey
+    :return: the user's e-mail address
+    """
+    condition = auth_user_table.c.auth_user_id == survey_table.c.auth_user_id
+    join_table = auth_user_table.join(survey_table, condition)
+    return join_table.select().where(
+        survey_table.c.survey_id == survey_id).execute().first().email
 
 
 def _conflicting(title: str, surveys: ResultProxy) -> Iterator:
