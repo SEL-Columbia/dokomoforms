@@ -5,28 +5,30 @@ App = {
 App.init = function(survey) {
     var self = this;
     self.survey = new Survey(survey.survey_id, survey.questions);
-    
+
+    // Manual sync    
     $('.nav__sync')
         .click(function() {
-            App.sync();
+            self.sync();
         });
         
-        
     // Syncing intervals
-    setInterval(function() {
-        if (navigator.onLine && self.unsynced.length) {
-            _.each(self.unsynced, function(survey) {
-                survey.submit();
-            });
-            self.unsynced = []; //XXX: Surveys can fail again, better to pop unsuccess;
-        }
-    }, 10000);
+    setInterval(App.sync, 10000);
     
     // AppCache updates
     window.applicationCache.addEventListener('updateready', function() {
         alert('app updated, reloading...');
         window.location.reload();
     });
+};
+
+App.sync = function() {
+    if (navigator.onLine && App.unsynced.length) {
+        _.each(App.unsynced, function(survey) {
+            survey.submit();
+        });
+        App.unsynced = []; //XXX: Surveys can fail again, better to pop unsuccess;
+    }
 };
 
 App.message = function(text) {

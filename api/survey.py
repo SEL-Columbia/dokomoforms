@@ -9,15 +9,17 @@ from db import engine, delete_record, update_record
 from db.answer import get_answers_for_question, answer_insert
 from db.answer_choice import get_answer_choices_for_choice_id, \
     answer_choice_insert
+from db.auth_user import get_auth_user_by_email
 from db.question import question_insert, MissingMinimalLogicError, \
     question_select, get_questions
 from db.question_branch import get_branches, question_branch_insert, \
     MultipleBranchError
 from db.question_choice import get_choices, question_choice_insert, \
     RepeatedChoiceError, QuestionChoiceDoesNotExistError
-from db.submission import get_submissions, submission_insert
+from db.submission import get_submissions_by_email, submission_insert
 from db.survey import survey_insert, survey_select, survey_table, \
-    SurveyAlreadyExistsError, get_free_title, get_surveys_for_user_by_email
+    SurveyAlreadyExistsError, get_free_title, get_surveys_for_user_by_email, \
+    display
 from db.type_constraint import TypeConstraintDoesNotExistError
 
 
@@ -237,22 +239,24 @@ def _create_branches(connection: Connection,
 
 def _copy_submission_entries(connection: Connection,
                              existing_survey_id: str,
-                             new_survey_id: str) -> tuple:
+                             new_survey_id: str,
+                             email: str) -> tuple:
     """
     Copy submissions from an existing survey to its updated copy.
 
     :param connection: the SQLAlchemy connection used for the transaction
     :param existing_survey_id: the UUID of the existing survey
     :param new_survey_id: the UUID of the survey's updated copy
+    :param email: the user's e-mail address
     :return: a tuple containing the old and new submission IDs
     """
-    for submission in get_submissions(existing_survey_id):
-        values = {'submitter': submission.submitter,
-                  'submission_time': submission.submission_time,
-                  'field_update_time': submission.field_update_time,
+    for sub in get_submissions_by_email(existing_survey_id, email=email):
+        values = {'submitter': sub.submitter,
+                  'submission_time': sub.submission_time,
+                  'field_update_time': sub.field_update_time,
                   'survey_id': new_survey_id}
         result = connection.execute(submission_insert(**values))
-        yield submission.submission_id, result.inserted_primary_key[0]
+        yield sub.submission_id, result.inserted_primary_key[0]
 
 
 def _create_survey(connection: Connection, data: dict) -> str:
@@ -267,16 +271,14 @@ def _create_survey(connection: Connection, data: dict) -> str:
     """
     is_update = 'survey_id' in data
 
-    survey_id = None
-
-    # user_id = json_data['auth_user_id']
+    email = data['email']
+    user_id = get_auth_user_by_email(email).auth_user_id
     title = data['title']
     data_q = data['questions']
 
     # First, create an entry in the survey table
     safe_title = get_free_title(title)
-    survey_values = {  # 'auth_user_id': user_id,
-                       'title': safe_title}
+    survey_values = {'auth_user_id': user_id, 'title': safe_title}
     executable = survey_insert(**survey_values)
     exc = [('survey_title_survey_owner_key',
             SurveyAlreadyExistsError(safe_title))]
@@ -290,7 +292,8 @@ def _create_survey(connection: Connection, data: dict) -> str:
         submission_map = {entry[0]: entry[1] for entry in
                           _copy_submission_entries(connection,
                                                    data['survey_id'],
-                                                   survey_id)}
+                                                   survey_id,
+                                                   data['email'])}
 
     # Now insert questions.  Inserting branches has to come afterward so
     # that the question_id values actually exist in the tables.
@@ -308,13 +311,10 @@ def create(data: dict) -> dict:
     :param data: a JSON representation of the survey to be created
     :return: a JSON representation of the created survey
     """
-
-    survey_id = None
-
     with engine.begin() as connection:
         survey_id = _create_survey(connection, data)
 
-    return get_one(survey_id)
+    return get_one(survey_id, email=data['email'])
 
 
 def _get_choice_fields(choice: RowProxy) -> dict:
@@ -377,25 +377,39 @@ def _to_json(survey: RowProxy) -> dict:
             'questions': question_fields}
 
 
-def get_one(survey_id: str) -> dict:
+def display_survey(survey_id: str) -> dict:
     """
-    Get a JSON representation of a survey.
+    Get a JSON representation of a survey. Use this to display a survey for
+    submission purposes.
 
-    :param data: JSON containing the UUID of the survey
+    :param survey_id: the UUID of the survey
     :return: the JSON representation.
     """
-    survey = survey_select(survey_id)
+    return _to_json(display(survey_id))
+
+
+def get_one(survey_id: str, auth_user_id: str=None, email: str=None) -> dict:
+    """
+    Get a JSON representation of a survey. You must supply either the
+    auth_user_id or the email of the user.
+
+    :param survey_id: the UUID of the survey
+    :param auth_user_id: the UUID of the user
+    :param email: the e-mail address of the user
+    :return: the JSON representation.
+    """
+    survey = survey_select(survey_id, auth_user_id=auth_user_id, email=email)
     return _to_json(survey)
 
 
-def get_all(data: dict) -> dict:
+def get_all(email: str) -> dict:
     """
     Return a JSON representation of all the surveys for a user.
 
-    :param data: JSON containing the user's email.
+    :param email: the user's e-mail address.
     :return: the JSON string representation
     """
-    surveys = get_surveys_for_user_by_email(data['email'])
+    surveys = get_surveys_for_user_by_email(email)
     return [_to_json(survey) for survey in surveys]
 
 
@@ -409,10 +423,10 @@ def update(data: dict):
     :param data: JSON containing the UUID of the survey and fields to update.
     """
     survey_id = data['survey_id']
-    existing_survey = survey_select(survey_id)
+    email = data['email']
+    existing_survey = survey_select(survey_id, email=email)
     update_time = datetime.datetime.now()
 
-    new_survey_id = None
     with engine.connect() as connection:
         new_title = '{} (new version created on {})'.format(
             existing_survey.title, update_time.isoformat())
@@ -424,7 +438,7 @@ def update(data: dict):
 
         new_survey_id = _create_survey(connection, data)
 
-    return get_one(new_survey_id)
+    return get_one(new_survey_id, email=email)
 
 
 def delete(survey_id: str):

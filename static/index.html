@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html manifest2="/static/cache.appcache">
 <head>
-    <title>Ebola Response</title>
+    <title>Dokomo Forms</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="viewport" content="width=device-width, user-scalable=no">
@@ -25,13 +25,13 @@
         </symbol>
     </svg>
     
-    <div class="nav">
-        <svg class="icon nav__sync">
-            <use xlink:href="#icon-sync"></use>
-        </svg>
-        <div class="nav__title">EbolaResponse</div>
+     <div class="nav__title">Dokomo Forms</div>
+        <div class="icon nav__sync sel_logo">
+            <a href="http://sel.columbia.edu">
+            <img src="/static/img/SEL_logo_sm.png">
+            </a>
+        </div>
     </div>
-    
     <div class="message"></div>
 
     <div class="content">
@@ -72,7 +72,16 @@
         </span>
         </div>
     </div>
-</body>
 
+    <script src="https://login.persona.org/include.js"></script>
+    <script src="/static/persona.js"></script>
+    <script src="/static/lib.js"></script>
+    <script src="/static/app.js"></script>
+    {% if message %}
+    <script>
+        App.message("{{ message }}");
+    </script>
+    {% end %}
+</body>
 </html>
 
