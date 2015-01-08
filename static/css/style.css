@@ -17,11 +17,8 @@ body {
     color: rgba(0,0,0,0.7);
     font-size: 18px;
     font-family: 'Droid Sans', 'Helvetica Neue', helvetica, sans-serif;
-<<<<<<< HEAD:static/style.css
     color: rgb(16, 42, 16);
-=======
->>>>>>> staging:static/css/style.css
-    padding: 75px 0;
+    padding: 75px 0px;
     overflow-x: hidden;
     -webkit-tap-highlight-color: transparent;
 }
@@ -121,7 +118,6 @@ body {
     width: 100%;
     height: 100%;
     padding: 50px 25px;
-<<<<<<< HEAD:static/style.css
     min-height: 400px;
     min-width: 400px;
 }
@@ -165,65 +161,11 @@ body {
     width: 55%;
     float: left;
     padding: 10px 10px;
-=======
-}
-
-.welcome {
-    font-size: 0.75em;
-    box-sizing: border-box;
-    float: left;
-    width: 35%;
-    background: rgb(225,225,225);
-    border-radius: 7px;
-    padding: 20px 10px;
-    height: 100%;
-    z-index: 0;
-    position: relative;
-}
-
-.activities {
-    position: absolute;
-    bottom: 25px;
-    width: 100%;
-}
-
-.activity_nav {
-    height: 25px;
-    background: rgb(46, 204, 113);
-    border-radius: 7px;
-    box-sizing: border-box;
-    padding: 6px 10px;
-    padding-left: 20px;
-    margin: 0px 8px;
-    color: rgb(255, 255, 255);
-    text-decoration: none;
-    -moz-box-shadow: 0 0 2px #888;
-    -webkit-box-shadow: 0 0 2px#888;
-    box-shadow: 0 0 2px #888;
-    
-}
-
-.about{
-    box-sizing: border-box;
-    width: 60%;
-    float: left;
-    padding: 20px 10px;
->>>>>>> staging:static/css/style.css
     height: 100%;
     margin-left: 10px;
     position: relative;
     z-index: 0;
 }
-
-<<<<<<< HEAD:static/style.css
-=======
-.login {
-    position: absolute;
-    bottom: 0px;
-    width: 100%;
-    left: 65%;
-}
->>>>>>> staging:static/css/style.css
 
 .about h3 {
     margin: 0px;
@@ -310,13 +252,8 @@ body {
 
 .sel_text_logo span{
     float: right;
-<<<<<<< HEAD:static/style.css
     font-size: 0.55em;
     color: rgb(35, 45, 35);
-=======
-    font-size: 0.5em;
-    color: rgb(35, 35, 35);
->>>>>>> staging:static/css/style.css
     margin: auto;
     padding-top: 40px;
 }
