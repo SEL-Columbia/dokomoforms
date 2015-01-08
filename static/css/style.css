@@ -3,20 +3,22 @@ html {
     background: rgb(242,235,232);
     overflow: auto;
     height: 100%;
+    width: 100%;
 }
 
 body {
     position: relative;
     box-sizing: border-box;
-    max-width: 600px;
+    width: 100%;
     height: 100%;
+    max-width: 600px;
     max-height: 600px;
-    margin: auto;
+    margin: 0px auto;
     background: white;
     color: rgba(0,0,0,0.7);
     font-size: 18px;
     font-family: 'Droid Sans', 'Helvetica Neue', helvetica, sans-serif;
-    padding: 60px 0;
+    padding: 75px 0;
     overflow-x: hidden;
     -webkit-tap-highlight-color: transparent;
 }
@@ -53,7 +55,6 @@ body {
     -moz-animation: spin 1.5s linear infinite;
 }
 
-
 .text_input {
     display: block;
     font-size: 20px;
@@ -80,16 +81,21 @@ body {
     width: 100%;
     background: rgb(46, 204, 113);
     color: white;
-    padding: 15px;
+    padding: 5px;
 }
+
 .nav__title {
     font-size: 22px;
+    display: inline-block;
+    padding: 15px;
 }
+
 .nav__sync {
     float: right;
     height: 25px;
     width: 25px;
     fill: rgba(0, 0, 0, 0.7);
+    display: inline-block;
     cursor: pointer;
 }
 
@@ -104,11 +110,76 @@ body {
     border-radius: 7px;
     text-align: center;
     font-size: 18px;
+    z-index: 99;
 }
 
 .content {
-    padding: 50px 25px;
     box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    padding: 50px 25px;
+}
+
+.welcome {
+    font-size: 0.75em;
+    box-sizing: border-box;
+    float: left;
+    width: 35%;
+    background: rgb(225,225,225);
+    border-radius: 7px;
+    padding: 20px 10px;
+    height: 100%;
+    z-index: 0;
+    position: relative;
+}
+
+.activities {
+    position: absolute;
+    bottom: 25px;
+    width: 100%;
+}
+
+.activity_nav {
+    height: 25px;
+    background: rgb(46, 204, 113);
+    border-radius: 7px;
+    box-sizing: border-box;
+    padding: 6px 10px;
+    padding-left: 20px;
+    margin: 0px 8px;
+    color: rgb(255, 255, 255);
+    text-decoration: none;
+    -moz-box-shadow: 0 0 2px #888;
+    -webkit-box-shadow: 0 0 2px#888;
+    box-shadow: 0 0 2px #888;
+    
+}
+
+.about{
+    box-sizing: border-box;
+    width: 60%;
+    float: left;
+    padding: 20px 10px;
+    height: 100%;
+    margin-left: 10px;
+    position: relative;
+    z-index: 0;
+}
+
+.login {
+    position: absolute;
+    bottom: 0px;
+    width: 100%;
+    left: 65%;
+}
+
+.about h3 {
+    margin: 0px;
+}
+
+.about p {
+    padding-left: 5px;
+    font-size: 0.75em;
 }
 
 .header {
@@ -126,12 +197,15 @@ body {
     background: rgb(210, 210, 210);
     padding: 10px;
     box-sizing: border-box;
+    height: 75px;
 }
+
 .page_nav__center {
     width: 75%;
     max-width: 270px;
     margin: auto;
 }
+
 .page_nav__progress {
     color: rgba(0,0,0,0.5);
     font-size: 20px;
@@ -159,7 +233,36 @@ body {
     float: right;
 }
 
+.sel_logo {
+    display: inline-block;
+    float: right;
+    width: 50px;
+    height: 50px;
+    padding: 0px 20px;
+}
 
+.sel_logo img{
+    width: 50px;
+    height: 50px;
+}
+
+.sel_text_logo img{
+    padding: 0px 10px;
+    padding-top: 5px;
+    height: 50px;
+}
+
+.sel_text_logo a{
+    text-decoration: none;
+}
+
+.sel_text_logo span{
+    float: right;
+    font-size: 0.5em;
+    color: rgb(35, 35, 35);
+    margin: auto;
+    padding-top: 40px;
+}
 
 /* Survey
 ==================================================*/
@@ -167,6 +270,7 @@ body {
     text-align: center;
     font-size: 25px;
 }
+
 .question__btn {
     cursor: pointer;
     display: block;
@@ -178,22 +282,14 @@ body {
     margin: 25px auto;
     width: 120px;
 }
+
 .question__btn:hover {
     background: rgba(0,0,0,0.3);
 }
+
 .question__saving {
     display: block;
     width: 50px;
     height: 50px;
     margin: 20px auto;
 }
-
-
-
-
-
-
-
-
-
-
