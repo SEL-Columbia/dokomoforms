@@ -28,8 +28,12 @@ logger = setup_custom_logger('dokomo')
 
 
 class Index(BaseHandler):
-    def get(self, msg="Welcome"):
-        self.render('index.html', message=msg)
+
+    def get(self, msg=""):
+        current_user = ""
+        if self.current_user:
+            current_user = self.current_user.decode('utf-8')
+        self.render('index.html', message=msg, user=current_user)
 
     def post(self, *args):
         LogoutHandler.post(self) #TODO move to js

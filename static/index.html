@@ -78,6 +78,11 @@
     <script src="/static/persona.js"></script>
     <script src="/static/lib.js"></script>
     <script src="/static/app.js"></script>
+    {% if message %}
+    <script>
+        App.message("{{ message }}");
+    </script>
+    {% end %}
 </body>
 
 </html>
