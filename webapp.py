@@ -29,7 +29,7 @@ logger = setup_custom_logger('dokomo')
 
 class Index(BaseHandler):
     def get(self, msg="Welcome"):
-        self.render('index.html', message=msg)  # This is temporary don't panic
+        self.render('index.html', message=msg)
 
     def post(self, *args):
         LogoutHandler.post(self) #TODO move to js
@@ -45,8 +45,7 @@ class Survey(BaseHandler):
                         title=survey['title'])
 
         except SurveyDoesNotExistError:
-            raise tornado.web.HTTPError(404) # Viktor -- I think this is better
-            #Index.get(self, "Survey not found")
+            raise tornado.web.HTTPError(404)
 
     def post(self, uuid):
         data = json.loads(self.request.body.decode('utf-8'))
