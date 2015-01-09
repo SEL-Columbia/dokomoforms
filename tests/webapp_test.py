@@ -7,12 +7,13 @@ import unittest
 from unittest import mock
 from sqlalchemy import and_
 
-from tornado.escape import to_unicode, json_encode, json_decode
+from tornado.escape import to_unicode, json_encode, json_decode, url_escape
 import tornado.httpserver
 import tornado.httpclient
 import tornado.ioloop
 from tornado.testing import AsyncHTTPTestCase
 import tornado.web
+from urllib.parse import urlencode
 
 import api.submission
 import api.survey
@@ -207,6 +208,23 @@ class APITest(AsyncHTTPTestCase):
         self.assertNotEqual(json_response, [])
         self.assertEqual(json_response,
                          api.survey.get_one(survey_id, email='test_email'))
+
+
+# class AuthTest(AsyncHTTPTestCase):
+#     def tearDown(self):
+#         submission_table.delete().execute()
+#
+#     def get_app(self):
+#         self.app = tornado.web.Application(pages, **new_config)
+#         return self.app
+#
+#     def get_new_ioloop(self):
+#         return tornado.ioloop.IOLoop.instance()
+#
+#     def testLogin(self):
+#         response = self.fetch('/user/login/persona', method='POST',
+#                               body=urlencode({'assertion': ''}))
+#         assert False, response
 
 
 if __name__ == '__main__':

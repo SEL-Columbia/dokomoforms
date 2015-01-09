@@ -26,12 +26,12 @@ class LoginHandler(BaseHandler):
         assertion = self.get_argument('assertion')
         http_client = tornado.httpclient.AsyncHTTPClient()
         url = 'https://verifier.login.persona.org/verify'
-        data = {'assertion': assertion, 'audience': 'localhost:8888'}
+        input_data = {'assertion': assertion, 'audience': 'localhost:8888'}
         response = yield tornado.gen.Task(
             http_client.fetch,
             url,
             method='POST',
-            body=urllib.parse.urlencode(data),
+            body=urllib.parse.urlencode(input_data),
         )
         data = tornado.escape.json_decode(response.body)
         if data['status'] != "okay":
