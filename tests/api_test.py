@@ -243,16 +243,20 @@ class TestSubmission(unittest.TestCase):
 class TestSurvey(unittest.TestCase):
     def tearDown(self):
         survey_table.delete().where(
-            survey_table.c.title.in_(('api_test survey',
-                                      'test_title(1)',
-                                      'test_title(2)',
-                                      'test_title(1)(1)',
-                                      'not in conflict',
-                                      'not in conflict(1)',
-                                      'updated survey title',
-                                      'to_be_updated',
-                                      'updated',
-                                      'bad update survey'))).execute()
+            survey_table.c.title.in_(('updated',
+                                      ))).execute()
+        survey_table.delete().where(
+            survey_table.c.title.like('to_be_updated%')).execute()
+        survey_table.delete().where(
+            survey_table.c.title.like('bad update survey%')).execute()
+        survey_table.delete().where(
+            survey_table.c.title.like('api_test survey%')).execute()
+        survey_table.delete().where(
+            survey_table.c.title.like('test_title(%')).execute()
+        survey_table.delete().where(
+            survey_table.c.title.like('updated survey title%')).execute()
+        survey_table.delete().where(
+            survey_table.c.title.like('not in conflict%')).execute()
         submission_table.delete().execute()
 
     def testGetOne(self):
