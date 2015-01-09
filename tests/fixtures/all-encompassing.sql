@@ -159,78 +159,6 @@ VALUES ('choice b', 2, the_from_question_id, 'multiple_choice', 8,
     False, the_survey_id);
 
 INSERT INTO survey (title, auth_user_id)
-VALUES ('test_title3', the_auth_user_id)
-RETURNING survey_id INTO the_survey_id;
-
-INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 1, 'another integer question 2', 'integer', False),
-       (the_survey_id, 5, 'another time question 2', 'time', False),
-       (the_survey_id, 6, 'another location question 2', 'location', False),
-       (the_survey_id, 7, 'another text question 2', 'text', True),
-       (the_survey_id, 9, 'another note 2', 'note', False);
-
-INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 2, 'another multiple choice question 2', 'multiple_choice', 
-           False)
-RETURNING question_id into the_from_question_id;
-
-INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 3, 'another decimal question 2', 'decimal', False)
-RETURNING question_id into the_to_question_id;
-
-INSERT INTO question_choice (choice, choice_number, question_id,
-    type_constraint_name, question_sequence_number, allow_multiple, survey_id)
-VALUES ('choice poop', 1, the_from_question_id, 'multiple_choice', 2, False,
-    the_survey_id)
-RETURNING question_choice_id into the_question_choice_id;
-
-INSERT INTO question_branch (question_choice_id, from_question_id,
-    from_type_constraint, from_sequence_number, from_allow_multiple,
-    from_survey_id, to_question_id, to_type_constraint, to_sequence_number,
-    to_allow_multiple, to_survey_id)
-VALUES (the_question_choice_id, the_from_question_id, 'multiple_choice', 2,
-    False, the_survey_id, the_to_question_id, 'decimal', 3, False,
-    the_survey_id);
-
-INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 4, 'another poop question', 'date', False)
-RETURNING question_id into the_to_question_id;
-
-INSERT INTO question_choice (choice, choice_number, question_id,
-    type_constraint_name, question_sequence_number, allow_multiple, survey_id)
-VALUES ('choice gummies', 2, the_from_question_id, 'multiple_choice', 2, False,
-    the_survey_id)
-RETURNING question_choice_id into the_question_choice_id;
-
-INSERT INTO question_branch (question_choice_id, from_question_id,
-    from_type_constraint, from_sequence_number, from_allow_multiple,
-    from_survey_id, to_question_id, to_type_constraint, to_sequence_number,
-    to_allow_multiple, to_survey_id)
-VALUES (the_question_choice_id, the_from_question_id, 'multiple_choice', 2,
-    False, the_survey_id, the_to_question_id, 'date', 4, False,
-    the_survey_id);
-
-INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple, logic)
-VALUES (the_survey_id, 8, 'another multiple choice with other 3',
-           'multiple_choice', False, '{"required": false, "with_other": true}')
-RETURNING question_id into the_from_question_id;
-
-INSERT INTO question_choice (choice, choice_number, question_id,
-    type_constraint_name, question_sequence_number, allow_multiple, survey_id)
-VALUES ('choice f', 1, the_from_question_id, 'multiple_choice', 8,
-    False, the_survey_id);
-
-INSERT INTO question_choice (choice, choice_number, question_id,
-    type_constraint_name, question_sequence_number, allow_multiple, survey_id)
-VALUES ('choice u', 2, the_from_question_id, 'multiple_choice', 8,
-    False, the_survey_id);
-
-INSERT INTO survey (title, auth_user_id)
 VALUES ('what is life', the_auth_user_id)
 RETURNING survey_id INTO the_survey_id;
 
@@ -275,7 +203,8 @@ RETURNING survey_id INTO the_survey_id;
 INSERT INTO question (survey_id, sequence_number, title,
     type_constraint_name, allow_multiple)
 VALUES (the_survey_id, 1, 'guess it', 'integer', False),
-       (the_survey_id, 2, 'it was 7 btw', 'note', False);
+       (the_survey_id, 2, 'it was 7 btw', 'note', False),
+       (the_survey_id, 3, 'also where are you', 'location', False);
 
 INSERT INTO survey (title, auth_user_id)
 VALUES ('sadness', the_auth_user_id)

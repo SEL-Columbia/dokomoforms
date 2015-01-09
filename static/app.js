@@ -187,7 +187,69 @@ Widgets.integer = function(question, page) {
 
 Widgets.location = function(question, page) {
     // TODO: add location status
-        
+    
+    // Map
+    var lat = parseFloat($(page).find('.question__lat').val()) || 5.118915;
+    var lng = parseFloat($(page).find('.question__lon').val()) || 7.353078;
+    var start_loc = [lat, lng];
+
+    var map = L.map('map', {
+            center: start_loc,
+            dragging: true,
+            zoom: 16,
+            zoomControl: false,
+            doubleClickZoom: false,
+            attributionControl: false
+        });
+    
+    // Revisit API Call
+    getNearbyFacilities(start_loc[0], start_loc[1], 2, map); 
+
+    function getImage(url, cb) {
+        // Retrieves an image from cache, possibly fetching it first
+        var imgKey = url.split('.').slice(1).join('.').replace(/\//g, '');
+        var img = localStorage[imgKey];
+        if (img) {
+            cb(img);
+        } else {
+            imgToBase64(url, 'image/png', function(img) {
+                localStorage[imgKey] = img;
+                cb(img);
+            });
+        }
+    };
+    
+    function imgToBase64(url, outputFormat, callback){
+        var canvas = document.createElement('canvas'),
+            ctx = canvas.getContext('2d'),
+            img = new Image;
+        img.crossOrigin = 'Anonymous';
+        img.onload = function(){
+            var dataURL;
+            canvas.height = img.height;
+            canvas.width = img.width;
+            ctx.drawImage(img, 0, 0);
+            dataURL = canvas.toDataURL(outputFormat);
+            callback.call(this, dataURL);
+            canvas = null; 
+        };
+        img.src = url;
+    };
+
+    // Tile layer
+    var funcLayer = new L.TileLayer.Functional(function(view) {
+        var deferred = $.Deferred();
+        var url = 'http://{s}.tiles.mapbox.com/v3/examples.map-20v6611k/{z}/{y}/{x}.png'
+            .replace('{s}', 'abcd'[Math.round(Math.random() * 3)])
+            .replace('{z}', Math.floor(view.zoom))
+            .replace('{x}', view.tile.row)
+            .replace('{y}', view.tile.column);
+        getImage(url, deferred.resolve);
+        return deferred.promise();
+    });
+    
+    map.addLayer(funcLayer);
+
     $(page)
         .find('.question__btn')
         .click(function() {
@@ -196,8 +258,14 @@ Widgets.location = function(question, page) {
                     // Server accepts [lon, lat]
                     var coords = [position.coords.longitude, position.coords.latitude];
                     question.answer = coords;
-                    $(page).find('.question__lat').val(coords[1]);
+
+                    map.setView([coords[1], coords[0]]);
+
+                    // Revisit api call
+                    getNearbyFacilities(coords[0], coords[1], 2, map); 
+
                     $(page).find('.question__lon').val(coords[0]);
+                    $(page).find('.question__lat').val(coords[1]);
                 }, function error() {
                     alert('error')
                 }, {
@@ -290,3 +358,70 @@ Widgets.time = function(question, page) {
 
 Widgets.note = function(question, page) {
 };
+
+
+/* Revisit stuff */
+function getNearbyFacilities(lat, lng, rad, map) {
+    var icon_edu = new L.icon({iconUrl: "/static/img/icons/normal_education.png"});
+    var icon_health = new L.icon({iconUrl: "/static/img/icons/normal_health.png"});
+    var icon_water = new L.icon({iconUrl: "/static/img/icons/normal_water.png"});
+    var url = "http://revisit.global/api/v0/facilities.json"
+    function drawPoint(lat, lng, name, type) {
+        var marker = new L.marker([lat, lng], {
+            title: name,
+            alt: name,
+            riseOnHover: true
+        });
+
+        switch(type) {
+            case "education":
+                marker.options.icon = icon_edu;
+                break;
+            case "water":
+                marker.options.icon = icon_water;
+                break;
+            default:
+                // just mark it as health 
+                marker.options.icon = icon_health;
+                break;
+        }
+
+        marker.addTo(map);
+    };
+
+    var revisit = localStorage.getItem('revisit');
+    if (revisit) { // its in localStorage 
+        var facilities = JSON.parse(revisit).facilities;
+        var facility = null;
+        for(i = 0; i < facilities.length; i++) {
+            facility = facilities[i];
+            // stored lon/lat in revisit, switch around
+            drawPoint(facility.coordinates[1], 
+                    facility.coordinates[0], 
+                    facility.name, 
+                    facility.properties.sector);
+        }
+    } else {
+        // Revisit ajax req
+        $.get(url,{
+                near: lat + "," + lng,
+                rad: rad,
+                limit: 100,
+                fields: "name,coordinates,properties:sector", //filters results to include just those three fields,
+            },
+            function(data) {
+                localStorage.setItem('revisit', JSON.stringify(data));
+                var facilities = data.facilities;
+                var facility = null;
+                for(i = 0; i < facilities.length; i++) {
+                    facility = facilities[i];
+                    // stored lon/lat in revisit, switch around
+                    drawPoint(facility.coordinates[1], 
+                            facility.coordinates[0], 
+                            facility.name, 
+                            facility.properties.sector);
+                }
+            }
+        );
+    }
+}
