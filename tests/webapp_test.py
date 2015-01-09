@@ -19,11 +19,13 @@ import api.submission
 import api.survey
 import api.user
 from db.answer import get_answers
+from db.auth_user import generate_api_token
 from db.question import get_questions, question_table
 from db.question_choice import question_choice_table
 from db.submission import submission_table
 from pages.api.submissions import SubmissionsAPI, SingleSubmissionAPI
 from pages.api.surveys import SurveysAPI, SingleSurveyAPI
+from pages.util.base import BaseHandler
 import settings
 from webapp import config, pages
 from db.survey import survey_table
@@ -177,6 +179,17 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(json_decode(to_unicode(response.body)),
                          api.submission.get_all(survey_id, 'test_email'))
 
+    def testGetSubmissionsWithInvalidAPIToken(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        token = api.user.generate_token({'email': 'test_email'})['token']
+        response = self.fetch('/api/surveys/{}/submissions'.format(survey_id),
+                              headers={'Token': generate_api_token(),
+                                       'Email': 'test_email'})
+        self.assertEqual(response.code, 200)
+        self.assertEqual(json_decode(to_unicode(response.body)),
+                         api.submission.get_all(survey_id, 'test_email'))
+
     def testGetSingleSubmission(self):
         submission_id = create_test_submission()['submission_id']
         with mock.patch.object(SingleSubmissionAPI, 'get_secure_cookie') as m:
@@ -235,6 +248,19 @@ class DebugTest(AsyncHTTPTestCase):
     def testLogout(self):
         response = self.fetch('/debug/logout')
         self.assertEqual(response.code, 200)
+
+
+class BaseHandlerTest(AsyncHTTPTestCase):
+    def get_app(self):
+        self.app = tornado.web.Application(pages, **new_config)
+        return self.app
+
+    def get_new_ioloop(self):
+        return tornado.ioloop.IOLoop.instance()
+
+    def testGet(self):
+        response = self.fetch('/user/login/persona')
+        self.assertEqual(response.code, 404)
 
 
 if __name__ == '__main__':
