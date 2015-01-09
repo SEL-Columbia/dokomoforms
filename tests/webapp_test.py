@@ -15,12 +15,14 @@ from tornado.testing import AsyncHTTPTestCase
 import tornado.web
 
 import api.submission
+import api.survey
 import api.user
 from db.answer import get_answers
 from db.question import get_questions, question_table
 from db.question_choice import question_choice_table
 from db.submission import submission_table
-from pages.api.submissions import SubmissionsAPI
+from pages.api.submissions import SubmissionsAPI, SingleSubmissionAPI
+from pages.api.surveys import SurveysAPI, SingleSurveyAPI
 import settings
 from webapp import config, pages
 from db.survey import survey_table
@@ -145,12 +147,14 @@ class APITest(AsyncHTTPTestCase):
         return tornado.ioloop.IOLoop.instance()
 
     def testGetSubmissionsNotLoggedIn(self):
-        survey_id = survey_table.select().execute().first().survey_id
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
         response = self.fetch('/api/surveys/{}/submissions'.format(survey_id))
         self.assertEqual(response.code, 403)
 
     def testGetSubmissionsLoggedIn(self):
-        survey_id = survey_table.select().execute().first().survey_id
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
         create_test_submission()
         with mock.patch.object(SubmissionsAPI, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
@@ -163,13 +167,46 @@ class APITest(AsyncHTTPTestCase):
                          api.submission.get_all(survey_id, 'test_email'))
 
     def testGetSubmissionsWithAPIToken(self):
-        survey_id = survey_table.select().execute().first().survey_id
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
         token = api.user.generate_token({'email': 'test_email'})['token']
         response = self.fetch('/api/surveys/{}/submissions'.format(survey_id),
                               headers={'Token': token, 'Email': 'test_email'})
         self.assertEqual(response.code, 200)
         self.assertEqual(json_decode(to_unicode(response.body)),
                          api.submission.get_all(survey_id, 'test_email'))
+
+    def testGetSingleSubmission(self):
+        submission_id = create_test_submission()['submission_id']
+        with mock.patch.object(SingleSubmissionAPI, 'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/submissions/{}'.format(submission_id))
+        self.assertEqual(response.code, 200)
+        json_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(json_response, [])
+        self.assertEqual(json_response,
+                         api.submission.get_one(submission_id, 'test_email'))
+
+    def testGetSurveys(self):
+        with mock.patch.object(SurveysAPI, 'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/surveys')
+        self.assertEqual(response.code, 200)
+        json_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(json_response, [])
+        self.assertEqual(json_response, api.survey.get_all('test_email'))
+
+    def testGetSingleSurvey(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        with mock.patch.object(SingleSurveyAPI, 'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/surveys/{}'.format(survey_id))
+        self.assertEqual(response.code, 200)
+        json_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(json_response, [])
+        self.assertEqual(json_response,
+                         api.survey.get_one(survey_id, email='test_email'))
 
 
 if __name__ == '__main__':
