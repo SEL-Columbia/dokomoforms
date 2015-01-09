@@ -18,6 +18,8 @@ from pages.auth import LogoutHandler, LoginHandler
 from pages.api.submissions import SubmissionsAPI, SingleSubmissionAPI
 from pages.api.surveys import SurveysAPI, SingleSurveyAPI
 from pages.util.base import BaseHandler
+import pages.util.ui
+
 from pages.debug import DebugLoginHandler, DebugLogoutHandler
 import settings
 from utils.logger import setup_custom_logger
@@ -30,10 +32,8 @@ logger = setup_custom_logger('dokomo')
 class Index(BaseHandler):
 
     def get(self, msg=""):
-        current_user = ""
-        if self.current_user:
-            current_user = self.current_user.decode('utf-8')
-        self.render('index.html', message=msg, user=current_user)
+        self.render('index.html', 
+                message=msg) 
 
     def post(self, *args):
         LogoutHandler.post(self) #TODO move to js
@@ -84,6 +84,7 @@ config = {
     'xsrf_cookies': True,
     'login_url': '/',
     'cookie_secret': settings.COOKIE_SECRET,
+    'ui_methods': pages.util.ui,
     'debug': True  # Remove this
 }
 
@@ -118,8 +119,9 @@ if config.get('debug', False):
               (r'/debug/logout/?', DebugLogoutHandler),
     ]
 
+app = tornado.web.Application(pages, **config)
+
 if __name__ == '__main__':
-    app = tornado.web.Application(pages, **config)
     app.listen(settings.WEBAPP_PORT, '0.0.0.0')
 
     logger.info('starting server on port ' + str(settings.WEBAPP_PORT))
