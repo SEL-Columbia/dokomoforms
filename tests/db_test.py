@@ -165,7 +165,8 @@ class TestAnswerChoice(unittest.TestCase):
 class TestAuthUser(unittest.TestCase):
     def tearDown(self):
         auth_user_table.delete().where(
-            auth_user_table.c.email != 'test_email').execute()
+            auth_user_table.c.email.in_(('a',
+                                         ))).execute()
 
     def testGetAuthUser(self):
         result = auth_user_table.insert({'email': 'a'}).execute()

@@ -35,7 +35,8 @@ class TestSubmission(unittest.TestCase):
     def tearDown(self):
         submission_table.delete().execute()
         survey_table.delete().where(
-            survey_table.c.title != 'test_title').execute()
+            survey_table.c.title.in_(('survey with required question',
+                                      ))).execute()
 
     def testSubmit(self):
         survey_id = survey_table.select().execute().first().survey_id
@@ -242,7 +243,16 @@ class TestSubmission(unittest.TestCase):
 class TestSurvey(unittest.TestCase):
     def tearDown(self):
         survey_table.delete().where(
-            survey_table.c.title != 'test_title').execute()
+            survey_table.c.title.in_(('api_test survey',
+                                      'test_title(1)',
+                                      'test_title(2)',
+                                      'test_title(1)(1)',
+                                      'not in conflict',
+                                      'not in conflict(1)',
+                                      'updated survey title',
+                                      'to_be_updated',
+                                      'updated',
+                                      'bad update survey'))).execute()
         submission_table.delete().execute()
 
     def testGetOne(self):
