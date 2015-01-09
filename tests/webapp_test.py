@@ -3,21 +3,21 @@ Tests for the dokomo webapp
 
 """
 
+import json
+import unittest
+
 import tornado.httpserver
 import tornado.httpclient
 import tornado.ioloop
 import tornado.web
-import json
 
-import unittest
 from db.answer import get_answers
 from db.question import get_questions
 from db.submission import submission_table
 import settings
-
-from webapp import Index, Survey, config
-
+from webapp import config, pages
 from db.survey import survey_table
+
 
 TEST_PORT = 8001 # just to show you can test the same
                  # container on a different port
@@ -34,10 +34,7 @@ class TestDokomoWebapp(unittest.TestCase):
     response = None
 
     def setUp(self):
-        application = tornado.web.Application([
-                (r'/', Index),
-                (r'/([a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12})', Survey),
-                ], **new_config)
+        application = tornado.web.Application(pages, **new_config)
         self.http_server = tornado.httpserver.HTTPServer(application)
         self.http_server.listen(TEST_PORT)
 
