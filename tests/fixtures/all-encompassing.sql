@@ -83,7 +83,7 @@ VALUES ('choice b', 2, the_from_question_id, 'multiple_choice', 8,
     False, the_survey_id);
 
 INSERT INTO auth_user (email)
-VALUES ('test_email2')
+VALUES ('a.dahir7@gmail.com')
 RETURNING auth_user_id INTO the_auth_user_id;
 
 INSERT INTO survey (title, auth_user_id)
