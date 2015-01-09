@@ -6,14 +6,14 @@ Tests for the dokomo webapp
 import unittest
 from unittest import mock
 from sqlalchemy import and_
+from urllib.parse import urlencode
 
-from tornado.escape import to_unicode, json_encode, json_decode, url_escape
+from tornado.escape import to_unicode, json_encode, json_decode
 import tornado.httpserver
 import tornado.httpclient
 import tornado.ioloop
 from tornado.testing import AsyncHTTPTestCase
 import tornado.web
-from urllib.parse import urlencode
 
 import api.submission
 import api.survey
@@ -210,21 +210,31 @@ class APITest(AsyncHTTPTestCase):
                          api.survey.get_one(survey_id, email='test_email'))
 
 
-# class AuthTest(AsyncHTTPTestCase):
-#     def tearDown(self):
-#         submission_table.delete().execute()
-#
-#     def get_app(self):
-#         self.app = tornado.web.Application(pages, **new_config)
-#         return self.app
-#
-#     def get_new_ioloop(self):
-#         return tornado.ioloop.IOLoop.instance()
-#
-#     def testLogin(self):
-#         response = self.fetch('/user/login/persona', method='POST',
-#                               body=urlencode({'assertion': ''}))
-#         assert False, response
+class DebugTest(AsyncHTTPTestCase):
+    def get_app(self):
+        self.app = tornado.web.Application(pages, **new_config)
+        return self.app
+
+    def get_new_ioloop(self):
+        return tornado.ioloop.IOLoop.instance()
+
+    def testLoginGet(self):
+        response = self.fetch('/debug/login')
+        self.assertEqual(response.code, 200)
+
+    def testLogin(self):
+        response = self.fetch('/debug/login', method='POST',
+                              body=urlencode({'email': 'test_email'}))
+        self.assertIn('test_email', to_unicode(response.body))
+
+    def testLoginFail(self):
+        response = self.fetch('/debug/login', method='POST',
+                              body=urlencode({'email': 'nope'}))
+        self.assertIn('No such user', to_unicode(response.body))
+
+    def testLogout(self):
+        response = self.fetch('/debug/logout')
+        self.assertEqual(response.code, 200)
 
 
 if __name__ == '__main__':
