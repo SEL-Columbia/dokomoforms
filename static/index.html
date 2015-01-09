@@ -38,8 +38,15 @@
 
     <div class="content">
         <div class="welcome">
-            {% if user %}
-            <p> Top 10 surveys dumped here for {{ user }} </p>
+            {% if get_current_user() %}
+            <h4 class="welcome_title">Welcome: {{ get_current_user() }}</h4>
+            <p class="welcome_blurb"> Your top 10 Surveys: </p>
+            <ul class="welcome_ulist">
+                {% for survey_id, survey_title in get_survey_info(get_current_user(), 10 ) %}
+                <li class="welcome_item"> <a href="{{get_uri(survey_id)}}"> {{ survey_title }} </a></li>
+                {% end %}
+            </ul>
+
             <div class="view">
                 <a href="#" class="dokomo-button"><span>View</span></a>
             </div>
@@ -52,7 +59,8 @@
                 <a href="#" class="dokomo-button persona-button" id="logout"><span>Logout</span></a>
             </div>
             {% else %}
-            <p> Login to experience the awesomeness Dokomo </p>
+            <h4 class="welcome_title"> Welcome to <em>Dokomo</em></h4>
+            <p class="welcome_blurb"> Sign up or login to create and view forms </p>
             <div class="login">
                 <a href="#" class="dokomo-button persona-button" id="login"><span>Login</span></a>
             </div>
