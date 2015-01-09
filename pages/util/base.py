@@ -1,4 +1,5 @@
 """Base handler classes and utility functions."""
+from tornado.escape import to_unicode
 
 import tornado.web
 
@@ -63,4 +64,4 @@ def get_email(self: APIHandler) -> str:
     :return: the e-mail address
     """
     header = self.request.headers.get('Email', None)
-    return header if header is not None else self.current_user.decode('utf-8')
+    return header if header is not None else to_unicode(self.current_user)

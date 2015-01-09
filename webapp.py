@@ -6,13 +6,13 @@ it also functions as the wsgi container for accepting survey form post
 requests back from the client app.
 """
 import json
+from tornado.escape import to_unicode, json_encode, json_decode
 
 import tornado.web
 import tornado.ioloop
 
 import api.survey
 import api.submission
-import api.api_token
 import api.user
 from pages.auth import LogoutHandler, LoginHandler
 from pages.api.submissions import SubmissionsAPI, SingleSubmissionAPI
@@ -32,7 +32,7 @@ class Index(BaseHandler):
     def get(self, msg=""):
         current_user = ""
         if self.current_user:
-            current_user = self.current_user.decode('utf-8')
+            current_user = to_unicode(self.current_user)
         self.render('index.html', message=msg, user=current_user)
 
     def post(self, *args):
@@ -45,14 +45,14 @@ class Survey(BaseHandler):
         try:
             survey = api.survey.display_survey(survey_id)
             self.render('survey.html',
-                        survey=json.dumps(survey),
+                        survey=json_encode(survey),
                         title=survey['title'])
 
         except SurveyDoesNotExistError:
             raise tornado.web.HTTPError(404)
 
     def post(self, uuid):
-        data = json.loads(self.request.body.decode('utf-8'))
+        data = json_decode(to_unicode(self.request.body))
         self.write(api.submission.submit(data))
 
 
@@ -67,15 +67,15 @@ class APITokenGenerator(BaseHandler):
     def get(self):
         # self.render('api-token.html')
         self.write(
-            api.api_token.generate_token(
-                {'email': self.current_user.decode('utf-8')}))
+            api.user.generate_token(
+                {'email': to_unicode(self.current_user)}))
 
 
     @tornado.web.authenticated
     def post(self):
-        data = json.loads(self.request.body.decode('utf-8'))
+        data = json_decode(to_unicode(self.request.body))
 
-        self.write(api.api_token.generate_token(data))
+        self.write(api.user.generate_token(data))
 
 
 config = {

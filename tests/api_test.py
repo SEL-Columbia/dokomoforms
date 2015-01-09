@@ -13,7 +13,6 @@ from passlib.hash import bcrypt_sha256
 from api import execute_with_exceptions
 import api.survey
 import api.submission
-import api.api_token
 import api.user
 import db
 from db.answer import answer_insert, CannotAnswerMultipleTimesError, \
@@ -36,10 +35,11 @@ class TestSubmission(unittest.TestCase):
         submission_table.delete().execute()
         survey_table.delete().where(
             survey_table.c.title.in_(('survey with required question',
-                                      ))).execute()
+            ))).execute()
 
     def testSubmit(self):
-        survey_id = survey_table.select().execute().first().survey_id
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         question_id = question_table.select().where(
@@ -91,7 +91,8 @@ class TestSubmission(unittest.TestCase):
         self.assertEqual(data['answers'][4]['answer'], 'answer two')
 
     def testIncorrectType(self):
-        survey_id = survey_table.select().execute().first().survey_id
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         question_id = question_table.select().where(
@@ -134,7 +135,8 @@ class TestSubmission(unittest.TestCase):
                           api.submission.submit, submission2)
 
     def testQuestionDoesNotExist(self):
-        survey_id = survey_table.select().execute().first().survey_id
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
         input_data = {'survey_id': survey_id,
                       'answers': [{'question_id': str(uuid.uuid4()),
                                    'answer': 1}]}
@@ -148,7 +150,8 @@ class TestSubmission(unittest.TestCase):
                           input_data)
 
     def testDateAndTime(self):
-        survey_id = survey_table.select().execute().first().survey_id
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
         date_cond = and_(question_table.c.survey_id == survey_id,
                          question_table.c.type_constraint_name == 'date')
         date_question_id = question_table.select().where(
@@ -170,7 +173,8 @@ class TestSubmission(unittest.TestCase):
         self.assertEqual(response['answers'][1]['answer'], '11:26:00-04:00')
 
     def testMultipleAnswersNotAllowed(self):
-        survey_id = survey_table.select().execute().first().survey_id
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         question_id = question_table.select().where(
@@ -189,7 +193,8 @@ class TestSubmission(unittest.TestCase):
 
 
     def testGet(self):
-        survey_id = survey_table.select().execute().first().survey_id
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'location')
         question = q_where.execute().first()
@@ -209,7 +214,8 @@ class TestSubmission(unittest.TestCase):
         self.assertIsNotNone(data['answers'])
 
     def testGetForSurvey(self):
-        survey_id = survey_table.select().execute().first().survey_id
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'integer')
         question = q_where.execute().first()
@@ -229,7 +235,8 @@ class TestSubmission(unittest.TestCase):
         self.assertGreater(len(data), 0)
 
     def testDelete(self):
-        survey_id = survey_table.select().execute().first().survey_id
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
         data = {'survey_id': survey_id,
                 'answers': [{'answer': None}]}
         submission_id = api.submission.submit(data)['submission_id']
@@ -244,7 +251,7 @@ class TestSurvey(unittest.TestCase):
     def tearDown(self):
         survey_table.delete().where(
             survey_table.c.title.in_(('updated',
-                                      ))).execute()
+            ))).execute()
         survey_table.delete().where(
             survey_table.c.title.like('to_be_updated%')).execute()
         survey_table.delete().where(
@@ -260,20 +267,25 @@ class TestSurvey(unittest.TestCase):
         submission_table.delete().execute()
 
     def testGetOne(self):
-        survey_id = survey_table.select().execute().first().survey_id
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
         data = api.survey.get_one(survey_id, email='test_email')
         self.assertIsNotNone(data['survey_id'])
         self.assertIsNotNone(data['questions'])
 
     def testDisplaySurvey(self):
-        survey_id = survey_table.select().execute().first().survey_id
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
         data = api.survey.display_survey(survey_id)
         self.assertIsNotNone(data['survey_id'])
         self.assertIsNotNone(data['questions'])
 
     def testGetAll(self):
         surveys = api.survey.get_all(
-            auth_user_table.select().execute().first().email)
+            auth_user_table.select().where(
+                auth_user_table.c.email == 'test_email').execute().first(
+
+            ).email)
         self.assertGreater(len(surveys), 0)
 
     def testCreate(self):
@@ -328,7 +340,8 @@ class TestSurvey(unittest.TestCase):
 
 
     def testSurveyAlreadyExists(self):
-        survey_id = survey_table.select().execute().first().survey_id
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
         title = survey_select(survey_id, email='test_email').title
         input_data = {'title': title, 'questions': [], 'email': 'test_email'}
         result = api.survey.create(input_data)
@@ -790,7 +803,7 @@ class TestAPIToken(unittest.TestCase):
     def testGenerateToken(self):
         user_id = create_auth_user(
             email='api_test_email').execute().inserted_primary_key[0]
-        response = api.api_token.generate_token({'email': 'api_test_email'})
+        response = api.user.generate_token({'email': 'api_test_email'})
         user = get_auth_user(auth_user_id=user_id)
         self.assertTrue(bcrypt_sha256.verify(response['token'], user.token))
         self.assertEqual(response['expires_on'][:10],
@@ -799,8 +812,8 @@ class TestAPIToken(unittest.TestCase):
     def testGenerateTokenWithDuration(self):
         user_id = create_auth_user(
             email='api_test_email').execute().inserted_primary_key[0]
-        response = api.api_token.generate_token({'email': 'api_test_email',
-                                                 'duration': 5.0})
+        response = api.user.generate_token({'email': 'api_test_email',
+                                            'duration': 5.0})
         user = get_auth_user(auth_user_id=user_id)
         self.assertTrue(bcrypt_sha256.verify(response['token'], user.token))
         self.assertEqual(response['expires_on'][:10],
@@ -809,8 +822,8 @@ class TestAPIToken(unittest.TestCase):
     def testTokenDurationTooLong(self):
         user_id = create_auth_user(
             email='api_test_email').execute().inserted_primary_key[0]
-        self.assertRaises(api.api_token.TokenDurationTooLong,
-                          api.api_token.generate_token,
+        self.assertRaises(api.user.TokenDurationTooLong,
+                          api.user.generate_token,
                           {'email': 'api_test_email',
                            'duration': 999999999999999})
 

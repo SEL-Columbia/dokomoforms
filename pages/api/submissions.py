@@ -1,5 +1,5 @@
 """API endpoints dealing with submissions."""
-import json
+from tornado.escape import json_encode
 
 import api.submission
 from pages.util.base import APIHandler, get_email
@@ -10,7 +10,7 @@ class SubmissionsAPI(APIHandler):
 
     def get(self, survey_id: str):
         response = api.submission.get_all(survey_id, email=get_email(self))
-        self.write(json.dumps(response))
+        self.write(json_encode(response))
 
 
 class SingleSubmissionAPI(APIHandler):
@@ -18,4 +18,4 @@ class SingleSubmissionAPI(APIHandler):
 
     def get(self, submission_id: str):
         response = api.submission.get_one(submission_id, email=get_email(self))
-        self.write(json.dumps(response))
+        self.write(json_encode(response))

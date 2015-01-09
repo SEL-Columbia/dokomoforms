@@ -1,6 +1,6 @@
 """API endpoints dealing with surveys."""
 
-import json
+from tornado.escape import json_encode
 
 import api.survey
 from pages.util.base import APIHandler, get_email
@@ -14,7 +14,7 @@ class SurveysAPI(APIHandler):
         I hope you like parentheses.
 
         """
-        self.write(json.dumps(api.survey.get_all(get_email(self))))
+        self.write(json_encode(api.survey.get_all(get_email(self))))
 
 
 class SingleSurveyAPI(APIHandler):
@@ -22,4 +22,4 @@ class SingleSurveyAPI(APIHandler):
 
     def get(self, survey_id: str):
         email = get_email(self)
-        self.write(json.dumps(api.survey.get_one(survey_id, email=email)))
+        self.write(json_encode(api.survey.get_one(survey_id, email=email)))
