@@ -186,9 +186,7 @@ class APITest(AsyncHTTPTestCase):
         response = self.fetch('/api/surveys/{}/submissions'.format(survey_id),
                               headers={'Token': generate_api_token(),
                                        'Email': 'test_email'})
-        self.assertEqual(response.code, 200)
-        self.assertEqual(json_decode(to_unicode(response.body)),
-                         api.submission.get_all(survey_id, 'test_email'))
+        self.assertEqual(response.code, 403)
 
     def testGetSingleSubmission(self):
         submission_id = create_test_submission()['submission_id']
