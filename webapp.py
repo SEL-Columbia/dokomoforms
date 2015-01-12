@@ -85,7 +85,7 @@ pages = [
     (r'/', Index),  # Ebola front page
 
     # Survey Submissions
-    (r'/survey/(.*)/?', Survey),
+    (r'/survey/(.+)/?', Survey),
 
     # Auth
     (r'/user/login/persona/?', LoginHandler),  # Post to Persona here
