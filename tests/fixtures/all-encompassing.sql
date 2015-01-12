@@ -192,7 +192,7 @@ RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
     type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 1, 'rate me', 'integer', False),
+VALUES (the_survey_id, 1, 'rate me', 'integer', True),
        (the_survey_id, 2, 'will you go out with me?', 'text', True),
        (the_survey_id, 3, 'im gonan ask you out anyway', 'note', False);
 
@@ -202,7 +202,7 @@ RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
     type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 1, 'guess it', 'integer', False),
+VALUES (the_survey_id, 1, 'guess it', 'integer', True),
        (the_survey_id, 2, 'it was 7 btw', 'note', False),
        (the_survey_id, 3, 'also where are you', 'location', False);
 

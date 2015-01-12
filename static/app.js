@@ -57,8 +57,7 @@ function Survey(id, questions) {
     // Load answers from localStorage
     var answers = JSON.parse(localStorage[this.id] || '{}');
     _.each(this.questions, function(question) {
-        //XXX: Location is loaded incorrectly
-        question.answer = answers[question.question_id] || null;
+        question.answer = answers[question.question_id] || [];
     });
     
     // Page navigation
@@ -80,10 +79,9 @@ Survey.prototype.next = function(offset, index) {
     var prev_index = index - offset;
     var prev_question = this.questions[prev_index];
     if (offset === 1 && prev_question) {
-        console.log(prev_question.logic, prev_question.answer);
         // XXX: prev_question.answer field is a mess to check, need to purify ans
         if (prev_question.logic.required 
-                && (!prev_question.answer && prev_question.answer !== 0))  {
+                && (!prev_question.answer[0] && prev_question.answer !== 0))  {
             App.message('Survey requires this question to be completed.');
             return;
         }
@@ -141,17 +139,24 @@ Survey.prototype.submit = function() {
     localStorage[self.id] = JSON.stringify(answers);
 
     // Prepare POST request
+    var answers = [];
+    self.questions.forEach(function(q) {
+        console.log('q', q);
+        q.answer.forEach(function(ans) {
+            answers.push({
+                question_id: q.question_id,
+                answer: ans,
+                is_other: q.is_other || false //XXX: This will need to be an array as well
+            });
+        });
+    });
+
     var data = {
         survey_id: self.id,
-        answers: _.map(self.questions, function(q) {
-            console.log('q', q);
-            return {
-                question_id: q.question_id,
-                answer: q.answer,
-                is_other: q.is_other || false
-            };
-        })
+        answers: answers
     };
+
+    console.log(data);
     
     sync.classList.add('icon--spin');
     save_btn.classList.add('icon--spin');
@@ -185,6 +190,19 @@ Survey.prototype.submit = function() {
 
 
 var Widgets = {};
+// Handle creating multiple inputs for widgets that support it
+Widgets.keyUp = function(e, page, question, cls, type, keyup_cb) {
+    window.v = ($(page).find('input'));
+    if (e.keyCode === 13) {
+        if (question.allow_multiple) {
+            var v = $('<input>')
+                .attr({'type': type, 'class': cls})
+                .keyup(keyup_cb)
+                .appendTo(page);
+        }
+    }
+}
+
 Widgets.text = function(question, page) {
     // This widget's events. Called after page template rendering.
     // Responsible for setting the question object's answer
@@ -194,16 +212,20 @@ Widgets.text = function(question, page) {
     $(page)
         .find('input')
         .on('keyup', function() {
-            question.answer = this.value;
+            question.answer = [this.value];
         });
 };
 
 Widgets.integer = function(question, page) {
+    var self = this;
+    function keyup(e) {
+        question.answer = [parseInt(this.value)];
+        self.keyUp(e, page, question, 'text_input', 'number', keyup);
+    };
+
     $(page)
         .find('input')
-        .keyup(function() {
-            question.answer = parseInt(this.value);
-        });
+        .keyup(keyup);
 };
 
 Widgets.location = function(question, page) {
@@ -278,7 +300,7 @@ Widgets.location = function(question, page) {
                 function success(position) {
                     // Server accepts [lon, lat]
                     var coords = [position.coords.longitude, position.coords.latitude];
-                    question.answer = coords;
+                    question.answer = [coords];
 
                     map.setView([coords[1], coords[0]]);
 
@@ -305,7 +327,7 @@ Widgets.multiple_choice = function(question, page) {
         var $other = $(page)
             .find('.text_input')
             .keyup(function() {
-                question.answer = this.value;
+                question.answer = [this.value];
             })
             .hide();
 
@@ -314,24 +336,24 @@ Widgets.multiple_choice = function(question, page) {
             .change(function() {
                 if (this.value == 'null') {
                     // No option chosen
-                    question.answer = null;
+                    question.answer = [];
                     question.is_other = true;
                     $other.hide();
                 } else if (this.value == 'other') {
                     // Choice is text input
                     $other.show();
-                    question.answer = $other.val();
+                    question.answer = [$other.val()];
                     question.is_other = true;
                 } else {
                     // Normal choice
-                    question.answer = this.value;
+                    question.answer = [this.value];
                     question.is_other = false;
                     $other.hide();
                 }
             });
 
         // Set the default/selected option
-        var option = question.answer ? 'other' : 'null';
+        var option = question.answer[0] ? 'other' : 'null';
         $select
             .find('option[value="' + option + '"]')
             .prop('selected', true);
@@ -341,9 +363,9 @@ Widgets.multiple_choice = function(question, page) {
             .find('select')
             .change(function() {
                 if (this.value !== ''){
-                    question.answer = this.value;
+                    question.answer = [this.value];
                 } else {
-                    question.answer = undefined;
+                    question.answer = [];
                 }
         });
     }
@@ -353,7 +375,7 @@ Widgets.decimal = function(question, page) {
     $(page)
         .find('input')
         .keyup(function() {
-            question.answer = parseFloat(this.value);
+            question.answer = [parseFloat(this.value)];
         });
 };
 
@@ -362,7 +384,7 @@ Widgets.date = function(question, page) {
         .find('input')
         .keyup(function() {
             if (this.value !== '') {
-                question.answer = this.value;
+                question.answer = [this.value];
             }
         });
 };
@@ -372,7 +394,7 @@ Widgets.time = function(question, page) {
         .find('input')
         .keyup(function() {
             if(this.value !== ''){
-                question.answer = this.value;
+                question.answer = [this.value];
             }
       });
 };
