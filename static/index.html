@@ -42,8 +42,9 @@
             <h4 class="welcome_title">Welcome: {{ current_user }}</h4>
             <p class="welcome_blurb"> Your top 10 Surveys: </p>
             <ul class="welcome_ulist">
-                {% for survey_id, survey_title in get_survey_info(current_user.decode('utf-8'), 10 ) %}
-                <li class="welcome_item"> <a href="{{get_uri(survey_id)}}"> {{ survey_title }} </a></li>
+                {% from db.survey import get_surveys_for_user_by_email %}
+                {% for survey in get_surveys_for_user_by_email(current_user.decode('utf-8'), 10 ) %}
+                <li class="welcome_item"> <a href="{{request.path}}{{survey.survey_id}}"> {{ survey.title }} </a></li>
                 {% end %}
             </ul>
 

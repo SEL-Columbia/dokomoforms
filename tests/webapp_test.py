@@ -25,7 +25,6 @@ from db.question_choice import question_choice_table
 from db.submission import submission_table
 from pages.api.submissions import SubmissionsAPI, SingleSubmissionAPI
 from pages.api.surveys import SurveysAPI, SingleSurveyAPI
-from pages.util.base import BaseHandler
 import settings
 from webapp import config, pages
 from db.survey import survey_table
