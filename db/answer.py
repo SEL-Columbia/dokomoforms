@@ -5,6 +5,7 @@ from sqlalchemy import Table, MetaData, text
 from sqlalchemy.engine import ResultProxy, RowProxy
 from sqlalchemy.sql.dml import Insert
 from sqlalchemy.sql import func
+from tornado.escape import json_decode
 
 from db import engine
 from db.question import question_select
@@ -117,7 +118,7 @@ def get_geo_json(answer: RowProxy) -> dict:
     :return: a GeoJSON dict representing the answer's value
     """
     result = engine.execute(func.ST_AsGeoJSON(answer.answer_location)).scalar()
-    return json.loads(result)
+    return json_decode(result)
 
 
 class CannotAnswerMultipleTimesError(Exception):

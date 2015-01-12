@@ -69,6 +69,8 @@ def verify_api_token(*, token: str, email: str) -> bool:
     :return: whether the token is correct and not expired
     """
     auth_user = get_auth_user_by_email(email)
+    if auth_user is None:
+        return False
     token_is_fresh = auth_user.expires_on.timetuple() >= localtime()
     not_blank = auth_user.token != ''
     token_matches = not_blank and bcrypt_sha256.verify(token, auth_user.token)

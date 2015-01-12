@@ -1,0 +1,111 @@
+/* Persona button altered with dokomo colours and no person icon */
+.dokomo-button{
+  color: #FFFFFF;
+  display: inline-block;
+  font-size: 12px;
+  font-family: 'Droid Sans', 'Helvetica Neue', helvetica, sans-serif;
+  overflow: hidden;
+  position: relative;
+  text-decoration: none;
+  background: #2Ec371;
+  margin: 0px auto;
+
+  -moz-border-radius:   3px;
+  -ms-border-radius:     3px;
+  -o-border-radius:     3px;
+  -webkit-border-radius:   3px;
+  border-radius:       3px;
+
+}
+
+.dokomo-button:hover{
+  background: #2E9f71;
+}
+
+.dokomo-button:active, .persona-button:focus{
+  top: 1px;
+}
+
+.dokomo-button span{
+  display: inline-block;
+  padding: 5px 12px 5px 16px;
+  width: 36px;
+  text-align: center;
+}
+
+/* Triangle */
+.dokomo-button:before{
+  background: #2Edd71;
+  content: '';
+  display: block;
+  height: 20px;
+  width: 14px;
+
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  margin-top: -9px;
+  z-index: 0;
+
+
+
+  -moz-transform:   rotate(45deg);
+  -ms-transform:     rotate(45deg);
+  -o-transform:     rotate(45deg);
+  -webkit-transform:   rotate(45deg);
+  transform:       rotate(45deg);
+}
+
+/* Inset shadow (required here because the icon background clips it when on the `a` element) */
+.dokomo-button:after{
+  content: '';
+  display: block;
+  height: 100%;
+  width: 100%;
+
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 10;
+
+  -moz-border-radius:   3px;
+  -ms-border-radius:     3px;
+  -o-border-radius:     3px;
+  -webkit-border-radius:   3px;
+  border-radius:       3px;
+
+}
+
+/* ========================================================
+ *    Dark button 
+ * ===================================================== */
+.dokomo-button.dark{
+  background: #2E3c71;
+}
+.dokomo-button.dark:hover{
+  background: #2E2d71;
+}
+.dokomo-button.dark span:before{ /* Icon BG */
+  background: #2E2d71;
+}
+.dokomo-button.dark:before{ /* Triangle */
+  background: #2E2d71;
+}
+
+/* ========================================================
+ *    Orange button 
+ * ===================================================== */
+.dokomo-button.orange{
+  background: #2E1a71;
+}
+.dokomo-button.orange:hover{
+  background: #2E1671;
+}
+.dokomo-button.orange span:before{ /* Icon BG */
+  background: #2E2171;
+}
+.dokomo-button.orange:before{ /* Triangle */
+  background: #2E2171;
+}

@@ -1,10 +1,13 @@
 CACHE MANIFEST
-# Version 0.00123
+# Version 0.001234
 
 /
+/static/persona.js
 /static/lib.js
 /static/app.js
-/static/style.css
+/static/css
+/static/css/style.css
+/static/img
 
 NETWORK:
 *

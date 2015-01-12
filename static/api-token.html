@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Viktor's Create a Survey Funhouse</title>
+    <title>Generate an API token</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="viewport" content="width=device-width, user-scalable=no">
@@ -23,16 +23,28 @@
         <svg class="icon nav__sync">
             <use xlink:href="#icon-sync"></use>
         </svg>
-        <a href="#" class="persona-button" id="login"><span>Sign in with your e-mail</span></a>
-        <div class="nav__title">Here is where you log in.</div>
+        <a href="#" class="persona-button" id="logout"><span>Logout</span></a>
+        <div class="nav__title">Generate your API token</div>
     </div>
 
     <div class="content">
-        Some content.
+        <!-- This doesn't work. Help me Chris. -->
+        <script id="widget_integer" type="text/html">
+            <div class="question__title">Enter an optional duration in seconds. The default is 60 days. The maximum is 365 days.</div>
+            <input class="text_input" type="number" value="Duration in seconds."/>
+        </script>
+        <div>
+            <p>Click here to generate your API token and invalidate your existing one.</p>
+        </div>
+        <script id="template_submit" type="text/html">
+
+        <div class="question__btn">Submit</div>
+        </script>
     </div>
 
     <script src="https://login.persona.org/include.js"></script>
     <script src="/static/lib.js"></script>
+    <script src="/static/persona.js"></script>
     <script src="/static/app.js"></script>
 
 </body>

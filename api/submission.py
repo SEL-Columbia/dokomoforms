@@ -13,8 +13,8 @@ from db.answer_choice import get_answer_choices, answer_choice_insert
 from db.question import question_select, get_required
 from db.question_choice import question_choice_select
 from db.submission import submission_insert, submission_select, \
-    get_submissions, submission_table
-from db.survey import SurveyDoesNotExistError
+    get_submissions_by_email, submission_table
+from db.survey import SurveyDoesNotExistError, get_email_address
 
 
 class RequiredQuestionSkippedError(Exception):
@@ -88,7 +88,7 @@ def submit(data: dict) -> dict:
         if unanswered_required:
             raise RequiredQuestionSkippedError(unanswered_required)
 
-    return get(submission_id)
+    return get_one(submission_id, email=get_email_address(survey_id))
 
 
 def _get_comparable(answers: ResultProxy) -> Iterator:
@@ -158,36 +158,40 @@ def _get_fields(answer: RowProxy) -> dict:
     return result_dict
 
 
-# TODO: Figure out if this function should take a survey_id as a parameter
-def get(submission_id: str) -> dict:
+def get_one(submission_id: str, email: str) -> dict:
     """
     Create a JSON representation of a submission.
 
     :param submission_id: the UUID of the submission
+    :param email: the user's e-mail address
     :return: a JSON dict
     """
-    submission = submission_select(submission_id)
+    submission = submission_select(submission_id, email=email)
     answers = _get_comparable(get_answers(submission_id))
     choices = _get_comparable(get_answer_choices(submission_id))
     # The merge is necessary to get the answers in sequence number order.
     result = merge(answers, choices)
     sub_dict = {'submission_id': submission_id,
-                'survey_id': submission.survey_id,
-                'submitter': submission.submitter,
-                'submission_time': submission.submission_time.isoformat(),
+                'survey_id': submission.survey_survey_id,
+                'submitter': submission.submission_submitter,
+                'submission_time':
+                    submission.submission_submission_time.isoformat(),
                 'answers': [_get_fields(answer) for num, answer in result]}
     return sub_dict
 
 
-def get_all(survey_id: str) -> dict:
+def get_all(survey_id: str, email: str) -> dict:
     """
-    Create a JSON representation of the submissions to a given survey.
+    Create a JSON representation of the submissions to a given survey and
+    email.
 
     :param survey_id: the UUID of the survey
+    :param email: the user's e-mail address
     :return: a JSON dict
     """
-    submissions = get_submissions(survey_id)
-    return [get(sub.submission_id) for sub in submissions]
+    submissions = get_submissions_by_email(survey_id, email=email)
+    # TODO: Check if this is a performance problem
+    return [get_one(sub.submission_id, email=email) for sub in submissions]
 
 
 def delete(submission_id: str):

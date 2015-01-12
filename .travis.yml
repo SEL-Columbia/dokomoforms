@@ -20,7 +20,7 @@ before_script:
 
 # command to run tests
 script: 
-  - nosetests --with-coverage --cover-inclusive --cover-branches --cover-package=api,db,webapp
+  - nosetests --with-coverage --cover-inclusive --cover-branches --cover-tests --cover-html --cover-erase --cover-package=api,db,webapp,pages.api,pages.util,pages.debug
 
 notifications:
   irc:
@@ -34,3 +34,8 @@ notifications:
   hipchat:
     rooms:
       secure: O1kfcW59uDkeCOj4NcxHpwCL77pfFxiRosfoRaXedMcV9llJZkZ7IYCc4HLIr52/sTN2eBrFetOoywRL3nrcrfaKIdbW+Dc+IdmesmOI1xMomsY+yWM79q38D1jiwkHbsGQIH4GTSsLSwTf8lFt7KfM3nKAgwEjApq8+zvnSM1w=
+    template:
+      - "%{repository}@%{branch}: %{message} (%{build_url})"
+    on_success: change
+    on_failure: change
+

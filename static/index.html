@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html manifest2="/static/cache.appcache">
 <head>
-    <title>Ebola Response</title>
+    <title>Dokomo Forms</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="viewport" content="width=device-width, user-scalable=no">
-    <link href="/static/style.css" rel="stylesheet" type="text/css">
+    <link href="/static/css/style.css" rel="stylesheet" type="text/css">
+    <link href="/static/css/dokomo-buttons.css" rel="stylesheet" type="text/css"/>
 </head>
 
 <body>
@@ -25,106 +26,73 @@
     </svg>
     
     <div class="nav">
-        <svg class="icon nav__sync">
-            <use xlink:href="#icon-sync"></use>
-        </svg>
-        <div class="nav__title">EbolaResponse</div>
+        <div class="nav__title">Dokomo Forms</div>
+        <div class="icon nav__sync sel_logo">
+            <a href="http://sel.columbia.edu">
+            <img src="/static/img/SEL_logo_sm.png">
+            </a>
+        </div>
     </div>
-    
+
     <div class="message"></div>
-    
-    <div class="content"></div>
+
+    <div class="content">
+        <div class="welcome">
+            {% if current_user %}
+            <h4 class="welcome_title">Welcome: {{ current_user }}</h4>
+            <p class="welcome_blurb"> Your top 10 Surveys: </p>
+            <ul class="welcome_ulist">
+                {% from db.survey import get_surveys_for_user_by_email %}
+                {% for survey in get_surveys_for_user_by_email(current_user.decode('utf-8'), 10 ) %}
+                <li class="welcome_item"> <a href="/survey/{{survey.survey_id}}"> {{ survey.title }} </a></li>
+                {% end %}
+            </ul>
+
+            <div class="view">
+                <a href="#" class="dokomo-button"><span>View</span></a>
+            </div>
+            <div class="center-create">
+            <div class="create">
+                <a href="#" class="dokomo-button"><span>Create</span></a>
+            </div>
+            </div>
+            <div class="login">
+                <a href="#" class="dokomo-button persona-button" id="logout"><span>Logout</span></a>
+            </div>
+            {% else %}
+            <h4 class="welcome_title"> Welcome to <em>Dokomo</em></h4>
+            <p class="welcome_blurb"> Sign up or login to create and view forms </p>
+            <div class="login">
+                <a href="#" class="dokomo-button persona-button" id="login"><span>Login</span></a>
+            </div>
+            {%end%}
+
+        </div>
+        <div class="about">
+            <h3> Dokomo Forms </h3>
+            <p>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris eu suscipit lectus. Cras molestie elit enim, vitae tristique libero lacinia ac. Curabitur fringilla justo vel ante ornare sodales. Aenean bibendum augue sed est sagittis egestas. Nullam convallis a metus nec congue. Phasellus in mauris orci. Duis vel risus laoreet, faucibus diam ultricies, consequat orci. Duis eget vestibulum ipsum. Integer fermentum velit et sem commodo fringilla. Aenean sit amet nibh pulvinar justo lobortis placerat.
+            </p>
+        </div>
+    </div>
     
     <div class="page_nav">
-        <div class="page_nav__center">
-            <svg class="icon page_nav__btn page_nav__prev">
-                <use xlink:href="#icon-chevron-left"></use>
-            </svg>
-            <svg class="icon page_nav__btn page_nav__next">
-                <use xlink:href="#icon-chevron-right"></use>
-            </svg>
-            <div class="page_nav__progress">1 / 5</div>
+        <div class="sel_text_logo">
+        <span>
+            Dokomo Forms. Forms <em>Everywhere</em>
+        </span>
         </div>
     </div>
-    
-    <script id="widget_text" type="text/html">
-        <div class="question__title"><%- question.title %></div>
-        <input class="text_input" type="text"
-            value="<%- question.answer || question.default || '' %>">
-    </script>
-    
-    <script id="widget_integer" type="text/html">
-        <div class="question__title"><%- question.title %></div>
-        <input class="text_input" type="number"
-            value="<%- question.answer || question.default || '' %>"
-            <% if (question.min != null){ %>
-                min="<%- question.min %>"
-            <% } %>
-            <% if (question.max != null){ %>
-                max="<%- question.max %>"
-            <% } %>
-            >
-    </script>
-    
-    <script id="widget_location" type="text/html">
-        <div class="question__title"><%- question.title %></div>
-        <input class="text_input question__lat" type="text" value="<%- (question.answer && question.answer[0]) || '' %>">
-        <input class="text_input question__lon" type="text" value="<%- (question.answer && question.answer[1]) || '' %>">
-        <div class="question__btn">Find location</div>
-    </script>
-
-    <script id="widget_multiple_choice" type="text/html">
-        <div class="question__title"><%- question.title %></div>
-        <select>
-            <option value="null">Please choose an option</option>
-            <% _.each(question.choices, function(choice) { %>
-                <option value="<%- choice.question_choice_id %>"><%- choice.choice %></option>
-            <% }); %>
-            <% if (question.logic['with_other']) { %>
-                <option value="other">Other</option>
-            <% } %>
-        </select>
-        <input class="text_input" type="text"
-            value="<%- question.answer || question.default || '' %>">
-    </script>
-
-    <script id="widget_decimal" type="text/html">
-        <div class="question__title"><%- question.title %></div>
-        <input class="text_input" type="number" step="any"
-            value="<%- question.answer || question.default || '' %>">
-    </script>
-
-    <script id="widget_date" type="text/html">
-        <div class="question__title"><%- question.title %></div>
-        <input type="date" />
-    </script>
-
-    <script id="widget_time" type="text/html">
-        <div class="question__title"><%- question.title %></div>
-        <input type="time" />
-    </script>
-
-    <script id="widget_note" type="text/html">
-        <div class="question__title"><%- question.title %></div>
-    </script>
-
-    <script id="template_submit" type="text/html">
-        <div class="question__title">
-            That's it, you're finished!
-        </div>
-        <svg class="icon question__saving">
-            <use xlink:href="#icon-save-disk"></use>
-        </svg>
-        <div class="question__btn">Submit</div>
-    </script>
 
     <script src="https://login.persona.org/include.js"></script>
+    <script src="/static/persona.js"></script>
     <script src="/static/lib.js"></script>
     <script src="/static/app.js"></script>
+    {% if message %}
     <script>
-        App.init({% raw survey %});
+        App.message("{{ message }}");
     </script>
+    {% end %}
 </body>
-
 </html>
 

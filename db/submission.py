@@ -1,5 +1,5 @@
 """Allow access to the submission table."""
-
+from operator import and_
 from sqlalchemy import Table, MetaData
 from datetime import datetime
 
@@ -7,6 +7,8 @@ from sqlalchemy.engine import RowProxy, ResultProxy
 from sqlalchemy.sql.dml import Insert
 
 from db import engine
+from db.auth_user import auth_user_table
+from db.survey import survey_table
 
 
 submission_table = Table('submission', MetaData(bind=engine), autoload=True)
@@ -36,31 +38,60 @@ def submission_insert(*,
     return submission_table.insert().values(values)
 
 
-def submission_select(submission_id: str) -> RowProxy:
+def submission_select(submission_id: str,
+                      auth_user_id: str=None,
+                      email: str=None) -> RowProxy:
     """
-    Get a record from the submission table.
+    Get a record from the submission table. You must supply either the
+    auth_user_id or the email.
 
     :param submission_id: the UUID of the submission
+    :param auth_user_id: the UUID of the user
+    :param email: the user's e-mail address
     :return: the corresponding records
     :raise SubmissionDoesNotExistError: if the submission_id is not in the
                                         table
     """
-    submission = submission_table.select().where(
-        submission_table.c.submission_id == submission_id).execute().first()
+
+    sub_sur_cond = submission_table.c.survey_id == survey_table.c.survey_id
+    submission_survey = submission_table.join(survey_table, sub_sur_cond)
+
+    if auth_user_id is not None:
+        if email is not None:
+            raise TypeError('You cannot specify both auth_user_id and email')
+        table = submission_survey
+        cond = and_(submission_table.c.submission_id == submission_id,
+                    survey_table.c.auth_user_id == auth_user_id)
+    elif email is not None:
+        j_cond = survey_table.c.auth_user_id == auth_user_table.c.auth_user_id
+        table = submission_survey.join(auth_user_table, j_cond)
+        cond = and_(submission_table.c.submission_id == submission_id,
+                    auth_user_table.c.email == email)
+    else:
+        raise TypeError('You must specify either auth_user_id or email')
+
+    submission = table.select(use_labels=True).where(cond).execute().first()
     if submission is None:
         raise SubmissionDoesNotExistError(submission_id)
     return submission
 
 
-def get_submissions(survey_id: str) -> ResultProxy:
+def get_submissions_by_email(survey_id: str, email: str) -> ResultProxy:
     """
     Get submissions to a survey.
 
     :param survey_id: the UUID of the survey
+    :param email: the e-mail address of the user
     :return: an iterable of the submission records
     """
-    return submission_table.select().where(
-        submission_table.c.survey_id == survey_id).execute()
+    survey_condition = submission_table.c.survey_id == survey_table.c.survey_id
+    table = submission_table.join(survey_table, survey_condition)
+    user_cond = survey_table.c.auth_user_id == auth_user_table.c.auth_user_id
+    table = table.join(auth_user_table, user_cond)
+
+    condition = and_(submission_table.c.survey_id == survey_id,
+                     auth_user_table.c.email == email)
+    return table.select().where(condition).execute()
 
 
 class SubmissionDoesNotExistError(Exception):
