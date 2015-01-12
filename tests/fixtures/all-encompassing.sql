@@ -163,28 +163,28 @@ VALUES ('what is life', the_auth_user_id)
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 1, 'life', 'integer', False),
-       (the_survey_id, 2, 'there is none fool', 'note', False);
+    type_constraint_name, allow_multiple, logic)
+VALUES (the_survey_id, 1, 'life', 'integer', False, '{"required": true, "with_other": false}'),
+       (the_survey_id, 2, 'there is none fool', 'note', False, '{"required": false, "with_other": false}');
 
 INSERT INTO survey (title, auth_user_id)
 VALUES ('what is death', the_auth_user_id)
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 1, 'death', 'integer', False),
-       (the_survey_id, 2, 'me', 'note', False);
+    type_constraint_name, allow_multiple, logic)
+VALUES (the_survey_id, 1, 'death', 'integer', False, '{"required": true, "with_other": false}'),
+       (the_survey_id, 2, 'me', 'note', False, '{"required": false, "with_other": false}');
 
 INSERT INTO survey (title, auth_user_id)
 VALUES ('happiness', the_auth_user_id)
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 1, 'rate me', 'integer', False),
-       (the_survey_id, 3, 'Tell me how you feel', 'text', True),
-       (the_survey_id, 2, 'thanks, youre the best', 'note', False);
+    type_constraint_name, allow_multiple, logic)
+VALUES (the_survey_id, 1, 'rate me', 'integer', False, '{"required": true, "with_other": false}'),
+       (the_survey_id, 3, 'Tell me how you feel', 'text', True, '{"required": true,"with_other": false }'),
+       (the_survey_id, 2, 'thanks, youre the best', 'note', False, '{"required": false, "with_other": false}');
 
 INSERT INTO survey (title, auth_user_id)
 VALUES ('do you like me?', the_auth_user_id)
@@ -193,8 +193,8 @@ RETURNING survey_id INTO the_survey_id;
 INSERT INTO question (survey_id, sequence_number, title,
     type_constraint_name, allow_multiple)
 VALUES (the_survey_id, 1, 'rate me', 'integer', False),
-       (the_survey_id, 3, 'will you go out with me?', 'text', True),
-       (the_survey_id, 2, 'im gonan ask you out anyway', 'note', False);
+       (the_survey_id, 2, 'will you go out with me?', 'text', True),
+       (the_survey_id, 3, 'im gonan ask you out anyway', 'note', False);
 
 INSERT INTO survey (title, auth_user_id)
 VALUES ('my favourite number', the_auth_user_id)
@@ -213,8 +213,8 @@ RETURNING survey_id INTO the_survey_id;
 INSERT INTO question (survey_id, sequence_number, title,
     type_constraint_name, allow_multiple)
 VALUES (the_survey_id, 1, 'rat3e life', 'integer', False),
-       (the_survey_id, 3, 'was it really worth it', 'text', True),
-       (the_survey_id, 2, 'it wasnt', 'note', False);
+       (the_survey_id, 3, 'it wasnt', 'note', False),
+       (the_survey_id, 2, 'was it really worth it', 'text', True);
 
 INSERT INTO survey (title, auth_user_id)
 VALUES ('days of the week', the_auth_user_id)
