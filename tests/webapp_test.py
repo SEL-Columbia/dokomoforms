@@ -14,6 +14,7 @@ import tornado.httpclient
 import tornado.ioloop
 from tornado.testing import AsyncHTTPTestCase
 import tornado.web
+import uuid
 
 import api.submission
 import api.survey
@@ -257,6 +258,37 @@ class BaseHandlerTest(AsyncHTTPTestCase):
 
     def testGet(self):
         response = self.fetch('/user/login/persona')
+        self.assertEqual(response.code, 404)
+
+
+class IndexTest(AsyncHTTPTestCase):
+    def get_app(self):
+        self.app = tornado.web.Application(pages, **new_config)
+        return self.app
+
+    def get_new_ioloop(self):
+        return tornado.ioloop.IOLoop.instance()
+
+    def testPost(self):
+        response = self.fetch('/', method='POST', body='')
+        self.assertEqual(response.code, 200)
+
+class SurveyTest(AsyncHTTPTestCase):
+    def get_app(self):
+        self.app = tornado.web.Application(pages, **new_config)
+        return self.app
+
+    def get_new_ioloop(self):
+        return tornado.ioloop.IOLoop.instance()
+
+    def testGet(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        response = self.fetch('/{}'.format(survey_id))
+        self.assertEqual(response.code, 200)
+
+    def testGet404(self):
+        response = self.fetch('/{}'.format(str(uuid.uuid4())))
         self.assertEqual(response.code, 404)
 
 

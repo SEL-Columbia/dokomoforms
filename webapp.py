@@ -5,9 +5,7 @@ This tornado server creates the client app by serving html/css/js and
 it also functions as the wsgi container for accepting survey form post
 requests back from the client app.
 """
-import json
 from tornado.escape import to_unicode, json_encode, json_decode
-
 import tornado.web
 import tornado.ioloop
 
@@ -19,7 +17,6 @@ from pages.api.submissions import SubmissionsAPI, SingleSubmissionAPI
 from pages.api.surveys import SurveysAPI, SingleSurveyAPI
 from pages.util.base import BaseHandler
 import pages.util.ui
-
 from pages.debug import DebugLoginHandler, DebugLogoutHandler
 import settings
 from utils.logger import setup_custom_logger
@@ -30,13 +27,11 @@ logger = setup_custom_logger('dokomo')
 
 
 class Index(BaseHandler):
-
     def get(self, msg=""):
-        self.render('index.html', 
-                message=msg) 
+        self.render('index.html', message=msg)
 
-    def post(self, *args):
-        LogoutHandler.post(self) #TODO move to js
+    def post(self):
+        LogoutHandler.post(self)  # TODO move to js
         self.get("You logged out")
 
 
@@ -54,12 +49,6 @@ class Survey(BaseHandler):
     def post(self, uuid):
         data = json_decode(to_unicode(self.request.body))
         self.write(api.submission.submit(data))
-
-
-class PageRequiringLogin(BaseHandler):
-    @tornado.web.authenticated
-    def get(self):
-        self.render('requires-login.html')
 
 
 class APITokenGenerator(BaseHandler):
@@ -92,26 +81,25 @@ UUID_REGEX = '[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[' \
              'a-f0-9]{12}'
 
 pages = [
-           # Dokomo Forms
-           (r'/', Index),  # Ebola front page
+    # Dokomo Forms
+    (r'/', Index),  # Ebola front page
 
-           # Survey Submissions
-           (r'/({})/?'.format(UUID_REGEX), Survey),
+    # Survey Submissions
+    (r'/({})/?'.format(UUID_REGEX), Survey),
 
-           # Auth
-           (r'/user/login/persona/?', LoginHandler),  # Post to Persona here
+    # Auth
+    (r'/user/login/persona/?', LoginHandler),  # Post to Persona here
 
-           # API tokens
-           (r'/user/generate-api-token/?', APITokenGenerator),
+    # API tokens
+    (r'/user/generate-api-token/?', APITokenGenerator),
 
-           # Testing
-           (r'/api/surveys/?', SurveysAPI),
-           (r'/api/surveys/({})/?'.format(UUID_REGEX), SingleSurveyAPI),
-           (r'/api/surveys/({})/submissions/?'.format(UUID_REGEX),
-            SubmissionsAPI),
-           (r'/api/submissions/({})/?'.format(UUID_REGEX),
-            SingleSubmissionAPI),
-           (r'/user/requires-login/?', PageRequiringLogin),
+    # Testing
+    (r'/api/surveys/?', SurveysAPI),
+    (r'/api/surveys/({})/?'.format(UUID_REGEX), SingleSurveyAPI),
+    (r'/api/surveys/({})/submissions/?'.format(UUID_REGEX),
+     SubmissionsAPI),
+    (r'/api/submissions/({})/?'.format(UUID_REGEX),
+     SingleSubmissionAPI),
 ]
 
 if config.get('debug', False):
