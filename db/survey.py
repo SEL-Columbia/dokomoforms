@@ -54,7 +54,7 @@ def get_survey_id_from_prefix(survey_prefix: str) -> str:
     surveys = survey_table.select().where(condition).execute().fetchall()
     if len(surveys) == 1:
         return surveys[0].survey_id
-    raise SurveyPrefixDoesNotIdentifyASurvey(survey_prefix)
+    raise SurveyPrefixDoesNotIdentifyASurveyError(survey_prefix)
 
 
 def display(survey_id: str) -> RowProxy:
@@ -168,5 +168,5 @@ class SurveyAlreadyExistsError(Exception):
     pass
 
 
-class SurveyPrefixDoesNotIdentifyASurvey(Exception):
+class SurveyPrefixDoesNotIdentifyASurveyError(Exception):
     pass

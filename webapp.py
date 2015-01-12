@@ -20,7 +20,8 @@ import pages.util.ui
 from pages.debug import DebugLoginHandler, DebugLogoutHandler
 import settings
 from utils.logger import setup_custom_logger
-from db.survey import SurveyPrefixDoesNotIdentifyASurvey
+from db.survey import SurveyPrefixDoesNotIdentifyASurveyError, \
+    get_survey_id_from_prefix
 
 
 logger = setup_custom_logger('dokomo')
@@ -38,11 +39,15 @@ class Index(BaseHandler):
 class Survey(BaseHandler):
     def get(self, survey_prefix: str):
         try:
-            survey = api.survey.display_survey(survey_prefix)
-            self.render('survey.html',
-                        survey=json_encode(survey),
-                        title=survey['title'])
-        except SurveyPrefixDoesNotIdentifyASurvey:
+            survey_id = get_survey_id_from_prefix(survey_prefix)
+            if len(survey_prefix) < 36:
+                self.redirect('/survey/{}'.format(survey_id), permanent=False)
+            else:
+                survey = api.survey.display_survey(survey_id)
+                self.render('survey.html',
+                            survey=json_encode(survey),
+                            title=survey['title'])
+        except SurveyPrefixDoesNotIdentifyASurveyError:
             raise tornado.web.HTTPError(404)
 
 

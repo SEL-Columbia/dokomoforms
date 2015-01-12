@@ -19,7 +19,7 @@ from db.question_choice import get_choices, question_choice_insert, \
 from db.submission import get_submissions_by_email, submission_insert
 from db.survey import survey_insert, survey_select, survey_table, \
     SurveyAlreadyExistsError, get_free_title, get_surveys_for_user_by_email, \
-    display, get_survey_id_from_prefix
+    display
 from db.type_constraint import TypeConstraintDoesNotExistError
 
 
@@ -377,16 +377,14 @@ def _to_json(survey: RowProxy) -> dict:
             'questions': question_fields}
 
 
-def display_survey(survey_prefix: str) -> dict:
+def display_survey(survey_id: str) -> dict:
     """
     Get a JSON representation of a survey. Use this to display a survey for
     submission purposes.
 
-    :param survey_prefix: the UUID (or a uniquely-identifying prefix) of the
-                        survey
+    :param survey_id: the UUID of the survey
     :return: the JSON representation.
     """
-    survey_id = get_survey_id_from_prefix(survey_prefix)
     return _to_json(display(survey_id))
 
 

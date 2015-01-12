@@ -26,7 +26,7 @@ from db.submission import submission_table, submission_insert, \
     submission_select, get_submissions_by_email
 from db.survey import survey_table, survey_insert, survey_select, \
     get_surveys_for_user_by_email, display, SurveyDoesNotExistError, \
-    get_survey_id_from_prefix, SurveyPrefixDoesNotIdentifyASurvey
+    get_survey_id_from_prefix, SurveyPrefixDoesNotIdentifyASurveyError
 
 
 class TestAnswer(unittest.TestCase):
@@ -445,7 +445,7 @@ class TestSurvey(unittest.TestCase):
         survey_id = survey_table.select().where(
             survey_table.c.title == 'test_title').execute().first().survey_id
         self.assertEqual(get_survey_id_from_prefix(survey_id[:10]), survey_id)
-        self.assertRaises(SurveyPrefixDoesNotIdentifyASurvey,
+        self.assertRaises(SurveyPrefixDoesNotIdentifyASurveyError,
                           get_survey_id_from_prefix, str(uuid.uuid4()))
 
     def testDisplay(self):
