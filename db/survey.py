@@ -1,10 +1,10 @@
 """Allow access to the survey table."""
 import re
 from collections import Iterator
-from sqlalchemy import Table, MetaData
+from sqlalchemy import Table, MetaData, Text
 
 from sqlalchemy.engine import RowProxy, ResultProxy
-from sqlalchemy.sql import Insert, and_
+from sqlalchemy.sql import Insert, and_, cast
 
 from db import engine
 from db.auth_user import auth_user_table
@@ -37,6 +37,24 @@ def get_surveys_for_user_by_email(email: str, limit: int=None) -> ResultProxy:
     return join_table.select().limit(limit).where(
         auth_user_table.c.email == email).order_by(
         'created_on asc').execute().fetchall()
+
+
+def get_survey_id_from_prefix(survey_prefix: str) -> str:
+    """
+    Return the survey UUID that is identified uniquely by the given prefix.
+
+    :param survey_prefix: a string of characters that could be the prefix to
+                          a UUID
+    :return: the full UUID
+    :raise SurveyPrefixDoesNotIdentifyASurvey: if the given prefix identifies
+                                               0 or more than 1 survey
+    """
+    survey_id_text = cast(survey_table.c.survey_id, Text)
+    condition = survey_id_text.like('{}%'.format(survey_prefix))
+    surveys = survey_table.select().where(condition).execute().fetchall()
+    if len(surveys) == 1:
+        return surveys[0].survey_id
+    raise SurveyPrefixDoesNotIdentifyASurvey(survey_prefix)
 
 
 def display(survey_id: str) -> RowProxy:
@@ -147,4 +165,8 @@ class SurveyDoesNotExistError(Exception):
 
 
 class SurveyAlreadyExistsError(Exception):
+    pass
+
+
+class SurveyPrefixDoesNotIdentifyASurvey(Exception):
     pass

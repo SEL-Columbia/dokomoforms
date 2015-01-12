@@ -20,7 +20,7 @@ import pages.util.ui
 from pages.debug import DebugLoginHandler, DebugLogoutHandler
 import settings
 from utils.logger import setup_custom_logger
-from db.survey import SurveyDoesNotExistError
+from db.survey import SurveyPrefixDoesNotIdentifyASurvey
 
 
 logger = setup_custom_logger('dokomo')
@@ -36,15 +36,15 @@ class Index(BaseHandler):
 
 
 class Survey(BaseHandler):
-    def get(self, survey_id: str):
+    def get(self, survey_prefix: str):
         try:
-            survey = api.survey.display_survey(survey_id)
+            survey = api.survey.display_survey(survey_prefix)
             self.render('survey.html',
                         survey=json_encode(survey),
                         title=survey['title'])
-
-        except SurveyDoesNotExistError:
+        except SurveyPrefixDoesNotIdentifyASurvey:
             raise tornado.web.HTTPError(404)
+
 
     def post(self, uuid):
         data = json_decode(to_unicode(self.request.body))
@@ -85,7 +85,7 @@ pages = [
     (r'/', Index),  # Ebola front page
 
     # Survey Submissions
-    (r'/({})/?'.format(UUID_REGEX), Survey),
+    (r'/survey/(.*)/?', Survey),
 
     # Auth
     (r'/user/login/persona/?', LoginHandler),  # Post to Persona here

@@ -79,7 +79,7 @@ class TestDokomoWebapp(unittest.TestCase):
         # prepare the POST request
         http_client = tornado.httpclient.AsyncHTTPClient()
         req = tornado.httpclient.HTTPRequest(
-            url='http://localhost:%d/%s' % (TEST_PORT, survey_id),
+            url='http://localhost:%d/survey/%s' % (TEST_PORT, survey_id),
             method='POST',
             headers=POST_HDRS,
             body=json_encode(answer_json))
@@ -284,11 +284,11 @@ class SurveyTest(AsyncHTTPTestCase):
     def testGet(self):
         survey_id = survey_table.select().where(
             survey_table.c.title == 'test_title').execute().first().survey_id
-        response = self.fetch('/{}'.format(survey_id))
+        response = self.fetch('/survey/{}'.format(survey_id))
         self.assertEqual(response.code, 200)
 
     def testGet404(self):
-        response = self.fetch('/{}'.format(str(uuid.uuid4())))
+        response = self.fetch('/survey/{}'.format(str(uuid.uuid4())))
         self.assertEqual(response.code, 404)
 
 

@@ -21,3 +21,4 @@ WITH (
 ALTER TABLE survey
   OWNER TO postgres;
 
+CREATE INDEX words_btree_tpo ON survey(cast(survey_id AS text) text_pattern_ops);
