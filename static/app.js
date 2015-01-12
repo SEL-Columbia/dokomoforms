@@ -190,9 +190,9 @@ Survey.prototype.submit = function() {
 
 
 var Widgets = {};
+
 // Handle creating multiple inputs for widgets that support it
 Widgets.keyUp = function(e, page, question, cls, type, keyup_cb) {
-    window.v = ($(page).find('input'));
     if (e.keyCode === 13) {
         if (question.allow_multiple) {
             var v = $('<input>')
@@ -219,7 +219,8 @@ Widgets.text = function(question, page) {
 Widgets.integer = function(question, page) {
     var self = this;
     function keyup(e) {
-        question.answer = [parseInt(this.value)];
+        var ans_ind = ($(page).find('input')).index(this);
+        question.answer[ans_ind] = parseInt(this.value);
         self.keyUp(e, page, question, 'text_input', 'number', keyup);
     };
 
