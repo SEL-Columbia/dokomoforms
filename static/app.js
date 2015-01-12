@@ -52,10 +52,12 @@ function Survey(id, questions) {
     var self = this;
     this.id = id;
     this.questions = questions;
-    
+    //this.questions = _.sortBy(questions, function(question) { return question.sequence_number; });
+
     // Load answers from localStorage
     var answers = JSON.parse(localStorage[this.id] || '{}');
     _.each(this.questions, function(question) {
+        //XXX: Location is loaded incorrectly
         question.answer = answers[question.question_id] || null;
     });
     
@@ -64,7 +66,7 @@ function Survey(id, questions) {
         var offset = this.classList.contains('page_nav__prev') ? -1 : 1;
         var index = $('.content').data('index') + offset;
         if (index >= 0 && index <= self.questions.length) {
-            self.render(index);
+            self.next(offset, index);
         }
         return false;
     });
@@ -72,6 +74,25 @@ function Survey(id, questions) {
     // Render first question
     this.render(0);
 };
+
+Survey.prototype.next = function(offset, index) {
+    var self = this;
+    var prev_index = index - offset;
+    var prev_question = this.questions[prev_index];
+    if (offset === 1 && prev_question) {
+        console.log(prev_question.logic, prev_question.answer);
+        // XXX: prev_question.answer field is a mess to check, need to purify ans
+        if (prev_question.logic.required 
+                && (!prev_question.answer && prev_question.answer !== 0))  {
+            App.message('Survey requires this question to be completed.');
+            return;
+        }
+    }
+
+    self.render(index);
+};
+
+//XXX: Have a question class to do checks, answer validation and branching? 
 
 Survey.prototype.render = function(index) {
     var self = this;
