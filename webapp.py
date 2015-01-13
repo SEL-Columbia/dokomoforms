@@ -74,7 +74,7 @@ class APITokenGenerator(BaseHandler):
 
 
 config = {
-    'template_path': 'static',
+    'template_path': 'templates',
     'static_path': 'static',
     'xsrf_cookies': True,
     'login_url': '/',
