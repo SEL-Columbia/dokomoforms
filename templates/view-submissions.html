@@ -5,12 +5,12 @@
     <div class="message"></div>
 
     <div class="content">
-        <div class="welcome">
-            <h4 class="welcome_title">Welcome {{ current_user }}</h4>
-            <p class="welcome_blurb"> Submissions to {{ survey.title }}: </p>
-            <ul class="welcome_ulist">
+        <div>
+            <h4>Welcome {{ current_user }}</h4>
+            <p> Submissions to {{ survey.title }}: </p>
+            <ul>
                 {% for submission in submissions %}
-                    <li class="welcome_item">
+                    <li>
                         <a href="/view/submission/{{ submission.submission_id }}">{{ submission.submitter }} - {{ submission.submission_time }}</a>
                     </li>
                 {% end %}

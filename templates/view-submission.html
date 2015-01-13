@@ -5,20 +5,18 @@
     <div class="message"></div>
 
     <div class="content">
-        <div class="welcome">
-            <h4 class="welcome_title">Welcome {{ current_user }}</h4>
-            <p class="welcome_blurb"> Submission {{ submission['submission_id'] }} by {{ submission['submitter'] }} at {{ submission['submission_time'] }} to survey {{ survey.title }}: </p>
-            <ul class="welcome_ulist">
-                {% for answer in submission['answers'] %}
-                    <li class="welcome_item">
-                        {{ answer }}
-                    </li>
-                {% end %}
-            </ul>
-            </div>
-            <div class="login">
-                <a href="#" class="dokomo-button persona-button" id="logout"><span>Logout</span></a>
-            </div>
+        <h4>Welcome {{ current_user }}</h4>
+        <p> Submission {{ submission['submission_id'] }} by {{ submission['submitter'] }} at {{ submission['submission_time'] }} to survey {{ survey.title }}: </p>
+        <ul>
+            {% for answer in submission['answers'] %}
+                <li>
+                    {{ answer }}
+                </li>
+            {% end %}
+        </ul>
+        </div>
+        <div class="login">
+            <a href="#" class="dokomo-button persona-button" id="logout"><span>Logout</span></a>
         </div>
     </div>
 
