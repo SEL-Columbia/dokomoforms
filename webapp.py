@@ -21,7 +21,7 @@ from pages.debug import DebugLoginHandler, DebugLogoutHandler
 import settings
 from utils.logger import setup_custom_logger
 from db.survey import SurveyPrefixDoesNotIdentifyASurveyError, \
-    get_survey_id_from_prefix
+    get_survey_id_from_prefix, SurveyPrefixTooShortError
 
 
 logger = setup_custom_logger('dokomo')
@@ -47,7 +47,8 @@ class Survey(BaseHandler):
                 self.render('survey.html',
                             survey=json_encode(survey),
                             title=survey['title'])
-        except SurveyPrefixDoesNotIdentifyASurveyError:
+        except (SurveyPrefixDoesNotIdentifyASurveyError,
+                SurveyPrefixTooShortError):
             raise tornado.web.HTTPError(404)
 
 

@@ -49,6 +49,8 @@ def get_survey_id_from_prefix(survey_prefix: str) -> str:
     :raise SurveyPrefixDoesNotIdentifyASurvey: if the given prefix identifies
                                                0 or more than 1 survey
     """
+    if len(survey_prefix) < 8:
+        raise SurveyPrefixTooShortError(survey_prefix)
     survey_id_text = cast(survey_table.c.survey_id, Text)
     cond = survey_id_text.like('{}%'.format(survey_prefix))
     surveys = survey_table.select().limit(2).where(cond).execute().fetchall()
@@ -169,4 +171,8 @@ class SurveyAlreadyExistsError(Exception):
 
 
 class SurveyPrefixDoesNotIdentifyASurveyError(Exception):
+    pass
+
+
+class SurveyPrefixTooShortError(Exception):
     pass
