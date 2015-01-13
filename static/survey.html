@@ -52,6 +52,13 @@
         <div class="question__title"><%- question.title %></div>
         <input class="text_input" type="text"
             value="<%- question.answer[0] || question.default || '' %>">
+
+        <% if (question.answer.length > 1){ %>
+            <% _.each(question.answer.slice(1), function(ans) { %>
+                <input class="text_input" type="text"
+                    value="<%- ans || question.default || '' %>">
+            <% }); %>
+        <% } %>
     </script>
     
     <script id="widget_integer" type="text/html">
@@ -68,7 +75,7 @@
         <% if (question.answer.length > 1){ %>
             <% _.each(question.answer.slice(1), function(ans) { %>
                 <input class="text_input" type="number"
-                    value="<%- ans || question.default || '' %>"
+                    value="<%- ans %>"
                     <% if (question.min != null){ %>
                         min="<%- question.min %>"
                     <% } %>
@@ -83,9 +90,17 @@
     <script id="widget_location" type="text/html">
         <div class="question__title"><%- question.title %></div>
         <div id="map" class="question__map"></div>
+
         <input class="text_input question__lat" type="text" value="<%- (question.answer[0] && question.answer[0][1]) || '' %>">
         <input class="text_input question__lon" type="text" value="<%- (question.answer[0] && question.answer[0][0]) || '' %>">
         <div class="question__btn">Find location</div>
+
+        <% if (question.answer.length > 1){ %>
+            <% _.each(question.answer.slice(1), function(ans) { %>
+                <input class="text_input question__lat" type="text" value="<%- (ans[1]) %>">
+                <input class="text_input question__lon" type="text" value="<%- (ans[0]) %>">
+            <% }); %>
+        <% } %>
     </script>
 
     <script id="widget_multiple_choice" type="text/html">
