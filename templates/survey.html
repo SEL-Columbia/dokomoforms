@@ -100,7 +100,7 @@
         <% if (question.answer.length > 1){ %>
             <% _.each(question.answer.slice(1), function(ans) { %>
                 <input class="text_input" type="number" step="any"
-                    value="<%- question.answer[0] || question.default || '' %>">
+                    value="<%- ans %>">
             <% }); %>
         <% } %>
     </script>
@@ -108,11 +108,21 @@
     <script id="widget_date" type="text/html">
         <div class="question__title"><%- question.title %></div>
         <input class="text_input" type="date" value="<%- question.answer[0] || question.default || '' %>">
+        <% if (question.answer.length > 1){ %>
+            <% _.each(question.answer.slice(1), function(ans) { %>
+                <input class="text_input" type="date" value="<%- ans %>">
+            <% }); %>
+        <% } %>
     </script>
 
     <script id="widget_time" type="text/html">
         <div class="question__title"><%- question.title %></div>
         <input class="text_input" type="time" value="<%- question.answer[0] || question.default || '' %>">
+        <% if (question.answer.length > 1){ %>
+            <% _.each(question.answer.slice(1), function(ans) { %>
+                <input class="text_input" type="time" value="<%- ans %>">
+            <% }); %>
+        <% } %>
     </script>
 
     <script id="widget_note" type="text/html">
