@@ -18,6 +18,7 @@ from pages.api.surveys import SurveysAPI, SingleSurveyAPI
 from pages.util.base import BaseHandler
 import pages.util.ui
 from pages.debug import DebugLoginHandler, DebugLogoutHandler
+from pages.view.surveys import ViewHandler
 import settings
 from utils.logger import setup_custom_logger
 from db.survey import SurveyPrefixDoesNotIdentifyASurveyError, \
@@ -90,7 +91,10 @@ UUID_REGEX = '[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[' \
 
 pages = [
     # Dokomo Forms
-    (r'/', Index),  # Ebola front page
+    (r'/', Index),
+
+    # View surveys
+    (r'/view/?', ViewHandler),
 
     # Survey Submissions
     (r'/survey/(.+)/?', Survey),
