@@ -18,7 +18,9 @@ from pages.api.surveys import SurveysAPI, SingleSurveyAPI
 from pages.util.base import BaseHandler
 import pages.util.ui
 from pages.debug import DebugLoginHandler, DebugLogoutHandler
-from pages.view.surveys import ViewHandler, ViewSubmissionsHandler
+from pages.view.surveys import ViewHandler
+from pages.view.submissions import ViewSubmissionsHandler, \
+    ViewSubmissionHandler
 import settings
 from utils.logger import setup_custom_logger
 from db.survey import SurveyPrefixDoesNotIdentifyASurveyError, \
@@ -96,6 +98,7 @@ pages = [
     # View surveys and submissions
     (r'/view/?', ViewHandler),
     (r'/view/({})/?'.format(UUID_REGEX), ViewSubmissionsHandler),
+    (r'/view/submission/({})/?'.format(UUID_REGEX), ViewSubmissionHandler),
 
     # Survey Submissions
     (r'/survey/(.+)/?', Survey),
