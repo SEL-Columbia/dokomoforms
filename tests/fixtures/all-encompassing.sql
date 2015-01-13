@@ -92,9 +92,9 @@ RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
     type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 1, 'another integer question', 'integer', False),
-       (the_survey_id, 5, 'another time question', 'time', False),
-       (the_survey_id, 6, 'another location question', 'location', False),
+VALUES (the_survey_id, 1, 'another integer question', 'integer', True),
+       (the_survey_id, 5, 'another time question', 'time', True),
+       (the_survey_id, 6, 'another location question', 'location', True),
        (the_survey_id, 7, 'another text question', 'text', True),
        (the_survey_id, 9, 'another note', 'note', False);
 
@@ -106,7 +106,7 @@ RETURNING question_id into the_from_question_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
     type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 3, 'another decimal question', 'decimal', False)
+VALUES (the_survey_id, 3, 'another decimal question', 'decimal', True)
 RETURNING question_id into the_to_question_id;
 
 INSERT INTO question_choice (choice, choice_number, question_id,
@@ -120,12 +120,12 @@ INSERT INTO question_branch (question_choice_id, from_question_id,
     from_survey_id, to_question_id, to_type_constraint, to_sequence_number,
     to_allow_multiple, to_survey_id)
 VALUES (the_question_choice_id, the_from_question_id, 'multiple_choice', 2,
-    False, the_survey_id, the_to_question_id, 'decimal', 3, False,
+    False, the_survey_id, the_to_question_id, 'decimal', 3, True,
     the_survey_id);
 
 INSERT INTO question (survey_id, sequence_number, title,
     type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 4, 'another date question', 'date', False)
+VALUES (the_survey_id, 4, 'another date question', 'date', True)
 RETURNING question_id into the_to_question_id;
 
 INSERT INTO question_choice (choice, choice_number, question_id,
@@ -139,7 +139,7 @@ INSERT INTO question_branch (question_choice_id, from_question_id,
     from_survey_id, to_question_id, to_type_constraint, to_sequence_number,
     to_allow_multiple, to_survey_id)
 VALUES (the_question_choice_id, the_from_question_id, 'multiple_choice', 2,
-    False, the_survey_id, the_to_question_id, 'date', 4, False,
+    False, the_survey_id, the_to_question_id, 'date', 4, True,
     the_survey_id);
 
 INSERT INTO question (survey_id, sequence_number, title,

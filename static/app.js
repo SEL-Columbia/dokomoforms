@@ -78,7 +78,6 @@ Survey.prototype.next = function(offset, index) {
     var self = this;
     var prev_index = index - offset;
     var prev_question = this.questions[prev_index];
-    console.log(prev_question.answers, prev_question);
     if (offset === 1 && prev_question) {
         // XXX: prev_question.answer field is a mess to check, need to purify ans
         if (prev_question.logic.required 
@@ -193,11 +192,12 @@ Survey.prototype.submit = function() {
 var Widgets = {};
 
 // Handle creating multiple inputs for widgets that support it
-Widgets.keyUp = function(e, page, question, cls, type, keyup_cb) {
+Widgets.keyUp = function(e, page, question, cls, type, keyup_cb, change_cb) {
     if (e.keyCode === 13) {
         if (question.allow_multiple) {
             var v = $('<input>')
                 .attr({'type': type, 'class': cls})
+                .change(change_cb)
                 .keyup(keyup_cb)
                 .appendTo(page);
         }
@@ -210,11 +210,17 @@ Widgets.text = function(question, page) {
     //
     // question: question data
     // page: the widget container DOM element
+
+    var self = this;
+    function keyup(e) {
+        var ans_ind = ($(page).find('input')).index(this);
+        question.answer[ans_ind] = this.value;
+        self.keyUp(e, page, question, 'text_input', 'text', keyup);
+    };
+
     $(page)
         .find('input')
-        .on('keyup', function() {
-            question.answer = [this.value];
-        });
+        .keyup(keyup);
 };
 
 Widgets.integer = function(question, page) {
@@ -359,31 +365,57 @@ Widgets.multiple_choice = function(question, page) {
 };
 
 Widgets.decimal = function(question, page) {
+    var self = this;
+    function keyup(e) {
+        var ans_ind = ($(page).find('input')).index(this);
+        question.answer[ans_ind] = parseFloat(this.value);
+        self.keyUp(e, page, question, 'text_input', 'number', keyup);
+    };
+
     $(page)
         .find('input')
-        .keyup(function() {
-            question.answer = [parseFloat(this.value)];
-        });
+        .keyup(keyup);
 };
 
 Widgets.date = function(question, page) {
+    var self = this;
+    function change() {
+        var ans_ind = ($(page).find('input')).index(this);
+        console.log(ans_ind, this.value);
+        if (this.value !== '') 
+            question.answer[ans_ind] = this.value;
+
+    };
+
+    function keyup(e) {
+        self.keyUp(e, page, question, 'text_input', 'date', keyup, change);
+    }
+
     $(page)
         .find('input')
-        .change(function() {
-            if (this.value !== '') {
-                question.answer = [this.value];
-            }
-        });
+        .change(change)
+        .keyup(keyup)
 };
 
 Widgets.time = function(question, page) {
+
+    var self = this;
+    function change() {
+        var ans_ind = ($(page).find('input')).index(this);
+        console.log(ans_ind, this.value);
+        if (this.value !== '') 
+            question.answer[ans_ind] = this.value;
+
+    };
+
+    function keyup(e) {
+        self.keyUp(e, page, question, 'text_input', 'time', keyup, change);
+    }
+
     $(page)
         .find('input')
-        .change(function() {
-            if(this.value !== ''){
-                question.answer = [this.value];
-            }
-      });
+        .change(change)
+        .keyup(keyup)
 };
 
 Widgets.note = function(question, page) {
