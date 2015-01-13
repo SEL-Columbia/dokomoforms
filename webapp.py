@@ -65,7 +65,7 @@ class APITokenGenerator(BaseHandler):
         # self.render('api-token.html')
         self.write(
             api.user.generate_token(
-                {'email': to_unicode(self.current_user)}))
+                {'email': self.current_user}))
 
 
     @tornado.web.authenticated
