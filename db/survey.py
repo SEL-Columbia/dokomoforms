@@ -4,7 +4,7 @@ from collections import Iterator
 from sqlalchemy import Table, MetaData, Text
 
 from sqlalchemy.engine import RowProxy, ResultProxy
-from sqlalchemy.sql import Insert, and_, cast
+from sqlalchemy.sql import Insert, and_, cast, select, exists
 
 from db import engine
 from db.auth_user import auth_user_table
@@ -152,8 +152,9 @@ def get_free_title(title: str) -> str:
     :param title: the survey title
     :return: a title that can be inserted safely
     """
-    eq_condition = survey_table.c.title == title
-    if survey_table.select().where(eq_condition).execute().rowcount == 0:
+    (does_exist, ), = engine.execute(
+        select((exists().where(survey_table.c.title == title),)))
+    if not does_exist:
         return title
     cond = survey_table.c.title.like(title + '%')
     similar_surveys = survey_table.select().where(cond).execute().fetchall()

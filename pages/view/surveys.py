@@ -1,10 +1,9 @@
 """Survey views."""
 
-from tornado.escape import json_encode
 import tornado.web
 
-import api.survey
-from pages.util.base import APIHandler, get_email, BaseHandler
+from db.survey import get_surveys_for_user_by_email
+from pages.util.base import BaseHandler
 
 
 class ViewHandler(BaseHandler):
@@ -12,4 +11,5 @@ class ViewHandler(BaseHandler):
 
     @tornado.web.authenticated
     def get(self):
-        surveys = json_encode(api.survey.get_all(get_email(self)))
+        surveys = get_surveys_for_user_by_email(self.current_user)
+        self.render('view.html', message=None, surveys=surveys)
