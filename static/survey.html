@@ -56,17 +56,28 @@
     
     <script id="widget_integer" type="text/html">
         <div class="question__title"><%- question.title %></div>
-        <% _.each(question.answer, function(ans) { %>
-            <input class="text_input" type="number"
-                value="<%- ans || question.default || '' %>"
-                <% if (question.min != null){ %>
-                    min="<%- question.min %>"
-                <% } %>
-                <% if (question.max != null){ %>
-                    max="<%- question.max %>"
-                <% } %>
-            >
-        <% }); %>
+        <input class="text_input" type="number"
+            value="<%- question.answer[0] || question.default || '' %>"
+            <% if (question.min != null){ %>
+                min="<%- question.min %>"
+            <% } %>
+            <% if (question.max != null){ %>
+                max="<%- question.max %>"
+            <% } %>
+        >
+        <% if (question.answer.length > 1){ %>
+            <% _.each(question.answer.slice(1), function(ans) { %>
+                <input class="text_input" type="number"
+                    value="<%- ans || question.default || '' %>"
+                    <% if (question.min != null){ %>
+                        min="<%- question.min %>"
+                    <% } %>
+                    <% if (question.max != null){ %>
+                        max="<%- question.max %>"
+                    <% } %>
+                >
+            <% }); %>
+        <% } %>
     </script>
     
     <script id="widget_location" type="text/html">
