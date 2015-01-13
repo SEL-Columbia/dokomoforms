@@ -33,7 +33,9 @@ class BaseHandler(tornado.web.RequestHandler):
 
         :return: the current user's e-mail address
         """
-        return self.get_secure_cookie('user')
+        user = self.get_secure_cookie('user')
+        if user:
+            return to_unicode(user)
 
 
 class APIHandler(BaseHandler):
@@ -64,4 +66,4 @@ def get_email(self: APIHandler) -> str:
     :return: the e-mail address
     """
     header = self.request.headers.get('Email', None)
-    return header if header is not None else to_unicode(self.current_user)
+    return header if header is not None else self.current_user

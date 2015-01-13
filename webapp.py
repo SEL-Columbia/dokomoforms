@@ -20,7 +20,9 @@ import pages.util.ui
 from pages.debug import DebugLoginHandler, DebugLogoutHandler
 import settings
 from utils.logger import setup_custom_logger
-from db.survey import SurveyDoesNotExistError
+from db.survey import SurveyPrefixDoesNotIdentifyASurveyError, \
+    SurveyPrefixTooShortError, \
+    get_survey_id_from_prefix, get_surveys_for_user_by_email
 
 
 logger = setup_custom_logger('dokomo')
@@ -28,7 +30,8 @@ logger = setup_custom_logger('dokomo')
 
 class Index(BaseHandler):
     def get(self, msg=""):
-        self.render('index.html', message=msg)
+        surveys = get_surveys_for_user_by_email(self.current_user, 10)
+        self.render('index.html', message=msg, surveys=surveys)
 
     def post(self):
         LogoutHandler.post(self)  # TODO move to js
@@ -36,15 +39,20 @@ class Index(BaseHandler):
 
 
 class Survey(BaseHandler):
-    def get(self, survey_id: str):
+    def get(self, survey_prefix: str):
         try:
-            survey = api.survey.display_survey(survey_id)
-            self.render('survey.html',
-                        survey=json_encode(survey),
-                        title=survey['title'])
-
-        except SurveyDoesNotExistError:
+            survey_id = get_survey_id_from_prefix(survey_prefix)
+            if len(survey_prefix) < 36:
+                self.redirect('/survey/{}'.format(survey_id), permanent=False)
+            else:
+                survey = api.survey.display_survey(survey_id)
+                self.render('survey.html',
+                            survey=json_encode(survey),
+                            title=survey['title'])
+        except (SurveyPrefixDoesNotIdentifyASurveyError,
+                SurveyPrefixTooShortError):
             raise tornado.web.HTTPError(404)
+
 
     def post(self, uuid):
         data = json_decode(to_unicode(self.request.body))
@@ -57,7 +65,7 @@ class APITokenGenerator(BaseHandler):
         # self.render('api-token.html')
         self.write(
             api.user.generate_token(
-                {'email': to_unicode(self.current_user)}))
+                {'email': self.current_user}))
 
 
     @tornado.web.authenticated
@@ -68,7 +76,7 @@ class APITokenGenerator(BaseHandler):
 
 
 config = {
-    'template_path': 'static',
+    'template_path': 'templates',
     'static_path': 'static',
     'xsrf_cookies': True,
     'login_url': '/',
@@ -85,7 +93,7 @@ pages = [
     (r'/', Index),  # Ebola front page
 
     # Survey Submissions
-    (r'/({})/?'.format(UUID_REGEX), Survey),
+    (r'/survey/(.+)/?', Survey),
 
     # Auth
     (r'/user/login/persona/?', LoginHandler),  # Post to Persona here

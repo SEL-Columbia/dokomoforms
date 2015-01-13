@@ -13,6 +13,8 @@ from pages.util.base import BaseHandler
 class LoginHandler(BaseHandler):
     """POST here to create an account or log in using Mozilla Persona."""
 
+    # TODO: Someone please help me write a test for this.
+
     @tornado.web.asynchronous
     @tornado.gen.engine
     def post(self):
@@ -49,4 +51,4 @@ class LoginHandler(BaseHandler):
 
 class LogoutHandler(BaseHandler):
     def post(self):
-        self.clear_cookie('user') #Move to js if possible
+        self.clear_cookie('user')  # Move to js if possible

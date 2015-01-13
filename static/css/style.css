@@ -106,6 +106,7 @@ a:link:active, a:visited:active {
     background: rgb(46, 204, 113);
     color: white;
     padding: 5px;
+    z-index: 10;
 }
 
 .nav__title {
