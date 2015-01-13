@@ -26,7 +26,8 @@ from db.submission import submission_table, submission_insert, \
     submission_select, get_submissions_by_email
 from db.survey import survey_table, survey_insert, survey_select, \
     get_surveys_for_user_by_email, display, SurveyDoesNotExistError, \
-    get_survey_id_from_prefix, SurveyPrefixDoesNotIdentifyASurveyError
+    get_survey_id_from_prefix, SurveyPrefixDoesNotIdentifyASurveyError, \
+    SurveyPrefixTooShortError
 
 
 class TestAnswer(unittest.TestCase):
@@ -447,6 +448,10 @@ class TestSurvey(unittest.TestCase):
         self.assertEqual(get_survey_id_from_prefix(survey_id[:10]), survey_id)
         self.assertRaises(SurveyPrefixDoesNotIdentifyASurveyError,
                           get_survey_id_from_prefix, str(uuid.uuid4()))
+
+    def testPrefixTooShort(self):
+        self.assertRaises(SurveyPrefixTooShortError, get_survey_id_from_prefix,
+                          'a')
 
     def testDisplay(self):
         survey = survey_table.select().where(
