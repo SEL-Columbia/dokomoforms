@@ -53,14 +53,11 @@ function getCookie(name) {
       }
 
     });
-
-    var signinLink = document.getElementById('login');
-    if (signinLink) {
-      signinLink.onclick = function() { navigator.id.request(); };
-    }
-
-    var signoutLink = document.getElementById('logout');
-    if (signoutLink) {
-      signoutLink.onclick = function() { navigator.id.logout(); };
-    }
+    
+    $('#login').click(function(){
+        navigator.id.request();
+    });
+    $('#logout').click(function(){
+        navigator.id.logout();
+    });
 })();
