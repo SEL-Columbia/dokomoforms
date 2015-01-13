@@ -18,7 +18,7 @@ from db.question_choice import get_choices, question_choice_insert, \
     RepeatedChoiceError, QuestionChoiceDoesNotExistError
 from db.submission import get_submissions_by_email, submission_insert
 from db.survey import survey_insert, survey_select, survey_table, \
-    SurveyAlreadyExistsError, get_free_title, get_surveys_for_user_by_email, \
+    SurveyAlreadyExistsError, get_free_title, get_surveys_by_email, \
     display
 from db.type_constraint import TypeConstraintDoesNotExistError
 
@@ -409,7 +409,7 @@ def get_all(email: str) -> dict:
     :param email: the user's e-mail address.
     :return: the JSON string representation
     """
-    surveys = get_surveys_for_user_by_email(email)
+    surveys = get_surveys_by_email(email)
     return [_to_json(survey) for survey in surveys]
 
 

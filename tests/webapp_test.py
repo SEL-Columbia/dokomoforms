@@ -7,6 +7,7 @@ import unittest
 from unittest import mock
 from sqlalchemy import and_
 from urllib.parse import urlencode
+import uuid
 
 from tornado.escape import to_unicode, json_encode, json_decode
 import tornado.httpserver
@@ -14,7 +15,6 @@ import tornado.httpclient
 import tornado.ioloop
 from tornado.testing import AsyncHTTPTestCase
 import tornado.web
-import uuid
 
 import api.submission
 import api.survey
@@ -26,6 +26,9 @@ from db.question_choice import question_choice_table
 from db.submission import submission_table
 from pages.api.submissions import SubmissionsAPI, SingleSubmissionAPI
 from pages.api.surveys import SurveysAPI, SingleSurveyAPI
+from pages.view.submissions import ViewSubmissionsHandler, \
+    ViewSubmissionHandler
+from pages.view.surveys import ViewHandler
 import settings
 from webapp import config, pages
 from db.survey import survey_table
@@ -300,6 +303,44 @@ class SurveyTest(AsyncHTTPTestCase):
     def testGet404(self):
         response = self.fetch('/survey/{}'.format(str(uuid.uuid4())))
         self.assertEqual(response.code, 404)
+
+
+class ViewTest(AsyncHTTPTestCase):
+    def tearDown(self):
+        submission_table.delete().execute()
+
+    def get_app(self):
+        self.app = tornado.web.Application(pages, **config)
+        return self.app
+
+    def get_new_ioloop(self):
+        return tornado.ioloop.IOLoop.instance()
+
+    def testGetSurveys(self):
+        with mock.patch.object(ViewHandler, 'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/view')
+        self.assertIn('test_title', to_unicode(response.body))
+
+    def testGetSubmissions(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        create_test_submission()
+        with mock.patch.object(ViewSubmissionsHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/view/{}'.format(survey_id))
+        self.assertIn('/view/submission/', to_unicode(response.body))
+
+    def testGetSubmission(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        submission_id = create_test_submission()['submission_id']
+        with mock.patch.object(ViewSubmissionHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/view/submission/{}'.format(submission_id))
+        self.assertIn('answer&#39;: 3.5', to_unicode(response.body))
 
 
 if __name__ == '__main__':

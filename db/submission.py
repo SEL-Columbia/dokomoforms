@@ -4,6 +4,7 @@ from sqlalchemy import Table, MetaData
 from datetime import datetime
 
 from sqlalchemy.engine import RowProxy, ResultProxy
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.dml import Insert
 
 from db import engine
@@ -92,6 +93,17 @@ def get_submissions_by_email(survey_id: str, email: str) -> ResultProxy:
     condition = and_(submission_table.c.survey_id == survey_id,
                      auth_user_table.c.email == email)
     return table.select().where(condition).execute()
+
+
+def get_number_of_submissions(survey_id: str) -> int:
+    """
+    Return the number of submissions for a given survey
+    :param survey_id: the UUID of the survey
+    :return: the corresponding number of submissions
+    """
+    session = sessionmaker(bind=engine)()
+    query = session.query(submission_table)
+    return query.filter(submission_table.c.survey_id == survey_id).count()
 
 
 class SubmissionDoesNotExistError(Exception):
