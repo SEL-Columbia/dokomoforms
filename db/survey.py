@@ -50,8 +50,8 @@ def get_survey_id_from_prefix(survey_prefix: str) -> str:
                                                0 or more than 1 survey
     """
     survey_id_text = cast(survey_table.c.survey_id, Text)
-    condition = survey_id_text.like('{}%'.format(survey_prefix))
-    surveys = survey_table.select().where(condition).execute().fetchall()
+    cond = survey_id_text.like('{}%'.format(survey_prefix))
+    surveys = survey_table.select().limit(2).where(cond).execute().fetchall()
     if len(surveys) == 1:
         return surveys[0].survey_id
     raise SurveyPrefixDoesNotIdentifyASurveyError(survey_prefix)
