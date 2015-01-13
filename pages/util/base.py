@@ -33,7 +33,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
         :return: the current user's e-mail address
         """
-        return self.get_secure_cookie('user')
+        return self.get_secure_cookie('user').decode('utf-8')
 
 
 class APIHandler(BaseHandler):
