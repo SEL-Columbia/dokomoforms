@@ -24,7 +24,7 @@ def survey_insert(*, auth_user_id: str, title: str) -> Insert:
     return survey_table.insert().values(title=title, auth_user_id=auth_user_id)
 
 
-def get_surveys_for_user_by_email(email: str, limit: int=None) -> ResultProxy:
+def get_surveys_by_email(email: str, limit: int=None) -> ResultProxy:
     """
     Get all surveys for the specified user ordered by creation time.
 

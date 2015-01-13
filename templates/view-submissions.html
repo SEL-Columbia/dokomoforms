@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+    <div class="message"></div>
+
+    <div class="content">
+        <div class="welcome">
+            <h4 class="welcome_title">Welcome {{ current_user }}</h4>
+            <p class="welcome_blurb"> Submissions to {{ survey.title }}: </p>
+            <ul class="welcome_ulist">
+                {% for submission in submissions %}
+                    <li class="welcome_item">
+                        <a href="/view/submission/{{ submission.submission_id }}">{{ submission.submitter }} - {{ submission.submission_time }}</a>
+                    </li>
+                {% end %}
+            </ul>
+            </div>
+            <div class="login">
+                <a href="#" class="dokomo-button persona-button" id="logout"><span>Logout</span></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="page_nav">
+        <div class="sel_text_logo">
+        <span>
+            Dokomo Forms. Forms <em>Everywhere</em>
+        </span>
+        </div>
+    </div>
+
+    <script src="https://login.persona.org/include.js"></script>
+    <script src="/static/persona.js"></script>
+    <script src="/static/app.js"></script>
+    {% if message %}
+        <script>
+            App.message("{{ message }}");
+        </script>
+    {% end %}
+{% end %}

@@ -18,12 +18,12 @@ from pages.api.surveys import SurveysAPI, SingleSurveyAPI
 from pages.util.base import BaseHandler
 import pages.util.ui
 from pages.debug import DebugLoginHandler, DebugLogoutHandler
-from pages.view.surveys import ViewHandler
+from pages.view.surveys import ViewHandler, ViewSubmissionsHandler
 import settings
 from utils.logger import setup_custom_logger
 from db.survey import SurveyPrefixDoesNotIdentifyASurveyError, \
     SurveyPrefixTooShortError, \
-    get_survey_id_from_prefix, get_surveys_for_user_by_email
+    get_survey_id_from_prefix, get_surveys_by_email
 
 
 logger = setup_custom_logger('dokomo')
@@ -31,7 +31,7 @@ logger = setup_custom_logger('dokomo')
 
 class Index(BaseHandler):
     def get(self, msg=""):
-        surveys = get_surveys_for_user_by_email(self.current_user, 10)
+        surveys = get_surveys_by_email(self.current_user, 10)
         self.render('index.html', message=msg, surveys=surveys)
 
     def post(self):
@@ -93,8 +93,9 @@ pages = [
     # Dokomo Forms
     (r'/', Index),
 
-    # View surveys
+    # View surveys and submissions
     (r'/view/?', ViewHandler),
+    (r'/view/({})/?'.format(UUID_REGEX), ViewSubmissionsHandler),
 
     # Survey Submissions
     (r'/survey/(.+)/?', Survey),
