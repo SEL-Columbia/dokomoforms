@@ -30,7 +30,7 @@ logger = setup_custom_logger('dokomo')
 
 class Index(BaseHandler):
     def get(self, msg=""):
-        surveys = get_surveys_for_user_by_email(current_user.decode('utf-8'), 10 )
+        surveys = get_surveys_for_user_by_email(self.current_user, 10)
         self.render('index.html', message=msg, surveys=surveys)
 
     def post(self):
