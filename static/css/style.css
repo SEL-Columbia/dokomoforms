@@ -173,6 +173,10 @@ a:link:active, a:visited:active {
     */
 }
 
+.welcome_buttons a {
+    color: white;
+}
+
 .weclome_title {
     text-align: center;
 }

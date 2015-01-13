@@ -65,8 +65,11 @@
         <div class="question__title"><%- question.title %></div>
         <div id="map" class="question__map"></div>
 
-        <input class="text_input question__lat" type="text" value="<%- (question.answer[0] && question.answer[0][1]) || '' %>">
-        <input class="text_input question__lon" type="text" value="<%- (question.answer[0] && question.answer[0][0]) || '' %>">
+        <div class="loc_input">
+            <input class="text_input question__lat" type="text" value="<%- (question.answer[0] && question.answer[0][1]) || '' %>">
+            <input class="text_input question__lon" type="text" value="<%- (question.answer[0] && question.answer[0][0]) || '' %>">
+        </div>
+
         <div class="question__btn">Find location</div>
 
         <% if (question.answer.length > 1){ %>
