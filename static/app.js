@@ -383,7 +383,7 @@ Widgets.decimal = function(question, page) {
 Widgets.date = function(question, page) {
     $(page)
         .find('input')
-        .keyup(function() {
+        .change(function() {
             if (this.value !== '') {
                 question.answer = [this.value];
             }
@@ -393,7 +393,7 @@ Widgets.date = function(question, page) {
 Widgets.time = function(question, page) {
     $(page)
         .find('input')
-        .keyup(function() {
+        .change(function() {
             if(this.value !== ''){
                 question.answer = [this.value];
             }

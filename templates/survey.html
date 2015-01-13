@@ -107,12 +107,12 @@
 
     <script id="widget_date" type="text/html">
         <div class="question__title"><%- question.title %></div>
-        <input type="date" value="<%- question.answer[0] || question.default || '' %>">
+        <input class="text_input" type="date" value="<%- question.answer[0] || question.default || '' %>">
     </script>
 
     <script id="widget_time" type="text/html">
         <div class="question__title"><%- question.title %></div>
-        <input type="time" value="<%- question.answer[0] || question.default || '' %>">
+        <input class="text_input" type="time" value="<%- question.answer[0] || question.default || '' %>">
     </script>
 
     <script id="widget_note" type="text/html">
