@@ -26,6 +26,7 @@ from db.question_choice import question_choice_table
 from db.submission import submission_table
 from pages.api.submissions import SubmissionsAPI, SingleSubmissionAPI
 from pages.api.surveys import SurveysAPI, SingleSurveyAPI
+from pages.view.surveys import ViewHandler
 import settings
 from webapp import config, pages
 from db.survey import survey_table
@@ -300,6 +301,20 @@ class SurveyTest(AsyncHTTPTestCase):
     def testGet404(self):
         response = self.fetch('/survey/{}'.format(str(uuid.uuid4())))
         self.assertEqual(response.code, 404)
+
+class ViewTest(AsyncHTTPTestCase):
+    def get_app(self):
+        self.app = tornado.web.Application(pages, **config)
+        return self.app
+
+    def get_new_ioloop(self):
+        return tornado.ioloop.IOLoop.instance()
+
+    def testGetPrefix(self):
+        with mock.patch.object(ViewHandler, 'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/view')
+        self.assertIn('test_title', to_unicode(response.body))
 
 
 if __name__ == '__main__':
