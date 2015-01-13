@@ -21,7 +21,8 @@ from pages.debug import DebugLoginHandler, DebugLogoutHandler
 import settings
 from utils.logger import setup_custom_logger
 from db.survey import SurveyPrefixDoesNotIdentifyASurveyError, \
-    get_survey_id_from_prefix, SurveyPrefixTooShortError
+    SurveyPrefixTooShortError, \
+    get_survey_id_from_prefix, get_surveys_for_user_by_email
 
 
 logger = setup_custom_logger('dokomo')
@@ -29,7 +30,8 @@ logger = setup_custom_logger('dokomo')
 
 class Index(BaseHandler):
     def get(self, msg=""):
-        self.render('index.html', message=msg)
+        surveys = get_surveys_for_user_by_email(current_user.decode('utf-8'), 10 )
+        self.render('index.html', message=msg, surveys=surveys)
 
     def post(self):
         LogoutHandler.post(self)  # TODO move to js
