@@ -78,6 +78,7 @@ Survey.prototype.next = function(offset, index) {
     var self = this;
     var prev_index = index - offset;
     var prev_question = this.questions[prev_index];
+    console.log(prev_question.answers, prev_question);
     if (offset === 1 && prev_question) {
         // XXX: prev_question.answer field is a mess to check, need to purify ans
         if (prev_question.logic.required 
@@ -321,55 +322,40 @@ Widgets.location = function(question, page) {
 };
 
 Widgets.multiple_choice = function(question, page) {
-    $(page)
+    var $other = $(page)
         .find('.text_input')
-        .hide();
-    if(question.logic['with_other']){
-        var $other = $(page)
-            .find('.text_input')
-            .keyup(function() {
+        .keyup(function() {
+            question.answer = [this.value];
+        })
+
+    $other.hide();
+
+    var $select = $(page)
+        .find('select')
+        .change(function() {
+            if (this.value == 'null') {
+                // No option chosen
+                question.answer = [];
+                question.is_other = false;
+                $other.hide();
+            } else if (this.value == 'other') {
+                // Choice is text input
+                $other.show();
+                question.answer = [$other.val()];
+                question.is_other = true;
+            } else {
+                // Normal choice
                 question.answer = [this.value];
-            })
-            .hide();
-
-        var $select = $(page)
-            .find('select')
-            .change(function() {
-                if (this.value == 'null') {
-                    // No option chosen
-                    question.answer = [];
-                    question.is_other = true;
-                    $other.hide();
-                } else if (this.value == 'other') {
-                    // Choice is text input
-                    $other.show();
-                    question.answer = [$other.val()];
-                    question.is_other = true;
-                } else {
-                    // Normal choice
-                    question.answer = [this.value];
-                    question.is_other = false;
-                    $other.hide();
-                }
-            });
-
-        // Set the default/selected option
-        var option = question.answer[0] ? 'other' : 'null';
-        $select
-            .find('option[value="' + option + '"]')
-            .prop('selected', true);
-        $select.change();
-    } else {
-        $(page)
-            .find('select')
-            .change(function() {
-                if (this.value !== ''){
-                    question.answer = [this.value];
-                } else {
-                    question.answer = [];
-                }
+                question.is_other = false;
+                $other.hide();
+            }
         });
+
+    if (question.is_other) {
+        $select.find("#with_other").prop("selected", true);
+        $other.show();
     }
+
 };
 
 Widgets.decimal = function(question, page) {

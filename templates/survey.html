@@ -82,14 +82,22 @@
         <select>
             <option value="null">Please choose an option</option>
             <% _.each(question.choices, function(choice) { %>
-                <option value="<%- choice.question_choice_id %>"><%- choice.choice %></option>
+                <option 
+                    <% if (choice.question_choice_id === question.answer[0])  { %>
+                        selected
+                    <% } %>
+                    value="<%- choice.question_choice_id %>"><%- choice.choice %></option>
             <% }); %>
             <% if (question.logic['with_other']) { %>
-                <option value="other">Other</option>
+                <option id="with_other" value="other">Other</option>
             <% } %>
         </select>
+
         <input class="text_input" type="text"
-            value="<%- question.answer[0] || question.default || '' %>">
+            <% if (question.is_other) { %>
+                value="<%- question.answer[0] || question.default || '' %>"
+            <% } %>
+        >
     </script>
 
     <script id="widget_decimal" type="text/html">
