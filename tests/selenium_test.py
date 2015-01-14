@@ -44,7 +44,7 @@ class AuthTest(DriverTest):
         self.drv.switch_to.window(self.drv.window_handles[0])
         load = EC.presence_of_element_located((By.ID, 'logout'))
         try:
-            WebDriverWait(self.drv, 10).until(load)
+            WebDriverWait(self.drv, 15).until(load)
         except TimeoutException:
             # Travis... For some reason the wait doesn't work properly in the
             # Travis run.
