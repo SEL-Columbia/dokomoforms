@@ -2,18 +2,14 @@
 import unittest
 
 from selenium import webdriver
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import tornado.web
-import tornado.ioloop
-from tornado.testing import AsyncHTTPTestCase
 
-from webapp import pages, config
-
-base = 'http://localhost:{}'
+base = 'http://localhost:8888'
 
 
 def go_to_new_window(driver: WebDriver):
@@ -26,27 +22,17 @@ def go_to_new_window(driver: WebDriver):
         driver.switch_to.window(handle)
 
 
-class DriverTest(AsyncHTTPTestCase):
+class DriverTest(unittest.TestCase):
     def setUp(self):
-        super(DriverTest, self).setUp()
         self.drv = webdriver.Firefox()
-        self.get_app()
 
     def tearDown(self):
-        super(DriverTest, self).tearDown()
         self.drv.quit()
-
-    def get_app(self):
-        self.app = tornado.web.Application(pages, **config)
-        return self.app
-
-    def get_new_ioloop(self):
-        return tornado.ioloop.IOLoop.instance()
 
 
 class AuthTest(DriverTest):
     def testLoginAndLogout(self):
-        self.drv.get(base.format(self.get_http_port()) + '/')
+        self.drv.get(base + '/')
 
         self.assertIn('Welcome to <em>Dokomo</em>', self.drv.page_source)
 
