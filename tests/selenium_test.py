@@ -41,11 +41,8 @@ class AuthTest(DriverTest):
         eml = self.drv.find_element_by_xpath('//*[@id="authentication_email"]')
         eml.send_keys('test@mockmyid.com', Keys.RETURN)
         self.drv.switch_to.window(self.drv.window_handles[0])
-        load = EC.presence_of_element_located((By.CLASS_NAME, 'center-create'))
-        try:
-            WebDriverWait(self.drv, 10).until(load)
-        finally:
-            assert False, self.drv.page_source
+        load = EC.presence_of_element_located((By.ID, 'logout'))
+        WebDriverWait(self.drv, 10).until(load)
 
         self.assertIn('Welcome: test@mockmyid.com', self.drv.page_source)
 
