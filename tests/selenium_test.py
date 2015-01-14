@@ -13,7 +13,7 @@ from tornado.testing import AsyncHTTPTestCase
 
 from webapp import pages, config
 
-base = 'http://localhost:8888'
+base = 'http://localhost:{}'
 
 
 def go_to_new_window(driver: WebDriver):
