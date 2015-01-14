@@ -130,9 +130,13 @@ def _get_fields(answer: RowProxy) -> dict:
     :param answer: A record in the answer or answer_choice table
     :return: A dictionary of the fields.
     """
-    result_dict = {'question_id': answer.question_id,
-                   'type_constraint_name': answer.type_constraint_name}
     tcn = answer.type_constraint_name
+    question_id = answer.question_id
+    question = question_select(question_id)
+    result_dict = {'question_id': question_id,
+                   'title': question.title,
+                   'sequence_number': question.sequence_number,
+                   'type_constraint_name': tcn}
     try:
         # Get the choice for a multiple choice question
         choice_id = answer.question_choice_id

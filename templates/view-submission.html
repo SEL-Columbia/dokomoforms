@@ -10,7 +10,13 @@
         <ul>
             {% for answer in submission['answers'] %}
                 <li>
-                    {{ answer }}
+                    <strong>{{ answer['sequence_number'] }}. {{ answer['title'] }}</strong><br/>
+                    Type: {{ answer['type_constraint_name'] }}<br/>
+                    {% if answer['choice'] %}
+                        Choice: {{ answer['choice_number'] }}. {{ answer['choice'] }}<br/>
+                    {% else %}
+                        Answer: {{ answer['answer'] }}<br/>
+                    {% end %}
                 </li>
             {% end %}
         </ul>

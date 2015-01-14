@@ -102,8 +102,11 @@ def get_number_of_submissions(survey_id: str) -> int:
     :return: the corresponding number of submissions
     """
     session = sessionmaker(bind=engine)()
-    query = session.query(submission_table)
-    return query.filter(submission_table.c.survey_id == survey_id).count()
+    try:
+        query = session.query(submission_table)
+        return query.filter(submission_table.c.survey_id == survey_id).count()
+    finally:
+        session.close()
 
 
 class SubmissionDoesNotExistError(Exception):

@@ -24,13 +24,16 @@ def get_free_sequence_number(survey_id: str) -> int:
     # Sorry for this awful mess of a function... The hoops you have to go
     # through to find the maximum value...
 
-    # Not sure why you need a session
+    # Not exactly sure why you need a session to do this
     session = sessionmaker(bind=engine)()
-    query = session.query(sqlmax(question_table.c.sequence_number))
-    condition = question_table.c.survey_id == survey_id
-    # Without coalesce, this would fall over in the no-questions case.
-    coal = coalesce(query.filter(condition).scalar(), 0)
-    return engine.execute(coal).scalar() + 1
+    try:
+        query = session.query(sqlmax(question_table.c.sequence_number))
+        condition = question_table.c.survey_id == survey_id
+        # Without coalesce, this would fall over in the no-questions case.
+        coal = coalesce(query.filter(condition).scalar(), 0)
+        return engine.execute(coal).scalar() + 1
+    finally:
+        session.close()
 
 
 def _add_optional_values(values: dict, **kwargs) -> dict:
