@@ -42,7 +42,7 @@ class AuthTest(DriverTest):
         eml.send_keys('test@mockmyid.com', Keys.RETURN)
         self.drv.switch_to.window(self.drv.window_handles[0])
         load = EC.presence_of_element_located((By.CLASS_NAME, 'center-create'))
-        WebDriverWait(self.drv, 10).until(load)
+        WebDriverWait(self.drv, 30).until(load)
 
         self.assertIn('Welcome: test@mockmyid.com', self.drv.page_source)
 
