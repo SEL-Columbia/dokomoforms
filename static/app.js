@@ -191,19 +191,22 @@ Survey.prototype.submit = function() {
 
 var Widgets = {};
 
-// Handle creating multiple inputs for widgets that support it
+// Handle creating multiple inputs for widgets that support it (might not be best place to store func)
 Widgets.keyUp = function(e, page, question, cls, type, keyup_cb, change_cb) {
+    //TODO: Instead of enter key, listen to btn press to display new box 
     if (e.keyCode === 13) {
         if (question.allow_multiple) {
-            var v = $('<input>')
+            $('<input>')
                 .attr({'type': type, 'class': cls})
                 .change(change_cb)
                 .keyup(keyup_cb)
-                .appendTo(page);
+                .appendTo(page)
+                .focus();
         }
     }
 }
 
+// All widgets store results in the questions.answer array
 Widgets.text = function(question, page) {
     // This widget's events. Called after page template rendering.
     // Responsible for setting the question object's answer
@@ -236,8 +239,107 @@ Widgets.integer = function(question, page) {
         .keyup(keyup);
 };
 
+// Multiple choice and multiple choice with other are handled here by same func
+Widgets.multiple_choice = function(question, page) {
+    var $other = $(page)
+        .find('.text_input')
+        .keyup(function() {
+            question.answer = [this.value];
+        })
+
+    $other.hide();
+
+    var $select = $(page)
+        .find('select')
+        .change(function() {
+            if (this.value == 'null') {
+                // No option chosen
+                question.answer = [];
+                question.is_other = false;
+                $other.hide();
+            } else if (this.value == 'other') {
+                // Choice is text input
+                $other.show();
+                question.answer = [$other.val()];
+                question.is_other = true;
+            } else {
+                // Normal choice
+                question.answer = [this.value];
+                question.is_other = false;
+                $other.hide();
+            }
+        });
+
+    // Selection is handled in _template however the other option
+    // is better handled here 
+    if (question.is_other) {
+        $select.find("#with_other").prop("selected", true);
+        $other.show();
+    }
+
+};
+
+Widgets.decimal = function(question, page) {
+    var self = this;
+    function keyup(e) {
+        var ans_ind = ($(page).find('input')).index(this);
+        question.answer[ans_ind] = parseFloat(this.value);
+        self.keyUp(e, page, question, 'text_input', 'number', keyup);
+    };
+
+    $(page)
+        .find('input')
+        .keyup(keyup);
+};
+
+// Date and time respond better to change then keypresses
+Widgets.date = function(question, page) {
+    var self = this;
+    function change() {
+        var ans_ind = ($(page).find('input')).index(this);
+        console.log(ans_ind, this.value);
+        if (this.value !== '') 
+            question.answer[ans_ind] = this.value;
+
+    };
+
+    function keyup(e) {
+        self.keyUp(e, page, question, 'text_input', 'date', keyup, change);
+    }
+
+    $(page)
+        .find('input')
+        .change(change)
+        .keyup(keyup)
+};
+
+Widgets.time = function(question, page) {
+
+    var self = this;
+    function change() {
+        var ans_ind = ($(page).find('input')).index(this);
+        console.log(ans_ind, this.value);
+        if (this.value !== '') 
+            question.answer[ans_ind] = this.value;
+
+    };
+
+    function keyup(e) {
+        self.keyUp(e, page, question, 'text_input', 'time', keyup, change);
+    }
+
+    $(page)
+        .find('input')
+        .change(change)
+        .keyup(keyup)
+};
+
+Widgets.note = function(question, page) {
+};
+
 Widgets.location = function(question, page) {
     // TODO: add location status
+    var self = this;
     
     // Map
     var lat = parseFloat($(page).find('.question__lat').val()) || 5.118915;
@@ -301,6 +403,10 @@ Widgets.location = function(question, page) {
     
     map.addLayer(funcLayer);
 
+    // Location is the only one that doesn't use the same keyup function due to the btn
+    // being the only way to input values in the view.
+    var loc_div = "<div class='loc_input'><input class='text_input question__lat' type='text'><input class='text_input question__lon' type='text'></div>";
+
     $(page)
         .find('.question__btn')
         .click(function() {
@@ -308,15 +414,27 @@ Widgets.location = function(question, page) {
                 function success(position) {
                     // Server accepts [lon, lat]
                     var coords = [position.coords.longitude, position.coords.latitude];
-                    question.answer = [coords];
+                    question.answer.push(coords);
 
                     map.setView([coords[1], coords[0]]);
 
                     // Revisit api call
                     getNearbyFacilities(coords[0], coords[1], 2, map); 
 
-                    $(page).find('.question__lon').val(coords[0]);
-                    $(page).find('.question__lat').val(coords[1]);
+                    var questions_lon = $(page).find('.question__lon');
+                    var questions_lat = $(page).find('.question__lat');
+
+                    questions_lon[questions_lon.length - 1].value = coords[0];
+                    questions_lat[questions_lat.length - 1].value = coords[1];
+
+                    // Add new button if allow multiple is present 
+                    if (question.allow_multiple) {
+                       var loc_dom = $(loc_div)
+                            .find('input')
+
+                       $('.question__btn').before(loc_dom);
+                    }
+
                 }, function error() {
                     alert('error')
                 }, {
@@ -325,100 +443,6 @@ Widgets.location = function(question, page) {
                     maximumAge: 0
                 });
         });
-};
-
-Widgets.multiple_choice = function(question, page) {
-    var $other = $(page)
-        .find('.text_input')
-        .keyup(function() {
-            question.answer = [this.value];
-        })
-
-    $other.hide();
-
-    var $select = $(page)
-        .find('select')
-        .change(function() {
-            if (this.value == 'null') {
-                // No option chosen
-                question.answer = [];
-                question.is_other = false;
-                $other.hide();
-            } else if (this.value == 'other') {
-                // Choice is text input
-                $other.show();
-                question.answer = [$other.val()];
-                question.is_other = true;
-            } else {
-                // Normal choice
-                question.answer = [this.value];
-                question.is_other = false;
-                $other.hide();
-            }
-        });
-
-    if (question.is_other) {
-        $select.find("#with_other").prop("selected", true);
-        $other.show();
-    }
-
-};
-
-Widgets.decimal = function(question, page) {
-    var self = this;
-    function keyup(e) {
-        var ans_ind = ($(page).find('input')).index(this);
-        question.answer[ans_ind] = parseFloat(this.value);
-        self.keyUp(e, page, question, 'text_input', 'number', keyup);
-    };
-
-    $(page)
-        .find('input')
-        .keyup(keyup);
-};
-
-Widgets.date = function(question, page) {
-    var self = this;
-    function change() {
-        var ans_ind = ($(page).find('input')).index(this);
-        console.log(ans_ind, this.value);
-        if (this.value !== '') 
-            question.answer[ans_ind] = this.value;
-
-    };
-
-    function keyup(e) {
-        self.keyUp(e, page, question, 'text_input', 'date', keyup, change);
-    }
-
-    $(page)
-        .find('input')
-        .change(change)
-        .keyup(keyup)
-};
-
-Widgets.time = function(question, page) {
-
-    var self = this;
-    function change() {
-        var ans_ind = ($(page).find('input')).index(this);
-        console.log(ans_ind, this.value);
-        if (this.value !== '') 
-            question.answer[ans_ind] = this.value;
-
-    };
-
-    function keyup(e) {
-        self.keyUp(e, page, question, 'text_input', 'time', keyup, change);
-    }
-
-    $(page)
-        .find('input')
-        .change(change)
-        .keyup(keyup)
-};
-
-Widgets.note = function(question, page) {
 };
 
 

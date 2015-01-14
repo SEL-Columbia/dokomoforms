@@ -378,6 +378,8 @@ a:link:active, a:visited:active {
     width: 49.8%;
     margin-right: 0.2%;
     box-sizing: border-box;
+    margin-bottom: 10px;
+    margin-top: 10px;
 }
 
 .question__lon {
@@ -385,6 +387,11 @@ a:link:active, a:visited:active {
     box-sizing: border-box;
     width: 49.8%;
     margin-left: 0.2%;
+    margin-bottom: 10px;
+    margin-top: 10px;
 }
 
-
+.loc_input {
+    margin: 0px;
+    padding: 0px;
+}

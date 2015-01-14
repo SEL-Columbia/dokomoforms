@@ -70,14 +70,16 @@
             <input class="text_input question__lon" type="text" value="<%- (question.answer[0] && question.answer[0][0]) || '' %>">
         </div>
 
-        <div class="question__btn">Find location</div>
-
         <% if (question.answer.length > 1){ %>
             <% _.each(question.answer.slice(1), function(ans) { %>
-                <input class="text_input question__lat" type="text" value="<%- (ans[1]) %>">
-                <input class="text_input question__lon" type="text" value="<%- (ans[0]) %>">
+                <div class="loc_input">
+                    <input class="text_input question__lat" type="text" value="<%- ans[1] %>">
+                    <input class="text_input question__lon" type="text" value="<%- ans[0] %>">
+                </div>
             <% }); %>
         <% } %>
+        
+        <div class="question__btn">Find location</div>
     </script>
 
     <script id="widget_multiple_choice" type="text/html">
