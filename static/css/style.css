@@ -395,3 +395,37 @@ a:link:active, a:visited:active {
     margin: 0px;
     padding: 0px;
 }
+
+select {
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='50px' height='50px'><polyline points='46.139,15.518 25.166,36.49 4.193,15.519'/></svg>");
+    background-repeat:no-repeat;
+    background-position: right 10px top 15px;
+    background-size: 16px 16px;
+    padding:12px;
+    margin-right: 10px;
+    width:auto;
+    text-align:center;
+    border-radius:3px;
+    -webkit-border-radius:3px;
+    -webkit-appearance: none;
+    -webkit-transition:0.3s ease all;
+    -moz-transition:0.3s ease all;
+    -ms-transition:0.3s ease all;
+    -o-transition:0.3s ease all;
+    transition:0.3s ease all;
+    display: block;
+    font-size: 20px;
+    width: 80%;
+    max-width: 300px;
+    margin: 25px auto;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-radius: 5px;
+    outline: none;
+    box-sizing: border-box;
+    height: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+select:focus, select:active {
+}

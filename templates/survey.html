@@ -84,7 +84,9 @@
 
     <script id="widget_multiple_choice" type="text/html">
         <div class="question__title"><%- question.title %></div>
-        <select>
+        <select <%  if (question.allow_multiple) { %> 
+            multiple size=<%- question.choices.length + 1 + 1*question.logic['with_other']%> 
+        <% } %>>
             <option value="null">Please choose an option</option>
             <% _.each(question.choices, function(choice) { %>
                 <option 

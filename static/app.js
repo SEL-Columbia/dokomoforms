@@ -142,11 +142,19 @@ Survey.prototype.submit = function() {
     var answers = [];
     self.questions.forEach(function(q) {
         console.log('q', q);
-        q.answer.forEach(function(ans) {
+        q.answer.forEach(function(ans, ind) {
+            var is_other_val = q.is_other || false;
+
+            if (typeof q.is_other === 'object') 
+                is_other_val = q.is_other[ind];
+
+            if (!ans) 
+                return;
+
             answers.push({
                 question_id: q.question_id,
                 answer: ans,
-                is_other: q.is_other || false //XXX: This will need to be an array as well
+                is_other: is_other_val 
             });
         });
     });
@@ -249,25 +257,37 @@ Widgets.multiple_choice = function(question, page) {
 
     $other.hide();
 
+    var $childeren = $(page).find('select');
     var $select = $(page)
         .find('select')
         .change(function() {
-            if (this.value == 'null') {
-                // No option chosen
-                question.answer = [];
-                question.is_other = false;
-                $other.hide();
-            } else if (this.value == 'other') {
-                // Choice is text input
-                $other.show();
-                question.answer = [$other.val()];
-                question.is_other = true;
-            } else {
-                // Normal choice
-                question.answer = [this.value];
-                question.is_other = false;
-                $other.hide();
+            question.answer = [];
+            question.is_other = [];
+            $other.hide();
+            $('select').val().forEach(function(opt, ind) { //TODO: THIS IS INCORRECT LOOP
+                console.log(opt, ind);
+                // Please choose something option
+                if (opt === 'null') 
+                    return;
+
+                question.answer[ind - 1] = opt;
+                question.is_other[ind - 1] = false;
+
+                if (opt  == 'other') {
+                    // Choice is text input
+                    $other.show();
+                    question.answer[ind - 1] = $other.val();
+                    question.is_other[ind - 1] = true;
+                } 
+
+             });
+            
+            if ($('select').val().indexOf('other') < 0) {
+                    $other.hide();
             }
+            
+            console.log(question.answer);
+
         });
 
     // Selection is handled in _template however the other option
@@ -297,7 +317,6 @@ Widgets.date = function(question, page) {
     var self = this;
     function change() {
         var ans_ind = ($(page).find('input')).index(this);
-        console.log(ans_ind, this.value);
         if (this.value !== '') 
             question.answer[ans_ind] = this.value;
 

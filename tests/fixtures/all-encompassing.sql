@@ -221,9 +221,21 @@ VALUES ('days of the week', the_auth_user_id)
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 1, 'how many', 'integer', False),
-       (the_survey_id, 2, 'but how bout on the moon?', 'note', False);
+    type_constraint_name, allow_multiple, logic)
+VALUES (the_survey_id, 1, 'repeat multiple choice with other question',
+           'multiple_choice', True, '{"required": false, "with_other": true}')
+RETURNING question_id into the_from_question_id;
+
+INSERT INTO question_choice (choice, choice_number, question_id,
+    type_constraint_name, question_sequence_number, allow_multiple, survey_id)
+VALUES ('choice a', 1, the_from_question_id, 'multiple_choice', 1,
+    True, the_survey_id),
+('choice b', 2, the_from_question_id, 'multiple_choice', 1,
+    True, the_survey_id),
+('choice c', 3, the_from_question_id, 'multiple_choice', 1,
+    True, the_survey_id),
+('choice d', 4, the_from_question_id, 'multiple_choice', 1,
+    True, the_survey_id);
 
 INSERT INTO survey (title, auth_user_id)
 VALUES ('days of the month', the_auth_user_id)
