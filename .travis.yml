@@ -24,7 +24,7 @@ before_script:
   # code.google.com/p/selenium/issues/detail?id=4814
   - wget http://download.cdn.mozilla.net/pub/mozilla.org/firefox/releases/16.0/linux-i686/en-US/firefox-16.0.tar.bz2
   - tar -xjf firefox-16.0.tar.bz2
-  - export PATH=./firefox:$PATH
+  - export PATH=/home/travis/firefox:$PATH
 
 
 # command to run tests
