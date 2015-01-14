@@ -46,7 +46,7 @@ class AuthTest(DriverTest):
         try:
             WebDriverWait(self.drv, 10).until(load)
         except TimeoutException:
-            # Travis... For some reason the wait doesn'twork properly in the
+            # Travis... For some reason the wait doesn't work properly in the
             # Travis run.
             pass
 
