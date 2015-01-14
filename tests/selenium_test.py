@@ -46,7 +46,7 @@ class DriverTest(AsyncHTTPTestCase):
 
 class AuthTest(DriverTest):
     def testLoginAndLogout(self):
-        self.drv.get(base + '/')
+        self.drv.get(base.format(self.get_http_port()) + '/')
 
         self.assertIn('Welcome to <em>Dokomo</em>', self.drv.page_source)
 
