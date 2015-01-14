@@ -2,6 +2,7 @@
 import unittest
 
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -42,7 +43,10 @@ class AuthTest(DriverTest):
         eml.send_keys('test@mockmyid.com', Keys.RETURN)
         self.drv.switch_to.window(self.drv.window_handles[0])
         load = EC.presence_of_element_located((By.ID, 'logout'))
-        WebDriverWait(self.drv, 10).until(load)
+        try:
+            WebDriverWait(self.drv, 10).until(load)
+        except TimeoutException:
+            self.drv.get(base + '/')
 
         self.assertIn('Welcome: test@mockmyid.com', self.drv.page_source)
 
