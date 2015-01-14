@@ -22,7 +22,9 @@ before_script:
   - python3 webapp.py &
   # Remove after 4814 is resolved
   # code.google.com/p/selenium/issues/detail?id=4814
-  - wget http://download.cdn.mozilla.net/pub/mozilla.org/firefox/releases/16.0/linux-i686/en-US/firefox-16.0.tar.bz2 tar -xjf firefox-16.0.tar.bz2 export PATH=./firefox:$PATH
+  - wget http://download.cdn.mozilla.net/pub/mozilla.org/firefox/releases/16.0/linux-i686/en-US/firefox-16.0.tar.bz2
+  - tar -xjf firefox-16.0.tar.bz2
+  - export PATH=./firefox:$PATH
 
 
 # command to run tests
