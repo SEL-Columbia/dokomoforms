@@ -37,16 +37,21 @@ class AuthTest(DriverTest):
 
         self.assertIn('Welcome to <em>Dokomo</em>', self.drv.page_source)
 
-        self.drv.find_element_by_xpath('//*[@id="login"]').click()
-        go_to_new_window(self.drv)
-        eml = self.drv.find_element_by_xpath('//*[@id="authentication_email"]')
-        eml.send_keys('test@mockmyid.com', Keys.RETURN)
-        self.drv.switch_to.window(self.drv.window_handles[0])
-        load = EC.presence_of_element_located((By.ID, 'logout'))
-        try:
-            WebDriverWait(self.drv, 10).until(load)
-        except TimeoutException:
-            self.drv.get(base + '/')
+        # Travis makes me want to cry
+        no_good = True
+        while no_good:
+            try:
+                self.drv.find_element_by_xpath('//*[@id="login"]').click()
+                go_to_new_window(self.drv)
+                eml = self.drv.find_element_by_xpath(
+                    '//*[@id="authentication_email"]')
+                eml.send_keys('test@mockmyid.com', Keys.RETURN)
+                self.drv.switch_to.window(self.drv.window_handles[0])
+                load = EC.presence_of_element_located((By.ID, 'logout'))
+                WebDriverWait(self.drv, 7).until(load)
+                no_good = False
+            except TimeoutException:
+                pass
 
         self.assertIn('Welcome: test@mockmyid.com', self.drv.page_source)
 
