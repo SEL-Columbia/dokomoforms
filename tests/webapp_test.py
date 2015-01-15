@@ -340,7 +340,7 @@ class ViewTest(AsyncHTTPTestCase):
                                'get_secure_cookie') as m:
             m.return_value = 'test_email'
             response = self.fetch('/view/submission/{}'.format(submission_id))
-        self.assertIn('answer&#39;: 3.5', to_unicode(response.body))
+        self.assertIn('Answer: 3.5', to_unicode(response.body))
 
 
 if __name__ == '__main__':
