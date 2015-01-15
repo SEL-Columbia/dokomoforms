@@ -98,7 +98,8 @@ def question_insert(*,
     values = {'title': title,
               'type_constraint_name': tcn,
               'survey_id': survey_id,
-              'sequence_number': sequence_number}
+              'sequence_number': sequence_number,
+              'question_to_sequence_number': question_to_sequence_number}
     # These values will only be inserted if they were supplied (since they
     # have default values in the db)
     values = _add_optional_values(values, hint=hint,

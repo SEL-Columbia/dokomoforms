@@ -138,6 +138,7 @@ def _create_questions(connection: Connection,
     :param submission_map: a dictionary mapping old submission_id to new
     :return: an iterable of the resultant question fields
     """
+    # TODO: considering enforcing that the client specify the sequnce_number
     for number, question in enumerate(questions):
         values = question.copy()
         values['sequence_number'] = number
@@ -207,7 +208,9 @@ def _create_branches(connection: Connection,
     for index, question_dict in enumerate(questions_json):
         from_dict = question_dicts[index]
         from_q_id = from_dict['question_id']
-        branches = question_dict.get('branches', [])
+        branches = question_dict['branches']
+        if branches is None:
+            continue
         for branch in branches:
             choice_index = branch['choice_number']
             question_choice_id = from_dict['choice_ids'][choice_index]

@@ -35,7 +35,7 @@ CREATE TABLE question
   CONSTRAINT question_survey_id_sequence_number_key UNIQUE (survey_id,
                                                             sequence_number),
 
-  CONSTRAINT positive_sequence_number CHECK (sequence_number > 0),
+  CONSTRAINT positive_sequence_number CHECK (sequence_number >= 0),
 
   CONSTRAINT non_empty_title CHECK (title != ''),
 
