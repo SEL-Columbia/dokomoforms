@@ -13,6 +13,8 @@ Dokomo [どこも](http://tangorin.com/general/%E3%81%A9%E3%81%93%E3%82%82) Form
    ```
    
    (or whatever the command is on your distribution)
+
+   You may also need to install a package like postgresql-X.Y-postgis-scripts (check your repositories).
    
    [Debian](http://www.debian.org/) users: update your apt sources according to [this guide](https://wiki.postgresql.org/wiki/Apt) else you will pull your hair out wondering why <tt>CREATE EXTENSION "postgis";</tt> fails.
    
