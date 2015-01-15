@@ -88,22 +88,25 @@
             multiple size=<%- question.choices.length + 1 + 1*question.logic['with_other']%> 
         <% } %>>
             <option value="null">Please choose an option</option>
-            <% _.each(question.choices, function(choice) { %>
+            <% _.each(question.choices, function(choice, ind) { %>
                 <option 
-                    <% if (choice.question_choice_id === question.answer[0])  { %>
+                    <% if (choice.question_choice_id === question.answer[ind])  { %>
                         selected
                     <% } %>
                     value="<%- choice.question_choice_id %>"><%- choice.choice %></option>
             <% }); %>
             <% if (question.logic['with_other']) { %>
-                <option id="with_other" value="other">Other</option>
+                <option id="with_other" 
+                    <% var val = question.answer[question.choices.length];
+                    if (val || val === '')  { %>
+                        selected
+                    <% } %>
+                value="other">Other</option>
             <% } %>
         </select>
 
         <input class="text_input" type="text"
-            <% if (question.is_other) { %>
-                value="<%- question.answer[0] || question.default || '' %>"
-            <% } %>
+                value="<%- question.answer[question.choices.length] || '' %>"
         >
     </script>
 

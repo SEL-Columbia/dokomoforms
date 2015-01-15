@@ -164,10 +164,20 @@ Survey.prototype.submit = function() {
         answers: answers
     };
 
-    console.log(data);
-    
+
     sync.classList.add('icon--spin');
     save_btn.classList.add('icon--spin');
+    
+    // Don't post with no replies
+    if (JSON.stringify(answers) === '[]') {
+      // Not doing instantly to make it seem like App tried reaaall hard
+      setTimeout(function() {
+        sync.classList.remove('icon--spin');
+        save_btn.classList.remove('icon--spin');
+        App.message('Submission failed, No questions answer in Survey!');
+      }, 1000);
+      return;
+    }
 
     $.ajax({
         url: '',
@@ -190,7 +200,6 @@ Survey.prototype.submit = function() {
         setTimeout(function() {
             sync.classList.remove('icon--spin');
             save_btn.classList.remove('icon--spin');
-            App.message('Survey submitted!');
             self.render(0);
         }, 1000);
     });
@@ -249,51 +258,75 @@ Widgets.integer = function(question, page) {
 
 // Multiple choice and multiple choice with other are handled here by same func
 Widgets.multiple_choice = function(question, page) {
+
+    // record values for each select option to update answer array in consistent way
+    var $children = [];
+    // jquery has own array funcs?
+    $(page).find('select').children().each(function(i, child){$children.push(child.value)});
+
+    // handle change for text field
     var $other = $(page)
         .find('.text_input')
         .keyup(function() {
-            question.answer = [this.value];
-        })
+                            // end - default value pos
+            question.answer[$children.length - 1 - 1] = this.value;
+            console.log(question.answer);
+        });
 
     $other.hide();
 
-    var $childeren = $(page).find('select');
     var $select = $(page)
         .find('select')
         .change(function() {
+            // any change => answer is reset
             question.answer = [];
             question.is_other = [];
             $other.hide();
-            $('select').val().forEach(function(opt, ind) { //TODO: THIS IS INCORRECT LOOP
-                console.log(opt, ind);
-                // Please choose something option
+
+            // jquery is dumb and inconsistent 
+            var svals = $('select').val();
+            svals = typeof svals === 'string' ? [svals] : svals
+            // find all select options
+            svals.forEach(function(opt) { //TODO: THIS IS INCORRECT LOOP
+                console.log(opt);
+                // Please choose something option wipes answers
+                var ind = $children.indexOf(opt) - 1;
                 if (opt === 'null') 
                     return;
 
-                question.answer[ind - 1] = opt;
-                question.is_other[ind - 1] = false;
+                // Default, fill in values (other will be overwritten below if selected)
+                question.answer[ind] = opt;
+                question.is_other[ind] = false;
 
                 if (opt  == 'other') {
                     // Choice is text input
+                    question.answer[ind] = $other.val();
+                    question.is_other[ind] = true;
                     $other.show();
-                    question.answer[ind - 1] = $other.val();
-                    question.is_other[ind - 1] = true;
                 } 
 
              });
             
-            if ($('select').val().indexOf('other') < 0) {
-                    $other.hide();
+
+            // Toggle off other if deselected on change event 
+            if (svals.indexOf('other') < 0) { 
+                $other.hide();
             }
             
             console.log(question.answer);
 
         });
 
-    // Selection is handled in _template however the other option
-    // is better handled here 
-    if (question.is_other) {
-        $select.find("#with_other").prop("selected", true);
+    console.log($children.length);
+    console.log($children);
+    console.log(question.is_other);
+    console.log(question.answer);
+    console.log(question.answer);
+
+    // Selection is handled in _template however toggling of view is done here
+                                              // end - default value pos
+    if (question.is_other && question.is_other[$children.length - 1 - 1]) {
+        //$select.find("#with_other").attr("selected", true);
         $other.show();
     }
 
