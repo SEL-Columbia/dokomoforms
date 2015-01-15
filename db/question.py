@@ -61,6 +61,7 @@ def question_insert(*,
                     logic: dict,
                     title: str,
                     type_constraint_name: str,
+                    question_to_sequence_number: int,
                     survey_id: str) -> Insert:
     """
     Insert a record into the question table. A question is associated with a
@@ -85,6 +86,8 @@ def question_insert(*,
                                  time
                                  location
                                  note (no answer allowed)
+    :param question_to_sequence_number: the sequence number of the subequent
+                                        question
     :param survey_id: the UUID of the survey
     :return: the Insert object. Execute this!
     """
