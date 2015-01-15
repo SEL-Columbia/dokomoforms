@@ -1,3 +1,6 @@
+var NEXT = 1;
+var PREV = -1;
+
 App = {
     unsynced: [] // unsynced surveys
 };
@@ -52,57 +55,74 @@ function Survey(id, questions) {
     var self = this;
     this.id = id;
     this.questions = questions;
-    //this.questions = _.sortBy(questions, function(question) { return question.sequence_number; });
 
     // Load answers from localStorage
     var answers = JSON.parse(localStorage[this.id] || '{}');
-    _.each(this.questions, function(question) {
+    _.each(this.questions, function(question, ind, questions) {
         question.answer = answers[question.question_id] || [];
+        if (ind != 0) 
+            question.prev = questions[ind - 1];
+        
+        if (ind != questions.length - 1) 
+            question.next = questions[ind + 1];
     });
     
+    console.log(this.questions);
+    this.current_question = questions[0];
+
     // Page navigation
     $('.page_nav__prev, .page_nav__next').click(function() {
-        var offset = this.classList.contains('page_nav__prev') ? -1 : 1;
-        var index = $('.content').data('index') + offset;
-        if (index >= 0 && index <= self.questions.length) {
-            self.next(offset, index);
-        }
+        var offset = this.classList.contains('page_nav__prev') ? PREV : NEXT;
+        self.next(offset);
         return false;
     });
     
     // Render first question
-    this.render(0);
+    this.render(this.current_question);
 };
 
-Survey.prototype.next = function(offset, index) {
+Survey.prototype.next = function(offset) {
     var self = this;
-    var prev_index = index - offset;
-    var prev_question = this.questions[prev_index];
-    if (offset === 1 && prev_question) {
+    var next_question = offset === PREV ? this.current_question.prev : this.current_question.next;
+    var index = $('.content').data('index');
+
+    if (index === 0 && offset === PREV) {
+        // Going backwards on first q is a no-no;
+        return;
+    }
+
+    if (index === this.questions.length && offset === PREV) {
+        // Going backwards at submit means render ME;
+        next_question = this.current_question;
+    } 
+    
+    if (offset === NEXT) {
         // XXX: prev_question.answer field is a mess to check, need to purify ans
-        if (prev_question.logic.required 
-                && (!prev_question.answer[0] && prev_question.answer !== 0))  {
+        if (this.current_question.logic.required 
+                && (!this.current_question.answer[0] && prev_question.answer !== 0))  {
             App.message('Survey requires this question to be completed.');
             return;
         }
     }
 
-    self.render(index);
+    self.render(next_question);
 };
 
 //XXX: Have a question class to do checks, answer validation and branching? 
 
-Survey.prototype.render = function(index) {
+Survey.prototype.render = function(question) {
     var self = this;
-    var question = this.questions[index];
     var content = $('.content');
     
+    var index = self.questions.indexOf(question); 
+
     if (question) {
         // Show widget
         var templateHTML = $('#widget_' + question.type_constraint_name).html();
         var template = _.template(templateHTML);
         var html = template({question: question});
         
+        self.current_question = question;
         // Render question
         content.empty()
             .data('index', index)
@@ -113,6 +133,7 @@ Survey.prototype.render = function(index) {
         Widgets[question.type_constraint_name](question, content);
     } else {
         // Show submit page
+        index = this.questions.length;
         content.empty()
             .data('index', index)
             .html($('#template_submit').html())
@@ -181,7 +202,6 @@ Survey.prototype.submit = function() {
       return;
     }
 
-    // TODO: Deal with 500 in firefox
     $.ajax({
         url: '',
         type: 'POST',
@@ -203,7 +223,7 @@ Survey.prototype.submit = function() {
         setTimeout(function() {
             sync.classList.remove('icon--spin');
             save_btn.classList.remove('icon--spin');
-            self.render(0);
+            self.render(self.questions[0]);
         }, 1000);
     });
 };
