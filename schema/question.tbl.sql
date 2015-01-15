@@ -10,10 +10,9 @@ CREATE TABLE question
   hint                  text      NOT NULL DEFAULT '',
 
   -- The sequence number determines the order of the questions in a survey.
-  -- Sequence numbers don't have to be consecutive, just unique. Without
-  -- branching, the order of the questions goes from lowest sequence number to
-  -- highest.
+  -- Sequence numbers don't have to be consecutive, just unique
   sequence_number       integer   NOT NULL,
+  question_to_sequence_number integer NOT NULL,
 
   -- Set this to true for questions like "list the books available at this
   -- facility."
@@ -35,6 +34,8 @@ CREATE TABLE question
 
   CONSTRAINT question_survey_id_sequence_number_key UNIQUE (survey_id,
                                                             sequence_number),
+
+  CONSTRAINT positive_sequence_number CHECK (sequence_number > 0),
 
   CONSTRAINT non_empty_title CHECK (title != ''),
 
