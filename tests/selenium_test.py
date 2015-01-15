@@ -1,6 +1,8 @@
 """Front-end tests"""
 import unittest
 
+from browserid.pages.sign_in import SignIn
+
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 
@@ -13,17 +15,20 @@ from selenium.webdriver.support import expected_conditions as EC
 base = 'http://localhost:8888'
 
 
-def go_to_new_window(driver: WebDriver):
-    """
-    I think this is how you switch windows...?
+def click_next(self):
+    """Clicks the 'next' button."""
 
-    :param driver: the Selenium WebDriver
-    """
-    for handle in driver.window_handles:
-        driver.switch_to.window(handle)
+    if self.selenium.find_element(*self._desktop_next_locator).is_displayed():
+        self.selenium.find_element(*self._desktop_next_locator).click()
+    else:
+        self.selenium.find_element(*self._mobile_next_locator).click()
+
+        WebDriverWait(self.selenium, self.timeout).until(
+            lambda s: not s.find_element(
+                *self._checking_email_provider_loading_locator).is_displayed())
 
 
-class DriverTest(unittest.TestCase):
+class DriverTestBase(unittest.TestCase):
     def setUp(self):
         self.drv = webdriver.Firefox()
 
@@ -31,28 +36,19 @@ class DriverTest(unittest.TestCase):
         self.drv.quit()
 
 
-class AuthTest(DriverTest):
+class AuthTest(DriverTestBase):
     def testLoginAndLogout(self):
         self.drv.get(base + '/')
 
         self.assertIn('Welcome to <em>Dokomo</em>', self.drv.page_source)
 
-        # Travis makes me want to cry
-        no_good = True
-        while no_good:
-            try:
-                self.drv.find_element_by_xpath('//*[@id="login"]').click()
-                go_to_new_window(self.drv)
-                eml = self.drv.find_element_by_xpath(
-                    '//*[@id="authentication_email"]')
-                eml.send_keys('test@mockmyid.com', Keys.RETURN)
-                self.drv.switch_to.window(self.drv.window_handles[0])
-                load = EC.presence_of_element_located((By.ID, 'logout'))
-                WebDriverWait(self.drv, 7).until(load)
-                no_good = False
-            except TimeoutException:
-                pass
+        self.drv.find_element_by_id('login').click()
+        persona = SignIn(self.drv, 60)
+        persona.email = 'test@mockmyid.com'
+        click_next(persona)
+        self.drv.switch_to.window(self.drv.window_handles[0])
 
+        self.assertTrue(self.drv.find_element_by_id('logout').is_displayed())
         self.assertIn('Welcome: test@mockmyid.com', self.drv.page_source)
 
         self.drv.find_element_by_id('logout').click()
