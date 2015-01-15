@@ -207,9 +207,7 @@ def _create_branches(connection: Connection,
     for index, question_dict in enumerate(questions_json):
         from_dict = question_dicts[index]
         from_q_id = from_dict['question_id']
-        branches = question_dict['branches']
-        if branches is None:
-            continue
+        branches = question_dict.get('branches', [])
         for branch in branches:
             choice_index = branch['choice_number']
             question_choice_id = from_dict['choice_ids'][choice_index]
@@ -351,6 +349,7 @@ def _get_fields(question: RowProxy) -> dict:
               'title': question.title,
               'hint': question.hint,
               'sequence_number': question.sequence_number,
+              'question_to_sequence_number': question.question_to_sequence_number,
               'allow_multiple': question.allow_multiple,
               'type_constraint_name': question.type_constraint_name,
               'logic': question.logic}
