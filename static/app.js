@@ -106,7 +106,8 @@ Survey.prototype.render = function(index) {
         // Render question
         content.empty()
             .data('index', index)
-            .html(html);
+            .html(html)
+            .scrollTop(); //XXX: Ignored in chrome ...
         
         // Attach widget events
         Widgets[question.type_constraint_name](question, content);
@@ -164,6 +165,7 @@ Survey.prototype.submit = function() {
         answers: answers
     };
 
+    console.log('submission:', data);
 
     sync.classList.add('icon--spin');
     save_btn.classList.add('icon--spin');
@@ -179,6 +181,7 @@ Survey.prototype.submit = function() {
       return;
     }
 
+    // TODO: Deal with 500 in firefox
     $.ajax({
         url: '',
         type: 'POST',
@@ -268,9 +271,7 @@ Widgets.multiple_choice = function(question, page) {
     var $other = $(page)
         .find('.text_input')
         .keyup(function() {
-                            // end - default value pos
             question.answer[$children.length - 1 - 1] = this.value;
-            console.log(question.answer);
         });
 
     $other.hide();
@@ -288,7 +289,6 @@ Widgets.multiple_choice = function(question, page) {
             svals = typeof svals === 'string' ? [svals] : svals
             // find all select options
             svals.forEach(function(opt) { //TODO: THIS IS INCORRECT LOOP
-                console.log(opt);
                 // Please choose something option wipes answers
                 var ind = $children.indexOf(opt) - 1;
                 if (opt === 'null') 
@@ -313,15 +313,7 @@ Widgets.multiple_choice = function(question, page) {
                 $other.hide();
             }
             
-            console.log(question.answer);
-
         });
-
-    console.log($children.length);
-    console.log($children);
-    console.log(question.is_other);
-    console.log(question.answer);
-    console.log(question.answer);
 
     // Selection is handled in _template however toggling of view is done here
                                               // end - default value pos
@@ -347,6 +339,7 @@ Widgets.decimal = function(question, page) {
 
 // Date and time respond better to change then keypresses
 Widgets.date = function(question, page) {
+    //XXX: TODO change input thing to be jquery-ey
     var self = this;
     function change() {
         var ans_ind = ($(page).find('input')).index(this);
@@ -366,11 +359,10 @@ Widgets.date = function(question, page) {
 };
 
 Widgets.time = function(question, page) {
-
+    //XXX: TODO change input thing to be jquery-ey
     var self = this;
     function change() {
         var ans_ind = ($(page).find('input')).index(this);
-        console.log(ans_ind, this.value);
         if (this.value !== '') 
             question.answer[ans_ind] = this.value;
 
