@@ -5,6 +5,9 @@ This tornado server creates the client app by serving html/css/js and
 it also functions as the wsgi container for accepting survey form post
 requests back from the client app.
 """
+from pprint import pformat
+from sqlalchemy.exc import IntegrityError
+
 from tornado.escape import to_unicode, json_encode, json_decode
 import tornado.web
 import tornado.ioloop
@@ -15,13 +18,18 @@ import api.user
 from pages.auth import LogoutHandler, LoginHandler
 from pages.api.submissions import SubmissionsAPI, SingleSubmissionAPI
 from pages.api.surveys import SurveysAPI, SingleSurveyAPI
-from pages.util.base import BaseHandler
+from pages.util.base import BaseHandler, get_json_request_body, \
+    validation_message, catch_bare_integrity_error
 import pages.util.ui
 from pages.debug import DebugLoginHandler, DebugLogoutHandler
+from pages.view.surveys import ViewHandler
+from pages.view.submissions import ViewSubmissionsHandler, \
+    ViewSubmissionHandler
 import settings
 from utils.logger import setup_custom_logger
 from db.survey import SurveyPrefixDoesNotIdentifyASurveyError, \
-    get_survey_id_from_prefix
+    SurveyPrefixTooShortError, \
+    get_survey_id_from_prefix, get_surveys_by_email, IncorrectQuestionIdError
 
 
 logger = setup_custom_logger('dokomo')
@@ -29,7 +37,8 @@ logger = setup_custom_logger('dokomo')
 
 class Index(BaseHandler):
     def get(self, msg=""):
-        self.render('index.html', message=msg)
+        surveys = get_surveys_by_email(self.current_user, 10)
+        self.render('index.html', message=msg, surveys=surveys)
 
     def post(self):
         LogoutHandler.post(self)  # TODO move to js
@@ -47,13 +56,27 @@ class Survey(BaseHandler):
                 self.render('survey.html',
                             survey=json_encode(survey),
                             title=survey['title'])
-        except SurveyPrefixDoesNotIdentifyASurveyError:
+        except (SurveyPrefixDoesNotIdentifyASurveyError,
+                SurveyPrefixTooShortError):
             raise tornado.web.HTTPError(404)
 
 
+    @catch_bare_integrity_error
     def post(self, uuid):
-        data = json_decode(to_unicode(self.request.body))
-        self.write(api.submission.submit(data))
+        data = get_json_request_body(self)
+
+        if data.get('survey_id', None) != uuid:
+            reason = validation_message('submission', 'survey_id', 'invalid')
+            raise tornado.web.HTTPError(422, reason=reason)
+        try:
+            self.write(api.submission.submit(data))
+            self.set_status(201)
+        except KeyError as e:
+            reason = validation_message('submission', str(e), 'missing_field')
+            raise tornado.web.HTTPError(422, reason=reason)
+        except IncorrectQuestionIdError:
+            reason = validation_message('submission', 'question_id', 'invalid')
+            raise tornado.web.HTTPError(422, reason=reason)
 
 
 class APITokenGenerator(BaseHandler):
@@ -62,18 +85,17 @@ class APITokenGenerator(BaseHandler):
         # self.render('api-token.html')
         self.write(
             api.user.generate_token(
-                {'email': to_unicode(self.current_user)}))
+                {'email': self.current_user}))
 
 
     @tornado.web.authenticated
     def post(self):
-        data = json_decode(to_unicode(self.request.body))
-
+        data = get_json_request_body(self)
         self.write(api.user.generate_token(data))
 
 
 config = {
-    'template_path': 'static',
+    'template_path': 'templates',
     'static_path': 'static',
     'xsrf_cookies': True,
     'login_url': '/',
@@ -87,7 +109,12 @@ UUID_REGEX = '[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[' \
 
 pages = [
     # Dokomo Forms
-    (r'/', Index),  # Ebola front page
+    (r'/', Index),
+
+    # View surveys and submissions
+    (r'/view/?', ViewHandler),
+    (r'/view/({})/?'.format(UUID_REGEX), ViewSubmissionsHandler),
+    (r'/view/submission/({})/?'.format(UUID_REGEX), ViewSubmissionHandler),
 
     # Survey Submissions
     (r'/survey/(.+)/?', Survey),

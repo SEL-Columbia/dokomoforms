@@ -4,7 +4,7 @@ from collections import Iterator
 from sqlalchemy import Table, MetaData, Text
 
 from sqlalchemy.engine import RowProxy, ResultProxy
-from sqlalchemy.sql import Insert, and_, cast
+from sqlalchemy.sql import Insert, and_, cast, select, exists
 
 from db import engine
 from db.auth_user import auth_user_table
@@ -24,7 +24,7 @@ def survey_insert(*, auth_user_id: str, title: str) -> Insert:
     return survey_table.insert().values(title=title, auth_user_id=auth_user_id)
 
 
-def get_surveys_for_user_by_email(email: str, limit: int=None) -> ResultProxy:
+def get_surveys_by_email(email: str, limit: int=None) -> ResultProxy:
     """
     Get all surveys for the specified user ordered by creation time.
 
@@ -49,9 +49,11 @@ def get_survey_id_from_prefix(survey_prefix: str) -> str:
     :raise SurveyPrefixDoesNotIdentifyASurvey: if the given prefix identifies
                                                0 or more than 1 survey
     """
+    if len(survey_prefix) < 8:
+        raise SurveyPrefixTooShortError(survey_prefix)
     survey_id_text = cast(survey_table.c.survey_id, Text)
-    condition = survey_id_text.like('{}%'.format(survey_prefix))
-    surveys = survey_table.select().where(condition).execute().fetchall()
+    cond = survey_id_text.like('{}%'.format(survey_prefix))
+    surveys = survey_table.select().limit(2).where(cond).execute().fetchall()
     if len(surveys) == 1:
         return surveys[0].survey_id
     raise SurveyPrefixDoesNotIdentifyASurveyError(survey_prefix)
@@ -150,8 +152,9 @@ def get_free_title(title: str) -> str:
     :param title: the survey title
     :return: a title that can be inserted safely
     """
-    eq_condition = survey_table.c.title == title
-    if survey_table.select().where(eq_condition).execute().rowcount == 0:
+    (does_exist, ), = engine.execute(
+        select((exists().where(survey_table.c.title == title),)))
+    if not does_exist:
         return title
     cond = survey_table.c.title.like(title + '%')
     similar_surveys = survey_table.select().where(cond).execute().fetchall()
@@ -169,4 +172,11 @@ class SurveyAlreadyExistsError(Exception):
 
 
 class SurveyPrefixDoesNotIdentifyASurveyError(Exception):
+    pass
+
+
+class SurveyPrefixTooShortError(Exception):
+    pass
+
+class IncorrectQuestionIdError(Exception):
     pass

@@ -57,8 +57,7 @@ function Survey(id, questions) {
     // Load answers from localStorage
     var answers = JSON.parse(localStorage[this.id] || '{}');
     _.each(this.questions, function(question) {
-        //XXX: Location is loaded incorrectly
-        question.answer = answers[question.question_id] || null;
+        question.answer = answers[question.question_id] || [];
     });
     
     // Page navigation
@@ -80,10 +79,9 @@ Survey.prototype.next = function(offset, index) {
     var prev_index = index - offset;
     var prev_question = this.questions[prev_index];
     if (offset === 1 && prev_question) {
-        console.log(prev_question.logic, prev_question.answer);
         // XXX: prev_question.answer field is a mess to check, need to purify ans
         if (prev_question.logic.required 
-                && (!prev_question.answer && prev_question.answer !== 0))  {
+                && (!prev_question.answer[0] && prev_question.answer !== 0))  {
             App.message('Survey requires this question to be completed.');
             return;
         }
@@ -108,7 +106,8 @@ Survey.prototype.render = function(index) {
         // Render question
         content.empty()
             .data('index', index)
-            .html(html);
+            .html(html)
+            .scrollTop(); //XXX: Ignored in chrome ...
         
         // Attach widget events
         Widgets[question.type_constraint_name](question, content);
@@ -141,21 +140,48 @@ Survey.prototype.submit = function() {
     localStorage[self.id] = JSON.stringify(answers);
 
     // Prepare POST request
+    var answers = [];
+    self.questions.forEach(function(q) {
+        console.log('q', q);
+        q.answer.forEach(function(ans, ind) {
+            var is_other_val = q.is_other || false;
+
+            if (typeof q.is_other === 'object') 
+                is_other_val = q.is_other[ind];
+
+            if (!ans) 
+                return;
+
+            answers.push({
+                question_id: q.question_id,
+                answer: ans,
+                is_other: is_other_val 
+            });
+        });
+    });
+
     var data = {
         survey_id: self.id,
-        answers: _.map(self.questions, function(q) {
-            console.log('q', q);
-            return {
-                question_id: q.question_id,
-                answer: q.answer,
-                is_other: q.is_other || false
-            };
-        })
+        answers: answers
     };
-    
+
+    console.log('submission:', data);
+
     sync.classList.add('icon--spin');
     save_btn.classList.add('icon--spin');
+    
+    // Don't post with no replies
+    if (JSON.stringify(answers) === '[]') {
+      // Not doing instantly to make it seem like App tried reaaall hard
+      setTimeout(function() {
+        sync.classList.remove('icon--spin');
+        save_btn.classList.remove('icon--spin');
+        App.message('Submission failed, No questions answer in Survey!');
+      }, 1000);
+      return;
+    }
 
+    // TODO: Deal with 500 in firefox
     $.ajax({
         url: '',
         type: 'POST',
@@ -177,7 +203,6 @@ Survey.prototype.submit = function() {
         setTimeout(function() {
             sync.classList.remove('icon--spin');
             save_btn.classList.remove('icon--spin');
-            App.message('Survey submitted!');
             self.render(0);
         }, 1000);
     });
@@ -185,29 +210,180 @@ Survey.prototype.submit = function() {
 
 
 var Widgets = {};
+
+// Handle creating multiple inputs for widgets that support it (might not be best place to store func)
+Widgets.keyUp = function(e, page, question, cls, type, keyup_cb, change_cb) {
+    //TODO: Instead of enter key, listen to btn press to display new box 
+    if (e.keyCode === 13) {
+        if (question.allow_multiple) {
+            $('<input>')
+                .attr({'type': type, 'class': cls})
+                .change(change_cb)
+                .keyup(keyup_cb)
+                .appendTo(page)
+                .focus();
+        }
+    }
+}
+
+// All widgets store results in the questions.answer array
 Widgets.text = function(question, page) {
     // This widget's events. Called after page template rendering.
     // Responsible for setting the question object's answer
     //
     // question: question data
     // page: the widget container DOM element
+
+    var self = this;
+    function keyup(e) {
+        var ans_ind = ($(page).find('input')).index(this);
+        question.answer[ans_ind] = this.value;
+        self.keyUp(e, page, question, 'text_input', 'text', keyup);
+    };
+
     $(page)
         .find('input')
-        .on('keyup', function() {
-            question.answer = this.value;
-        });
+        .keyup(keyup);
 };
 
 Widgets.integer = function(question, page) {
+    var self = this;
+    function keyup(e) {
+        var ans_ind = ($(page).find('input')).index(this);
+        question.answer[ans_ind] = parseInt(this.value);
+        self.keyUp(e, page, question, 'text_input', 'number', keyup);
+    };
+
     $(page)
         .find('input')
+        .keyup(keyup);
+};
+
+// Multiple choice and multiple choice with other are handled here by same func
+Widgets.multiple_choice = function(question, page) {
+
+    // record values for each select option to update answer array in consistent way
+    var $children = [];
+    // jquery has own array funcs?
+    $(page).find('select').children().each(function(i, child){$children.push(child.value)});
+
+    // handle change for text field
+    var $other = $(page)
+        .find('.text_input')
         .keyup(function() {
-            question.answer = parseInt(this.value);
+            question.answer[$children.length - 1 - 1] = this.value;
         });
+
+    $other.hide();
+
+    var $select = $(page)
+        .find('select')
+        .change(function() {
+            // any change => answer is reset
+            question.answer = [];
+            question.is_other = [];
+            $other.hide();
+
+            // jquery is dumb and inconsistent 
+            var svals = $('select').val();
+            svals = typeof svals === 'string' ? [svals] : svals
+            // find all select options
+            svals.forEach(function(opt) { //TODO: THIS IS INCORRECT LOOP
+                // Please choose something option wipes answers
+                var ind = $children.indexOf(opt) - 1;
+                if (opt === 'null') 
+                    return;
+
+                // Default, fill in values (other will be overwritten below if selected)
+                question.answer[ind] = opt;
+                question.is_other[ind] = false;
+
+                if (opt  == 'other') {
+                    // Choice is text input
+                    question.answer[ind] = $other.val();
+                    question.is_other[ind] = true;
+                    $other.show();
+                } 
+
+             });
+            
+
+            // Toggle off other if deselected on change event 
+            if (svals.indexOf('other') < 0) { 
+                $other.hide();
+            }
+            
+        });
+
+    // Selection is handled in _template however toggling of view is done here
+                                              // end - default value pos
+    if (question.is_other && question.is_other[$children.length - 1 - 1]) {
+        //$select.find("#with_other").attr("selected", true);
+        $other.show();
+    }
+
+};
+
+Widgets.decimal = function(question, page) {
+    var self = this;
+    function keyup(e) {
+        var ans_ind = ($(page).find('input')).index(this);
+        question.answer[ans_ind] = parseFloat(this.value);
+        self.keyUp(e, page, question, 'text_input', 'number', keyup);
+    };
+
+    $(page)
+        .find('input')
+        .keyup(keyup);
+};
+
+// Date and time respond better to change then keypresses
+Widgets.date = function(question, page) {
+    //XXX: TODO change input thing to be jquery-ey
+    var self = this;
+    function change() {
+        var ans_ind = ($(page).find('input')).index(this);
+        if (this.value !== '') 
+            question.answer[ans_ind] = this.value;
+
+    };
+
+    function keyup(e) {
+        self.keyUp(e, page, question, 'text_input', 'date', keyup, change);
+    }
+
+    $(page)
+        .find('input')
+        .change(change)
+        .keyup(keyup)
+};
+
+Widgets.time = function(question, page) {
+    //XXX: TODO change input thing to be jquery-ey
+    var self = this;
+    function change() {
+        var ans_ind = ($(page).find('input')).index(this);
+        if (this.value !== '') 
+            question.answer[ans_ind] = this.value;
+
+    };
+
+    function keyup(e) {
+        self.keyUp(e, page, question, 'text_input', 'time', keyup, change);
+    }
+
+    $(page)
+        .find('input')
+        .change(change)
+        .keyup(keyup)
+};
+
+Widgets.note = function(question, page) {
 };
 
 Widgets.location = function(question, page) {
     // TODO: add location status
+    var self = this;
     
     // Map
     var lat = parseFloat($(page).find('.question__lat').val()) || 5.118915;
@@ -271,6 +447,10 @@ Widgets.location = function(question, page) {
     
     map.addLayer(funcLayer);
 
+    // Location is the only one that doesn't use the same keyup function due to the btn
+    // being the only way to input values in the view.
+    var loc_div = "<div class='loc_input'><input class='text_input question__lat' type='text'><input class='text_input question__lon' type='text'></div>";
+
     $(page)
         .find('.question__btn')
         .click(function() {
@@ -278,15 +458,28 @@ Widgets.location = function(question, page) {
                 function success(position) {
                     // Server accepts [lon, lat]
                     var coords = [position.coords.longitude, position.coords.latitude];
-                    question.answer = coords;
 
                     map.setView([coords[1], coords[0]]);
 
                     // Revisit api call
                     getNearbyFacilities(coords[0], coords[1], 2, map); 
 
-                    $(page).find('.question__lon').val(coords[0]);
-                    $(page).find('.question__lat').val(coords[1]);
+                    var questions_lon = $(page).find('.question__lon');
+                    var questions_lat = $(page).find('.question__lat');
+
+                    questions_lon[questions_lon.length - 1].value = coords[0];
+                    questions_lat[questions_lat.length - 1].value = coords[1];
+                    // update array val
+                    question.answer[questions_lon.length - 1] = coords;
+
+                    // Add new button if allow multiple is present 
+                    if (question.allow_multiple) {
+                       var loc_dom = $(loc_div)
+                            .find('input')
+
+                       $('.question__btn').before(loc_dom);
+                    }
+
                 }, function error() {
                     alert('error')
                 }, {
@@ -295,89 +488,6 @@ Widgets.location = function(question, page) {
                     maximumAge: 0
                 });
         });
-};
-
-Widgets.multiple_choice = function(question, page) {
-    $(page)
-        .find('.text_input')
-        .hide();
-    if(question.logic['with_other']){
-        var $other = $(page)
-            .find('.text_input')
-            .keyup(function() {
-                question.answer = this.value;
-            })
-            .hide();
-
-        var $select = $(page)
-            .find('select')
-            .change(function() {
-                if (this.value == 'null') {
-                    // No option chosen
-                    question.answer = null;
-                    question.is_other = true;
-                    $other.hide();
-                } else if (this.value == 'other') {
-                    // Choice is text input
-                    $other.show();
-                    question.answer = $other.val();
-                    question.is_other = true;
-                } else {
-                    // Normal choice
-                    question.answer = this.value;
-                    question.is_other = false;
-                    $other.hide();
-                }
-            });
-
-        // Set the default/selected option
-        var option = question.answer ? 'other' : 'null';
-        $select
-            .find('option[value="' + option + '"]')
-            .prop('selected', true);
-        $select.change();
-    } else {
-        $(page)
-            .find('select')
-            .change(function() {
-                if (this.value !== ''){
-                    question.answer = this.value;
-                } else {
-                    question.answer = undefined;
-                }
-        });
-    }
-};
-
-Widgets.decimal = function(question, page) {
-    $(page)
-        .find('input')
-        .keyup(function() {
-            question.answer = parseFloat(this.value);
-        });
-};
-
-Widgets.date = function(question, page) {
-    $(page)
-        .find('input')
-        .keyup(function() {
-            if (this.value !== '') {
-                question.answer = this.value;
-            }
-        });
-};
-
-Widgets.time = function(question, page) {
-    $(page)
-        .find('input')
-        .keyup(function() {
-            if(this.value !== ''){
-                question.answer = this.value;
-            }
-      });
-};
-
-Widgets.note = function(question, page) {
 };
 
 

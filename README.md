@@ -1,7 +1,5 @@
-<a href="https://magnum.travis-ci.com/SEL-Columbia/dokomoforms"><img src="https://magnum.travis-ci.com/SEL-Columbia/dokomoforms.svg?token=YQoxqgi37o2BmSPVXoMS&branch=master" border="0" /></a>
-
 # About
-
+<a href="https://magnum.travis-ci.com/SEL-Columbia/dokomoforms"><img src="https://magnum.travis-ci.com/SEL-Columbia/dokomoforms.svg?token=YQoxqgi37o2BmSPVXoMS&branch=master" border="0" /></a>
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/SEL-Columbia/dokomoforms?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Dokomo [どこも](http://tangorin.com/general/%E3%81%A9%E3%81%93%E3%82%82) Forms is a mobile data collection technology that doesn't suck.
@@ -15,6 +13,8 @@ Dokomo [どこも](http://tangorin.com/general/%E3%81%A9%E3%81%93%E3%82%82) Form
    ```
    
    (or whatever the command is on your distribution)
+
+   You may also need to install a package like postgresql-X.Y-postgis-scripts (check your repositories).
    
    [Debian](http://www.debian.org/) users: update your apt sources according to [this guide](https://wiki.postgresql.org/wiki/Apt) else you will pull your hair out wondering why <tt>CREATE EXTENSION "postgis";</tt> fails.
    
@@ -45,6 +45,6 @@ postgres=# \q
 
 # Running the tests
 
-1. `$ pip-python3 install nose coverage`
-2. `nosetests --with-coverage --cover-inclusive --cover-branches --cover-tests --cover-html --cover-erase --cover-package=api,db,webapp,pages.api,pages.util,pages.debug`
+1. `$ pip-python3 install nose coverage selenium`
+2. `nosetests --with-coverage --cover-inclusive --cover-branches --cover-tests --cover-html --cover-erase --cover-package=api,db,webapp,pages.api,pages.util,pages.debug,pages.view`
 

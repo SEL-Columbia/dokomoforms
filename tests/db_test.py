@@ -23,10 +23,11 @@ from db.question_choice import get_choices, question_choice_select, \
     question_choice_insert, question_choice_table, \
     QuestionChoiceDoesNotExistError
 from db.submission import submission_table, submission_insert, \
-    submission_select, get_submissions_by_email
+    submission_select, get_submissions_by_email, get_number_of_submissions
 from db.survey import survey_table, survey_insert, survey_select, \
-    get_surveys_for_user_by_email, display, SurveyDoesNotExistError, \
-    get_survey_id_from_prefix, SurveyPrefixDoesNotIdentifyASurveyError
+    get_surveys_by_email, display, SurveyDoesNotExistError, \
+    get_survey_id_from_prefix, SurveyPrefixDoesNotIdentifyASurveyError, \
+    SurveyPrefixTooShortError
 
 
 class TestAnswer(unittest.TestCase):
@@ -405,7 +406,7 @@ class TestSubmission(unittest.TestCase):
                           auth_user_id='', email='')
         self.assertRaises(TypeError, submission_select, submission_id)
 
-    def testGetSubmissions(self):
+    def testGetSubmissionsByEmail(self):
         survey_id = survey_table.select().where(
             survey_table.c.title == 'test_title').execute().first().survey_id
         for _ in range(2):
@@ -426,6 +427,16 @@ class TestSubmission(unittest.TestCase):
         submission = sub_exec.first()
         self.assertEqual(submission_id, submission.submission_id)
 
+    def testGetNumberOfSubmissions(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        submission_exec = submission_insert(submitter='test_submitter',
+                                            survey_id=survey_id).execute()
+        submission_id = submission_exec.inserted_primary_key[0]
+        sub_exec = submission_table.select().where(
+            submission_table.c.submission_id == submission_id).execute()
+        self.assertEqual(get_number_of_submissions(survey_id), 1)
+
 
 class TestSurvey(unittest.TestCase):
     def tearDown(self):
@@ -437,7 +448,7 @@ class TestSurvey(unittest.TestCase):
             auth_user_table.c.email == 'test_email').execute().first()
         condition = survey_table.c.auth_user_id == user.auth_user_id
         surveys = survey_table.select().where(condition).execute().fetchall()
-        surveys_by_email = get_surveys_for_user_by_email(user.email)
+        surveys_by_email = get_surveys_by_email(user.email)
         self.assertEqual(len(surveys), len(surveys_by_email))
         self.assertEqual(surveys[0].survey_id, surveys_by_email[0].survey_id)
 
@@ -447,6 +458,10 @@ class TestSurvey(unittest.TestCase):
         self.assertEqual(get_survey_id_from_prefix(survey_id[:10]), survey_id)
         self.assertRaises(SurveyPrefixDoesNotIdentifyASurveyError,
                           get_survey_id_from_prefix, str(uuid.uuid4()))
+
+    def testPrefixTooShort(self):
+        self.assertRaises(SurveyPrefixTooShortError, get_survey_id_from_prefix,
+                          'a')
 
     def testDisplay(self):
         survey = survey_table.select().where(
