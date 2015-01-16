@@ -44,7 +44,6 @@ POST_HDRS = {"Content-type": "application/x-www-form-urlencoded",
 
 new_config = config.copy()
 new_config['xsrf_cookies'] = False  # convenient for testing...
-# eventually we should use mock instead
 
 def create_test_submission() -> dict:
     survey_id = survey_table.select().where(
