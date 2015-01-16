@@ -51,6 +51,7 @@ function getCookie(name) {
     return r ? r[1] : undefined;
 }
 
+
 function Survey(id, questions) {
     var self = this;
     this.id = id;
@@ -60,15 +61,21 @@ function Survey(id, questions) {
     var answers = JSON.parse(localStorage[this.id] || '{}');
     _.each(this.questions, function(question, ind, questions) {
         question.answer = answers[question.question_id] || [];
-        if (ind != 0) 
-            question.prev = questions[ind - 1];
-        
-        if (ind != questions.length - 1) 
-            question.next = questions[ind + 1];
+        // Set next pointers
+        question.next = self.getQuestion(question.question_to_sequence_number);
     });
+
+    this.current_question = this.questions[0];
+    var curr_q = this.current_question;
+    var prev_q = null;
+    console.log(questions);
+    // Now that you know order, you can set prev pointers
+    do {
+        curr_q.prev = prev_q;
+        prev_q = curr_q;
+        curr_q = curr_q.next;
+    } while (curr_q);
     
-    console.log(this.questions);
-    this.current_question = questions[0];
 
     // Page navigation
     $('.page_nav__prev, .page_nav__next').click(function() {
@@ -81,12 +88,36 @@ function Survey(id, questions) {
     this.render(this.current_question);
 };
 
+// Search by sequence number instead of array pos
+Survey.prototype.getQuestion = function(seq) {
+    var self = this;
+    for(i = 0; i < self.questions.length; i++) {
+        if (self.questions[i].sequence_number === seq)
+            return self.questions[i]
+    }
+
+    return null;
+}
+
+// Answer array may have elements even if answer[0] is undefined
+Survey.prototype.getFirstResponse = function(question) {
+    for (i = 0; i < question.answer.length; i++) {
+        if (question.answer[i]) 
+            return question.answer[i];
+    }
+
+    return null;
+}
+
 Survey.prototype.next = function(offset) {
     var self = this;
     var next_question = offset === PREV ? this.current_question.prev : this.current_question.next;
     var index = $('.content').data('index');
+    var response = this.current_question.answer;
+    var first_response = this.getFirstResponse(this.current_question); 
 
-    if (index === 0 && offset === PREV) {
+    //XXX: 0 is not the indicator anymore its lowest sequence num;
+    if (index === 1 && offset === PREV) {
         // Going backwards on first q is a no-no;
         return;
     }
@@ -99,9 +130,22 @@ Survey.prototype.next = function(offset) {
     if (offset === NEXT) {
         // XXX: prev_question.answer field is a mess to check, need to purify ans
         if (this.current_question.logic.required 
-                && (!this.current_question.answer[0] && prev_question.answer !== 0))  {
+                && (first_response && first_response !== 0))  {
             App.message('Survey requires this question to be completed.');
             return;
+        }
+
+        // Check if question was a branching question
+        if (this.current_question.branches && first_response) {
+            var branches = this.current_question.branches;
+            for (i=0; i < branches.length; i++) {
+                if(branches[i].question_choice_id == first_response) {
+                    next_question = self.getQuestion(branches[i].to_sequence_number);
+                    // update pointers
+                    self.current_question.next = next_question;
+                    next_question.prev = self.current_question; 
+                }
+            }
         }
     }
 
@@ -114,7 +158,7 @@ Survey.prototype.render = function(question) {
     var self = this;
     var content = $('.content');
     
-    var index = self.questions.indexOf(question); 
+    var index = question ? question.sequence_number : this.questions.length + 1;
 
     if (question) {
         // Show widget
@@ -133,7 +177,6 @@ Survey.prototype.render = function(question) {
         Widgets[question.type_constraint_name](question, content);
     } else {
         // Show submit page
-        index = this.questions.length;
         content.empty()
             .data('index', index)
             .html($('#template_submit').html())
@@ -145,7 +188,7 @@ Survey.prototype.render = function(question) {
     
     // Update nav
     $('.page_nav__progress')
-        .text((index + 1) + ' / ' + (this.questions.length + 1));
+        .text((index) + ' / ' + (this.questions.length + 1));
 };
 
 Survey.prototype.submit = function() {
@@ -170,7 +213,7 @@ Survey.prototype.submit = function() {
             if (typeof q.is_other === 'object') 
                 is_other_val = q.is_other[ind];
 
-            if (!ans) 
+            if (!ans && ans !== 0) 
                 return;
 
             answers.push({
