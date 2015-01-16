@@ -177,3 +177,6 @@ class SurveyPrefixDoesNotIdentifyASurveyError(Exception):
 
 class SurveyPrefixTooShortError(Exception):
     pass
+
+class IncorrectQuestionIdError(Exception):
+    pass

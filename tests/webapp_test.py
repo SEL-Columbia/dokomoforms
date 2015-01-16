@@ -8,6 +8,7 @@ from unittest import mock
 from sqlalchemy import and_
 from urllib.parse import urlencode
 import uuid
+from sqlalchemy import Table, MetaData
 
 from tornado.escape import to_unicode, json_encode, json_decode
 import tornado.httpserver
@@ -19,6 +20,7 @@ import tornado.web
 import api.submission
 import api.survey
 import api.user
+from db import engine
 from db.answer import get_answers
 from db.auth_user import generate_api_token
 from db.question import get_questions, question_table
@@ -26,10 +28,10 @@ from db.question_choice import question_choice_table
 from db.submission import submission_table
 from pages.api.submissions import SubmissionsAPI, SingleSubmissionAPI
 from pages.api.surveys import SurveysAPI, SingleSurveyAPI
+from pages.util.base import catch_bare_integrity_error
 from pages.view.submissions import ViewSubmissionsHandler, \
     ViewSubmissionHandler
 from pages.view.surveys import ViewHandler
-import settings
 from webapp import config, pages
 from db.survey import survey_table
 
@@ -42,61 +44,6 @@ POST_HDRS = {"Content-type": "application/x-www-form-urlencoded",
 
 new_config = config.copy()
 new_config['xsrf_cookies'] = False  # convenient for testing...
-# eventually we should use mock instead
-
-class TestDokomoWebapp(unittest.TestCase):
-    http_server = None
-    response = None
-
-    def setUp(self):
-        application = tornado.web.Application(pages, **new_config)
-        self.http_server = tornado.httpserver.HTTPServer(application)
-        self.http_server.listen(TEST_PORT)
-
-    def tearDown(self):
-        self.http_server.stop()
-        submission_table.delete().execute()
-
-    def handle_request(self, response):
-        self.response = response
-        tornado.ioloop.IOLoop.instance().stop()
-
-    def testGetIndex(self):
-        survey_id = survey_table.select().execute().first().survey_id
-        settings.SURVEY_ID = survey_id
-        http_client = tornado.httpclient.AsyncHTTPClient()
-        http_client.fetch('http://localhost:%d/' % TEST_PORT,
-                          self.handle_request)
-        tornado.ioloop.IOLoop.instance().start()
-        self.assertFalse(self.response.error)
-        # Test contents of response
-        self.assertIn(u'<title>Dokomo Forms</title>', str(self.response.body))
-
-    def testFormPost(self):
-        survey_id = survey_table.select().execute().first().survey_id
-        answer_json = {'survey_id': survey_id, 'answers': [
-            {'question_id': get_questions(survey_id).first().question_id,
-             'answer': 1,
-             'is_other': False}]}
-
-        # prepare the POST request
-        http_client = tornado.httpclient.AsyncHTTPClient()
-        req = tornado.httpclient.HTTPRequest(
-            url='http://localhost:%d/survey/%s' % (TEST_PORT, survey_id),
-            method='POST',
-            headers=POST_HDRS,
-            body=json_encode(answer_json))
-        http_client.fetch(req, self.handle_request)
-        tornado.ioloop.IOLoop.instance().start()
-        self.assertFalse(self.response.error)
-        result = to_unicode(self.response.body)
-        result_submission_id = json_decode(result)['submission_id']
-        condition = submission_table.c.submission_id == result_submission_id
-        self.assertEqual(
-            submission_table.select().where(condition).execute().rowcount, 1)
-        sub_answers = get_answers(result_submission_id)
-        self.assertEqual(sub_answers.rowcount, 1)
-
 
 def create_test_submission() -> dict:
     survey_id = survey_table.select().where(
@@ -263,6 +210,17 @@ class BaseHandlerTest(AsyncHTTPTestCase):
         response = self.fetch('/user/login/persona')
         self.assertEqual(response.code, 404)
 
+    def testCatchBareIntegrityError(self):
+        class Log():
+            def error(self, dummy):
+                pass
+
+        table = Table('type_constraint', MetaData(bind=engine), autoload=True)
+        wrapped = catch_bare_integrity_error(
+            lambda: table.insert().values(
+                type_constraint_name='text').execute(), logger=Log())
+        self.assertRaises(tornado.web.HTTPError, wrapped)
+
 
 class IndexTest(AsyncHTTPTestCase):
     def get_app(self):
@@ -285,6 +243,9 @@ class SurveyTest(AsyncHTTPTestCase):
     def get_new_ioloop(self):
         return tornado.ioloop.IOLoop.instance()
 
+    def tearDown(self):
+        submission_table.delete().execute()
+
     def testGetPrefix(self):
         survey_id = survey_table.select().where(
             survey_table.c.title == 'test_title').execute().first().survey_id
@@ -292,7 +253,6 @@ class SurveyTest(AsyncHTTPTestCase):
         response2 = self.fetch('/survey/{}'.format(survey_id))
         self.assertEqual(response.code, 200)
         self.assertEqual(response.body, response2.body)
-
 
     def testGet(self):
         survey_id = survey_table.select().where(
@@ -303,6 +263,75 @@ class SurveyTest(AsyncHTTPTestCase):
     def testGet404(self):
         response = self.fetch('/survey/{}'.format(str(uuid.uuid4())))
         self.assertEqual(response.code, 404)
+
+    def testPost(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        answer_json = {'survey_id': survey_id, 'answers': [
+            {'question_id': get_questions(survey_id).first().question_id,
+             'answer': 1,
+             'is_other': False}]}
+        response = self.fetch('/survey/{}'.format(survey_id), method='POST',
+                              body=json_encode(answer_json))
+
+        self.assertFalse(response.error)
+        result = to_unicode(response.body)
+        result_submission_id = json_decode(result)['submission_id']
+        condition = submission_table.c.submission_id == result_submission_id
+        self.assertEqual(
+            submission_table.select().where(condition).execute().rowcount, 1)
+        sub_answers = get_answers(result_submission_id)
+        self.assertEqual(sub_answers.rowcount, 1)
+
+    def testPostNotJson(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        response = self.fetch('/survey/{}'.format(survey_id), method='POST',
+                              body='not even close to json')
+
+        self.assertEqual(response.code, 400)
+        self.assertEqual(str(response.error),
+                         'HTTP 400: {"message": "Problems parsing JSON"}')
+
+    def testPostMissingValue(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        answer_json = {'survey_id': survey_id}
+        response = self.fetch('/survey/{}'.format(survey_id), method='POST',
+                              body=json_encode(answer_json))
+
+        self.assertEqual(response.code, 422)
+        self.assertIn('missing_field', str(response.error))
+
+    def testPostWrongSurveyID(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        wrong_id = survey_table.select().where(
+            survey_table.c.title != 'test_title').execute().first().survey_id
+        answer_json = {'survey_id': wrong_id, 'answers': [
+            {'question_id': get_questions(survey_id).first().question_id,
+             'answer': 1,
+             'is_other': False}]}
+        response = self.fetch('/survey/{}'.format(survey_id), method='POST',
+                              body=json_encode(answer_json))
+
+        self.assertEqual(response.code, 422)
+        self.assertIn('invalid', str(response.error))
+
+    def testPostWrongQuestionID(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        wrong_id = survey_table.select().where(
+            survey_table.c.title != 'test_title').execute().first().survey_id
+        answer_json = {'survey_id': survey_id, 'answers': [
+            {'question_id': get_questions(wrong_id).first().question_id,
+             'answer': 1,
+             'is_other': False}]}
+        response = self.fetch('/survey/{}'.format(survey_id), method='POST',
+                              body=json_encode(answer_json))
+
+        self.assertEqual(response.code, 422)
+        self.assertIn('invalid', str(response.error))
 
 
 class ViewTest(AsyncHTTPTestCase):

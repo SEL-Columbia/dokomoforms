@@ -478,7 +478,6 @@ Widgets.location = function(question, page) {
                 function success(position) {
                     // Server accepts [lon, lat]
                     var coords = [position.coords.longitude, position.coords.latitude];
-                    question.answer.push(coords);
 
                     map.setView([coords[1], coords[0]]);
 
@@ -490,6 +489,8 @@ Widgets.location = function(question, page) {
 
                     questions_lon[questions_lon.length - 1].value = coords[0];
                     questions_lat[questions_lat.length - 1].value = coords[1];
+                    // update array val
+                    question.answer[questions_lon.length - 1] = coords;
 
                     // Add new button if allow multiple is present 
                     if (question.allow_multiple) {

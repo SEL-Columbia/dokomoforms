@@ -14,7 +14,8 @@ from db.question import question_select, get_required
 from db.question_choice import question_choice_select
 from db.submission import submission_insert, submission_select, \
     get_submissions_by_email, submission_table
-from db.survey import SurveyDoesNotExistError, get_email_address
+from db.survey import SurveyDoesNotExistError, get_email_address, \
+    IncorrectQuestionIdError
 
 
 class RequiredQuestionSkippedError(Exception):
@@ -80,7 +81,10 @@ def submit(data: dict) -> dict:
             executable = _insert_answer(answer, submission_id, survey_id)
             exceptions = [('only_one_answer_allowed',
                            CannotAnswerMultipleTimesError(
-                               answer['question_id']))]
+                               answer['question_id'])),
+                          ('answer_question_id_fkey',
+                           IncorrectQuestionIdError(answer['question_id']))
+            ]
             execute_with_exceptions(connection, executable, exceptions)
             unanswered_required.discard(answer['question_id'])
 
