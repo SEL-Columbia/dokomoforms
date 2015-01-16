@@ -338,7 +338,8 @@ def _get_branch_fields(branch: RowProxy) -> dict:
     :return: A dictionary of the fields.
     """
     return {'question_choice_id': branch.question_choice_id,
-            'to_question_id': branch.to_question_id}
+            'to_question_id': branch.to_question_id,
+            'to_sequence_number': branch.to_sequence_number}
 
 
 def _get_fields(question: RowProxy) -> dict:
