@@ -8,6 +8,7 @@ from unittest import mock
 from sqlalchemy import and_
 from urllib.parse import urlencode
 import uuid
+from sqlalchemy import Table, MetaData
 
 from tornado.escape import to_unicode, json_encode, json_decode
 import tornado.httpserver
@@ -19,6 +20,7 @@ import tornado.web
 import api.submission
 import api.survey
 import api.user
+from db import engine
 from db.answer import get_answers
 from db.auth_user import generate_api_token
 from db.question import get_questions, question_table
@@ -26,6 +28,7 @@ from db.question_choice import question_choice_table
 from db.submission import submission_table
 from pages.api.submissions import SubmissionsAPI, SingleSubmissionAPI
 from pages.api.surveys import SurveysAPI, SingleSurveyAPI
+from pages.util.base import catch_bare_integrity_error
 from pages.view.submissions import ViewSubmissionsHandler, \
     ViewSubmissionHandler
 from pages.view.surveys import ViewHandler
@@ -207,6 +210,17 @@ class BaseHandlerTest(AsyncHTTPTestCase):
     def testGet(self):
         response = self.fetch('/user/login/persona')
         self.assertEqual(response.code, 404)
+
+    def testCatchBareIntegrityError(self):
+        class Log():
+            def error(self, dummy):
+                pass
+
+        table = Table('type_constraint', MetaData(bind=engine), autoload=True)
+        wrapped = catch_bare_integrity_error(
+            lambda: table.insert().values(
+                type_constraint_name='text').execute(), logger=Log())
+        self.assertRaises(tornado.web.HTTPError, wrapped)
 
 
 class IndexTest(AsyncHTTPTestCase):
