@@ -396,6 +396,22 @@ a:link:active, a:visited:active {
     padding: 0px;
 }
 
+.next_input {
+    width: 25px;
+    height: 25px;
+    display: block;
+    margin: 0px auto;
+    background: rgba(0,0,0,0.1);
+    padding: 15px;
+    border-radius: 100px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.next_input:hover {
+    background: rgba(0,0,0,0.3);
+}
+
 select {
     background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='50px' height='50px'><polyline points='46.139,15.518 25.166,36.49 4.193,15.519'/></svg>");
     background-repeat:no-repeat;

@@ -33,6 +33,12 @@
                     value="<%- ans %>">
             <% }); %>
         <% } %>
+
+        <%  if (question.allow_multiple) { %> 
+        <svg class="icon next_input">
+            <use xlink:href="#icon-add"></use>
+        </svg>
+        <% } %>
     </script>
     
     <script id="widget_integer" type="text/html">
@@ -46,6 +52,7 @@
                 max="<%- question.max %>"
             <% } %>
         >
+        
         <% if (question.answer.length > 1){ %>
             <% _.each(question.answer.slice(1), function(ans) { %>
                 <input class="text_input" type="number"
@@ -59,6 +66,13 @@
                 >
             <% }); %>
         <% } %>
+
+        <%  if (question.allow_multiple) { %> 
+        <svg class="icon next_input">
+            <use xlink:href="#icon-add"></use>
+        </svg>
+        <% } %>
+        
     </script>
     
     <script id="widget_location" type="text/html">
@@ -83,6 +97,12 @@
             </div>
         <% } %>
         
+        <%  if (question.allow_multiple) { %> 
+        <svg class="icon next_input">
+            <use xlink:href="#icon-add"></use>
+        </svg>
+        <% } %>
+
         <div class="question__btn">Find location</div>
     </script>
 
@@ -125,6 +145,12 @@
                     value="<%- ans %>">
             <% }); %>
         <% } %>
+        
+        <%  if (question.allow_multiple) { %> 
+        <svg class="icon next_input">
+            <use xlink:href="#icon-add"></use>
+        </svg>
+        <% } %>
     </script>
 
     <script id="widget_date" type="text/html">
@@ -135,6 +161,12 @@
                 <input class="text_input" type="date" value="<%- ans %>">
             <% }); %>
         <% } %>
+
+        <%  if (question.allow_multiple) { %> 
+        <svg class="icon next_input">
+            <use xlink:href="#icon-add"></use>
+        </svg>
+        <% } %>
     </script>
 
     <script id="widget_time" type="text/html">
@@ -144,6 +176,12 @@
             <% _.each(question.answer.slice(1), function(ans) { %>
                 <input class="text_input" type="time" value="<%- ans %>">
             <% }); %>
+        <% } %>
+        
+        <%  if (question.allow_multiple) { %> 
+        <svg class="icon next_input">
+            <use xlink:href="#icon-add"></use>
+        </svg>
         <% } %>
     </script>
 
