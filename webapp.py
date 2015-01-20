@@ -135,7 +135,7 @@ pages = [
 ]
 
 if config.get('debug', False):
-    pages += [(r'/debug/login/?', DebugLoginHandler),
+    pages += [(r'/debug/login/(.+)/?', DebugLoginHandler),
               (r'/debug/logout/?', DebugLogoutHandler),
     ]
 
