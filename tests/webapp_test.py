@@ -45,6 +45,7 @@ POST_HDRS = {"Content-type": "application/x-www-form-urlencoded",
 new_config = config.copy()
 new_config['xsrf_cookies'] = False  # convenient for testing...
 
+
 def create_test_submission() -> dict:
     survey_id = survey_table.select().where(
         survey_table.c.title == 'test_title').execute().first().survey_id
@@ -69,6 +70,7 @@ def create_test_submission() -> dict:
     fourth_q_id = question_table.select().where(
         fourth_cond).execute().first().question_id
     input_data = {'survey_id': survey_id,
+                  'submitter': 'me',
                   'answers':
                       [{'question_id': question_id,
                         'answer': 1,
@@ -267,7 +269,7 @@ class SurveyTest(AsyncHTTPTestCase):
     def testPost(self):
         survey_id = survey_table.select().where(
             survey_table.c.title == 'test_title').execute().first().survey_id
-        answer_json = {'survey_id': survey_id, 'answers': [
+        answer_json = {'submitter': 'me', 'survey_id': survey_id, 'answers': [
             {'question_id': get_questions(survey_id).first().question_id,
              'answer': 1,
              'is_other': False}]}
@@ -323,7 +325,8 @@ class SurveyTest(AsyncHTTPTestCase):
             survey_table.c.title == 'test_title').execute().first().survey_id
         wrong_id = survey_table.select().where(
             survey_table.c.title != 'test_title').execute().first().survey_id
-        answer_json = {'survey_id': survey_id, 'answers': [
+        answer_json = {'submitter': 'me',
+                       'survey_id': survey_id, 'answers': [
             {'question_id': get_questions(wrong_id).first().question_id,
              'answer': 1,
              'is_other': False}]}

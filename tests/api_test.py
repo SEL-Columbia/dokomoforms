@@ -60,7 +60,8 @@ class TestSubmission(unittest.TestCase):
                            question_table.c.type_constraint_name == 'decimal')
         fourth_q_id = question_table.select().where(
             fourth_cond).execute().first().question_id
-        input_data = {'survey_id': survey_id,
+        input_data = {'submitter': 'me',
+                      'survey_id': survey_id,
                       'answers':
                           [{'question_id': question_id,
                             'answer': 1,
@@ -97,7 +98,8 @@ class TestSubmission(unittest.TestCase):
                         question_table.c.type_constraint_name == 'integer')
         question_id = question_table.select().where(
             and_cond).execute().first().question_id
-        input_data = {'survey_id': survey_id,
+        input_data = {'submitter': 'me',
+                      'survey_id': survey_id,
                       'answers':
                           [{'question_id': question_id,
                             'answer': 'one',
@@ -120,14 +122,16 @@ class TestSubmission(unittest.TestCase):
         survey = api.survey.create(data)
         survey_id = survey['survey_id']
 
-        submission = {'survey_id': survey_id,
+        submission = {'submitter': 'me',
+                      'survey_id': survey_id,
                       'answers': []}
         self.assertRaises(api.submission.RequiredQuestionSkippedError,
                           api.submission.submit, submission)
 
         question_id = survey['questions'][0]['question_id']
 
-        submission2 = {'survey_id': survey_id,
+        submission2 = {'submitter': 'me',
+                       'survey_id': survey_id,
                        'answers': [{'question_id': question_id,
                                     'answer': None}]}
 
@@ -137,7 +141,8 @@ class TestSubmission(unittest.TestCase):
     def testQuestionDoesNotExist(self):
         survey_id = survey_table.select().where(
             survey_table.c.title == 'test_title').execute().first().survey_id
-        input_data = {'survey_id': survey_id,
+        input_data = {'submitter': 'me',
+                      'survey_id': survey_id,
                       'answers': [{'question_id': str(uuid.uuid4()),
                                    'answer': 1}]}
         self.assertRaises(QuestionDoesNotExistError, api.submission.submit,
@@ -145,7 +150,7 @@ class TestSubmission(unittest.TestCase):
 
     def testSurveyDoesNotExist(self):
         survey_id = str(uuid.uuid4())
-        input_data = {'survey_id': survey_id, 'answers': []}
+        input_data = {'submitter': 'me', 'survey_id': survey_id, 'answers': []}
         self.assertRaises(SurveyDoesNotExistError, api.submission.submit,
                           input_data)
 
@@ -160,7 +165,8 @@ class TestSubmission(unittest.TestCase):
                          question_table.c.type_constraint_name == 'time')
         time_question_id = question_table.select().where(
             time_cond).execute().first().question_id
-        input_data = {'survey_id': survey_id,
+        input_data = {'submitter': 'me',
+                      'survey_id': survey_id,
                       'answers':
                           [{'question_id': date_question_id,
                             'answer': '2014-10-27',
@@ -179,7 +185,8 @@ class TestSubmission(unittest.TestCase):
                         question_table.c.type_constraint_name == 'integer')
         question_id = question_table.select().where(
             and_cond).execute().first().question_id
-        input_data = {'survey_id': survey_id,
+        input_data = {'submitter': 'me',
+                      'survey_id': survey_id,
                       'answers':
                           [{'question_id': question_id,
                             'answer': 1,
@@ -237,7 +244,8 @@ class TestSubmission(unittest.TestCase):
     def testDelete(self):
         survey_id = survey_table.select().where(
             survey_table.c.title == 'test_title').execute().first().survey_id
-        data = {'survey_id': survey_id,
+        data = {'submitter': 'me',
+                'survey_id': survey_id,
                 'answers': [{'answer': None}]}
         submission_id = api.submission.submit(data)['submission_id']
         api.submission.delete(submission_id)
@@ -456,7 +464,8 @@ class TestSurvey(unittest.TestCase):
         choice_1 = get_choices(inserted_qs[1].question_id).fetchall()[0]
         choice_1_id = choice_1.question_choice_id
 
-        submission = {'survey_id': survey_id,
+        submission = {'submitter': 'me',
+                      'survey_id': survey_id,
                       'answers': [{'question_id': inserted_qs[0].question_id,
                                    'answer': 'text answer',
                                    'is_other': False},
@@ -587,7 +596,8 @@ class TestSurvey(unittest.TestCase):
         other_choice_2 = get_choices(inserted_qs[4].question_id).first()
         other_choice_2_id = other_choice_2.question_choice_id
 
-        submission = {'survey_id': survey_id,
+        submission = {'submitter': 'me',
+                      'survey_id': survey_id,
                       'answers': [{'question_id': inserted_qs[0].question_id,
                                    'answer': 'text answer',
                                    'is_other': False},
@@ -693,7 +703,8 @@ class TestSurvey(unittest.TestCase):
         survey_id = api.survey.create(data)['survey_id']
         inserted_q_id = get_questions(survey_id).first().question_id
 
-        submission = {'survey_id': survey_id,
+        submission = {'submitter': 'me',
+                      'survey_id': survey_id,
                       'answers': [{'question_id': inserted_q_id,
                                    'answer': 'text answer',
                                    'is_other': False}]}
