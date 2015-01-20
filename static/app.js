@@ -1,3 +1,6 @@
+var NEXT = 1;
+var PREV = -1;
+
 App = {
     unsynced: [] // unsynced surveys
 };
@@ -48,61 +51,125 @@ function getCookie(name) {
     return r ? r[1] : undefined;
 }
 
+
 function Survey(id, questions) {
     var self = this;
     this.id = id;
     this.questions = questions;
-    //this.questions = _.sortBy(questions, function(question) { return question.sequence_number; });
 
     // Load answers from localStorage
     var answers = JSON.parse(localStorage[this.id] || '{}');
-    _.each(this.questions, function(question) {
+    _.each(this.questions, function(question, ind, questions) {
         question.answer = answers[question.question_id] || [];
+        // Set next pointers
+        question.next = self.getQuestion(question.question_to_sequence_number);
     });
+
+    // No where to start, and number
+    this.current_question = this.questions[0];
+    this.lowest_sequence_number = this.current_question.sequence_number;
+
+    // Now that you know order, you can set prev pointers
+    var curr_q = this.current_question;
+    var prev_q = null;
+    do {
+        curr_q.prev = prev_q;
+        prev_q = curr_q;
+        curr_q = curr_q.next;
+    } while (curr_q);
     
+
+    console.log(questions);
+
     // Page navigation
     $('.page_nav__prev, .page_nav__next').click(function() {
-        var offset = this.classList.contains('page_nav__prev') ? -1 : 1;
-        var index = $('.content').data('index') + offset;
-        if (index >= 0 && index <= self.questions.length) {
-            self.next(offset, index);
-        }
+        var offset = this.classList.contains('page_nav__prev') ? PREV : NEXT;
+        self.next(offset);
         return false;
     });
     
     // Render first question
-    this.render(0);
+    this.render(this.current_question);
 };
 
-Survey.prototype.next = function(offset, index) {
+// Search by sequence number instead of array pos
+Survey.prototype.getQuestion = function(seq) {
     var self = this;
-    var prev_index = index - offset;
-    var prev_question = this.questions[prev_index];
-    if (offset === 1 && prev_question) {
+    for(i = 0; i < self.questions.length; i++) {
+        if (self.questions[i].sequence_number === seq)
+            return self.questions[i]
+    }
+
+    return null;
+}
+
+// Answer array may have elements even if answer[0] is undefined
+Survey.prototype.getFirstResponse = function(question) {
+    for (i = 0; i < question.answer.length; i++) {
+        if (question.answer[i]) 
+            return question.answer[i];
+    }
+
+    return null;
+}
+
+Survey.prototype.next = function(offset) {
+    var self = this;
+    var next_question = offset === PREV ? this.current_question.prev : this.current_question.next;
+    var index = $('.content').data('index');
+    var response = this.current_question.answer;
+    var first_response = this.getFirstResponse(this.current_question); 
+
+    //XXX: 0 is not the indicator anymore its lowest sequence num;
+    if (index === self.lowest_sequence_number && offset === PREV) {
+        // Going backwards on first q is a no-no;
+        return;
+    }
+
+    if (index === this.questions.length + 1 && offset === PREV) {
+        // Going backwards at submit means render ME;
+        next_question = this.current_question;
+    } 
+    
+    if (offset === NEXT) {
         // XXX: prev_question.answer field is a mess to check, need to purify ans
-        if (prev_question.logic.required 
-                && (!prev_question.answer[0] && prev_question.answer !== 0))  {
+        if (this.current_question.logic.required 
+                && (first_response && first_response !== 0))  {
             App.message('Survey requires this question to be completed.');
             return;
         }
+
+        // Check if question was a branching question
+        if (this.current_question.branches && first_response) {
+            var branches = this.current_question.branches;
+            for (i=0; i < branches.length; i++) {
+                if(branches[i].question_choice_id == first_response) {
+                    next_question = self.getQuestion(branches[i].to_sequence_number);
+                    // update pointers
+                    self.current_question.next = next_question;
+                    next_question.prev = self.current_question; 
+                    break; // only one set of ptrs ever needed updating
+                }
+            }
+        }
     }
 
-    self.render(index);
+    self.render(next_question);
 };
 
-//XXX: Have a question class to do checks, answer validation and branching? 
-
-Survey.prototype.render = function(index) {
+Survey.prototype.render = function(question) {
     var self = this;
-    var question = this.questions[index];
     var content = $('.content');
     
+    var index = question ? question.sequence_number : this.questions.length + 1;
+
     if (question) {
         // Show widget
         var templateHTML = $('#widget_' + question.type_constraint_name).html();
         var template = _.template(templateHTML);
         var html = template({question: question});
         
+        self.current_question = question;
         // Render question
         content.empty()
             .data('index', index)
@@ -124,7 +191,7 @@ Survey.prototype.render = function(index) {
     
     // Update nav
     $('.page_nav__progress')
-        .text((index + 1) + ' / ' + (this.questions.length + 1));
+        .text((index) + ' / ' + (this.questions.length + 1));
 };
 
 Survey.prototype.submit = function() {
@@ -149,7 +216,7 @@ Survey.prototype.submit = function() {
             if (typeof q.is_other === 'object') 
                 is_other_val = q.is_other[ind];
 
-            if (!ans) 
+            if (!ans && ans !== 0) 
                 return;
 
             answers.push({
@@ -177,11 +244,11 @@ Survey.prototype.submit = function() {
         sync.classList.remove('icon--spin');
         save_btn.classList.remove('icon--spin');
         App.message('Submission failed, No questions answer in Survey!');
+        self.render(self.questions[0]);
       }, 1000);
       return;
     }
 
-    // TODO: Deal with 500 in firefox
     $.ajax({
         url: '',
         type: 'POST',
@@ -203,7 +270,7 @@ Survey.prototype.submit = function() {
         setTimeout(function() {
             sync.classList.remove('icon--spin');
             save_btn.classList.remove('icon--spin');
-            self.render(0);
+            self.render(self.questions[0]);
         }, 1000);
     });
 };

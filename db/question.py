@@ -61,6 +61,7 @@ def question_insert(*,
                     logic: dict,
                     title: str,
                     type_constraint_name: str,
+                    question_to_sequence_number: int,
                     survey_id: str) -> Insert:
     """
     Insert a record into the question table. A question is associated with a
@@ -85,6 +86,8 @@ def question_insert(*,
                                  time
                                  location
                                  note (no answer allowed)
+    :param question_to_sequence_number: the sequence number of the subequent
+                                        question
     :param survey_id: the UUID of the survey
     :return: the Insert object. Execute this!
     """
@@ -95,7 +98,8 @@ def question_insert(*,
     values = {'title': title,
               'type_constraint_name': tcn,
               'survey_id': survey_id,
-              'sequence_number': sequence_number}
+              'sequence_number': sequence_number,
+              'question_to_sequence_number': question_to_sequence_number}
     # These values will only be inserted if they were supplied (since they
     # have default values in the db)
     values = _add_optional_values(values, hint=hint,
