@@ -228,6 +228,7 @@ Survey.prototype.submit = function() {
     });
 
     var data = {
+        submitter: "me",
         survey_id: self.id,
         answers: answers
     };
