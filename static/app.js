@@ -65,17 +65,21 @@ function Survey(id, questions) {
         question.next = self.getQuestion(question.question_to_sequence_number);
     });
 
+    // No where to start, and number
     this.current_question = this.questions[0];
+    this.lowest_sequence_number = this.current_question.sequence_number;
+
+    // Now that you know order, you can set prev pointers
     var curr_q = this.current_question;
     var prev_q = null;
-    console.log(questions);
-    // Now that you know order, you can set prev pointers
     do {
         curr_q.prev = prev_q;
         prev_q = curr_q;
         curr_q = curr_q.next;
     } while (curr_q);
     
+
+    console.log(questions);
 
     // Page navigation
     $('.page_nav__prev, .page_nav__next').click(function() {
@@ -117,12 +121,12 @@ Survey.prototype.next = function(offset) {
     var first_response = this.getFirstResponse(this.current_question); 
 
     //XXX: 0 is not the indicator anymore its lowest sequence num;
-    if (index === 1 && offset === PREV) {
+    if (index === self.lowest_sequence_number && offset === PREV) {
         // Going backwards on first q is a no-no;
         return;
     }
 
-    if (index === this.questions.length && offset === PREV) {
+    if (index === this.questions.length + 1 && offset === PREV) {
         // Going backwards at submit means render ME;
         next_question = this.current_question;
     } 
@@ -144,6 +148,7 @@ Survey.prototype.next = function(offset) {
                     // update pointers
                     self.current_question.next = next_question;
                     next_question.prev = self.current_question; 
+                    break; // only one set of ptrs ever needed updating
                 }
             }
         }
@@ -151,8 +156,6 @@ Survey.prototype.next = function(offset) {
 
     self.render(next_question);
 };
-
-//XXX: Have a question class to do checks, answer validation and branching? 
 
 Survey.prototype.render = function(question) {
     var self = this;
@@ -241,6 +244,7 @@ Survey.prototype.submit = function() {
         sync.classList.remove('icon--spin');
         save_btn.classList.remove('icon--spin');
         App.message('Submission failed, No questions answer in Survey!');
+        self.render(self.questions[0]);
       }, 1000);
       return;
     }
