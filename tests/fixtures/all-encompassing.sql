@@ -10,8 +10,8 @@ INSERT INTO auth_user (email)
 VALUES ('test_email')
 RETURNING auth_user_id INTO the_auth_user_id;
 
-INSERT INTO survey (title, auth_user_id)
-VALUES ('test_title', the_auth_user_id)
+INSERT INTO survey (title, auth_user_id, metadata)
+VALUES ('test_title', the_auth_user_id, '{"foo": "bar"}')
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,

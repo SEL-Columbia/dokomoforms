@@ -273,6 +273,7 @@ class TestSurvey(unittest.TestCase):
         data = api.survey.get_one(survey_id, email='test_email')
         self.assertIsNotNone(data['survey_id'])
         self.assertIsNotNone(data['questions'])
+        self.assertIsNotNone(data['metadata'])
 
     def testDisplaySurvey(self):
         survey_id = survey_table.select().where(
