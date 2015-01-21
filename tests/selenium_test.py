@@ -8,6 +8,7 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+from db.auth_user import auth_user_table
 from db.submission import submission_table
 
 base = 'http://localhost:8888'
@@ -29,6 +30,8 @@ class DriverTest(unittest.TestCase):
 
     def tearDown(self):
         submission_table.delete().execute()
+        auth_user_table.delete().where(
+            auth_user_table.c.email == 'test@mockmyid.com').execute()
         self.drv.quit()
 
 
@@ -88,7 +91,18 @@ class SubmissionTest(DriverTest):
         self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('5:55')
         next_button.click()
         # browser geolocation is complicated in selenium...
-        self.drv.find_element_by_xpath(in_xpath + 'div[4]')#.click()
+        self.drv.execute_script(
+            '''
+            window.navigator.geolocation.getCurrentPosition =
+              function (success) {
+                var position = {"coords": {"latitude":  "40",
+                                           "longitude": "-70"}
+                               };
+                success(position);
+              }
+            '''
+        )
+        self.drv.find_element_by_xpath(in_xpath + 'div[4]').click()
         next_button.click()
         self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('text 7')
         next_button.click()
