@@ -9,6 +9,7 @@ CREATE TABLE survey
   title            text                     NOT NULL,
   auth_user_id     uuid                     NOT NULL REFERENCES auth_user
                                            ON UPDATE CASCADE ON DELETE CASCADE,
+  metadata         json                     NOT NULL DEFAULT '{}',
   created_on       timestamp with time zone NOT NULL DEFAULT now(),
 
   survey_last_update_time timestamp with time zone NOT NULL DEFAULT now(),
