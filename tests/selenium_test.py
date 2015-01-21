@@ -110,6 +110,8 @@ class SubmissionTest(DriverTest):
         self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('other 8')
         next_button.click()
         next_button.click()
+        assert False, 'Missing a UI for "facility" questions.'
+        next_button.click()
         self.drv.find_element_by_xpath(in_xpath + 'div[2]').click()
 
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(

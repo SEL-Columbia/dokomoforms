@@ -16,11 +16,12 @@ RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
     type_constraint_name, allow_multiple, question_to_sequence_number)
-VALUES (the_survey_id, 1, 'integer question', 'integer', False, 2),
-       (the_survey_id, 5, 'time question', 'time', False, 6),
-       (the_survey_id, 6, 'location question', 'location', False, 7),
-       (the_survey_id, 7, 'text question', 'text', True, 8),
-       (the_survey_id, 9, 'note', 'note', False, -1);
+VALUES (the_survey_id, 1,  'integer question', 'integer', False, 2),
+       (the_survey_id, 5,  'time question', 'time', False, 6),
+       (the_survey_id, 6,  'location question', 'location', False, 7),
+       (the_survey_id, 7,  'text question', 'text', True, 8),
+       (the_survey_id, 9,  'note', 'note', False, 10),
+       (the_survey_id, 10, 'facility question', 'facility', False, -1);
 
 INSERT INTO question (survey_id, sequence_number, title,
     type_constraint_name, allow_multiple, question_to_sequence_number)

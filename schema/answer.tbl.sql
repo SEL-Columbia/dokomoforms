@@ -57,6 +57,9 @@ CREATE TABLE answer
     (CASE WHEN type_constraint_name =   'time'     AND answer_time     IS NOT NULL
       THEN 1 ELSE 0 END) +
     (CASE WHEN type_constraint_name =   'location' AND answer_location IS NOT NULL
+      THEN 1 ELSE 0 END) +
+    (CASE WHEN type_constraint_name =   'facility' AND answer_location IS NOT NULL
+                                                   AND answer_text     IS NOT NULL
       THEN 1 ELSE 0 END)
   = 1)
 )
