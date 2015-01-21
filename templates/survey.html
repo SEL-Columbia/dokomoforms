@@ -33,6 +33,10 @@
                     value="<%- ans %>">
             <% }); %>
         <% } %>
+
+        <svg class="icon next_input" <% if (!question.allow_multiple) { %> style="display:none" <% } %>>
+            <use xlink:href="#icon-add"></use>
+        </svg>
     </script>
     
     <script id="widget_integer" type="text/html">
@@ -46,6 +50,7 @@
                 max="<%- question.max %>"
             <% } %>
         >
+        
         <% if (question.answer.length > 1){ %>
             <% _.each(question.answer.slice(1), function(ans) { %>
                 <input class="text_input" type="number"
@@ -59,29 +64,22 @@
                 >
             <% }); %>
         <% } %>
+        
+        <svg class="icon next_input" <% if (!question.allow_multiple) { %> style="display:none" <% } %>>
+            <use xlink:href="#icon-add"></use>
+        </svg>
     </script>
     
     <script id="widget_location" type="text/html">
         <div class="question__title"><%- question.title %></div>
         <div id="map" class="question__map"></div>
 
-        <div class="loc_input">
-            <input class="text_input question__lat" type="text" value="<%- (question.answer[0] && question.answer[0][1]) || '' %>">
-            <input class="text_input question__lon" type="text" value="<%- (question.answer[0] && question.answer[0][0]) || '' %>">
-        </div>
-
-        <% if (question.answer.length > 1){ %>
-            <% _.each(question.answer.slice(1), function(ans) { %>
-                <div class="loc_input">
-                    <input class="text_input question__lat" type="text" value="<%- ans[1] %>">
-                    <input class="text_input question__lon" type="text" value="<%- ans[0] %>">
-                </div>
-            <% }); %>
+        <% _.each(question.answer, function(ans) { %>
             <div class="loc_input">
-                 <input class="text_input question__lat" type="text" value="">
-                 <input class="text_input question__lon" type="text" value="">
+                <input class="text_input question__lat" type="text" value="<%- ans[1] %>">
+                <input class="text_input question__lon" type="text" value="<%- ans[0] %>">
             </div>
-        <% } %>
+        <% }); %>
         
         <div class="question__btn">Find location</div>
     </script>
@@ -125,6 +123,10 @@
                     value="<%- ans %>">
             <% }); %>
         <% } %>
+        
+        <svg class="icon next_input" <% if (!question.allow_multiple) { %> style="display:none" <% } %>>
+            <use xlink:href="#icon-add"></use>
+        </svg>
     </script>
 
     <script id="widget_date" type="text/html">
@@ -135,6 +137,10 @@
                 <input class="text_input" type="date" value="<%- ans %>">
             <% }); %>
         <% } %>
+
+        <svg class="icon next_input" <% if (!question.allow_multiple) { %> style="display:none" <% } %>>
+            <use xlink:href="#icon-add"></use>
+        </svg>
     </script>
 
     <script id="widget_time" type="text/html">
@@ -145,6 +151,10 @@
                 <input class="text_input" type="time" value="<%- ans %>">
             <% }); %>
         <% } %>
+        
+        <svg class="icon next_input" <% if (!question.allow_multiple) { %> style="display:none" <% } %>>
+            <use xlink:href="#icon-add"></use>
+        </svg>
     </script>
 
     <script id="widget_note" type="text/html">
