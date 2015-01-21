@@ -39,7 +39,6 @@ a:link:active, a:visited:active {
 }
 
 #wrapper {
-    width: 600px;
     margin: 0px auto;
     max-width: 600px;
     min-height: 600px;
