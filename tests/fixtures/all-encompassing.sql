@@ -10,27 +10,27 @@ INSERT INTO auth_user (email)
 VALUES ('test_email')
 RETURNING auth_user_id INTO the_auth_user_id;
 
-INSERT INTO survey (title, auth_user_id)
-VALUES ('test_title', the_auth_user_id)
+INSERT INTO survey (title, auth_user_id, metadata)
+VALUES ('test_title', the_auth_user_id, '{"foo": "bar"}')
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 1, 'integer question', 'integer', False),
-       (the_survey_id, 5, 'time question', 'time', False),
-       (the_survey_id, 6, 'location question', 'location', False),
-       (the_survey_id, 7, 'text question', 'text', True),
-       (the_survey_id, 9, 'note', 'note', False);
+    type_constraint_name, allow_multiple, question_to_sequence_number)
+VALUES (the_survey_id, 1, 'integer question', 'integer', False, 2),
+       (the_survey_id, 5, 'time question', 'time', False, 6),
+       (the_survey_id, 6, 'location question', 'location', False, 7),
+       (the_survey_id, 7, 'text question', 'text', True, 8),
+       (the_survey_id, 9, 'note', 'note', False, -1);
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
+    type_constraint_name, allow_multiple, question_to_sequence_number)
 VALUES (the_survey_id, 2, 'multiple choice question', 'multiple_choice', 
-           False)
+           False, 3)
 RETURNING question_id into the_from_question_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 3, 'decimal question', 'decimal', False)
+    type_constraint_name, allow_multiple, question_to_sequence_number)
+VALUES (the_survey_id, 3, 'decimal question', 'decimal', False, 4)
 RETURNING question_id into the_to_question_id;
 
 INSERT INTO question_choice (choice, choice_number, question_id,
@@ -48,8 +48,8 @@ VALUES (the_question_choice_id, the_from_question_id, 'multiple_choice', 2,
     the_survey_id);
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 4, 'date question', 'date', False)
+    type_constraint_name, allow_multiple, question_to_sequence_number)
+VALUES (the_survey_id, 4, 'date question', 'date', False, 5)
 RETURNING question_id into the_to_question_id;
 
 INSERT INTO question_choice (choice, choice_number, question_id,
@@ -67,9 +67,9 @@ VALUES (the_question_choice_id, the_from_question_id, 'multiple_choice', 2,
     the_survey_id);
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple, logic)
+    type_constraint_name, allow_multiple, logic, question_to_sequence_number)
 VALUES (the_survey_id, 8, 'multiple choice with other question',
-           'multiple_choice', False, '{"required": false, "with_other": true}')
+           'multiple_choice', False, '{"required": false, "with_other": true}', 9)
 RETURNING question_id into the_from_question_id;
 
 INSERT INTO question_choice (choice, choice_number, question_id,
@@ -91,22 +91,22 @@ VALUES ('test_title2', the_auth_user_id)
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 1, 'another integer question', 'integer', True),
-       (the_survey_id, 5, 'another time question', 'time', True),
-       (the_survey_id, 6, 'another location question', 'location', True),
-       (the_survey_id, 7, 'another text question', 'text', True),
-       (the_survey_id, 9, 'another note', 'note', False);
+    type_constraint_name, allow_multiple, question_to_sequence_number)
+VALUES (the_survey_id, 1, 'another integer question', 'integer', True, 2),
+       (the_survey_id, 5, 'another time question', 'time', True, 6),
+       (the_survey_id, 6, 'another location question', 'location', True, 7),
+       (the_survey_id, 7, 'another text question', 'text', True, 8),
+       (the_survey_id, 9, 'another note', 'note', False, -1);
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
+    type_constraint_name, allow_multiple, question_to_sequence_number)
 VALUES (the_survey_id, 2, 'another multiple choice question', 'multiple_choice', 
-           False)
+           False, 3)
 RETURNING question_id into the_from_question_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 3, 'another decimal question', 'decimal', True)
+    type_constraint_name, allow_multiple, question_to_sequence_number)
+VALUES (the_survey_id, 3, 'another decimal question', 'decimal', True, 4)
 RETURNING question_id into the_to_question_id;
 
 INSERT INTO question_choice (choice, choice_number, question_id,
@@ -124,8 +124,8 @@ VALUES (the_question_choice_id, the_from_question_id, 'multiple_choice', 2,
     the_survey_id);
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 4, 'another date question', 'date', True)
+    type_constraint_name, allow_multiple, question_to_sequence_number)
+VALUES (the_survey_id, 4, 'another date question', 'date', True, 5)
 RETURNING question_id into the_to_question_id;
 
 INSERT INTO question_choice (choice, choice_number, question_id,
@@ -143,9 +143,9 @@ VALUES (the_question_choice_id, the_from_question_id, 'multiple_choice', 2,
     the_survey_id);
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple, logic)
+    type_constraint_name, allow_multiple, logic, question_to_sequence_number)
 VALUES (the_survey_id, 8, 'another multiple choice with other question',
-           'multiple_choice', False, '{"required": false, "with_other": true}')
+           'multiple_choice', False, '{"required": false, "with_other": true}', 9)
 RETURNING question_id into the_from_question_id;
 
 INSERT INTO question_choice (choice, choice_number, question_id,
@@ -163,67 +163,67 @@ VALUES ('what is life', the_auth_user_id)
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple, logic)
-VALUES (the_survey_id, 1, 'life', 'integer', False, '{"required": true, "with_other": false}'),
-       (the_survey_id, 2, 'there is none fool', 'note', False, '{"required": false, "with_other": false}');
+    type_constraint_name, allow_multiple, logic, question_to_sequence_number)
+VALUES (the_survey_id, 1, 'life', 'integer', False, '{"required": true, "with_other": false}', 2),
+       (the_survey_id, 2, 'there is none fool', 'note', False, '{"required": false, "with_other": false}', -1);
 
 INSERT INTO survey (title, auth_user_id)
 VALUES ('what is death', the_auth_user_id)
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple, logic)
-VALUES (the_survey_id, 1, 'death', 'integer', False, '{"required": true, "with_other": false}'),
-       (the_survey_id, 2, 'me', 'note', False, '{"required": false, "with_other": false}');
+    type_constraint_name, allow_multiple, logic, question_to_sequence_number)
+VALUES (the_survey_id, 1, 'death', 'integer', False, '{"required": true, "with_other": false}', 2),
+       (the_survey_id, 2, 'me', 'note', False, '{"required": false, "with_other": false}', -1);
 
 INSERT INTO survey (title, auth_user_id)
 VALUES ('happiness', the_auth_user_id)
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple, logic)
-VALUES (the_survey_id, 1, 'rate me', 'integer', False, '{"required": true, "with_other": false}'),
-       (the_survey_id, 3, 'Tell me how you feel', 'text', True, '{"required": true,"with_other": false }'),
-       (the_survey_id, 2, 'thanks, youre the best', 'note', False, '{"required": false, "with_other": false}');
+    type_constraint_name, allow_multiple, logic, question_to_sequence_number)
+VALUES (the_survey_id, 1, 'rate me', 'integer', False, '{"required": true, "with_other": false}', 2),
+       (the_survey_id, 3, 'Tell me how you feel', 'text', True, '{"required": true,"with_other": false }', -1),
+       (the_survey_id, 2, 'thanks, youre the best', 'note', False, '{"required": false, "with_other": false}', 3);
 
 INSERT INTO survey (title, auth_user_id)
 VALUES ('do you like me?', the_auth_user_id)
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 1, 'rate me', 'integer', True),
-       (the_survey_id, 2, 'will you go out with me?', 'text', True),
-       (the_survey_id, 3, 'im gonan ask you out anyway', 'note', False);
+    type_constraint_name, allow_multiple, question_to_sequence_number)
+VALUES (the_survey_id, 1, 'rate me', 'integer', True, 2),
+       (the_survey_id, 2, 'will you go out with me?', 'text', True, 3),
+       (the_survey_id, 3, 'im gonan ask you out anyway', 'note', False, -1);
 
 INSERT INTO survey (title, auth_user_id)
 VALUES ('my favourite number', the_auth_user_id)
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 1, 'guess it', 'integer', True),
-       (the_survey_id, 2, 'it was 7 btw', 'note', False),
-       (the_survey_id, 3, 'also where are you', 'location', False);
+    type_constraint_name, allow_multiple, question_to_sequence_number)
+VALUES (the_survey_id, 1, 'guess it', 'integer', True, 2),
+       (the_survey_id, 2, 'it was 7 btw', 'note', False, 3),
+       (the_survey_id, 3, 'also where are you', 'location', False, -1);
 
 INSERT INTO survey (title, auth_user_id)
 VALUES ('sadness', the_auth_user_id)
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 1, 'rat3e life', 'integer', False),
-       (the_survey_id, 3, 'it wasnt', 'note', False),
-       (the_survey_id, 2, 'was it really worth it', 'text', True);
+    type_constraint_name, allow_multiple, question_to_sequence_number)
+VALUES (the_survey_id, 1, 'rat3e life', 'integer', False, 2),
+       (the_survey_id, 3, 'it wasnt', 'note', False, -1),
+       (the_survey_id, 2, 'was it really worth it', 'text', True, 3);
 
 INSERT INTO survey (title, auth_user_id)
 VALUES ('days of the week', the_auth_user_id)
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple, logic)
+    type_constraint_name, allow_multiple, logic, question_to_sequence_number)
 VALUES (the_survey_id, 1, 'repeat multiple choice with other question',
-           'multiple_choice', True, '{"required": false, "with_other": true}')
+           'multiple_choice', True, '{"required": false, "with_other": true}', -1)
 RETURNING question_id into the_from_question_id;
 
 INSERT INTO question_choice (choice, choice_number, question_id,
@@ -242,16 +242,16 @@ VALUES ('days of the month', the_auth_user_id)
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 1, 'guess it', 'integer', False),
-       (the_survey_id, 2, 'HA', 'note', False);
+    type_constraint_name, allow_multiple, question_to_sequence_number)
+VALUES (the_survey_id, 1, 'guess it', 'integer', False, 2),
+       (the_survey_id, 2, 'HA', 'note', False, -1);
 
 INSERT INTO survey (title, auth_user_id)
 VALUES ('how many pieces of rope to reach the moon', the_auth_user_id)
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
-    type_constraint_name, allow_multiple)
-VALUES (the_survey_id, 1, 'guess it', 'integer', False),
-       (the_survey_id, 2, 'one, if its long enough', 'note', False);
+    type_constraint_name, allow_multiple, question_to_sequence_number)
+VALUES (the_survey_id, 1, 'guess it', 'integer', False, 2),
+       (the_survey_id, 2, 'one, if its long enough', 'note', False, -1);
 END $$;

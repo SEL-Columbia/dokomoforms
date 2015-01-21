@@ -7,11 +7,7 @@ from pages.util.base import BaseHandler
 class DebugLoginHandler(BaseHandler):
     """Use this page to log in as any user."""
 
-    def get(self):
-        self.render('debug-login.html')
-
-    def post(self):
-        email = self.get_argument('email')
+    def get(self, email=""):
         if get_auth_user_by_email(email) is not None:
             self.set_secure_cookie('user', email, expires_days=None,
                                    # secure=True,

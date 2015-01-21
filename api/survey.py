@@ -138,6 +138,7 @@ def _create_questions(connection: Connection,
     :param submission_map: a dictionary mapping old submission_id to new
     :return: an iterable of the resultant question fields
     """
+    # TODO: considering enforcing that the client specify the sequnce_number
     for number, question in enumerate(questions):
         values = question.copy()
         values['sequence_number'] = number
@@ -337,7 +338,8 @@ def _get_branch_fields(branch: RowProxy) -> dict:
     :return: A dictionary of the fields.
     """
     return {'question_choice_id': branch.question_choice_id,
-            'to_question_id': branch.to_question_id}
+            'to_question_id': branch.to_question_id,
+            'to_sequence_number': branch.to_sequence_number}
 
 
 def _get_fields(question: RowProxy) -> dict:
@@ -351,6 +353,7 @@ def _get_fields(question: RowProxy) -> dict:
               'title': question.title,
               'hint': question.hint,
               'sequence_number': question.sequence_number,
+              'question_to_sequence_number': question.question_to_sequence_number,
               'allow_multiple': question.allow_multiple,
               'type_constraint_name': question.type_constraint_name,
               'logic': question.logic}
@@ -374,6 +377,7 @@ def _to_json(survey: RowProxy) -> dict:
     question_fields = [_get_fields(question) for question in questions]
     return {'survey_id': survey.survey_id,
             'title': survey.title,
+            'metadata': survey.metadata,
             'questions': question_fields}
 
 

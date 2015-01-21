@@ -274,6 +274,7 @@ class TestQuestion(unittest.TestCase):
                                sequence_number=sequence_number,
                                title='test insert',
                                type_constraint_name='text',
+                               question_to_sequence_number=sequence_number + 1,
                                survey_id=survey_id)
         question_id = stmt.execute().inserted_primary_key[0]
         condition = question_table.c.title == 'test insert'
@@ -289,6 +290,7 @@ class TestQuestion(unittest.TestCase):
                           allow_multiple=None,
                           logic=None,
                           sequence_number=sequence_number,
+                          question_to_sequence_number=1,
                           title='test insert',
                           type_constraint_name='text',
                           survey_id=survey_id)
@@ -369,6 +371,7 @@ class TestQuestionChoice(unittest.TestCase):
                                logic={'required': False, 'with_other': False},
                                sequence_number=seq_number, title='test choice',
                                type_constraint_name='multiple_choice',
+                               question_to_sequence_number=-1,
                                survey_id=survey_id)
         question_id = stmt.execute().inserted_primary_key[0]
         c_stmt = question_choice_insert(question_id=question_id,

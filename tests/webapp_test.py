@@ -180,17 +180,15 @@ class DebugTest(AsyncHTTPTestCase):
         return tornado.ioloop.IOLoop.instance()
 
     def testLoginGet(self):
-        response = self.fetch('/debug/login')
+        response = self.fetch('/debug/login//')
         self.assertEqual(response.code, 200)
 
     def testLogin(self):
-        response = self.fetch('/debug/login', method='POST',
-                              body=urlencode({'email': 'test_email'}))
+        response = self.fetch('/debug/login/test_email')
         self.assertIn('test_email', to_unicode(response.body))
 
     def testLoginFail(self):
-        response = self.fetch('/debug/login', method='POST',
-                              body=urlencode({'email': 'nope'}))
+        response = self.fetch('/debug/login/nope.avi')
         self.assertIn('No such user', to_unicode(response.body))
 
     def testLogout(self):
