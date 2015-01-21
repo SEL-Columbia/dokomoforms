@@ -377,6 +377,7 @@ def _to_json(survey: RowProxy) -> dict:
     question_fields = [_get_fields(question) for question in questions]
     return {'survey_id': survey.survey_id,
             'title': survey.title,
+            'metadata': survey.metadata,
             'questions': question_fields}
 
 
