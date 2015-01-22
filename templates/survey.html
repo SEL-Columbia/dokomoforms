@@ -84,6 +84,19 @@
         <div class="question__btn">Find location</div>
     </script>
 
+    <script id="widget_facility" type="text/html">
+        <div class="question__title"><%- question.title %></div>
+        <div id="map" class="question__map"></div>
+
+       <input class="text_input" type="text" value="<%- question.answer[0] %>">
+        
+        <div class="facility_input">
+            <span class="find__btn">Find Me</span>
+            <span class="facility__btn">Add Facility</span>
+        <div class="loc_input">
+
+    </script>
+
     <script id="widget_multiple_choice" type="text/html">
         <div class="question__title"><%- question.title %></div>
         <select <%  if (question.allow_multiple) { %> 

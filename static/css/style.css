@@ -143,7 +143,7 @@ a:link:active, a:visited:active {
     height: 100%;
     padding: 50px 25px;
     min-height: 400px;
-    min-width: 500px;
+    min-width: 350px;
 }
 
 .welcome {
@@ -357,6 +357,47 @@ a:link:active, a:visited:active {
 
 .question__btn:hover {
     background: rgba(0,0,0,0.3);
+}
+
+.find__btn {
+    cursor: pointer;
+    display: inline-block;
+    padding: 13px 15px;
+    background: rgba(0,0,0,0.1);
+    border-radius: 7px;
+    font-weight: 500;
+    text-align: center;
+    margin: 25px auto;
+    width: 120px;
+    clear: both;
+}
+
+.find__btn:hover {
+    background: rgba(0,0,0,0.3);
+}
+
+.facility__btn {
+    cursor: pointer;
+    display: inline-block;
+    padding: 13px 15px;
+    background: rgba(0,0,0,0.1);
+    border-radius: 7px;
+    font-weight: 500;
+    text-align: center;
+    margin: 25px auto;
+    width: 120px;
+    clear: both;
+}
+
+.facility__btn:hover {
+    background: rgba(0,0,0,0.3);
+}
+
+.facility_input {
+    width: 100%;
+    margin: 0px auto;
+    padding: 0px;
+    text-align: center;
 }
 
 .question__saving {
