@@ -51,6 +51,7 @@ class TestAnswer(unittest.TestCase):
                                     submission_id=submission_id,
                                     survey_id=survey_id,
                                     type_constraint_name=tcn,
+                                    is_other=False,
                                     sequence_number=seq,
                                     allow_multiple=mul).execute()
         answer_id = answer_exec.inserted_primary_key[0]
@@ -73,6 +74,7 @@ class TestAnswer(unittest.TestCase):
                                     submission_id=submission_id,
                                     survey_id=survey_id,
                                     type_constraint_name=tcn,
+                                    is_other=False,
                                     sequence_number=seq,
                                     allow_multiple=mul).execute()
         answer_id = answer_exec.inserted_primary_key[0]
@@ -89,6 +91,7 @@ class TestAnswer(unittest.TestCase):
                                       submission_id=submission_2_id,
                                       survey_id=survey_id,
                                       type_constraint_name=tcn,
+                                      is_other=False,
                                       sequence_number=seq,
                                       allow_multiple=mul).execute()
         answer_2_id = answer_2_exec.inserted_primary_key[0]
@@ -113,6 +116,7 @@ class TestAnswer(unittest.TestCase):
         answer_insert(answer=1, question_id=question_id,
                       submission_id=submission_id,
                       survey_id=survey_id, type_constraint_name=tcn,
+                      is_other=False,
                       sequence_number=seq, allow_multiple=mul).execute()
         self.assertEqual(get_answers(submission_id).rowcount, 1)
 
@@ -318,7 +322,7 @@ class TestQuestionBranch(unittest.TestCase):
         to_question = get_questions(survey_id).fetchall()[-1]
         q_where = question_table.select().where(
             cast(cast(question_table.c.logic['with_other'], Text), Boolean))
-        from_question = q_where.execute().first()
+        from_question = q_where.execute().fetchall()[1]
         choice = get_choices(from_question.question_id).fetchall()[0]
         from_tcn = from_question.type_constraint_name
         branch_dict = {'question_choice_id': choice.question_choice_id,
