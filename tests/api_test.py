@@ -460,7 +460,7 @@ class TestSurvey(unittest.TestCase):
 
     def testUpdate(self):
         questions = [{'title': 'api_test question',
-                      'type_constraint_name': 'text',
+                      'type_constraint_name': 'integer',
                       'sequence_number': None,
                       'question_to_sequence_number': 1,
                       'hint': None,
@@ -497,7 +497,7 @@ class TestSurvey(unittest.TestCase):
 
         submission = {'survey_id': survey_id,
                       'answers': [{'question_id': inserted_qs[0].question_id,
-                                   'answer': 'text answer',
+                                   'answer': 5,
                                    'is_other': False},
                                   {'question_id': inserted_qs[1].question_id,
                                    'answer': choice_1_id,
@@ -526,7 +526,7 @@ class TestSurvey(unittest.TestCase):
                       'allow_multiple': False,
                       'hint': None,
                       'logic': {'required': False, 'with_other': False},
-                      'type_constraint_name': 'text',
+                      'type_constraint_name': 'integer',
                       'question_to_sequence_number': 1,
                       'choices': [],
                       'branches': []},
@@ -560,8 +560,8 @@ class TestSurvey(unittest.TestCase):
         self.assertEqual(len(choices), 3)
         new_submission = get_submissions_by_email(new_survey_id,
                                                   email='test_email').first()
-        text_answer = get_answers(new_submission.submission_id).first()
-        self.assertEqual(text_answer.answer_text, 'text answer')
+        integer_answer = get_answers(new_submission.submission_id).first()
+        self.assertEqual(integer_answer.answer_integer, 5)
         the_choice = get_answer_choices(new_submission.submission_id).first()
         self.assertEqual(the_choice.question_choice_id,
                          choices[2].question_choice_id)

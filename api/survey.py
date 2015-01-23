@@ -177,7 +177,6 @@ def _create_questions(connection: Connection,
                 new_submission_id = submission_map[answer.submission_id]
 
                 if answer.answer_text is None:
-                    # TODO: write a test
                     answer_values['answer'] = answer['answer_' + new_tcn]
                     answer_values['is_other'] = False
                 else:
