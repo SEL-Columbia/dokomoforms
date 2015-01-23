@@ -306,7 +306,7 @@ Widgets.text = function(question, page) {
         var ans_ind = ($(page).find('input')).index(this);
         question.answer[ans_ind] = this.value;
         if (e.keyCode === 13) {
-            self._add_new_input(page, question, 'text_input', 'text', keyup);
+            self._addNewInput(page, question, 'text_input', 'text', keyup);
         }
     };
 
@@ -314,7 +314,7 @@ Widgets.text = function(question, page) {
     $(page)
         .find('.next_input')
         .click(function() { 
-            self._add_new_input(page, question, 'text_input', 'text', keyup);
+            self._addNewInput(page, question, 'text_input', 'text', keyup);
         });
 
     $(page)
@@ -328,7 +328,7 @@ Widgets.integer = function(question, page) {
         var ans_ind = ($(page).find('input')).index(this);
         question.answer[ans_ind] = parseInt(this.value);
         if (e.keyCode === 13) {
-            self._add_new_input(page, question, 'text_input', 'number', keyup);
+            self._addNewInput(page, question, 'text_input', 'number', keyup);
         }
     };
     
@@ -336,7 +336,7 @@ Widgets.integer = function(question, page) {
     $(page)
         .find('.next_input')
         .click(function() { 
-            self._add_new_input(page, question, 'text_input', 'number', keyup);
+            self._addNewInput(page, question, 'text_input', 'number', keyup);
         });
 
     $(page)
@@ -350,7 +350,7 @@ Widgets.decimal = function(question, page) {
         var ans_ind = ($(page).find('input')).index(this);
         question.answer[ans_ind] = parseFloat(this.value);
         if (e.keyCode === 13) {
-            self._add_new_input(page, question, 'text_input', 'number', keyup);
+            self._addNewInput(page, question, 'text_input', 'number', keyup);
         }
     };
 
@@ -358,7 +358,7 @@ Widgets.decimal = function(question, page) {
     $(page)
         .find('.next_input')
         .click(function() { 
-            self._add_new_input(page, question, 'text_input', 'number', keyup);
+            self._addNewInput(page, question, 'text_input', 'number', keyup);
         });
 
     $(page)
@@ -379,7 +379,7 @@ Widgets.date = function(question, page) {
 
     function keyup(e) {
         if (e.keyCode === 13) {
-            self._add_new_input(page, question, 'text_input', 'date', keyup, change);
+            self._addNewInput(page, question, 'text_input', 'date', keyup, change);
         }
     }
 
@@ -387,7 +387,7 @@ Widgets.date = function(question, page) {
     $(page)
         .find('.next_input')
         .click(function() { 
-            self._add_new_input(page, question, 'text_input', 'date', keyup, change);
+            self._addNewInput(page, question, 'text_input', 'date', keyup, change);
         });
 
     $(page)
@@ -408,7 +408,7 @@ Widgets.time = function(question, page) {
 
     function keyup(e) {
         if (e.keyCode === 13) {
-            self._add_new_input(page, question, 'text_input', 'time', keyup, change);
+            self._addNewInput(page, question, 'text_input', 'time', keyup, change);
         }
     }
 
@@ -416,7 +416,7 @@ Widgets.time = function(question, page) {
     $(page)
         .find('.next_input')
         .click(function() { 
-            self._add_new_input(page, question, 'text_input', 'time', keyup, change);
+            self._addNewInput(page, question, 'text_input', 'time', keyup, change);
         });
 
     $(page)
@@ -517,10 +517,10 @@ Widgets.location = function(question, page) {
     var circle = L.circle(App.start_loc, 5, {
             color: 'red',
             fillColor: '#f00',
-            fillOpacity: 0.5
+            fillOpacity: 0.5,
+            zIndexOffset: 777,
     })
-        .addTo(map)
-        .bringToFront();
+        .addTo(map);
     
 
     var counter = 0;
@@ -530,13 +530,13 @@ Widgets.location = function(question, page) {
         circle.setStyle({
             fillColor : "#f" + fillcol + fillcol,
             color : "#f" + col + col,
-        }).bringToFront();
+        });
     };
 
     // Save the interval id, clear it every time a page is rendered
     Widgets.interval = window.setInterval(updateColour, 50);
     
-    map.addLayer(App._get_map_layer());
+    map.addLayer(App._getMapLayer());
 
     // Location is the only one that doesn't use the same keyup function due to
     // the btn being the only way to input values in the view.
@@ -550,16 +550,18 @@ Widgets.location = function(question, page) {
                     // Server accepts [lon, lat]
                     var coords = [position.coords.longitude, position.coords.latitude];
 
+                    // Set map view and update indicator position
                     map.setView([coords[1], coords[0]]);
                     circle
-                        .setLatLng([coords[1], coords[0]])
-                        .bringToFront();
+                        .setLatLng([coords[1], coords[0]]);
 
+                    // If allow multiple is set (or this is the first time they clicked) add new div
                     if (question.allow_multiple || $(page).find('.question__lon').length === 0) {
                        $(loc_div)
                            .insertBefore(".question__btn");
                     }
 
+                    // Find current length of inputs and update the last one;
                     var questions_lon = $(page).find('.question__lon');
                     var questions_lat = $(page).find('.question__lat');
 
@@ -568,8 +570,6 @@ Widgets.location = function(question, page) {
                         
                     questions_lon[questions_lon.length - 1].value = coords[0];
                     questions_lat[questions_lat.length - 1].value = coords[1];
-
-                    // Add new button if allow multiple is present 
 
                 }, function error() {
                     //TODO: If cannot Get location" for some reason, 
@@ -588,33 +588,51 @@ Widgets.facility = function(question, page) {
     var self = this;
     
     // Map
-    var len = question.answer.length - 1;
-    var lat = question.answer[len] && question.answer[len][1]|| App.start_loc[0];
-    var lng = question.answer[len] && question.answer[len][0]|| App.start_loc[1];
-    App.start_loc = [lat, lng];
+    App.start_loc= question.answer[0] && question.answer[0][0] || App.start_loc;
 
     var map = L.map('map', {
             center: App.start_loc,
             dragging: true,
-            zoom: 15,
+            zoom: 18,
             zoomControl: false,
             doubleClickZoom: false,
             attributionControl: false
         });
-    
-    // Revisit API Call
-    getNearbyFacilities(App.start_loc[0], App.start_loc[1], 5, map, question.id,
-        // callback to handle facilities list
-        function(facilities) {
-            // function that draws facilities and can attach cb on click
-            drawFacilities(facilities, map, function(e) {
-                alert(e);
-                console.log(e);
-                $(page)
-                    .find('input')
-                    .val(e.name);
-            });
+   
+    // Know which marker is currently "up" 
+    var touchedMarker = null;
+    facilityMarkers = []; //XXX: Do something about this global scope of markers;
+
+    // Callback to handle facilities list
+    function facilitiesCallback(facilities) {
+        // function that draws facilities and can attach cb on click
+        drawFacilities(facilities, map, function(e) {
+            if (touchedMarker) {
+                touchedMarker.setIcon(touchedMarker.type);
+                touchedMarker.setZIndexOffset(0);
+            }
+            
+            var marker = e.target;
+            marker.setZIndexOffset(666); // above 250 so it can't be hidden by hovering over neighbour
+            marker.setIcon(icon_selected);
+            touchedMarker = marker;
+
+            question.answer[0] = [[marker._latlng.lng, marker._latlng.lat], marker.uuid];
+
+            $(page)
+                .find('input')
+                .val(JSON.stringify(question.answer[0]));
         });
+    }
+
+
+    // Revisit API Call
+    getNearbyFacilities(App.start_loc[0], App.start_loc[1], 
+            5, // Radius in km 
+            map,
+            question.question_id, // id for localStorage
+            facilitiesCallback // what to do with facilities
+        );
 
     // Blinking location indicator
     var circle = L.circle(App.start_loc, 5, {
@@ -622,9 +640,7 @@ Widgets.facility = function(question, page) {
             fillColor: '#f00',
             fillOpacity: 0.5
     })
-        .addTo(map)
-        .bringToFront();
-
+        .addTo(map);
 
     var counter = 0;
     function updateColour() {
@@ -633,13 +649,14 @@ Widgets.facility = function(question, page) {
         circle.setStyle({
             fillColor : "#f" + fillcol + fillcol,
             color : "#f" + col + col,
-        }).bringToFront();
+            zIndexOffset: 777,
+        });
     };
 
     // Save the interval id, clear it every time a page is rendered
     Widgets.interval = window.setInterval(updateColour, 50);
 
-    map.addLayer(App._get_map_layer());
+    map.addLayer(App._getMapLayer());
 
     $(page)
         .find('.find__btn')
@@ -649,19 +666,21 @@ Widgets.facility = function(question, page) {
                     // Server accepts [lon, lat]
                     var coords = [position.coords.longitude, position.coords.latitude];
 
+                    // Update map position and set indicator position again
                     map.setView([coords[1], coords[0]]);
                     circle
                         .setLatLng([coords[1], coords[0]])
-                        .bringToFront();
 
                     // Revisit api call
-                    getNearbyFacilities(coords[0], coords[1], 5, map, question.id,
-                        function(facilities) {
-                            drawFacilities(facilities, map, alert);
-                        });
+                    getNearbyFacilities(coords[0], coords[1],
+                            5, // Radius in km 
+                            map,
+                            question.question_id, // id for localStorage
+                            facilitiesCallback // what to do with facilities
+                    );
 
                 }, function error() {
-                    alert('error')
+                    alert('error'); ///XXX: DONT FORGET MEMEE
                 }, {
                     enableHighAccuracy: true,
                     timeout: 20000,
@@ -671,7 +690,7 @@ Widgets.facility = function(question, page) {
 };
 
 // Handle creating multiple inputs for widgets that support it 
-Widgets._add_new_input = function(page, question, cls, type, keyup_cb, change_cb) {
+Widgets._addNewInput = function(page, question, cls, type, keyup_cb, change_cb) {
     if (question.allow_multiple) {
         $('<input>')
             .attr({'type': type, 'class': cls})
@@ -683,7 +702,7 @@ Widgets._add_new_input = function(page, question, cls, type, keyup_cb, change_cb
 }
 
 // Handle caching map layer
-App._get_map_layer = function() {
+App._getMapLayer = function() {
     function getImage(url, cb) {
         // Retrieves an image from cache, possibly fetching it first
         var imgKey = url.split('.').slice(1).join('.').replace(/\//g, '');
@@ -731,6 +750,7 @@ App._get_map_layer = function() {
 
 /* -------------------------- Revisit Stuff Below ----------------------------*/
 function getNearbyFacilities(lat, lng, rad, map, id, cb) {
+    var url = "http://revisit.global/api/v0/facilities.json"
     if (navigator.onLine) { 
         // Revisit ajax req
         console.log("MADE EXTERNAL QUERY");
@@ -738,7 +758,7 @@ function getNearbyFacilities(lat, lng, rad, map, id, cb) {
                 near: lat + "," + lng,
                 rad: rad,
                 limit: 256,
-                fields: "name,coordinates,properties:sector", //filters results to include just those three fields,
+                fields: "name,uuid,coordinates,properties:sector", //filters results to include just those three fields,
             },
             function(data) {
                 localStorage.setItem(id, JSON.stringify(data));
@@ -755,12 +775,13 @@ function getNearbyFacilities(lat, lng, rad, map, id, cb) {
     }
 }
 
-var icon_edu = new L.icon({iconUrl: "/static/img/icons/normal_education.png"});
-var icon_health = new L.icon({iconUrl: "/static/img/icons/normal_health.png"});
-var icon_water = new L.icon({iconUrl: "/static/img/icons/normal_water.png"});
-var url = "http://revisit.global/api/v0/facilities.json"
+var icon_edu = new L.icon({iconUrl: "/static/img/icons/normal_education.png",iconAnchor: [13, 31]});
+var icon_health = new L.icon({iconUrl: "/static/img/icons/normal_health.png", iconAnchor: [13, 31]});
+var icon_water = new L.icon({iconUrl: "/static/img/icons/normal_water.png", iconAnchor: [13, 31]});
+var icon_selected = new L.icon({iconUrl: "/static/img/icons/selected-point.png", iconAnchor: [15, 48]});
+var icon_added = new L.icon({iconUrl: "/static/img/icons/added-point.png", iconAnchor: [15, 48]});
 
-function drawPoint(lat, lng, name, type, map, clickEvent) {
+function drawPoint(lat, lng, name, type, uuid, map, clickEvent) {
     var marker = new L.marker([lat, lng], {
         title: name,
         alt: name,
@@ -768,29 +789,37 @@ function drawPoint(lat, lng, name, type, map, clickEvent) {
         riseOnHover: true
     });
 
+    marker.uuid = uuid; // store the uuid so we can read it back in the event handler
+
     switch(type) {
         case "education":
             marker.options.icon = icon_edu;
+            marker.type = icon_edu;
             break;
         case "water":
             marker.options.icon = icon_water;
+            marker.type = icon_water;
             break;
         default:
             // just mark it as health 
-            marker.options.icon = icon_health;
+            marker.options.icon = icon_health; 
+            marker.type = icon_health;
+            //XXX: Mark health as health and create default icon
             break;
     }
 
     marker.on('click', clickEvent);
     marker.addTo(map);
+    facilityMarkers.push(marker); //XXX: Do something about the global scope for this crap
+    
 };
 
 function drawFacilities(facilities, map, clickEvent) {
     console.log("IN CAVLLBACK");
+    facilityMarkers = []; //XXX: Do something about this global scope of markers
     //var bounds = map.getBounds(); // Limit number of facilities added to map
     for (i = 0; i < facilities.length; i++) {
         var facility = facilities[i];
-        console.log(facility);
         //var lat = facility.coordinates[1];
         //var lng = facility.coordinates[0];
         //if ((lat < bounds._northEast.lat && lng < bounds._northEast.lng)
@@ -799,6 +828,7 @@ function drawFacilities(facilities, map, clickEvent) {
                     facility.coordinates[0], 
                     facility.name, 
                     facility.properties.sector,
+                    facility.uuid,
                     map,
                     clickEvent);
         //}
