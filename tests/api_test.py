@@ -5,9 +5,9 @@ Tests for the dokomo JSON api
 import unittest
 import uuid
 from sqlalchemy import and_
-from sqlalchemy.exc import ProgrammingError
 from datetime import datetime, timedelta
 
+from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.exc import DataError, IntegrityError
 from passlib.hash import bcrypt_sha256
 
@@ -15,11 +15,13 @@ from api import execute_with_exceptions
 import api.survey
 import api.submission
 import api.user
+import api.aggregation
 import db
 from db.answer import answer_insert, CannotAnswerMultipleTimesError, \
     get_answers
 from db.answer_choice import get_answer_choices
-from db.auth_user import auth_user_table, create_auth_user, get_auth_user
+from db.auth_user import auth_user_table, create_auth_user, get_auth_user, \
+    get_auth_user_by_email
 from db.question import question_table, get_questions, \
     QuestionDoesNotExistError, MissingMinimalLogicError
 from db.question_branch import get_branches, MultipleBranchError
@@ -220,8 +222,9 @@ class TestSubmission(unittest.TestCase):
     def testGet(self):
         survey_id = survey_table.select().where(
             survey_table.c.title == 'test_title').execute().first().survey_id
-        q_where = question_table.select().where(
-            question_table.c.type_constraint_name == 'location')
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'location')
+        q_where = question_table.select().where(and_cond)
         question = q_where.execute().first()
         question_id = question.question_id
         tcn = question.type_constraint_name
@@ -242,8 +245,9 @@ class TestSubmission(unittest.TestCase):
     def testGetForSurvey(self):
         survey_id = survey_table.select().where(
             survey_table.c.title == 'test_title').execute().first().survey_id
-        q_where = question_table.select().where(
-            question_table.c.type_constraint_name == 'integer')
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
         question = q_where.execute().first()
         question_id = question.question_id
         tcn = question.type_constraint_name
@@ -898,6 +902,81 @@ class TestUser(unittest.TestCase):
         self.assertEqual(
             api.user.create_user({'email': 'api_user_test_email'}),
             {'email': 'api_user_test_email', 'response': 'Already exists'})
+
+
+class TestAggregation(unittest.TestCase):
+    def tearDown(self):
+        submission_table.delete().execute()
+
+    def testMin(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        question_id = question.question_id
+
+        for i in range(2):
+            input_data = {'survey_id': survey_id,
+                          'answers':
+                              [{'question_id': question_id,
+                                'answer': i,
+                                'is_other': False}]}
+            api.submission.submit(input_data)
+
+        expected = {'result': 0, 'query': 'min'}
+
+        self.assertEqual(api.aggregation.min(question_id, email='test_email'),
+                         expected)
+        user_id = get_auth_user_by_email('test_email').auth_user_id
+        self.assertEqual(
+            api.aggregation.min(question_id, auth_user_id=user_id), expected)
+
+
+    def testMinNoUser(self):
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'integer')
+        question = q_where.execute().first()
+        question_id = question.question_id
+        self.assertRaises(TypeError, api.aggregation.min, question_id)
+
+    def testMinNoSubmissions(self):
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'integer')
+        question = q_where.execute().first()
+        question_id = question.question_id
+        self.assertRaises(api.aggregation.NoSubmissionsToQuestionError,
+                          api.aggregation.min, question_id, email='test_email')
+
+    def testMinInvalidType(self):
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'text')
+        question = q_where.execute().first()
+        question_id = question.question_id
+        self.assertRaises(api.aggregation.InvalidTypeForAggregationError,
+                          api.aggregation.min, question_id, email='test_email')
+
+
+    def testMax(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        question_id = question.question_id
+
+        for i in range(2):
+            input_data = {'survey_id': survey_id,
+                          'answers':
+                              [{'question_id': question_id,
+                                'answer': i,
+                                'is_other': False}]}
+            api.submission.submit(input_data)
+
+        self.assertEqual(api.aggregation.max(question_id, email='test_email'),
+                         {'result': 1, 'query': 'max'})
 
 
 if __name__ == '__main__':
