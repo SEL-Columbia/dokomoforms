@@ -588,7 +588,9 @@ Widgets.facility = function(question, page) {
     var self = this;
     
     // Map
-    App.start_loc= question.answer[0] && question.answer[0][0] || App.start_loc;
+    var len = question.answer.length - 1;
+    var lat = question.answer[len] && question.answer[len][0][1] || App.start_loc[0];
+    var lng = question.answer[len] && question.answer[len][0][0] || App.start_loc[1];
 
     var map = L.map('map', {
             center: App.start_loc,
@@ -601,9 +603,30 @@ Widgets.facility = function(question, page) {
    
     // Know which marker is currently "up" 
     var touchedMarker = null;
-    facilityMarkers = []; //XXX: Do something about this global scope of markers;
 
-    // Callback to handle facilities list
+    // handles calling drawPoint 
+    function drawFacilities(facilities, map, clickEvent) {
+        var selected = question.answer[0] && question.answer[0][1] || null;
+        console.log(selected);
+        for (i = 0; i < facilities.length; i++) {
+            var facility = facilities[i];
+            var marker = drawPoint(facility.coordinates[1], 
+                        facility.coordinates[0], 
+                        facility.name, 
+                        facility.properties.sector,
+                        facility.uuid,
+                        map,
+                        clickEvent);
+            if (selected == marker.uuid) {
+                marker.setZIndexOffset(666); // above 250 so it can't be hidden by hovering over neighbour
+                marker.setIcon(icon_selected);
+                touchedMarker = marker;
+
+            }
+        }
+    }; 
+
+    // callback to handle facilities list, calls drawFacilities
     function facilitiesCallback(facilities) {
         // function that draws facilities and can attach cb on click
         drawFacilities(facilities, map, function(e) {
@@ -618,15 +641,11 @@ Widgets.facility = function(question, page) {
             touchedMarker = marker;
 
             question.answer[0] = [[marker._latlng.lng, marker._latlng.lat], marker.uuid];
-
-            $(page)
-                .find('input')
-                .val(JSON.stringify(question.answer[0]));
         });
     }
 
 
-    // Revisit API Call
+    // Revisit API Call calls facilitiesCallback
     getNearbyFacilities(App.start_loc[0], App.start_loc[1], 
             5, // Radius in km 
             map,
@@ -810,28 +829,8 @@ function drawPoint(lat, lng, name, type, uuid, map, clickEvent) {
 
     marker.on('click', clickEvent);
     marker.addTo(map);
-    facilityMarkers.push(marker); //XXX: Do something about the global scope for this crap
+    return marker;
     
 };
 
-function drawFacilities(facilities, map, clickEvent) {
-    console.log("IN CAVLLBACK");
-    facilityMarkers = []; //XXX: Do something about this global scope of markers
-    //var bounds = map.getBounds(); // Limit number of facilities added to map
-    for (i = 0; i < facilities.length; i++) {
-        var facility = facilities[i];
-        //var lat = facility.coordinates[1];
-        //var lng = facility.coordinates[0];
-        //if ((lat < bounds._northEast.lat && lng < bounds._northEast.lng)
-        //&& (lat > bounds._southWest.lat && lng > bounds._southWest.lng)) {
-            drawPoint(facility.coordinates[1], 
-                    facility.coordinates[0], 
-                    facility.name, 
-                    facility.properties.sector,
-                    facility.uuid,
-                    map,
-                    clickEvent);
-        //}
-    }
-}; 
 
