@@ -175,13 +175,19 @@ def _create_questions(connection: Connection,
                     continue
                 answer_values = question_fields.copy()
                 new_submission_id = submission_map[answer.submission_id]
-                is_other = values['logic']['with_other']
-                if new_tcn == 'multiple_choice':
-                    if not is_other:
-                        continue
-                    else:
-                        new_tcn = 'text'
-                answer_values['answer'] = answer['answer_' + new_tcn]
+
+                if answer.answer_text is None:
+                    # TODO: write a test
+                    answer_values['answer'] = answer['answer_' + new_tcn]
+                    answer_values['is_other'] = False
+                else:
+                    answer_values['answer'] = answer.answer_text
+                    is_other = False if new_tcn == 'text' else True
+                    answer_values['is_other'] = is_other
+                with_other = values['logic']['with_other']
+
+                if new_tcn == 'multiple_choice' and not with_other:
+                    continue
                 answer_values['submission_id'] = new_submission_id
                 connection.execute(answer_insert(**answer_values))
 
