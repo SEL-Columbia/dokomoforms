@@ -6,7 +6,6 @@ Tests for the dokomo webapp
 import unittest
 from unittest import mock
 from sqlalchemy import and_
-from urllib.parse import urlencode
 import uuid
 from sqlalchemy import Table, MetaData
 
@@ -45,7 +44,8 @@ POST_HDRS = {"Content-type": "application/x-www-form-urlencoded",
 new_config = config.copy()
 new_config['xsrf_cookies'] = False  # convenient for testing...
 
-def create_test_submission() -> dict:
+
+def _create_submission() -> dict:
     survey_id = survey_table.select().where(
         survey_table.c.title == 'test_title').execute().first().survey_id
     and_cond = and_(question_table.c.survey_id == survey_id,
@@ -108,7 +108,7 @@ class APITest(AsyncHTTPTestCase):
     def testGetSubmissionsLoggedIn(self):
         survey_id = survey_table.select().where(
             survey_table.c.title == 'test_title').execute().first().survey_id
-        create_test_submission()
+        _create_submission()
         with mock.patch.object(SubmissionsAPI, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
             response = self.fetch(
@@ -139,7 +139,7 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(response.code, 403)
 
     def testGetSingleSubmission(self):
-        submission_id = create_test_submission()['submission_id']
+        submission_id = _create_submission()['submission_id']
         with mock.patch.object(SingleSubmissionAPI, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
             response = self.fetch('/api/submissions/{}'.format(submission_id))
@@ -352,7 +352,7 @@ class ViewTest(AsyncHTTPTestCase):
     def testGetSubmissions(self):
         survey_id = survey_table.select().where(
             survey_table.c.title == 'test_title').execute().first().survey_id
-        create_test_submission()
+        _create_submission()
         with mock.patch.object(ViewSubmissionsHandler,
                                'get_secure_cookie') as m:
             m.return_value = 'test_email'
@@ -360,9 +360,7 @@ class ViewTest(AsyncHTTPTestCase):
         self.assertIn('/view/submission/', to_unicode(response.body))
 
     def testGetSubmission(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
-        submission_id = create_test_submission()['submission_id']
+        submission_id = _create_submission()['submission_id']
         with mock.patch.object(ViewSubmissionHandler,
                                'get_secure_cookie') as m:
             m.return_value = 'test_email'
