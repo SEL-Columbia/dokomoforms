@@ -280,34 +280,41 @@ Survey.prototype.submit = function() {
 var Widgets = {};
 
 // Handle creating multiple inputs for widgets that support it (might not be best place to store func)
-Widgets.keyUp = function(e, page, question, cls, type, keyup_cb, change_cb) {
-    //TODO: Instead of enter key, listen to btn press to display new box 
-    if (e.keyCode === 13) {
-        if (question.allow_multiple) {
-            $('<input>')
-                .attr({'type': type, 'class': cls})
-                .change(change_cb)
-                .keyup(keyup_cb)
-                .appendTo(page)
-                .focus();
-        }
+Widgets._add_new_input = function(page, question, cls, type, keyup_cb, change_cb) {
+    if (question.allow_multiple) {
+        $('<input>')
+            .attr({'type': type, 'class': cls})
+            .change(change_cb)
+            .keyup(keyup_cb)
+            .insertBefore(page.find(".next_input"))
+            .focus();
     }
 }
 
+// This widget's events. Called after page template rendering.
+// Responsible for setting the question object's answer
+//
+// question: question data
+// page: the widget container DOM element
+//
 // All widgets store results in the questions.answer array
 Widgets.text = function(question, page) {
-    // This widget's events. Called after page template rendering.
-    // Responsible for setting the question object's answer
-    //
-    // question: question data
-    // page: the widget container DOM element
 
     var self = this;
     function keyup(e) {
         var ans_ind = ($(page).find('input')).index(this);
         question.answer[ans_ind] = this.value;
-        self.keyUp(e, page, question, 'text_input', 'text', keyup);
+        if (e.keyCode === 13) {
+            self._add_new_input(page, question, 'text_input', 'text', keyup);
+        }
     };
+
+    // Click the + for new input
+    $(page)
+        .find('.next_input')
+        .click(function() { 
+            self._add_new_input(page, question, 'text_input', 'text', keyup);
+        });
 
     $(page)
         .find('input')
@@ -319,12 +326,105 @@ Widgets.integer = function(question, page) {
     function keyup(e) {
         var ans_ind = ($(page).find('input')).index(this);
         question.answer[ans_ind] = parseInt(this.value);
-        self.keyUp(e, page, question, 'text_input', 'number', keyup);
+        if (e.keyCode === 13) {
+            self._add_new_input(page, question, 'text_input', 'number', keyup);
+        }
     };
+    
+    // Click the + for new input
+    $(page)
+        .find('.next_input')
+        .click(function() { 
+            self._add_new_input(page, question, 'text_input', 'number', keyup);
+        });
 
     $(page)
         .find('input')
         .keyup(keyup);
+};
+
+Widgets.decimal = function(question, page) {
+    var self = this;
+    function keyup(e) {
+        var ans_ind = ($(page).find('input')).index(this);
+        question.answer[ans_ind] = parseFloat(this.value);
+        if (e.keyCode === 13) {
+            self._add_new_input(page, question, 'text_input', 'number', keyup);
+        }
+    };
+
+    // Click the + for new input
+    $(page)
+        .find('.next_input')
+        .click(function() { 
+            self._add_new_input(page, question, 'text_input', 'number', keyup);
+        });
+
+    $(page)
+        .find('input')
+        .keyup(keyup);
+};
+
+// Date and time respond better to change then keypresses
+Widgets.date = function(question, page) {
+    //XXX: TODO change input thing to be jquery-ey
+    var self = this;
+    function change() {
+        var ans_ind = ($(page).find('input')).index(this);
+        if (this.value !== '') 
+            question.answer[ans_ind] = this.value;
+
+    };
+
+    function keyup(e) {
+        if (e.keyCode === 13) {
+            self._add_new_input(page, question, 'text_input', 'date', keyup, change);
+        }
+    }
+
+    // Click the + for new input
+    $(page)
+        .find('.next_input')
+        .click(function() { 
+            self._add_new_input(page, question, 'text_input', 'date', keyup, change);
+        });
+
+    $(page)
+        .find('input')
+        .change(change)
+        .keyup(keyup)
+};
+
+Widgets.time = function(question, page) {
+    //XXX: TODO change input thing to be jquery-ey
+    var self = this;
+    function change() {
+        var ans_ind = ($(page).find('input')).index(this);
+        if (this.value !== '') 
+            question.answer[ans_ind] = this.value;
+
+    };
+
+    function keyup(e) {
+        if (e.keyCode === 13) {
+            self._add_new_input(page, question, 'text_input', 'time', keyup, change);
+        }
+    }
+
+    // Click the + for new input
+    $(page)
+        .find('.next_input')
+        .click(function() { 
+            self._add_new_input(page, question, 'text_input', 'time', keyup, change);
+        });
+
+    $(page)
+        .find('input')
+        .change(change)
+        .keyup(keyup)
+};
+
+Widgets.note = function(question, page) {
 };
 
 // Multiple choice and multiple choice with other are handled here by same func
@@ -390,63 +490,6 @@ Widgets.multiple_choice = function(question, page) {
         $other.show();
     }
 
-};
-
-Widgets.decimal = function(question, page) {
-    var self = this;
-    function keyup(e) {
-        var ans_ind = ($(page).find('input')).index(this);
-        question.answer[ans_ind] = parseFloat(this.value);
-        self.keyUp(e, page, question, 'text_input', 'number', keyup);
-    };
-
-    $(page)
-        .find('input')
-        .keyup(keyup);
-};
-
-// Date and time respond better to change then keypresses
-Widgets.date = function(question, page) {
-    //XXX: TODO change input thing to be jquery-ey
-    var self = this;
-    function change() {
-        var ans_ind = ($(page).find('input')).index(this);
-        if (this.value !== '') 
-            question.answer[ans_ind] = this.value;
-
-    };
-
-    function keyup(e) {
-        self.keyUp(e, page, question, 'text_input', 'date', keyup, change);
-    }
-
-    $(page)
-        .find('input')
-        .change(change)
-        .keyup(keyup)
-};
-
-Widgets.time = function(question, page) {
-    //XXX: TODO change input thing to be jquery-ey
-    var self = this;
-    function change() {
-        var ans_ind = ($(page).find('input')).index(this);
-        if (this.value !== '') 
-            question.answer[ans_ind] = this.value;
-
-    };
-
-    function keyup(e) {
-        self.keyUp(e, page, question, 'text_input', 'time', keyup, change);
-    }
-
-    $(page)
-        .find('input')
-        .change(change)
-        .keyup(keyup)
-};
-
-Widgets.note = function(question, page) {
 };
 
 Widgets.location = function(question, page) {
@@ -532,21 +575,21 @@ Widgets.location = function(question, page) {
                     // Revisit api call
                     getNearbyFacilities(coords[0], coords[1], 2, map); 
 
+                    if (question.allow_multiple || $(page).find('.question__lon').length === 0) {
+                       $(loc_div)
+                           .insertBefore(".question__btn");
+                    }
+
                     var questions_lon = $(page).find('.question__lon');
                     var questions_lat = $(page).find('.question__lat');
 
-                    questions_lon[questions_lon.length - 1].value = coords[0];
-                    questions_lat[questions_lat.length - 1].value = coords[1];
                     // update array val
                     question.answer[questions_lon.length - 1] = coords;
+                        
+                    questions_lon[questions_lon.length - 1].value = coords[0];
+                    questions_lat[questions_lat.length - 1].value = coords[1];
 
                     // Add new button if allow multiple is present 
-                    if (question.allow_multiple) {
-                       var loc_dom = $(loc_div)
-                            .find('input')
-
-                       $('.question__btn').before(loc_dom);
-                    }
 
                 }, function error() {
                     alert('error')

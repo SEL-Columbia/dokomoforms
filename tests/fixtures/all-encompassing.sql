@@ -16,11 +16,15 @@ RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, title,
     type_constraint_name, allow_multiple, question_to_sequence_number)
-VALUES (the_survey_id, 1, 'integer question', 'integer', False, 2),
-       (the_survey_id, 5, 'time question', 'time', False, 6),
+VALUES (the_survey_id, 5, 'time question', 'time', False, 6),
        (the_survey_id, 6, 'location question', 'location', False, 7),
        (the_survey_id, 7, 'text question', 'text', True, 8),
        (the_survey_id, 9, 'note', 'note', False, -1);
+
+INSERT INTO question (survey_id, sequence_number, title,
+    type_constraint_name, logic, allow_multiple, question_to_sequence_number)
+VALUES (the_survey_id, 1, 'integer question', 'integer', '{"required": false, "with_other": true}',
+           False, 2);
 
 INSERT INTO question (survey_id, sequence_number, title,
     type_constraint_name, allow_multiple, question_to_sequence_number)
@@ -69,7 +73,7 @@ VALUES (the_question_choice_id, the_from_question_id, 'multiple_choice', 2,
 INSERT INTO question (survey_id, sequence_number, title,
     type_constraint_name, allow_multiple, logic, question_to_sequence_number)
 VALUES (the_survey_id, 8, 'multiple choice with other question',
-           'multiple_choice', False, '{"required": false, "with_other": true}', 9)
+           'multiple_choice', False, '{"required": false, "with_other": true, "other_text": "don''t know"}', 9)
 RETURNING question_id into the_from_question_id;
 
 INSERT INTO question_choice (choice, choice_number, question_id,
