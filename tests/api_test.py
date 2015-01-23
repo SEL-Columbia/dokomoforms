@@ -5,6 +5,7 @@ Tests for the dokomo JSON api
 import unittest
 import uuid
 from sqlalchemy import and_
+from sqlalchemy.exc import ProgrammingError
 from datetime import datetime, timedelta
 
 from sqlalchemy.exc import DataError, IntegrityError
@@ -104,6 +105,29 @@ class TestSubmission(unittest.TestCase):
                             'is_other': False}]}
         self.assertRaises(DataError, api.submission.submit, input_data)
         self.assertEqual(submission_table.select().execute().rowcount, 0)
+
+        input_data2 = {'survey_id': survey_id,
+                       'answers':
+                           [{'question_id': question_id,
+                             'answer': 1j,
+                             'is_other': False}]}
+        self.assertRaises(ProgrammingError, api.submission.submit, input_data2)
+
+    def testIsOther(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        question_id = question_table.select().where(
+            and_cond).execute().first().question_id
+        input_data = {'survey_id': survey_id,
+                      'answers':
+                          [{'question_id': question_id,
+                            'answer': 'one',
+                            'is_other': True}]}
+        result = api.submission.submit(input_data)
+        self.assertEqual(result['answers'][0]['answer'], 'one')
+        self.assertEqual(result['answers'][0]['is_other'], True)
 
     def testSkippedQuestion(self):
         questions = [{'title': 'required question',
@@ -209,6 +233,7 @@ class TestSubmission(unittest.TestCase):
         answer_insert(answer=[90, 0], question_id=question_id,
                       submission_id=submission_id,
                       survey_id=survey_id, type_constraint_name=tcn,
+                      is_other=False,
                       sequence_number=seq, allow_multiple=mul).execute()
         data = api.submission.get_one(submission_id, email='test_email')
         self.assertIsNotNone(data['submission_id'])
@@ -231,6 +256,7 @@ class TestSubmission(unittest.TestCase):
             answer_insert(answer=i, question_id=question_id,
                           submission_id=submission_id,
                           survey_id=survey_id, type_constraint_name=tcn,
+                          is_other=False,
                           sequence_number=seq, allow_multiple=mul).execute()
         data = api.submission.get_all(survey_id, email='test_email')
         self.assertGreater(len(data), 0)

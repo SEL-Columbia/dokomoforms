@@ -11,6 +11,7 @@ answer_choice_table = Table('answer_choice', MetaData(bind=engine),
 
 
 def answer_choice_insert(*,
+                         is_other: bool=None,
                          question_choice_id: str,
                          question_id: str,
                          submission_id: str,
@@ -28,6 +29,7 @@ def answer_choice_insert(*,
     :param question_id: The UUID of the question.
     :param submission_id: The UUID of the submission.
     :param type_constraint_name: the type constraint
+    :param is_other: may be passed in for convenience, but is unused
     :param sequence_number: the sequence number
     :param allow_multiple: whether multiple answers are allowed
     :param survey_id: The UUID of the survey.
