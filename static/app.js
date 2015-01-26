@@ -592,22 +592,35 @@ Widgets.facility = function(question, page) {
     var lat = question.answer[len] && question.answer[len][0][1] || App.start_loc[0];
     var lng = question.answer[len] && question.answer[len][0][0] || App.start_loc[1];
 
+    App.start_loc = [lat, lng];
+
     var map = L.map('map', {
             center: App.start_loc,
             dragging: true,
-            zoom: 18,
-            zoomControl: false,
-            doubleClickZoom: false,
+            zoom: 13,
+            zoomControl: true,
+            doubleClickZoom: true,
             attributionControl: false
         });
    
     // Know which marker is currently "up" 
     var touchedMarker = null;
+    // Added facility  
+    var addedMarker = null;
+    // Add markers here so clearing them isn't such a huge pain
+    var group = new L.featureGroup();
+    group.addTo(map);
 
-    // handles calling drawPoint 
-    function drawFacilities(facilities, map, clickEvent) {
+    // switch state if facilty was added before
+    if (question._new_facility) {
+        addedMarker = addFacility(lat, lng, question.answer[len][1]);
+        $(page).find('.facility__btn').html("Remove Facility");
+    }
+
+    // handles calling drawPoint gets called once per getNearby call 
+    function drawFacilities(facilities, clickEvent) {
+        group.clearLayers();
         var selected = question.answer[0] && question.answer[0][1] || null;
-        console.log(selected);
         for (i = 0; i < facilities.length; i++) {
             var facility = facilities[i];
             var marker = drawPoint(facility.coordinates[1], 
@@ -615,40 +628,71 @@ Widgets.facility = function(question, page) {
                         facility.name, 
                         facility.properties.sector,
                         facility.uuid,
-                        map,
                         clickEvent);
+
             if (selected == marker.uuid) {
                 marker.setZIndexOffset(666); // above 250 so it can't be hidden by hovering over neighbour
                 marker.setIcon(icon_selected);
                 touchedMarker = marker;
 
             }
+
+            group.addLayer(marker);
         }
     }; 
 
     // callback to handle facilities list, calls drawFacilities
     function facilitiesCallback(facilities) {
         // function that draws facilities and can attach cb on click
-        drawFacilities(facilities, map, function(e) {
+        drawFacilities(facilities, function(e) {
+            if (addedMarker) {
+                App.message("Please remove added facility before choosing an exisiting facility");
+                return;
+            }
+            // happens per touch on facility 
             if (touchedMarker) {
                 touchedMarker.setIcon(touchedMarker.type);
                 touchedMarker.setZIndexOffset(0);
             }
             
+            // Update marker so it looks selected
             var marker = e.target;
             marker.setZIndexOffset(666); // above 250 so it can't be hidden by hovering over neighbour
             marker.setIcon(icon_selected);
             touchedMarker = marker;
 
             question.answer[0] = [[marker._latlng.lng, marker._latlng.lat], marker.uuid];
+            console.log(question.answer[0]);
         });
     }
 
+    // function to wrap up the new facility code
+    function addFacility(lat, lng, uuid) {
+        var addedMarker = new L.marker([lat, lng], {
+            title: "New Facility",
+            alt: "New Facility",
+            clickable: true,
+            draggable: true,
+            riseOnHover: true
+        });
+
+        addedMarker.uuid = uuid;
+        addedMarker.setIcon(icon_added);
+        addedMarker.addTo(map);
+
+        //XXX: Add Popup with bits of info
+        addedMarker.on('dragend', function(e) {
+            var marker = e.target;
+            question.answer[0] = [[marker._latlng.lng, marker._latlng.lat], marker.uuid];
+            console.log(question.answer[0]);
+        });
+
+        return addedMarker;
+    }
 
     // Revisit API Call calls facilitiesCallback
     getNearbyFacilities(App.start_loc[0], App.start_loc[1], 
             5, // Radius in km 
-            map,
             question.question_id, // id for localStorage
             facilitiesCallback // what to do with facilities
         );
@@ -677,6 +721,8 @@ Widgets.facility = function(question, page) {
 
     map.addLayer(App._getMapLayer());
 
+    // Widget has two buttons, find location btn (simplifed version of the location widget one)
+    // and add facility btn which adds markers onto a map and hooks into revisit
     $(page)
         .find('.find__btn')
         .click(function() {
@@ -691,9 +737,8 @@ Widgets.facility = function(question, page) {
                         .setLatLng([coords[1], coords[0]])
 
                     // Revisit api call
-                    getNearbyFacilities(coords[0], coords[1],
+                    getNearbyFacilities(coords[1], coords[0],
                             5, // Radius in km 
-                            map,
                             question.question_id, // id for localStorage
                             facilitiesCallback // what to do with facilities
                     );
@@ -705,6 +750,40 @@ Widgets.facility = function(question, page) {
                     timeout: 20000,
                     maximumAge: 0
                 });
+        });
+
+
+    $(page)
+        .find('.facility__btn')
+        .click(function() {
+            // You added on before
+            if (addedMarker) {
+                // Get rid of all traces of it
+                map.removeLayer(addedMarker);
+                addedMarker = null;
+                question.answer = [];
+                this.innerHTML = "Add Facility";
+                question._new_facility = false;
+                return;
+            }
+
+            // Undo selected marker before adding new one
+            if (touchedMarker) {
+                touchedMarker.setIcon(touchedMarker.type);
+                touchedMarker.setZIndexOffset(0);
+            }
+
+            // Adding new facility
+            var lat = map.getCenter().lat;
+            var lng = map.getCenter().lng;
+            var uuid = "123456789123456789abcdef"; //XXX: TODO replace this shit with new uuid
+            //XXX: TODO store new request in array
+
+            addedMarker = addFacility(lat, lng, uuid);
+            question.answer[0] = [[lng, lat], uuid];
+            console.log(question.answer[0]);
+            question._new_facility = true;
+            this.innerHTML = "Remove Facility";
         });
 };
 
@@ -768,8 +847,8 @@ App._getMapLayer = function() {
 }
 
 /* -------------------------- Revisit Stuff Below ----------------------------*/
-function getNearbyFacilities(lat, lng, rad, map, id, cb) {
-    var url = "http://revisit.global/api/v0/facilities.json"
+function getNearbyFacilities(lat, lng, rad, id, cb) {
+    var url = "http://localhost:3000/api/v0/facilities.json" // install revisit server from git
     if (navigator.onLine) { 
         // Revisit ajax req
         console.log("MADE EXTERNAL QUERY");
@@ -786,6 +865,7 @@ function getNearbyFacilities(lat, lng, rad, map, id, cb) {
                 }
             }
         );
+
     } else {
         console.log("MADE LOCAL QUERY");
         var revisit = localStorage.getItem(id);
@@ -800,7 +880,7 @@ var icon_water = new L.icon({iconUrl: "/static/img/icons/normal_water.png", icon
 var icon_selected = new L.icon({iconUrl: "/static/img/icons/selected-point.png", iconAnchor: [15, 48]});
 var icon_added = new L.icon({iconUrl: "/static/img/icons/added-point.png", iconAnchor: [15, 48]});
 
-function drawPoint(lat, lng, name, type, uuid, map, clickEvent) {
+function drawPoint(lat, lng, name, type, uuid, clickEvent) {
     var marker = new L.marker([lat, lng], {
         title: name,
         alt: name,
@@ -828,7 +908,6 @@ function drawPoint(lat, lng, name, type, uuid, map, clickEvent) {
     }
 
     marker.on('click', clickEvent);
-    marker.addTo(map);
     return marker;
     
 };
