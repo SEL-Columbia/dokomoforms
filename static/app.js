@@ -869,7 +869,7 @@ Widgets.facility = function(question, page) {
                 'name': 'New Facility', 'uuid': uuid, 
                 'properties' : {'sector': 'other'},
                 'coordinates' : [lng, lat],
-                'question_id' : question.question_id // won't be submitted
+                'question_id' : question.question_id // XXX: Remove this from here
             };
 
             // Record response for Dokomo
@@ -954,7 +954,7 @@ function postNewFacility(facility) {
 
     // For local storage referencing
     var id = facility.question_id;
-    delete facility.question_id;
+    delete facility.question_id; //XXX; Pass in question id instead
 
     $.ajax({
         url: url,
@@ -1034,7 +1034,7 @@ function drawPoint(lat, lng, name, type, uuid, clickEvent) {
 
 // Not sure how legit this is but hey
 function GUID() {
-    return 'xxxxxxxx4xxxyxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxx'.replace(/[xy]/g, function(c) {
         var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
         return v.toString(16);
     });
