@@ -3,6 +3,7 @@ var PREV = -1;
 
 App = {
     unsynced: [], // unsynced surveys
+    facilities: {}, // new facilities
     start_loc: [40.8138912, -73.9624327] 
    // defaults to nyc, updated by metadata and answers to location questions
 };
@@ -277,6 +278,10 @@ Survey.prototype.submit = function() {
         fail: function() {
             App.message('Submission failed, will try again later.');
             App.unsynced.push(self);
+        },
+        error: function() {
+            App.message('Submission failed, will try again later.');
+            App.unsynced.push(self);
         }
     }).done(function() {
         setTimeout(function() {
@@ -507,7 +512,7 @@ Widgets.location = function(question, page) {
             center: App.start_loc,
             dragging: true,
             zoom: 13,
-            zoomControl: false,
+            zoomControl: true,
             doubleClickZoom: false,
             attributionControl: false
         });
@@ -591,6 +596,7 @@ Widgets.facility = function(question, page) {
     var len = question.answer.length - 1;
     var lat = question.answer[len] && question.answer[len][0][1] || App.start_loc[0];
     var lng = question.answer[len] && question.answer[len][0][0] || App.start_loc[1];
+    var selected = question.answer[0] && question.answer[0][1] || null;
 
     App.start_loc = [lat, lng];
 
@@ -599,7 +605,7 @@ Widgets.facility = function(question, page) {
             dragging: true,
             zoom: 13,
             zoomControl: true,
-            doubleClickZoom: true,
+            doubleClickZoom: false,
             attributionControl: false
         });
    
@@ -611,16 +617,15 @@ Widgets.facility = function(question, page) {
     var group = new L.featureGroup();
     group.addTo(map);
 
-    // switch state if facilty was added before
-    if (question._new_facility) {
-        addedMarker = addFacility(lat, lng, question.answer[len][1]);
+    // If selected uuid is stored in the App, paint it green
+    if (App.facilities[selected]) {
+        addedMarker = addFacility(lat, lng, selected);
         $(page).find('.facility__btn').html("Remove Facility");
     }
 
     // handles calling drawPoint gets called once per getNearby call 
     function drawFacilities(facilities, clickEvent) {
         group.clearLayers();
-        var selected = question.answer[0] && question.answer[0][1] || null;
         for (i = 0; i < facilities.length; i++) {
             var facility = facilities[i];
             var marker = drawPoint(facility.coordinates[1], 
@@ -630,16 +635,25 @@ Widgets.facility = function(question, page) {
                         facility.uuid,
                         clickEvent);
 
+            // If selected uuid was from Revisit, paint it white
             if (selected == marker.uuid) {
-                marker.setZIndexOffset(666); // above 250 so it can't be hidden by hovering over neighbour
-                marker.setIcon(icon_selected);
-                touchedMarker = marker;
-
+                selectFacility(marker);
             }
 
             group.addLayer(marker);
         }
     }; 
+
+    function selectFacility(marker) {
+        marker.setZIndexOffset(666); // above 250 so it can't be hidden by hovering over neighbour
+        marker.setIcon(icon_selected);
+        touchedMarker = marker;
+        question.answer[0] = [[marker._latlng.lng, marker._latlng.lat], marker.uuid];
+        $(page).find('.facility__name').val(marker.name);
+        $(page).find('.facility__type').val(marker.sector).change();
+    }
+
+    //XXX: DESELCT FUNCTION theres too much now
 
     // callback to handle facilities list, calls drawFacilities
     function facilitiesCallback(facilities) {
@@ -657,11 +671,7 @@ Widgets.facility = function(question, page) {
             
             // Update marker so it looks selected
             var marker = e.target;
-            marker.setZIndexOffset(666); // above 250 so it can't be hidden by hovering over neighbour
-            marker.setIcon(icon_selected);
-            touchedMarker = marker;
-
-            question.answer[0] = [[marker._latlng.lng, marker._latlng.lat], marker.uuid];
+            selectFacility(marker);
             console.log(question.answer[0]);
         });
     }
@@ -677,6 +687,8 @@ Widgets.facility = function(question, page) {
         });
 
         addedMarker.uuid = uuid;
+        addedMarker.sector = 'other';
+        addedMarker.name = "New Facility";
         addedMarker.setIcon(icon_added);
         addedMarker.addTo(map);
 
@@ -759,11 +771,11 @@ Widgets.facility = function(question, page) {
             // You added on before
             if (addedMarker) {
                 // Get rid of all traces of it
+                delete App.facilities[addedMarker.uuid];
                 map.removeLayer(addedMarker);
                 addedMarker = null;
                 question.answer = [];
                 this.innerHTML = "Add Facility";
-                question._new_facility = false;
                 return;
             }
 
@@ -777,12 +789,17 @@ Widgets.facility = function(question, page) {
             var lat = map.getCenter().lat;
             var lng = map.getCenter().lng;
             var uuid = "123456789123456789abcdef"; //XXX: TODO replace this shit with new uuid
-            //XXX: TODO store new request in array
 
+            // Get and place marker
             addedMarker = addFacility(lat, lng, uuid);
+
+            // Record this new facility for Revisit submission
+            App.facilities[uuid] = {name: 'New Facility', 'uuid': uuid, 
+                'properties' : {'sector': 'type'}};
+
+            // Record response for Dokomo
             question.answer[0] = [[lng, lat], uuid];
-            console.log(question.answer[0]);
-            question._new_facility = true;
+
             this.innerHTML = "Remove Facility";
         });
 };
@@ -874,6 +891,28 @@ function getNearbyFacilities(lat, lng, rad, id, cb) {
     }
 }
 
+function postNewFacility(facility) {
+    var url = "http://localhost:3000/api/v0/facilities.json" // install revisit server from git
+    $.ajax({
+        url: url,
+        type: 'POST',
+        contentType: 'application/json',
+        processData: false,
+        data: JSON.stringify(facility),
+        dataType: 'json',
+        success: function() {
+            App.message('Facility Added!');
+            delete App.facilities[facility.uuid]; //If posted, we don't need a local reference to it anymore;
+        },
+        fail: function() {
+            App.message('Facility submission failed, will try again later.');
+        },
+        error: function() {
+            App.message('Facility submission failed, will try again later.');
+        }
+    });
+}
+
 var icon_edu = new L.icon({iconUrl: "/static/img/icons/normal_education.png",iconAnchor: [13, 31]});
 var icon_health = new L.icon({iconUrl: "/static/img/icons/normal_health.png", iconAnchor: [13, 31]});
 var icon_water = new L.icon({iconUrl: "/static/img/icons/normal_water.png", iconAnchor: [13, 31]});
@@ -889,6 +928,8 @@ function drawPoint(lat, lng, name, type, uuid, clickEvent) {
     });
 
     marker.uuid = uuid; // store the uuid so we can read it back in the event handler
+    marker.sector = type;
+    marker.name = name;
 
     switch(type) {
         case "education":
@@ -899,10 +940,15 @@ function drawPoint(lat, lng, name, type, uuid, clickEvent) {
             marker.options.icon = icon_water;
             marker.type = icon_water;
             break;
+        case "health":
+            marker.options.icon = icon_health; 
+            marker.type = icon_health;
+            break;
         default:
             // just mark it as health 
             marker.options.icon = icon_health; 
             marker.type = icon_health;
+            marker.sector = 'other';
             //XXX: Mark health as health and create default icon
             break;
     }

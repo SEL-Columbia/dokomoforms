@@ -87,11 +87,21 @@
     <script id="widget_facility" type="text/html">
         <div class="question__title"><%- question.title %></div>
         <div id="map" class="question__map"></div>
+        <div>
+            <input class="text_input facility__name" type="text"/>
+            <select class="facility__type">
+                <option value="other">Other</option>
+                <option value="water">Water</option>
+                <option value="health">Health</option>
+                <option value="education">Education</option>
+                <!-- <option value="power">Power</option> -->
+            </select>
+        </div>
 
         <div class="facility_input">
             <span class="find__btn">Find Me</span>
             <span class="facility__btn">Add Facility</span>
-        <div class="loc_input">
+        </div>
 
     </script>
 
