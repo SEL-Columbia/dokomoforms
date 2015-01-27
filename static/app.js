@@ -12,6 +12,7 @@ App.init = function(survey) {
     var self = this;
     self.survey = new Survey(survey.survey_id, survey.questions, survey.metadata);
     self.start_loc = survey.metadata.location || self.start_loc;
+    //App.facilities = localStorage['facilities'] || {};
 
     // Manual sync    
     $('.nav__sync')
@@ -49,12 +50,53 @@ App.message = function(text) {
         .fadeOut('fast');
 };
 
+// Handle caching map layer
+App._getMapLayer = function() {
+    //XXX: TODO: Some how cache this on survey load 
+    function getImage(url, cb) {
+        // Retrieves an image from cache, possibly fetching it first
+        var imgKey = url.split('.').slice(1).join('.').replace(/\//g, '');
+        var img = localStorage[imgKey];
+        if (img) {
+            cb(img);
+        } else {
+            imgToBase64(url, 'image/png', function(img) {
+                localStorage[imgKey] = img;
+                cb(img);
+            });
+        }
+    };
+    
+    function imgToBase64(url, outputFormat, callback){
+        var canvas = document.createElement('canvas'),
+            ctx = canvas.getContext('2d'),
+            img = new Image;
+        img.crossOrigin = 'Anonymous';
+        img.onload = function(){
+            var dataURL;
+            canvas.height = img.height;
+            canvas.width = img.width;
+            ctx.drawImage(img, 0, 0);
+            dataURL = canvas.toDataURL(outputFormat);
+            callback.call(this, dataURL);
+            canvas = null; 
+        };
+        img.src = url;
+    };
 
-function getCookie(name) {
-    var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
-    return r ? r[1] : undefined;
+    // Tile layer
+    return new L.TileLayer.Functional(function(view) {
+        var deferred = $.Deferred();
+        var url = 'http://{s}.tiles.mapbox.com/v3/examples.map-20v6611k/{z}/{y}/{x}.png'
+            .replace('{s}', 'abcd'[Math.round(Math.random() * 3)])
+            .replace('{z}', Math.floor(view.zoom))
+            .replace('{x}', view.tile.row)
+            .replace('{y}', view.tile.column);
+        getImage(url, deferred.resolve);
+        return deferred.promise();
+    });
+
 }
-
 
 function Survey(id, questions, metadata) {
     var self = this;
@@ -212,11 +254,17 @@ Survey.prototype.submit = function() {
     var sync = $('.nav__sync')[0];
     var save_btn = $('.question__saving')[0];
     var answers = {};
+
+    function getCookie(name) {
+        var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
+        return r ? r[1] : undefined;
+    }
     
     // Save answers locally
     _.each(self.questions, function(question) {
         answers[question.question_id] = question.answer;
     });
+
     localStorage[self.id] = JSON.stringify(answers);
 
     // Prepare POST request
@@ -238,6 +286,12 @@ Survey.prototype.submit = function() {
                 is_other: is_other_val 
             });
         });
+    });
+
+    // Post to Revisit 
+    console.log('revisit-ing', App.facilities);
+    _.map(App.facilities, function(facility) {
+        postNewFacility(facility); 
     });
 
     var data = {
@@ -285,8 +339,8 @@ Survey.prototype.submit = function() {
         }
     }).done(function() {
         setTimeout(function() {
-            sync.classList.remove('icon--spin');
             save_btn.classList.remove('icon--spin');
+            sync.classList.remove('icon--spin');
             self.render(self.questions[0]);
         }, 1000);
     });
@@ -550,8 +604,11 @@ Widgets.location = function(question, page) {
     $(page)
         .find('.question__btn')
         .click(function() {
+            var sync = $('.nav__sync')[0];
+            sync.classList.add('icon--spin');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
+                    sync.classList.remove('icon--spin');
                     // Server accepts [lon, lat]
                     var coords = [position.coords.longitude, position.coords.latitude];
 
@@ -579,6 +636,7 @@ Widgets.location = function(question, page) {
                 }, function error() {
                     //TODO: If cannot Get location" for some reason, 
                     // Allow  user to fill in text field instead
+                    sync.classList.remove('icon--spin');
                     alert('error'); //XXX Replace with our message thing
                 }, {
                     enableHighAccuracy: true,
@@ -593,13 +651,12 @@ Widgets.facility = function(question, page) {
     var self = this;
     
     // Map
-    var len = question.answer.length - 1;
-    var lat = question.answer[len] && question.answer[len][0][1] || App.start_loc[0];
-    var lng = question.answer[len] && question.answer[len][0][0] || App.start_loc[1];
+    var lat = question.answer[0] && question.answer[0][0][1] || App.start_loc[0];
+    var lng = question.answer[0] && question.answer[0][0][0] || App.start_loc[1];
     var selected = question.answer[0] && question.answer[0][1] || null;
-
     App.start_loc = [lat, lng];
 
+    /* Buld inital state */
     var map = L.map('map', {
             center: App.start_loc,
             dragging: true,
@@ -621,85 +678,6 @@ Widgets.facility = function(question, page) {
     if (App.facilities[selected]) {
         addedMarker = addFacility(lat, lng, selected);
         $(page).find('.facility__btn').html("Remove Facility");
-    }
-
-    // handles calling drawPoint gets called once per getNearby call 
-    function drawFacilities(facilities, clickEvent) {
-        group.clearLayers();
-        for (i = 0; i < facilities.length; i++) {
-            var facility = facilities[i];
-            var marker = drawPoint(facility.coordinates[1], 
-                        facility.coordinates[0], 
-                        facility.name, 
-                        facility.properties.sector,
-                        facility.uuid,
-                        clickEvent);
-
-            // If selected uuid was from Revisit, paint it white
-            if (selected == marker.uuid) {
-                selectFacility(marker);
-            }
-
-            group.addLayer(marker);
-        }
-    }; 
-
-    function selectFacility(marker) {
-        marker.setZIndexOffset(666); // above 250 so it can't be hidden by hovering over neighbour
-        marker.setIcon(icon_selected);
-        touchedMarker = marker;
-        question.answer[0] = [[marker._latlng.lng, marker._latlng.lat], marker.uuid];
-        $(page).find('.facility__name').val(marker.name);
-        $(page).find('.facility__type').val(marker.sector).change();
-    }
-
-    //XXX: DESELCT FUNCTION theres too much now
-
-    // callback to handle facilities list, calls drawFacilities
-    function facilitiesCallback(facilities) {
-        // function that draws facilities and can attach cb on click
-        drawFacilities(facilities, function(e) {
-            if (addedMarker) {
-                App.message("Please remove added facility before choosing an exisiting facility");
-                return;
-            }
-            // happens per touch on facility 
-            if (touchedMarker) {
-                touchedMarker.setIcon(touchedMarker.type);
-                touchedMarker.setZIndexOffset(0);
-            }
-            
-            // Update marker so it looks selected
-            var marker = e.target;
-            selectFacility(marker);
-            console.log(question.answer[0]);
-        });
-    }
-
-    // function to wrap up the new facility code
-    function addFacility(lat, lng, uuid) {
-        var addedMarker = new L.marker([lat, lng], {
-            title: "New Facility",
-            alt: "New Facility",
-            clickable: true,
-            draggable: true,
-            riseOnHover: true
-        });
-
-        addedMarker.uuid = uuid;
-        addedMarker.sector = 'other';
-        addedMarker.name = "New Facility";
-        addedMarker.setIcon(icon_added);
-        addedMarker.addTo(map);
-
-        //XXX: Add Popup with bits of info
-        addedMarker.on('dragend', function(e) {
-            var marker = e.target;
-            question.answer[0] = [[marker._latlng.lng, marker._latlng.lat], marker.uuid];
-            console.log(question.answer[0]);
-        });
-
-        return addedMarker;
     }
 
     // Revisit API Call calls facilitiesCallback
@@ -733,11 +711,99 @@ Widgets.facility = function(question, page) {
 
     map.addLayer(App._getMapLayer());
 
+    /* Helper functions for updates  */
+    // handles calling drawPoint gets called once per getNearby call 
+    function drawFacilities(facilities, clickEvent) {
+        group.clearLayers();
+        for (i = 0; i < facilities.length; i++) {
+            var facility = facilities[i];
+            var marker = drawPoint(facility.coordinates[1], 
+                        facility.coordinates[0], 
+                        facility.name, 
+                        facility.properties.sector,
+                        facility.uuid,
+                        clickEvent);
+
+            // If selected uuid was from Revisit, paint it white
+            if (selected == marker.uuid) {
+                selectFacility(marker);
+            }
+
+            group.addLayer(marker);
+        }
+    }; 
+
+    function selectFacility(marker) {
+        marker.setZIndexOffset(666); // above 250 so it can't be hidden by hovering over neighbour
+        marker.setIcon(icon_selected);
+        touchedMarker = marker;
+        question.answer[0] = [[marker._latlng.lng, marker._latlng.lat], marker.uuid];
+        $(page).find('.facility__name').val(marker.name);
+        $(page).find('.facility__type').val(marker.sector);
+    }
+
+    // callback to handle facilities list, calls drawFacilities
+    function facilitiesCallback(facilities) {
+        // function that draws facilities and can attach cb on click
+        drawFacilities(facilities, function(e) {
+            if (addedMarker) {
+                App.message("Please remove added facility before choosing an exisiting facility");
+                return;
+            }
+
+            if (touchedMarker) {
+                touchedMarker.setIcon(touchedMarker.type);
+                touchedMarker.setZIndexOffset(0);
+            }
+            
+            // Update marker so it looks selected
+            var marker = e.target;
+            selectFacility(marker);
+        });
+    }
+
+    // function to wrap up the new facility code
+    function addFacility(lat, lng, uuid) {
+        var addedMarker = new L.marker([lat, lng], {
+            title: "New Facility",
+            alt: "New Facility",
+            clickable: true,
+            draggable: true,
+            riseOnHover: true
+        });
+
+        addedMarker.uuid = uuid;
+        addedMarker.sector = 'other';
+        addedMarker.name = "New Facility";
+        addedMarker.setIcon(icon_added);
+        addedMarker.addTo(map);
+
+        // We added em before 
+        if (App.facilities[uuid]) {
+            addedMarker.sector = App.facilities[uuid]['properties']['sector'];
+            addedMarker.name = App.facilities[uuid]['name'];
+        }
+
+        //XXX: Add Popup with bits of info
+        addedMarker.on('dragend', function(e) {
+            var marker = e.target;
+            question.answer[0] = [[marker._latlng.lng, marker._latlng.lat], marker.uuid];
+            App.facilities[marker.uuid]['coordinates'] = [marker._latlng.lng, marker._latlng.lat];
+        });
+
+        $(page).find('.facility__name').val(addedMarker.name);
+        $(page).find('.facility__type').val(addedMarker.sector).change();
+        return addedMarker;
+    }
+
+    /* Handle events */
     // Widget has two buttons, find location btn (simplifed version of the location widget one)
     // and add facility btn which adds markers onto a map and hooks into revisit
     $(page)
         .find('.find__btn')
         .click(function() {
+            var sync = $('.nav__sync')[0];
+            sync.classList.add('icon--spin');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
                     // Server accepts [lon, lat]
@@ -755,7 +821,9 @@ Widgets.facility = function(question, page) {
                             facilitiesCallback // what to do with facilities
                     );
 
+                    sync.classList.remove('icon--spin');
                 }, function error() {
+                    sync.classList.remove('icon--spin');
                     alert('error'); ///XXX: DONT FORGET MEMEE
                 }, {
                     enableHighAccuracy: true,
@@ -776,6 +844,8 @@ Widgets.facility = function(question, page) {
                 addedMarker = null;
                 question.answer = [];
                 this.innerHTML = "Add Facility";
+                $(page).find('.facility__name').val("");
+                $(page).find('.facility__type').val("other");
                 return;
             }
 
@@ -783,24 +853,57 @@ Widgets.facility = function(question, page) {
             if (touchedMarker) {
                 touchedMarker.setIcon(touchedMarker.type);
                 touchedMarker.setZIndexOffset(0);
+                touchedMarker = null;
             }
 
             // Adding new facility
             var lat = map.getCenter().lat;
             var lng = map.getCenter().lng;
-            var uuid = "123456789123456789abcdef"; //XXX: TODO replace this shit with new uuid
+            var uuid = GUID(); //XXX: TODO replace this shit with new uuid
 
             // Get and place marker
             addedMarker = addFacility(lat, lng, uuid);
 
             // Record this new facility for Revisit submission
-            App.facilities[uuid] = {name: 'New Facility', 'uuid': uuid, 
-                'properties' : {'sector': 'type'}};
+            App.facilities[uuid] = {
+                'name': 'New Facility', 'uuid': uuid, 
+                'properties' : {'sector': 'other'},
+                'coordinates' : [lng, lat],
+                'question_id' : question.question_id // won't be submitted
+            };
 
             // Record response for Dokomo
             question.answer[0] = [[lng, lat], uuid];
 
             this.innerHTML = "Remove Facility";
+        });
+
+    // Change name
+    $(page)
+        .find('.facility__name')
+        .keyup(function(e) {
+            console.log(this.value);
+            if (touchedMarker) {
+                // Prevent updates for now
+                selectFacility(touchedMarker);
+            } else if (addedMarker) {
+                // Update facility info
+                App.facilities[addedMarker.uuid]['name'] = this.value;
+            }
+        });
+
+    // Change type
+    $(page)
+        .find('.facility__type')
+        .change(function(e) {
+            console.log(this.value);
+            if (touchedMarker) {
+                // Prevent updates for now
+                selectFacility(touchedMarker);
+            } else if (addedMarker) {
+                // Update facility info
+                App.facilities[addedMarker.uuid]['properties']['sector'] = this.value;
+            } 
         });
 };
 
@@ -816,57 +919,11 @@ Widgets._addNewInput = function(page, question, cls, type, keyup_cb, change_cb) 
     }
 }
 
-// Handle caching map layer
-App._getMapLayer = function() {
-    function getImage(url, cb) {
-        // Retrieves an image from cache, possibly fetching it first
-        var imgKey = url.split('.').slice(1).join('.').replace(/\//g, '');
-        var img = localStorage[imgKey];
-        if (img) {
-            cb(img);
-        } else {
-            imgToBase64(url, 'image/png', function(img) {
-                localStorage[imgKey] = img;
-                cb(img);
-            });
-        }
-    };
-    
-    function imgToBase64(url, outputFormat, callback){
-        var canvas = document.createElement('canvas'),
-            ctx = canvas.getContext('2d'),
-            img = new Image;
-        img.crossOrigin = 'Anonymous';
-        img.onload = function(){
-            var dataURL;
-            canvas.height = img.height;
-            canvas.width = img.width;
-            ctx.drawImage(img, 0, 0);
-            dataURL = canvas.toDataURL(outputFormat);
-            callback.call(this, dataURL);
-            canvas = null; 
-        };
-        img.src = url;
-    };
-
-    // Tile layer
-    return new L.TileLayer.Functional(function(view) {
-        var deferred = $.Deferred();
-        var url = 'http://{s}.tiles.mapbox.com/v3/examples.map-20v6611k/{z}/{y}/{x}.png'
-            .replace('{s}', 'abcd'[Math.round(Math.random() * 3)])
-            .replace('{z}', Math.floor(view.zoom))
-            .replace('{x}', view.tile.row)
-            .replace('{y}', view.tile.column);
-        getImage(url, deferred.resolve);
-        return deferred.promise();
-    });
-
-}
-
 /* -------------------------- Revisit Stuff Below ----------------------------*/
 function getNearbyFacilities(lat, lng, rad, id, cb) {
-    var url = "http://localhost:3000/api/v0/facilities.json" // install revisit server from git
-    if (navigator.onLine) { 
+    var url = "http://staging.revisit.global/api/v0/facilities.json" 
+    //var url = "http://localhost:3000/api/v0/facilities.json" // install revisit server from git
+    if (navigator.onLine) { //TODO: Do query only when necessary somehow 
         // Revisit ajax req
         console.log("MADE EXTERNAL QUERY");
         $.get(url,{
@@ -892,7 +949,13 @@ function getNearbyFacilities(lat, lng, rad, id, cb) {
 }
 
 function postNewFacility(facility) {
-    var url = "http://localhost:3000/api/v0/facilities.json" // install revisit server from git
+    var url = "http://staging.revisit.global/api/v0/facilities.json";
+    //var url = "http://localhost:3000/api/v0/facilities.json" // install revisit server from git
+
+    // For local storage referencing
+    var id = facility.question_id;
+    delete facility.question_id;
+
     $.ajax({
         url: url,
         type: 'POST',
@@ -902,13 +965,24 @@ function postNewFacility(facility) {
         dataType: 'json',
         success: function() {
             App.message('Facility Added!');
-            delete App.facilities[facility.uuid]; //If posted, we don't need a local reference to it anymore;
+
+            // Javascript single-threadedness makes this safe. Async doesn't switch tasks mid execution
+            var revisit = localStorage.getItem(id);
+            var facilities = revisit && JSON.parse(revisit).facilities || [];
+            facilities.push(facility);
+            localStorage.setItem(id, JSON.stringify({"facilities": facilities})); // store in localstorage incase they lose connection even after posting
+
+            // If posted, we don't an unsynced reference to it anymore
+            delete App.facilities[facility.uuid];
+            //localStorage['facilities'] = App.facilities;
         },
         fail: function() {
             App.message('Facility submission failed, will try again later.');
+            //XXX: Do something here so that users can create additional facilities even one is unposted 
         },
         error: function() {
             App.message('Facility submission failed, will try again later.');
+            //XXX: Do something here so that users can create additional facilities even one is unposted 
         }
     });
 }
@@ -958,4 +1032,10 @@ function drawPoint(lat, lng, name, type, uuid, clickEvent) {
     
 };
 
-
+// Not sure how legit this is but hey
+function GUID() {
+    return 'xxxxxxxx4xxxyxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+        return v.toString(16);
+    });
+}
