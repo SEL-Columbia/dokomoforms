@@ -3,7 +3,7 @@ from numbers import Number
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.functions import GenericFunction, min as sqlmin, \
-    max as sqlmax
+    max as sqlmax, sum as sqlsum
 
 from db import engine
 from db.answer import answer_table
@@ -113,3 +113,17 @@ def max(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
                                                'date',
                                                'time'}),
             'query': 'max'}
+
+
+def sum(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
+    """
+    Get the sum of submissions to the specified question. You must
+    provide either an auth_user_id or e-mail address.
+
+    :param question_id: the UUID of the question
+    :param auth_user_id: the UUID of the user
+    :param email: the e-mail address of the user.
+    :return: a JSON dict containing the result
+    """
+    return {'result': _scalar(question_id, sqlsum, auth_user_id, email),
+            'query': 'sum'}

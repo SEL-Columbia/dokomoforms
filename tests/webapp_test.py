@@ -26,7 +26,7 @@ from db.auth_user import generate_api_token
 from db.question import get_questions, question_table
 from db.question_choice import question_choice_table
 from db.submission import submission_table
-from pages.api.aggregations import MinAPI, MaxAPI
+from pages.api.aggregations import MinAPI, MaxAPI, SumAPI
 from pages.api.submissions import SubmissionsAPI, SingleSubmissionAPI
 from pages.api.surveys import SurveysAPI, SingleSurveyAPI
 from pages.util.base import catch_bare_integrity_error
@@ -223,6 +223,32 @@ class APITest(AsyncHTTPTestCase):
         self.assertNotEqual(json_response, [])
         self.assertEqual(json_response,
                          api.aggregation.max(question_id, email='test_email'))
+
+    def testGetSum(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        question_id = question.question_id
+
+        for i in range(2):
+            input_data = {'survey_id': survey_id,
+                          'answers':
+                              [{'question_id': question_id,
+                                'answer': i,
+                                'is_other': False}]}
+            api.submission.submit(input_data)
+
+        with mock.patch.object(SumAPI, 'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/sum/{}'.format(question_id))
+        self.assertEqual(response.code, 200)
+        json_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(json_response, [])
+        self.assertEqual(json_response,
+                         api.aggregation.sum(question_id, email='test_email'))
 
 
 class DebugTest(AsyncHTTPTestCase):

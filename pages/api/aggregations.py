@@ -10,7 +10,14 @@ class MinAPI(APIHandler):
         response = api.aggregation.min(question_id, email=get_email(self))
         self.write(json_encode(response))
 
+
 class MaxAPI(APIHandler):
     def get(self, question_id: str):
         response = api.aggregation.max(question_id, email=get_email(self))
+        self.write(json_encode(response))
+
+
+class SumAPI(APIHandler):
+    def get(self, question_id: str):
+        response = api.aggregation.sum(question_id, email=get_email(self))
         self.write(json_encode(response))

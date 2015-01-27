@@ -17,7 +17,7 @@ import api.survey
 import api.submission
 import api.user
 from pages.auth import LogoutHandler, LoginHandler
-from pages.api.aggregations import MinAPI, MaxAPI
+from pages.api.aggregations import MinAPI, MaxAPI, SumAPI
 from pages.api.submissions import SubmissionsAPI, SingleSubmissionAPI
 from pages.api.surveys import SurveysAPI, SingleSurveyAPI
 from pages.util.base import BaseHandler, get_json_request_body, \
@@ -130,6 +130,7 @@ pages = [
     # Testing
     (r'/api/min/({})/?'.format(UUID_REGEX), MinAPI),
     (r'/api/max/({})/?'.format(UUID_REGEX), MaxAPI),
+    (r'/api/sum/({})/?'.format(UUID_REGEX), SumAPI),
     (r'/api/surveys/?', SurveysAPI),
     (r'/api/surveys/({})/?'.format(UUID_REGEX), SingleSurveyAPI),
     (r'/api/surveys/({})/submissions/?'.format(UUID_REGEX),
