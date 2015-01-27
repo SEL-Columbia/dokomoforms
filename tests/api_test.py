@@ -5,7 +5,7 @@ Tests for the dokomo JSON api
 import unittest
 import uuid
 from sqlalchemy import and_
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.exc import DataError, IntegrityError
@@ -933,7 +933,6 @@ class TestAggregation(unittest.TestCase):
         self.assertEqual(
             api.aggregation.min(question_id, auth_user_id=user_id), expected)
 
-
     def testMinNoUser(self):
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'integer')
@@ -957,7 +956,6 @@ class TestAggregation(unittest.TestCase):
         self.assertRaises(api.aggregation.InvalidTypeForAggregationError,
                           api.aggregation.min, question_id, email='test_email')
 
-
     def testMax(self):
         survey_id = survey_table.select().where(
             survey_table.c.title == 'test_title').execute().first().survey_id
@@ -977,6 +975,28 @@ class TestAggregation(unittest.TestCase):
 
         self.assertEqual(api.aggregation.max(question_id, email='test_email'),
                          {'result': 1, 'query': 'max'})
+
+    def testDate(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'date')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        question_id = question.question_id
+
+        for i in range(1, 3):
+            input_data = {'survey_id': survey_id,
+                          'answers':
+                              [{'question_id': question_id,
+                                'answer': '1/{}/2015'.format(i),
+                                'is_other': False}]}
+            api.submission.submit(input_data)
+
+        self.assertEqual(api.aggregation.max(question_id, email='test_email'),
+                         {'result': date(2015, 1, 2), 'query': 'max'})
+        self.assertEqual(api.aggregation.min(question_id, email='test_email'),
+                         {'result': date(2015, 1, 1), 'query': 'min'})
 
 
 if __name__ == '__main__':
