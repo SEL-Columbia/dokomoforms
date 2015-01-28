@@ -1,11 +1,12 @@
 language: python
 python:
   - "3.3"
+addons:
+  - postgresql: "9.4"
 
 # prerequisite 
 before_install:
   - sudo /etc/init.d/postgresql stop
-  - sudo apt-get install -y postgresql-9.4
   - sudo /etc/init.d/postgresql start 9.4
 
 # command to install dependencies
