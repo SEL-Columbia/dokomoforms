@@ -566,7 +566,7 @@ Widgets.location = function(question, page) {
             center: App.start_loc,
             dragging: true,
             zoom: 13,
-            zoomControl: true,
+            zoomControl: false,
             doubleClickZoom: false,
             attributionControl: false
         });
@@ -661,7 +661,7 @@ Widgets.facility = function(question, page) {
             center: App.start_loc,
             dragging: true,
             zoom: 13,
-            zoomControl: true,
+            zoomControl: false,
             doubleClickZoom: false,
             attributionControl: false
         });
@@ -683,6 +683,7 @@ Widgets.facility = function(question, page) {
     // Revisit API Call calls facilitiesCallback
     getNearbyFacilities(App.start_loc[0], App.start_loc[1], 
             5, // Radius in km 
+            100, // limit
             question.question_id, // id for localStorage
             facilitiesCallback // what to do with facilities
         );
@@ -817,6 +818,7 @@ Widgets.facility = function(question, page) {
                     // Revisit api call
                     getNearbyFacilities(coords[1], coords[0],
                             5, // Radius in km 
+                            100, // limit
                             question.question_id, // id for localStorage
                             facilitiesCallback // what to do with facilities
                     );
@@ -920,16 +922,23 @@ Widgets._addNewInput = function(page, question, cls, type, keyup_cb, change_cb) 
 }
 
 /* -------------------------- Revisit Stuff Below ----------------------------*/
-function getNearbyFacilities(lat, lng, rad, id, cb) {
+function getNearbyFacilities(lat, lng, rad, lim, id, cb) {
     var url = "http://staging.revisit.global/api/v0/facilities.json" 
     //var url = "http://localhost:3000/api/v0/facilities.json" // install revisit server from git
-    if (navigator.onLine) { //TODO: Do query only when necessary somehow 
+    var revisit = localStorage.getItem(id);
+    if(revisit) {
+        console.log("MADE LOCAL QUERY");
+        var facilities = revisit && JSON.parse(revisit).facilities || [];
+        cb(facilities);
+
+    //if (navigator.onLine) { //TODO: Do query only when necessary somehow 
+    } else {
         // Revisit ajax req
         console.log("MADE EXTERNAL QUERY");
         $.get(url,{
                 near: lat + "," + lng,
                 rad: rad,
-                limit: 256,
+                limit: lim,
                 fields: "name,uuid,coordinates,properties:sector", //filters results to include just those three fields,
             },
             function(data) {
@@ -939,12 +948,6 @@ function getNearbyFacilities(lat, lng, rad, id, cb) {
                 }
             }
         );
-
-    } else {
-        console.log("MADE LOCAL QUERY");
-        var revisit = localStorage.getItem(id);
-        var facilities = revisit && JSON.parse(revisit).facilities || [];
-        cb(facilities);
     }
 }
 
