@@ -15,10 +15,6 @@ import api.survey
 import api.submission
 import api.user
 from pages.auth import LogoutHandler, LoginHandler
-from pages.api.aggregations import MinAPIHandler, MaxAPIHandler, \
-    SumAPIHandler, \
-    CountAPIHandler, AvgAPIHandler, \
-    StddevPopAPIHandler, StddevSampAPIHandler, ModeAPIHandler
 from pages.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler
 from pages.api.surveys import SurveysAPIHandler, SingleSurveyAPIHandler
