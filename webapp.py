@@ -15,9 +15,13 @@ import api.survey
 import api.submission
 import api.user
 from pages.auth import LogoutHandler, LoginHandler
-from pages.api.aggregations import MinAPI, MaxAPI, SumAPI, CountAPI
-from pages.api.submissions import SubmissionsAPI, SingleSubmissionAPI
-from pages.api.surveys import SurveysAPI, SingleSurveyAPI
+from pages.api.aggregations import MinAPIHandler, MaxAPIHandler, \
+    SumAPIHandler, \
+    CountAPIHandler, AvgAPIHandler, \
+    StddevPopAPIHandler, StddevSampAPIHandler, ModeAPIHandler
+from pages.api.submissions import SubmissionsAPIHandler, \
+    SingleSubmissionAPIHandler
+from pages.api.surveys import SurveysAPIHandler, SingleSurveyAPIHandler
 from pages.util.base import BaseHandler, get_json_request_body, \
     validation_message, catch_bare_integrity_error
 import pages.util.ui
@@ -126,17 +130,21 @@ pages = [
     (r'/user/generate-api-token/?', APITokenGenerator),
 
     # Testing
-    (r'/api/min/({})/?'.format(UUID_REGEX), MinAPI),
-    (r'/api/max/({})/?'.format(UUID_REGEX), MaxAPI),
-    (r'/api/sum/({})/?'.format(UUID_REGEX), SumAPI),
-    (r'/api/count/({})/?'.format(UUID_REGEX), CountAPI),
+    (r'/api/min/({})/?'.format(UUID_REGEX), MinAPIHandler),
+    (r'/api/max/({})/?'.format(UUID_REGEX), MaxAPIHandler),
+    (r'/api/sum/({})/?'.format(UUID_REGEX), SumAPIHandler),
+    (r'/api/count/({})/?'.format(UUID_REGEX), CountAPIHandler),
+    (r'/api/avg/({})/?'.format(UUID_REGEX), AvgAPIHandler),
+    (r'/api/stddev_pop/({})/?'.format(UUID_REGEX), StddevPopAPIHandler),
+    (r'/api/stddev_samp/({})/?'.format(UUID_REGEX), StddevSampAPIHandler),
+    (r'/api/mode/({})/?'.format(UUID_REGEX), ModeAPIHandler),
 
-    (r'/api/surveys/?', SurveysAPI),
-    (r'/api/surveys/({})/?'.format(UUID_REGEX), SingleSurveyAPI),
+    (r'/api/surveys/?', SurveysAPIHandler),
+    (r'/api/surveys/({})/?'.format(UUID_REGEX), SingleSurveyAPIHandler),
     (r'/api/surveys/({})/submissions/?'.format(UUID_REGEX),
-     SubmissionsAPI),
+     SubmissionsAPIHandler),
     (r'/api/submissions/({})/?'.format(UUID_REGEX),
-     SingleSubmissionAPI),
+     SingleSubmissionAPIHandler),
 ]
 
 if config.get('debug', False):

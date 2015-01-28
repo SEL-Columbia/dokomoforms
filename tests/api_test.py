@@ -6,6 +6,7 @@ import unittest
 import uuid
 from sqlalchemy import and_
 from datetime import datetime, timedelta, date
+from math import sqrt
 
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.exc import DataError, IntegrityError
@@ -940,6 +941,14 @@ class TestAggregation(unittest.TestCase):
         question_id = question.question_id
         self.assertRaises(TypeError, api.aggregation.min, question_id)
 
+    def testMinWrongUser(self):
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'integer')
+        question = q_where.execute().first()
+        question_id = question.question_id
+        self.assertRaises(QuestionDoesNotExistError, api.aggregation.min,
+                          question_id, email='a.dahir7@gmail.com')
+
     def testMinNoSubmissions(self):
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'integer')
@@ -1068,6 +1077,138 @@ class TestAggregation(unittest.TestCase):
         self.assertEqual(
             api.aggregation.count(question_id, email='test_email'),
             {'result': 2, 'query': 'count'})
+
+    def testAvg(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        question_id = question.question_id
+
+        for i in range(2):
+            input_data = {'survey_id': survey_id,
+                          'answers':
+                              [{'question_id': question_id,
+                                'answer': i,
+                                'is_other': False}]}
+            api.submission.submit(input_data)
+
+        self.assertAlmostEqual(
+            api.aggregation.avg(question_id, email='test_email')['result'],
+            0.5)
+
+    def testStddevPop(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        q_id = question.question_id
+
+        for i in range(3):
+            input_data = {'survey_id': survey_id,
+                          'answers':
+                              [{'question_id': q_id,
+                                'answer': i,
+                                'is_other': False}]}
+            api.submission.submit(input_data)
+
+        expected_value = sqrt(sum((i - 1) ** 2 for i in range(3)) / 3)
+        self.assertAlmostEqual(
+            api.aggregation.stddev_pop(q_id, email='test_email')['result'],
+            expected_value)
+
+    def testStddevSamp(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        q_id = question.question_id
+
+        for i in range(3):
+            input_data = {'survey_id': survey_id,
+                          'answers':
+                              [{'question_id': q_id,
+                                'answer': i,
+                                'is_other': False}]}
+            api.submission.submit(input_data)
+
+        self.assertAlmostEqual(
+            api.aggregation.stddev_samp(q_id, email='test_email')['result'],
+            1)
+
+    def testMode(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        q_id = question.question_id
+
+        for i in (1, 2, 2, 3):
+            input_data = {'survey_id': survey_id,
+                          'answers':
+                              [{'question_id': q_id,
+                                'answer': i,
+                                'is_other': False}]}
+            api.submission.submit(input_data)
+
+        self.assertEqual(
+            api.aggregation.mode(q_id, email='test_email'),
+            {'result': 2, 'query': 'mode'})
+
+        self.assertEqual(
+            api.aggregation.mode(q_id, auth_user_id=get_auth_user_by_email(
+                'test_email').auth_user_id),
+            {'result': 2, 'query': 'mode'})
+
+
+    def testModeBadeType(self):
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'note')
+        question = q_where.execute().first()
+        question_id = question.question_id
+        self.assertRaises(api.aggregation.InvalidTypeForAggregationError,
+                          api.aggregation.mode, question_id,
+                          email='test_email')
+
+    def testModeMultipleChoice(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        cond = and_(question_table.c.survey_id == survey_id,
+                    question_table.c.type_constraint_name == 'multiple_choice')
+        q_where = question_table.select().where(cond)
+        question = q_where.execute().first()
+        q_id = question.question_id
+
+        self.assertEqual(
+            api.aggregation.count(q_id, email='test_email'),
+            {'result': 0, 'query': 'count'})
+
+        for choice in get_choices(q_id):
+            input_data = {'survey_id': survey_id,
+                          'answers':
+                              [{'question_id': q_id,
+                                'answer': choice.question_choice_id,
+                                'is_other': False}]}
+            api.submission.submit(input_data)
+        repeated_choice = get_choices(q_id).first().question_choice_id
+        input_data = {'survey_id': survey_id,
+                      'answers':
+                          [{'question_id': q_id,
+                            'answer': repeated_choice,
+                            'is_other': False}]}
+        api.submission.submit(input_data)
+
+        self.assertEqual(
+            api.aggregation.mode(q_id, email='test_email'),
+            {'result': repeated_choice, 'query': 'mode'})
 
 
 if __name__ == '__main__':

@@ -1,15 +1,16 @@
 """Functions for aggregating and interacting with submission data."""
-from numbers import Number
+from numbers import Real
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.functions import GenericFunction, min as sqlmin, \
     max as sqlmax, sum as sqlsum, count as sqlcount
+from sqlalchemy.sql import func
 
 from db import engine
 from db.answer import answer_table
 from db.answer_choice import answer_choice_table
 from db.auth_user import get_auth_user_by_email
-from db.question import question_select
+from db.question import question_select, QuestionDoesNotExistError
 from db.survey import survey_table
 
 
@@ -29,13 +30,38 @@ def _get_user(auth_user_id: str=None, email: str=None):
     raise TypeError('You must specify either auth_user_id or email')
 
 
+def _return_scalar(result: Real,
+                   survey_id: str,
+                   auth_user_id: str,
+                   question_id: str) -> Real:
+    """
+    Get the result for a _scalar-y function.
+
+    :param result: the result of the SQL function
+    :param survey_id: the UUID of the survey
+    :param auth_user_id: the UUID of the user
+    :param question_id: the UUID of the question
+    :return: the result of the SQL function
+    :raise NoSubmissionsToQuestionError: if there are no submissions
+    :raise QuestionDoesNotExistError: if the user is not authorized
+    """
+    if result is None:
+        condition = survey_table.c.survey_id == survey_id
+        stmt = survey_table.select().where(condition)
+        proper_id = stmt.execute().first().auth_user_id
+        if auth_user_id == proper_id:
+            raise NoSubmissionsToQuestionError(question_id)
+        raise QuestionDoesNotExistError(question_id)
+    return result
+
+
 def _scalar(question_id: str,
             sql_function: GenericFunction,
             *,
             auth_user_id: str=None,
             email: str=None,
             is_other: bool=False,
-            allowable_types: set={'integer', 'decimal'}) -> Number:
+            allowable_types: set={'integer', 'decimal'}) -> Real:
     """
     Get a scalar SQL-y value (max, mean, etc) across all submissions to a
     question. You must provide either an auth_user_id or e-mail address.
@@ -46,7 +72,7 @@ def _scalar(question_id: str,
     :param email: the e-mail address of the user
     :param is_other: whether to look at the "other" responses
     :return: the result of the SQL function
-    :raise NoSubmissionsToQuestion: if there are no data to aggregate
+    :raise InvalidTypeForAggregationError: if the type constraint name is bad
     """
     user_id, user_email = _get_user(auth_user_id, email)
     # TODO: See if not doing a 3-table join is a performance problem
@@ -54,11 +80,13 @@ def _scalar(question_id: str,
         user_id = get_auth_user_by_email(user_email).auth_user_id
 
     question = question_select(question_id)
+
     tcn = question.type_constraint_name
     if tcn not in allowable_types:
         raise InvalidTypeForAggregationError(tcn)
     if is_other:
         tcn = 'text'
+
     if tcn == 'multiple_choice':
         table = answer_choice_table
         column_name = 'question_choice_id'
@@ -78,9 +106,7 @@ def _scalar(question_id: str,
     finally:
         session.close()
 
-    if result is None:
-        raise NoSubmissionsToQuestionError(question_id)
-    return result
+    return _return_scalar(result, question.survey_id, user_id, question_id)
 
 
 class NoSubmissionsToQuestionError(Exception):
@@ -162,3 +188,101 @@ def count(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
                     email=email, is_other=True, allowable_types=types)
     return {'result': regular + other,
             'query': 'count'}
+
+
+def avg(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
+    """
+    Get the average of submissions to the specified question. You must
+    provide either an auth_user_id or e-mail address.
+
+    :param question_id: the UUID of the question
+    :param auth_user_id: the UUID of the user
+    :param email: the e-mail address of the user.
+    :return: a JSON dict containing the result
+    """
+    result = _scalar(question_id, func.avg,
+                     auth_user_id=auth_user_id,
+                     email=email)
+    return {'result': float(result),
+            'query': 'avg'}
+
+
+def stddev_pop(question_id: str,
+               auth_user_id: str=None, email: str=None) -> dict:
+    """
+    Get the population standard deviation of submissions to the specified
+    question. You must provide either an auth_user_id or e-mail address.
+
+    :param question_id: the UUID of the question
+    :param auth_user_id: the UUID of the user
+    :param email: the e-mail address of the user.
+    :return: a JSON dict containing the result
+    """
+    result = _scalar(question_id, func.stddev_pop,
+                     auth_user_id=auth_user_id,
+                     email=email)
+    return {'result': float(result),
+            'query': 'stddev_pop'}
+
+
+def stddev_samp(question_id: str,
+                auth_user_id: str=None, email: str=None) -> dict:
+    """
+    Get the sample standard deviation of submissions to the specified
+    question. You must provide either an auth_user_id or e-mail address.
+
+    :param question_id: the UUID of the question
+    :param auth_user_id: the UUID of the user
+    :param email: the e-mail address of the user.
+    :return: a JSON dict containing the result
+    """
+    result = _scalar(question_id, func.stddev_samp,
+                     auth_user_id=auth_user_id,
+                     email=email)
+    return {'result': float(result),
+            'query': 'stddev_samp'}
+
+
+def mode(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
+    """
+    Get the mode of answers to the specified question, or the first one if
+    there are multiple equally-frequent results. You must provide either an
+    auth_user_id or e-mail address.
+
+    :param question_id: the UUID of the question
+    :param auth_user_id: the UUID of the user
+    :param email: the e-mail address of the user
+    :return: a JSON dict containing the result
+    """
+    user_id, user_email = _get_user(auth_user_id, email)
+    # TODO: See if not doing a 3-table join is a performance problem
+    if user_email is not None:
+        user_id = get_auth_user_by_email(user_email).auth_user_id
+
+    allowable_types = {'text', 'integer', 'decimal', 'multiple_choice', 'date',
+                       'time', 'location'}
+
+    question = question_select(question_id)
+    tcn = question.type_constraint_name
+    if tcn not in allowable_types:
+        raise InvalidTypeForAggregationError(tcn)
+
+    # Assume that you only want to consider the non-other answers for the mode
+
+    if tcn == 'multiple_choice':
+        table_name = 'answer_choice'
+        column_name = 'question_choice_id'
+    else:
+        table_name = 'answer'
+        column_name = 'answer_' + tcn
+
+    query = """SELECT MODE() WITHIN GROUP (ORDER BY {0}) FROM {1} JOIN
+    survey ON {1}.survey_id = survey.survey_id WHERE auth_user_id = '{2}'
+    AND question_id = '{3}'"""
+
+    result = engine.execute(
+        query.format(column_name, table_name, user_id, question_id)).scalar()
+
+    final = _return_scalar(result, question.survey_id, user_id, question_id)
+
+    return {'result': final, 'query': 'mode'}

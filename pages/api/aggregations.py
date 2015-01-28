@@ -5,25 +5,51 @@ import api.aggregation
 from pages.util.base import APIHandler, get_email
 
 
-class MinAPI(APIHandler):
+class MinAPIHandler(APIHandler):
     def get(self, question_id: str):
         response = api.aggregation.min(question_id, email=get_email(self))
         self.write(json_encode(response))
 
 
-class MaxAPI(APIHandler):
+class MaxAPIHandler(APIHandler):
     def get(self, question_id: str):
         response = api.aggregation.max(question_id, email=get_email(self))
         self.write(json_encode(response))
 
 
-class SumAPI(APIHandler):
+class SumAPIHandler(APIHandler):
     def get(self, question_id: str):
         response = api.aggregation.sum(question_id, email=get_email(self))
         self.write(json_encode(response))
 
 
-class CountAPI(APIHandler):
+class CountAPIHandler(APIHandler):
     def get(self, question_id: str):
         response = api.aggregation.count(question_id, email=get_email(self))
+        self.write(json_encode(response))
+
+
+class AvgAPIHandler(APIHandler):
+    def get(self, question_id: str):
+        response = api.aggregation.avg(question_id, email=get_email(self))
+        self.write(json_encode(response))
+
+
+class StddevPopAPIHandler(APIHandler):
+    def get(self, question_id: str):
+        response = api.aggregation.stddev_pop(question_id,
+                                              email=get_email(self))
+        self.write(json_encode(response))
+
+
+class StddevSampAPIHandler(APIHandler):
+    def get(self, question_id: str):
+        response = api.aggregation.stddev_samp(question_id,
+                                               email=get_email(self))
+        self.write(json_encode(response))
+
+
+class ModeAPIHandler(APIHandler):
+    def get(self, question_id: str):
+        response = api.aggregation.mode(question_id, email=get_email(self))
         self.write(json_encode(response))
