@@ -26,6 +26,8 @@ from db.auth_user import generate_api_token
 from db.question import get_questions, question_table
 from db.question_choice import question_choice_table
 from db.submission import submission_table
+from pages.api.aggregations import MinAPIHandler, MaxAPIHandler, SumAPIHandler, \
+    CountAPIHandler, AvgAPIHandler, StddevPopAPIHandler, StddevSampAPIHandler
 from pages.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler
 from pages.api.surveys import SurveysAPIHandler, SingleSurveyAPIHandler
