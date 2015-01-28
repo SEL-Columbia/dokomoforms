@@ -5,7 +5,7 @@ python:
 # prerequisite 
 before_install:
   - sudo /etc/init.d/postgresql stop
-  - sudo /etc/init.d/postgresql start 9.4
+  - sudo /etc/init.d/postgresql start 9.3
 
 # command to install dependencies
 install:
