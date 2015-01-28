@@ -3,7 +3,7 @@ from numbers import Number
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.functions import GenericFunction, min as sqlmin, \
-    max as sqlmax, sum as sqlsum
+    max as sqlmax, sum as sqlsum, count as sqlcount
 
 from db import engine
 from db.answer import answer_table
@@ -30,8 +30,10 @@ def _get_user(auth_user_id: str=None, email: str=None):
 
 def _scalar(question_id: str,
             sql_function: GenericFunction,
+            *,
             auth_user_id: str=None,
             email: str=None,
+            is_other: bool=False,
             allowable_types: set={'integer', 'decimal'}) -> Number:
     """
     Get a scalar SQL-y value (max, mean, etc) across all submissions to a
@@ -41,6 +43,7 @@ def _scalar(question_id: str,
     :param sql_function: the SQL function to execute
     :param auth_user_id: the UUID of the user
     :param email: the e-mail address of the user
+    :param is_other: whether to look at the "other" responses
     :return: the result of the SQL function
     :raise NoSubmissionsToQuestion: if there are no data to aggregate
     """
@@ -53,10 +56,18 @@ def _scalar(question_id: str,
     tcn = question.type_constraint_name
     if tcn not in allowable_types:
         raise InvalidTypeForAggregationError(tcn)
-    join_condition = answer_table.c.survey_id == survey_table.c.survey_id
-    condition = (answer_table.c.question_id == question_id,
+    if is_other:
+        tcn = 'text'
+    if tcn == 'multiple_choice':
+        table = answer_choice_table
+        column_name = 'question_choice_id'
+    else:
+        table = answer_table
+        column_name = 'answer_' + tcn
+    join_condition = table.c.survey_id == survey_table.c.survey_id
+    condition = (table.c.question_id == question_id,
                  survey_table.c.auth_user_id == user_id)
-    column = answer_table.c.get('answer_' + tcn)
+    column = table.c.get(column_name)
 
     session = sessionmaker(bind=engine)()
     try:
@@ -89,7 +100,7 @@ def min(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
     :param email: the e-mail address of the user.
     :return: a JSON dict containing the result
     """
-    return {'result': _scalar(question_id, sqlmin, auth_user_id, email,
+    return {'result': _scalar(question_id, sqlmin, auth_user_id=auth_user_id, email=email,
                               allowable_types={'integer',
                                                'decimal',
                                                'date',
@@ -107,7 +118,7 @@ def max(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
     :param email: the e-mail address of the user.
     :return: a JSON dict containing the result
     """
-    return {'result': _scalar(question_id, sqlmax, auth_user_id, email,
+    return {'result': _scalar(question_id, sqlmax, auth_user_id=auth_user_id, email=email,
                               allowable_types={'integer',
                                                'decimal',
                                                'date',
@@ -125,5 +136,21 @@ def sum(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
     :param email: the e-mail address of the user.
     :return: a JSON dict containing the result
     """
-    return {'result': _scalar(question_id, sqlsum, auth_user_id, email),
+    return {'result': _scalar(question_id, sqlsum, auth_user_id=auth_user_id, email=email),
             'query': 'sum'}
+
+def count(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
+    """
+    Get the number of submissions to the specified question. You must
+    provide either an auth_user_id or e-mail address.
+
+    :param question_id: the UUID of the question
+    :param auth_user_id: the UUID of the user
+    :param email: the e-mail address of the user.
+    :return: a JSON dict containing the result
+    """
+    types = {'text', 'integer', 'decimal', 'multiple_choice', 'date', 'time', 'location'}
+    regular = _scalar(question_id, sqlcount, auth_user_id=auth_user_id, email=email, allowable_types=types)
+    other = _scalar(question_id, sqlcount, auth_user_id=auth_user_id, email=email, is_other=True, allowable_types=types)
+    return {'result': regular + other,
+            'query': 'count'}
