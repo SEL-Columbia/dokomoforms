@@ -49,7 +49,7 @@ class StddevSampAPIHandler(APIHandler):
         self.write(json_encode(response))
 
 
-class ModeAPIHandler(APIHandler):
-    def get(self, question_id: str):
-        response = api.aggregation.mode(question_id, email=get_email(self))
-        self.write(json_encode(response))
+# class ModeAPIHandler(APIHandler):
+#     def get(self, question_id: str):
+#         response = api.aggregation.mode(question_id, email=get_email(self))
+#         self.write(json_encode(response))

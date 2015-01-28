@@ -1142,73 +1142,73 @@ class TestAggregation(unittest.TestCase):
             api.aggregation.stddev_samp(q_id, email='test_email')['result'],
             1)
 
-    def testMode(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
-        and_cond = and_(question_table.c.survey_id == survey_id,
-                        question_table.c.type_constraint_name == 'integer')
-        q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
-        q_id = question.question_id
-
-        for i in (1, 2, 2, 3):
-            input_data = {'survey_id': survey_id,
-                          'answers':
-                              [{'question_id': q_id,
-                                'answer': i,
-                                'is_other': False}]}
-            api.submission.submit(input_data)
-
-        self.assertEqual(
-            api.aggregation.mode(q_id, email='test_email'),
-            {'result': 2, 'query': 'mode'})
-
-        self.assertEqual(
-            api.aggregation.mode(q_id, auth_user_id=get_auth_user_by_email(
-                'test_email').auth_user_id),
-            {'result': 2, 'query': 'mode'})
-
-
-    def testModeBadeType(self):
-        q_where = question_table.select().where(
-            question_table.c.type_constraint_name == 'note')
-        question = q_where.execute().first()
-        question_id = question.question_id
-        self.assertRaises(api.aggregation.InvalidTypeForAggregationError,
-                          api.aggregation.mode, question_id,
-                          email='test_email')
-
-    def testModeMultipleChoice(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
-        cond = and_(question_table.c.survey_id == survey_id,
-                    question_table.c.type_constraint_name == 'multiple_choice')
-        q_where = question_table.select().where(cond)
-        question = q_where.execute().first()
-        q_id = question.question_id
-
-        self.assertEqual(
-            api.aggregation.count(q_id, email='test_email'),
-            {'result': 0, 'query': 'count'})
-
-        for choice in get_choices(q_id):
-            input_data = {'survey_id': survey_id,
-                          'answers':
-                              [{'question_id': q_id,
-                                'answer': choice.question_choice_id,
-                                'is_other': False}]}
-            api.submission.submit(input_data)
-        repeated_choice = get_choices(q_id).first().question_choice_id
-        input_data = {'survey_id': survey_id,
-                      'answers':
-                          [{'question_id': q_id,
-                            'answer': repeated_choice,
-                            'is_other': False}]}
-        api.submission.submit(input_data)
-
-        self.assertEqual(
-            api.aggregation.mode(q_id, email='test_email'),
-            {'result': repeated_choice, 'query': 'mode'})
+    # def testMode(self):
+    #     survey_id = survey_table.select().where(
+    #         survey_table.c.title == 'test_title').execute().first().survey_id
+    #     and_cond = and_(question_table.c.survey_id == survey_id,
+    #                     question_table.c.type_constraint_name == 'integer')
+    #     q_where = question_table.select().where(and_cond)
+    #     question = q_where.execute().first()
+    #     q_id = question.question_id
+    #
+    #     for i in (1, 2, 2, 3):
+    #         input_data = {'survey_id': survey_id,
+    #                       'answers':
+    #                           [{'question_id': q_id,
+    #                             'answer': i,
+    #                             'is_other': False}]}
+    #         api.submission.submit(input_data)
+    #
+    #     self.assertEqual(
+    #         api.aggregation.mode(q_id, email='test_email'),
+    #         {'result': 2, 'query': 'mode'})
+    #
+    #     self.assertEqual(
+    #         api.aggregation.mode(q_id, auth_user_id=get_auth_user_by_email(
+    #             'test_email').auth_user_id),
+    #         {'result': 2, 'query': 'mode'})
+    #
+    #
+    # def testModeBadeType(self):
+    #     q_where = question_table.select().where(
+    #         question_table.c.type_constraint_name == 'note')
+    #     question = q_where.execute().first()
+    #     question_id = question.question_id
+    #     self.assertRaises(api.aggregation.InvalidTypeForAggregationError,
+    #                       api.aggregation.mode, question_id,
+    #                       email='test_email')
+    #
+    # def testModeMultipleChoice(self):
+    #     survey_id = survey_table.select().where(
+    #         survey_table.c.title == 'test_title').execute().first().survey_id
+    #     cond = and_(question_table.c.survey_id == survey_id,
+    #                 question_table.c.type_constraint_name == 'multiple_choice')
+    #     q_where = question_table.select().where(cond)
+    #     question = q_where.execute().first()
+    #     q_id = question.question_id
+    #
+    #     self.assertEqual(
+    #         api.aggregation.count(q_id, email='test_email'),
+    #         {'result': 0, 'query': 'count'})
+    #
+    #     for choice in get_choices(q_id):
+    #         input_data = {'survey_id': survey_id,
+    #                       'answers':
+    #                           [{'question_id': q_id,
+    #                             'answer': choice.question_choice_id,
+    #                             'is_other': False}]}
+    #         api.submission.submit(input_data)
+    #     repeated_choice = get_choices(q_id).first().question_choice_id
+    #     input_data = {'survey_id': survey_id,
+    #                   'answers':
+    #                       [{'question_id': q_id,
+    #                         'answer': repeated_choice,
+    #                         'is_other': False}]}
+    #     api.submission.submit(input_data)
+    #
+    #     self.assertEqual(
+    #         api.aggregation.mode(q_id, email='test_email'),
+    #         {'result': repeated_choice, 'query': 'mode'})
 
 
 if __name__ == '__main__':

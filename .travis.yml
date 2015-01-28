@@ -1,13 +1,10 @@
 language: python
 python:
+  - "3.2"
   - "3.3"
-
-# prerequisite 
-before_install:
-  - sudo apt-get update
-  - sudo apt-get purge postgresql-9.1 postgresql-9.2 postgresql-9.3
-  - sudo apt-get install postgresql-client-common postgresql-9.4
-  - sudo service postgresql start
+  - "3.4"
+addons:
+  postgresql: "9.3"
 
 # command to install dependencies
 install:

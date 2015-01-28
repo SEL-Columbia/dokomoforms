@@ -137,7 +137,7 @@ pages = [
     (r'/api/avg/({})/?'.format(UUID_REGEX), AvgAPIHandler),
     (r'/api/stddev_pop/({})/?'.format(UUID_REGEX), StddevPopAPIHandler),
     (r'/api/stddev_samp/({})/?'.format(UUID_REGEX), StddevSampAPIHandler),
-    (r'/api/mode/({})/?'.format(UUID_REGEX), ModeAPIHandler),
+    # (r'/api/mode/({})/?'.format(UUID_REGEX), ModeAPIHandler),
 
     (r'/api/surveys/?', SurveysAPIHandler),
     (r'/api/surveys/({})/?'.format(UUID_REGEX), SingleSurveyAPIHandler),
