@@ -21,3 +21,9 @@ class SumAPI(APIHandler):
     def get(self, question_id: str):
         response = api.aggregation.sum(question_id, email=get_email(self))
         self.write(json_encode(response))
+
+
+class CountAPI(APIHandler):
+    def get(self, question_id: str):
+        response = api.aggregation.count(question_id, email=get_email(self))
+        self.write(json_encode(response))

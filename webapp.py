@@ -5,10 +5,8 @@ This tornado server creates the client app by serving html/css/js and
 it also functions as the wsgi container for accepting survey form post
 requests back from the client app.
 """
-from pprint import pformat
-from sqlalchemy.exc import IntegrityError
 
-from tornado.escape import to_unicode, json_encode, json_decode
+from tornado.escape import json_encode
 import tornado.web
 import tornado.ioloop
 
@@ -17,7 +15,7 @@ import api.survey
 import api.submission
 import api.user
 from pages.auth import LogoutHandler, LoginHandler
-from pages.api.aggregations import MinAPI, MaxAPI, SumAPI
+from pages.api.aggregations import MinAPI, MaxAPI, SumAPI, CountAPI
 from pages.api.submissions import SubmissionsAPI, SingleSubmissionAPI
 from pages.api.surveys import SurveysAPI, SingleSurveyAPI
 from pages.util.base import BaseHandler, get_json_request_body, \
@@ -131,6 +129,8 @@ pages = [
     (r'/api/min/({})/?'.format(UUID_REGEX), MinAPI),
     (r'/api/max/({})/?'.format(UUID_REGEX), MaxAPI),
     (r'/api/sum/({})/?'.format(UUID_REGEX), SumAPI),
+    (r'/api/count/({})/?'.format(UUID_REGEX), CountAPI),
+
     (r'/api/surveys/?', SurveysAPI),
     (r'/api/surveys/({})/?'.format(UUID_REGEX), SingleSurveyAPI),
     (r'/api/surveys/({})/submissions/?'.format(UUID_REGEX),

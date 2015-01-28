@@ -7,6 +7,7 @@ from sqlalchemy.sql.functions import GenericFunction, min as sqlmin, \
 
 from db import engine
 from db.answer import answer_table
+from db.answer_choice import answer_choice_table
 from db.auth_user import get_auth_user_by_email
 from db.question import question_select
 from db.survey import survey_table
@@ -100,7 +101,8 @@ def min(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
     :param email: the e-mail address of the user.
     :return: a JSON dict containing the result
     """
-    return {'result': _scalar(question_id, sqlmin, auth_user_id=auth_user_id, email=email,
+    return {'result': _scalar(question_id, sqlmin, auth_user_id=auth_user_id,
+                              email=email,
                               allowable_types={'integer',
                                                'decimal',
                                                'date',
@@ -118,7 +120,8 @@ def max(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
     :param email: the e-mail address of the user.
     :return: a JSON dict containing the result
     """
-    return {'result': _scalar(question_id, sqlmax, auth_user_id=auth_user_id, email=email,
+    return {'result': _scalar(question_id, sqlmax, auth_user_id=auth_user_id,
+                              email=email,
                               allowable_types={'integer',
                                                'decimal',
                                                'date',
@@ -136,8 +139,10 @@ def sum(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
     :param email: the e-mail address of the user.
     :return: a JSON dict containing the result
     """
-    return {'result': _scalar(question_id, sqlsum, auth_user_id=auth_user_id, email=email),
+    return {'result': _scalar(question_id, sqlsum, auth_user_id=auth_user_id,
+                              email=email),
             'query': 'sum'}
+
 
 def count(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
     """
@@ -149,8 +154,11 @@ def count(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
     :param email: the e-mail address of the user.
     :return: a JSON dict containing the result
     """
-    types = {'text', 'integer', 'decimal', 'multiple_choice', 'date', 'time', 'location'}
-    regular = _scalar(question_id, sqlcount, auth_user_id=auth_user_id, email=email, allowable_types=types)
-    other = _scalar(question_id, sqlcount, auth_user_id=auth_user_id, email=email, is_other=True, allowable_types=types)
+    types = {'text', 'integer', 'decimal', 'multiple_choice', 'date', 'time',
+             'location'}
+    regular = _scalar(question_id, sqlcount, auth_user_id=auth_user_id,
+                      email=email, allowable_types=types)
+    other = _scalar(question_id, sqlcount, auth_user_id=auth_user_id,
+                    email=email, is_other=True, allowable_types=types)
     return {'result': regular + other,
             'query': 'count'}
