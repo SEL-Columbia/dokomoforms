@@ -23,14 +23,10 @@ import api.user
 from db import engine
 from db.answer import get_answers
 from db.auth_user import generate_api_token
-from db.question import get_questions, question_table
+from db.question import get_questions_no_credentials, question_table
 from db.question_choice import question_choice_table
 from db.submission import submission_table
-from pages.api.aggregations import MinAPIHandler, MaxAPIHandler, \
-    SumAPIHandler, \
-    CountAPIHandler, AvgAPIHandler, StddevPopAPIHandler, \
-    StddevSampAPIHandler, \
-    TimeSeriesAPIHandler, BarGraphAPIHandler, ModeAPIHandler
+from pages.api.aggregations import AggregationHandler
 from pages.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler
 from pages.api.surveys import SurveysAPIHandler, SingleSurveyAPIHandler
@@ -54,7 +50,9 @@ new_config['xsrf_cookies'] = False  # convenient for testing...
 
 def _create_submission() -> dict:
     survey_id = survey_table.select().where(
-        survey_table.c.title == 'test_title').execute().first().survey_id
+        survey_table.c.survey_title == 'test_title').execute().first(
+
+    ).survey_id
     and_cond = and_(question_table.c.survey_id == survey_id,
                     question_table.c.type_constraint_name == 'integer')
     question_id = question_table.select().where(
@@ -108,13 +106,17 @@ class APITest(AsyncHTTPTestCase):
 
     def testGetSubmissionsNotLoggedIn(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         response = self.fetch('/api/surveys/{}/submissions'.format(survey_id))
         self.assertEqual(response.code, 403)
 
     def testGetSubmissionsLoggedIn(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         _create_submission()
         with mock.patch.object(SubmissionsAPIHandler,
                                'get_secure_cookie') as m:
@@ -129,7 +131,9 @@ class APITest(AsyncHTTPTestCase):
 
     def testGetSubmissionsWithAPIToken(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         token = api.user.generate_token({'email': 'test_email'})['token']
         response = self.fetch('/api/surveys/{}/submissions'.format(survey_id),
                               headers={'Token': token, 'Email': 'test_email'})
@@ -139,7 +143,9 @@ class APITest(AsyncHTTPTestCase):
 
     def testGetSubmissionsWithInvalidAPIToken(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         token = api.user.generate_token({'email': 'test_email'})['token']
         response = self.fetch('/api/surveys/{}/submissions'.format(survey_id),
                               headers={'Token': generate_api_token(),
@@ -169,7 +175,9 @@ class APITest(AsyncHTTPTestCase):
 
     def testGetSingleSurvey(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         with mock.patch.object(SingleSurveyAPIHandler,
                                'get_secure_cookie') as m:
             m.return_value = 'test_email'
@@ -182,7 +190,9 @@ class APITest(AsyncHTTPTestCase):
 
     def testGetMin(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
@@ -197,18 +207,22 @@ class APITest(AsyncHTTPTestCase):
                                 'is_other': False}]}
             api.submission.submit(input_data)
 
-        with mock.patch.object(MinAPIHandler, 'get_secure_cookie') as m:
+        with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
-            response = self.fetch('/api/min/{}'.format(question_id))
+            response = self.fetch('/api/aggregate/{}?min'.format(question_id))
         self.assertEqual(response.code, 200)
         json_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(json_response, [])
         self.assertEqual(json_response,
-                         api.aggregation.min(question_id, email='test_email'))
+                         [api.aggregation.min(question_id,
+                                              email='test_email')])
+
 
     def testGetMax(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
@@ -223,18 +237,52 @@ class APITest(AsyncHTTPTestCase):
                                 'is_other': False}]}
             api.submission.submit(input_data)
 
-        with mock.patch.object(MaxAPIHandler, 'get_secure_cookie') as m:
+        with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
-            response = self.fetch('/api/max/{}'.format(question_id))
+            response = self.fetch('/api/aggregate/{}?max'.format(question_id))
         self.assertEqual(response.code, 200)
         json_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(json_response, [])
         self.assertEqual(json_response,
-                         api.aggregation.max(question_id, email='test_email'))
+                         [api.aggregation.max(question_id,
+                                              email='test_email')])
+
+    def testGetMinAndMax(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        question_id = question.question_id
+
+        for i in range(2):
+            input_data = {'survey_id': survey_id,
+                          'answers':
+                              [{'question_id': question_id,
+                                'answer': i,
+                                'is_other': False}]}
+            api.submission.submit(input_data)
+
+        with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch(
+                '/api/aggregate/{}?min&max'.format(question_id))
+        self.assertEqual(response.code, 200)
+        json_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(json_response, [])
+        self.assertIn(api.aggregation.min(question_id, email='test_email'),
+                      json_response)
+        self.assertIn(api.aggregation.max(question_id, email='test_email'),
+                      json_response)
 
     def testGetSum(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
@@ -249,18 +297,20 @@ class APITest(AsyncHTTPTestCase):
                                 'is_other': False}]}
             api.submission.submit(input_data)
 
-        with mock.patch.object(SumAPIHandler, 'get_secure_cookie') as m:
+        with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
-            response = self.fetch('/api/sum/{}'.format(question_id))
+            response = self.fetch('/api/aggregate/{}?sum'.format(question_id))
         self.assertEqual(response.code, 200)
         json_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(json_response, [])
         self.assertEqual(json_response,
-                         api.aggregation.sum(question_id, email='test_email'))
+                         [api.aggregation.sum(question_id,
+                                              email='test_email')])
 
     def testGetCount(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+        survey_id = survey_table.select(). \
+            where(survey_table.c.survey_title == 'test_title').execute() \
+            .first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
@@ -275,18 +325,20 @@ class APITest(AsyncHTTPTestCase):
                                 'is_other': False}]}
             api.submission.submit(input_data)
 
-        with mock.patch.object(CountAPIHandler, 'get_secure_cookie') as m:
+        with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
-            response = self.fetch('/api/count/{}'.format(q_id))
+            response = self.fetch('/api/aggregate/{}?count'.format(q_id))
         self.assertEqual(response.code, 200)
         json_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(json_response, [])
         self.assertEqual(json_response,
-                         api.aggregation.count(q_id, email='test_email'))
+                         [api.aggregation.count(q_id, email='test_email')])
 
     def testGetAvg(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
@@ -301,18 +353,20 @@ class APITest(AsyncHTTPTestCase):
                                 'is_other': False}]}
             api.submission.submit(input_data)
 
-        with mock.patch.object(AvgAPIHandler, 'get_secure_cookie') as m:
+        with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
-            response = self.fetch('/api/avg/{}'.format(q_id))
+            response = self.fetch('/api/aggregate/{}?avg'.format(q_id))
         self.assertEqual(response.code, 200)
         json_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(json_response, [])
         self.assertEqual(json_response,
-                         api.aggregation.avg(q_id, email='test_email'))
+                         [api.aggregation.avg(q_id, email='test_email')])
 
     def testGetStddevPop(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
@@ -327,18 +381,21 @@ class APITest(AsyncHTTPTestCase):
                                 'is_other': False}]}
             api.submission.submit(input_data)
 
-        with mock.patch.object(StddevPopAPIHandler, 'get_secure_cookie') as m:
+        with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
-            response = self.fetch('/api/stddev_pop/{}'.format(q_id))
+            response = self.fetch('/api/aggregate/{}?stddev_pop'.format(q_id))
         self.assertEqual(response.code, 200)
         json_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(json_response, [])
         self.assertEqual(json_response,
-                         api.aggregation.stddev_pop(q_id, email='test_email'))
+                         [api.aggregation.stddev_pop(q_id,
+                                                     email='test_email')])
 
     def testGetStddevSamp(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
@@ -353,18 +410,21 @@ class APITest(AsyncHTTPTestCase):
                                 'is_other': False}]}
             api.submission.submit(input_data)
 
-        with mock.patch.object(StddevSampAPIHandler, 'get_secure_cookie') as m:
+        with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
-            response = self.fetch('/api/stddev_samp/{}'.format(q_id))
+            response = self.fetch('/api/aggregate/{}?stddev_samp'.format(q_id))
         self.assertEqual(response.code, 200)
         json_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(json_response, [])
         self.assertEqual(json_response,
-                         api.aggregation.stddev_samp(q_id, email='test_email'))
+                         [api.aggregation.stddev_samp(q_id,
+                                                      email='test_email')])
 
     def testGetMode(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
@@ -379,19 +439,48 @@ class APITest(AsyncHTTPTestCase):
                                 'is_other': False}]}
             api.submission.submit(input_data)
 
-        with mock.patch.object(ModeAPIHandler, 'get_secure_cookie') as m:
+        with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
-            response = self.fetch('/api/mode/{}'.format(q_id))
+            response = self.fetch('/api/aggregate/{}?mode'.format(q_id))
         self.assertEqual(response.code, 200)
         json_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(json_response, [])
         self.assertEqual(json_response,
-                         api.aggregation.mode(q_id, email='test_email'))
+                         [api.aggregation.mode(q_id, email='test_email')])
+
+    def testGetModeLocation(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'location')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        q_id = question.question_id
+
+        input_data = {'survey_id': survey_id,
+                      'answers':
+                          [{'question_id': q_id,
+                            'answer': [90, 0],
+                            'is_other': False}]}
+        api.submission.submit(input_data)
+
+        with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/aggregate/{}?mode'.format(q_id))
+        self.assertEqual(response.code, 200)
+        json_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(json_response, [])
+        self.assertEqual(json_response,
+                         [api.aggregation.mode(q_id, email='test_email')])
 
 
     def testGetTimeSeries(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
@@ -406,22 +495,24 @@ class APITest(AsyncHTTPTestCase):
                                 'is_other': False}]}
             api.submission.submit(input_data)
 
-        with mock.patch.object(TimeSeriesAPIHandler, 'get_secure_cookie') as m:
+        with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
-            response = self.fetch('/api/time_series/{}'.format(q_id))
+            response = self.fetch('/api/aggregate/{}?time_series'.format(q_id))
         self.assertEqual(response.code, 200)
         json_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(json_response, [])
         api_response = api.aggregation.time_series(q_id, email='test_email')
-        self.assertSequenceEqual(json_response['result'][0],
+        self.assertSequenceEqual(json_response[0]['result'][0],
                                  api_response['result'][0])
-        self.assertSequenceEqual(json_response['result'][1],
+        self.assertSequenceEqual(json_response[0]['result'][1],
                                  api_response['result'][1])
 
 
     def testGetBarGraph(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
@@ -436,16 +527,16 @@ class APITest(AsyncHTTPTestCase):
                                 'is_other': False}]}
             api.submission.submit(input_data)
 
-        with mock.patch.object(BarGraphAPIHandler, 'get_secure_cookie') as m:
+        with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
-            response = self.fetch('/api/bar_graph/{}'.format(q_id))
+            response = self.fetch('/api/aggregate/{}?bar_graph'.format(q_id))
         self.assertEqual(response.code, 200)
         json_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(json_response, [])
         api_response = api.aggregation.bar_graph(q_id, email='test_email')
-        self.assertSequenceEqual(json_response['result'][0],
+        self.assertSequenceEqual(json_response[0]['result'][0],
                                  api_response['result'][0])
-        self.assertSequenceEqual(json_response['result'][1],
+        self.assertSequenceEqual(json_response[0]['result'][1],
                                  api_response['result'][1])
 
 
@@ -524,7 +615,9 @@ class SurveyTest(AsyncHTTPTestCase):
 
     def testGetPrefix(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         response = self.fetch('/survey/{}'.format(survey_id[:35]))
         response2 = self.fetch('/survey/{}'.format(survey_id))
         self.assertEqual(response.code, 200)
@@ -532,7 +625,9 @@ class SurveyTest(AsyncHTTPTestCase):
 
     def testGet(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         response = self.fetch('/survey/{}'.format(survey_id))
         self.assertEqual(response.code, 200)
 
@@ -542,9 +637,12 @@ class SurveyTest(AsyncHTTPTestCase):
 
     def testPost(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         answer_json = {'survey_id': survey_id, 'answers': [
-            {'question_id': get_questions(survey_id).first().question_id,
+            {'question_id': get_questions_no_credentials(
+                survey_id).first().question_id,
              'answer': 1,
              'is_other': False}]}
         response = self.fetch('/survey/{}'.format(survey_id), method='POST',
@@ -561,7 +659,9 @@ class SurveyTest(AsyncHTTPTestCase):
 
     def testPostNotJson(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         response = self.fetch('/survey/{}'.format(survey_id), method='POST',
                               body='not even close to json')
 
@@ -571,7 +671,9 @@ class SurveyTest(AsyncHTTPTestCase):
 
     def testPostMissingValue(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         answer_json = {'survey_id': survey_id}
         response = self.fetch('/survey/{}'.format(survey_id), method='POST',
                               body=json_encode(answer_json))
@@ -581,11 +683,16 @@ class SurveyTest(AsyncHTTPTestCase):
 
     def testPostWrongSurveyID(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         wrong_id = survey_table.select().where(
-            survey_table.c.title != 'test_title').execute().first().survey_id
+            survey_table.c.survey_title != 'test_title').execute().first(
+
+        ).survey_id
         answer_json = {'survey_id': wrong_id, 'answers': [
-            {'question_id': get_questions(survey_id).first().question_id,
+            {'question_id': get_questions_no_credentials(
+                survey_id).first().question_id,
              'answer': 1,
              'is_other': False}]}
         response = self.fetch('/survey/{}'.format(survey_id), method='POST',
@@ -596,11 +703,16 @@ class SurveyTest(AsyncHTTPTestCase):
 
     def testPostWrongQuestionID(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         wrong_id = survey_table.select().where(
-            survey_table.c.title != 'test_title').execute().first().survey_id
+            survey_table.c.survey_title != 'test_title').execute().first(
+
+        ).survey_id
         answer_json = {'survey_id': survey_id, 'answers': [
-            {'question_id': get_questions(wrong_id).first().question_id,
+            {'question_id': get_questions_no_credentials(
+                wrong_id).first().question_id,
              'answer': 1,
              'is_other': False}]}
         response = self.fetch('/survey/{}'.format(survey_id), method='POST',
@@ -629,7 +741,9 @@ class ViewTest(AsyncHTTPTestCase):
 
     def testGetSubmissions(self):
         survey_id = survey_table.select().where(
-            survey_table.c.title == 'test_title').execute().first().survey_id
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
         _create_submission()
         with mock.patch.object(ViewSubmissionsHandler,
                                'get_secure_cookie') as m:

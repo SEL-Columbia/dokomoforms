@@ -14,9 +14,7 @@ import api.aggregation
 import api.survey
 import api.submission
 import api.user
-from pages.api.aggregations import MinAPIHandler, MaxAPIHandler, SumAPIHandler, \
-    CountAPIHandler, AvgAPIHandler, StddevPopAPIHandler, StddevSampAPIHandler, \
-    TimeSeriesAPIHandler, BarGraphAPIHandler, ModeAPIHandler
+from pages.api.aggregations import AggregationHandler
 from pages.auth import LogoutHandler, LoginHandler
 from pages.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler
@@ -58,7 +56,7 @@ class Survey(BaseHandler):
                 survey = api.survey.display_survey(survey_id)
                 self.render('survey.html',
                             survey=json_encode(survey),
-                            title=survey['title'])
+                            survey_title=survey['survey_title'])
         except (SurveyPrefixDoesNotIdentifyASurveyError,
                 SurveyPrefixTooShortError):
             raise tornado.web.HTTPError(404)
@@ -129,16 +127,7 @@ pages = [
     (r'/user/generate-api-token/?', APITokenGenerator),
 
     # Testing
-    (r'/api/min/({})/?'.format(UUID_REGEX), MinAPIHandler),
-    (r'/api/max/({})/?'.format(UUID_REGEX), MaxAPIHandler),
-    (r'/api/sum/({})/?'.format(UUID_REGEX), SumAPIHandler),
-    (r'/api/count/({})/?'.format(UUID_REGEX), CountAPIHandler),
-    (r'/api/avg/({})/?'.format(UUID_REGEX), AvgAPIHandler),
-    (r'/api/mode/({})/?'.format(UUID_REGEX), ModeAPIHandler),
-    (r'/api/stddev_pop/({})/?'.format(UUID_REGEX), StddevPopAPIHandler),
-    (r'/api/stddev_samp/({})/?'.format(UUID_REGEX), StddevSampAPIHandler),
-    (r'/api/time_series/({})/?'.format(UUID_REGEX), TimeSeriesAPIHandler),
-    (r'/api/bar_graph/({})/?'.format(UUID_REGEX), BarGraphAPIHandler),
+    (r'/api/aggregate/({})/?'.format(UUID_REGEX), AggregationHandler),
 
     (r'/api/surveys/?', SurveysAPIHandler),
     (r'/api/surveys/({})/?'.format(UUID_REGEX), SingleSurveyAPIHandler),
