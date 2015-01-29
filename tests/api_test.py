@@ -1210,6 +1210,28 @@ class TestAggregation(unittest.TestCase):
     #         api.aggregation.mode(q_id, email='test_email'),
     #         {'result': repeated_choice, 'query': 'mode'})
 
+    def testTimeSeries(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        q_id = question.question_id
+
+        for i in range(3):
+            input_data = {'survey_id': survey_id,
+                          'answers':
+                              [{'question_id': q_id,
+                                'answer': i,
+                                'is_other': False}]}
+            api.submission.submit(input_data)
+
+        res = api.aggregation.time_series(q_id, email='test_email')['result']
+        self.assertEqual(len(res), 2)
+        self.assertEqual(len(res[0]), 3)
+        self.assertEqual(len(res[1]), 3)
+
 
 if __name__ == '__main__':
     unittest.main()

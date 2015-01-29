@@ -4,13 +4,14 @@ from numbers import Real
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.functions import GenericFunction, min as sqlmin, \
     max as sqlmax, sum as sqlsum, count as sqlcount
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func, and_
 
 from db import engine
 from db.answer import answer_table
 from db.answer_choice import answer_choice_table
 from db.auth_user import get_auth_user_by_email
 from db.question import question_select, QuestionDoesNotExistError
+from db.submission import submission_table
 from db.survey import survey_table
 
 
@@ -30,10 +31,10 @@ def _get_user(auth_user_id: str=None, email: str=None):
     raise TypeError('You must specify either auth_user_id or email')
 
 
-def _return_scalar(result: Real,
-                   survey_id: str,
-                   auth_user_id: str,
-                   question_id: str) -> Real:
+def _return_sql(result: Real,
+                survey_id: str,
+                auth_user_id: str,
+                question_id: str) -> Real:
     """
     Get the result for a _scalar-y function.
 
@@ -106,7 +107,7 @@ def _scalar(question_id: str,
     finally:
         session.close()
 
-    return _return_scalar(result, question.survey_id, user_id, question_id)
+    return _return_sql(result, question.survey_id, user_id, question_id)
 
 
 class NoSubmissionsToQuestionError(Exception):
@@ -244,14 +245,14 @@ def stddev_samp(question_id: str,
 
 
 # def mode(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
-#     """
-#     Get the mode of answers to the specified question, or the first one if
-#     there are multiple equally-frequent results. You must provide either an
-#     auth_user_id or e-mail address.
+# """
+# Get the mode of answers to the specified question, or the first one if
+# there are multiple equally-frequent results. You must provide either an
+# auth_user_id or e-mail address.
 #
-#     :param question_id: the UUID of the question
-#     :param auth_user_id: the UUID of the user
-#     :param email: the e-mail address of the user
+# :param question_id: the UUID of the question
+# :param auth_user_id: the UUID of the user
+# :param email: the e-mail address of the user
 #     :return: a JSON dict containing the result
 #     """
 #     user_id, user_email = _get_user(auth_user_id, email)
@@ -259,7 +260,8 @@ def stddev_samp(question_id: str,
 #     if user_email is not None:
 #         user_id = get_auth_user_by_email(user_email).auth_user_id
 #
-#     allowable_types = {'text', 'integer', 'decimal', 'multiple_choice', 'date',
+#     allowable_types = {'text', 'integer', 'decimal', 'multiple_choice',
+# 'date',
 #                        'time', 'location'}
 #
 #     question = question_select(question_id)
@@ -267,7 +269,8 @@ def stddev_samp(question_id: str,
 #     if tcn not in allowable_types:
 #         raise InvalidTypeForAggregationError(tcn)
 #
-#     # Assume that you only want to consider the non-other answers for the mode
+#     # Assume that you only want to consider the non-other answers for the
+# mode
 #
 #     if tcn == 'multiple_choice':
 #         table_name = 'answer_choice'
@@ -286,3 +289,50 @@ def stddev_samp(question_id: str,
 #     final = _return_scalar(result, question.survey_id, user_id, question_id)
 #
 #     return {'result': final, 'query': 'mode'}
+
+def time_series(question_id: str, auth_user_id: str=None,
+                email: str=None) -> dict:
+    """
+    Get a list of submissions to the specified question over time. You must
+    provide either an auth_user_id or e-mail address.
+
+    :param question_id: the UUID of the question
+    :param auth_user_id: the UUID of the user
+    :param email: the e-mail address of the user.
+    :return: a JSON dict containing the result
+    """
+    user_id, user_email = _get_user(auth_user_id, email)
+    # TODO: See if not doing a 3-table join is a performance problem
+    if user_email is not None:
+        user_id = get_auth_user_by_email(user_email).auth_user_id
+
+    allowable_types = {'text', 'integer', 'decimal', 'multiple_choice', 'date',
+                       'time', 'location'}
+
+    question = question_select(question_id)
+    tcn = question.type_constraint_name
+    if tcn not in allowable_types:
+        raise InvalidTypeForAggregationError(tcn)
+
+    # Assume that you only want to consider the non-other answers for the mode
+    if tcn == 'multiple_choice':
+        table = answer_choice_table
+        column_name = 'question_choice_id'
+    else:
+        table = answer_table
+        column_name = 'answer_' + tcn
+
+    survey_condition = table.c.survey_id == survey_table.c.survey_id
+    join_table = table.join(survey_table, survey_condition)
+    submission_cond = table.c.submission_id == submission_table.c.submission_id
+    join_table = join_table.join(submission_table, submission_cond)
+
+    where_stmt = join_table.select().where(
+        and_(table.c.question_id == question_id,
+             survey_table.c.auth_user_id == user_id))
+    result = _return_sql(where_stmt.order_by('submission_time asc').execute(),
+                         question.survey_id, auth_user_id, question_id)
+    # transpose the result into two lists: time and value
+    genexp = ((r.submission_time.isoformat(), r[column_name]) for r in result)
+    time_series_result = list(zip(*genexp))
+    return {'result': time_series_result, 'query': 'time_series'}
