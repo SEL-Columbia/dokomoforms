@@ -50,12 +50,19 @@ class StddevSampAPIHandler(APIHandler):
 
 
 # class ModeAPIHandler(APIHandler):
-#     def get(self, question_id: str):
-#         response = api.aggregation.mode(question_id, email=get_email(self))
-#         self.write(json_encode(response))
+# def get(self, question_id: str):
+# response = api.aggregation.mode(question_id, email=get_email(self))
+# self.write(json_encode(response))
 
 class TimeSeriesAPIHandler(APIHandler):
     def get(self, question_id: str):
         response = api.aggregation.time_series(question_id,
                                                email=get_email(self))
+        self.write(json_encode(response))
+
+
+class BarGraphAPIHandler(APIHandler):
+    def get(self, question_id: str):
+        response = api.aggregation.bar_graph(question_id,
+                                             email=get_email(self))
         self.write(json_encode(response))

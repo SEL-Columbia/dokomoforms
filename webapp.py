@@ -16,7 +16,7 @@ import api.submission
 import api.user
 from pages.api.aggregations import MinAPIHandler, MaxAPIHandler, SumAPIHandler, \
     CountAPIHandler, AvgAPIHandler, StddevPopAPIHandler, StddevSampAPIHandler, \
-    TimeSeriesAPIHandler
+    TimeSeriesAPIHandler, BarGraphAPIHandler
 from pages.auth import LogoutHandler, LoginHandler
 from pages.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler
@@ -138,6 +138,7 @@ pages = [
     (r'/api/stddev_samp/({})/?'.format(UUID_REGEX), StddevSampAPIHandler),
     # (r'/api/mode/({})/?'.format(UUID_REGEX), ModeAPIHandler),
     (r'/api/time_series/({})/?'.format(UUID_REGEX), TimeSeriesAPIHandler),
+    (r'/api/bar_graph/({})/?'.format(UUID_REGEX), BarGraphAPIHandler),
 
     (r'/api/surveys/?', SurveysAPIHandler),
     (r'/api/surveys/({})/?'.format(UUID_REGEX), SingleSurveyAPIHandler),

@@ -30,7 +30,7 @@ from pages.api.aggregations import MinAPIHandler, MaxAPIHandler, \
     SumAPIHandler, \
     CountAPIHandler, AvgAPIHandler, StddevPopAPIHandler, \
     StddevSampAPIHandler, \
-    TimeSeriesAPIHandler
+    TimeSeriesAPIHandler, BarGraphAPIHandler
 from pages.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler
 from pages.api.surveys import SurveysAPIHandler, SingleSurveyAPIHandler
@@ -412,6 +412,35 @@ class APITest(AsyncHTTPTestCase):
         json_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(json_response, [])
         api_response = api.aggregation.time_series(q_id, email='test_email')
+        self.assertSequenceEqual(json_response['result'][0],
+                                 api_response['result'][0])
+        self.assertSequenceEqual(json_response['result'][1],
+                                 api_response['result'][1])
+
+    def testGetBarGraph(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        q_id = question.question_id
+
+        for i in [0, 2, 1, 0]:
+            input_data = {'survey_id': survey_id,
+                          'answers':
+                              [{'question_id': q_id,
+                                'answer': i,
+                                'is_other': False}]}
+            api.submission.submit(input_data)
+
+        with mock.patch.object(BarGraphAPIHandler, 'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/bar_graph/{}'.format(q_id))
+        self.assertEqual(response.code, 200)
+        json_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(json_response, [])
+        api_response = api.aggregation.bar_graph(q_id, email='test_email')
         self.assertSequenceEqual(json_response['result'][0],
                                  api_response['result'][0])
         self.assertSequenceEqual(json_response['result'][1],
