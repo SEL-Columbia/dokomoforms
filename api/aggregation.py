@@ -1,6 +1,7 @@
 """Functions for aggregating and interacting with submission data."""
 from numbers import Real
 
+from sqlalchemy.engine import RowProxy
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.functions import GenericFunction, min as sqlmin, \
     max as sqlmax, sum as sqlsum, count as sqlcount
@@ -31,10 +32,10 @@ def _get_user(auth_user_id: str=None, email: str=None):
     raise TypeError('You must specify either auth_user_id or email')
 
 
-def _return_sql(result: Real,
+def _return_sql(result: object,
                 survey_id: str,
                 auth_user_id: str,
-                question_id: str) -> Real:
+                question_id: str) -> object:
     """
     Get the result for a _scalar-y function.
 
@@ -56,6 +57,50 @@ def _return_sql(result: Real,
     return result
 
 
+def _table_and_column(type_constraint_name: str) -> tuple:
+    """
+    Get the table and column name relevant for an aggregation.
+    :param type_constraint_name: the type constraint of the table
+    :return: (table, column_name)
+    """
+    # Assume that you only want to consider the non-other answers
+    if type_constraint_name == 'multiple_choice':
+        table = answer_choice_table
+        column_name = 'question_choice_id'
+    else:
+        table = answer_table
+        column_name = 'answer_' + type_constraint_name
+    return table, column_name
+
+
+def _get_type_constraint_name(allowable_types: set, question: RowProxy) -> str:
+    """
+    Return the type_constraint_name for a question if it is an allowable type.
+    :param allowable_types: the set of allowable types
+    :param question: the SQLAlchemy RowProxy representing the question
+    :return: the type_constraint_name
+    :raise InvalidTypeForAggregationError: if the type is not allowable
+    """
+    tcn = question.type_constraint_name
+    if tcn not in allowable_types:
+        raise InvalidTypeForAggregationError(tcn)
+    return tcn
+
+
+def _get_user_id(auth_user_id: str, email: str) -> str:
+    """
+    Get the auth_user_id, whether it or the e-mail address is provided
+    :param auth_user_id: the auth_user_id, if provided
+    :param email: the e-mail address, if provided
+    :return: the auth_user_id
+    """
+    user_id, user_email = _get_user(auth_user_id, email)
+    # TODO: See if not doing a 3-table join is a performance problem
+    if user_email is not None:
+        user_id = get_auth_user_by_email(user_email).auth_user_id
+    return user_id
+
+
 def _scalar(question_id: str,
             sql_function: GenericFunction,
             *,
@@ -75,25 +120,16 @@ def _scalar(question_id: str,
     :return: the result of the SQL function
     :raise InvalidTypeForAggregationError: if the type constraint name is bad
     """
-    user_id, user_email = _get_user(auth_user_id, email)
-    # TODO: See if not doing a 3-table join is a performance problem
-    if user_email is not None:
-        user_id = get_auth_user_by_email(user_email).auth_user_id
+    user_id = _get_user_id(auth_user_id, email)
 
     question = question_select(question_id)
 
-    tcn = question.type_constraint_name
-    if tcn not in allowable_types:
-        raise InvalidTypeForAggregationError(tcn)
+    tcn = _get_type_constraint_name(allowable_types, question)
     if is_other:
         tcn = 'text'
 
-    if tcn == 'multiple_choice':
-        table = answer_choice_table
-        column_name = 'question_choice_id'
-    else:
-        table = answer_table
-        column_name = 'answer_' + tcn
+    table, column_name = _table_and_column(tcn)
+
     join_condition = table.c.survey_id == survey_table.c.survey_id
     condition = (table.c.question_id == question_id,
                  survey_table.c.auth_user_id == user_id)
@@ -253,11 +289,11 @@ def stddev_samp(question_id: str,
 # :param question_id: the UUID of the question
 # :param auth_user_id: the UUID of the user
 # :param email: the e-mail address of the user
-#     :return: a JSON dict containing the result
-#     """
-#     user_id, user_email = _get_user(auth_user_id, email)
-#     # TODO: See if not doing a 3-table join is a performance problem
-#     if user_email is not None:
+# :return: a JSON dict containing the result
+# """
+# user_id, user_email = _get_user(auth_user_id, email)
+# # TODO: See if not doing a 3-table join is a performance problem
+# if user_email is not None:
 #         user_id = get_auth_user_by_email(user_email).auth_user_id
 #
 #     allowable_types = {'text', 'integer', 'decimal', 'multiple_choice',
@@ -299,28 +335,19 @@ def time_series(question_id: str, auth_user_id: str=None,
     :param question_id: the UUID of the question
     :param auth_user_id: the UUID of the user
     :param email: the e-mail address of the user.
-    :return: a JSON dict containing the result
+    :return: a JSON dict containing the result [[times], [values]]
     """
-    user_id, user_email = _get_user(auth_user_id, email)
-    # TODO: See if not doing a 3-table join is a performance problem
-    if user_email is not None:
-        user_id = get_auth_user_by_email(user_email).auth_user_id
+    user_id = _get_user_id(auth_user_id, email)
 
     allowable_types = {'text', 'integer', 'decimal', 'multiple_choice', 'date',
                        'time', 'location'}
 
     question = question_select(question_id)
-    tcn = question.type_constraint_name
-    if tcn not in allowable_types:
-        raise InvalidTypeForAggregationError(tcn)
 
-    # Assume that you only want to consider the non-other answers for the mode
-    if tcn == 'multiple_choice':
-        table = answer_choice_table
-        column_name = 'question_choice_id'
-    else:
-        table = answer_table
-        column_name = 'answer_' + tcn
+    tcn = _get_type_constraint_name(allowable_types, question)
+
+    # Assume that you only want to consider the non-other answers
+    table, column_name = _table_and_column(tcn)
 
     survey_condition = table.c.survey_id == survey_table.c.survey_id
     join_table = table.join(survey_table, survey_condition)
@@ -336,3 +363,45 @@ def time_series(question_id: str, auth_user_id: str=None,
     genexp = ((r.submission_time.isoformat(), r[column_name]) for r in result)
     time_series_result = list(zip(*genexp))
     return {'result': time_series_result, 'query': 'time_series'}
+
+
+def bar_graph(question_id: str, auth_user_id: str=None,
+              email: str=None) -> dict:
+    """
+    Get a list of the number of times each submission value appears. You must
+    provide either an auth_user_id or e-mail address.
+
+    :param question_id: the UUID of the question
+    :param auth_user_id: the UUID of the user
+    :param email: the e-mail address of the user.
+    :return: a JSON dict containing the result [[values], [counts]]
+    """
+    user_id = _get_user_id(auth_user_id, email)
+
+    allowable_types = {'text', 'integer', 'decimal', 'multiple_choice', 'date',
+                       'time', 'location'}
+
+    question = question_select(question_id)
+
+    tcn = _get_type_constraint_name(allowable_types, question)
+
+    # Assume that you only want to consider the non-other answers
+    table, column_name = _table_and_column(tcn)
+    join_condition = table.c.survey_id == survey_table.c.survey_id
+    condition = (table.c.question_id == question_id,
+                 survey_table.c.auth_user_id == user_id)
+    column = table.c.get(column_name)
+
+    session = sessionmaker(bind=engine)()
+    try:
+        column_query = session.query(column, sqlcount(column)).group_by(
+            column).order_by(column)
+        join_query = column_query.join(survey_table, join_condition)
+        result = join_query.filter(*condition)
+    finally:
+        session.close()
+
+    result = _return_sql(result, question.survey_id, user_id, question_id)
+    # transpose the result into two lists: value and count
+    bar_graph_result = list(zip(*result))
+    return {'result': bar_graph_result, 'query': 'bar_graph'}
