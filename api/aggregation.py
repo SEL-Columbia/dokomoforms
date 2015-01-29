@@ -1,6 +1,8 @@
 """Functions for aggregating and interacting with submission data."""
 from numbers import Real
 
+from sqlalchemy import desc
+
 from sqlalchemy.engine import RowProxy
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.functions import GenericFunction, min as sqlmin, \
@@ -280,52 +282,6 @@ def stddev_samp(question_id: str,
             'query': 'stddev_samp'}
 
 
-# def mode(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
-# """
-# Get the mode of answers to the specified question, or the first one if
-# there are multiple equally-frequent results. You must provide either an
-# auth_user_id or e-mail address.
-#
-# :param question_id: the UUID of the question
-# :param auth_user_id: the UUID of the user
-# :param email: the e-mail address of the user
-# :return: a JSON dict containing the result
-# """
-# user_id, user_email = _get_user(auth_user_id, email)
-# # TODO: See if not doing a 3-table join is a performance problem
-# if user_email is not None:
-#         user_id = get_auth_user_by_email(user_email).auth_user_id
-#
-#     allowable_types = {'text', 'integer', 'decimal', 'multiple_choice',
-# 'date',
-#                        'time', 'location'}
-#
-#     question = question_select(question_id)
-#     tcn = question.type_constraint_name
-#     if tcn not in allowable_types:
-#         raise InvalidTypeForAggregationError(tcn)
-#
-#     # Assume that you only want to consider the non-other answers for the
-# mode
-#
-#     if tcn == 'multiple_choice':
-#         table_name = 'answer_choice'
-#         column_name = 'question_choice_id'
-#     else:
-#         table_name = 'answer'
-#         column_name = 'answer_' + tcn
-#
-#     query = """SELECT MODE() WITHIN GROUP (ORDER BY {0}) FROM {1} JOIN
-#     survey ON {1}.survey_id = survey.survey_id WHERE auth_user_id = '{2}'
-#     AND question_id = '{3}'"""
-#
-#     result = engine.execute(
-#         query.format(column_name, table_name, user_id, question_id)).scalar()
-#
-#     final = _return_scalar(result, question.survey_id, user_id, question_id)
-#
-#     return {'result': final, 'query': 'mode'}
-
 def time_series(question_id: str, auth_user_id: str=None,
                 email: str=None) -> dict:
     """
@@ -365,8 +321,11 @@ def time_series(question_id: str, auth_user_id: str=None,
     return {'result': time_series_result, 'query': 'time_series'}
 
 
-def bar_graph(question_id: str, auth_user_id: str=None,
-              email: str=None) -> dict:
+def bar_graph(question_id: str,
+              auth_user_id: str=None,
+              email: str=None,
+              limit: int=None,
+              count_order: bool=False) -> dict:
     """
     Get a list of the number of times each submission value appears. You must
     provide either an auth_user_id or e-mail address.
@@ -374,6 +333,8 @@ def bar_graph(question_id: str, auth_user_id: str=None,
     :param question_id: the UUID of the question
     :param auth_user_id: the UUID of the user
     :param email: the e-mail address of the user.
+    :param limit: a limit on the number of results
+    :param count_order: whether to order from largest count to smallest
     :return: a JSON dict containing the result [[values], [counts]]
     """
     user_id = _get_user_id(auth_user_id, email)
@@ -394,10 +355,14 @@ def bar_graph(question_id: str, auth_user_id: str=None,
 
     session = sessionmaker(bind=engine)()
     try:
-        column_query = session.query(column, sqlcount(column)).group_by(
-            column).order_by(column)
-        join_query = column_query.join(survey_table, join_condition)
-        result = join_query.filter(*condition)
+        column_query = session.query(column, sqlcount(column)).group_by(column)
+        if count_order:
+            ordering = desc(sqlcount(column))
+        else:
+            ordering = column
+        ordered_query = column_query.order_by(ordering)
+        join_query = ordered_query.join(survey_table, join_condition)
+        result = join_query.filter(*condition).limit(limit)
     finally:
         session.close()
 
@@ -405,3 +370,18 @@ def bar_graph(question_id: str, auth_user_id: str=None,
     # transpose the result into two lists: value and count
     bar_graph_result = list(zip(*result))
     return {'result': bar_graph_result, 'query': 'bar_graph'}
+
+
+def mode(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
+    """
+    Get the mode of answers to the specified question, or the first one if
+    there are multiple equally-frequent results. You must provide either an
+    auth_user_id or e-mail address.
+
+    :param question_id: the UUID of the question
+    :param auth_user_id: the UUID of the user
+    :param email: the e-mail address of the user
+    :return: a JSON dict containing the result
+    """
+    bar_graph_top = bar_graph(question_id, auth_user_id, email, 1, True)
+    return {'result': bar_graph_top['result'][0][0], 'query': 'mode'}

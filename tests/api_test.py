@@ -1142,35 +1142,36 @@ class TestAggregation(unittest.TestCase):
             api.aggregation.stddev_samp(q_id, email='test_email')['result'],
             1)
 
-    # def testMode(self):
-    # survey_id = survey_table.select().where(
-    #         survey_table.c.title == 'test_title').execute().first().survey_id
-    #     and_cond = and_(question_table.c.survey_id == survey_id,
-    #                     question_table.c.type_constraint_name == 'integer')
-    #     q_where = question_table.select().where(and_cond)
-    #     question = q_where.execute().first()
-    #     q_id = question.question_id
-    #
-    #     for i in (1, 2, 2, 3):
-    #         input_data = {'survey_id': survey_id,
-    #                       'answers':
-    #                           [{'question_id': q_id,
-    #                             'answer': i,
-    #                             'is_other': False}]}
-    #         api.submission.submit(input_data)
-    #
-    #     self.assertEqual(
-    #         api.aggregation.mode(q_id, email='test_email'),
-    #         {'result': 2, 'query': 'mode'})
-    #
-    #     self.assertEqual(
-    #         api.aggregation.mode(q_id, auth_user_id=get_auth_user_by_email(
-    #             'test_email').auth_user_id),
-    #         {'result': 2, 'query': 'mode'})
+    def testMode(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.title == 'test_title').execute().first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        q_id = question.question_id
+
+        for i in (1, 2, 2, 2, 3, 3):
+            input_data = {'survey_id': survey_id,
+                          'answers':
+                              [{'question_id': q_id,
+                                'answer': i,
+                                'is_other': False}]}
+            api.submission.submit(input_data)
+
+        self.assertEqual(
+            api.aggregation.mode(q_id, email='test_email'),
+            {'result': 2, 'query': 'mode'})
+
+        self.assertEqual(
+            api.aggregation.mode(q_id, auth_user_id=get_auth_user_by_email(
+                'test_email').auth_user_id),
+            {'result': 2, 'query': 'mode'})
+
     #
     #
     # def testModeBadeType(self):
-    #     q_where = question_table.select().where(
+    # q_where = question_table.select().where(
     #         question_table.c.type_constraint_name == 'note')
     #     question = q_where.execute().first()
     #     question_id = question.question_id
