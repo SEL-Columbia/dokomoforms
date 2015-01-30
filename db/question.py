@@ -8,6 +8,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.functions import max as sqlmax
 
 from db import engine
+from db.auth_user import auth_user_table
+from db.survey import survey_table, SurveyDoesNotExistError
 
 
 question_table = Table('question', MetaData(bind=engine), autoload=True)
@@ -59,7 +61,7 @@ def question_insert(*,
                     hint: str,
                     allow_multiple: bool,
                     logic: dict,
-                    title: str,
+                    question_title: str,
                     type_constraint_name: str,
                     question_to_sequence_number: int,
                     survey_id: str) -> Insert:
@@ -76,7 +78,8 @@ def question_insert(*,
     :param allow_multiple: whether you can give multiple responses. Default
                            False.
     :param logic: the logical constraint (min or max value, etc) as JSON
-    :param title: the question title (for example, 'What is your name?')
+    :param question_title: the question title (for example, 'What is your
+    name?')
     :param type_constraint_name: The type of the question. Can be:
                                  text
                                  integer
@@ -95,7 +98,7 @@ def question_insert(*,
         raise TypeError('logic must not be None')
     tcn = type_constraint_name
     # These values must be provided in the insert statement
-    values = {'title': title,
+    values = {'question_title': question_title,
               'type_constraint_name': tcn,
               'survey_id': survey_id,
               'sequence_number': sequence_number,
@@ -130,7 +133,32 @@ class MissingMinimalLogicError(Exception):
     pass
 
 
-def get_questions(survey_id: str) -> ResultProxy:
+def get_questions(survey_id: str,
+                  auth_user_id: str=None,
+                  email: str=None) -> ResultProxy:
+    q_sur_cond = question_table.c.survey_id == survey_table.c.survey_id
+    question_survey = question_table.join(survey_table, q_sur_cond)
+
+    if auth_user_id is not None:
+        if email is not None:
+            raise TypeError('You cannot specify both auth_user_id and email')
+        table = question_survey
+        cond = and_(question_table.c.survey_id == survey_id,
+                    survey_table.c.auth_user_id == auth_user_id)
+    elif email is not None:
+        j_cond = survey_table.c.auth_user_id == auth_user_table.c.auth_user_id
+        table = question_survey.join(auth_user_table, j_cond)
+        cond = and_(question_table.c.survey_id == survey_id,
+                    auth_user_table.c.email == email)
+    else:
+        raise TypeError('You must specify either auth_user_id or email')
+
+    questions = table.select().where(cond). \
+        order_by('sequence_number asc').execute()
+    return questions
+
+
+def get_questions_no_credentials(survey_id: str) -> ResultProxy:
     """
     Get all the questions for a survey identified by survey_id ordered by
     sequence number.
