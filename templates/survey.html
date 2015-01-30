@@ -2,7 +2,7 @@
 
 {% block content %}
     <div class="nav">
-        <div class="nav__title">{{ title }}</div>
+        <div class="nav__title">{{ survey_title }}</div>
         <div class="icon nav__sync sel_logo"><img src="/static/img/SEL_logo_sm.png"></div>
     </div>
     
@@ -23,7 +23,7 @@
     </div>
 
     <script id="widget_text" type="text/html">
-        <div class="question__title"><%- question.title %></div>
+        <div class="question__title"><%- question.question_title %></div>
         <input class="text_input" type="text"
             value="<%- question.answer[0] || question.default || '' %>">
 
@@ -40,7 +40,7 @@
     </script>
     
     <script id="widget_integer" type="text/html">
-        <div class="question__title"><%- question.title %></div>
+        <div class="question__title"><%- question.question_title %></div>
         <input class="text_input" type="number"
             value="<%- question.answer[0] || question.default || '' %>"
             <% if (question.min != null){ %>
@@ -71,7 +71,7 @@
     </script>
     
     <script id="widget_location" type="text/html">
-        <div class="question__title"><%- question.title %></div>
+        <div class="question__title"><%- question.question_title %></div>
         <div id="map" class="question__map"></div>
 
         <% _.each(question.answer, function(ans) { %>
@@ -85,7 +85,7 @@
     </script>
 
     <script id="widget_multiple_choice" type="text/html">
-        <div class="question__title"><%- question.title %></div>
+        <div class="question__title"><%- question.question_title %></div>
         <select <%  if (question.allow_multiple) { %> 
             multiple size=<%- question.choices.length + 1 + 1*question.logic['with_other']%> 
         <% } %>>
@@ -113,7 +113,7 @@
     </script>
 
     <script id="widget_decimal" type="text/html">
-        <div class="question__title"><%- question.title %></div>
+        <div class="question__title"><%- question.question_title %></div>
         <input class="text_input" type="number" step="any"
             value="<%- question.answer[0] || question.default || '' %>">
 
@@ -130,7 +130,7 @@
     </script>
 
     <script id="widget_date" type="text/html">
-        <div class="question__title"><%- question.title %></div>
+        <div class="question__title"><%- question.question_title %></div>
         <input class="text_input" type="date" value="<%- question.answer[0] || question.default || '' %>">
         <% if (question.answer.length > 1){ %>
             <% _.each(question.answer.slice(1), function(ans) { %>
@@ -144,7 +144,7 @@
     </script>
 
     <script id="widget_time" type="text/html">
-        <div class="question__title"><%- question.title %></div>
+        <div class="question__title"><%- question.question_title %></div>
         <input class="text_input" type="time" value="<%- question.answer[0] || question.default || '' %>">
         <% if (question.answer.length > 1){ %>
             <% _.each(question.answer.slice(1), function(ans) { %>
@@ -158,7 +158,7 @@
     </script>
 
     <script id="widget_note" type="text/html">
-        <div class="question__title"><%- question.title %></div>
+        <div class="question__title"><%- question.question_title %></div>
     </script>
 
     <script id="template_submit" type="text/html">

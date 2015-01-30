@@ -13,15 +13,16 @@ from db.auth_user import auth_user_table
 survey_table = Table('survey', MetaData(bind=engine), autoload=True)
 
 
-def survey_insert(*, auth_user_id: str, title: str) -> Insert:
+def survey_insert(*, auth_user_id: str, survey_title: str) -> Insert:
     """
     Insert a record into the survey table.
 
     :param auth_user_id: The UUID of the user.
-    :param title: The survey's title
+    :param survey_title: The survey's title
     :return: The Insert object. Execute this!
     """
-    return survey_table.insert().values(title=title, auth_user_id=auth_user_id)
+    return survey_table.insert().values(survey_title=survey_title,
+                                        auth_user_id=auth_user_id)
 
 
 def get_surveys_by_email(email: str, limit: int=None) -> ResultProxy:
@@ -134,7 +135,7 @@ def _conflicting(title: str, surveys: ResultProxy) -> Iterator:
     for survey in surveys:
         # Match things like "title(1)"
         pattern = r'{}\((\d+)\)'.format(title)
-        match = re.match(pattern, survey.title)
+        match = re.match(pattern, survey.survey_title)
         if match:
             number = match.groups()[0]
             yield int(number)
@@ -153,10 +154,10 @@ def get_free_title(title: str) -> str:
     :return: a title that can be inserted safely
     """
     (does_exist, ), = engine.execute(
-        select((exists().where(survey_table.c.title == title),)))
+        select((exists().where(survey_table.c.survey_title == title),)))
     if not does_exist:
         return title
-    cond = survey_table.c.title.like(title + '%')
+    cond = survey_table.c.survey_title.like(title + '%')
     similar_surveys = survey_table.select().where(cond).execute().fetchall()
     conflicts = list(_conflicting(title, similar_surveys))
     free_number = max(conflicts) + 1 if len(conflicts) else 1
@@ -177,6 +178,7 @@ class SurveyPrefixDoesNotIdentifyASurveyError(Exception):
 
 class SurveyPrefixTooShortError(Exception):
     pass
+
 
 class IncorrectQuestionIdError(Exception):
     pass
