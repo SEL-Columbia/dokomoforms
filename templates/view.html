@@ -11,7 +11,7 @@
             <ul>
                 {% for survey, num_submissions in surveys %}
                     <li>
-                        <a href="/view/{{ survey.survey_id }}">{{ survey.title }}</a>
+                        <a href="/view/{{ survey.survey_id }}">{{ survey.survey_title }}</a>
                         <!- THIS IS BAD AND LOOKS BAD -- SORRY -- VIKTOR ->
                         Number of submissions: {{ num_submissions }}
                         ---

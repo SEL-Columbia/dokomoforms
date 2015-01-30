@@ -66,7 +66,7 @@ class SubmissionTest(DriverTest):
 
         # Click on the survey
         self.drv.find_element_by_xpath(
-            '/html/body/div/div[3]/div[1]/ul/li/a').click()
+            '/html/body/div/div[3]/div[2]/ul/li/a').click()
 
         # Click on the shareable link
         WebDriverWait(self.drv, 2).until(EC.presence_of_element_located(
@@ -76,9 +76,9 @@ class SubmissionTest(DriverTest):
 
         # Fill out the survey
         WebDriverWait(self.drv, 2).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div/div[5]/div/div')))
+            (By.XPATH, '/html/body/div/div[3]/input')))
         next_button = self.drv.find_element_by_class_name('page_nav__next')
-        in_xpath = '/html/body/div/div[4]/'
+        in_xpath = '/html/body/div/div[3]/'
 
         self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('1')
         next_button.click()
@@ -110,6 +110,7 @@ class SubmissionTest(DriverTest):
         self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('other 8')
         next_button.click()
         next_button.click()
+        # TODO: Not really sure how to test the facility question...
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
             (By.XPATH, in_xpath + 'div[2]/div[1]/div[2]/div[3]/img[1]')))
         self.drv.find_element_by_xpath(
