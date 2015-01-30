@@ -139,7 +139,7 @@ def _get_fields(answer: RowProxy) -> dict:
     question_id = answer.question_id
     question = question_select(question_id)
     result_dict = {'question_id': question_id,
-                   'title': question.title,
+                   'question_title': question.question_title,
                    'sequence_number': question.sequence_number,
                    'type_constraint_name': tcn}
     try:

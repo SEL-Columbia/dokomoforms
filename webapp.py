@@ -5,19 +5,20 @@ This tornado server creates the client app by serving html/css/js and
 it also functions as the wsgi container for accepting survey form post
 requests back from the client app.
 """
-from pprint import pformat
-from sqlalchemy.exc import IntegrityError
 
-from tornado.escape import to_unicode, json_encode, json_decode
+from tornado.escape import json_encode
 import tornado.web
 import tornado.ioloop
 
+import api.aggregation
 import api.survey
 import api.submission
 import api.user
+from pages.api.aggregations import AggregationHandler
 from pages.auth import LogoutHandler, LoginHandler
-from pages.api.submissions import SubmissionsAPI, SingleSubmissionAPI
-from pages.api.surveys import SurveysAPI, SingleSurveyAPI
+from pages.api.submissions import SubmissionsAPIHandler, \
+    SingleSubmissionAPIHandler
+from pages.api.surveys import SurveysAPIHandler, SingleSurveyAPIHandler
 from pages.util.base import BaseHandler, get_json_request_body, \
     validation_message, catch_bare_integrity_error
 import pages.util.ui
@@ -55,7 +56,7 @@ class Survey(BaseHandler):
                 survey = api.survey.display_survey(survey_id)
                 self.render('survey.html',
                             survey=json_encode(survey),
-                            title=survey['title'])
+                            survey_title=survey['survey_title'])
         except (SurveyPrefixDoesNotIdentifyASurveyError,
                 SurveyPrefixTooShortError):
             raise tornado.web.HTTPError(404)
@@ -126,12 +127,14 @@ pages = [
     (r'/user/generate-api-token/?', APITokenGenerator),
 
     # Testing
-    (r'/api/surveys/?', SurveysAPI),
-    (r'/api/surveys/({})/?'.format(UUID_REGEX), SingleSurveyAPI),
+    (r'/api/aggregate/({})/?'.format(UUID_REGEX), AggregationHandler),
+
+    (r'/api/surveys/?', SurveysAPIHandler),
+    (r'/api/surveys/({})/?'.format(UUID_REGEX), SingleSurveyAPIHandler),
     (r'/api/surveys/({})/submissions/?'.format(UUID_REGEX),
-     SubmissionsAPI),
+     SubmissionsAPIHandler),
     (r'/api/submissions/({})/?'.format(UUID_REGEX),
-     SingleSubmissionAPI),
+     SingleSubmissionAPIHandler),
 ]
 
 if config.get('debug', False):
