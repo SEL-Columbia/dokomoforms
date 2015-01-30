@@ -47,7 +47,7 @@ class AuthTest(DriverTest):
         eml.send_keys('test@mockmyid.com', Keys.RETURN)
         self.drv.switch_to.window(self.drv.window_handles[0])
         load = EC.presence_of_element_located((By.ID, 'logout'))
-        WebDriverWait(self.drv, 7).until(load)
+        WebDriverWait(self.drv, 10).until(load)
 
         self.assertIn('Welcome: test@mockmyid.com', self.drv.page_source)
 
@@ -102,7 +102,7 @@ class SubmissionTest(DriverTest):
               }
             '''
         )
-        self.drv.find_element_by_xpath(in_xpath + 'div[4]').click()
+        self.drv.find_element_by_xpath(in_xpath + 'div[3]').click()
         next_button.click()
         self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('text 7')
         next_button.click()

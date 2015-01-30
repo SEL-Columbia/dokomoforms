@@ -43,7 +43,7 @@ def _insert_answer(answer: dict, submission_id: str, survey_id: str) -> Insert:
     value_dict['allow_multiple'] = question.allow_multiple
     # determine whether this is a choice selection
     is_mc = question.type_constraint_name == 'multiple_choice'
-    is_other = value_dict.pop('is_other')
+    is_other = value_dict.get('is_other')
     if is_mc and not is_other:
         value_dict['question_choice_id'] = value_dict.pop('answer')
         insert = answer_choice_insert
@@ -138,7 +138,7 @@ def _get_fields(answer: RowProxy) -> dict:
     question_id = answer.question_id
     question = question_select(question_id)
     result_dict = {'question_id': question_id,
-                   'title': question.title,
+                   'question_title': question.question_title,
                    'sequence_number': question.sequence_number,
                    'type_constraint_name': tcn}
     try:
@@ -154,11 +154,11 @@ def _get_fields(answer: RowProxy) -> dict:
     except AttributeError:
         # The answer is not a choice
         question = question_select(answer.question_id)
-        if question.logic['with_other']:
+        if ((answer.answer_text is None) or (tcn == 'text')):
+            result_dict['is_other'] = False
+        else:
             tcn = 'text'
             result_dict['is_other'] = True
-        else:
-            result_dict['is_other'] = False
         result_dict['answer'] = _jsonify(answer, tcn)
         result_dict['answer_id'] = answer.answer_id
         result_dict['choice'] = None

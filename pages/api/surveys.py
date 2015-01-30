@@ -6,7 +6,7 @@ import api.survey
 from pages.util.base import APIHandler, get_email
 
 
-class SurveysAPI(APIHandler):
+class SurveysAPIHandler(APIHandler):
     """The endpoint for getting all of a user's surveys."""
 
     def get(self):
@@ -17,7 +17,7 @@ class SurveysAPI(APIHandler):
         self.write(json_encode(api.survey.get_all(get_email(self))))
 
 
-class SingleSurveyAPI(APIHandler):
+class SingleSurveyAPIHandler(APIHandler):
     """The endpoint for getting a single survey."""
 
     def get(self, survey_id: str):

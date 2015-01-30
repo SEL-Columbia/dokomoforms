@@ -46,17 +46,22 @@ CREATE TABLE answer
 
   CONSTRAINT type_constraint_name_matches_answer_type CHECK(
     (CASE WHEN type_constraint_name in ('text', 'multiple_choice')
-                                                   AND answer_text     IS NOT NULL
+                                                   AND   answer_text     IS NOT NULL
       THEN 1 ELSE 0 END) +
-    (CASE WHEN type_constraint_name =   'integer'  AND answer_integer  IS NOT NULL
+    (CASE WHEN type_constraint_name =   'integer'  AND ((answer_integer  IS NULL) !=
+                                                        (answer_text     IS NULL))
       THEN 1 ELSE 0 END) +
-    (CASE WHEN type_constraint_name =   'decimal'  AND answer_decimal  IS NOT NULL
+    (CASE WHEN type_constraint_name =   'decimal'  AND ((answer_decimal  IS NULL) !=
+                                                        (answer_text     IS NULL))
       THEN 1 ELSE 0 END) +
-    (CASE WHEN type_constraint_name =   'date'     AND answer_date     IS NOT NULL
+    (CASE WHEN type_constraint_name =   'date'     AND ((answer_date     IS NULL) !=
+                                                        (answer_text     IS NULL))
       THEN 1 ELSE 0 END) +
-    (CASE WHEN type_constraint_name =   'time'     AND answer_time     IS NOT NULL
+    (CASE WHEN type_constraint_name =   'time'     AND ((answer_time     IS NULL) !=
+                                                        (answer_text     IS NULL))
       THEN 1 ELSE 0 END) +
-    (CASE WHEN type_constraint_name =   'location' AND answer_location IS NOT NULL
+    (CASE WHEN type_constraint_name =   'location' AND ((answer_location IS NULL) !=
+                                                        (answer_text     IS NULL))
       THEN 1 ELSE 0 END)
   = 1)
 )

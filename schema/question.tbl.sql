@@ -6,7 +6,7 @@ CREATE TABLE question
 (
   question_id           uuid UNIQUE DEFAULT uuid_generate_v4(),
 
-  title                 text      NOT NULL,
+  question_title        text      NOT NULL,
   hint                  text      NOT NULL DEFAULT '',
 
   -- The sequence number determines the order of the questions in a survey.
@@ -37,7 +37,7 @@ CREATE TABLE question
 
   CONSTRAINT nonnegative_sequence_number CHECK (sequence_number >= 0),
 
-  CONSTRAINT non_empty_title CHECK (title != ''),
+  CONSTRAINT non_empty_title CHECK (question_title != ''),
 
   CONSTRAINT minimal_logic CHECK (((logic->>'required')) IS NOT NULL AND
                                   ((logic->>'with_other')) IS NOT NULL)

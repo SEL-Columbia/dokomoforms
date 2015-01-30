@@ -11,6 +11,7 @@ answer_choice_table = Table('answer_choice', MetaData(bind=engine),
 
 
 def answer_choice_insert(*,
+                         is_other: bool=None,
                          question_choice_id: str,
                          question_id: str,
                          submission_id: str,
@@ -23,6 +24,7 @@ def answer_choice_insert(*,
     associated with a question, a question choice, and a submission. Make
     sure to use a transaction!
 
+    :param is_other: may be passed in for convenience, but is unused
     :param question_choice_id: The answer value. References the
                                question_choice table.
     :param question_id: The UUID of the question.
@@ -59,7 +61,8 @@ def get_answer_choices(submission_id: str) -> ResultProxy:
 
 def get_answer_choices_for_choice_id(question_choice_id: str) -> ResultProxy:
     """
-    Get all the records from the answer_choice table identified by question_id.
+    Get all the records from the answer_choice table identified by
+    question_choice_id.
 
     :param question_choice_id: foreign key
     :return: an iterable of the answer choices (RowProxy)

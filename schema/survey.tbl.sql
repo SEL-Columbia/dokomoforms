@@ -6,7 +6,7 @@ CREATE TABLE survey
 (
   survey_id        uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 
-  title            text                     NOT NULL,
+  survey_title     text                     NOT NULL,
   auth_user_id     uuid                     NOT NULL REFERENCES auth_user
                                            ON UPDATE CASCADE ON DELETE CASCADE,
   metadata         json                     NOT NULL DEFAULT '{}',
@@ -14,7 +14,7 @@ CREATE TABLE survey
 
   survey_last_update_time timestamp with time zone NOT NULL DEFAULT now(),
 
-  CONSTRAINT survey_title_survey_owner_key UNIQUE (title, auth_user_id)
+  CONSTRAINT survey_title_survey_owner_key UNIQUE (survey_title, auth_user_id)
 )
 WITH (
   OIDS=FALSE

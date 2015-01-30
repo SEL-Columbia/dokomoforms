@@ -5,7 +5,7 @@ import api.submission
 from pages.util.base import APIHandler, get_email
 
 
-class SubmissionsAPI(APIHandler):
+class SubmissionsAPIHandler(APIHandler):
     """The endpoint for getting all submissions to a survey."""
 
     def get(self, survey_id: str):
@@ -13,7 +13,7 @@ class SubmissionsAPI(APIHandler):
         self.write(json_encode(response))
 
 
-class SingleSubmissionAPI(APIHandler):
+class SingleSubmissionAPIHandler(APIHandler):
     """The endpoint for getting a single submission."""
 
     def get(self, submission_id: str):

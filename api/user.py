@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from db import engine
 from db.auth_user import get_auth_user_by_email, create_auth_user, \
-    generate_api_token, set_api_token
+    generate_api_token, set_api_token, UserDoesNotExistError
 
 
 def create_user(data: dict) -> dict:
@@ -15,12 +15,13 @@ def create_user(data: dict) -> dict:
     already exists in the database
     """
     email = data['email']
-    if get_auth_user_by_email(email) is None:
+    try:
+        get_auth_user_by_email(email)
+    except UserDoesNotExistError:
         with engine.begin() as connection:
             connection.execute(create_auth_user(email=email))
         return {'email': email, 'response': 'Created'}
-    else:
-        return {'email': email, 'response': 'Already exists'}
+    return {'email': email, 'response': 'Already exists'}
 
 
 def generate_token(data: dict) -> dict:
