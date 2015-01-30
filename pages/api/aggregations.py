@@ -13,10 +13,12 @@ class AggregationHandler(APIHandler):
             return method(question_id, email=get_email(self))
         except AttributeError:
             reason = json_encode(
-                validation_message('aggregation', aggregation_name, 'invalid'))
+                validation_message('aggregation', aggregation_name,
+                                   'no_such_method'))
         except api.aggregation.InvalidTypeForAggregationError:
             reason = json_encode(
-                validation_message('aggregation', aggregation_name, 'invalid'))
+                validation_message('aggregation', aggregation_name,
+                                   'invalid_type'))
         except api.aggregation.NoSubmissionsToQuestionError:
             reason = json_encode(
                 validation_message('aggregation', aggregation_name,

@@ -217,6 +217,65 @@ class APITest(AsyncHTTPTestCase):
                          [api.aggregation.min(question_id,
                                               email='test_email')])
 
+    def testGetShmin(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        question_id = question.question_id
+
+        with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch(
+                '/api/aggregate/{}?shmin'.format(question_id))
+        self.assertEqual(response.code, 422)
+        self.assertIn('no_such_method', str(response.error))
+
+    def testGetMinInvalidType(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'text')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        question_id = question.question_id
+
+        for i in range(2):
+            input_data = {'survey_id': survey_id,
+                          'answers':
+                              [{'question_id': question_id,
+                                'answer': str(i),
+                                'is_other': False}]}
+            api.submission.submit(input_data)
+
+        with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/aggregate/{}?min'.format(question_id))
+        self.assertEqual(response.code, 422)
+        self.assertIn('invalid_type', str(response.error))
+
+    def testGetMinNoSubmissions(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        question_id = question.question_id
+
+        with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/aggregate/{}?min'.format(question_id))
+        self.assertEqual(response.code, 422)
+        self.assertIn('no_submissions', str(response.error))
 
     def testGetMax(self):
         survey_id = survey_table.select().where(
