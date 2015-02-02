@@ -26,7 +26,8 @@ from pages.debug import DebugLoginHandler, DebugLogoutHandler
 from pages.view.surveys import ViewHandler
 from pages.view.submissions import ViewSubmissionsHandler, \
     ViewSubmissionHandler
-from pages.visual.graphs import VisualizationHandler
+from pages.visual.graphs import GraphVisualizationHandler, \
+    MapVisualizationHandler
 from pages.visual.images import LineGraphHandler
 import settings
 from utils.logger import setup_custom_logger
@@ -118,8 +119,9 @@ pages = [
     (r'/view/?', ViewHandler),
     (r'/view/({})/?'.format(UUID_REGEX), ViewSubmissionsHandler),
     (r'/view/submission/({})/?'.format(UUID_REGEX), ViewSubmissionHandler),
-    (r'/visualization/({})/?'.format(UUID_REGEX), VisualizationHandler),
+    (r'/visualization/({})/?'.format(UUID_REGEX), GraphVisualizationHandler),
     (r'/images/({})_(time|bar).png/?'.format(UUID_REGEX), LineGraphHandler),
+    (r'/map/({})/?'.format(UUID_REGEX), MapVisualizationHandler),
 
     # Survey Submissions
     (r'/survey/(.+)/?', Survey),

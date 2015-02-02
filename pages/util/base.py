@@ -21,11 +21,13 @@ class BaseHandler(tornado.web.RequestHandler):
         """
         self.xsrf_token  # accessing this property sets the cookie on the page
 
-    def get(self):
+    def get(self, *args, **kwargs):
         """
         The default behavior is to raise a 404 (hiding the existence of the
         endpoint). Override this method to render something instead.
 
+        :param args: positional arguments
+        :param kwargs: keyword arguments
         :raise tornado.web.HTTPError: 404, always
         """
         raise tornado.web.HTTPError(404)

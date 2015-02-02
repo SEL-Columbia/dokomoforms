@@ -12,7 +12,11 @@
             <ul>
                 {% for stats in question_stats %}
                     <li>
+                        {% if stats['question'].type_constraint_name == 'location' %}
+                        <p><a href="/map/{{ stats['question'].question_id }}">{{ stats['question'].sequence_number }}. {{ stats['question'].question_title }}</a></p>
+                        {% else %}
                         <p><a href="/visualization/{{ stats['question'].question_id }}">{{ stats['question'].sequence_number }}. {{ stats['question'].question_title }}</a></p>
+                        {% end %}
                         {% for stat in stats['stats'] %}
                             <p>{{ stat['query'] }}: {{ stat['result'] }}</p>
                         {% end %}

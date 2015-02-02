@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+    <div class="message"></div>
+
+    <div class="content">
+        <h4>Welcome {{ current_user }}</h4>
+        <p> Answers to this question: </p>
+        <div id="viktormap" class="question__map"></div>
+    </div>
+    <div class="login">
+        <a href="#" class="dokomo-button persona-button" id="logout"><span>Logout</span></a>
+    </div>
+
+    <div class="page_nav">
+        <div class="sel_text_logo">
+        <span>
+            Dokomo Forms. Forms <em>Everywhere</em>
+        </span>
+        </div>
+    </div>
+
+    <script src="https://login.persona.org/include.js"></script>
+    <script src="/static/persona.js"></script>
+    <script src="/static/viktors-cool-map.js"></script>
+    <script>
+        displayViktorPoints({% raw coordinates %});
+    </script>
+{% end %}
