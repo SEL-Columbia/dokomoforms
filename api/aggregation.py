@@ -9,6 +9,7 @@ from sqlalchemy.sql.functions import GenericFunction, min as sqlmin, \
     max as sqlmax, sum as sqlsum, count as sqlcount
 from sqlalchemy.sql import func, and_
 from tornado.escape import json_decode
+from api import json_response
 
 from db import engine
 from db.answer import answer_table
@@ -194,8 +195,9 @@ def min(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
                      email=email,
                      allowable_types={'integer', 'decimal', 'date', 'time'})
 
-    return {'result': _jsonify(result, question_id),
-            'query': 'min'}
+    response = json_response(_jsonify(result, question_id))
+    response['query'] = 'min'
+    return response
 
 
 def max(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
@@ -211,8 +213,9 @@ def max(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
     result = _scalar(question_id, sqlmax, auth_user_id=auth_user_id,
                      email=email,
                      allowable_types={'integer', 'decimal', 'date', 'time'})
-    return {'result': _jsonify(result, question_id),
-            'query': 'max'}
+    response = json_response(_jsonify(result, question_id))
+    response['query'] = 'max'
+    return response
 
 
 def sum(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
@@ -227,8 +230,9 @@ def sum(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
     """
     result = _scalar(question_id, sqlsum, auth_user_id=auth_user_id,
                      email=email)
-    return {'result': result,
-            'query': 'sum'}
+    response = json_response(result)
+    response['query'] = 'sum'
+    return response
 
 
 def count(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
@@ -244,11 +248,12 @@ def count(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
     types = {'text', 'integer', 'decimal', 'multiple_choice', 'date', 'time',
              'location'}
     regular = _scalar(question_id, sqlcount, auth_user_id=auth_user_id,
-                          email=email, allowable_types=types)
+                      email=email, allowable_types=types)
     other = _scalar(question_id, sqlcount, auth_user_id=auth_user_id,
-                        email=email, is_other=True, allowable_types=types)
-    return {'result': regular + other,
-            'query': 'count'}
+                    email=email, is_other=True, allowable_types=types)
+    response = json_response(regular + other)
+    response['query'] = 'count'
+    return response
 
 
 def avg(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
@@ -264,8 +269,9 @@ def avg(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
     result = _scalar(question_id, func.avg,
                      auth_user_id=auth_user_id,
                      email=email)
-    return {'result': float(result),
-            'query': 'avg'}
+    response = json_response(float(result))
+    response['query'] = 'avg'
+    return response
 
 
 def stddev_pop(question_id: str,
@@ -282,8 +288,9 @@ def stddev_pop(question_id: str,
     result = _scalar(question_id, func.stddev_pop,
                      auth_user_id=auth_user_id,
                      email=email)
-    return {'result': float(result),
-            'query': 'stddev_pop'}
+    response = json_response(float(result))
+    response['query'] = 'stddev_pop'
+    return response
 
 
 def stddev_samp(question_id: str,
@@ -300,8 +307,9 @@ def stddev_samp(question_id: str,
     result = _scalar(question_id, func.stddev_samp,
                      auth_user_id=auth_user_id,
                      email=email)
-    return {'result': float(result),
-            'query': 'stddev_samp'}
+    response = json_response(float(result))
+    response['query'] = 'stddev_samp'
+    return response
 
 
 def time_series(question_id: str, auth_user_id: str=None,
@@ -341,9 +349,11 @@ def time_series(question_id: str, auth_user_id: str=None,
     genexp = ((r.submission_time.isoformat(),
                _jsonify(r[column_name], question_id)) for r in result)
     time_series_result = list(zip(*genexp))
-    return {'query': 'time_series',
-            'result': _return_sql(time_series_result, question.survey_id,
-                                  user_id, question_id)}
+    response = json_response(
+        _return_sql(time_series_result, question.survey_id, user_id,
+                    question_id))
+    response['query'] = 'time_series'
+    return response
 
 
 def bar_graph(question_id: str,
@@ -395,9 +405,11 @@ def bar_graph(question_id: str,
     # transpose the result into two lists: value and count
     values = [(_jsonify(r[0], question_id), r[1]) for r in result]
     bar_graph_result = list(zip(*values))
-    return {'query': 'bar_graph',
-            'result': _return_sql(bar_graph_result, question.survey_id,
-                                  user_id, question_id)}
+    response = json_response(_return_sql(bar_graph_result, question.survey_id,
+                                         user_id, question_id)
+    )
+    response['query'] = 'bar_graph'
+    return response
 
 
 def mode(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
@@ -412,7 +424,9 @@ def mode(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
     :return: a JSON dict containing the result
     """
     bar_graph_top = bar_graph(question_id, auth_user_id, email, 1, True)
-    return {'result': bar_graph_top['result'][0][0], 'query': 'mode'}
+    response = json_response(bar_graph_top['result'][0][0])
+    response['query'] = 'mode'
+    return response
 
 
 def _get_stats(question: RowProxy, auth_user_id: str, email: str) -> Iterator:
@@ -462,4 +476,4 @@ def get_question_stats(survey_id: str,
     """
     user_id = _get_user_id(auth_user_id, email)
     questions = get_questions(survey_id, user_id, None)
-    return list(_get_question_stats(questions, user_id, None))
+    return json_response(list(_get_question_stats(questions, user_id, None)))

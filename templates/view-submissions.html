@@ -10,7 +10,7 @@
             <a href="/survey/{{ survey.survey_id }}">Shareable link!!!</a>
             <p>Questions with submission statistics:</p>
             <ul>
-                {% for stats in question_stats %}
+                {% for stats in question_stats['result'] %}
                     <li>
                         <p>{{ stats['question'].sequence_number }}. {{ stats['question'].question_title }} - {{ stats['question'].question_id }}</p>
                         {% for stat in stats['stats'] %}

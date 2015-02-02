@@ -1,4 +1,5 @@
 """Allow access to the submission table."""
+from collections import Iterator
 from operator import and_
 from sqlalchemy import Table, MetaData
 from datetime import datetime
@@ -77,12 +78,15 @@ def submission_select(submission_id: str,
     return submission
 
 
-def get_submissions_by_email(survey_id: str, email: str) -> ResultProxy:
+def get_submissions_by_email(survey_id: str,
+                             email: str,
+                             submitters: Iterator=None) -> ResultProxy:
     """
     Get submissions to a survey.
 
     :param survey_id: the UUID of the survey
     :param email: the e-mail address of the user
+    :param submitters: if supplied, filters results by all given submitters
     :return: an iterable of the submission records
     """
     survey_condition = submission_table.c.survey_id == survey_table.c.survey_id
@@ -92,6 +96,9 @@ def get_submissions_by_email(survey_id: str, email: str) -> ResultProxy:
 
     condition = and_(submission_table.c.survey_id == survey_id,
                      auth_user_table.c.email == email)
+    if submitters is not None:
+        condition = and_(condition,
+                         submission_table.c.submitter.in_(submitters))
     return table.select().where(condition).execute()
 
 

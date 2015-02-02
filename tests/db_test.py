@@ -468,12 +468,14 @@ class TestSubmission(unittest.TestCase):
             survey_table.c.survey_title == 'test_title').execute().first(
 
         ).survey_id
-        for _ in range(2):
-            submission_exec = submission_insert(submitter='test_submitter',
-                                                survey_id=survey_id).execute()
-            submission_id = submission_exec.inserted_primary_key[0]
+        for i in range(2):
+            submission_insert(submitter='test_submitter{}'.format(i),
+                              survey_id=survey_id).execute()
         submissions = get_submissions_by_email(survey_id, email='test_email')
         self.assertEqual(submissions.rowcount, 2)
+        submissions = get_submissions_by_email(survey_id, email='test_email',
+                                               submitters=['test_submitter1'])
+        self.assertEqual(submissions.rowcount, 1)
 
     def testSubmissionInsert(self):
         survey_id = survey_table.select().where(
