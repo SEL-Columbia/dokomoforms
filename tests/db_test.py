@@ -107,6 +107,38 @@ class TestAnswer(unittest.TestCase):
         location_2 = get_geo_json(answer_2)
         self.assertEqual(location_2, {'coordinates': [], 'type': 'MultiPoint'})
 
+    def testInsertFacility(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'facility')
+        question = q_where.execute().first()
+        question_id = question.question_id
+        tcn = question.type_constraint_name
+        seq = question.sequence_number
+        mul = question.allow_multiple
+        submission_exec = submission_insert(submitter='test_submitter',
+                                            survey_id=survey_id).execute()
+        submission_id = submission_exec.inserted_primary_key[0]
+        answer_exec = answer_insert(answer=['revisit ID', [90, 0]],
+                                    question_id=question_id,
+                                    submission_id=submission_id,
+                                    survey_id=survey_id,
+                                    type_constraint_name=tcn,
+                                    is_other=False,
+                                    sequence_number=seq,
+                                    allow_multiple=mul).execute()
+        answer_id = answer_exec.inserted_primary_key[0]
+        self.assertIsNotNone(answer_id)
+        condition = answer_table.c.answer_id == answer_id
+        answer = answer_table.select().where(condition).execute().first()
+        location = get_geo_json(answer)['coordinates']
+        self.assertEqual(location, [90, 0])
+        facility_id = answer.answer_text
+        self.assertEqual(facility_id, 'revisit ID')
+
     def testGetAnswers(self):
         survey_id = survey_table.select().where(
             survey_table.c.survey_title == 'test_title').execute().first(
@@ -303,7 +335,7 @@ class TestQuestion(unittest.TestCase):
             survey_table.c.survey_title == 'test_title').execute().first(
 
         ).survey_id
-        self.assertEqual(get_free_sequence_number(survey_id), 10)
+        self.assertEqual(get_free_sequence_number(survey_id), 11)
 
     def testQuestionInsert(self):
         survey_id = survey_table.select().where(
