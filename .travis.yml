@@ -17,10 +17,12 @@ before_script:
   - python3 manage_db.py
   - psql -U postgres -d doko -f tests/fixtures/all-encompassing.sql
   - python3 webapp.py &
+  - npm install package.json
 
 # command to run tests
 script: 
   - nosetests --with-coverage --cover-inclusive --cover-branches --cover-tests --cover-html --cover-erase --cover-package=api,db,webapp,pages.api,pages.util,pages.debug,pages.view --ignore-files=selenium_test
+  - npm test 
 
 notifications:
   irc:
