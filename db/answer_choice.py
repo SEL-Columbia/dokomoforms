@@ -24,12 +24,12 @@ def answer_choice_insert(*,
     associated with a question, a question choice, and a submission. Make
     sure to use a transaction!
 
+    :param is_other: may be passed in for convenience, but is unused
     :param question_choice_id: The answer value. References the
                                question_choice table.
     :param question_id: The UUID of the question.
     :param submission_id: The UUID of the submission.
     :param type_constraint_name: the type constraint
-    :param is_other: may be passed in for convenience, but is unused
     :param sequence_number: the sequence number
     :param allow_multiple: whether multiple answers are allowed
     :param survey_id: The UUID of the survey.
@@ -61,7 +61,8 @@ def get_answer_choices(submission_id: str) -> ResultProxy:
 
 def get_answer_choices_for_choice_id(question_choice_id: str) -> ResultProxy:
     """
-    Get all the records from the answer_choice table identified by question_id.
+    Get all the records from the answer_choice table identified by
+    question_choice_id.
 
     :param question_choice_id: foreign key
     :return: an iterable of the answer choices (RowProxy)
