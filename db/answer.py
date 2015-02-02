@@ -42,6 +42,7 @@ def answer_insert(*,
                   question_id: str,
                   submission_id: str,
                   type_constraint_name: str,
+                  is_other: bool,
                   sequence_number: int,
                   allow_multiple: bool,
                   survey_id: str) -> Insert:
@@ -59,14 +60,14 @@ def answer_insert(*,
     :param question_id: The UUID of the question.
     :param submission_id: The UUID of the submission.
     :param type_constraint_name: the type constraint
+    :param is_other: whether this is an 'other' submission
     :param sequence_number: the sequence number
     :param allow_multiple: whether there can be multiple answers
     :param survey_id: The UUID of the survey.
     :return: The Insert object. Execute this!
     """
     question = question_select(question_id)
-    other = question.logic['with_other']
-    answer_type = 'answer_text' if other else 'answer_' + type_constraint_name
+    answer_type = 'answer_text' if is_other else 'answer_' + type_constraint_name
     values = {answer_type: _sanitize_answer(answer, type_constraint_name),
               'question_id': question_id,
               'submission_id': submission_id,

@@ -39,7 +39,6 @@ a:link:active, a:visited:active {
 }
 
 #wrapper {
-    width: 600px;
     margin: 0px auto;
     max-width: 600px;
     min-height: 600px;
@@ -394,6 +393,22 @@ a:link:active, a:visited:active {
 .loc_input {
     margin: 0px;
     padding: 0px;
+}
+
+.next_input {
+    width: 25px;
+    height: 25px;
+    display: block;
+    margin: 0px auto;
+    background: rgba(0,0,0,0.1);
+    padding: 15px;
+    border-radius: 100px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.next_input:hover {
+    background: rgba(0,0,0,0.3);
 }
 
 select {

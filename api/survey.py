@@ -11,7 +11,7 @@ from db.answer_choice import get_answer_choices_for_choice_id, \
     answer_choice_insert
 from db.auth_user import get_auth_user_by_email
 from db.question import question_insert, MissingMinimalLogicError, \
-    question_select, get_questions
+    question_select, get_questions_no_credentials
 from db.question_branch import get_branches, question_branch_insert, \
     MultipleBranchError
 from db.question_choice import get_choices, question_choice_insert, \
@@ -175,13 +175,19 @@ def _create_questions(connection: Connection,
                     continue
                 answer_values = question_fields.copy()
                 new_submission_id = submission_map[answer.submission_id]
-                is_other = values['logic']['with_other']
-                if new_tcn == 'multiple_choice':
-                    if not is_other:
-                        continue
-                    else:
-                        new_tcn = 'text'
-                answer_values['answer'] = answer['answer_' + new_tcn]
+
+                if answer.answer_text is None:
+                    # TODO: write a test
+                    answer_values['answer'] = answer['answer_' + new_tcn]
+                    answer_values['is_other'] = False
+                else:
+                    answer_values['answer'] = answer.answer_text
+                    is_other = False if new_tcn == 'text' else True
+                    answer_values['is_other'] = is_other
+                with_other = values['logic']['with_other']
+
+                if new_tcn == 'multiple_choice' and not with_other:
+                    continue
                 answer_values['submission_id'] = new_submission_id
                 connection.execute(answer_insert(**answer_values))
 
@@ -274,12 +280,12 @@ def _create_survey(connection: Connection, data: dict) -> str:
 
     email = data['email']
     user_id = get_auth_user_by_email(email).auth_user_id
-    title = data['title']
+    title = data['survey_title']
     data_q = data['questions']
 
     # First, create an entry in the survey table
     safe_title = get_free_title(title)
-    survey_values = {'auth_user_id': user_id, 'title': safe_title}
+    survey_values = {'auth_user_id': user_id, 'survey_title': safe_title}
     executable = survey_insert(**survey_values)
     exc = [('survey_title_survey_owner_key',
             SurveyAlreadyExistsError(safe_title))]
@@ -350,7 +356,7 @@ def _get_fields(question: RowProxy) -> dict:
     :return: A dictionary of the fields.
     """
     result = {'question_id': question.question_id,
-              'title': question.title,
+              'question_title': question.question_title,
               'hint': question.hint,
               'sequence_number': question.sequence_number,
               'question_to_sequence_number': question.question_to_sequence_number,
@@ -373,10 +379,10 @@ def _to_json(survey: RowProxy) -> dict:
     :param survey: the survey object
     :return: a JSON dict representation
     """
-    questions = get_questions(survey.survey_id)
+    questions = get_questions_no_credentials(survey.survey_id)
     question_fields = [_get_fields(question) for question in questions]
     return {'survey_id': survey.survey_id,
-            'title': survey.title,
+            'survey_title': survey.survey_title,
             'metadata': survey.metadata,
             'questions': question_fields}
 
@@ -433,9 +439,9 @@ def update(data: dict):
 
     with engine.connect() as connection:
         new_title = '{} (new version created on {})'.format(
-            existing_survey.title, update_time.isoformat())
+            existing_survey.survey_title, update_time.isoformat())
         executable = update_record(survey_table, 'survey_id', survey_id,
-                                   title=new_title)
+                                   survey_title=new_title)
         exc = [('survey_title_survey_owner_key',
                 SurveyAlreadyExistsError(new_title))]
         execute_with_exceptions(connection, executable, exc)
