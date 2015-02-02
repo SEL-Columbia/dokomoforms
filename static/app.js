@@ -560,9 +560,11 @@ Widgets.multiple_choice = function(question, page) {
         });
 
     // Selection is handled in _template however toggling of view is done here
+    question.is_other =  question.is_other || [];
     if (question.answer[question.choices.length] || 
             question.answer[question.choices.length] === '') {
         //$select.find("#with_other").attr("selected", true);
+        question.is_other[question.choices.length] = true;
         $other.show();
     }
 
