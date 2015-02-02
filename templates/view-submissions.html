@@ -8,7 +8,18 @@
         <div>
             <h4>Welcome {{ current_user }}</h4>
             <a href="/survey/{{ survey.survey_id }}">Shareable link!!!</a>
-            <p> Submissions to {{ survey.title }}: </p>
+            <p>Questions with submission statistics:</p>
+            <ul>
+                {% for stats in question_stats %}
+                    <li>
+                        <p>{{ stats['question'].sequence_number }}. {{ stats['question'].question_title }} - {{ stats['question'].question_id }}</p>
+                        {% for stat in stats['stats'] %}
+                            <p>{{ stat['query'] }}: {{ stat['result'] }}</p>
+                        {% end %}
+                    </li>
+                {% end %}
+            </ul>
+            <p>Submissions to {{ survey.survey_title }}: </p>
             <ul>
                 {% for submission in submissions %}
                     <li>
@@ -16,10 +27,9 @@
                     </li>
                 {% end %}
             </ul>
-            </div>
-            <div class="login">
-                <a href="#" class="dokomo-button persona-button" id="logout"><span>Logout</span></a>
-            </div>
+        </div>
+        <div class="login">
+            <a href="#" class="dokomo-button persona-button" id="logout"><span>Logout</span></a>
         </div>
     </div>
 

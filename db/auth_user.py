@@ -25,7 +25,12 @@ def get_auth_user(auth_user_id: str) -> RowProxy:
     select_stmt = auth_user_table.select()
     where_stmt = select_stmt.where(
         auth_user_table.c.auth_user_id == auth_user_id)
-    return where_stmt.execute().first()
+    auth_user = where_stmt.execute().first()
+
+    if auth_user is None:
+        raise UserDoesNotExistError(auth_user_id)
+
+    return auth_user
 
 
 def get_auth_user_by_email(email: str) -> RowProxy:
@@ -38,7 +43,12 @@ def get_auth_user_by_email(email: str) -> RowProxy:
     select_stmt = auth_user_table.select()
     where_stmt = select_stmt.where(
         auth_user_table.c.email == email)
-    return where_stmt.execute().first()
+    auth_user = where_stmt.execute().first()
+
+    if auth_user is None:
+        raise UserDoesNotExistError(email)
+
+    return auth_user
 
 
 def create_auth_user(*, email: str) -> Insert:
@@ -68,8 +78,9 @@ def verify_api_token(*, token: str, email: str) -> bool:
     :param email: the e-mail address of the user
     :return: whether the token is correct and not expired
     """
-    auth_user = get_auth_user_by_email(email)
-    if auth_user is None:
+    try:
+        auth_user = get_auth_user_by_email(email)
+    except UserDoesNotExistError:
         return False
     token_is_fresh = auth_user.expires_on.timetuple() >= localtime()
     not_blank = auth_user.token != ''

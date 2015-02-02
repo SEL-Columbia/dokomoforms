@@ -6,11 +6,11 @@
 
     <div class="content">
         <h4>Welcome {{ current_user }}</h4>
-        <p> Submission {{ submission['submission_id'] }} by {{ submission['submitter'] }} at {{ submission['submission_time'] }} to survey {{ survey.title }}: </p>
+        <p> Submission {{ submission['submission_id'] }} by {{ submission['submitter'] }} at {{ submission['submission_time'] }} to survey {{ survey.survey_title }}: </p>
         <ul>
             {% for answer in submission['answers'] %}
                 <li>
-                    <strong>{{ answer['sequence_number'] }}. {{ answer['title'] }}</strong><br/>
+                    <strong>{{ answer['sequence_number'] }}. {{ answer['question_title'] }}</strong><br/>
                     Type: {{ answer['type_constraint_name'] }}<br/>
                     {% if answer['choice'] %}
                         Choice: {{ answer['choice_number'] }}. {{ answer['choice'] }}<br/>
