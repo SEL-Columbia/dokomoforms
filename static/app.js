@@ -348,20 +348,17 @@ Survey.prototype.submit = function() {
         success: function() {
             App.message('Survey submitted!');
         },
-        fail: function() {
-            App.message('Submission failed, will try again later.');
-            App.unsynced.push(self);
-        },
         error: function() {
             App.message('Submission failed, will try again later.');
             App.unsynced.push(self);
+        },
+        complete: function() {
+            setTimeout(function() {
+                save_btn.classList.remove('icon--spin');
+                sync.classList.remove('icon--spin');
+                self.render(self.questions[0]);
+            }, 1000);
         }
-    }).done(function() {
-        setTimeout(function() {
-            save_btn.classList.remove('icon--spin');
-            sync.classList.remove('icon--spin');
-            self.render(self.questions[0]);
-        }, 1000);
     });
 };
 
@@ -521,6 +518,7 @@ Widgets.multiple_choice = function(question, page) {
             question.answer[$children.length - 1 - 1] = this.value;
         });
 
+
     $other.hide();
 
     var $select = $(page)
@@ -553,7 +551,6 @@ Widgets.multiple_choice = function(question, page) {
                 } 
 
              });
-            
 
             // Toggle off other if deselected on change event 
             if (svals.indexOf('other') < 0) { 
@@ -563,8 +560,8 @@ Widgets.multiple_choice = function(question, page) {
         });
 
     // Selection is handled in _template however toggling of view is done here
-                                              // end - default value pos
-    if (question.is_other && question.is_other[$children.length - 1 - 1]) {
+    if (question.answer[question.choices.length] || 
+            question.answer[question.choices.length] === '') {
         //$select.find("#with_other").attr("selected", true);
         $other.show();
     }
@@ -658,7 +655,7 @@ Widgets.location = function(question, page) {
                         .setLatLng([coords[1], coords[0]]);
 
                     // If allow multiple is set (or this is the first time they clicked) add new div
-                    if (question.allow_multiple) {
+                    if (question.allow_multiple && typeof question.answer[0] !== "undefined") {
                        $(loc_div)
                            .insertBefore(".question__btn");
                     }
