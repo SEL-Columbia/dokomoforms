@@ -235,7 +235,7 @@ class APITest(AsyncHTTPTestCase):
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
                          json_response([api.aggregation.min(question_id,
-                                              email='test_email')]))
+                                                            email='test_email')]))
 
     def testGetShmin(self):
         survey_id = survey_table.select().where(
@@ -324,7 +324,7 @@ class APITest(AsyncHTTPTestCase):
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
                          json_response([api.aggregation.max(question_id,
-                                              email='test_email')]))
+                                                            email='test_email')]))
 
     def testGetMinAndMax(self):
         survey_id = survey_table.select().where(
@@ -411,7 +411,8 @@ class APITest(AsyncHTTPTestCase):
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
-                         json_response([api.aggregation.count(q_id, email='test_email')]))
+                         json_response([
+                             api.aggregation.count(q_id, email='test_email')]))
 
     def testGetAvg(self):
         survey_id = survey_table.select().where(
@@ -439,7 +440,8 @@ class APITest(AsyncHTTPTestCase):
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
-                         json_response([api.aggregation.avg(q_id, email='test_email')]))
+                         json_response(
+                             [api.aggregation.avg(q_id, email='test_email')]))
 
     def testGetStddevPop(self):
         survey_id = survey_table.select().where(
@@ -468,7 +470,7 @@ class APITest(AsyncHTTPTestCase):
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
                          json_response([api.aggregation.stddev_pop(q_id,
-                                                     email='test_email')]))
+                                                                   email='test_email')]))
 
     def testGetStddevSamp(self):
         survey_id = survey_table.select().where(
@@ -525,7 +527,8 @@ class APITest(AsyncHTTPTestCase):
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
-                         json_response([api.aggregation.mode(q_id, email='test_email')]))
+                         json_response(
+                             [api.aggregation.mode(q_id, email='test_email')]))
 
     def testGetModeLocation(self):
         survey_id = survey_table.select().where(
@@ -552,7 +555,8 @@ class APITest(AsyncHTTPTestCase):
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
-                         json_response([api.aggregation.mode(q_id, email='test_email')]))
+                         json_response(
+                             [api.aggregation.mode(q_id, email='test_email')]))
 
 
     def testGetTimeSeries(self):

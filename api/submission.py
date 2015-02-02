@@ -188,7 +188,10 @@ def get_one(submission_id: str, email: str) -> dict:
     return json_response(sub_dict)
 
 
-def get_all(survey_id: str, email: str, submitters: Iterator=None) -> dict:
+def get_all(survey_id: str,
+            email: str,
+            submitters: Iterator=None,
+            filters: list=None) -> dict:
     """
     Create a JSON representation of the submissions to a given survey and
     email.
@@ -196,10 +199,13 @@ def get_all(survey_id: str, email: str, submitters: Iterator=None) -> dict:
     :param survey_id: the UUID of the survey
     :param email: the user's e-mail address
     :param submitters: if supplied, filters results by all given submitters
+    :param filters: if supplied, filters results by answers
     :return: a JSON dict
     """
-    submissions = get_submissions_by_email(survey_id, email=email,
-                                           submitters=submitters)
+    submissions = get_submissions_by_email(survey_id,
+                                           email=email,
+                                           submitters=submitters,
+                                           filters=filters)
     # TODO: Check if this is a performance problem
     result = [get_one(sub.submission_id, email=email) for sub in submissions]
     return json_response(result)

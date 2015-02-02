@@ -1,15 +1,17 @@
 """Allow access to the submission table."""
 from collections import Iterator
-from operator import and_
 from sqlalchemy import Table, MetaData
 from datetime import datetime
 
 from sqlalchemy.engine import RowProxy, ResultProxy
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.dml import Insert
+from sqlalchemy.sql.elements import and_
 
 from db import engine
+from db.answer import answer_table
 from db.auth_user import auth_user_table
+from db.question import question_select
 from db.survey import survey_table
 
 
@@ -78,28 +80,51 @@ def submission_select(submission_id: str,
     return submission
 
 
+def _get_filtered_ids(filters: list) -> Iterator:
+    """
+    Given a list of filters like
+    { 'question_id': <question_id>,
+      '<type_constraint_name>': <value> },
+    yield the submission_id values that pass the filters
+    :param filters: a list of filters consisting of answers to questions
+    """
+    for filter_pair in filters:
+        _, type_constraint = filter_pair
+        value = filter_pair[type_constraint]
+        answers = answer_table.select().where(
+            answer_table.c.question_id == filter_pair['question_id']).where(
+            answer_table.c.get(type_constraint) == value).execute()
+        for answer in answers:
+            yield answer.submission_id
+
+
 def get_submissions_by_email(survey_id: str,
                              email: str,
-                             submitters: Iterator=None) -> ResultProxy:
+                             submitters: Iterator=None,
+                             filters: list=None) -> ResultProxy:
     """
     Get submissions to a survey.
 
     :param survey_id: the UUID of the survey
     :param email: the e-mail address of the user
     :param submitters: if supplied, filters results by all given submitters
+    :param filters: if supplied, filters results by answers
     :return: an iterable of the submission records
     """
+
     survey_condition = submission_table.c.survey_id == survey_table.c.survey_id
     table = submission_table.join(survey_table, survey_condition)
     user_cond = survey_table.c.auth_user_id == auth_user_table.c.auth_user_id
     table = table.join(auth_user_table, user_cond)
 
-    condition = and_(submission_table.c.survey_id == survey_id,
-                     auth_user_table.c.email == email)
+    conditions = [submission_table.c.survey_id == survey_id,
+                  auth_user_table.c.email == email]
     if submitters is not None:
-        condition = and_(condition,
-                         submission_table.c.submitter.in_(submitters))
-    return table.select().where(condition).execute()
+        conditions.append(submission_table.c.submitter.in_(submitters))
+    if filters is not None:
+        filtered = set(_get_filtered_ids(filters))
+        conditions.append(submission_table.c.submission_id.in_(filtered))
+    return table.select().where(and_(*conditions)).execute()
 
 
 def get_number_of_submissions(survey_id: str) -> int:
