@@ -37,10 +37,10 @@ App.init = function(survey) {
     setInterval(App.sync, 10000);
     
     // AppCache updates
-    window.applicationCache.addEventListener('updateready', function() {
-        alert('app updated, reloading...');
-        window.location.reload();
-    });
+    //window.applicationCache.addEventListener('updateready', function() {
+    //    alert('app updated, reloading...');
+    //    window.location.reload();
+    //});
 };
 
 App.sync = function() {
