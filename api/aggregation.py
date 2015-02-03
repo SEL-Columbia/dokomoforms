@@ -11,7 +11,7 @@ from sqlalchemy.sql import func, and_
 from tornado.escape import json_decode
 from api import json_response
 
-from db import engine
+from db import engine, NoSuchColumnError, get_column
 from db.answer import answer_table
 from db.answer_choice import answer_choice_table
 from db.auth_user import get_auth_user_by_email
@@ -160,7 +160,7 @@ def _scalar(question_id: str,
     join_condition = table.c.survey_id == survey_table.c.survey_id
     condition = (table.c.question_id == question_id,
                  survey_table.c.auth_user_id == user_id)
-    column = table.c.get(column_name)
+    column = get_column(table, column_name)
 
     session = sessionmaker(bind=engine)()
     try:
@@ -386,7 +386,7 @@ def bar_graph(question_id: str,
     join_condition = table.c.survey_id == survey_table.c.survey_id
     condition = (table.c.question_id == question_id,
                  survey_table.c.auth_user_id == user_id)
-    column = table.c.get(column_name)
+    column = get_column(table, column_name)
 
     session = sessionmaker(bind=engine)()
     try:

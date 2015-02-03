@@ -7,8 +7,7 @@ from sqlalchemy.engine import RowProxy, ResultProxy
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.dml import Insert
 from sqlalchemy.sql.elements import and_
-
-from db import engine
+from db import engine, get_column
 from db.answer import answer_table
 from db.auth_user import auth_user_table
 from db.question import question_select
@@ -89,11 +88,12 @@ def _get_filtered_ids(filters: list) -> Iterator:
     :param filters: a list of filters consisting of answers to questions
     """
     for filter_pair in filters:
-        _, type_constraint = filter_pair
+        question_id = filter_pair.pop('question_id')
+        type_constraint = list(filter_pair.keys())[0]  # TODO: better way...?
         value = filter_pair[type_constraint]
         answers = answer_table.select().where(
-            answer_table.c.question_id == filter_pair['question_id']).where(
-            answer_table.c.get(type_constraint) == value).execute()
+            and_(answer_table.c.question_id == question_id,
+                 get_column(answer_table, type_constraint) == value)).execute()
         for answer in answers:
             yield answer.submission_id
 
