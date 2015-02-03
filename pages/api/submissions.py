@@ -1,8 +1,11 @@
 """API endpoints dealing with submissions."""
 from tornado.escape import json_encode, to_unicode
+import tornado.web
 
 import api.submission
-from pages.util.base import APIHandler, get_email, get_json_request_body
+from db.survey import IncorrectQuestionIdError
+from pages.util.base import APIHandler, get_email, get_json_request_body, \
+    catch_bare_integrity_error, validation_message, BaseHandler
 
 
 class SubmissionsAPIHandler(APIHandler):
@@ -36,3 +39,24 @@ class SingleSubmissionAPIHandler(APIHandler):
     def get(self, submission_id: str):
         response = api.submission.get_one(submission_id, email=get_email(self))
         self.write(response)
+
+
+class SubmitAPIHandler(BaseHandler):
+    """The endpoint for submitting to a survey. You don't need to be log in."""
+
+    @catch_bare_integrity_error
+    def post(self, survey_id: str):
+        data = get_json_request_body(self)
+
+        if data.get('survey_id', None) != survey_id:
+            reason = validation_message('submission', 'survey_id', 'invalid')
+            raise tornado.web.HTTPError(422, reason=reason)
+        try:
+            self.write(api.submission.submit(data))
+            self.set_status(201)
+        except KeyError as e:
+            reason = validation_message('submission', str(e), 'missing_field')
+            raise tornado.web.HTTPError(422, reason=reason)
+        except IncorrectQuestionIdError:
+            reason = validation_message('submission', 'question_id', 'invalid')
+            raise tornado.web.HTTPError(422, reason=reason)
