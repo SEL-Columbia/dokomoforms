@@ -23,5 +23,5 @@ ALTER TABLE type_constraint
 -- 05 date
 -- 06 time
 -- 07 location
--- 08 note (no answer)
-
+-- 08 facility
+-- 09 note (no answer)

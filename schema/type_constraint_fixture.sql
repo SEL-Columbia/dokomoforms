@@ -5,6 +5,7 @@ INSERT INTO type_constraint (type_constraint_name) VALUES
               ('date'),
               ('time'),
               ('location'),
+              ('facility'),
               ('multiple_choice'),
               ('note')
 ;
