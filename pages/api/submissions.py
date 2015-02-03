@@ -42,7 +42,7 @@ class SingleSubmissionAPIHandler(APIHandler):
 
 
 class SubmitAPIHandler(BaseHandler):
-    """The endpoint for submitting to a survey. You don't need to be log in."""
+    """The endpoint for submitting to a survey. You don't need to log in."""
 
     @catch_bare_integrity_error
     def post(self, survey_id: str):
