@@ -540,7 +540,14 @@ class TestSubmission(unittest.TestCase):
                                      email='test_email',
                                      filters=[{'question_id': question_id,
                                                'answer_integer': 1}
-                                     ]).fetchall()), 1)
+                                     ]).fetchall()), 1, msg =get_submissions_by_email(
+
+            survey_id,
+            email='test_email',
+            filters=[{'question_id': question_id,
+                      'answer_integer': 1}
+            ]).fetchall()
+        )
 
     def testSubmissionInsert(self):
         survey_id = survey_table.select().where(
