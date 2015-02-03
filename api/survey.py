@@ -4,7 +4,7 @@ import datetime
 
 from sqlalchemy.engine import RowProxy, Connection
 
-from api import execute_with_exceptions
+from api import execute_with_exceptions, json_response
 from db import engine, delete_record, update_record
 from db.answer import get_answers_for_question, answer_insert
 from db.answer_choice import get_answer_choices_for_choice_id, \
@@ -395,7 +395,7 @@ def display_survey(survey_id: str) -> dict:
     :param survey_id: the UUID of the survey
     :return: the JSON representation.
     """
-    return _to_json(display(survey_id))
+    return json_response(_to_json(display(survey_id)))
 
 
 def get_one(survey_id: str, auth_user_id: str=None, email: str=None) -> dict:
@@ -409,7 +409,7 @@ def get_one(survey_id: str, auth_user_id: str=None, email: str=None) -> dict:
     :return: the JSON representation.
     """
     survey = survey_select(survey_id, auth_user_id=auth_user_id, email=email)
-    return _to_json(survey)
+    return json_response(_to_json(survey))
 
 
 def get_all(email: str) -> dict:
@@ -420,7 +420,7 @@ def get_all(email: str) -> dict:
     :return: the JSON string representation
     """
     surveys = get_surveys_by_email(email)
-    return [_to_json(survey) for survey in surveys]
+    return json_response([_to_json(survey) for survey in surveys])
 
 
 def update(data: dict):
@@ -459,4 +459,4 @@ def delete(survey_id: str):
     """
     with engine.connect() as connection:
         connection.execute(delete_record(survey_table, 'survey_id', survey_id))
-    return {'message': 'Survey deleted'}
+    return json_response('Survey deleted')

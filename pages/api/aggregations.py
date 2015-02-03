@@ -1,6 +1,7 @@
 """API endpoints dealing with aggregations."""
 from tornado.escape import json_encode
 import tornado.web
+from api import json_response
 
 import api.aggregation
 from pages.util.base import APIHandler, get_email, validation_message
@@ -29,4 +30,4 @@ class AggregationHandler(APIHandler):
     def get(self, question_id: str):
         response = [self._apply_aggregation(arg, question_id) for arg in
                     self.request.arguments]
-        self.write(json_encode(response))
+        self.write(json_response(response))

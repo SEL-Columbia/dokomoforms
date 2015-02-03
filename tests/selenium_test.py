@@ -109,24 +109,24 @@ class SubmissionTest(DriverTest):
         self.drv.find_element_by_id('with_other').click()
         self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('other 8')
         next_button.click()
-        next_button.click()
-        # TODO: Not really sure how to test the facility question...
+        next_button.click()  # note question
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, in_xpath + 'div[2]/div[1]/div[2]/div[3]/img[1]')))
-        self.drv.find_element_by_xpath(
-            in_xpath + 'div[2]/div[1]/div[2]/div[3]/img[1]').click()
+            (By.XPATH, in_xpath + 'div[3]/input')))
+        self.drv.find_element_by_xpath(in_xpath + 'div[3]/input').send_keys(
+            'new_test_facility')
+        self.drv.find_element_by_xpath(in_xpath + 'div[4]/span[2]').click()
         next_button.click()
         self.drv.find_element_by_xpath(in_xpath + 'div[2]').click()
 
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div/div[4]/input')))
+            (By.XPATH, '/html/body/div/div[3]/input')))
 
         # Check the submissions
         self.drv.get(base + '/')
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[1]/div[3]/div[1]/ul/li/a')))
+            (By.XPATH, '/html/body/div/div[3]/div[2]/ul/li/a')))
         self.drv.find_element_by_xpath(
-            '/html/body/div[1]/div[3]/div[1]/ul/li/a').click()
+            '/html/body/div/div[3]/div[2]/ul/li/a').click()
         self.drv.find_element_by_xpath(
             '/html/body/div/div[3]/div[1]/ul/li/a').click()
 

@@ -15,6 +15,7 @@ import tornado.httpclient
 import tornado.ioloop
 from tornado.testing import AsyncHTTPTestCase
 import tornado.web
+from api import json_response
 
 import api.aggregation
 import api.submission
@@ -28,7 +29,7 @@ from db.question_choice import question_choice_table
 from db.submission import submission_table
 from pages.api.aggregations import AggregationHandler
 from pages.api.submissions import SubmissionsAPIHandler, \
-    SingleSubmissionAPIHandler
+    SingleSubmissionAPIHandler, SubmitAPIHandler
 from pages.api.surveys import SurveysAPIHandler, SingleSurveyAPIHandler
 from pages.util.base import catch_bare_integrity_error
 from pages.view.submissions import ViewSubmissionsHandler, \
@@ -90,7 +91,7 @@ def _create_submission() -> dict:
                        {'question_id': fourth_q_id,
                         'answer': 3.5,
                         'is_other': False}]}
-    return api.submission.submit(input_data)
+    return api.submission.submit(input_data)['result']
 
 
 class APITest(AsyncHTTPTestCase):
@@ -98,7 +99,7 @@ class APITest(AsyncHTTPTestCase):
         submission_table.delete().execute()
 
     def get_app(self):
-        self.app = tornado.web.Application(pages, **config)
+        self.app = tornado.web.Application(pages, **new_config)
         return self.app
 
     def get_new_ioloop(self):
@@ -124,17 +125,60 @@ class APITest(AsyncHTTPTestCase):
             response = self.fetch(
                 '/api/surveys/{}/submissions'.format(survey_id))
         self.assertEqual(response.code, 200)
-        json_response = json_decode(to_unicode(response.body))
-        self.assertNotEqual(json_response, [])
-        self.assertEqual(json_response,
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(webpage_response,
                          api.submission.get_all(survey_id, 'test_email'))
+
+    def testGetSubmissionsBySubmitter(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        _create_submission()
+        with mock.patch.object(SubmissionsAPIHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch(
+                '/api/surveys/{}/submissions?submitter='.format(survey_id))
+        self.assertEqual(response.code, 200)
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(webpage_response,
+                         api.submission.get_all(survey_id, 'test_email'))
+
+    def testGetSubmissionsWithFilter(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+
+        question_id = question_table.select().where(
+            and_cond).execute().first().question_id
+        _create_submission()
+        filters = [{'question_id': question_id, 'answer_integer': 1}]
+        with mock.patch.object(SubmissionsAPIHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch(
+                '/api/surveys/{}/submissions'.format(survey_id), method='POST',
+                body=json_encode({'filters': filters}))
+        self.assertEqual(response.code, 200)
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(webpage_response,
+                         api.submission.get_all(survey_id, 'test_email',
+                                                filters=filters))
 
     def testGetSubmissionsWithAPIToken(self):
         survey_id = survey_table.select().where(
             survey_table.c.survey_title == 'test_title').execute().first(
 
         ).survey_id
-        token = api.user.generate_token({'email': 'test_email'})['token']
+        token = api.user.generate_token({'email':
+                                             'test_email'})['result']['token']
         response = self.fetch('/api/surveys/{}/submissions'.format(survey_id),
                               headers={'Token': token, 'Email': 'test_email'})
         self.assertEqual(response.code, 200)
@@ -146,7 +190,8 @@ class APITest(AsyncHTTPTestCase):
             survey_table.c.survey_title == 'test_title').execute().first(
 
         ).survey_id
-        token = api.user.generate_token({'email': 'test_email'})['token']
+        token = api.user.generate_token({'email':
+                                             'test_email'})['result']['token']
         response = self.fetch('/api/surveys/{}/submissions'.format(survey_id),
                               headers={'Token': generate_api_token(),
                                        'Email': 'test_email'})
@@ -159,19 +204,75 @@ class APITest(AsyncHTTPTestCase):
             m.return_value = 'test_email'
             response = self.fetch('/api/submissions/{}'.format(submission_id))
         self.assertEqual(response.code, 200)
-        json_response = json_decode(to_unicode(response.body))
-        self.assertNotEqual(json_response, [])
-        self.assertEqual(json_response,
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(webpage_response,
                          api.submission.get_one(submission_id, 'test_email'))
+
+    def testPostSubmission(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        question_id = question_table.select().where(
+            and_cond).execute().first().question_id
+        second_cond = and_(question_table.c.survey_id == survey_id,
+                           question_table.c.type_constraint_name ==
+                           'multiple_choice')
+        second_q_id = question_table.select().where(
+            second_cond).execute().first().question_id
+        choice_cond = question_choice_table.c.question_id == second_q_id
+        choice_id = question_choice_table.select().where(
+            choice_cond).execute().first().question_choice_id
+        third_cond = and_(question_table.c.survey_id == survey_id,
+                          question_table.c.type_constraint_name == 'text')
+        third_q_id = question_table.select().where(
+            third_cond).execute().first().question_id
+        fourth_cond = and_(question_table.c.survey_id == survey_id,
+                           question_table.c.type_constraint_name == 'decimal')
+        fourth_q_id = question_table.select().where(
+            fourth_cond).execute().first().question_id
+        input_data = {'survey_id': survey_id,
+                      'answers':
+                          [{'question_id': question_id,
+                            'answer': 1,
+                            'is_other': False},
+                           {'question_id': second_q_id,
+                            'answer': choice_id,
+                            'is_other': False},
+                           {'question_id': third_q_id,
+                            'answer': 'answer one',
+                            'is_other': False},
+                           {'question_id': third_q_id,
+                            'answer': 'answer two',
+                            'is_other': False},
+                           {'question_id': fourth_q_id,
+                            'answer': 3.5,
+                            'is_other': False}]}
+        response = self.fetch('/api/surveys/{}/submit'.format(survey_id),
+                              method='POST', body=json_encode(input_data))
+        result = json_decode(to_unicode(response.body))['result']
+        submission_id = result['submission_id']
+        self.assertEqual(result,
+                         api.submission.get_one(submission_id,
+                                                email='test_email')['result'])
+        self.assertEqual(response.code, 201)
+
 
     def testGetSurveys(self):
         with mock.patch.object(SurveysAPIHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
             response = self.fetch('/api/surveys')
         self.assertEqual(response.code, 200)
-        json_response = json_decode(to_unicode(response.body))
-        self.assertNotEqual(json_response, [])
-        self.assertEqual(json_response, api.survey.get_all('test_email'))
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(webpage_response, api.survey.get_all('test_email'))
 
     def testGetSingleSurvey(self):
         survey_id = survey_table.select().where(
@@ -183,9 +284,9 @@ class APITest(AsyncHTTPTestCase):
             m.return_value = 'test_email'
             response = self.fetch('/api/surveys/{}'.format(survey_id))
         self.assertEqual(response.code, 200)
-        json_response = json_decode(to_unicode(response.body))
-        self.assertNotEqual(json_response, [])
-        self.assertEqual(json_response,
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(webpage_response,
                          api.survey.get_one(survey_id, email='test_email'))
 
     def testGetMin(self):
@@ -211,11 +312,11 @@ class APITest(AsyncHTTPTestCase):
             m.return_value = 'test_email'
             response = self.fetch('/api/aggregate/{}?min'.format(question_id))
         self.assertEqual(response.code, 200)
-        json_response = json_decode(to_unicode(response.body))
-        self.assertNotEqual(json_response, [])
-        self.assertEqual(json_response,
-                         [api.aggregation.min(question_id,
-                                              email='test_email')])
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(webpage_response,
+                         json_response([api.aggregation.min(question_id,
+                                                            email='test_email')]))
 
     def testGetShmin(self):
         survey_id = survey_table.select().where(
@@ -300,11 +401,11 @@ class APITest(AsyncHTTPTestCase):
             m.return_value = 'test_email'
             response = self.fetch('/api/aggregate/{}?max'.format(question_id))
         self.assertEqual(response.code, 200)
-        json_response = json_decode(to_unicode(response.body))
-        self.assertNotEqual(json_response, [])
-        self.assertEqual(json_response,
-                         [api.aggregation.max(question_id,
-                                              email='test_email')])
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(webpage_response,
+                         json_response([api.aggregation.max(question_id,
+                                                            email='test_email')]))
 
     def testGetMinAndMax(self):
         survey_id = survey_table.select().where(
@@ -330,12 +431,12 @@ class APITest(AsyncHTTPTestCase):
             response = self.fetch(
                 '/api/aggregate/{}?min&max'.format(question_id))
         self.assertEqual(response.code, 200)
-        json_response = json_decode(to_unicode(response.body))
-        self.assertNotEqual(json_response, [])
+        webpage_response = json_decode(to_unicode(response.body))['result']
+        self.assertNotEqual(webpage_response, [])
         self.assertIn(api.aggregation.min(question_id, email='test_email'),
-                      json_response)
+                      webpage_response)
         self.assertIn(api.aggregation.max(question_id, email='test_email'),
-                      json_response)
+                      webpage_response)
 
     def testGetSum(self):
         survey_id = survey_table.select().where(
@@ -360,11 +461,11 @@ class APITest(AsyncHTTPTestCase):
             m.return_value = 'test_email'
             response = self.fetch('/api/aggregate/{}?sum'.format(question_id))
         self.assertEqual(response.code, 200)
-        json_response = json_decode(to_unicode(response.body))
-        self.assertNotEqual(json_response, [])
-        self.assertEqual(json_response,
-                         [api.aggregation.sum(question_id,
-                                              email='test_email')])
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(webpage_response,
+                         json_response([api.aggregation.sum(question_id,
+                                                            email='test_email')]))
 
     def testGetCount(self):
         survey_id = survey_table.select(). \
@@ -388,10 +489,11 @@ class APITest(AsyncHTTPTestCase):
             m.return_value = 'test_email'
             response = self.fetch('/api/aggregate/{}?count'.format(q_id))
         self.assertEqual(response.code, 200)
-        json_response = json_decode(to_unicode(response.body))
-        self.assertNotEqual(json_response, [])
-        self.assertEqual(json_response,
-                         [api.aggregation.count(q_id, email='test_email')])
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(webpage_response,
+                         json_response([
+                             api.aggregation.count(q_id, email='test_email')]))
 
     def testGetAvg(self):
         survey_id = survey_table.select().where(
@@ -416,10 +518,11 @@ class APITest(AsyncHTTPTestCase):
             m.return_value = 'test_email'
             response = self.fetch('/api/aggregate/{}?avg'.format(q_id))
         self.assertEqual(response.code, 200)
-        json_response = json_decode(to_unicode(response.body))
-        self.assertNotEqual(json_response, [])
-        self.assertEqual(json_response,
-                         [api.aggregation.avg(q_id, email='test_email')])
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(webpage_response,
+                         json_response(
+                             [api.aggregation.avg(q_id, email='test_email')]))
 
     def testGetStddevPop(self):
         survey_id = survey_table.select().where(
@@ -444,11 +547,11 @@ class APITest(AsyncHTTPTestCase):
             m.return_value = 'test_email'
             response = self.fetch('/api/aggregate/{}?stddev_pop'.format(q_id))
         self.assertEqual(response.code, 200)
-        json_response = json_decode(to_unicode(response.body))
-        self.assertNotEqual(json_response, [])
-        self.assertEqual(json_response,
-                         [api.aggregation.stddev_pop(q_id,
-                                                     email='test_email')])
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(webpage_response,
+                         json_response([api.aggregation.stddev_pop(q_id,
+                                                                   email='test_email')]))
 
     def testGetStddevSamp(self):
         survey_id = survey_table.select().where(
@@ -473,11 +576,11 @@ class APITest(AsyncHTTPTestCase):
             m.return_value = 'test_email'
             response = self.fetch('/api/aggregate/{}?stddev_samp'.format(q_id))
         self.assertEqual(response.code, 200)
-        json_response = json_decode(to_unicode(response.body))
-        self.assertNotEqual(json_response, [])
-        self.assertEqual(json_response,
-                         [api.aggregation.stddev_samp(q_id,
-                                                      email='test_email')])
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(webpage_response,
+                         json_response([api.aggregation.stddev_samp(q_id,
+                                                                    email='test_email')]))
 
     def testGetMode(self):
         survey_id = survey_table.select().where(
@@ -502,10 +605,11 @@ class APITest(AsyncHTTPTestCase):
             m.return_value = 'test_email'
             response = self.fetch('/api/aggregate/{}?mode'.format(q_id))
         self.assertEqual(response.code, 200)
-        json_response = json_decode(to_unicode(response.body))
-        self.assertNotEqual(json_response, [])
-        self.assertEqual(json_response,
-                         [api.aggregation.mode(q_id, email='test_email')])
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(webpage_response,
+                         json_response(
+                             [api.aggregation.mode(q_id, email='test_email')]))
 
     def testGetModeLocation(self):
         survey_id = survey_table.select().where(
@@ -529,10 +633,11 @@ class APITest(AsyncHTTPTestCase):
             m.return_value = 'test_email'
             response = self.fetch('/api/aggregate/{}?mode'.format(q_id))
         self.assertEqual(response.code, 200)
-        json_response = json_decode(to_unicode(response.body))
-        self.assertNotEqual(json_response, [])
-        self.assertEqual(json_response,
-                         [api.aggregation.mode(q_id, email='test_email')])
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(webpage_response,
+                         json_response(
+                             [api.aggregation.mode(q_id, email='test_email')]))
 
 
     def testGetTimeSeries(self):
@@ -558,12 +663,12 @@ class APITest(AsyncHTTPTestCase):
             m.return_value = 'test_email'
             response = self.fetch('/api/aggregate/{}?time_series'.format(q_id))
         self.assertEqual(response.code, 200)
-        json_response = json_decode(to_unicode(response.body))
-        self.assertNotEqual(json_response, [])
+        webpage_response = json_decode(to_unicode(response.body))['result']
+        self.assertNotEqual(webpage_response, [])
         api_response = api.aggregation.time_series(q_id, email='test_email')
-        self.assertSequenceEqual(json_response[0]['result'][0],
+        self.assertSequenceEqual(webpage_response[0]['result'][0],
                                  api_response['result'][0])
-        self.assertSequenceEqual(json_response[0]['result'][1],
+        self.assertSequenceEqual(webpage_response[0]['result'][1],
                                  api_response['result'][1])
 
 
@@ -590,12 +695,12 @@ class APITest(AsyncHTTPTestCase):
             m.return_value = 'test_email'
             response = self.fetch('/api/aggregate/{}?bar_graph'.format(q_id))
         self.assertEqual(response.code, 200)
-        json_response = json_decode(to_unicode(response.body))
-        self.assertNotEqual(json_response, [])
+        webpage_response = json_decode(to_unicode(response.body))['result']
+        self.assertNotEqual(webpage_response, [])
         api_response = api.aggregation.bar_graph(q_id, email='test_email')
-        self.assertSequenceEqual(json_response[0]['result'][0],
+        self.assertSequenceEqual(webpage_response[0]['result'][0],
                                  api_response['result'][0])
-        self.assertSequenceEqual(json_response[0]['result'][1],
+        self.assertSequenceEqual(webpage_response[0]['result'][1],
                                  api_response['result'][1])
 
 
@@ -709,7 +814,7 @@ class SurveyTest(AsyncHTTPTestCase):
 
         self.assertFalse(response.error)
         result = to_unicode(response.body)
-        result_submission_id = json_decode(result)['submission_id']
+        result_submission_id = json_decode(result)['result']['submission_id']
         condition = submission_table.c.submission_id == result_submission_id
         self.assertEqual(
             submission_table.select().where(condition).execute().rowcount, 1)

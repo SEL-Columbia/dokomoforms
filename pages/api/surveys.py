@@ -14,7 +14,7 @@ class SurveysAPIHandler(APIHandler):
         I hope you like parentheses.
 
         """
-        self.write(json_encode(api.survey.get_all(get_email(self))))
+        self.write(api.survey.get_all(get_email(self)))
 
 
 class SingleSurveyAPIHandler(APIHandler):
@@ -22,4 +22,4 @@ class SingleSurveyAPIHandler(APIHandler):
 
     def get(self, survey_id: str):
         email = get_email(self)
-        self.write(json_encode(api.survey.get_one(survey_id, email=email)))
+        self.write(api.survey.get_one(survey_id, email=email))
