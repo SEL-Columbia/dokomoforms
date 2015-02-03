@@ -29,7 +29,7 @@ from db.question_choice import question_choice_table
 from db.submission import submission_table
 from pages.api.aggregations import AggregationHandler
 from pages.api.submissions import SubmissionsAPIHandler, \
-    SingleSubmissionAPIHandler
+    SingleSubmissionAPIHandler, SubmitAPIHandler
 from pages.api.surveys import SurveysAPIHandler, SingleSurveyAPIHandler
 from pages.util.base import catch_bare_integrity_error
 from pages.view.submissions import ViewSubmissionsHandler, \
@@ -208,6 +208,62 @@ class APITest(AsyncHTTPTestCase):
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
                          api.submission.get_one(submission_id, 'test_email'))
+
+    def testPostSubmission(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        question_id = question_table.select().where(
+            and_cond).execute().first().question_id
+        second_cond = and_(question_table.c.survey_id == survey_id,
+                           question_table.c.type_constraint_name ==
+                           'multiple_choice')
+        second_q_id = question_table.select().where(
+            second_cond).execute().first().question_id
+        choice_cond = question_choice_table.c.question_id == second_q_id
+        choice_id = question_choice_table.select().where(
+            choice_cond).execute().first().question_choice_id
+        third_cond = and_(question_table.c.survey_id == survey_id,
+                          question_table.c.type_constraint_name == 'text')
+        third_q_id = question_table.select().where(
+            third_cond).execute().first().question_id
+        fourth_cond = and_(question_table.c.survey_id == survey_id,
+                           question_table.c.type_constraint_name == 'decimal')
+        fourth_q_id = question_table.select().where(
+            fourth_cond).execute().first().question_id
+        input_data = {'survey_id': survey_id,
+                      'answers':
+                          [{'question_id': question_id,
+                            'answer': 1,
+                            'is_other': False},
+                           {'question_id': second_q_id,
+                            'answer': choice_id,
+                            'is_other': False},
+                           {'question_id': third_q_id,
+                            'answer': 'answer one',
+                            'is_other': False},
+                           {'question_id': third_q_id,
+                            'answer': 'answer two',
+                            'is_other': False},
+                           {'question_id': fourth_q_id,
+                            'answer': 3.5,
+                            'is_other': False}]}
+        response = self.fetch('/api/surveys/{}/submit'.format(survey_id),
+                              method='POST', body=json_encode(input_data))
+        result = json_decode(to_unicode(response.body))['result']
+        submission_id = result['submission_id']
+        self.assertEqual(result,
+                         api.submission.get_one(submission_id,
+                                                email='test_email')['result'])
+        self.assertEqual(response.code, 201)
+
 
     def testGetSurveys(self):
         with mock.patch.object(SurveysAPIHandler, 'get_secure_cookie') as m:

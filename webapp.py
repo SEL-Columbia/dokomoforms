@@ -17,7 +17,7 @@ import api.user
 from pages.api.aggregations import AggregationHandler
 from pages.auth import LogoutHandler, LoginHandler
 from pages.api.submissions import SubmissionsAPIHandler, \
-    SingleSubmissionAPIHandler
+    SingleSubmissionAPIHandler, SubmitAPIHandler
 from pages.api.surveys import SurveysAPIHandler, SingleSurveyAPIHandler
 from pages.util.base import BaseHandler, get_json_request_body, \
     validation_message, catch_bare_integrity_error
@@ -65,22 +65,8 @@ class Survey(BaseHandler):
             raise tornado.web.HTTPError(404)
 
 
-    @catch_bare_integrity_error
     def post(self, uuid):
-        data = get_json_request_body(self)
-
-        if data.get('survey_id', None) != uuid:
-            reason = validation_message('submission', 'survey_id', 'invalid')
-            raise tornado.web.HTTPError(422, reason=reason)
-        try:
-            self.write(api.submission.submit(data))
-            self.set_status(201)
-        except KeyError as e:
-            reason = validation_message('submission', str(e), 'missing_field')
-            raise tornado.web.HTTPError(422, reason=reason)
-        except IncorrectQuestionIdError:
-            reason = validation_message('submission', 'question_id', 'invalid')
-            raise tornado.web.HTTPError(422, reason=reason)
+        SubmitAPIHandler.post(self, uuid) # TODO: Hey Abdi kill this
 
 
 class APITokenGenerator(BaseHandler):
@@ -137,6 +123,7 @@ pages = [
 
     (r'/api/surveys/?', SurveysAPIHandler),
     (r'/api/surveys/({})/?'.format(UUID_REGEX), SingleSurveyAPIHandler),
+    (r'/api/surveys/({})/submit/?'.format(UUID_REGEX), SubmitAPIHandler),
     (r'/api/surveys/({})/submissions/?'.format(UUID_REGEX),
      SubmissionsAPIHandler),
     (r'/api/submissions/({})/?'.format(UUID_REGEX),
