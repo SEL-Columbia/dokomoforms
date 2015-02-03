@@ -477,6 +477,39 @@ class TestSubmission(unittest.TestCase):
                                                submitters=['test_submitter1'])
         self.assertEqual(submissions.rowcount, 1)
 
+    def testGetSubmissionsWithFilter(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'integer')
+        question = q_where.execute().first()
+        question_id = question.question_id
+        tcn = question.type_constraint_name
+        seq = question.sequence_number
+        mul = question.allow_multiple
+        for i in range(2):
+            submission_exec = submission_insert(submitter='test_submitter',
+                                                survey_id=survey_id).execute()
+            submission_id = submission_exec.inserted_primary_key[0]
+            answer_exec = answer_insert(answer=i, question_id=question_id,
+                                        submission_id=submission_id,
+                                        survey_id=survey_id,
+                                        type_constraint_name=tcn,
+                                        is_other=False,
+                                        sequence_number=seq,
+                                        allow_multiple=mul).execute()
+        self.assertEqual(
+            len(get_submissions_by_email(survey_id,
+                                         email='test_email').fetchall()), 2)
+        self.assertEqual(len(
+            get_submissions_by_email(survey_id,
+                                     email='test_email',
+                                     filters=[{'question_id': question_id,
+                                               'answer_integer': 1}
+                                     ]).fetchall()), 1)
+
     def testSubmissionInsert(self):
         survey_id = survey_table.select().where(
             survey_table.c.survey_title == 'test_title').execute().first(

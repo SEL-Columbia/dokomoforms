@@ -99,7 +99,7 @@ class APITest(AsyncHTTPTestCase):
         submission_table.delete().execute()
 
     def get_app(self):
-        self.app = tornado.web.Application(pages, **config)
+        self.app = tornado.web.Application(pages, **new_config)
         return self.app
 
     def get_new_ioloop(self):
@@ -130,7 +130,7 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(webpage_response,
                          api.submission.get_all(survey_id, 'test_email'))
 
-    def testGetSubmissionsWithFilter(self):
+    def testGetSubmissionsBySubmitter(self):
         survey_id = survey_table.select().where(
             survey_table.c.survey_title == 'test_title').execute().first(
 
@@ -146,6 +146,31 @@ class APITest(AsyncHTTPTestCase):
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
                          api.submission.get_all(survey_id, 'test_email'))
+
+    def testGetSubmissionsWithFilter(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+
+        question_id = question_table.select().where(
+            and_cond).execute().first().question_id
+        _create_submission()
+        filters = [{'question_id': question_id, 'answer_integer': 1}]
+        with mock.patch.object(SubmissionsAPIHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch(
+                '/api/surveys/{}/submissions'.format(survey_id), method='POST',
+                body=json_encode({'filters': filters}))
+        self.assertEqual(response.code, 200)
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(webpage_response,
+                         api.submission.get_all(survey_id, 'test_email',
+                                                filters=filters))
 
     def testGetSubmissionsWithAPIToken(self):
         survey_id = survey_table.select().where(
