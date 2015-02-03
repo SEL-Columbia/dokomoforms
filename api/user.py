@@ -1,5 +1,6 @@
 """Functions for interacting with user accounts."""
 from datetime import timedelta
+from api import json_response
 
 from db import engine
 from db.auth_user import get_auth_user_by_email, create_auth_user, \
@@ -20,8 +21,8 @@ def create_user(data: dict) -> dict:
     except UserDoesNotExistError:
         with engine.begin() as connection:
             connection.execute(create_auth_user(email=email))
-        return {'email': email, 'response': 'Created'}
-    return {'email': email, 'response': 'Already exists'}
+        return json_response({'email': email, 'response': 'Created'})
+    return json_response({'email': email, 'response': 'Already exists'})
 
 
 def generate_token(data: dict) -> dict:
@@ -45,8 +46,8 @@ def generate_token(data: dict) -> dict:
     with engine.begin() as connection:
         connection.execute(set_api_token(**params))
     updated_user = get_auth_user_by_email(data['email'])
-    return {'token': token,
-            'expires_on': updated_user.expires_on.isoformat()}
+    return json_response(
+        {'token': token, 'expires_on': updated_user.expires_on.isoformat()})
 
 
 class TokenDurationTooLong(Exception):

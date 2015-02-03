@@ -11,7 +11,7 @@ VALUES ('test_email')
 RETURNING auth_user_id INTO the_auth_user_id;
 
 INSERT INTO survey (survey_title, auth_user_id, metadata)
-VALUES ('test_title', the_auth_user_id, '{"foo": "bar"}')
+VALUES ('test_title', the_auth_user_id, '{"location": [5.118915, 7.353078]}')
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, question_title,
@@ -19,7 +19,8 @@ INSERT INTO question (survey_id, sequence_number, question_title,
 VALUES (the_survey_id, 5, 'time question', 'time', False, 6),
        (the_survey_id, 6, 'location question', 'location', False, 7),
        (the_survey_id, 7, 'text question', 'text', True, 8),
-       (the_survey_id, 9, 'note', 'note', False, -1);
+       (the_survey_id, 9, 'note', 'note', False, 10),
+       (the_survey_id, 10, 'facility question', 'facility', False, -1);
 
 INSERT INTO question (survey_id, sequence_number, question_title,
     type_constraint_name, logic, allow_multiple, question_to_sequence_number)
@@ -90,8 +91,8 @@ INSERT INTO auth_user (email)
 VALUES ('a.dahir7@gmail.com')
 RETURNING auth_user_id INTO the_auth_user_id;
 
-INSERT INTO survey (survey_title, auth_user_id)
-VALUES ('test_title2', the_auth_user_id)
+INSERT INTO survey (survey_title, auth_user_id, metadata)
+VALUES ('test_title2', the_auth_user_id,'{"location": [5.118915, 7.353078]}')
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, question_title,
@@ -200,8 +201,8 @@ VALUES (the_survey_id, 1, 'rate me', 'integer', True, 2),
        (the_survey_id, 2, 'will you go out with me?', 'text', True, 3),
        (the_survey_id, 3, 'im gonan ask you out anyway', 'note', False, -1);
 
-INSERT INTO survey(survey_title, auth_user_id)
-VALUES ('my favourite number', the_auth_user_id)
+INSERT INTO survey (survey_title, auth_user_id, metadata)
+VALUES ('my favourite number', the_auth_user_id, '{"location": [5.118915, 7.353078]}')
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, question_title,

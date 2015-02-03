@@ -56,7 +56,7 @@ class Survey(BaseHandler):
             if len(survey_prefix) < 36:
                 self.redirect('/survey/{}'.format(survey_id), permanent=False)
             else:
-                survey = api.survey.display_survey(survey_id)
+                survey = api.survey.display_survey(survey_id)['result']
                 self.render('survey.html',
                             survey=json_encode(survey),
                             survey_title=survey['survey_title'])
