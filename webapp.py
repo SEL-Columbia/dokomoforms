@@ -62,7 +62,6 @@ class Survey(BaseHandler):
             raise tornado.web.HTTPError(404)
 
 
-    @catch_bare_integrity_error
     def post(self, uuid):
         SubmitAPIHandler.post(self, uuid) # TODO: Hey Abdi kill this
 
