@@ -99,7 +99,7 @@ describe('Survey tests', function(done) {
         done();
     });
 
-    it('should init app and survey juust fine', 
+    it('should ', //XXX: soon 
         function(done) {
             var questions = [
                 {
@@ -108,23 +108,59 @@ describe('Survey tests', function(done) {
                     sequence_number: 1
                 },
                 {
-                    question_to_sequence_number: 2,
-                    type_constraint_name: "text",
-                    sequence_number: 3
-                },
-                {
                     question_to_sequence_number: 3,
                     type_constraint_name: "text",
-                    sequence_number: -1
+                    sequence_number: 2
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "text",
+                    sequence_number: 3
                 },
             ];
 
             var survey = new window.Survey("id", questions, {});
+            //XXX: soon
 
             done();
 
         });
     
+    it('should return false for invalid input true otherwise',
+        function(done) {
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "integer",
+                    answers = [0]
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: 3,
+                    type_constraint_name: "integer",
+                    answers = [1]
+                    sequence_number: 2
+                },
+                {
+                    question_to_sequence_number: 4,
+                    type_constraint_name: "integer",
+                    answers = ["hi"]
+                    sequence_number: 3
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    answers = [""]
+                    sequence_number: 4
+                },
+            ];
+
+            var survey = new window.Survey("id", questions, {});
+
+
+            done();
+
+        });
 });
 
 
