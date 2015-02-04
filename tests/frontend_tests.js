@@ -112,19 +112,19 @@ describe('Survey function tests', function(done) {
             var survey = new window.Survey("id", questions, {});
 
             // empty
-            survey.hasOneResponse(questions[0]).should.match(false);
+            should(survey.getFirstResponse(questions[0])).not.be.ok;
             // O value
             questions[0].answer = [0];
-            survey.hasOneResponse(questions[0]).should.match(true);
+            should(survey.getFirstResponse(questions[0])).match(0);;
             // some value
             questions[0].answer = [1];
-            survey.hasOneResponse(questions[0]).should.match(true);
+            should(survey.getFirstResponse(questions[0])).be.ok;
             // empty string
             questions[0].answer = [""];
-            survey.hasOneResponse(questions[0]).should.match(false);
-            // incorrect type (get hasOneResponse does not validate type)
+            should(survey.getFirstResponse(questions[0])).not.be.ok;
+            // incorrect type (get getFirstResponse does not validate type)
             questions[0].answer = ["bs"];
-            survey.hasOneResponse(questions[0]).should.match(true);
+            should(survey.getFirstResponse(questions[0])).be.ok;
 
             done();
 
@@ -150,7 +150,18 @@ describe('Survey function tests', function(done) {
             ];
 
             var survey = new window.Survey("id", questions, {});
-            console.log(survey.next(NEXT));
+            questions[0].should.equal(survey.current_question);
+
+            // state shouldn't change
+            survey.next(NEXT);
+            questions[0].should.equal(survey.current_question);
+            questions[1].should.not.equal(survey.current_question);
+            
+            // state SHOULD change
+            questions[0].answer = [1];
+            survey.next(NEXT);
+            questions[0].should.not.equal(survey.current_question);
+            questions[1].should.equal(survey.current_question);
 
             done();
 

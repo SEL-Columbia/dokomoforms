@@ -119,18 +119,18 @@ function Survey(id, questions, metadata) {
 
     // Load answers from localStorage
     var answers = JSON.parse(localStorage[this.id] || '{}');
-    _.each(this.questions, function(question, ind, questions) {
+    _.each(self.questions, function(question, ind, questions) {
         question.answer = answers[question.question_id] || [];
         // Set next pointers
         question.next = self.getQuestion(question.question_to_sequence_number);
     });
 
-    // No where to start, and number
-    this.current_question = this.questions[0];
-    this.lowest_sequence_number = this.current_question.sequence_number;
+    // Know where to start, and number
+    self.current_question = self.questions[0];
+    self.lowest_sequence_number = self.current_question.sequence_number;
 
     // Now that you know order, you can set prev pointers
-    var curr_q = this.current_question;
+    var curr_q = self.current_question;
     var prev_q = null;
     do {
         curr_q.prev = prev_q;
@@ -149,7 +149,7 @@ function Survey(id, questions, metadata) {
     });
     
     // Render first question
-    this.render(this.current_question);
+    self.render(self.current_question);
 };
 
 // Search by sequence number instead of array pos
@@ -164,13 +164,14 @@ Survey.prototype.getQuestion = function(seq) {
 }
 
 // Answer array may have elements even if answer[0] is undefined
-Survey.prototype.hasOneResponse = function(question) {
+// XXX: function name doesnt match return types
+Survey.prototype.getFirstResponse = function(question) {
     for (i = 0; i < question.answer.length; i++) {
         if (question.answer[i] || question.answer[i] === 0)
-            return true;
+            return question.answer[i];
     }
 
-    return false;
+    return null;
 }
 
 // Choose next question, deals with branching and back/forth movement
@@ -179,7 +180,7 @@ Survey.prototype.next = function(offset) {
     var next_question = offset === PREV ? this.current_question.prev : this.current_question.next;
     var index = $('.content').data('index');
     var response = this.current_question.answer;
-    var first_response = this.hasOneResponse(this.current_question); 
+    var first_response = this.getFirstResponse(this.current_question); 
 
     //XXX: 0 is not the indicator anymore its lowest sequence num;
     if (index === self.lowest_sequence_number && offset === PREV) {
@@ -239,6 +240,7 @@ Survey.prototype.render = function(question) {
             .scrollTop(); //XXX: Ignored in chrome ...
         
         // Clear any interval events
+        // XXX: Blinky light could be in css instead
         if (Widgets.interval) {
             window.clearInterval(Widgets.interval);
             Widgets.interval = null;
@@ -380,7 +382,7 @@ Widgets.text = function(question, page) {
     function keyup(e) {
         var ans_ind = ($(page).find('input')).index(this);
         question.answer[ans_ind] = this.value;
-        if (e.keyCode === 13) {
+        if (e.keyCode === 13) { // 13 == return
             self._addNewInput(page, question, 'text_input', 'text', keyup);
         }
     };
@@ -504,6 +506,7 @@ Widgets.note = function(question, page) {
 };
 
 // Multiple choice and multiple choice with other are handled here by same func
+// XXX: possibly two widgets (multi select and multi choice)
 Widgets.multiple_choice = function(question, page) {
 
     // record values for each select option to update answer array in consistent way
@@ -533,7 +536,7 @@ Widgets.multiple_choice = function(question, page) {
             var svals = $('select').val();
             svals = typeof svals === 'string' ? [svals] : svals
             // find all select options
-            svals.forEach(function(opt) { //TODO: THIS IS INCORRECT LOOP
+            svals.forEach(function(opt) { 
                 // Please choose something option wipes answers
                 var ind = $children.indexOf(opt) - 1;
                 if (opt === 'null') 
@@ -620,7 +623,8 @@ Widgets.location = function(question, page) {
     };
 
     // Save the interval id, clear it every time a page is rendered
-    Widgets.interval = window.setInterval(updateColour, 50);
+    Widgets.interval = window.setInterval(updateColour, 50); // XXX: could be CSS
+
     map.addLayer(App._getMapLayer());
     map.on('drag', function(e) {
         circle.setLatLng(map.getCenter());
@@ -705,6 +709,7 @@ Widgets.facility = function(question, page) {
     // Add markers here so clearing them isn't such a huge pain
     var facilities_group = new L.featureGroup();
     var new_facilities_group = new L.featureGroup();
+
     facilities_group.addTo(map);
     new_facilities_group.addTo(map);
 
@@ -986,6 +991,8 @@ Widgets.facility = function(question, page) {
 };
 
 // Handle creating multiple inputs for widgets that support it 
+// XXX: Maybe feature isn't required
+// XXX: Duplicate exisiting field instead of creating new one
 Widgets._addNewInput = function(page, question, cls, type, keyup_cb, change_cb) {
     if (question.allow_multiple) {
         $('<input>')
@@ -1020,6 +1027,7 @@ function getNearbyFacilities(lat, lng, rad, lim, id, cb) {
     );
 }
 
+// XXX: Really doesn't need to
 function postNewFacility(facility) {
     var url = "http://staging.revisit.global/api/v0/facilities.json";
     //var url = "http://localhost:3000/api/v0/facilities.json" // install revisit server from git
