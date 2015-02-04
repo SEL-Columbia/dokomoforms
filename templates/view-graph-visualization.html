@@ -6,10 +6,14 @@
 
     <div class="content">
         <h4>Welcome {{ current_user }}</h4>
-        <p> Value over time: </p>
-        <img class="graph" src="/images/{{ question_id }}_time.png" />
+        {% if question.type_constraint_name in {'integer', 'decimal'} %}
+            <p> Value over time: </p>
+            <img class="graph" src="/images/{{ question.question_id }}_time.png" />
+        {% end %}
+        {% if question.type_constraint_name in {'text', 'integer', 'decimal', 'date', 'time', 'location', 'multiple_choice'} %}
         <p> Bar graph: </p>
-        <img class="graph" src="/images/{{ question_id }}_bar.png" />
+        {% end %}
+        <img class="graph" src="/images/{{ question.question_id }}_bar.png" />
     </div>
     <div class="login">
         <a href="#" class="dokomo-button persona-button" id="logout"><span>Logout</span></a>

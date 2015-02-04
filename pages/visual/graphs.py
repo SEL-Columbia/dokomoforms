@@ -2,6 +2,7 @@ from sqlalchemy.engine import ResultProxy
 from tornado.escape import json_encode
 import tornado.web
 from db.answer import get_answers_for_question, get_geo_json
+from db.question import question_select
 
 from pages.util.base import BaseHandler
 
@@ -14,7 +15,8 @@ class GraphVisualizationHandler(BaseHandler):
     @tornado.web.authenticated
     @user_owns_question
     def get(self, question_id: str):
-        self.render('view-graph-visualization.html', question_id=question_id)
+        question = question_select(question_id)
+        self.render('view-graph-visualization.html', question=question)
 
 
 class MapVisualizationHandler(BaseHandler):
