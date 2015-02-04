@@ -164,13 +164,13 @@ Survey.prototype.getQuestion = function(seq) {
 }
 
 // Answer array may have elements even if answer[0] is undefined
-Survey.prototype.getFirstResponse = function(question) {
+Survey.prototype.hasOneResponse = function(question) {
     for (i = 0; i < question.answer.length; i++) {
-        if (question.answer[i]) 
-            return question.answer[i];
+        if (question.answer[i] || question.answer[i] === 0)
+            return true;
     }
 
-    return null;
+    return false;
 }
 
 // Choose next question, deals with branching and back/forth movement
@@ -179,7 +179,7 @@ Survey.prototype.next = function(offset) {
     var next_question = offset === PREV ? this.current_question.prev : this.current_question.next;
     var index = $('.content').data('index');
     var response = this.current_question.answer;
-    var first_response = this.getFirstResponse(this.current_question); 
+    var first_response = this.hasOneResponse(this.current_question); 
 
     //XXX: 0 is not the indicator anymore its lowest sequence num;
     if (index === self.lowest_sequence_number && offset === PREV) {
@@ -193,9 +193,9 @@ Survey.prototype.next = function(offset) {
     } 
     
     if (offset === NEXT) {
+        console.log(first_response);
         // XXX: prev_question.answer field is a mess to check, need to purify ans
-        if (this.current_question.logic.required 
-                && (first_response && first_response !== 0))  {
+        if (this.current_question.logic.required && !first_response)  {
             App.message('Survey requires this question to be completed.');
             return;
         }

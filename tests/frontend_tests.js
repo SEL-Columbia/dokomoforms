@@ -69,7 +69,7 @@ describe('App and Survey Init Tests', function(done) {
 });
 
 
-describe('Survey tests', function(done) {
+describe('Survey function tests', function(done) {
     // globals
     var window;
     var raw_survey;
@@ -99,27 +99,58 @@ describe('Survey tests', function(done) {
         done();
     });
 
-    it('should init app and survey juust fine', 
+    it('hasOneResponse: should return false for invalid input true otherwise',
         function(done) {
             var questions = [
                 {
-                    question_to_sequence_number: 2,
-                    type_constraint_name: "text",
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
                     sequence_number: 1
-                },
-                {
-                    question_to_sequence_number: 2,
-                    type_constraint_name: "text",
-                    sequence_number: 3
-                },
-                {
-                    question_to_sequence_number: 3,
-                    type_constraint_name: "text",
-                    sequence_number: -1
                 },
             ];
 
             var survey = new window.Survey("id", questions, {});
+
+            // empty
+            survey.hasOneResponse(questions[0]).should.match(false);
+            // O value
+            questions[0].answer = [0];
+            survey.hasOneResponse(questions[0]).should.match(true);
+            // some value
+            questions[0].answer = [1];
+            survey.hasOneResponse(questions[0]).should.match(true);
+            // empty string
+            questions[0].answer = [""];
+            survey.hasOneResponse(questions[0]).should.match(false);
+            // incorrect type (get hasOneResponse does not validate type)
+            questions[0].answer = ["bs"];
+            survey.hasOneResponse(questions[0]).should.match(true);
+
+            done();
+
+        });
+
+    
+    it('next: should enforce required questions',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "text",
+                    logic: {required: true},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    sequence_number: 2
+                },
+            ];
+
+            var survey = new window.Survey("id", questions, {});
+            console.log(survey.next(NEXT));
 
             done();
 
