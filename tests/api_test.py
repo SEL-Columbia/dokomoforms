@@ -354,7 +354,7 @@ class TestSurvey(unittest.TestCase):
                       'logic': {'required': False, 'with_other': False},
                       'choices': ['choice 1', 'choice 2'],
                       'branches': [{'choice_number': 0,
-                                    'to_question_number': 1}]
+                                    'to_question_number': 2}]
                      },
                      {'question_title': 'api_test question',
                       'type_constraint_name': 'text',
@@ -450,9 +450,9 @@ class TestSurvey(unittest.TestCase):
                                                'with_other': False},
                                      'choices': ['a', 'b'],
                                      'branches': [{'choice_number': 0,
-                                                   'to_question_number': 1},
+                                                   'to_question_number': 2},
                                                   {'choice_number': 0,
-                                                   'to_question_number': 2}]},
+                                                   'to_question_number': 3}]},
                                     {'question_title': 'choice error',
                                      'type_constraint_name': 'text',
                                      'sequence_number': None,
@@ -511,7 +511,7 @@ class TestSurvey(unittest.TestCase):
                       'logic': {'required': False, 'with_other': False},
                       'choices': ['1', '2', '3'],
                       'branches': [
-                          {'choice_number': 0, 'to_question_number': 2}]},
+                          {'choice_number': 0, 'to_question_number': 3}]},
                      {'question_title': 'api_test 3rd question',
                       'type_constraint_name': 'text',
                       'sequence_number': None,
@@ -554,7 +554,7 @@ class TestSurvey(unittest.TestCase):
                                   'a',
                                   '1'],
                       'branches': [
-                          {'choice_number': 1, 'to_question_number': 2}]},
+                          {'choice_number': 1, 'to_question_number': 3}]},
                      {'question_id': inserted_qs[0].question_id,
                       'question_title': 'updated question title',
                       'allow_multiple': False,
