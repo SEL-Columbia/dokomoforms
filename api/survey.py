@@ -138,8 +138,7 @@ def _create_questions(connection: Connection,
     :param submission_map: a dictionary mapping old submission_id to new
     :return: an iterable of the resultant question fields
     """
-    # TODO: considering enforcing that the client specify the sequnce_number
-    for number, question in enumerate(questions):
+    for number, question in enumerate(questions, start=1):
         values = question.copy()
         values['sequence_number'] = number
         values['survey_id'] = survey_id
@@ -222,7 +221,7 @@ def _create_branches(connection: Connection,
             question_choice_id = from_dict['choice_ids'][choice_index]
             from_tcn = question_dict['type_constraint_name']
             from_mul = from_dict['allow_multiple']
-            to_question_index = branch['to_question_number']
+            to_question_index = branch['to_question_number'] - 1
             to_question_id = question_dicts[to_question_index]['question_id']
             to_tcn = question_dicts[to_question_index]['type_constraint_name']
             to_seq = question_dicts[to_question_index]['sequence_number']
@@ -230,7 +229,7 @@ def _create_branches(connection: Connection,
             branch_dict = {'question_choice_id': question_choice_id,
                            'from_question_id': from_q_id,
                            'from_type_constraint': from_tcn,
-                           'from_sequence_number': index,
+                           'from_sequence_number': index + 1,
                            'from_allow_multiple': from_mul,
                            'from_survey_id': survey_id,
                            'to_question_id': to_question_id,
