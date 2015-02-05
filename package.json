@@ -33,9 +33,9 @@
     "should": "^4.6.2",
     "supertest": "^0.15.0"
   },
-  "config": {
-      "blanket": {
+  "config" : {
+    "blanket": {
           "pattern": "static"
-      }
+    }
   }
 }

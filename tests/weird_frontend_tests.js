@@ -2,6 +2,7 @@ var jsdom = require('jsdom');
 var should = require('should');
 var request = require('supertest');
 var assert = require('assert');
+var fs = require('fs');
 
 describe('App and Survey Init Tests', function(done) {
     // globals
@@ -16,13 +17,33 @@ describe('App and Survey Init Tests', function(done) {
         raw_survey = require('./fixtures/survey.json');
         jsdom.env('./tests/widgets.html',  
             ['lib/classList_shim.js',
-            '../static/lib.js',  
-            '../static/app.js'], 
+            '../static/lib.js'], 
             function(error, win) {
                 if (error) throw (error);
-            
                 window = win;
+                var document = window.document;
+
+                var features = document.implementation._features;
+                document.implementation.addFeature('FetchExternalResources', ['script']);
+                document.implementation.addFeature('ProcessExternalResources', ['script']);
+                document.implementation.addFeature('MutationEvents', ['2.0']);
+
+                var script = window.document.createElement('script');
+                script.onload = function() {
+                    document.implementation._features = features;
+                };
+                script.text = fs.readFileSync("tests/lib/blanket.min.js", "utf-8");
+                window.document.body.appendChild(script);
+
                 window.localStorage = {};
+                var script = window.document.createElement('script');
+                script.setAttribute('data-cover', '');
+                script.onload = function() {
+                    document.implementation._features = features;
+                };
+                script.text = fs.readFileSync("static/app.js", "utf-8");
+                window.document.body.appendChild(script);
+
                 done();
             });
 
@@ -83,15 +104,34 @@ describe('Survey function tests', function(done) {
     beforeEach(function(done) {
         raw_survey = require('./fixtures/survey.json');
         jsdom.env('./tests/widgets.html',  
-            [//'lib/blanket.min.js', 
-            'lib/classList_shim.js',
-            '../static/lib.js',  
-            '../static/app.js'], 
+            ['lib/classList_shim.js',
+            '../static/lib.js'], 
             function(error, win) {
                 if (error) throw (error);
-            
                 window = win;
+                var document = window.document;
+
+                var features = document.implementation._features;
+                document.implementation.addFeature('FetchExternalResources', ['script']);
+                document.implementation.addFeature('ProcessExternalResources', ['script']);
+                document.implementation.addFeature('MutationEvents', ['2.0']);
+
+                var script = window.document.createElement('script');
+                script.onload = function() {
+                    document.implementation._features = features;
+                };
+                script.text = fs.readFileSync("tests/lib/blanket.min.js", "utf-8");
+                window.document.body.appendChild(script);
+
                 window.localStorage = {};
+                var script = window.document.createElement('script');
+                script.setAttribute('data-cover', '');
+                script.onload = function() {
+                    document.implementation._features = features;
+                };
+                script.text = fs.readFileSync("static/app.js", "utf-8");
+                window.document.body.appendChild(script);
+
                 done();
             });
 
@@ -398,16 +438,35 @@ describe('Next Question Tests', function(done) {
     beforeEach(function(done) {
         raw_survey = require('./fixtures/survey.json');
         jsdom.env('./tests/widgets.html',  
-            [//'lib/blanket.min.js', 
-            'lib/classList_shim.js',
-            '../static/lib.js',  
-            '../static/app.js'], 
+            ['lib/classList_shim.js',
+            '../static/lib.js'], 
             function(error, win) {
                 if (error) throw (error);
-            
                 window = win;
+                var document = window.document;
+
+                var features = document.implementation._features;
+                document.implementation.addFeature('FetchExternalResources', ['script']);
+                document.implementation.addFeature('ProcessExternalResources', ['script']);
+                document.implementation.addFeature('MutationEvents', ['2.0']);
+
+                var script = window.document.createElement('script');
+                script.onload = function() {
+                    document.implementation._features = features;
+                };
+                script.text = fs.readFileSync("tests/lib/blanket.min.js", "utf-8");
+                window.document.body.appendChild(script);
+
                 window.localStorage = {};
-                window.App.init(raw_survey)
+                var script = window.document.createElement('script');
+                script.setAttribute('data-cover', '');
+                script.onload = function() {
+                    document.implementation._features = features;
+                };
+                script.text = fs.readFileSync("static/app.js", "utf-8");
+                window.document.body.appendChild(script);
+                
+                window.App.init(raw_survey);
                 done();
             });
 
