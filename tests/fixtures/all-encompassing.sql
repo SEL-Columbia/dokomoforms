@@ -170,7 +170,8 @@ RETURNING survey_id INTO the_survey_id;
 INSERT INTO question (survey_id, sequence_number, question_title,
     type_constraint_name, allow_multiple, logic, question_to_sequence_number)
 VALUES (the_survey_id, 1, 'life', 'integer', False, '{"required": true, "with_other": false}', 2),
-       (the_survey_id, 2, 'there is none fool', 'note', False, '{"required": false, "with_other": false}', -1);
+       (the_survey_id, 3, 'say something foo', 'text', False, '{"required": true, "with_other": false}', -1),
+       (the_survey_id, 2, 'there is none fool', 'note', False, '{"required": false, "with_other": false}', 3);
 
 INSERT INTO survey(survey_title, auth_user_id)
 VALUES ('what is death', the_auth_user_id)

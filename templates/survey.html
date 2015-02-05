@@ -30,8 +30,9 @@
 
         <% if (question.answer.length > 1){ %>
             <% _.each(question.answer.slice(1), function(ans) { %>
-                <input class="text_input" type="text"
-                    value="<%- ans %>">
+                <% if (ans !== null) { %>
+                    <input class="text_input" type="text" value="<%- ans %>">
+                <% } %>
             <% }); %>
         <% } %>
 
@@ -43,7 +44,11 @@
     <script id="widget_integer" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
         <input class="text_input" type="number"
-            value="<%- question.answer[0] || question.default || '' %>"
+            <% if (question.answer[0] !== null) { %>
+                value="<%- question.answer[0] %>"
+            <% } else { %>
+                value="<%- question.default || '' %>"
+            <% } %>
             <% if (question.min != null){ %>
                 min="<%- question.min %>"
             <% } %>
@@ -54,15 +59,17 @@
         
         <% if (question.answer.length > 1){ %>
             <% _.each(question.answer.slice(1), function(ans) { %>
-                <input class="text_input" type="number"
-                    value="<%- ans %>"
-                    <% if (question.min != null){ %>
-                        min="<%- question.min %>"
-                    <% } %>
-                    <% if (question.max != null){ %>
-                        max="<%- question.max %>"
-                    <% } %>
-                >
+                <% if (ans !== null) { %>
+                    <input class="text_input" type="number"
+                        value="<%- ans %>"
+                        <% if (question.min != null){ %>
+                            min="<%- question.min %>"
+                        <% } %>
+                        <% if (question.max != null){ %>
+                            max="<%- question.max %>"
+                        <% } %>
+                    >
+                <% } %>
             <% }); %>
         <% } %>
         
@@ -137,12 +144,18 @@
     <script id="widget_decimal" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
         <input class="text_input" type="number" step="any"
-            value="<%- question.answer[0] || question.default || '' %>">
+            <% if (question.answer[0] !== null){ %>
+                value="<%- question.answer[0] %>"
+            <% } else { %>
+                value="<%- question.default || '' %>"
+            <% } %>
 
         <% if (question.answer.length > 1){ %>
             <% _.each(question.answer.slice(1), function(ans) { %>
-                <input class="text_input" type="number" step="any"
-                    value="<%- ans %>">
+                <% if (ans !== null) { %>
+                    <input class="text_input" type="number" step="any"
+                        value="<%- ans %>">
+                <% } %>
             <% }); %>
         <% } %>
         
@@ -156,7 +169,9 @@
         <input class="text_input" type="date" value="<%- question.answer[0] || question.default || '' %>">
         <% if (question.answer.length > 1){ %>
             <% _.each(question.answer.slice(1), function(ans) { %>
-                <input class="text_input" type="date" value="<%- ans %>">
+                <% if (ans !== null) { %>
+                    <input class="text_input" type="date" value="<%- ans %>">
+                <% } %>
             <% }); %>
         <% } %>
 
@@ -170,7 +185,9 @@
         <input class="text_input" type="time" value="<%- question.answer[0] || question.default || '' %>">
         <% if (question.answer.length > 1){ %>
             <% _.each(question.answer.slice(1), function(ans) { %>
-                <input class="text_input" type="time" value="<%- ans %>">
+                <% if (ans !== null) { %>
+                    <input class="text_input" type="time" value="<%- ans %>">
+                <% } %>
             <% }); %>
         <% } %>
         

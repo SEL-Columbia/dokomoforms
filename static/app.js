@@ -167,7 +167,8 @@ Survey.prototype.getQuestion = function(seq) {
 // XXX: function name doesnt match return types
 Survey.prototype.getFirstResponse = function(question) {
     for (i = 0; i < question.answer.length; i++) {
-        if (question.answer[i] || question.answer[i] === 0)
+        if (Widgets._validate(question.type_constraint_name,question.answer[i]) 
+                !== null)
             return question.answer[i];
     }
 
@@ -194,9 +195,8 @@ Survey.prototype.next = function(offset) {
     } 
     
     if (offset === NEXT) {
-        console.log(first_response);
-        // XXX: prev_question.answer field is a mess to check, need to purify ans
-        if (this.current_question.logic.required && !first_response)  {
+        if (this.current_question.logic.required 
+                && (first_response === null))  {
             App.message('Survey requires this question to be completed.');
             return;
         }
@@ -381,7 +381,7 @@ Widgets.text = function(question, page) {
     var self = this;
     function keyup(e) {
         var ans_ind = ($(page).find('input')).index(this);
-        question.answer[ans_ind] = this.value;
+        question.answer[ans_ind] = self._validate("text", this.value);
         if (e.keyCode === 13) { // 13 == return
             self._addNewInput(page, question, 'text_input', 'text', keyup);
         }
@@ -403,7 +403,7 @@ Widgets.integer = function(question, page) {
     var self = this;
     function keyup(e) {
         var ans_ind = ($(page).find('input')).index(this);
-        question.answer[ans_ind] = parseInt(this.value);
+        question.answer[ans_ind] = self._validate("integer", this.value);
         if (e.keyCode === 13) {
             self._addNewInput(page, question, 'text_input', 'number', keyup);
         }
@@ -425,7 +425,7 @@ Widgets.decimal = function(question, page) {
     var self = this;
     function keyup(e) {
         var ans_ind = ($(page).find('input')).index(this);
-        question.answer[ans_ind] = parseFloat(this.value);
+        question.answer[ans_ind] = self._validate("decimal", this.value);
         if (e.keyCode === 13) {
             self._addNewInput(page, question, 'text_input', 'number', keyup);
         }
@@ -450,8 +450,7 @@ Widgets.date = function(question, page) {
     function change() {
         var ans_ind = ($(page).find('input')).index(this);
         if (this.value !== '') 
-            question.answer[ans_ind] = this.value;
-
+            question.answer[ans_ind] = self._validate("date_chrome", this.value); //XXX
     };
 
     function keyup(e) {
@@ -479,8 +478,7 @@ Widgets.time = function(question, page) {
     function change() {
         var ans_ind = ($(page).find('input')).index(this);
         if (this.value !== '') 
-            question.answer[ans_ind] = this.value;
-
+            question.answer[ans_ind] = self._validate("time", this.value);
     };
 
     function keyup(e) {
@@ -518,7 +516,8 @@ Widgets.multiple_choice = function(question, page) {
     var $other = $(page)
         .find('.text_input')
         .keyup(function() {
-            question.answer[$children.length - 1 - 1] = this.value;
+            question.answer[$children.length - 1 - 1] 
+                = self._validate("text", this.value);
         });
 
 
@@ -585,7 +584,10 @@ Widgets.location = function(question, page) {
 
     // Location is the only one that doesn't use the same keyup function due to
     // the btn being the only way to input values in the view.
-    var loc_div = "<div class='loc_input'><input class='text_input question__lat' type='text'><input class='text_input question__lon' type='text'></div>";
+    var loc_div = "<div class='loc_input'>"
+        +"<input class='text_input question__lat' type='text'>"
+        +"<input class='text_input question__lon' type='text'>"
+        +"</div>";
 
     // Added div if none is around
     if ($(page).find('.question__lon').length === 0) {
@@ -1002,6 +1004,43 @@ Widgets._addNewInput = function(page, question, cls, type, keyup_cb, change_cb) 
             .insertBefore(page.find(".next_input"))
             .focus();
     }
+}
+
+Widgets._validate = function(type, answer) {
+    var val = null;
+    switch(type) {
+        case "decimal":
+            val = parseFloat(answer);
+            if (isNaN(val))
+                val = null;
+            break;
+        case "integer":
+            val = parseInt(answer);
+            if (isNaN(val))
+                val = null;
+            break;
+        case "date":
+            val = Date.parse(answer);
+            if (isNaN(val))
+                val = null;
+            else
+                val = (new Date(val)).toISOString();
+            break;
+        case "time":
+              //XXX: validation for time
+              val = answer;
+              break;
+        case "text":
+              if (answer)
+                  val = answer;
+              break;
+        default:
+              //XXX: Location, Facility, MChoice don't make sense to validate 
+              val = answer;
+              break;
+    }
+
+    return val;
 }
 
 /* -------------------------- Revisit Stuff Below ----------------------------*/

@@ -99,7 +99,7 @@ describe('Survey function tests', function(done) {
         done();
     });
 
-    it('hasOneResponse: should return false for invalid input true otherwise',
+    it('getFirstResponse: should return null if theres no valid integer input',
         function(done) {
             var questions = [
                 {
@@ -123,6 +123,31 @@ describe('Survey function tests', function(done) {
             questions[0].answer = [""];
             should(survey.getFirstResponse(questions[0])).not.be.ok;
             // incorrect type (get getFirstResponse does not validate type)
+            questions[0].answer = ["bs"];
+            should(survey.getFirstResponse(questions[0])).not.be.ok;
+
+            done();
+
+        });
+    
+    it('getFirstResponse: should return null if theres no valid text input',
+        function(done) {
+            var questions = [
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "text",
+                    sequence_number: 1
+                },
+            ];
+
+            var survey = new window.Survey("id", questions, {});
+
+            // empty
+            should(survey.getFirstResponse(questions[0])).not.be.ok;
+            // empty string
+            questions[0].answer = [""];
+            should(survey.getFirstResponse(questions[0])).not.be.ok;
+            // valid 
             questions[0].answer = ["bs"];
             should(survey.getFirstResponse(questions[0])).be.ok;
 
@@ -158,7 +183,7 @@ describe('Survey function tests', function(done) {
             questions[1].should.not.equal(survey.current_question);
             
             // state SHOULD change
-            questions[0].answer = [1];
+            questions[0].answer = ["yo"];
             survey.next(NEXT);
             questions[0].should.not.equal(survey.current_question);
             questions[1].should.equal(survey.current_question);
@@ -167,6 +192,192 @@ describe('Survey function tests', function(done) {
 
         });
     
+    it('next: should enforce required correctly for falsy response 0',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "integer",
+                    logic: {required: true},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    sequence_number: 2
+                },
+            ];
+
+            var survey = new window.Survey("id", questions, {});
+            questions[0].should.equal(survey.current_question);
+
+            // state shouldn't change
+            survey.next(NEXT);
+            questions[0].should.equal(survey.current_question);
+            questions[1].should.not.equal(survey.current_question);
+            
+            // state SHOULD change
+            questions[0].answer = [0];
+            survey.next(NEXT);
+            questions[0].should.not.equal(survey.current_question);
+            questions[1].should.equal(survey.current_question);
+
+            done();
+
+        });
+    
+    it('next: should enforce required correctly for falsy response ""',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "text",
+                    logic: {required: true},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    sequence_number: 2
+                },
+            ];
+
+            var survey = new window.Survey("id", questions, {});
+            questions[0].should.equal(survey.current_question);
+
+            // state shouldn't change
+            survey.next(NEXT);
+            questions[0].should.equal(survey.current_question);
+            questions[1].should.not.equal(survey.current_question);
+            
+            // state SHOULDNT change
+            questions[0].answer = [""];
+            survey.next(NEXT);
+            questions[0].should.equal(survey.current_question);
+            questions[1].should.not.equal(survey.current_question);
+
+            done();
+
+        });
+    
+    it('next: should enforce required correctly for invalid input to decimal',
+
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "decimal",
+                    logic: {required: true},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    sequence_number: 2
+                },
+            ];
+
+            var survey = new window.Survey("id", questions, {});
+            questions[0].should.equal(survey.current_question);
+
+            // state shouldn't change
+            survey.next(NEXT);
+            questions[0].should.equal(survey.current_question);
+            questions[1].should.not.equal(survey.current_question);
+            
+            // state SHOULDNT change
+            questions[0].answer = ["decimal"];
+            survey.next(NEXT);
+            questions[0].should.equal(survey.current_question);
+            questions[1].should.not.equal(survey.current_question);
+
+
+            done();
+
+        });
+    
+    it('next: should enforce required correctly for invalid input to date',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "date",
+                    logic: {required: true},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    sequence_number: 2
+                },
+            ];
+
+            var survey = new window.Survey("id", questions, {});
+            questions[0].should.equal(survey.current_question);
+
+            // state shouldn't change
+            survey.next(NEXT);
+            questions[0].should.equal(survey.current_question);
+            questions[1].should.not.equal(survey.current_question);
+            
+            // state SHOULDNT change
+            //questions[0].answer = ["date"];
+            //survey.next(NEXT);
+            //questions[0].should.equal(survey.current_question);
+            //questions[1].should.not.equal(survey.current_question);
+            //XXX VALIDATION FOR TIME NOT DONE;
+
+
+            done();
+
+        });
+    
+    it('next: should enforce required correctly for invalid input to time',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "time",
+                    logic: {required: true},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    sequence_number: 2
+                },
+            ];
+
+            var survey = new window.Survey("id", questions, {});
+            questions[0].should.equal(survey.current_question);
+
+            // state shouldn't change
+            survey.next(NEXT);
+            questions[0].should.equal(survey.current_question);
+            questions[1].should.not.equal(survey.current_question);
+            
+            // state SHOULDNT change
+            //questions[0].answer = ["time"];
+            //survey.next(NEXT);
+            //questions[0].should.equal(survey.current_question);
+            //questions[1].should.not.equal(survey.current_question);
+            //XXX: VALIDATION FOR DATE NOT DONE;
+
+
+            done();
+
+        });
+
 });
 
 
