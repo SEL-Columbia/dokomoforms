@@ -18,11 +18,13 @@ from pages.api.aggregations import AggregationHandler
 from pages.auth import LogoutHandler, LoginHandler
 from pages.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler, SubmitAPIHandler
-from pages.api.surveys import SurveysAPIHandler, SingleSurveyAPIHandler
+from pages.api.surveys import SurveysAPIHandler, SingleSurveyAPIHandler, \
+    CreateSurveyAPIHandler
 from pages.util.base import BaseHandler, get_json_request_body, \
     validation_message, catch_bare_integrity_error
 import pages.util.ui
-from pages.debug import DebugLoginHandler, DebugLogoutHandler
+from pages.debug import DebugLoginHandler, DebugLogoutHandler, \
+    DebugUserCreationHandler
 from pages.view.surveys import ViewHandler
 from pages.view.submissions import ViewSubmissionsHandler, \
     ViewSubmissionHandler
@@ -114,8 +116,8 @@ pages = [
 
     # Testing
     (r'/api/aggregate/({})/?'.format(UUID_REGEX), AggregationHandler),
-
     (r'/api/surveys/?', SurveysAPIHandler),
+    (r'/api/surveys/create/?', CreateSurveyAPIHandler),
     (r'/api/surveys/({})/?'.format(UUID_REGEX), SingleSurveyAPIHandler),
     (r'/api/surveys/({})/submit/?'.format(UUID_REGEX), SubmitAPIHandler),
     (r'/api/surveys/({})/submissions/?'.format(UUID_REGEX),
@@ -125,7 +127,8 @@ pages = [
 ]
 
 if config.get('debug', False):
-    pages += [(r'/debug/login/(.+)/?', DebugLoginHandler),
+    pages += [(r'/debug/create/(.+)/?', DebugUserCreationHandler),
+              (r'/debug/login/(.+)/?', DebugLoginHandler),
               (r'/debug/logout/?', DebugLogoutHandler),
     ]
 

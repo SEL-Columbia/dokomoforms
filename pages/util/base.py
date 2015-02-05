@@ -47,6 +47,15 @@ class BaseHandler(tornado.web.RequestHandler):
 class APIHandler(BaseHandler):
     """Handler for API endpoints."""
 
+    def check_xsrf_cookie(self):
+        """
+        Only check the xsrf cookie if this doesn't appear to be an API
+        request.
+        """
+        headers = self.request.headers
+        if 'Token' not in headers or 'Email' not in headers:
+            super().check_xsrf_cookie()
+
     def prepare(self):
         """
         Before an HTTP method runs, this checks that either the user is

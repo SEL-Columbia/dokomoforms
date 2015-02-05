@@ -1,11 +1,11 @@
 """API endpoints dealing with submissions."""
-from tornado.escape import json_encode, to_unicode
+from tornado.escape import to_unicode
 import tornado.web
 
 import api.submission
 from db.survey import IncorrectQuestionIdError
 from pages.util.base import APIHandler, get_email, get_json_request_body, \
-    catch_bare_integrity_error, validation_message, BaseHandler
+    catch_bare_integrity_error, validation_message
 
 
 class SubmissionsAPIHandler(APIHandler):
@@ -41,7 +41,7 @@ class SingleSubmissionAPIHandler(APIHandler):
         self.write(response)
 
 
-class SubmitAPIHandler(BaseHandler):
+class SubmitAPIHandler(APIHandler):
     """The endpoint for submitting to a survey. You don't need to log in."""
 
     @catch_bare_integrity_error

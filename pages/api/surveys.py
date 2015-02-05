@@ -1,9 +1,9 @@
 """API endpoints dealing with surveys."""
 
-from tornado.escape import json_encode
-
 import api.survey
-from pages.util.base import APIHandler, get_email
+from pages.util.base import APIHandler, get_email, \
+    catch_bare_integrity_error, \
+    get_json_request_body, BaseHandler
 
 
 class SurveysAPIHandler(APIHandler):
@@ -23,3 +23,13 @@ class SingleSurveyAPIHandler(APIHandler):
     def get(self, survey_id: str):
         email = get_email(self)
         self.write(api.survey.get_one(survey_id, email=email))
+
+
+class CreateSurveyAPIHandler(APIHandler):
+    """The endpoint for creating a survey."""
+
+    @catch_bare_integrity_error
+    def post(self):
+        data = get_json_request_body(self)
+        self.write(api.survey.create(data))
+        self.set_status(201)

@@ -2,6 +2,16 @@
 
 from db.auth_user import get_auth_user_by_email, UserDoesNotExistError
 from pages.util.base import BaseHandler
+import api.user
+
+
+class DebugUserCreationHandler(BaseHandler):
+    """User this page to create a user."""
+
+    def get(self, email=''):
+        api.user.create_user({'email': email})
+        self.write('Created user {}'.format(email))
+        self.set_status(201)
 
 
 class DebugLoginHandler(BaseHandler):
