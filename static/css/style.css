@@ -49,7 +49,6 @@ select {
     margin-right: 10px;
     width:auto;
     text-align:center;
-    border-radius:3px;
     -webkit-border-radius:3px;
     -webkit-appearance: none;
     -webkit-transition:0.3s ease all;
