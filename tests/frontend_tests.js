@@ -1,7 +1,5 @@
 var jsdom = require('jsdom');
 var should = require('should');
-var request = require('supertest');
-var assert = require('assert');
 
 describe('App and Survey Init Tests', function(done) {
     // globals
