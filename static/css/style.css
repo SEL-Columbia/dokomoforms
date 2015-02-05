@@ -394,9 +394,32 @@ select:focus, select:active {
 .text_input:focus {
     border-color: rgb(84, 216, 90);
 }
+
+.name_input {
+    display: inline;
+    font-size: 20px;
+    width: 80%;
+    max-width: 300px;
+    padding: 10px 15px;
+    margin: 25px auto;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-radius: 5px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.name_input:focus {
+    border-color: rgb(84, 216, 90);
+}
 .question__title {
     text-align: center;
     font-size: 25px;
+}
+
+.question__name {
+    display: block;
+    text-align: center;
+    font-size: 22px;
 }
 
 .question__btn {
@@ -462,6 +485,7 @@ select:focus, select:active {
     width: 50px;
     height: 50px;
     margin: 20px auto;
+    margin-top: 50px;
 }
 
 .question__map {

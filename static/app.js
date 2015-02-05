@@ -250,9 +250,12 @@ Survey.prototype.render = function(question) {
         Widgets[question.type_constraint_name](question, content);
     } else {
         // Show submit page
+        var templateHTML = $('#template_submit').html();
+        var template = _.template(templateHTML);
+        var html = template({name: localStorage['name']});
         content.empty()
             .data('index', index)
-            .html($('#template_submit').html())
+            .html(html)
             .find('.question__btn')
                 .one('click', function() {
                     self.submit();
