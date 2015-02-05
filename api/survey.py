@@ -4,7 +4,7 @@ import datetime
 
 from sqlalchemy.engine import RowProxy, Connection
 
-from api import execute_with_exceptions
+from api import execute_with_exceptions, json_response
 from db import engine, delete_record, update_record
 from db.answer import get_answers_for_question, answer_insert
 from db.answer_choice import get_answer_choices_for_choice_id, \
@@ -138,8 +138,7 @@ def _create_questions(connection: Connection,
     :param submission_map: a dictionary mapping old submission_id to new
     :return: an iterable of the resultant question fields
     """
-    # TODO: considering enforcing that the client specify the sequnce_number
-    for number, question in enumerate(questions):
+    for number, question in enumerate(questions, start=1):
         values = question.copy()
         values['sequence_number'] = number
         values['survey_id'] = survey_id
@@ -222,7 +221,7 @@ def _create_branches(connection: Connection,
             question_choice_id = from_dict['choice_ids'][choice_index]
             from_tcn = question_dict['type_constraint_name']
             from_mul = from_dict['allow_multiple']
-            to_question_index = branch['to_question_number']
+            to_question_index = branch['to_question_number'] - 1
             to_question_id = question_dicts[to_question_index]['question_id']
             to_tcn = question_dicts[to_question_index]['type_constraint_name']
             to_seq = question_dicts[to_question_index]['sequence_number']
@@ -230,7 +229,7 @@ def _create_branches(connection: Connection,
             branch_dict = {'question_choice_id': question_choice_id,
                            'from_question_id': from_q_id,
                            'from_type_constraint': from_tcn,
-                           'from_sequence_number': index,
+                           'from_sequence_number': index + 1,
                            'from_allow_multiple': from_mul,
                            'from_survey_id': survey_id,
                            'to_question_id': to_question_id,
@@ -395,7 +394,7 @@ def display_survey(survey_id: str) -> dict:
     :param survey_id: the UUID of the survey
     :return: the JSON representation.
     """
-    return _to_json(display(survey_id))
+    return json_response(_to_json(display(survey_id)))
 
 
 def get_one(survey_id: str, auth_user_id: str=None, email: str=None) -> dict:
@@ -409,7 +408,7 @@ def get_one(survey_id: str, auth_user_id: str=None, email: str=None) -> dict:
     :return: the JSON representation.
     """
     survey = survey_select(survey_id, auth_user_id=auth_user_id, email=email)
-    return _to_json(survey)
+    return json_response(_to_json(survey))
 
 
 def get_all(email: str) -> dict:
@@ -420,7 +419,7 @@ def get_all(email: str) -> dict:
     :return: the JSON string representation
     """
     surveys = get_surveys_by_email(email)
-    return [_to_json(survey) for survey in surveys]
+    return json_response([_to_json(survey) for survey in surveys])
 
 
 def update(data: dict):
@@ -459,4 +458,4 @@ def delete(survey_id: str):
     """
     with engine.connect() as connection:
         connection.execute(delete_record(survey_table, 'survey_id', survey_id))
-    return {'message': 'Survey deleted'}
+    return json_response('Survey deleted')

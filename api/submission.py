@@ -5,7 +5,7 @@ from collections import Iterator
 from sqlalchemy.engine import ResultProxy, RowProxy
 from sqlalchemy.sql import Insert
 
-from api import execute_with_exceptions
+from api import execute_with_exceptions, json_response
 from db import engine, delete_record
 from db.answer import answer_insert, get_answers, get_geo_json, \
     CannotAnswerMultipleTimesError
@@ -186,21 +186,30 @@ def get_one(submission_id: str, email: str) -> dict:
                 'submission_time':
                     submission.submission_submission_time.isoformat(),
                 'answers': [_get_fields(answer) for num, answer in result]}
-    return sub_dict
+    return json_response(sub_dict)
 
 
-def get_all(survey_id: str, email: str) -> dict:
+def get_all(survey_id: str,
+            email: str,
+            submitters: Iterator=None,
+            filters: list=None) -> dict:
     """
     Create a JSON representation of the submissions to a given survey and
     email.
 
     :param survey_id: the UUID of the survey
     :param email: the user's e-mail address
+    :param submitters: if supplied, filters results by all given submitters
+    :param filters: if supplied, filters results by answers
     :return: a JSON dict
     """
-    submissions = get_submissions_by_email(survey_id, email=email)
+    submissions = get_submissions_by_email(survey_id,
+                                           email=email,
+                                           submitters=submitters,
+                                           filters=filters)
     # TODO: Check if this is a performance problem
-    return [get_one(sub.submission_id, email=email) for sub in submissions]
+    result = [get_one(sub.submission_id, email=email) for sub in submissions]
+    return json_response(result)
 
 
 def delete(submission_id: str):
@@ -212,4 +221,4 @@ def delete(submission_id: str):
     with engine.connect() as connection:
         connection.execute(
             delete_record(submission_table, 'submission_id', submission_id))
-    return {'message': 'Submission deleted'}
+    return json_response('Submission deleted')

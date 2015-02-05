@@ -27,7 +27,8 @@ class ViewSubmissionHandler(BaseHandler):
 
     @tornado.web.authenticated
     def get(self, submission_id: str):
-        submission = api.submission.get_one(submission_id, self.current_user)
+        submission = api.submission.get_one(submission_id,
+                                            self.current_user)['result']
         survey = survey_select(submission['survey_id'],
                                email=self.current_user)
         self.render('view-submission.html', message=None, survey=survey,

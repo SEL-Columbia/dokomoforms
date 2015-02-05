@@ -17,12 +17,14 @@ import api.user
 from pages.api.aggregations import AggregationHandler
 from pages.auth import LogoutHandler, LoginHandler
 from pages.api.submissions import SubmissionsAPIHandler, \
-    SingleSubmissionAPIHandler
-from pages.api.surveys import SurveysAPIHandler, SingleSurveyAPIHandler
+    SingleSubmissionAPIHandler, SubmitAPIHandler
+from pages.api.surveys import SurveysAPIHandler, SingleSurveyAPIHandler, \
+    CreateSurveyAPIHandler
 from pages.util.base import BaseHandler, get_json_request_body, \
     validation_message, catch_bare_integrity_error
 import pages.util.ui
-from pages.debug import DebugLoginHandler, DebugLogoutHandler
+from pages.debug import DebugLoginHandler, DebugLogoutHandler, \
+    DebugUserCreationHandler
 from pages.view.surveys import ViewHandler
 from pages.view.submissions import ViewSubmissionsHandler, \
     ViewSubmissionHandler
@@ -53,7 +55,7 @@ class Survey(BaseHandler):
             if len(survey_prefix) < 36:
                 self.redirect('/survey/{}'.format(survey_id), permanent=False)
             else:
-                survey = api.survey.display_survey(survey_id)
+                survey = api.survey.display_survey(survey_id)['result']
                 self.render('survey.html',
                             survey=json_encode(survey),
                             survey_title=survey['survey_title'])
@@ -62,22 +64,8 @@ class Survey(BaseHandler):
             raise tornado.web.HTTPError(404)
 
 
-    @catch_bare_integrity_error
     def post(self, uuid):
-        data = get_json_request_body(self)
-
-        if data.get('survey_id', None) != uuid:
-            reason = validation_message('submission', 'survey_id', 'invalid')
-            raise tornado.web.HTTPError(422, reason=reason)
-        try:
-            self.write(api.submission.submit(data))
-            self.set_status(201)
-        except KeyError as e:
-            reason = validation_message('submission', str(e), 'missing_field')
-            raise tornado.web.HTTPError(422, reason=reason)
-        except IncorrectQuestionIdError:
-            reason = validation_message('submission', 'question_id', 'invalid')
-            raise tornado.web.HTTPError(422, reason=reason)
+        SubmitAPIHandler.post(self, uuid) # TODO: Hey Abdi kill this
 
 
 class APITokenGenerator(BaseHandler):
@@ -128,9 +116,10 @@ pages = [
 
     # Testing
     (r'/api/aggregate/({})/?'.format(UUID_REGEX), AggregationHandler),
-
     (r'/api/surveys/?', SurveysAPIHandler),
+    (r'/api/surveys/create/?', CreateSurveyAPIHandler),
     (r'/api/surveys/({})/?'.format(UUID_REGEX), SingleSurveyAPIHandler),
+    (r'/api/surveys/({})/submit/?'.format(UUID_REGEX), SubmitAPIHandler),
     (r'/api/surveys/({})/submissions/?'.format(UUID_REGEX),
      SubmissionsAPIHandler),
     (r'/api/submissions/({})/?'.format(UUID_REGEX),
@@ -138,7 +127,8 @@ pages = [
 ]
 
 if config.get('debug', False):
-    pages += [(r'/debug/login/(.+)/?', DebugLoginHandler),
+    pages += [(r'/debug/create/(.+)/?', DebugUserCreationHandler),
+              (r'/debug/login/(.+)/?', DebugLoginHandler),
               (r'/debug/logout/?', DebugLogoutHandler),
     ]
 

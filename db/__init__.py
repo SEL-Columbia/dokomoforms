@@ -2,6 +2,7 @@
 from sqlalchemy import create_engine, Table
 from sqlalchemy.engine import Engine
 from sqlalchemy.sql import Update, Delete
+from sqlalchemy.sql.schema import Column
 
 from settings import CONNECTION_STRING
 
@@ -69,7 +70,7 @@ def update_record(table: Table,
         raise TypeError('No update values specified.')
     # An update bumps the record's last_update_time column
     values[table.name + '_last_update_time'] = 'now()'
-    condition = table.c.get(uuid_column_name) == uuid_value
+    condition = get_column(table, uuid_column_name) == uuid_value
     return table.update().where(condition).values(values)
 
 
@@ -90,4 +91,25 @@ def delete_record(table: Table,
     :param uuid_value: The UUID specifying the record
     :return: A SQLAlchemy Delete object. Execute this!
     """
-    return table.delete().where(table.c.get(uuid_column_name) == uuid_value)
+    column = get_column(table, uuid_column_name)
+    return table.delete().where(column == uuid_value)
+
+
+def get_column(table: Table, column_name: str) -> Column:
+    """
+    Apparently SQLAlchemy lets you happily c.get a column name that doesn't
+    exist.
+
+    :param table: the SQLAlchemy Table
+    :param column_name: the name of the column you want to get
+    :return: the column
+    :raise NoSuchColumnError: if the column does not exist in the table
+    """
+    if table.c.has_key(column_name):
+        return table.c.get(column_name)
+    else:
+        raise NoSuchColumnError(column_name)
+
+
+class NoSuchColumnError(Exception):
+    pass
