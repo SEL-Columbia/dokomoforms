@@ -2,6 +2,7 @@ var jsdom = require('jsdom');
 var should = require('should');
 var request = require('supertest');
 var assert = require('assert');
+require("blanket");
 
 describe('App and Survey Init Tests', function(done) {
     // globals
@@ -15,7 +16,9 @@ describe('App and Survey Init Tests', function(done) {
     beforeEach(function(done) {
         raw_survey = require('./fixtures/survey.json');
         jsdom.env('./tests/widgets.html',  
-            ['../static/lib.js', 'classList_shim.js', '../static/app.js'], 
+            ['lib/classList_shim.js',
+            '../static/lib.js',  
+            '../static/app.js'], 
             function(error, win) {
                 if (error) throw (error);
             
@@ -81,7 +84,10 @@ describe('Survey function tests', function(done) {
     beforeEach(function(done) {
         raw_survey = require('./fixtures/survey.json');
         jsdom.env('./tests/widgets.html',  
-            ['../static/lib.js', 'classList_shim.js', '../static/app.js'], 
+            [//'lib/blanket.min.js', 
+            'lib/classList_shim.js',
+            '../static/lib.js',  
+            '../static/app.js'], 
             function(error, win) {
                 if (error) throw (error);
             
@@ -393,7 +399,10 @@ describe('Next Question Tests', function(done) {
     beforeEach(function(done) {
         raw_survey = require('./fixtures/survey.json');
         jsdom.env('./tests/widgets.html',  
-            ['../static/lib.js', 'classList_shim.js', '../static/app.js'], 
+            [//'lib/blanket.min.js', 
+            'lib/classList_shim.js',
+            '../static/lib.js',  
+            '../static/app.js'], 
             function(error, win) {
                 if (error) throw (error);
             

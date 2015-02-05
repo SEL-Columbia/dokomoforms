@@ -27,9 +27,15 @@
   },
   "homepage": "https://github.com/SEL-Columbia/dokomoforms",
   "devDependencies": {
+    "blanket": "^1.1.6",
     "jsdom": "^0.11.1",
     "mocha": "^2.1.0",
     "should": "^4.6.2",
     "supertest": "^0.15.0"
+  },
+  "config": {
+      "blanket": {
+          "pattern": "static"
+      }
   }
 }
