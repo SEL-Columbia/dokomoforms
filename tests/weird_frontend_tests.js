@@ -23,6 +23,7 @@ describe('App and Survey Init Tests', function(done) {
                 window = win;
                 var document = window.document;
 
+                // Add app and coverage scripts to document after window creation
                 var features = document.implementation._features;
                 document.implementation.addFeature('FetchExternalResources', ['script']);
                 document.implementation.addFeature('ProcessExternalResources', ['script']);
