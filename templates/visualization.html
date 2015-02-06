@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+    <div class="message"></div>
+
+    <div class="content">
+        <h4>Welcome {{ current_user }}</h4>
+        {% if time_data %}
+            <p>Value over time:</p>
+            {{ time_data }}
+        {% end %}
+        {% if bar_data %}
+            <p>Bar graph:</p>
+            {{ bar_data }}
+        {% end %}
+        {% if map_data %}
+            <p>Map:</p>
+            <div id="vis_map" class="question__map"></div>
+        {% end %}
+        {% if not(time_data or bar_data or map_data) %}
+            <p>No viewable submissions.</p>
+        {% end %}
+    </div>
+    <div class="login">
+        <a href="#" class="dokomo-button persona-button" id="logout"><span>Logout</span></a>
+    </div>
+
+    <div class="page_nav">
+        <div class="sel_text_logo">
+        <span>
+            Dokomo Forms. Forms <em>Everywhere</em>
+        </span>
+        </div>
+    </div>
+
+    <script src="https://login.persona.org/include.js"></script>
+    <script src="/static/persona.js"></script>
+    <script src="/static/app.js"></script>
+    <script src="/static/visualizations.js"></script>
+    <script>
+        drawVisualizations({% raw time_data %}, {% raw bar_data %}, {% raw map_data %});
+    </script>
+{% end %}

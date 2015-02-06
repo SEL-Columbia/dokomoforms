@@ -17,6 +17,7 @@ from db.answer_choice import answer_choice_table
 from db.auth_user import get_auth_user_by_email
 from db.question import question_select, QuestionDoesNotExistError, \
     get_questions
+from db.question_choice import question_choice_select
 from db.submission import submission_table
 from db.survey import survey_table
 
@@ -54,6 +55,9 @@ def _jsonify(answer: object, question_id: str) -> object:
         return answer.isoformat()
     elif type_constraint_name == 'decimal':
         return float(answer)
+    elif type_constraint_name == 'multiple_choice':
+        question_choice = question_choice_select(answer)
+        return question_choice.choice
     else:
         return answer
 
