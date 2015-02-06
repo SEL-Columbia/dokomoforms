@@ -79,7 +79,7 @@
     </script>
     
     <script id="widget_location" type="text/html">
-        <div class="question__title"><%- question.title %></div>
+        <div class="question__title"><%- question.question_title %></div>
         <div id="map" class="question__map"></div>
 
         <% _.each(question.answer, function(ans) { %>
@@ -93,7 +93,7 @@
     </script>
 
     <script id="widget_facility" type="text/html">
-        <div class="question__title"><%- question.title %></div>
+        <div class="question__title"><%- question.question_title %></div>
         <div id="map" class="question__map"></div>
         <div>
             <input class="text_input facility__name" type="text"/>
