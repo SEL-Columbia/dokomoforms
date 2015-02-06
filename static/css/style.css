@@ -406,6 +406,7 @@ select:focus, select:active {
     border-radius: 5px;
     outline: none;
     box-sizing: border-box;
+    text-align: center;
 }
 
 .name_input:focus {

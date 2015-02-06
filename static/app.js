@@ -6,6 +6,7 @@ App = {
     facilities: [], // revisit facilities
     unsynced_facilities: {}, // new facilities
     start_loc: [40.8138912, -73.9624327] 
+    submitter_name: localStorage['name'];
    // defaults to nyc, updated by metadata and answers to location questions
 };
 
@@ -252,7 +253,14 @@ Survey.prototype.render = function(question) {
         // Show submit page
         var templateHTML = $('#template_submit').html();
         var template = _.template(templateHTML);
-        var html = template({name: localStorage['name']});
+        var html = template({name: App.submitter_name});
+        html
+            .find('.name_input')
+            .keyup(function(e) {
+                App.submitter_name = this.value;
+                localStorage['name'] = App.submitter_name;
+            });
+
         content.empty()
             .data('index', index)
             .html(html)
@@ -319,7 +327,7 @@ Survey.prototype.submit = function() {
     });
 
     var data = {
-        submitter: "me",
+        submitter: App.submitter_name || "anon",
         survey_id: self.id,
         answers: answers
     };
@@ -818,7 +826,6 @@ Widgets.facility = function(question, page) {
         if (marker.is_new) { 
             marker.setIcon(icon_added);
             addedMarker = marker;
-            //$(page).find('.facility__btn').text("Remove New Site");
         }
 
         touchedMarker = marker;
@@ -832,12 +839,6 @@ Widgets.facility = function(question, page) {
             touchedMarker.setIcon(getIcon(touchedMarker.sector, touchedMarker.is_new));
             touchedMarker.setZIndexOffset(0);
         }
-
-        // Deselecting an added facility does not allow you to add a new one
-        //if (addedMarker) {
-        //    $(page).find('.facility__btn').text("Add Facility");
-        //    addedMarker = null;
-        //}
 
         question.answer = [];
         $(page).find('.facility__name').val("");
