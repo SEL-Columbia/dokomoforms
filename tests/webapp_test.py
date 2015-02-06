@@ -15,8 +15,8 @@ import tornado.httpclient
 import tornado.ioloop
 from tornado.testing import AsyncHTTPTestCase
 import tornado.web
-from api import json_response
 
+from api import json_response
 import api.aggregation
 import api.submission
 import api.survey
@@ -29,7 +29,7 @@ from db.question_choice import question_choice_table
 from db.submission import submission_table
 from pages.api.aggregations import AggregationHandler
 from pages.api.submissions import SubmissionsAPIHandler, \
-    SingleSubmissionAPIHandler, SubmitAPIHandler
+    SingleSubmissionAPIHandler
 from pages.api.surveys import SurveysAPIHandler, SingleSurveyAPIHandler
 from pages.util.base import catch_bare_integrity_error
 from pages.view.submissions import ViewSubmissionsHandler, \
@@ -141,12 +141,13 @@ class APITest(AsyncHTTPTestCase):
                                'get_secure_cookie') as m:
             m.return_value = 'test_email'
             response = self.fetch(
-                '/api/surveys/{}/submissions?submitter='.format(survey_id))
+                '/api/surveys/{}/submissions?submitter=me'.format(survey_id))
         self.assertEqual(response.code, 200)
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
-                         api.submission.get_all(survey_id, 'test_email'))
+                         api.submission.get_all(survey_id, 'test_email',
+                                                submitters=['me']))
 
     def testGetSubmissionsWithFilter(self):
         survey_id = survey_table.select().where(
@@ -240,6 +241,7 @@ class APITest(AsyncHTTPTestCase):
         fourth_q_id = question_table.select().where(
             fourth_cond).execute().first().question_id
         input_data = {'survey_id': survey_id,
+                      'submitter': 'testPostSubmissionSubmitter',
                       'answers':
                           [{'question_id': question_id,
                             'answer': 1,
