@@ -5,8 +5,8 @@ App = {
     unsynced: [], // unsynced surveys
     facilities: [], // revisit facilities
     unsynced_facilities: {}, // new facilities
-    start_loc: [40.8138912, -73.9624327] 
-    submitter_name: localStorage['name'];
+    start_loc: [40.8138912, -73.9624327], 
+    submitter_name: localStorage['name']
    // defaults to nyc, updated by metadata and answers to location questions
 };
 
@@ -254,9 +254,12 @@ Survey.prototype.render = function(question) {
         var templateHTML = $('#template_submit').html();
         var template = _.template(templateHTML);
         var html = template({name: App.submitter_name});
-        html
+        $(html)
             .find('.name_input')
             .keyup(function(e) {
+                console.log(this.value);
+                console.log(this.value);
+                console.log(this.value);
                 App.submitter_name = this.value;
                 localStorage['name'] = App.submitter_name;
             });
