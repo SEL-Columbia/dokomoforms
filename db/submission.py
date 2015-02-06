@@ -124,7 +124,8 @@ def get_submissions_by_email(survey_id: str,
     if filters is not None:
         filtered = set(_get_filtered_ids(filters))
         conditions.append(submission_table.c.submission_id.in_(filtered))
-    return table.select().where(and_(*conditions)).execute()
+    return table.select().where(and_(*conditions)).order_by(
+        'submission_time').execute()
 
 
 def get_number_of_submissions(survey_id: str) -> int:

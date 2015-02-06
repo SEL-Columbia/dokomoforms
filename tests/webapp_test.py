@@ -23,7 +23,8 @@ import api.survey
 import api.user
 from db import engine
 from db.answer import get_answers
-from db.auth_user import generate_api_token
+from db.auth_user import generate_api_token, auth_user_table, \
+    get_auth_user_by_email
 from db.question import get_questions_no_credentials, question_table
 from db.question_choice import question_choice_table
 from db.submission import submission_table
@@ -98,6 +99,9 @@ def _create_submission() -> dict:
 class APITest(AsyncHTTPTestCase):
     def tearDown(self):
         submission_table.delete().execute()
+        survey_table.delete().where(
+            survey_table.c.survey_title ==
+            'survey_created_through_api').execute()
 
     def get_app(self):
         self.app = tornado.web.Application(pages, **new_config)
@@ -186,6 +190,14 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(response.code, 200)
         self.assertEqual(json_decode(to_unicode(response.body)),
                          api.submission.get_all(survey_id, 'test_email'))
+
+    def testGetSubmissionsWithoutAPIToken(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        response = self.fetch('/api/surveys/{}/submissions'.format(survey_id))
+        self.assertEqual(response.code, 403)
 
     def testGetSubmissionsWithInvalidAPIToken(self):
         survey_id = survey_table.select().where(
@@ -297,6 +309,33 @@ class APITest(AsyncHTTPTestCase):
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
                          api.survey.get_one(survey_id, email='test_email'))
+
+    def testCreateSurvey(self):
+        input_data = {'email': 'test_email',
+                      'survey_title': 'survey_created_through_api',
+                      'questions': [{'question_title': 'a question',
+                                     'type_constraint_name': 'text',
+                                     'hint': '',
+                                     'allow_multiple': False,
+                                     'logic': {'required': False,
+                                               'with_other': False},
+                                     'question_to_sequence_number': -1,
+                                     'choices': None,
+                                     'branches': None}]}
+
+        token = api.user.generate_token({'email':
+                                             'test_email'})['result']['token']
+
+        response = self.fetch('/api/surveys/create',
+                              method='POST', body=json_encode(input_data),
+                              headers={'Email': 'test_email',
+                                       'Token': token})
+        result = json_decode(to_unicode(response.body))['result']
+        survey_id = result['survey_id']
+        self.assertEqual(result,
+                         api.survey.get_one(survey_id,
+                                            email='test_email')['result'])
+        self.assertEqual(response.code, 201)
 
     def testGetMin(self):
         survey_id = survey_table.select().where(
@@ -733,6 +772,14 @@ class DebugTest(AsyncHTTPTestCase):
 
     def get_new_ioloop(self):
         return tornado.ioloop.IOLoop.instance()
+
+    def tearDown(self):
+        auth_user_table.delete().where(
+            auth_user_table.c.email == 'debug_test_email').execute()
+
+    def testCreate(self):
+        self.fetch('/debug/create/debug_test_email')
+        self.assertIsNotNone(get_auth_user_by_email('debug_test_email'))
 
     def testLoginGet(self):
         response = self.fetch('/debug/login//')
