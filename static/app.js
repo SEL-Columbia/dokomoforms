@@ -6,7 +6,7 @@ App = {
     facilities: [], // revisit facilities
     unsynced_facilities: {}, // new facilities
     start_loc: [40.8138912, -73.9624327], 
-    submitter_name: localStorage['name']
+    submitter_name: ''
    // defaults to nyc, updated by metadata and answers to location questions
 };
 
@@ -14,7 +14,9 @@ App.init = function(survey) {
     var self = this;
     self.survey = new Survey(survey.survey_id, survey.questions, survey.metadata);
     self.start_loc = survey.metadata.location || self.start_loc;
-    App.facilities = JSON.parse(localStorage['facilities'] || "[]");
+    self.facilities = JSON.parse(localStorage['facilities'] || "[]");
+    self.submitter_name = localStorage['name'];
+
     if (App.facilities.length == 0) {
         // See if you can get some facilities
         getNearbyFacilities(App.start_loc[0], App.start_loc[1], 

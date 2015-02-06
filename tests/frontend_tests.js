@@ -19,7 +19,10 @@ describe('App and Survey Init Tests', function(done) {
             '../static/lib.js',  
             '../static/app.js'], 
             function(error, win) {
-                if (error) throw (error);
+                if (error) { 
+                    console.log(error);
+                    throw (error) 
+                };
             
                 window = win;
                 window.localStorage = {};
@@ -68,6 +71,15 @@ describe('App and Survey Init Tests', function(done) {
             done();
         });
     
+    it('should fill in submitter name', 
+        function(done) {
+            var name = 'viktor sucks';
+            window.localStorage['name'] = name;
+            window.App.init(raw_survey);
+            window.App.submitter_name.should.match(name);
+            done();
+        });
+    
 });
 
 
@@ -88,7 +100,10 @@ describe('Survey function tests', function(done) {
             '../static/lib.js',  
             '../static/app.js'], 
             function(error, win) {
-                if (error) throw (error);
+                if (error) { 
+                    console.log(error);
+                    throw (error) 
+                }
             
                 window = win;
                 window.localStorage = {};
@@ -403,7 +418,10 @@ describe('Next Question Tests', function(done) {
             '../static/lib.js',  
             '../static/app.js'], 
             function(error, win) {
-                if (error) throw (error);
+                if (error) { 
+                    console.log(error);
+                    throw (error) 
+                }
             
                 window = win;
                 window.localStorage = {};
@@ -492,6 +510,91 @@ describe('Next Question Tests', function(done) {
             window.$(".page_nav__prev").trigger("click");
             last_question.should.equal(survey.current_question);
             window.$(".question__title").html().trim().should.match(title);
+            done();
+        });
+});
+
+describe('Submission tests', function(done) {
+    // globals
+    var window;
+    var raw_survey;
+
+    before(function(done) {
+        done();
+    });
+
+    beforeEach(function(done) {
+        raw_survey = require('./fixtures/survey.json');
+        jsdom.env('./tests/widgets.html',  
+            [//'lib/blanket.min.js', 
+            'lib/classList_shim.js',
+            '../static/lib.js',  
+            '../static/app.js'], 
+            function(error, win) {
+                if (error) { 
+                    console.log(error);
+                    throw (error) 
+                }
+            
+                window = win;
+                window.localStorage = {'name': 'hello'};
+                window.App.init(raw_survey)
+                done();
+            });
+
+    });
+
+    afterEach(function(done) {
+        raw_survey = null;
+        window.close();
+        window = null;
+        done();
+    });
+
+    it('should preload submitter name', 
+        function(done) {
+
+            var survey = window.App.survey;
+            var questions = survey.questions;
+            var name = window.App.submitter_name;
+            
+            survey.render(undefined);
+            window.$(".question__title").html().trim()
+                .should.equal("That's it, you're finished!");
+
+            window.$(".name_input").val()
+                .should.equal(name);
+
+            done();
+        });
+
+    it('should update submitter name', 
+        function(done) {
+
+            var survey = window.App.survey;
+            var questions = survey.questions;
+            var name = window.App.submitter_name;
+            var new_name = '2chains'
+            
+            survey.render(undefined);
+            window.$(".question__title").html().trim()
+                .should.equal("That's it, you're finished!");
+
+            window.$(".name_input").val(new_name)
+            window.$(".name_input").trigger('keyup');
+
+            // No references to old name
+            window.$(".name_input").val()
+                .should.not.equal(name);
+            window.localStorage.name.should.not.equal(name);
+            window.App.submitter_name.should.not.equal(name);
+
+            // all the references
+            window.localStorage.name.should.equal(new_name);
+            window.$(".name_input").val()
+                .should.equal(new_name);
+            window.App.submitter_name.should.equal(new_name);
+
             done();
         });
 });
