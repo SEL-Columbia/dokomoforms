@@ -254,15 +254,6 @@ Survey.prototype.render = function(question) {
         var templateHTML = $('#template_submit').html();
         var template = _.template(templateHTML);
         var html = template({name: App.submitter_name});
-        $(html)
-            .find('.name_input')
-            .keyup(function(e) {
-                console.log(this.value);
-                console.log(this.value);
-                console.log(this.value);
-                App.submitter_name = this.value;
-                localStorage['name'] = App.submitter_name;
-            });
 
         content.empty()
             .data('index', index)
@@ -271,6 +262,12 @@ Survey.prototype.render = function(question) {
                 .one('click', function() {
                     self.submit();
                 });
+        content
+            .find('.name_input')
+            .keyup(function(e) {
+                App.submitter_name = this.value;
+                localStorage['name'] = App.submitter_name;
+            });
     }
     
     // Update nav
