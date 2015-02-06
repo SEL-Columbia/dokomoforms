@@ -1,4 +1,4 @@
-function drawVisualizations(time_data, bar_data, map_data) {
+function drawMap(map_data) {
 
     var map = L.map('vis_map', {
         //center: [40.8138912, -73.9624327],
