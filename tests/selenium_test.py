@@ -1,4 +1,5 @@
 """Front-end tests"""
+from time import sleep
 import unittest
 
 from selenium import webdriver
@@ -116,7 +117,10 @@ class SubmissionTest(DriverTest):
             'new_test_facility')
         self.drv.find_element_by_xpath(in_xpath + 'div[4]/span[2]').click()
         next_button.click()
-        self.drv.find_element_by_xpath(in_xpath + 'div[2]').click()
+
+        self.drv.find_element_by_xpath(in_xpath + 'div[2]/input').send_keys(
+            'super cool ghost submitter')
+        self.drv.find_element_by_xpath(in_xpath + 'div[3]').click()
 
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
             (By.XPATH, '/html/body/div/div[3]/input')))
