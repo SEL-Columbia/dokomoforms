@@ -190,6 +190,7 @@ describe('Survey function tests', function(done) {
                 {
                     question_to_sequence_number: -1,
                     type_constraint_name: "integer",
+                    logic: {},
                     sequence_number: 2
                 },
             ];
@@ -226,6 +227,7 @@ describe('Survey function tests', function(done) {
                 {
                     question_to_sequence_number: -1,
                     type_constraint_name: "integer",
+                    logic: {},
                     sequence_number: 2
                 },
             ];
@@ -262,6 +264,7 @@ describe('Survey function tests', function(done) {
                 {
                     question_to_sequence_number: -1,
                     type_constraint_name: "integer",
+                    logic: {},
                     sequence_number: 2
                 },
             ];
@@ -285,7 +288,6 @@ describe('Survey function tests', function(done) {
         });
     
     it('next: should enforce required correctly for invalid input to decimal',
-
         function(done) {
             var NEXT = 1;
             var PREV = -1;
@@ -299,6 +301,7 @@ describe('Survey function tests', function(done) {
                 {
                     question_to_sequence_number: -1,
                     type_constraint_name: "integer",
+                    logic: {},
                     sequence_number: 2
                 },
             ];
@@ -336,6 +339,7 @@ describe('Survey function tests', function(done) {
                 {
                     question_to_sequence_number: -1,
                     type_constraint_name: "integer",
+                    logic: {},
                     sequence_number: 2
                 },
             ];
@@ -374,6 +378,7 @@ describe('Survey function tests', function(done) {
                 {
                     question_to_sequence_number: -1,
                     type_constraint_name: "integer",
+                    logic: {},
                     sequence_number: 2
                 },
             ];
@@ -391,8 +396,147 @@ describe('Survey function tests', function(done) {
             //survey.next(NEXT);
             //questions[0].should.equal(survey.current_question);
             //questions[1].should.not.equal(survey.current_question);
-            //XXX: VALIDATION FOR DATE NOT DONE;
+            //XXX: VALIDATION FOR DATE NOT ENFORCED;
 
+
+            done();
+
+        });
+    
+    it('next: should follow sequence number ordering not list ordering',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "time",
+                    logic: {},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: 4,
+                    type_constraint_name: "text",
+                    logic: {},
+                    sequence_number: 3
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    logic: {},
+                    sequence_number: 4
+                },
+                {
+                    question_to_sequence_number: 3,
+                    type_constraint_name: "decimal",
+                    logic: {},
+                    sequence_number: 2
+                },
+            ];
+
+            var survey = new window.Survey("id", questions, {});
+            questions[0].should.equal(survey.current_question);
+
+            survey.next(NEXT);
+            questions[3].should.equal(survey.current_question);
+            
+            survey.next(NEXT);
+            questions[1].should.equal(survey.current_question);
+
+            survey.next(NEXT);
+            questions[2].should.equal(survey.current_question);
+            
+            survey.next(PREV);
+            questions[1].should.equal(survey.current_question);
+
+            survey.next(PREV);
+            questions[3].should.equal(survey.current_question);
+
+            survey.next(PREV);
+            questions[0].should.equal(survey.current_question);
+            done();
+
+        });
+
+    it('next: should follow new paths when answer branches',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "time",
+                    logic: {},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: 4,
+                    type_constraint_name: "text",
+                    logic: {},
+                    sequence_number: 3
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "text",
+                    logic: {},
+                    sequence_number: 5
+                },
+                {
+                    question_to_sequence_number: 5,
+                    type_constraint_name: "text",
+                    logic: {},
+                    sequence_number: 4
+                },
+                {
+                    question_to_sequence_number: 3,
+                    type_constraint_name: "text", //code doesnt assert that its multiple choice
+                    logic: {},
+                    branches: [
+                        {
+                            question_choice_id: "end", // pretend this is a uuid
+                            to_sequence_number: 5,
+                        },
+                        {
+                            question_choice_id: "skip", // fake uuid
+                            to_sequence_number: 4,
+                        }
+                    ],
+                    sequence_number: 2
+                },
+            ];
+
+            var survey = new window.Survey("id", questions, {});
+            var brancher = questions[4];
+            var next = questions[1];
+            var end = questions[2];
+            var skip = questions[3];
+
+            questions[0].should.equal(survey.current_question);
+            survey.next(NEXT);
+
+            // assert we are at branching question
+            brancher.should.equal(survey.current_question);
+            // follows normal seq path
+            survey.next(NEXT);
+            next.should.equal(survey.current_question);
+            // assert we are back
+            survey.next(PREV);
+            brancher.should.equal(survey.current_question);
+            // branch to end 
+            brancher.answer = ["end"];
+            survey.next(NEXT); 
+            end.should.equal(survey.current_question);
+            // come back
+            survey.next(PREV);
+            brancher.should.equal(survey.current_question);
+            // branch to skip 
+            brancher.answer = ["skip"];
+            survey.next(NEXT); 
+            skip.should.equal(survey.current_question);
+            // come back again fine
+            survey.next(PREV);
+            brancher.should.equal(survey.current_question);
+            
 
             done();
 
