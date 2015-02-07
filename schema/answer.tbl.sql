@@ -62,6 +62,9 @@ CREATE TABLE answer
       THEN 1 ELSE 0 END) +
     (CASE WHEN type_constraint_name =   'location' AND ((answer_location IS NULL) !=
                                                         (answer_text     IS NULL))
+      THEN 1 ELSE 0 END) +
+    (CASE WHEN type_constraint_name =   'facility' AND answer_location IS NOT NULL
+                                                   AND answer_text     IS NOT NULL
       THEN 1 ELSE 0 END)
   = 1)
 )

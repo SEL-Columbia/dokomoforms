@@ -31,3 +31,12 @@ def execute_with_exceptions(connection: Connection,
             if name in error:
                 raise exception
         raise
+
+def json_response(something: object) -> dict:
+    """
+    Turns out a list isn't real JSON.
+
+    :param something: anything, especially a list
+    :return: {'result': something}
+    """
+    return {'result': something}
