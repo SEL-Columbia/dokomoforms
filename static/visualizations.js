@@ -1,7 +1,12 @@
+function drawLineGraph(time_data) {
+}
+
+function drawBarGraph(bar_data) {
+}
+ 
 function drawMap(map_data) {
 
     var map = L.map('vis_map', {
-        //center: [40.8138912, -73.9624327],
         dragging: true,
         zoom: 14,
         zoomControl: false,

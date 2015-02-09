@@ -39,6 +39,14 @@
     <script src="/static/app.js"></script>
     <script src="/static/visualizations.js"></script>
     <script>
+    {% if time_data %}
+        drawLineGraph({% raw time_data %});
+    {% end %}
+    {% if bar_data %}
+        drawBarGraph({% raw bar_data %});
+    {% end %}
+    {% if map_data %}
         drawMap({% raw map_data %});
+    {% end %}
     </script>
 {% end %}
