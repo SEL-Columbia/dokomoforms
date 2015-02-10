@@ -1,5 +1,5 @@
 # About
-<a href="https://magnum.travis-ci.com/SEL-Columbia/dokomoforms"><img src="https://magnum.travis-ci.com/SEL-Columbia/dokomoforms.svg?token=YQoxqgi37o2BmSPVXoMS&branch=master" border="0" /></a>
+[![Build Status](https://travis-ci.org/SEL-Columbia/dokomoforms.svg?branch=master)](https://travis-ci.org/SEL-Columbia/dokomoforms)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/SEL-Columbia/dokomoforms?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Health](https://landscape.io/github/SEL-Columbia/dokomoforms/master/landscape.svg?style=flat)](https://landscape.io/github/SEL-Columbia/dokomoforms/master)
 
