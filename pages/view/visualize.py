@@ -28,14 +28,16 @@ class VisualizationHandler(BaseHandler):
         time_data, bar_data, map_data = None, None, None
         if question.type_constraint_name in {'integer', 'decimal'}:
             try:
-                time_data = time_series(question_id, email=self.current_user)
+                data = time_series(question_id, email=self.current_user)
+                time_data = data['result']
             except NoSubmissionsToQuestionError:
                 pass
         if question.type_constraint_name in {'text', 'integer', 'decimal',
                                              'date', 'time', 'location',
                                              'multiple_choice'}:
             try:
-                bar_data = bar_graph(question_id, email=self.current_user)
+                data = bar_graph(question_id, email=self.current_user)
+                bar_data = data['result']
             except NoSubmissionsToQuestionError:
                 pass
         if question.type_constraint_name == 'location':
