@@ -556,7 +556,6 @@ Widgets.multiple_choice = function(question, page) {
     question.is_other =  question.is_other || [];
     if (question.answer[question.choices.length] || 
             question.answer[question.choices.length] === '') {
-        //$select.find("#with_other").attr("selected", true);
         question.is_other[question.choices.length] = true;
         $other.show();
     }
