@@ -160,7 +160,7 @@ function Survey(id, questions, metadata) {
 // Search by sequence number instead of array pos
 Survey.prototype.getQuestion = function(seq) {
     var self = this;
-    for(i = 0; i < self.questions.length; i++) {
+    for(var i = 0; i < self.questions.length; i++) {
         if (self.questions[i].sequence_number === seq) {
             return self.questions[i];
         }
@@ -172,7 +172,7 @@ Survey.prototype.getQuestion = function(seq) {
 // Answer array may have elements even if answer[0] is undefined
 // XXX: function name doesnt match return types
 Survey.prototype.getFirstResponse = function(question) {
-    for (i = 0; i < question.answer.length; i++) {
+    for (var i = 0; i < question.answer.length; i++) {
         if (Widgets._validate(question.type_constraint_name, question.answer[i]) !== null) {
             return question.answer[i];
         }
@@ -209,7 +209,7 @@ Survey.prototype.next = function(offset) {
         // Check if question was a branching question
         if (this.current_question.branches && first_response) {
             var branches = this.current_question.branches;
-            for (i=0; i < branches.length; i++) {
+            for (var i=0; i < branches.length; i++) {
                 if (branches[i].question_choice_id === first_response) {
                     next_question = self.getQuestion(branches[i].to_sequence_number);
                     // update pointers
@@ -467,7 +467,8 @@ Widgets._validate = function(type, answer) {
               //XXX: Others aren't validated the same
               val = answer;
               break;
-    };
+    }
+
     return val;
 };
 
@@ -603,7 +604,7 @@ Widgets._getMap = function() {
     map.addLayer(App._getMapLayer());
 
     return map;
-}
+};
 
 Widgets.location = function(question, page) {
     // TODO: add location status
@@ -728,7 +729,7 @@ Widgets.facility = function(question, page) {
         // SYNCED FACILITIES
         facilities_group.clearLayers(); // Clears synced facilities only
         facilities = facilities || [];
-        for (i = 0; i < facilities.length; i++) {
+        for (var i = 0; i < facilities.length; i++) {
             var facility = facilities[i];
             var marker = drawPoint(facility.coordinates[1], 
                         facility.coordinates[0], 
