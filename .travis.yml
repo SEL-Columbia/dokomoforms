@@ -2,13 +2,17 @@ language: python
 python:
   - "3.3"
   - "3.4"
+env:
+  global:
+    - secure: C/Ni0z3WjMsxFtHImuU7OqMlYg8fsON74Xwx/wlhvFHuKfiu8Y6o40/VXSUp7vqhjGJF3jmdWPmwlk2lNg0HwYbTaDBfB9Zr6yHlPKW4uqhWCibIBUN9K0p7Xv1Jp8j3TmSJc1uelLHOtYNYVW8bqyvt7qMqUqYGaGSiH1zU0nA=
+    - secure: V0rdSDV1xC8gLK8KC0q9MTe/LHl/yvN51fglqJCY8Keq0FC1rcrIP+Z0nRY5ORxOC4Fv4DJp3uvNktnnW2bVdDDuKc8emEMR/on33Xjp5WcaioADk59YMl+kaMD3DGE1Hqn0/WFnMw8UyYCahBnJuDZMyGJVZyV4FPgGjiMsfU0=
+  matrix:
+    - "BROWSER='firefox::Linux'"
+    - "BROWSER='chrome::Linux'"
+    - "BROWSER='android::Linux'"
 addons:
   postgresql: "9.3"
-  sauce_connect:
-    username: "vr2262"
-    access_key:
-      secure: "RBLGreyOafParyQCmxSe3Yj/QOsVv/b2Yfe2tMAh9EQKiaBEJXdebpiRRF9OzMn+9cPAO1pWbIaEFP7rtPsaRbonab/WpATMNrA8dr5zlq33EPKnlR3FKmgWsgs9dhh0cAbPJVmJHMmlVtWWyvNO+ak2ZxpzmPPGPhSXjMW+n0Y="
-
+  sauce_connect: true
 
 # command to install dependencies
 install:
@@ -28,7 +32,7 @@ before_script:
 # command to run tests
 script: 
   - npm test
-  - nosetests --with-coverage --cover-inclusive --cover-branches --cover-tests --cover-html --cover-erase --cover-package=api,db,webapp,pages.api,pages.util,pages.debug,pages.view --ignore-files=selenium_test
+  - nosetests --with-coverage --cover-inclusive --cover-branches --cover-tests --cover-html --cover-erase --cover-package=api,db,webapp,pages.api,pages.util,pages.debug,pages.view
 
 after_success: coveralls
 
