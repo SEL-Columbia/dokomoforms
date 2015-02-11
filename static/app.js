@@ -388,130 +388,102 @@ var Widgets = {
 //
 // question: question data
 // page: the widget container DOM element
+// type: type of widget, handles all accept
+//
+//      multiple choice
+//      facility
+//      location
+//      note
 //
 // All widgets store results in the questions.answer array
-Widgets.text = function(question, page) {
-
+Widgets._input = function(question, page, type) {
     var self = this;
-    function keyup(e) {
-        var ans_ind = ($(page).find('input')).index(this);
-        question.answer[ans_ind] = self._validate("text", this.value);
-        if (e.keyCode === 13) { // 13 == return
-            self._addNewInput(page, question, 'text_input', 'text', keyup);
-        }
-    };
+
+    $(page)
+        .find('input')
+        .change(function(e) {
+            var ans_ind = $(page).find('input').index(this); 
+            question.answer[ans_ind] = self._validate(type, this.value);
+        });
 
     // Click the + for new input
     $(page)
         .find('.next_input')
         .click(function() { 
-            self._addNewInput(page, question, 'text_input', 'text', keyup);
+            self._addNewInput(page, $(page).find('input').last(), question);
         });
+};
 
-    $(page)
-        .find('input')
-        .keyup(keyup);
+// Handle creating multiple inputs for widgets that support it 
+Widgets._addNewInput = function(page, input, question) {
+    if (question.allow_multiple) {
+        input
+            .clone(true)
+            .val(null)
+            .insertBefore(page.find(".next_input"))
+            .focus();
+    }
+}
+
+// Basic input validation
+Widgets._validate = function(type, answer) {
+    var val = null;
+    switch(type) {
+        case "decimal":
+            val = parseFloat(answer);
+            if (isNaN(val))
+                val = null;
+            break;
+        case "integer":
+            val = parseInt(answer);
+            if (isNaN(val))
+                val = null;
+            break;
+        case "date":
+            //XXX: Doesn't work with chrome date picker
+            val = Date.parse(answer);
+            if (isNaN(val))
+                val = null;
+            else
+                val = (new Date(val)).toISOString();
+            break;
+        case "time":
+              //XXX: validation for time
+              val = answer;
+              break;
+        case "text":
+              if (answer)
+                  val = answer;
+              break;
+        default:
+              //XXX: Others aren't validated the same
+              val = answer;
+              break;
+    }
+    return val;
+}
+
+Widgets.text = function(question, page) {
+    this._input(question, page, "text");
 };
 
 Widgets.integer = function(question, page) {
-    var self = this;
-    function keyup(e) {
-        var ans_ind = ($(page).find('input')).index(this);
-        question.answer[ans_ind] = self._validate("integer", this.value);
-        if (e.keyCode === 13) {
-            self._addNewInput(page, question, 'text_input', 'number', keyup);
-        }
-    };
-    
-    // Click the + for new input
-    $(page)
-        .find('.next_input')
-        .click(function() { 
-            self._addNewInput(page, question, 'text_input', 'number', keyup);
-        });
-
-    $(page)
-        .find('input')
-        .keyup(keyup);
+    this._input(question, page, "integer");
 };
 
 Widgets.decimal = function(question, page) {
-    var self = this;
-    function keyup(e) {
-        var ans_ind = ($(page).find('input')).index(this);
-        question.answer[ans_ind] = self._validate("decimal", this.value);
-        if (e.keyCode === 13) {
-            self._addNewInput(page, question, 'text_input', 'number', keyup);
-        }
-    };
-
-    // Click the + for new input
-    $(page)
-        .find('.next_input')
-        .click(function() { 
-            self._addNewInput(page, question, 'text_input', 'number', keyup);
-        });
-
-    $(page)
-        .find('input')
-        .keyup(keyup);
+    this._input(question, page, "decimal");
 };
 
 // Date and time respond better to change then keypresses
 Widgets.date = function(question, page) {
     //XXX: TODO change input thing to be jquery-ey
-    var self = this;
-    function change() {
-        var ans_ind = ($(page).find('input')).index(this);
-        if (this.value !== '') 
-            question.answer[ans_ind] = self._validate("date_chrome", this.value); //XXX
-    };
-
-    function keyup(e) {
-        if (e.keyCode === 13) {
-            self._addNewInput(page, question, 'text_input', 'date', keyup, change);
-        }
-    }
-
-    // Click the + for new input
-    $(page)
-        .find('.next_input')
-        .click(function() { 
-            self._addNewInput(page, question, 'text_input', 'date', keyup, change);
-        });
-
-    $(page)
-        .find('input')
-        .change(change)
-        .keyup(keyup)
+    this._input(question, page, "date_XXX"); //XXX: Fix validation
 };
 
 Widgets.time = function(question, page) {
     //XXX: TODO change input thing to be jquery-ey
-    var self = this;
-    function change() {
-        var ans_ind = ($(page).find('input')).index(this);
-        if (this.value !== '') 
-            question.answer[ans_ind] = self._validate("time", this.value);
-    };
-
-    function keyup(e) {
-        if (e.keyCode === 13) {
-            self._addNewInput(page, question, 'text_input', 'time', keyup, change);
-        }
-    }
-
-    // Click the + for new input
-    $(page)
-        .find('.next_input')
-        .click(function() { 
-            self._addNewInput(page, question, 'text_input', 'time', keyup, change);
-        });
-
-    $(page)
-        .find('input')
-        .change(change)
-        .keyup(keyup)
+    this._input(question, page, "time"); //XXX: Fix validation
 };
 
 Widgets.note = function(question, page) {
@@ -999,56 +971,6 @@ Widgets.facility = function(question, page) {
         });
 };
 
-// Handle creating multiple inputs for widgets that support it 
-// XXX: Maybe feature isn't required
-// XXX: Duplicate exisiting field instead of creating new one
-Widgets._addNewInput = function(page, question, cls, type, keyup_cb, change_cb) {
-    if (question.allow_multiple) {
-        $('<input>')
-            .attr({'type': type, 'class': cls})
-            .change(change_cb)
-            .keyup(keyup_cb)
-            .insertBefore(page.find(".next_input"))
-            .focus();
-    }
-}
-
-Widgets._validate = function(type, answer) {
-    var val = null;
-    switch(type) {
-        case "decimal":
-            val = parseFloat(answer);
-            if (isNaN(val))
-                val = null;
-            break;
-        case "integer":
-            val = parseInt(answer);
-            if (isNaN(val))
-                val = null;
-            break;
-        case "date":
-            val = Date.parse(answer);
-            if (isNaN(val))
-                val = null;
-            else
-                val = (new Date(val)).toISOString();
-            break;
-        case "time":
-              //XXX: validation for time
-              val = answer;
-              break;
-        case "text":
-              if (answer)
-                  val = answer;
-              break;
-        default:
-              //XXX: Location, Facility, MChoice don't make sense to validate 
-              val = answer;
-              break;
-    }
-
-    return val;
-}
 
 /* -------------------------- Revisit Stuff Below ----------------------------*/
 function getNearbyFacilities(lat, lng, rad, lim, id, cb) {
