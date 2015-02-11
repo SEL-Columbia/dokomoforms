@@ -6,6 +6,8 @@
 
 [![Coverage Status](https://coveralls.io/repos/SEL-Columbia/dokomoforms/badge.svg?branch=master)](https://coveralls.io/r/SEL-Columbia/dokomoforms?branch=master)
 
+[![Sauce Test Status](https://saucelabs.com/browser-matrix/vr2262sel.svg)](https://saucelabs.com/u/vr2262sel)
+
 Dokomo [どこも](http://tangorin.com/general/%E3%81%A9%E3%81%93%E3%82%82) Forms is a mobile data collection technology that doesn't suck.
  
 # Installation
