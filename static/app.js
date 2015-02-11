@@ -123,6 +123,7 @@ function Survey(id, questions, metadata) {
 
     // Load answers from localStorage
     var answers = JSON.parse(localStorage[this.id] || '{}');
+    console.log(answers);
     _.each(self.questions, function(question, ind, questions) {
         question.answer = answers[question.question_id] || [];
         // Set next pointers
@@ -282,7 +283,7 @@ Survey.prototype.submit = function() {
     var self = this;
     var sync = $('.nav__sync')[0];
     var save_btn = $('.question__saving')[0];
-    var answers = [];
+    var answers = {};
 
     function getCookie(name) {
         var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
@@ -297,6 +298,7 @@ Survey.prototype.submit = function() {
     localStorage[self.id] = JSON.stringify(answers);
 
     // Prepare POST request
+    var survey_answers = [];
     self.questions.forEach(function(q) {
         console.log('q', q);
         q.answer.forEach(function(ans, ind) {
@@ -310,7 +312,7 @@ Survey.prototype.submit = function() {
                 return;
             }
 
-            answers.push({
+            survey_answers.push({
                 question_id: q.question_id,
                 answer: ans,
                 is_other: is_other_val 
@@ -333,7 +335,7 @@ Survey.prototype.submit = function() {
     var data = {
         submitter: App.submitter_name || "anon",
         survey_id: self.id,
-        answers: answers
+        answers: survey_answers
     };
 
     console.log('submission:', data);
@@ -342,7 +344,7 @@ Survey.prototype.submit = function() {
     save_btn.classList.add('icon--spin');
     
     // Don't post with no replies
-    if (JSON.stringify(answers) === '[]') {
+    if (JSON.stringify(survey_answers) === '[]') {
       // Not doing instantly to make it seem like App tried reaaall hard
       setTimeout(function() {
         sync.classList.remove('icon--spin');
@@ -493,6 +495,7 @@ Widgets.note = function(question, page) {
 // Multiple choice and multiple choice with other are handled here by same func
 // XXX: possibly two widgets (multi select and multi choice)
 Widgets.multiple_choice = function(question, page) {
+    var self = this;
 
     // record values for each select option to update answer array in consistent way
     var $children = []; //XXX: Using question.choices is not enough
