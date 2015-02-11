@@ -233,7 +233,7 @@ Survey.prototype.render = function(question) {
         // Show widget
         var templateHTML = $('#widget_' + question.type_constraint_name).html();
         var template = _.template(templateHTML);
-        var html = template({question: question});
+        var html = template({question: question, start_loc: App.start_loc});
         
         self.current_question = question;
         // Render question
@@ -475,7 +475,6 @@ Widgets.decimal = function(question, page) {
     this._input(question, page, "decimal");
 };
 
-// Date and time respond better to change then keypresses
 Widgets.date = function(question, page) {
     //XXX: TODO change input thing to be jquery-ey
     this._input(question, page, "date_XXX"); //XXX: Fix validation
@@ -563,22 +562,11 @@ Widgets.location = function(question, page) {
     var self = this;
     
     // Map
-    var len = question.answer.length - 1;
-    var lat = question.answer[len] && question.answer[len][1] || App.start_loc[0];
-    var lng = question.answer[len] && question.answer[len][0] || App.start_loc[1];
+    var lat = $(page).find('.question__lat').last().val() || App.start_loc[0];
+    var lng = $(page).find('.question__lon').last().val() || App.start_loc[1];
+
+    console.log(lat, lng, "HEY");
     App.start_loc = [lat, lng];
-
-    // Location is the only one that doesn't use the same keyup function due to
-    // the btn being the only way to input values in the view.
-    var loc_div = "<div class='loc_input'>"
-        +"<input class='text_input question__lat' type='text'>"
-        +"<input class='text_input question__lon' type='text'>"
-        +"</div>";
-
-    // Added div if none is around
-    if ($(page).find('.question__lon').length === 0) {
-        $(loc_div).insertBefore(".question__btn");
-    }
 
     var map = L.map('map', {
             center: App.start_loc,
@@ -619,17 +607,19 @@ Widgets.location = function(question, page) {
         updateLocation([map.getCenter().lng, map.getCenter().lat]);
     });
 
-    function updateLocation(coords) {
+    function updateLocation(coords, idx) {
+        //XXX: Control which element is updated
+        console.log(coords);
 
         // Find current length of inputs and update the last one;
-        var questions_lon = $(page).find('.question__lon');
-        var questions_lat = $(page).find('.question__lat');
+        var questions_len = $(page).find('.question__location').length;
 
         // update array val
-        question.answer[questions_lon.length - 1] = coords;
+        question.answer[questions_len - 1] = coords;
             
-        questions_lon[questions_lon.length - 1].value = coords[0];
-        questions_lat[questions_lat.length - 1].value = coords[1];
+        // update latest lon/lat values
+        $(page).find('.question__lon').last().val(coords[0]);
+        $(page).find('.question__lat').last().val(coords[1]);
     }
 
     $(page)
@@ -640,25 +630,31 @@ Widgets.location = function(question, page) {
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
                     sync.classList.remove('icon--spin');
+
                     // Server accepts [lon, lat]
-                    var coords = [position.coords.longitude, position.coords.latitude];
+                    var coords = [
+                        position.coords.longitude, 
+                        position.coords.latitude
+                    ];
 
                     // Set map view and update indicator position
                     map.setView([coords[1], coords[0]]);
                     circle
                         .setLatLng([coords[1], coords[0]]);
 
-                    // If allow multiple is set (or this is the first time they clicked) add new div
-                    if (question.allow_multiple && typeof question.answer[0] !== "undefined") {
-                       $(loc_div)
-                           .insertBefore(".question__btn");
+                    // If allow multiple is set add there exists > 1 divs 
+                    if (question.allow_multiple && 
+                            typeof question.answer[0] !== "undefined") {
+                        $(page)
+                            .find('.question__location')
+                            .clone()
+                            .insertBefore(".question__btn");
                     }
 
                     updateLocation(coords);
 
                 }, function error() {
                     //TODO: If cannot Get location" for some reason, 
-                    // Allow  user to fill in text field instead
                     sync.classList.remove('icon--spin');
                     alert('error'); //XXX Replace with our message thing
                 }, {
@@ -674,10 +670,13 @@ Widgets.facility = function(question, page) {
     var self = this;
     
     // Map
-    var lat = question.answer[0] && question.answer[0][1][1] || App.start_loc[0];
-    var lng = question.answer[0] && question.answer[0][1][0] || App.start_loc[1];
+    var lat = question.answer[0] && question.answer[0][1][1] 
+        || App.start_loc[0];
+    var lng = question.answer[0] && question.answer[0][1][0] 
+        || App.start_loc[1];
 
     App.start_loc = [lat, lng];
+
     console.log("selected", question.answer[0] && question.answer[0][0] || null);
 
     /* Buld inital state */
