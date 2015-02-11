@@ -32,9 +32,12 @@ class DriverTest(unittest.TestCase):
         username = os.environ.get('SAUCE_USERNAME', SAUCE_USERNAME)
         access_key = os.environ.get('SAUCE_ACCESS_KEY', SAUCE_ACCESS_KEY)
         browser_config = os.environ.get('BROWSER', DEFAULT_BROWSER)
-        browser_name, version, platform = browser_config.split(':')
+        browser_name, version, platform, *other = browser_config.split(':')
         caps = {'browserName': browser_name,
                 'platform': platform}
+        if browser_name in {'android', 'iPhone'}:
+            caps['deviceName'] = other[0]
+            caps['device-orientation'] = 'portrait'
         if version:
             caps['version'] = version
         if 'TRAVIS_JOB_NUMBER' in os.environ:
@@ -69,8 +72,8 @@ class DriverTest(unittest.TestCase):
 # go_to_new_window(self.drv)
 # eml = self.drv.find_element_by_xpath('//*[
 # @id="authentication_email"]')
-#         eml.send_keys('test@mockmyid.com', Keys.RETURN)
-#         self.drv.switch_to.window(self.drv.window_handles[0])
+# eml.send_keys('test@mockmyid.com', Keys.RETURN)
+# self.drv.switch_to.window(self.drv.window_handles[0])
 #         load = EC.presence_of_element_located((By.ID, 'logout'))
 #         WebDriverWait(self.drv, 10).until(load)
 #
