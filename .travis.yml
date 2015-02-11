@@ -22,9 +22,8 @@ before_script:
 
 # command to run tests
 script: 
-  - nosetests --with-coverage --cover-inclusive --cover-branches --cover-tests --cover-html --cover-erase --cover-package=api,db,webapp,pages.api,pages.util,pages.debug,pages.view --ignore-files=selenium_test
-  - coverage run --source=api,db,webapp,pages.api,pages.util,pages.debug,pages.view
   - npm test
+  - nosetests --with-coverage --cover-inclusive --cover-branches --cover-tests --cover-html --cover-erase --cover-package=api,db,webapp,pages.api,pages.util,pages.debug,pages.view --ignore-files=selenium_test
 
 after_success: coveralls
 
