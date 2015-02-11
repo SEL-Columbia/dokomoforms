@@ -124,7 +124,7 @@ function Survey(id, questions, metadata) {
     // Load answers from localStorage
     var answers = JSON.parse(localStorage[this.id] || '{}');
     console.log(answers);
-    _.each(self.questions, function(question, ind, questions) {
+    _.each(self.questions, function(question) {
         question.answer = answers[question.question_id] || [];
         // Set next pointers
         question.next = self.getQuestion(question.question_to_sequence_number);
@@ -186,7 +186,6 @@ Survey.prototype.next = function(offset) {
     var self = this;
     var next_question = offset === PREV ? this.current_question.prev : this.current_question.next;
     var index = $('.content').data('index');
-    var response = this.current_question.answer;
     var first_response = this.getFirstResponse(this.current_question); 
 
     //XXX: 0 is not the indicator anymore its lowest sequence num;
@@ -262,7 +261,7 @@ Survey.prototype.render = function(question) {
                 });
         content
             .find('.name_input')
-            .keyup(function(e) {
+            .keyup(function() {
                 App.submitter_name = this.value;
                 localStorage.name = App.submitter_name;
             });
@@ -405,7 +404,7 @@ Widgets._input = function(question, page, type) {
 
     $(page)
         .find('input')
-        .change(function(e) {
+        .change(function() {
             var ans_ind = $(page).find('input').index(this); 
             question.answer[ans_ind] = self._validate(type, this.value);
         });
@@ -494,7 +493,7 @@ Widgets.time = function(question, page) {
     this._input(question, page, "time"); //XXX: Fix validation
 };
 
-Widgets.note = function(question, page) {
+Widgets.note = function() {
 };
 
 // Multiple choice and multiple choice with other are handled here by same func
@@ -518,7 +517,7 @@ Widgets.multiple_choice = function(question, page) {
 
     $other.hide();
 
-    var $select = $(page)
+    $(page)
         .find('select')
         .change(function() {
             // any change => answer is reset
@@ -607,9 +606,6 @@ Widgets._getMap = function() {
 };
 
 Widgets.location = function(question, page) {
-    // TODO: add location status
-    var self = this;
-    
     // Map
     var lat = $(page).find('.question__lat').last().val() || App.start_loc[0];
     var lng = $(page).find('.question__lon').last().val() || App.start_loc[1];
@@ -617,12 +613,12 @@ Widgets.location = function(question, page) {
     App.start_loc = [lat, lng];
 
     var map = this._getMap(); 
-    map.on('drag', function(e) {
+    map.on('drag', function() {
         map.circle.setLatLng(map.getCenter());
         updateLocation([map.getCenter().lng, map.getCenter().lat]);
     });
 
-    function updateLocation(coords, idx) {
+    function updateLocation(coords) {
         //XXX: Control which element is updated
 
         // Find current length of inputs and update the last one;
@@ -681,8 +677,6 @@ Widgets.location = function(question, page) {
 
 // Similar to location however you cannot just add location, 
 Widgets.facility = function(question, page) {
-    var self = this;
-    
     // Map
     var lat = question.answer[0] && question.answer[0][1][1] || App.start_loc[0];
     var lng = question.answer[0] && question.answer[0][1][0] || App.start_loc[1];
@@ -691,7 +685,7 @@ Widgets.facility = function(question, page) {
 
     /* Buld inital state */
     var map = this._getMap(); 
-    map.on('drag', function(e) {
+    map.on('drag', function() {
         map.circle.setLatLng(map.getCenter());
     });
 
@@ -923,7 +917,7 @@ Widgets.facility = function(question, page) {
     // Change name
     $(page)
         .find('.facility__name')
-        .keyup(function(e) {
+        .keyup(function() {
             console.log(this.value);
             if (addedMarker && addedMarker === touchedMarker) {
                 // Update facility info
@@ -938,7 +932,7 @@ Widgets.facility = function(question, page) {
     // Change type
     $(page)
         .find('.facility__type')
-        .change(function(e) {
+        .change(function() {
             console.log(this.value);
             if (addedMarker && addedMarker === touchedMarker) {
                 // Update facility info
@@ -1028,7 +1022,7 @@ var icon_new_base = new L.icon({iconUrl: "/static/img/icons/unsynced_base.png", 
 var icon_selected = new L.icon({iconUrl: "/static/img/icons/selected-point.png", iconAnchor: [15, 48]});
 var icon_added = new L.icon({iconUrl: "/static/img/icons/added-point.png", iconAnchor: [15, 48]});
 
-icon_types = {
+var icon_types = {
     "education" : icon_edu,
     "new_education" : icon_new_edu,
     "water" : icon_water,
@@ -1091,7 +1085,7 @@ function drawNewPoint(lat, lng, name, type, uuid, clickEvent, dragEvent) {
 
 // Def not legit but hey
 function objectID() {
-    return 'xxxxxxxxxxxxxxxxxxxxxxxx'.replace(/[x]/g, function(c) {
+    return 'xxxxxxxxxxxxxxxxxxxxxxxx'.replace(/[x]/g, function() {
         var r = Math.random()*16|0;
         return r.toString(16);
     });
