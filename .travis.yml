@@ -4,6 +4,11 @@ python:
   - "3.4"
 addons:
   postgresql: "9.3"
+  sauce_connect:
+    username: "vr2262"
+    access_key:
+      secure: "RBLGreyOafParyQCmxSe3Yj/QOsVv/b2Yfe2tMAh9EQKiaBEJXdebpiRRF9OzMn+9cPAO1pWbIaEFP7rtPsaRbonab/WpATMNrA8dr5zlq33EPKnlR3FKmgWsgs9dhh0cAbPJVmJHMmlVtWWyvNO+ak2ZxpzmPPGPhSXjMW+n0Y="
+
 
 # command to install dependencies
 install:
