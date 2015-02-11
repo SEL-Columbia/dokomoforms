@@ -1,6 +1,6 @@
 # About
 [![Build Status](https://travis-ci.org/SEL-Columbia/dokomoforms.svg?branch=master)](https://travis-ci.org/SEL-Columbia/dokomoforms)
-[![Coverage Status](https://coveralls.io/repos/SEL-Columbia/dokomoforms/badge.svg)](https://coveralls.io/r/SEL-Columbia/dokomoforms)
+[![Coverage Status](https://coveralls.io/repos/SEL-Columbia/dokomoforms/badge.svg?branch=master)](https://coveralls.io/r/SEL-Columbia/dokomoforms?branch=master)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/SEL-Columbia/dokomoforms?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Health](https://landscape.io/github/SEL-Columbia/dokomoforms/master/landscape.svg?style=flat)](https://landscape.io/github/SEL-Columbia/dokomoforms/master)
 [![Codacy Badge](https://www.codacy.com/project/badge/cd3923fbf90d405583140ef8732370b4)](https://www.codacy.com/public/vr2262/dokomoforms)
