@@ -34,6 +34,7 @@ COOKIE_SECRET = 'big secret'
 # Testing
 SAUCE_USERNAME = 'username'
 SAUCE_ACCESS_KEY = 'access key'
+DEFAULT_BROWSER = 'firefox::Linux'
 
 # Allow overrides from a local config file,
 # to enable test environments using the

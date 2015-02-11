@@ -8,7 +8,7 @@ env:
     - secure: V0rdSDV1xC8gLK8KC0q9MTe/LHl/yvN51fglqJCY8Keq0FC1rcrIP+Z0nRY5ORxOC4Fv4DJp3uvNktnnW2bVdDDuKc8emEMR/on33Xjp5WcaioADk59YMl+kaMD3DGE1Hqn0/WFnMw8UyYCahBnJuDZMyGJVZyV4FPgGjiMsfU0=
   matrix:
     - "BROWSER='firefox::Linux'"
-    - "BROWSER='chrome::Linux'"
+    #- "BROWSER='chrome::Linux'"
     - "BROWSER='android::Linux'"
 addons:
   postgresql: "9.3"

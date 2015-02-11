@@ -11,7 +11,7 @@ from selenium.webdriver.support import expected_conditions as EC
 
 from db.auth_user import auth_user_table
 from db.submission import submission_table
-from settings import SAUCE_USERNAME, SAUCE_ACCESS_KEY
+from settings import SAUCE_USERNAME, SAUCE_ACCESS_KEY, DEFAULT_BROWSER
 
 
 base = 'http://localhost:8888'
@@ -31,7 +31,7 @@ class DriverTest(unittest.TestCase):
     def setUp(self):
         username = os.environ.get('SAUCE_USERNAME', SAUCE_USERNAME)
         access_key = os.environ.get('SAUCE_ACCESS_KEY', SAUCE_ACCESS_KEY)
-        browser_config = os.environ.get('BROWSER', 'firefox::Linux')
+        browser_config = os.environ.get('BROWSER', DEFAULT_BROWSER)
         browser_name, version, platform = browser_config.split(':')
         caps = {'browserName': browser_name,
                 'platform': platform}
@@ -65,9 +65,9 @@ class DriverTest(unittest.TestCase):
 #
 # self.assertIn('Welcome to <em>Dokomo</em>', self.drv.page_source)
 #
-#         self.drv.find_element_by_xpath('//*[@id="login"]').click()
-#         go_to_new_window(self.drv)
-#         eml = self.drv.find_element_by_xpath('//*[
+# self.drv.find_element_by_xpath('//*[@id="login"]').click()
+# go_to_new_window(self.drv)
+# eml = self.drv.find_element_by_xpath('//*[
 # @id="authentication_email"]')
 #         eml.send_keys('test@mockmyid.com', Keys.RETURN)
 #         self.drv.switch_to.window(self.drv.window_handles[0])
@@ -127,7 +127,7 @@ class SubmissionTest(DriverTest):
               }
             '''
         )
-        self.drv.find_element_by_xpath(in_xpath + 'div[3]').click()
+        self.drv.find_element_by_class_name('question__btn').click()
         next_button.click()
         self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('text 7')
         next_button.click()
@@ -144,7 +144,7 @@ class SubmissionTest(DriverTest):
 
         self.drv.find_element_by_xpath(in_xpath + 'div[2]/input').send_keys(
             'super cool ghost submitter')
-        self.drv.find_element_by_xpath(in_xpath + 'div[3]').click()
+        self.drv.find_element_by_class_name('question__btn').click()
 
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
             (By.XPATH, '/html/body/div/div[3]/input')))
@@ -155,9 +155,11 @@ class SubmissionTest(DriverTest):
             (By.XPATH, '/html/body/div/div[3]/div[2]/ul/li/a')))
         self.drv.find_element_by_xpath(
             '/html/body/div/div[3]/div[2]/ul/li/a').click()
-        self.drv.find_element_by_xpath(
-            '/html/body/div/div[3]/div[1]/ul/li/a').click()
-
+        submission_link = self.drv.find_element_by_xpath(
+            '/html/body/div/div[3]/div[1]/ul[2]/li/a')
+        self.drv.execute_script(
+            'window.scrollTo(0, {});'.format(submission_link.location['y']))
+        submission_link.click()
         # Check the submission
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
             (By.XPATH, '/html/body/div[1]/div[3]/ul/li')))
