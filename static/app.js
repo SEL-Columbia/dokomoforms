@@ -1,7 +1,7 @@
 var NEXT = 1;
 var PREV = -1;
 
-App = {
+var App = {
     unsynced: [], // unsynced surveys
     facilities: [], // revisit facilities
     unsynced_facilities: {}, // new facilities
@@ -233,15 +233,15 @@ Survey.prototype.render = function(question) {
 
     if (question) {
         // Show widget
-        var templateHTML = $('#widget_' + question.type_constraint_name).html();
-        var template = _.template(templateHTML);
-        var html = template({question: question, start_loc: App.start_loc});
+        var widgetHTML = $('#widget_' + question.type_constraint_name).html();
+        var widgetTemplate = _.template(widgetHTML);
+        var compiledHTML = widgetTemplate({question: question, start_loc: App.start_loc});
         self.current_question = question;
 
         // Render question
         content.empty()
             .data('index', index)
-            .html(html)
+            .html(compiledHTML)
             .scrollTop(); //XXX: Ignored in chrome ...
         
         // Attach widget events
@@ -249,13 +249,13 @@ Survey.prototype.render = function(question) {
 
     } else {
         // Show submit page
-        var templateHTML = $('#template_submit').html();
-        var template = _.template(templateHTML);
-        var html = template({name: App.submitter_name});
+        var widgetHTML = $('#template_submit').html();
+        var widgetTemplate = _.template(widgetHTML);
+        var compiledHTML = widgetTemplate({name: App.submitter_name});
 
         content.empty()
             .data('index', index)
-            .html(html)
+            .html(compiledHTML)
             .find('.question__btn')
                 .one('click', function() {
                     self.submit();
@@ -427,7 +427,7 @@ Widgets._addNewInput = function(page, input, question) {
             .insertBefore(page.find(".next_input"))
             .focus();
     }
-}
+};
 
 // Basic input validation
 Widgets._validate = function(type, answer) {
@@ -435,62 +435,66 @@ Widgets._validate = function(type, answer) {
     switch(type) {
         case "decimal":
             val = parseFloat(answer);
-            if (isNaN(val))
+            if (isNaN(val)) {
                 val = null;
+            }
             break;
         case "integer":
             val = parseInt(answer);
-            if (isNaN(val))
+            if (isNaN(val)) {
                 val = null;
+            }
             break;
         case "date":
             //XXX: Doesn't work with chrome date picker
             val = Date.parse(answer);
-            if (isNaN(val))
+            if (isNaN(val)) {
                 val = null;
-            else
+            } else {
                 val = (new Date(val)).toISOString();
+            }
             break;
         case "time":
               //XXX: validation for time
               val = answer;
               break;
         case "text":
-              if (answer)
+              if (answer) {
                   val = answer;
+              }
               break;
         default:
               //XXX: Others aren't validated the same
               val = answer;
               break;
-    }
+    };
     return val;
-}
+};
 
 Widgets.text = function(question, page) {
     this._input(question, page, "text");
-}
+};
 
 Widgets.integer = function(question, page) {
     this._input(question, page, "integer");
-}
+};
 
 Widgets.decimal = function(question, page) {
     this._input(question, page, "decimal");
-}
+};
 
 Widgets.date = function(question, page) {
     //XXX: TODO change input thing to be jquery-ey
     this._input(question, page, "date_XXX"); //XXX: Fix validation
-}
+};
 
 Widgets.time = function(question, page) {
     //XXX: TODO change input thing to be jquery-ey
     this._input(question, page, "time"); //XXX: Fix validation
-}
+};
 
 Widgets.note = function(question, page) {
-}
+};
 
 // Multiple choice and multiple choice with other are handled here by same func
 // XXX: possibly two widgets (multi select and multi choice)
@@ -559,8 +563,7 @@ Widgets.multiple_choice = function(question, page) {
         question.is_other[question.choices.length] = true;
         $other.show();
     }
-
-}
+};
 
 Widgets._getMap = function() {
     var map = L.map('map', {
@@ -620,7 +623,6 @@ Widgets.location = function(question, page) {
 
     function updateLocation(coords, idx) {
         //XXX: Control which element is updated
-        console.log(coords);
 
         // Find current length of inputs and update the last one;
         var questions_len = $(page).find('.question__location').length;
@@ -674,17 +676,15 @@ Widgets.location = function(question, page) {
                     maximumAge: 0
                 });
         });
-}
+};
 
 // Similar to location however you cannot just add location, 
 Widgets.facility = function(question, page) {
     var self = this;
     
     // Map
-    var lat = question.answer[0] && question.answer[0][1][1] 
-        || App.start_loc[0];
-    var lng = question.answer[0] && question.answer[0][1][0] 
-        || App.start_loc[1];
+    var lat = question.answer[0] && question.answer[0][1][1] || App.start_loc[0];
+    var lng = question.answer[0] && question.answer[0][1][0] || App.start_loc[1];
 
     App.start_loc = [lat, lng];
 
@@ -828,8 +828,8 @@ Widgets.facility = function(question, page) {
         
         // We added em before 
         if (App.unsynced_facilities[uuid]) {
-            addedMarker.sector = App.unsynced_facilities[uuid]['properties']['sector'];
-            addedMarker.name = App.unsynced_facilities[uuid]['name'];
+            addedMarker.sector = App.unsynced_facilities[uuid].properties.sector;
+            addedMarker.name = App.unsynced_facilities[uuid].name;
         }
 
         selectFacility(addedMarker);
@@ -854,7 +854,7 @@ Widgets.facility = function(question, page) {
                     // Update map position and set indicator position again
                     map.setView([coords[1], coords[0]]);
                     map.circle
-                        .setLatLng([coords[1], coords[0]])
+                        .setLatLng([coords[1], coords[0]]);
 
                     // Revisit api call
                     if (navigator.onLine) {
@@ -884,13 +884,14 @@ Widgets.facility = function(question, page) {
         .find('.facility__btn')
         .click(function() {
             // You added on before
-            if (addedMarker && addedMarker.uuid == question._new_facility) {
+            if (addedMarker && addedMarker.uuid === question._new_facility) {
                 // Get rid of all traces of it
                 delete App.unsynced_facilities[addedMarker.uuid];
                 new_facilities_group.removeLayer(addedMarker);
 
-                if (addedMarker == touchedMarker) 
+                if (addedMarker === touchedMarker) { 
                     deselectFacility();
+                }
 
                 $(page).find('.facility__btn').text("Add New Site");
                 addedMarker = null;
@@ -923,9 +924,9 @@ Widgets.facility = function(question, page) {
         .find('.facility__name')
         .keyup(function(e) {
             console.log(this.value);
-            if (addedMarker && addedMarker == touchedMarker) {
+            if (addedMarker && addedMarker === touchedMarker) {
                 // Update facility info
-                App.unsynced_facilities[addedMarker.uuid]['name'] = this.value;
+                App.unsynced_facilities[addedMarker.uuid].name = this.value;
                 addedMarker.name = this.value;
             } else if (touchedMarker) {
                 // Prevent updates for now
@@ -938,23 +939,22 @@ Widgets.facility = function(question, page) {
         .find('.facility__type')
         .change(function(e) {
             console.log(this.value);
-            if (addedMarker && addedMarker == touchedMarker) {
+            if (addedMarker && addedMarker === touchedMarker) {
                 // Update facility info
-                App.unsynced_facilities[addedMarker.uuid]['properties']['sector']
-                    = this.value;
+                App.unsynced_facilities[addedMarker.uuid].properties.sector = this.value;
                 addedMarker.sector = this.value;
             } else if (touchedMarker) {
                 // Prevent updates for now
                 selectFacility(touchedMarker);
             }
         });
-}
+};
 
 
 /* -------------------------- Revisit Stuff Below ----------------------------*/
 function getNearbyFacilities(lat, lng, rad, lim, id, cb) {
     //var url = "http://staging.revisit.global/api/v0/facilities.json" 
-    var url = "http://localhost:3000/api/v0/facilities.json" // install revisit server from git
+    var url = "http://localhost:3000/api/v0/facilities.json"; // install revisit server from git
     // Revisit ajax req
     console.log("MADE EXTERNAL REVISIT QUERY");
     $.get(url,{
@@ -1036,7 +1036,7 @@ icon_types = {
     "new_health" : icon_new_health,
     "base" : icon_base,
     "new_base" : icon_new_base,
-}
+};
 
 function getIcon(sector, isNew) {
     var base = "base";
@@ -1086,8 +1086,7 @@ function drawNewPoint(lat, lng, name, type, uuid, clickEvent, dragEvent) {
     marker.on('click', clickEvent);
     marker.on('dragend', dragEvent);
     return marker;
-    
-};
+}
 
 // Def not legit but hey
 function objectID() {
