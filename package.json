@@ -8,7 +8,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "node_modules/.bin/mocha tests/frontend_tests.js"
+    "test": "node_modules/.bin/mocha"
   },
   "repository": {
     "type": "git",
@@ -29,13 +29,14 @@
   "devDependencies": {
     "blanket": "^1.1.6",
     "jsdom": "^0.11.1",
+    "jshint": "^2.6.0",
     "mocha": "^2.1.0",
     "should": "^4.6.2",
     "supertest": "^0.15.0"
   },
-  "config" : {
+  "config": {
     "blanket": {
-          "pattern": "static"
+      "pattern": "static"
     }
   }
 }

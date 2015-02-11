@@ -1,11 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- TODO: For some reason Abdi killed the survey title. ->
-    <!--<div class="nav">-->
-        <!--<div class="nav__title">{{ survey_title }}</div>-->
-        <!--<div class="icon nav__sync sel_logo"><img src="/static/img/SEL_logo_sm.png"></div>-->
-    <!--</div>-->
+<!-- TODO: For some reason Abdi killed the survey title. 
+    Ill kill you Viktor -->
     
     <div class="message"></div>
     
@@ -19,24 +16,33 @@
             <svg class="icon page_nav__btn page_nav__next">
                 <use xlink:href="#icon-chevron-right"></use>
             </svg>
-            <div class="page_nav__progress">1 / 5</div>
+            <div class="page_nav__progress">1 / 1</div>
         </div>
     </div>
 
     <script id="widget_text" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
         <input class="text_input" type="text"
-            value="<%- question.answer[0] || question.default || '' %>">
+            placeholder="Please provide any response"
+            value="<%- question.answer[0] || question.default || '' %>"
+        >
 
         <% if (question.answer.length > 1){ %>
             <% _.each(question.answer.slice(1), function(ans) { %>
                 <% if (ans !== null) { %>
-                    <input class="text_input" type="text" value="<%- ans %>">
+                    <input class="text_input" type="text" 
+                        placeholder="Please provide another response"
+                        value="<%- ans %>"
+                    >
                 <% } %>
             <% }); %>
         <% } %>
 
-        <svg class="icon next_input" <% if (!question.allow_multiple) { %> style="display:none" <% } %>>
+        <svg class="icon next_input" 
+            <% if (!question.allow_multiple) { %> 
+                style="display:none" 
+            <% }%>
+        >
             <use xlink:href="#icon-add"></use>
         </svg>
     </script>
@@ -44,6 +50,7 @@
     <script id="widget_integer" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
         <input class="text_input" type="number"
+            placeholder="Please provide a number"
             <% if (question.answer[0] !== null) { %>
                 value="<%- question.answer[0] %>"
             <% } else { %>
@@ -61,6 +68,7 @@
             <% _.each(question.answer.slice(1), function(ans) { %>
                 <% if (ans !== null) { %>
                     <input class="text_input" type="number"
+                        placeholder="Please provide another number"
                         value="<%- ans %>"
                         <% if (question.min != null){ %>
                             min="<%- question.min %>"
@@ -73,7 +81,11 @@
             <% }); %>
         <% } %>
         
-        <svg class="icon next_input" <% if (!question.allow_multiple) { %> style="display:none" <% } %>>
+        <svg class="icon next_input" 
+            <% if (!question.allow_multiple) { %> 
+                style="display:none" 
+            <% }%>
+        >
             <use xlink:href="#icon-add"></use>
         </svg>
     </script>
@@ -81,6 +93,7 @@
     <script id="widget_decimal" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
         <input class="text_input" type="number" step="any"
+                placeholder="Please provide a number (decimal OK)"
             <% if (question.answer[0] !== null){ %>
                 value="<%- question.answer[0] %>"
             <% } else { %>
@@ -92,12 +105,70 @@
             <% _.each(question.answer.slice(1), function(ans) { %>
                 <% if (ans !== null) { %>
                     <input class="text_input" type="number" step="any"
-                        value="<%- ans %>">
+                        placeholder="Please provide another number (decimal OK)"
+                        value="<%- ans %>"
+                    >
                 <% } %>
             <% }); %>
         <% } %>
         
-        <svg class="icon next_input" <% if (!question.allow_multiple) { %> style="display:none" <% } %>>
+        <svg class="icon next_input" 
+            <% if (!question.allow_multiple) { %> 
+                style="display:none" 
+            <% }%>
+        >
+            <use xlink:href="#icon-add"></use>
+        </svg>
+    </script>
+
+    <script id="widget_date" type="text/html">
+        <div class="question__title"><%- question.question_title %></div>
+        <input class="text_input" type="date" 
+               placeholder="Please provide a date"
+               value="<%- question.answer[0] || question.default || '' %>"
+        >
+        <% if (question.answer.length > 1){ %>
+            <% _.each(question.answer.slice(1), function(ans) { %>
+                <% if (ans !== null) { %>
+                    <input class="text_input" type="date" 
+                           placeholder="Please provide another date"
+                           value="<%- ans %>"
+                    >
+                <% } %>
+            <% }); %>
+        <% } %>
+
+        <svg class="icon next_input" 
+            <% if (!question.allow_multiple) { %> 
+                style="display:none" 
+            <% }%>
+        >
+            <use xlink:href="#icon-add"></use>
+        </svg>
+    </script>
+
+    <script id="widget_time" type="text/html">
+        <div class="question__title"><%- question.question_title %></div>
+        <input class="text_input" type="time" 
+               placeholder="Please provide a time"
+               value="<%- question.answer[0] || question.default || '' %>"
+        >
+        <% if (question.answer.length > 1){ %>
+            <% _.each(question.answer.slice(1), function(ans) { %>
+                <% if (ans !== null) { %>
+                    <input class="text_input" type="time" 
+                        placeholder="Please provide another time"
+                        value="<%- ans %>"
+                    >
+                <% } %>
+            <% }); %>
+        <% } %>
+        
+        <svg class="icon next_input" 
+            <% if (!question.allow_multiple) { %> 
+                style="display:none" 
+            <% }%>
+        >
             <use xlink:href="#icon-add"></use>
         </svg>
     </script>
@@ -105,11 +176,19 @@
     <script id="widget_location" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
         <div id="map" class="question__map"></div>
+        <div class="question__location">
+            <input class="text_input question__lat" type="text" 
+            value="<%- question.answer[0] && question.answer[0][1] || start_loc[0] %>">
+            <input class="text_input question__lon" type="text" 
+            value="<%- question.answer[0] && question.answer[0][0] || start_loc[1] %>">
+        </div>
 
-        <% _.each(question.answer, function(ans) { %>
-            <div class="loc_input">
-                <input class="text_input question__lat" type="text" value="<%- ans[1] %>">
-                <input class="text_input question__lon" type="text" value="<%- ans[0] %>">
+        <% _.each(question.answer.slice(1), function(ans) { %>
+            <div class="question__location">
+                <input class="text_input question__lat" type="text" 
+                       value="<%- ans[1] %>">
+                <input class="text_input question__lon" type="text" 
+                       value="<%- ans[0] %>">
             </div>
         <% }); %>
         
@@ -164,40 +243,7 @@
                 value="<%- question.answer[question.choices.length] || '' %>"
         >
     </script>
-
-
-    <script id="widget_date" type="text/html">
-        <div class="question__title"><%- question.question_title %></div>
-        <input class="text_input" type="date" value="<%- question.answer[0] || question.default || '' %>">
-        <% if (question.answer.length > 1){ %>
-            <% _.each(question.answer.slice(1), function(ans) { %>
-                <% if (ans !== null) { %>
-                    <input class="text_input" type="date" value="<%- ans %>">
-                <% } %>
-            <% }); %>
-        <% } %>
-
-        <svg class="icon next_input" <% if (!question.allow_multiple) { %> style="display:none" <% } %>>
-            <use xlink:href="#icon-add"></use>
-        </svg>
-    </script>
-
-    <script id="widget_time" type="text/html">
-        <div class="question__title"><%- question.question_title %></div>
-        <input class="text_input" type="time" value="<%- question.answer[0] || question.default || '' %>">
-        <% if (question.answer.length > 1){ %>
-            <% _.each(question.answer.slice(1), function(ans) { %>
-                <% if (ans !== null) { %>
-                    <input class="text_input" type="time" value="<%- ans %>">
-                <% } %>
-            <% }); %>
-        <% } %>
-        
-        <svg class="icon next_input" <% if (!question.allow_multiple) { %> style="display:none" <% } %>>
-            <use xlink:href="#icon-add"></use>
-        </svg>
-    </script>
-
+    
     <script id="widget_note" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
     </script>
