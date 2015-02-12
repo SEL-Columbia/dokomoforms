@@ -67,14 +67,22 @@ def answer_insert(*,
     :return: The Insert object. Execute this!
     """
     question = question_select(question_id)
-    answer_type = 'answer_text' if is_other else 'answer_' + type_constraint_name
-    values = {answer_type: _sanitize_answer(answer, type_constraint_name),
-              'question_id': question_id,
+    tcn = type_constraint_name
+
+    values = {'question_id': question_id,
               'submission_id': submission_id,
-              'type_constraint_name': type_constraint_name,
+              'type_constraint_name': tcn,
               'sequence_number': sequence_number,
               'allow_multiple': allow_multiple,
               'survey_id': survey_id}
+
+    if type_constraint_name == 'facility':
+        values['answer_text'] = answer[0]
+        values['answer_location'] = _sanitize_answer(answer[1], 'location')
+    else:
+        answer_type = 'answer_text' if is_other else 'answer_' + tcn
+        values[answer_type] = _sanitize_answer(answer, tcn)
+
     return answer_table.insert().values(values)
 
 

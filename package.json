@@ -1,0 +1,42 @@
+{
+  "name": "dokomoforms",
+  "version": "1.0.0",
+  "description": "Forms, everywhere",
+  "main": "static/app.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "node_modules/.bin/mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SEL-Columbia/dokomoforms.git"
+  },
+  "keywords": [
+    "dokomoforms",
+    "forms",
+    "formhub",
+    "testing"
+  ],
+  "author": "Abdi Dahir, Viktor Roytman, Chris Tan",
+  "license": "GPL",
+  "bugs": {
+    "url": "https://github.com/SEL-Columbia/dokomoforms/issues"
+  },
+  "homepage": "https://github.com/SEL-Columbia/dokomoforms",
+  "devDependencies": {
+    "blanket": "^1.1.6",
+    "jsdom": "^0.11.1",
+    "jshint": "^2.6.0",
+    "mocha": "^2.1.0",
+    "should": "^4.6.2",
+    "supertest": "^0.15.0"
+  },
+  "config": {
+    "blanket": {
+      "pattern": "static"
+    }
+  }
+}

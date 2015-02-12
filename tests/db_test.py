@@ -107,6 +107,38 @@ class TestAnswer(unittest.TestCase):
         location_2 = get_geo_json(answer_2)
         self.assertEqual(location_2, {'coordinates': [], 'type': 'MultiPoint'})
 
+    def testInsertFacility(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'facility')
+        question = q_where.execute().first()
+        question_id = question.question_id
+        tcn = question.type_constraint_name
+        seq = question.sequence_number
+        mul = question.allow_multiple
+        submission_exec = submission_insert(submitter='test_submitter',
+                                            survey_id=survey_id).execute()
+        submission_id = submission_exec.inserted_primary_key[0]
+        answer_exec = answer_insert(answer=['revisit ID', [90, 0]],
+                                    question_id=question_id,
+                                    submission_id=submission_id,
+                                    survey_id=survey_id,
+                                    type_constraint_name=tcn,
+                                    is_other=False,
+                                    sequence_number=seq,
+                                    allow_multiple=mul).execute()
+        answer_id = answer_exec.inserted_primary_key[0]
+        self.assertIsNotNone(answer_id)
+        condition = answer_table.c.answer_id == answer_id
+        answer = answer_table.select().where(condition).execute().first()
+        location = get_geo_json(answer)['coordinates']
+        self.assertEqual(location, [90, 0])
+        facility_id = answer.answer_text
+        self.assertEqual(facility_id, 'revisit ID')
+
     def testGetAnswers(self):
         survey_id = survey_table.select().where(
             survey_table.c.survey_title == 'test_title').execute().first(
@@ -303,7 +335,7 @@ class TestQuestion(unittest.TestCase):
             survey_table.c.survey_title == 'test_title').execute().first(
 
         ).survey_id
-        self.assertEqual(get_free_sequence_number(survey_id), 10)
+        self.assertEqual(get_free_sequence_number(survey_id), 11)
 
     def testQuestionInsert(self):
         survey_id = survey_table.select().where(
@@ -468,12 +500,49 @@ class TestSubmission(unittest.TestCase):
             survey_table.c.survey_title == 'test_title').execute().first(
 
         ).survey_id
-        for _ in range(2):
+        for i in range(2):
+            submission_insert(submitter='test_submitter{}'.format(i),
+                              survey_id=survey_id).execute()
+        submissions = get_submissions_by_email(survey_id, email='test_email')
+        self.assertEqual(submissions.rowcount, 2)
+        submissions = get_submissions_by_email(survey_id, email='test_email',
+                                               submitters=['test_submitter1'])
+        self.assertEqual(submissions.rowcount, 1)
+
+    def testGetSubmissionsWithFilter(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'integer')
+        question = q_where.execute().first()
+        question_id = question.question_id
+        tcn = question.type_constraint_name
+        seq = question.sequence_number
+        mul = question.allow_multiple
+        for i in range(2):
             submission_exec = submission_insert(submitter='test_submitter',
                                                 survey_id=survey_id).execute()
             submission_id = submission_exec.inserted_primary_key[0]
-        submissions = get_submissions_by_email(survey_id, email='test_email')
-        self.assertEqual(submissions.rowcount, 2)
+            answer_exec = answer_insert(answer=i, question_id=question_id,
+                                        submission_id=submission_id,
+                                        survey_id=survey_id,
+                                        type_constraint_name=tcn,
+                                        is_other=False,
+                                        sequence_number=seq,
+                                        allow_multiple=mul).execute()
+        self.assertEqual(
+            len(get_submissions_by_email(survey_id,
+                                         email='test_email').fetchall()), 2)
+        f_result = get_submissions_by_email(survey_id,
+                                            email='test_email',
+                                            filters=[{
+                                                         'question_id':
+                                                             question_id,
+                                                         'answer_integer':
+                                                             1}]).fetchall()
+        self.assertEqual(len(f_result), 1)
 
     def testSubmissionInsert(self):
         survey_id = survey_table.select().where(
@@ -510,22 +579,26 @@ class TestSurvey(unittest.TestCase):
         user = auth_user_table.select().where(
             auth_user_table.c.email == 'test_email').execute().first()
         condition = survey_table.c.auth_user_id == user.auth_user_id
-        surveys = survey_table.select().where(condition).execute().fetchall()
+        surveys = survey_table.select().where(
+            condition).execute().fetchall()
         surveys_by_email = get_surveys_by_email(user.email)
         self.assertEqual(len(surveys), len(surveys_by_email))
-        self.assertEqual(surveys[0].survey_id, surveys_by_email[0].survey_id)
+        self.assertEqual(surveys[0].survey_id,
+                         surveys_by_email[0].survey_id)
 
     def testGetSurveyIdFromPrefix(self):
         survey_id = survey_table.select().where(
             survey_table.c.survey_title == 'test_title').execute().first(
 
         ).survey_id
-        self.assertEqual(get_survey_id_from_prefix(survey_id[:10]), survey_id)
+        self.assertEqual(get_survey_id_from_prefix(survey_id[:10]),
+                         survey_id)
         self.assertRaises(SurveyPrefixDoesNotIdentifyASurveyError,
                           get_survey_id_from_prefix, str(uuid.uuid4()))
 
     def testPrefixTooShort(self):
-        self.assertRaises(SurveyPrefixTooShortError, get_survey_id_from_prefix,
+        self.assertRaises(SurveyPrefixTooShortError,
+                          get_survey_id_from_prefix,
                           'a')
 
     def testDisplay(self):
@@ -533,7 +606,8 @@ class TestSurvey(unittest.TestCase):
             survey_table.c.survey_title == 'test_title').execute().first()
         self.assertEqual(survey.survey_title,
                          display(survey.survey_id).survey_title)
-        self.assertRaises(SurveyDoesNotExistError, display, str(uuid.uuid4()))
+        self.assertRaises(SurveyDoesNotExistError, display,
+                          str(uuid.uuid4()))
 
     def testSurveySelect(self):
         user = auth_user_table.select().where(
@@ -576,6 +650,12 @@ class TestUtils(unittest.TestCase):
         db.set_testing_engine(engine)
         self.assertIsNotNone(db.engine)
 
+    def testGetColumn(self):
+        self.assertIs(db.get_column(answer_table, 'answer_integer'),
+                      answer_table.c.answer_integer)
+        self.assertRaises(db.NoSuchColumnError, db.get_column, answer_table,
+                          'garbage')
+
     def testDeleteRecord(self):
         auth_user_id = auth_user_table.select().where(
             auth_user_table.c.email == 'test_email').execute().first(
@@ -600,7 +680,8 @@ class TestUtils(unittest.TestCase):
         update_record(survey_table, 'survey_id', survey_id,
                       survey_title='updated').execute()
         condition = survey_table.c.survey_id == survey_id
-        new_record = survey_table.select().where(condition).execute().first()
+        new_record = survey_table.select().where(
+            condition).execute().first()
         self.assertEqual(new_record.survey_title, 'updated')
         self.assertNotEqual(new_record.survey_last_update_time,
                             new_record.created_on)
@@ -608,14 +689,17 @@ class TestUtils(unittest.TestCase):
         update_record(survey_table, 'survey_id', survey_id,
                       values_dict={'survey_title': 'update2'}).execute()
 
-        new_record = survey_table.select().where(condition).execute().first()
+        new_record = survey_table.select().where(
+            condition).execute().first()
         self.assertEqual(new_record.survey_title, 'update2')
 
-        self.assertRaises(TypeError, update_record, survey_table, 'survey_id',
+        self.assertRaises(TypeError, update_record, survey_table,
+                          'survey_id',
                           survey_id,
                           values_dict={'survey_title': 'updated2'},
                           survey_title='updated3')
-        self.assertRaises(TypeError, update_record, survey_table, 'survey_id',
+        self.assertRaises(TypeError, update_record, survey_table,
+                          'survey_id',
                           survey_id)
 
         delete_record(survey_table, 'survey_id', survey_id).execute()

@@ -1,0 +1,5 @@
+{
+    "undef":true,
+    "unused": true,
+    "predef": ["$", "_", "L", "alert", "localStorage", "window", "navigator", "setInterval", "console", "document", "setTimeout", "Image"]
+}

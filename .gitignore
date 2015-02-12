@@ -7,3 +7,5 @@ local_settings.py
 .coverage
 cover/
 .python-version
+node_modules/
+test/*.log
