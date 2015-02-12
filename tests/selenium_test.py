@@ -195,6 +195,17 @@ class SubmissionTest(DriverTest):
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
             (By.XPATH, '/html/body/div[1]/div[3]/ul/li')))
         self.assertIn('Answer: 1', self.drv.page_source)
+        self.assertIn('Choice: 1. choice 1', self.drv.page_source)
+        self.assertIn('Answer: 3.3', self.drv.page_source)
+        self.assertIn('Answer: 2044-04-04', self.drv.page_source)
+        self.assertIn('Answer: 05:55:00-05:00', self.drv.page_source)
+        self.assertIn('Answer: [-70, 40]', self.drv.page_source)
+        self.assertIn('Answer: [-70, 40]', self.drv.page_source)
+        self.assertIn('Answer: other 8', self.drv.page_source)
+        self.assertIn(
+            '<strong>10. facility question</strong><br />\nType: facility<br '
+            '/>\n\nAnswer: ',
+            self.drv.page_source)
 
 
 if __name__ == '__main__':
