@@ -8,6 +8,13 @@ env:
     - secure: V0rdSDV1xC8gLK8KC0q9MTe/LHl/yvN51fglqJCY8Keq0FC1rcrIP+Z0nRY5ORxOC4Fv4DJp3uvNktnnW2bVdDDuKc8emEMR/on33Xjp5WcaioADk59YMl+kaMD3DGE1Hqn0/WFnMw8UyYCahBnJuDZMyGJVZyV4FPgGjiMsfU0=
   matrix:
     - "BROWSER='firefox::Linux'"
+    - "BROWSER='firefox::OS X 10.6'"
+    - "BROWSER='firefox::OS X 10.9'"
+    - "BROWSER='firefox::OS X 10.10'"
+    - "BROWSER='firefox::Windows XP'"
+    - "BROWSER='firefox::Windows 7'"
+    - "BROWSER='firefox::Windows 8'"
+    - "BROWSER='firefox::Windows 8.1'"
     #- "BROWSER='chrome::Linux'"
     #- "BROWSER='android:4.0:Linux:Android Emulator'"
     #- "BROWSER='android:4.1:Linux:Android Emulator'"
@@ -16,15 +23,7 @@ env:
     - "BROWSER='android:4.4:Linux:Android Emulator'"
     #- "BROWSER='iPhone:8.1:OS X 10.10:iPhone Simulator'"
     #- "BROWSER='iPhone:8.1:OS X 10.10:iPad Simulator'"
-    - "BROWSER='firefox::OS X 10.6'"
-    - "BROWSER='firefox::OS X 10.9'"
-    - "BROWSER='firefox::OS X 10.10'"
-    - "BROWSER='firefox::Windows XP'"
-    - "BROWSER='firefox::Windows 7'"
-    - "BROWSER='firefox::Windows 8'"
-    - "BROWSER='firefox::Windows 8.1'"
     #- "BROWSER='safari::OS X 10.10'"
-    - "BROWSER='firefox::OS X 10.10'"
 addons:
   postgresql: "9.3"
   sauce_connect: true
