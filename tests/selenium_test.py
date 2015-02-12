@@ -198,7 +198,7 @@ class SubmissionTest(DriverTest):
         self.assertIn('Choice: 1. choice 1', self.drv.page_source)
         self.assertIn('Answer: 3.3', self.drv.page_source)
         self.assertIn('Answer: 2044-04-04', self.drv.page_source)
-        self.assertIn('Answer: 05:55:00-05:00', self.drv.page_source)
+        self.assertIn('Answer: 05:55:00', self.drv.page_source)
         self.assertIn('Answer: [-70, 40]', self.drv.page_source)
         self.assertIn('Answer: [-70, 40]', self.drv.page_source)
         self.assertIn('Answer: other 8', self.drv.page_source)
