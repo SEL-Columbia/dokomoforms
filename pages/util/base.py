@@ -47,7 +47,7 @@ class BaseHandler(tornado.web.RequestHandler):
 class APIHandler(BaseHandler):
     """Handler for API endpoints."""
 
-    def check_xsrf_cookie(self):
+    def check_xsrf_cookie(self):  # pragma: no cover
         """
         Only check the xsrf cookie if this doesn't appear to be an API
         request.

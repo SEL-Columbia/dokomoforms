@@ -15,21 +15,22 @@ import tornado.httpclient
 import tornado.ioloop
 from tornado.testing import AsyncHTTPTestCase
 import tornado.web
-from api import json_response
 
+from api import json_response
 import api.aggregation
 import api.submission
 import api.survey
 import api.user
 from db import engine
 from db.answer import get_answers
-from db.auth_user import generate_api_token
+from db.auth_user import generate_api_token, auth_user_table, \
+    get_auth_user_by_email
 from db.question import get_questions_no_credentials, question_table
 from db.question_choice import question_choice_table
 from db.submission import submission_table
 from pages.api.aggregations import AggregationHandler
 from pages.api.submissions import SubmissionsAPIHandler, \
-    SingleSubmissionAPIHandler, SubmitAPIHandler
+    SingleSubmissionAPIHandler
 from pages.api.surveys import SurveysAPIHandler, SingleSurveyAPIHandler
 from pages.util.base import catch_bare_integrity_error
 from pages.view.submissions import ViewSubmissionsHandler, \
@@ -75,6 +76,7 @@ def _create_submission() -> dict:
     fourth_q_id = question_table.select().where(
         fourth_cond).execute().first().question_id
     input_data = {'survey_id': survey_id,
+                  'submitter': 'me',
                   'answers':
                       [{'question_id': question_id,
                         'answer': 1,
@@ -97,6 +99,9 @@ def _create_submission() -> dict:
 class APITest(AsyncHTTPTestCase):
     def tearDown(self):
         submission_table.delete().execute()
+        survey_table.delete().where(
+            survey_table.c.survey_title ==
+            'survey_created_through_api').execute()
 
     def get_app(self):
         self.app = tornado.web.Application(pages, **new_config)
@@ -140,12 +145,13 @@ class APITest(AsyncHTTPTestCase):
                                'get_secure_cookie') as m:
             m.return_value = 'test_email'
             response = self.fetch(
-                '/api/surveys/{}/submissions?submitter='.format(survey_id))
+                '/api/surveys/{}/submissions?submitter=me'.format(survey_id))
         self.assertEqual(response.code, 200)
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
-                         api.submission.get_all(survey_id, 'test_email'))
+                         api.submission.get_all(survey_id, 'test_email',
+                                                submitters=['me']))
 
     def testGetSubmissionsWithFilter(self):
         survey_id = survey_table.select().where(
@@ -184,6 +190,14 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(response.code, 200)
         self.assertEqual(json_decode(to_unicode(response.body)),
                          api.submission.get_all(survey_id, 'test_email'))
+
+    def testGetSubmissionsWithoutAPIToken(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        response = self.fetch('/api/surveys/{}/submissions'.format(survey_id))
+        self.assertEqual(response.code, 403)
 
     def testGetSubmissionsWithInvalidAPIToken(self):
         survey_id = survey_table.select().where(
@@ -239,6 +253,7 @@ class APITest(AsyncHTTPTestCase):
         fourth_q_id = question_table.select().where(
             fourth_cond).execute().first().question_id
         input_data = {'survey_id': survey_id,
+                      'submitter': 'testPostSubmissionSubmitter',
                       'answers':
                           [{'question_id': question_id,
                             'answer': 1,
@@ -295,6 +310,33 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(webpage_response,
                          api.survey.get_one(survey_id, email='test_email'))
 
+    def testCreateSurvey(self):
+        input_data = {'email': 'test_email',
+                      'survey_title': 'survey_created_through_api',
+                      'questions': [{'question_title': 'a question',
+                                     'type_constraint_name': 'text',
+                                     'hint': '',
+                                     'allow_multiple': False,
+                                     'logic': {'required': False,
+                                               'with_other': False},
+                                     'question_to_sequence_number': -1,
+                                     'choices': None,
+                                     'branches': None}]}
+
+        token = api.user.generate_token({'email':
+                                             'test_email'})['result']['token']
+
+        response = self.fetch('/api/surveys/create',
+                              method='POST', body=json_encode(input_data),
+                              headers={'Email': 'test_email',
+                                       'Token': token})
+        result = json_decode(to_unicode(response.body))['result']
+        survey_id = result['survey_id']
+        self.assertEqual(result,
+                         api.survey.get_one(survey_id,
+                                            email='test_email')['result'])
+        self.assertEqual(response.code, 201)
+
     def testGetMin(self):
         survey_id = survey_table.select().where(
             survey_table.c.survey_title == 'test_title').execute().first(
@@ -308,6 +350,7 @@ class APITest(AsyncHTTPTestCase):
 
         for i in range(2):
             input_data = {'survey_id': survey_id,
+                          'submitter': 'test_submitter',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
@@ -355,6 +398,7 @@ class APITest(AsyncHTTPTestCase):
 
         for i in range(2):
             input_data = {'survey_id': survey_id,
+                          'submitter': 'test_submitter',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': str(i),
@@ -397,6 +441,7 @@ class APITest(AsyncHTTPTestCase):
 
         for i in range(2):
             input_data = {'survey_id': survey_id,
+                          'submitter': 'test_submitter',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
@@ -426,6 +471,7 @@ class APITest(AsyncHTTPTestCase):
 
         for i in range(2):
             input_data = {'survey_id': survey_id,
+                          'submitter': 'test_submitter',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
@@ -457,6 +503,7 @@ class APITest(AsyncHTTPTestCase):
 
         for i in range(2):
             input_data = {'survey_id': survey_id,
+                          'submitter': 'test_submitter',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
@@ -485,6 +532,7 @@ class APITest(AsyncHTTPTestCase):
 
         for i in range(2):
             input_data = {'survey_id': survey_id,
+                          'submitter': 'test_submitter',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -514,6 +562,7 @@ class APITest(AsyncHTTPTestCase):
 
         for i in range(2):
             input_data = {'survey_id': survey_id,
+                          'submitter': 'test_submitter',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -543,6 +592,7 @@ class APITest(AsyncHTTPTestCase):
 
         for i in range(3):
             input_data = {'survey_id': survey_id,
+                          'submitter': 'test_submitter',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -572,6 +622,7 @@ class APITest(AsyncHTTPTestCase):
 
         for i in range(3):
             input_data = {'survey_id': survey_id,
+                          'submitter': 'test_submitter',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -601,6 +652,7 @@ class APITest(AsyncHTTPTestCase):
 
         for i in (1, 2, 2, 3):
             input_data = {'survey_id': survey_id,
+                          'submitter': 'test_submitter',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -629,6 +681,7 @@ class APITest(AsyncHTTPTestCase):
         q_id = question.question_id
 
         input_data = {'survey_id': survey_id,
+                      'submitter': 'test_submitter',
                       'answers':
                           [{'question_id': q_id,
                             'answer': [90, 0],
@@ -659,6 +712,7 @@ class APITest(AsyncHTTPTestCase):
 
         for i in range(3):
             input_data = {'survey_id': survey_id,
+                          'submitter': 'test_submitter',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -691,6 +745,7 @@ class APITest(AsyncHTTPTestCase):
 
         for i in [0, 2, 1, 0]:
             input_data = {'survey_id': survey_id,
+                          'submitter': 'test_submitter',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -717,6 +772,14 @@ class DebugTest(AsyncHTTPTestCase):
 
     def get_new_ioloop(self):
         return tornado.ioloop.IOLoop.instance()
+
+    def tearDown(self):
+        auth_user_table.delete().where(
+            auth_user_table.c.email == 'debug_test_email').execute()
+
+    def testCreate(self):
+        self.fetch('/debug/create/debug_test_email')
+        self.assertIsNotNone(get_auth_user_by_email('debug_test_email'))
 
     def testLoginGet(self):
         response = self.fetch('/debug/login//')
@@ -810,7 +873,7 @@ class SurveyTest(AsyncHTTPTestCase):
             survey_table.c.survey_title == 'test_title').execute().first(
 
         ).survey_id
-        answer_json = {'survey_id': survey_id, 'answers': [
+        answer_json = {'submitter': 'me', 'survey_id': survey_id, 'answers': [
             {'question_id': get_questions_no_credentials(
                 survey_id).first().question_id,
              'answer': 1,
@@ -880,7 +943,8 @@ class SurveyTest(AsyncHTTPTestCase):
             survey_table.c.survey_title != 'test_title').execute().first(
 
         ).survey_id
-        answer_json = {'survey_id': survey_id, 'answers': [
+        answer_json = {'submitter': 'me',
+                       'survey_id': survey_id, 'answers': [
             {'question_id': get_questions_no_credentials(
                 wrong_id).first().question_id,
              'answer': 1,

@@ -190,11 +190,13 @@ def _create_questions(connection: Connection,
                 answer_values['submission_id'] = new_submission_id
                 connection.execute(answer_insert(**answer_values))
 
+        q_to_seq_number = values['question_to_sequence_number']
         yield {'question_id': q_id,
                'type_constraint_name': tcn,
                'sequence_number': values['sequence_number'],
                'allow_multiple': values['allow_multiple'],
-               'choice_ids': choices}
+               'choice_ids': choices,
+               'question_to_sequence_number': q_to_seq_number}
 
 
 def _create_branches(connection: Connection,
@@ -305,6 +307,8 @@ def _create_survey(connection: Connection, data: dict) -> str:
     # that the question_id values actually exist in the tables.
     questions = list(_create_questions(connection, data_q, survey_id,
                                        submission_map=submission_map))
+    if -1 not in set(q['question_to_sequence_number'] for q in questions):
+        raise SurveyDoesNotEndError()
     _create_branches(connection, data_q, questions, survey_id)
 
     return survey_id
@@ -358,7 +362,8 @@ def _get_fields(question: RowProxy) -> dict:
               'question_title': question.question_title,
               'hint': question.hint,
               'sequence_number': question.sequence_number,
-              'question_to_sequence_number': question.question_to_sequence_number,
+              'question_to_sequence_number':
+                  question.question_to_sequence_number,
               'allow_multiple': question.allow_multiple,
               'type_constraint_name': question.type_constraint_name,
               'logic': question.logic}
@@ -379,11 +384,11 @@ def _to_json(survey: RowProxy) -> dict:
     :return: a JSON dict representation
     """
     questions = get_questions_no_credentials(survey.survey_id)
-    question_fields = [_get_fields(question) for question in questions]
+    q_fields = [_get_fields(question) for question in questions]
     return {'survey_id': survey.survey_id,
             'survey_title': survey.survey_title,
             'metadata': survey.metadata,
-            'questions': question_fields}
+            'questions': q_fields}
 
 
 def display_survey(survey_id: str) -> dict:
@@ -459,3 +464,7 @@ def delete(survey_id: str):
     with engine.connect() as connection:
         connection.execute(delete_record(survey_table, 'survey_id', survey_id))
     return json_response('Survey deleted')
+
+
+class SurveyDoesNotEndError(Exception):
+    pass
