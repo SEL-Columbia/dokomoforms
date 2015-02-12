@@ -59,7 +59,8 @@ class DriverTest(unittest.TestCase):
             caps['tunnel-identifier'] = os.environ['TRAVIS_JOB_NUMBER']
             caps['build'] = os.environ['TRAVIS_BUILD_NUMBER']
             caps['tags'] = [os.environ['TRAVIS_PYTHON_VERSION'], 'CI']
-
+            caps['name'] = ' -- '.join([os.environ['TRAVIS_BUILD_NUMBER'],
+                                        browser_config])
         hub_url = '{}:{}@localhost:4445'.format(self.username, self.access_key)
         cmd_executor = 'http://{}/wd/hub'.format(hub_url)
         self.drv = webdriver.Remote(desired_capabilities=caps,
