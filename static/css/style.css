@@ -494,6 +494,10 @@ select:focus, select:active {
     margin-top: 10px;
 }
 
+.question__location {
+    margin: 0px;
+    padding: 0px;
+}
 .question__lat {
     float: left;
     width: 49.8%;
@@ -529,11 +533,6 @@ select:focus, select:active {
     box-sizing: border-box;
     margin-bottom: 10px;
     margin-top: 10px;
-}
-
-.loc_input {
-    margin: 0px;
-    padding: 0px;
 }
 
 .next_input {
