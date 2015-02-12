@@ -8,3 +8,4 @@ local_settings.py
 cover/
 .python-version
 node_modules/
+test/*.log
