@@ -2,6 +2,7 @@ language: python
 python:
   - "3.3"
   - "3.4"
+sudo: false
 env:
   global:
     - secure: C/Ni0z3WjMsxFtHImuU7OqMlYg8fsON74Xwx/wlhvFHuKfiu8Y6o40/VXSUp7vqhjGJF3jmdWPmwlk2lNg0HwYbTaDBfB9Zr6yHlPKW4uqhWCibIBUN9K0p7Xv1Jp8j3TmSJc1uelLHOtYNYVW8bqyvt7qMqUqYGaGSiH1zU0nA=
@@ -31,9 +32,9 @@ addons:
 
 # command to install dependencies
 install:
-  - pip install --use-mirrors -r requirements.txt
-  - pip install --use-mirrors -r requirements-testing.txt
-  - pip install --use-mirrors coverage coveralls
+  - pip install -r requirements.txt
+  - pip install -r requirements-testing.txt
+  - pip install coverage coveralls
 
 # database
 before_script:
