@@ -31,10 +31,9 @@ addons:
 
 # command to install dependencies
 install:
-  - pip install -r requirements.txt
-  - pip install -r requirements-testing.txt
-  - pip install coverage
-  - pip install coveralls
+  - pip install --use-mirrors -r requirements.txt
+  - pip install --use-mirrors -r requirements-testing.txt
+  - pip install --use-mirrors coverage coveralls
 
 # database
 before_script:
