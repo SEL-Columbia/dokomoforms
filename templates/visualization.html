@@ -8,7 +8,6 @@
         <h4>Welcome {{ current_user }}</h4>
         {% if time_data %}
             <p>Value over time:</p>
-            {{ time_data }}
             <svg id="line_graph" width="1000" height="500"></svg>
         {% end %}
         {% if bar_data %}

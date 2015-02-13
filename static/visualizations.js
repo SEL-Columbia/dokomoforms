@@ -5,9 +5,9 @@ function drawLineGraph(time_data) {
         return [parseDate(d[0]), d[1]]
     });
 
-    var margin = {top: 20, right: 20, bottom: 30, left: 50},
-        width = 960 - margin.left - margin.right,
-        height = 500 - margin.top - margin.bottom;
+    var margin = {top: 20, right: 20, bottom: 70, left: 50},
+        width = 400 - margin.left - margin.right,
+        height = 300 - margin.top - margin.bottom;
 
     var x = d3.time.scale()
         .range([0, width]);
@@ -17,6 +17,7 @@ function drawLineGraph(time_data) {
 
     var xAxis = d3.svg.axis()
         .scale(x)
+        .ticks(9)
         .orient("bottom");
 
     var yAxis = d3.svg.axis()
@@ -44,31 +45,34 @@ function drawLineGraph(time_data) {
         return d[1];
     }));
 
-//    svg.append("g")
-//        .attr("class", "x axis")
-//        .attr("transform", "translate(0," + height + ")")
-//        .call(xAxis)
-//        .text("Time");
-//
-//    svg.append("g")
-//        .attr("class", "y axis")
-//        .call(yAxis)
-//        .append("text")
-//        .attr("transform", "rotate(-90)")
-//        .attr("y", 6)
-//        .attr("dy", ".71em")
-//        .style("text-anchor", "end")
-//        .text("Value");
-
     svg.append('g')
         .attr('class', 'x axis')
-        .attr('transform', 'translate(0,' + (height - margin.bottom) + ')')
-        .call(xAxis);
+        .attr('transform', 'translate(0,' + height + ')')
+        .call(xAxis)
+        .selectAll('text')
+        .style('text-anchor', 'end')
+        .attr('dx', '-.8em')
+        .attr('dy', '.15em')
+        .attr('transform', function (d) {
+            return 'rotate(-65)'
+        });
 
     svg.append('g')
         .attr('class', 'y axis')
-        .attr('transform', 'translate(' + (margin.left) + ',0)')
+//        .attr('transform', 'translate(' + (margin.left) + ',0)')
         .call(yAxis);
+
+    svg.selectAll('dot')
+        .data(data)
+        .enter()
+        .append('circle')
+        .attr('r', 3.5)
+        .attr('cx', function (d) {
+            return x(d[0])
+        })
+        .attr('cy', function (d) {
+            return y(d[1])
+        });
 
     svg.append('path')
         .datum(data)
@@ -77,14 +81,6 @@ function drawLineGraph(time_data) {
         .attr('stroke-width', 2)
         .attr('fill', 'none');
 
-
-//
-
-//
-//    svg.append("path")
-//        .datum(data)
-//        .attr("class", "line")
-//        .attr("d", line);
 }
 
 function drawBarGraph(bar_data) {
