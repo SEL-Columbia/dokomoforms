@@ -26,7 +26,7 @@ env:
     #- "BROWSER='iPhone:8.1:OS X 10.10:iPad Simulator'"
     #- "BROWSER='safari::OS X 10.10'"
 addons:
-  postgresql: "9.3"
+  postgresql: "9.4"
   sauce_connect: true
 
 # command to install dependencies
