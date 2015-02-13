@@ -46,21 +46,24 @@ class DriverTest(unittest.TestCase):
 
         self.username = os.environ.get('SAUCE_USERNAME', SAUCE_USERNAME)
         self.access_key = os.environ.get('SAUCE_ACCESS_KEY', SAUCE_ACCESS_KEY)
-        browser_config = os.environ.get('BROWSER', DEFAULT_BROWSER)
-        browser_name, version, platform, *other = browser_config.split(':')
-        caps = {'browserName': browser_name,
-                'platform': platform}
-        if browser_name in {'android', 'iPhone'}:
+        self.browser_config = os.environ.get('BROWSER', DEFAULT_BROWSER)
+        bconf = self.browser_config.split(':')
+        self.browser_name, self.version, self.platform, *other = bconf
+        caps = {'browserName': self.browser_name,
+                'platform': self.platform}
+        if self.browser_name in {'android', 'iPhone'}:
             caps['deviceName'] = other[0]
             caps['device-orientation'] = 'portrait'
-        if version:
-            caps['version'] = version
+        if self.version:
+            caps['version'] = self.version
         if 'TRAVIS_JOB_NUMBER' in os.environ:
             caps['tunnel-identifier'] = os.environ['TRAVIS_JOB_NUMBER']
             caps['build'] = os.environ['TRAVIS_BUILD_NUMBER']
             caps['tags'] = [os.environ['TRAVIS_PYTHON_VERSION'], 'CI']
             caps['name'] = ' -- '.join([os.environ['TRAVIS_BUILD_NUMBER'],
-                                        browser_config])
+                                        self.browser_config])
+        else:
+            caps['name'] = 'Manual run -- ' + self.browser_config
         hub_url = '{}:{}@localhost:4445'.format(self.username, self.access_key)
         cmd_executor = 'http://{}/wd/hub'.format(hub_url)
         self.drv = webdriver.Remote(desired_capabilities=caps,
@@ -142,9 +145,25 @@ class SubmissionTest(DriverTest):
         next_button.click()
         self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('3.3')
         next_button.click()
-        self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('4/4/44')
+        if self.browser_name == 'android':
+            self.drv.find_element_by_xpath(in_xpath + 'input').click()
+            self.drv.switch_to.window('NATIVE_APP')
+            self.drv.find_element_by_id('button1').click()
+            self.drv.switch_to.window('WEBVIEW_0')
+            next_button = self.drv.find_element_by_class_name('page_nav__next')
+        else:
+            self.drv.find_element_by_xpath(in_xpath + 'input').send_keys(
+                '4/4/44')
         next_button.click()
-        self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('5:55')
+        if self.browser_name == 'android':
+            self.drv.find_element_by_xpath(in_xpath + 'input').click()
+            self.drv.switch_to.window('NATIVE_APP')
+            self.drv.find_element_by_id('button1').click()
+            self.drv.switch_to.window('WEBVIEW_0')
+            next_button = self.drv.find_element_by_class_name('page_nav__next')
+        else:
+            self.drv.find_element_by_xpath(in_xpath + 'input').send_keys(
+                '5:55')
         next_button.click()
         # browser geolocation is complicated in selenium...
         self.drv.execute_script(
@@ -197,15 +216,19 @@ class SubmissionTest(DriverTest):
         self.assertIn('Answer: 1', self.drv.page_source)
         self.assertIn('Choice: 1. choice 1', self.drv.page_source)
         self.assertIn('Answer: 3.3', self.drv.page_source)
-        self.assertIn('Answer: 2044-04-04', self.drv.page_source)
-        self.assertIn('Answer: 05:55:00', self.drv.page_source)
+        self.assertIn(
+            '<strong>4. date question</strong><br>\nType: '
+            'date<br>\n\nAnswer: ',
+            self.drv.page_source)
+        self.assertIn(
+            '<strong>5. time question</strong><br>\nType: '
+            'time<br>\n\nAnswer: ',
+            self.drv.page_source)
         self.assertIn('Answer: [-70, 40]', self.drv.page_source)
         self.assertIn('Answer: [-70, 40]', self.drv.page_source)
         self.assertIn('Answer: other 8', self.drv.page_source)
-        self.assertIn(
-            '<strong>10. facility question</strong><br />\nType: facility<br '
-            '/>\n\nAnswer: ',
-            self.drv.page_source)
+        self.assertIn('<strong>10. facility question</strong><br',
+                      self.drv.page_source)
 
 
 if __name__ == '__main__':
