@@ -1,17 +1,7 @@
 {% extends "base.html" %}
-
-
 {% block content %}
     <div class="message"></div>
-
-    <div class="content">
-        <div class="about">
-            <h3> Dokomo Forms </h3>
-            <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris eu suscipit lectus. Cras molestie elit enim, vitae tristique libero lacinia ac. Curabitur fringilla justo vel ante ornare sodales. Aenean bibendum augue sed est sagittis egestas. Nullam convallis a metus nec congue. Phasellus in mauris orci. Duis vel risus laoreet, faucibus diam ultricies, consequat orci. Duis eget vestibulum ipsum. Integer fermentum velit et sem commodo fringilla. Aenean sit amet nibh pulvinar justo lobortis placerat.
-            </p>
-        </div>
-
+    <div class="content content__index">
         <div class="welcome">
             {% if current_user %}
                 <h4 class="welcome_title">Welcome: {{ current_user }}</h4>
@@ -25,46 +15,33 @@
                 </ul>
 
                 <div class="welcome_buttons">
-                    <div class="view">
-                        <a href="#" class="dokomo-button"><span>View</span></a>
-                    </div>
-                    <div class="center_create">
-                        <div class="create">
-                            <a href="#" class="dokomo-button"><span>Create</span></a>
-                        </div>
-                    </div>
-                    <div class="login">
-                        <a href="#" class="dokomo-button persona-button" id="logout"><span>Logout</span></a>
-                    </div>
+                    <span>View</span>
+                    <span>Create</span>
+                    <span id="logout">Logout</span>
                 </div>
+
             {% else %}
+
                 <h4 class="welcome_title"> Welcome to <em>Dokomo</em></h4>
                 <p class="welcome_blurb"> Sign up or login to create and view forms </p>
                 <div class="welcome_buttons">
-                    <div class="login">
-                        <a href="#" class="dokomo-button persona-button" id="login"><span>Login</span></a>
-                    </div>
+                    <span id="login">Login</span>
                 </div>
-            {%end%}
 
+            {% end %}
         </div>
     </div>
     
-    <div class="page_nav">
-        <div class="sel_text_logo">
-        <span>
-            Dokomo Forms. Forms <em>Everywhere</em>
-        </span>
-        </div>
-    </div>
-
+    <script src="/static/lib.js"></script>
     <script src="https://login.persona.org/include.js"></script>
     <script src="/static/persona.js"></script>
     <script src="/static/app.js"></script>
+
     {% if message %}
         <script>
             App.message("{{ message }}");
         </script>
     {% end %}
+
 {% end %}
 
