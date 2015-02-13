@@ -408,8 +408,7 @@ def bar_graph(question_id: str,
 
     result = _return_sql(result, question.survey_id, user_id, question_id)
     # transpose the result into two lists: value and count
-    values = ((_jsonify(r[0], question_id), r[1]) for r in result)
-    bar_graph_result = list(map(list, zip(*values)))
+    bar_graph_result = [[_jsonify(r[0], question_id), r[1]] for r in result]
     response = json_response(_return_sql(bar_graph_result, question.survey_id,
                                          user_id, question_id))
     response['query'] = 'bar_graph'

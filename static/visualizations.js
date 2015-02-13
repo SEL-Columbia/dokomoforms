@@ -80,10 +80,77 @@ function drawLineGraph(time_data) {
         .attr('stroke', 'blue')
         .attr('stroke-width', 2)
         .attr('fill', 'none');
-
 }
 
 function drawBarGraph(bar_data) {
+//    var parseDate = d3.time.format.iso.parse;
+//
+//    var data = bar_data.map(function (d) {
+//        return [parseDate(d[0]), d[1]]
+//    });
+
+    var data = bar_data;
+
+    var margin = {top: 20, right: 20, bottom: 70, left: 50},
+        width = 400 - margin.left - margin.right,
+        height = 300 - margin.top - margin.bottom;
+
+    var x = d3.scale.ordinal()
+        .rangeRoundBands([margin.left, width - margin.right], 0.1);
+
+    var y = d3.scale.linear()
+        .range([height, 0]);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .tickSize(5)
+        .tickSubdivide(true);
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .tickSize(5)
+        .orient("left")
+        .tickSubdivide(true);
+
+
+    var svg = d3.select("#bar_graph")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    x.domain(data.map(function (d) {
+        return d[0];
+    }));
+    y.domain([0, d3.max(data, function (d) {
+        return d[1];
+    })]);
+
+    svg.append('g')
+        .attr('class', 'x axis')
+        .attr('transform', 'translate(0,' + height + ')')
+        .call(xAxis);
+
+    svg.append('g')
+        .attr('class', 'y axis')
+        .attr('transform', 'translate(' + (margin.left) + ',0)')
+        .call(yAxis);
+
+    svg.selectAll('rect')
+        .data(data)
+        .enter()
+        .append('rect')
+        .attr('x', function (d) {
+            return x(d[0]);
+        })
+        .attr('y', function (d) {
+            return y(d[1]);
+        })
+        .attr('width', x.rangeBand())
+        .attr('height', function (d) {
+            return (height - y(d[1]));
+        })
+        .attr('fill', 'grey');
 }
 
 function drawMap(map_data) {
