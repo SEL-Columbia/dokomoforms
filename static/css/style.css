@@ -394,9 +394,32 @@ select:focus, select:active {
 .text_input:focus {
     border-color: rgb(84, 216, 90);
 }
+
+.name_input {
+    display: inline;
+    font-size: 20px;
+    width: 80%;
+    max-width: 300px;
+    padding: 10px 15px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-radius: 5px;
+    outline: none;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.name_input:focus {
+    border-color: rgb(84, 216, 90);
+}
 .question__title {
     text-align: center;
     font-size: 25px;
+}
+
+.question__name {
+    display: block;
+    text-align: center;
+    font-size: 22px;
 }
 
 .question__btn {
@@ -462,6 +485,7 @@ select:focus, select:active {
     width: 50px;
     height: 50px;
     margin: 20px auto;
+    margin-top: 50px;
 }
 
 .question__map {
@@ -470,6 +494,10 @@ select:focus, select:active {
     margin-top: 10px;
 }
 
+.question__location {
+    margin: 0px;
+    padding: 0px;
+}
 .question__lat {
     float: left;
     width: 49.8%;
@@ -505,11 +533,6 @@ select:focus, select:active {
     box-sizing: border-box;
     margin-bottom: 10px;
     margin-top: 10px;
-}
-
-.loc_input {
-    margin: 0px;
-    padding: 0px;
 }
 
 .next_input {

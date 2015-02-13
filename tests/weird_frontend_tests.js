@@ -24,6 +24,7 @@ describe('App and Survey Init Tests', function(done) {
                 var document = window.document;
 
                 // Add app and coverage scripts to document after window creation
+
                 var features = document.implementation._features;
                 document.implementation.addFeature('FetchExternalResources', ['script']);
                 document.implementation.addFeature('ProcessExternalResources', ['script']);
@@ -35,7 +36,6 @@ describe('App and Survey Init Tests', function(done) {
                 };
                 script.text = fs.readFileSync("tests/lib/blanket.min.js", "utf-8");
                 window.document.body.appendChild(script);
-
                 window.localStorage = {};
                 var script = window.document.createElement('script');
                 script.setAttribute('data-cover', '');

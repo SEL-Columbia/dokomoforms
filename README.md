@@ -1,6 +1,14 @@
 # About
-<a href="https://magnum.travis-ci.com/SEL-Columbia/dokomoforms"><img src="https://magnum.travis-ci.com/SEL-Columbia/dokomoforms.svg?token=YQoxqgi37o2BmSPVXoMS&branch=master" border="0" /></a>
+[![Build Status](https://travis-ci.org/SEL-Columbia/dokomoforms.svg?branch=master)](https://travis-ci.org/SEL-Columbia/dokomoforms)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/SEL-Columbia/dokomoforms?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Codacy Badge](https://www.codacy.com/project/badge/cd3923fbf90d405583140ef8732370b4)](https://www.codacy.com/public/vr2262/dokomoforms)
+[![Code Climate](https://codeclimate.com/github/SEL-Columbia/dokomoforms/badges/gpa.svg)](https://codeclimate.com/github/SEL-Columbia/dokomoforms)
+
+[![Coverage Status](https://coveralls.io/repos/SEL-Columbia/dokomoforms/badge.svg?branch=master)](https://coveralls.io/r/SEL-Columbia/dokomoforms?branch=master)
+
+[![Sauce Test Status](https://saucelabs.com/browser-matrix/vr2262sel.svg)](https://saucelabs.com/u/vr2262sel)
+
+[![Dependency Status](https://gemnasium.com/SEL-Columbia/dokomoforms.svg)](https://gemnasium.com/SEL-Columbia/dokomoforms)
 
 Dokomo [どこも](http://tangorin.com/general/%E3%81%A9%E3%81%93%E3%82%82) Forms is a mobile data collection technology that doesn't suck.
  

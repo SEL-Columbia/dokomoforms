@@ -1,11 +1,12 @@
 var NEXT = 1;
 var PREV = -1;
 
-App = {
+var App = {
     unsynced: [], // unsynced surveys
     facilities: [], // revisit facilities
     unsynced_facilities: {}, // new facilities
-    start_loc: [40.8138912, -73.9624327] 
+    start_loc: [40.8138912, -73.9624327], 
+    submitter_name: ''
    // defaults to nyc, updated by metadata and answers to location questions
 };
 
@@ -13,8 +14,10 @@ App.init = function(survey) {
     var self = this;
     self.survey = new Survey(survey.survey_id, survey.questions, survey.metadata);
     self.start_loc = survey.metadata.location || self.start_loc;
-    App.facilities = JSON.parse(localStorage['facilities'] || "[]");
-    if (App.facilities.length == 0) {
+    self.facilities = JSON.parse(localStorage.facilities || "[]");
+    self.submitter_name = localStorage.name;
+
+    if (App.facilities.length === 0) {
         // See if you can get some facilities
         getNearbyFacilities(App.start_loc[0], App.start_loc[1], 
                 5, // Radius in km 
@@ -25,7 +28,8 @@ App.init = function(survey) {
     }
 
     // Load up any unsynced facilities
-    App.unsynced_facilities = JSON.parse(localStorage['unsynced_facilities'] || "{}");
+    App.unsynced_facilities = 
+        JSON.parse(localStorage.unsynced_facilities || "{}");
 
     // Manual sync    
     $('.nav__sync')
@@ -78,12 +82,12 @@ App._getMapLayer = function() {
                 cb(img);
             });
         }
-    };
+    }
     
     function imgToBase64(url, outputFormat, callback){
         var canvas = document.createElement('canvas'),
             ctx = canvas.getContext('2d'),
-            img = new Image;
+            img = new Image();
         img.crossOrigin = 'Anonymous';
         img.onload = function(){
             var dataURL;
@@ -95,7 +99,7 @@ App._getMapLayer = function() {
             canvas = null; 
         };
         img.src = url;
-    };
+    }
 
     // Tile layer
     return new L.TileLayer.Functional(function(view) {
@@ -109,7 +113,7 @@ App._getMapLayer = function() {
         return deferred.promise();
     });
 
-}
+};
 
 function Survey(id, questions, metadata) {
     var self = this;
@@ -119,7 +123,8 @@ function Survey(id, questions, metadata) {
 
     // Load answers from localStorage
     var answers = JSON.parse(localStorage[this.id] || '{}');
-    _.each(self.questions, function(question, ind, questions) {
+    console.log(answers);
+    _.each(self.questions, function(question) {
         question.answer = answers[question.question_id] || [];
         // Set next pointers
         question.next = self.getQuestion(question.question_to_sequence_number);
@@ -150,37 +155,37 @@ function Survey(id, questions, metadata) {
     
     // Render first question
     self.render(self.current_question);
-};
+}
 
 // Search by sequence number instead of array pos
 Survey.prototype.getQuestion = function(seq) {
     var self = this;
-    for(i = 0; i < self.questions.length; i++) {
-        if (self.questions[i].sequence_number === seq)
-            return self.questions[i]
+    for(var i = 0; i < self.questions.length; i++) {
+        if (self.questions[i].sequence_number === seq) {
+            return self.questions[i];
+        }
     }
 
     return null;
-}
+};
 
 // Answer array may have elements even if answer[0] is undefined
 // XXX: function name doesnt match return types
 Survey.prototype.getFirstResponse = function(question) {
-    for (i = 0; i < question.answer.length; i++) {
-        if (Widgets._validate(question.type_constraint_name,question.answer[i]) 
-                !== null)
+    for (var i = 0; i < question.answer.length; i++) {
+        if (Widgets._validate(question.type_constraint_name, question.answer[i]) !== null) {
             return question.answer[i];
+        }
     }
 
     return null;
-}
+};
 
 // Choose next question, deals with branching and back/forth movement
 Survey.prototype.next = function(offset) {
     var self = this;
     var next_question = offset === PREV ? this.current_question.prev : this.current_question.next;
     var index = $('.content').data('index');
-    var response = this.current_question.answer;
     var first_response = this.getFirstResponse(this.current_question); 
 
     //XXX: 0 is not the indicator anymore its lowest sequence num;
@@ -195,8 +200,7 @@ Survey.prototype.next = function(offset) {
     } 
     
     if (offset === NEXT) {
-        if (this.current_question.logic.required 
-                && (first_response === null))  {
+        if (this.current_question.logic.required && (first_response === null)) {
             App.message('Survey requires this question to be completed.');
             return;
         }
@@ -204,8 +208,8 @@ Survey.prototype.next = function(offset) {
         // Check if question was a branching question
         if (this.current_question.branches && first_response) {
             var branches = this.current_question.branches;
-            for (i=0; i < branches.length; i++) {
-                if(branches[i].question_choice_id == first_response) {
+            for (var i=0; i < branches.length; i++) {
+                if (branches[i].question_choice_id === first_response) {
                     next_question = self.getQuestion(branches[i].to_sequence_number);
                     // update pointers
                     self.current_question.next = next_question;
@@ -228,37 +232,47 @@ Survey.prototype.render = function(question) {
 
     if (question) {
         // Show widget
-        var templateHTML = $('#widget_' + question.type_constraint_name).html();
-        var template = _.template(templateHTML);
-        var html = template({question: question});
-        
+        var widgetHTML = $('#widget_' + question.type_constraint_name).html();
+        var widgetTemplate = _.template(widgetHTML);
+        var compiledHTML = widgetTemplate({question: question, start_loc: App.start_loc});
         self.current_question = question;
+
         // Render question
         content.empty()
             .data('index', index)
-            .html(html)
+            .html(compiledHTML)
             .scrollTop(); //XXX: Ignored in chrome ...
         
-        // Clear any interval events
-        // XXX: Blinky light could be in css instead
-        if (Widgets.interval) {
-            window.clearInterval(Widgets.interval);
-            Widgets.interval = null;
-        }
-
         // Attach widget events
         Widgets[question.type_constraint_name](question, content);
+
     } else {
         // Show submit page
+        var widgetHTML = $('#template_submit').html();
+        var widgetTemplate = _.template(widgetHTML);
+        var compiledHTML = widgetTemplate({name: App.submitter_name});
+
         content.empty()
             .data('index', index)
-            .html($('#template_submit').html())
+            .html(compiledHTML)
             .find('.question__btn')
                 .one('click', function() {
                     self.submit();
                 });
+        content
+            .find('.name_input')
+            .keyup(function() {
+                App.submitter_name = this.value;
+                localStorage.name = App.submitter_name;
+            });
     }
     
+    // Clear any interval events
+    if (Widgets.interval) {
+        window.clearInterval(Widgets.interval);
+        Widgets.interval = null;
+    }
+
     // Update nav
     $('.page_nav__progress')
         .text((index) + ' / ' + (this.questions.length + 1));
@@ -283,19 +297,21 @@ Survey.prototype.submit = function() {
     localStorage[self.id] = JSON.stringify(answers);
 
     // Prepare POST request
-    var answers = [];
+    var survey_answers = [];
     self.questions.forEach(function(q) {
         console.log('q', q);
         q.answer.forEach(function(ans, ind) {
             var is_other_val = q.is_other || false;
 
-            if (typeof q.is_other === 'object') 
+            if (typeof q.is_other === 'object') { 
                 is_other_val = q.is_other[ind];
+            }
 
-            if (!ans && ans !== 0) 
+            if (!ans && ans !== 0) {
                 return;
+            }
 
-            answers.push({
+            survey_answers.push({
                 question_id: q.question_id,
                 answer: ans,
                 is_other: is_other_val 
@@ -316,8 +332,9 @@ Survey.prototype.submit = function() {
     });
 
     var data = {
+        submitter: App.submitter_name || "anon",
         survey_id: self.id,
-        answers: answers
+        answers: survey_answers
     };
 
     console.log('submission:', data);
@@ -326,7 +343,7 @@ Survey.prototype.submit = function() {
     save_btn.classList.add('icon--spin');
     
     // Don't post with no replies
-    if (JSON.stringify(answers) === '[]') {
+    if (JSON.stringify(survey_answers) === '[]') {
       // Not doing instantly to make it seem like App tried reaaall hard
       setTimeout(function() {
         sync.classList.remove('icon--spin');
@@ -374,156 +391,133 @@ var Widgets = {
 //
 // question: question data
 // page: the widget container DOM element
+// type: type of widget, handles all accept
+//
+//      multiple choice
+//      facility
+//      location
+//      note
 //
 // All widgets store results in the questions.answer array
-Widgets.text = function(question, page) {
-
+Widgets._input = function(question, page, type) {
     var self = this;
-    function keyup(e) {
-        var ans_ind = ($(page).find('input')).index(this);
-        question.answer[ans_ind] = self._validate("text", this.value);
-        if (e.keyCode === 13) { // 13 == return
-            self._addNewInput(page, question, 'text_input', 'text', keyup);
-        }
-    };
+
+    $(page)
+        .find('input')
+        .change(function() {
+            var ans_ind = $(page).find('input').index(this); 
+            question.answer[ans_ind] = self._validate(type, this.value);
+        });
 
     // Click the + for new input
     $(page)
         .find('.next_input')
         .click(function() { 
-            self._addNewInput(page, question, 'text_input', 'text', keyup);
+            self._addNewInput(page, $(page).find('input').last(), question);
         });
+};
 
-    $(page)
-        .find('input')
-        .keyup(keyup);
+// Handle creating multiple inputs for widgets that support it 
+Widgets._addNewInput = function(page, input, question) {
+    if (question.allow_multiple) {
+        input
+            .clone(true)
+            .val(null)
+            .insertBefore(page.find(".next_input"))
+            .focus();
+    }
+};
+
+// Basic input validation
+Widgets._validate = function(type, answer) {
+    var val = null;
+    switch(type) {
+        case "decimal":
+            val = parseFloat(answer);
+            if (isNaN(val)) {
+                val = null;
+            }
+            break;
+        case "integer":
+            val = parseInt(answer);
+            if (isNaN(val)) {
+                val = null;
+            }
+            break;
+        case "date":
+            //XXX: Doesn't work with chrome date picker
+            val = Date.parse(answer);
+            if (isNaN(val)) {
+                val = null;
+            } else {
+                val = (new Date(val)).toISOString();
+            }
+            break;
+        case "time":
+              //XXX: validation for time
+              val = answer;
+              break;
+        case "text":
+              if (answer) {
+                  val = answer;
+              }
+              break;
+        default:
+              //XXX: Others aren't validated the same
+              val = answer;
+              break;
+    }
+
+    return val;
+};
+
+Widgets.text = function(question, page) {
+    this._input(question, page, "text");
 };
 
 Widgets.integer = function(question, page) {
-    var self = this;
-    function keyup(e) {
-        var ans_ind = ($(page).find('input')).index(this);
-        question.answer[ans_ind] = self._validate("integer", this.value);
-        if (e.keyCode === 13) {
-            self._addNewInput(page, question, 'text_input', 'number', keyup);
-        }
-    };
-    
-    // Click the + for new input
-    $(page)
-        .find('.next_input')
-        .click(function() { 
-            self._addNewInput(page, question, 'text_input', 'number', keyup);
-        });
-
-    $(page)
-        .find('input')
-        .keyup(keyup);
+    this._input(question, page, "integer");
 };
 
 Widgets.decimal = function(question, page) {
-    var self = this;
-    function keyup(e) {
-        var ans_ind = ($(page).find('input')).index(this);
-        question.answer[ans_ind] = self._validate("decimal", this.value);
-        if (e.keyCode === 13) {
-            self._addNewInput(page, question, 'text_input', 'number', keyup);
-        }
-    };
-
-    // Click the + for new input
-    $(page)
-        .find('.next_input')
-        .click(function() { 
-            self._addNewInput(page, question, 'text_input', 'number', keyup);
-        });
-
-    $(page)
-        .find('input')
-        .keyup(keyup);
+    this._input(question, page, "decimal");
 };
 
-// Date and time respond better to change then keypresses
 Widgets.date = function(question, page) {
     //XXX: TODO change input thing to be jquery-ey
-    var self = this;
-    function change() {
-        var ans_ind = ($(page).find('input')).index(this);
-        if (this.value !== '') 
-            question.answer[ans_ind] = self._validate("date_chrome", this.value); //XXX
-    };
-
-    function keyup(e) {
-        if (e.keyCode === 13) {
-            self._addNewInput(page, question, 'text_input', 'date', keyup, change);
-        }
-    }
-
-    // Click the + for new input
-    $(page)
-        .find('.next_input')
-        .click(function() { 
-            self._addNewInput(page, question, 'text_input', 'date', keyup, change);
-        });
-
-    $(page)
-        .find('input')
-        .change(change)
-        .keyup(keyup)
+    this._input(question, page, "date_XXX"); //XXX: Fix validation
 };
 
 Widgets.time = function(question, page) {
     //XXX: TODO change input thing to be jquery-ey
-    var self = this;
-    function change() {
-        var ans_ind = ($(page).find('input')).index(this);
-        if (this.value !== '') 
-            question.answer[ans_ind] = self._validate("time", this.value);
-    };
-
-    function keyup(e) {
-        if (e.keyCode === 13) {
-            self._addNewInput(page, question, 'text_input', 'time', keyup, change);
-        }
-    }
-
-    // Click the + for new input
-    $(page)
-        .find('.next_input')
-        .click(function() { 
-            self._addNewInput(page, question, 'text_input', 'time', keyup, change);
-        });
-
-    $(page)
-        .find('input')
-        .change(change)
-        .keyup(keyup)
+    this._input(question, page, "time"); //XXX: Fix validation
 };
 
-Widgets.note = function(question, page) {
+Widgets.note = function() {
 };
 
 // Multiple choice and multiple choice with other are handled here by same func
 // XXX: possibly two widgets (multi select and multi choice)
 Widgets.multiple_choice = function(question, page) {
+    var self = this;
 
     // record values for each select option to update answer array in consistent way
-    var $children = [];
-    // jquery has own array funcs?
-    $(page).find('select').children().each(function(i, child){$children.push(child.value)});
+    var $children = []; //XXX: Using question.choices is not enough
+    $(page).find('select').children().each(function(i, child){ 
+        $children.push(child.value);
+    });
 
     // handle change for text field
     var $other = $(page)
         .find('.text_input')
         .keyup(function() {
-            question.answer[$children.length - 1 - 1] 
-                = self._validate("text", this.value);
+            question.answer[$children.length - 1 - 1] = self._validate("text", this.value);
         });
 
 
     $other.hide();
 
-    var $select = $(page)
+    $(page)
         .find('select')
         .change(function() {
             // any change => answer is reset
@@ -533,19 +527,20 @@ Widgets.multiple_choice = function(question, page) {
 
             // jquery is dumb and inconsistent 
             var svals = $('select').val();
-            svals = typeof svals === 'string' ? [svals] : svals
+            svals = typeof svals === 'string' ? [svals] : svals;
             // find all select options
             svals.forEach(function(opt) { 
                 // Please choose something option wipes answers
                 var ind = $children.indexOf(opt) - 1;
-                if (opt === 'null') 
+                if (opt === 'null') { 
                     return;
+                }
 
                 // Default, fill in values (other will be overwritten below if selected)
                 question.answer[ind] = opt;
                 question.is_other[ind] = false;
 
-                if (opt  == 'other') {
+                if (opt === 'other') {
                     // Choice is text input
                     question.answer[ind] = $other.val();
                     question.is_other[ind] = true;
@@ -565,35 +560,12 @@ Widgets.multiple_choice = function(question, page) {
     question.is_other =  question.is_other || [];
     if (question.answer[question.choices.length] || 
             question.answer[question.choices.length] === '') {
-        //$select.find("#with_other").attr("selected", true);
         question.is_other[question.choices.length] = true;
         $other.show();
     }
-
 };
 
-Widgets.location = function(question, page) {
-    // TODO: add location status
-    var self = this;
-    
-    // Map
-    var len = question.answer.length - 1;
-    var lat = question.answer[len] && question.answer[len][1] || App.start_loc[0];
-    var lng = question.answer[len] && question.answer[len][0] || App.start_loc[1];
-    App.start_loc = [lat, lng];
-
-    // Location is the only one that doesn't use the same keyup function due to
-    // the btn being the only way to input values in the view.
-    var loc_div = "<div class='loc_input'>"
-        +"<input class='text_input question__lat' type='text'>"
-        +"<input class='text_input question__lon' type='text'>"
-        +"</div>";
-
-    // Added div if none is around
-    if ($(page).find('.question__lon').length === 0) {
-        $(loc_div).insertBefore(".question__btn");
-    }
-
+Widgets._getMap = function() {
     var map = L.map('map', {
             center: App.start_loc,
             dragging: true,
@@ -603,7 +575,6 @@ Widgets.location = function(question, page) {
             attributionControl: false
         });
     
-
     // Blinking location indicator
     var circle = L.circle(App.start_loc, 5, {
             color: 'red',
@@ -612,8 +583,10 @@ Widgets.location = function(question, page) {
             zIndexOffset: 777,
     })
         .addTo(map);
-    
 
+    map.circle = circle;
+
+    ///TODO: Replace this with CSSSSSSSssss
     var counter = 0;
     function updateColour() {
         var fillcol = Number((counter % 16)).toString(16);
@@ -622,28 +595,41 @@ Widgets.location = function(question, page) {
             fillColor : "#f" + fillcol + fillcol,
             color : "#f" + col + col,
         });
-    };
+    }
 
     // Save the interval id, clear it every time a page is rendered
     Widgets.interval = window.setInterval(updateColour, 50); // XXX: could be CSS
 
     map.addLayer(App._getMapLayer());
-    map.on('drag', function(e) {
-        circle.setLatLng(map.getCenter());
+
+    return map;
+};
+
+Widgets.location = function(question, page) {
+    // Map
+    var lat = $(page).find('.question__lat').last().val() || App.start_loc[0];
+    var lng = $(page).find('.question__lon').last().val() || App.start_loc[1];
+
+    App.start_loc = [lat, lng];
+
+    var map = this._getMap(); 
+    map.on('drag', function() {
+        map.circle.setLatLng(map.getCenter());
         updateLocation([map.getCenter().lng, map.getCenter().lat]);
     });
 
     function updateLocation(coords) {
+        //XXX: Control which element is updated
 
         // Find current length of inputs and update the last one;
-        var questions_lon = $(page).find('.question__lon');
-        var questions_lat = $(page).find('.question__lat');
+        var questions_len = $(page).find('.question__location').length;
 
         // update array val
-        question.answer[questions_lon.length - 1] = coords;
+        question.answer[questions_len - 1] = coords;
             
-        questions_lon[questions_lon.length - 1].value = coords[0];
-        questions_lat[questions_lat.length - 1].value = coords[1];
+        // update latest lon/lat values
+        $(page).find('.question__lon').last().val(coords[0]);
+        $(page).find('.question__lat').last().val(coords[1]);
     }
 
     $(page)
@@ -654,25 +640,31 @@ Widgets.location = function(question, page) {
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
                     sync.classList.remove('icon--spin');
+
                     // Server accepts [lon, lat]
-                    var coords = [position.coords.longitude, position.coords.latitude];
+                    var coords = [
+                        position.coords.longitude, 
+                        position.coords.latitude
+                    ];
 
                     // Set map view and update indicator position
                     map.setView([coords[1], coords[0]]);
-                    circle
+                    map.circle
                         .setLatLng([coords[1], coords[0]]);
 
-                    // If allow multiple is set (or this is the first time they clicked) add new div
-                    if (question.allow_multiple && typeof question.answer[0] !== "undefined") {
-                       $(loc_div)
-                           .insertBefore(".question__btn");
+                    // If allow multiple is set add there exists > 1 divs 
+                    if (question.allow_multiple && 
+                            typeof question.answer[0] !== "undefined") {
+                        $(page)
+                            .find('.question__location')
+                            .clone()
+                            .insertBefore(".question__btn");
                     }
 
                     updateLocation(coords);
 
                 }, function error() {
                     //TODO: If cannot Get location" for some reason, 
-                    // Allow  user to fill in text field instead
                     sync.classList.remove('icon--spin');
                     alert('error'); //XXX Replace with our message thing
                 }, {
@@ -685,25 +677,18 @@ Widgets.location = function(question, page) {
 
 // Similar to location however you cannot just add location, 
 Widgets.facility = function(question, page) {
-    var self = this;
-    
     // Map
     var lat = question.answer[0] && question.answer[0][1][1] || App.start_loc[0];
     var lng = question.answer[0] && question.answer[0][1][0] || App.start_loc[1];
 
     App.start_loc = [lat, lng];
-    console.log("selected", question.answer[0] && question.answer[0][0] || null);
 
     /* Buld inital state */
-    var map = L.map('map', {
-            center: App.start_loc,
-            dragging: true,
-            zoom: 13,
-            zoomControl: false,
-            doubleClickZoom: false,
-            attributionControl: false
-        });
-   
+    var map = this._getMap(); 
+    map.on('drag', function() {
+        map.circle.setLatLng(map.getCenter());
+    });
+
     // Know which marker is currently "up" 
     var touchedMarker = null;
     // Added facility  
@@ -724,45 +709,21 @@ Widgets.facility = function(question, page) {
                 "facilities", // id for localStorage
                 drawFacilities // what to do with facilities
             );
+
     } else {
         drawFacilities(App.facilities); // Otherwise draw our synced facilities
     }
 
-    // Blinking location indicator
-    var circle = L.circle(App.start_loc, 5, {
-            color: 'red',
-            fillColor: '#f00',
-            fillOpacity: 0.5
-    }).addTo(map);
-
-    var counter = 0;
-    function updateColour() {
-        var fillcol = Number((counter % 16)).toString(16);
-        var col = Number((counter++ % 13)).toString(16);
-        circle.setStyle({
-            fillColor : "#f" + fillcol + fillcol,
-            color : "#f" + col + col,
-            zIndexOffset: 777,
-        });
-        window.circle = circle;
-    };
-
-    // Save the interval id, clear it every time a page is rendered
-    Widgets.interval = window.setInterval(updateColour, 50);
-    map.addLayer(App._getMapLayer());
-    map.on('drag', function(e) {
-        circle.setLatLng(map.getCenter());
-    });
-
     /* Helper functions for updates  */
+
     // handles calling drawPoint gets called once per getNearby call 
     function drawFacilities(facilities) {
         var selected = question.answer[0] && question.answer[0][0] || null;
 
         // SYNCED FACILITIES
         facilities_group.clearLayers(); // Clears synced facilities only
-        var facilities = facilities || [];
-        for (i = 0; i < facilities.length; i++) {
+        facilities = facilities || [];
+        for (var i = 0; i < facilities.length; i++) {
             var facility = facilities[i];
             var marker = drawPoint(facility.coordinates[1], 
                         facility.coordinates[0], 
@@ -772,7 +733,7 @@ Widgets.facility = function(question, page) {
                         onFacilityClick);
 
             // If selected uuid was from Revisit, paint it white
-            if (selected == marker.uuid) {
+            if (selected === marker.uuid) {
                 selectFacility(marker);
                 console.log("match", selected);
             }
@@ -791,14 +752,14 @@ Widgets.facility = function(question, page) {
                         facility.uuid,
                         onFacilityClick, onFacilityDrag); 
             
-            if (selected == marker.uuid) {
+            if (selected === marker.uuid) {
                 selectFacility(marker);
                 $(page).find('.facility__btn').html("Remove New Site");
                 console.log("new match", selected);
             } 
 
             // They added a facility in this question before
-            if (question._new_facility == marker.uuid) {
+            if (question._new_facility === marker.uuid) {
                 addedMarker = marker;
                 $(page).find('.facility__btn').text("Remove New Site");
             }
@@ -806,7 +767,7 @@ Widgets.facility = function(question, page) {
             new_facilities_group.addLayer(marker);
         });
 
-    }; 
+    } 
 
     function selectFacility(marker) {
         marker.setZIndexOffset(666); // above 250 so it can't be hidden by hovering over neighbour
@@ -814,7 +775,6 @@ Widgets.facility = function(question, page) {
         if (marker.is_new) { 
             marker.setIcon(icon_added);
             addedMarker = marker;
-            //$(page).find('.facility__btn').text("Remove New Site");
         }
 
         touchedMarker = marker;
@@ -829,12 +789,6 @@ Widgets.facility = function(question, page) {
             touchedMarker.setZIndexOffset(0);
         }
 
-        // Deselecting an added facility does not allow you to add a new one
-        //if (addedMarker) {
-        //    $(page).find('.facility__btn').text("Add Facility");
-        //    addedMarker = null;
-        //}
-
         question.answer = [];
         $(page).find('.facility__name').val("");
         $(page).find('.facility__type').val("other");
@@ -846,18 +800,17 @@ Widgets.facility = function(question, page) {
         var marker = e.target;
         deselectFacility();
         selectFacility(marker);
-        console.log(question.answer[0]);
     }
 
     function onFacilityDrag(e) {
         var marker = e.target;
         deselectFacility();
         selectFacility(marker);
-        App.unsynced_facilities[marker.uuid]['coordinates'] 
-            = [marker._latlng.lng, marker._latlng.lat];
-        console.log(question.answer[0]);
-    };
-
+        App.unsynced_facilities[marker.uuid].coordinates = [
+            marker._latlng.lng, 
+            marker._latlng.lat
+        ];
+    }
 
     // function to wrap up the new facility code
     function addFacility(lat, lng, uuid) {
@@ -870,8 +823,8 @@ Widgets.facility = function(question, page) {
         
         // We added em before 
         if (App.unsynced_facilities[uuid]) {
-            addedMarker.sector = App.unsynced_facilities[uuid]['properties']['sector'];
-            addedMarker.name = App.unsynced_facilities[uuid]['name'];
+            addedMarker.sector = App.unsynced_facilities[uuid].properties.sector;
+            addedMarker.name = App.unsynced_facilities[uuid].name;
         }
 
         selectFacility(addedMarker);
@@ -895,8 +848,8 @@ Widgets.facility = function(question, page) {
 
                     // Update map position and set indicator position again
                     map.setView([coords[1], coords[0]]);
-                    circle
-                        .setLatLng([coords[1], coords[0]])
+                    map.circle
+                        .setLatLng([coords[1], coords[0]]);
 
                     // Revisit api call
                     if (navigator.onLine) {
@@ -926,13 +879,14 @@ Widgets.facility = function(question, page) {
         .find('.facility__btn')
         .click(function() {
             // You added on before
-            if (addedMarker && addedMarker.uuid == question._new_facility) {
+            if (addedMarker && addedMarker.uuid === question._new_facility) {
                 // Get rid of all traces of it
                 delete App.unsynced_facilities[addedMarker.uuid];
                 new_facilities_group.removeLayer(addedMarker);
 
-                if (addedMarker == touchedMarker) 
+                if (addedMarker === touchedMarker) { 
                     deselectFacility();
+                }
 
                 $(page).find('.facility__btn').text("Add New Site");
                 addedMarker = null;
@@ -963,11 +917,11 @@ Widgets.facility = function(question, page) {
     // Change name
     $(page)
         .find('.facility__name')
-        .keyup(function(e) {
+        .keyup(function() {
             console.log(this.value);
-            if (addedMarker && addedMarker == touchedMarker) {
+            if (addedMarker && addedMarker === touchedMarker) {
                 // Update facility info
-                App.unsynced_facilities[addedMarker.uuid]['name'] = this.value;
+                App.unsynced_facilities[addedMarker.uuid].name = this.value;
                 addedMarker.name = this.value;
             } else if (touchedMarker) {
                 // Prevent updates for now
@@ -978,12 +932,11 @@ Widgets.facility = function(question, page) {
     // Change type
     $(page)
         .find('.facility__type')
-        .change(function(e) {
+        .change(function() {
             console.log(this.value);
-            if (addedMarker && addedMarker == touchedMarker) {
+            if (addedMarker && addedMarker === touchedMarker) {
                 // Update facility info
-                App.unsynced_facilities[addedMarker.uuid]['properties']['sector']
-                    = this.value;
+                App.unsynced_facilities[addedMarker.uuid].properties.sector = this.value;
                 addedMarker.sector = this.value;
             } else if (touchedMarker) {
                 // Prevent updates for now
@@ -992,61 +945,11 @@ Widgets.facility = function(question, page) {
         });
 };
 
-// Handle creating multiple inputs for widgets that support it 
-// XXX: Maybe feature isn't required
-// XXX: Duplicate exisiting field instead of creating new one
-Widgets._addNewInput = function(page, question, cls, type, keyup_cb, change_cb) {
-    if (question.allow_multiple) {
-        $('<input>')
-            .attr({'type': type, 'class': cls})
-            .change(change_cb)
-            .keyup(keyup_cb)
-            .insertBefore(page.find(".next_input"))
-            .focus();
-    }
-}
-
-Widgets._validate = function(type, answer) {
-    var val = null;
-    switch(type) {
-        case "decimal":
-            val = parseFloat(answer);
-            if (isNaN(val))
-                val = null;
-            break;
-        case "integer":
-            val = parseInt(answer);
-            if (isNaN(val))
-                val = null;
-            break;
-        case "date":
-            val = Date.parse(answer);
-            if (isNaN(val))
-                val = null;
-            else
-                val = (new Date(val)).toISOString();
-            break;
-        case "time":
-              //XXX: validation for time
-              val = answer;
-              break;
-        case "text":
-              if (answer)
-                  val = answer;
-              break;
-        default:
-              //XXX: Location, Facility, MChoice don't make sense to validate 
-              val = answer;
-              break;
-    }
-
-    return val;
-}
 
 /* -------------------------- Revisit Stuff Below ----------------------------*/
 function getNearbyFacilities(lat, lng, rad, lim, id, cb) {
     //var url = "http://staging.revisit.global/api/v0/facilities.json" 
-    var url = "http://localhost:3000/api/v0/facilities.json" // install revisit server from git
+    var url = "http://localhost:3000/api/v0/facilities.json"; // install revisit server from git
     // Revisit ajax req
     console.log("MADE EXTERNAL REVISIT QUERY");
     $.get(url,{
@@ -1119,7 +1022,7 @@ var icon_new_base = new L.icon({iconUrl: "/static/img/icons/unsynced_base.png", 
 var icon_selected = new L.icon({iconUrl: "/static/img/icons/selected-point.png", iconAnchor: [15, 48]});
 var icon_added = new L.icon({iconUrl: "/static/img/icons/added-point.png", iconAnchor: [15, 48]});
 
-icon_types = {
+var icon_types = {
     "education" : icon_edu,
     "new_education" : icon_new_edu,
     "water" : icon_water,
@@ -1128,7 +1031,7 @@ icon_types = {
     "new_health" : icon_new_health,
     "base" : icon_base,
     "new_base" : icon_new_base,
-}
+};
 
 function getIcon(sector, isNew) {
     var base = "base";
@@ -1157,7 +1060,7 @@ function drawPoint(lat, lng, name, type, uuid, clickEvent) {
     marker.on('click', clickEvent);
     return marker;
     
-};
+}
 
 function drawNewPoint(lat, lng, name, type, uuid, clickEvent, dragEvent) {
     var marker = new L.marker([lat, lng], {
@@ -1178,12 +1081,11 @@ function drawNewPoint(lat, lng, name, type, uuid, clickEvent, dragEvent) {
     marker.on('click', clickEvent);
     marker.on('dragend', dragEvent);
     return marker;
-    
-};
+}
 
 // Def not legit but hey
 function objectID() {
-    return 'xxxxxxxxxxxxxxxxxxxxxxxx'.replace(/[x]/g, function(c) {
+    return 'xxxxxxxxxxxxxxxxxxxxxxxx'.replace(/[x]/g, function() {
         var r = Math.random()*16|0;
         return r.toString(16);
     });

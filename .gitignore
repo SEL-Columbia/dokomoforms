@@ -2,9 +2,11 @@
 *.swp
 *.sqlite
 *.pyc
+*.log
 local_settings.py
 .idea/
 .coverage
 cover/
 .python-version
 node_modules/
+test/*.log

@@ -62,13 +62,14 @@ def submit(data: dict) -> dict:
                                     question
     """
     survey_id = data['survey_id']
+    submitter = data['submitter']
     all_answers = data['answers']
     answers = filter(lambda answer: answer['answer'] is not None, all_answers)
     unanswered_required = {q.question_id for q in get_required(survey_id)}
 
     with engine.begin() as connection:
         # create the submission and store its ID
-        submission_values = {'submitter': '',
+        submission_values = {'submitter': submitter,
                              'survey_id': survey_id}
         executable = submission_insert(**submission_values)
         exceptions = [

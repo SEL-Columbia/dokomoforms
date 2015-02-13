@@ -139,4 +139,5 @@ if __name__ == '__main__':
 
     logger.info('starting server on port ' + str(settings.WEBAPP_PORT))
 
+    tornado.ioloop.IOLoop.current().set_blocking_log_threshold(1)
     tornado.ioloop.IOLoop.current().start()
