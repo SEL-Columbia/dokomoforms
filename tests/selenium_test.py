@@ -216,14 +216,10 @@ class SubmissionTest(DriverTest):
         self.assertIn('Answer: 1', self.drv.page_source)
         self.assertIn('Choice: 1. choice 1', self.drv.page_source)
         self.assertIn('Answer: 3.3', self.drv.page_source)
-        self.assertIn(
-            '<strong>4. date question</strong><br>\nType: '
-            'date<br>\n\nAnswer: ',
-            self.drv.page_source)
-        self.assertIn(
-            '<strong>5. time question</strong><br>\nType: '
-            'time<br>\n\nAnswer: ',
-            self.drv.page_source)
+        self.assertIn('<strong>4. date question</strong><br',
+                      self.drv.page_source)
+        self.assertIn('<strong>5. time question</strong><br',
+                      self.drv.page_source)
         self.assertIn('Answer: [-70, 40]', self.drv.page_source)
         self.assertIn('Answer: [-70, 40]', self.drv.page_source)
         self.assertIn('Answer: other 8', self.drv.page_source)
