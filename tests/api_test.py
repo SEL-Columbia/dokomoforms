@@ -1401,9 +1401,10 @@ class TestAggregation(unittest.TestCase):
             api.submission.submit(input_data)
 
         res = api.aggregation.time_series(q_id, email='test_email')['result']
-        self.assertEqual(len(res), 2)
-        self.assertEqual(len(res[0]), 3)
-        self.assertEqual(len(res[1]), 3)
+        self.assertEqual(len(res), 3)
+        self.assertEqual(res[0][1], 0)
+        self.assertEqual(res[1][1], 1)
+        self.assertEqual(res[2][1], 2)
 
     def testBarGraph(self):
         survey_id = survey_table.select().where(
@@ -1426,7 +1427,7 @@ class TestAggregation(unittest.TestCase):
             api.submission.submit(input_data)
 
         res = api.aggregation.bar_graph(q_id, email='test_email')
-        self.assertEqual(res, {'result': [(0, 1, 2), (2, 1, 1)],
+        self.assertEqual(res, {'result': [[0, 2], [1, 1], [2, 1]],
                                'query': 'bar_graph'})
 
     def testGetQuestionStats(self):
