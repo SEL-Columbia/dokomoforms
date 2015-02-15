@@ -228,13 +228,17 @@ Survey.prototype.render = function(question) {
     var self = this;
     var content = $('.content');
     
+    var widgetHTML;
+    var widgetTemplate;
+    var compiledHTML;
+    
     var index = question ? question.sequence_number : this.questions.length + 1;
 
     if (question) {
         // Show widget
-        var widgetHTML = $('#widget_' + question.type_constraint_name).html();
-        var widgetTemplate = _.template(widgetHTML);
-        var compiledHTML = widgetTemplate({question: question, start_loc: App.start_loc});
+        widgetHTML = $('#widget_' + question.type_constraint_name).html();
+        widgetTemplate = _.template(widgetHTML);
+        compiledHTML = widgetTemplate({question: question, start_loc: App.start_loc});
         self.current_question = question;
 
         // Render question
@@ -248,9 +252,9 @@ Survey.prototype.render = function(question) {
 
     } else {
         // Show submit page
-        var widgetHTML = $('#template_submit').html();
-        var widgetTemplate = _.template(widgetHTML);
-        var compiledHTML = widgetTemplate({name: App.submitter_name});
+        widgetHTML = $('#template_submit').html();
+        widgetTemplate = _.template(widgetHTML);
+        compiledHTML = widgetTemplate({name: App.submitter_name});
 
         content.empty()
             .data('index', index)
