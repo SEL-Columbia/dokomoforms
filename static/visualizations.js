@@ -110,8 +110,7 @@ function drawBarGraph(bar_data) {
         .scale(y)
         .tickSize(5)
         .orient("left")
-        .tickSubdivide(true);
-
+        .tickFormat(d3.format('d'));
 
     var svg = d3.select("#bar_graph")
         .attr("width", width + margin.left + margin.right)
