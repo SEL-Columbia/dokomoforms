@@ -17,18 +17,32 @@ body {
     width: 100%;
     height: 100%;
     margin: 0px auto;
-    background: white;
-    color: rgba(0,0,0,0.7);
     font-size: 18px;
     font-family: 'Droid Sans', 'Helvetica Neue', helvetica, sans-serif;
-    color: rgb(16, 42, 16);
     padding: 60px 0px 0px 0px;
     overflow-x: hidden;
     -webkit-tap-highlight-color: transparent;
+    background: rgba(255, 248, 243, 0.5);
+    color: rgb(22, 10, 05);
 }
 
 a {
     text-decoration: none;
+    color: rgb(120, 53, 17);
+}
+
+a:link, a:visited { 
+    color: rgb(120, 53, 17);
+}
+
+a:link:active, a:visited:active { 
+    color: rgb(132, 70, 45);
+}
+
+ul {
+    text-decoration: none;
+    list-style-type: none;
+    outline: none;
 }
 
 /* SEL Logo
@@ -82,11 +96,12 @@ a {
     top: 0;
     left: 0;
     width: 100%;
-    background: rgb(46, 204, 113);
-    color: white;
+    color: rgb(132, 70, 45);
+    background: rgb(234, 208, 173);
     padding: 5px;
     z-index: 10;
     height: 60px;
+    box-shadow: 4px 4px 2px #888888; 
 }
 
 .nav__title {
@@ -101,12 +116,13 @@ a {
     left: 20%;
     width: 60%;
     padding: 12px;
-    background: rgb(164, 231, 193);
+    background: rgb(250, 203, 27);
     box-sizing: border-box;
     border-radius: 7px;
     text-align: center;
     font-size: 18px;
     z-index: 99;
+    margin-top: 20px;
 }
 
 .header {
@@ -118,7 +134,7 @@ a {
     bottom: 0;
     left: 0;
     width: 100%;
-    background: rgb(210, 210, 210);
+    background: rgba(250, 203, 27, 0.15);
     padding: 10px;
     box-sizing: border-box;
     height: 75px;
@@ -148,7 +164,7 @@ a {
 .page_nav__btn {
     width: 25px;
     height: 25px;
-    background: rgba(0,0,0,0.1);
+    background: rgba(250, 203, 27, 0.5);
     padding: 15px;
     border-radius: 100px;
     cursor: pointer;
@@ -156,7 +172,7 @@ a {
 
 .page_nav__btn:hover,
 .page_nav__btn:active {
-    background: rgba(0,0,0,0.25);
+    background: rgba(250, 203, 27, 0.75);
 }
 
 .page_nav__prev {
@@ -206,21 +222,6 @@ a {
 .welcome_item {
 }
 
-.welcome_item a {
-    /* color: rgb(86, 102, 86);
-     */
-}
-
-.welcome_item a:link, .welcome_item a:visited { 
-   /* color: rgb(86, 102, 86);
-    */
-}
-
-.welcome_item a:link:active, .welcome_item a:visited:active { 
-    /* color: rgb(46, 72, 46);
-     */
-}
-
 /* Survey Layout
 ==================================================*/
 .text_input {
@@ -240,6 +241,10 @@ a {
     border-color: rgb(84, 216, 90);
 }
 
+.text_input:invalid {
+    border-color: rgb(216, 84, 90);
+}
+
 .name_input {
     display: inline;
     font-size: 20px;
@@ -257,6 +262,11 @@ a {
 .name_input:focus {
     border-color: rgb(84, 216, 90);
 }
+
+.name_input:invalid {
+    border-color: rgb(216, 84, 90);
+}
+
 .question__title {
     text-align: center;
     font-size: 25px;
@@ -272,7 +282,7 @@ a {
     cursor: pointer;
     display: block;
     padding: 13px 15px;
-    background: rgba(0,0,0,0.1);
+    background: rgba(250, 203, 27, 0.5);
     border-radius: 7px;
     font-weight: 500;
     text-align: center;
@@ -282,14 +292,14 @@ a {
 }
 
 .question__btn:hover {
-    background: rgba(0,0,0,0.3);
+    background: rgba(250, 203, 27, 0.75);
 }
 
 .question__inline__btn {
     cursor: pointer;
     display: inline-block;
     padding: 13px 15px;
-    background: rgba(0,0,0,0.1);
+    background: rgba(250, 203, 27, 0.5);
     border-radius: 7px;
     font-weight: 500;
     text-align: center;
@@ -298,7 +308,7 @@ a {
 }
 
 .question__inline__btn:hover {
-    background: rgba(0,0,0,0.3);
+    background: rgba(250, 203, 27, 0.75);
 }
 
 .facility_input {
@@ -349,7 +359,7 @@ a {
     height: 25px;
     display: block;
     margin: 0px auto;
-    background: rgba(0,0,0,0.1);
+    background: rgba(250, 203, 27, 0.5);
     padding: 15px;
     border-radius: 100px;
     cursor: pointer;
@@ -357,7 +367,7 @@ a {
 }
 
 .question__add:hover {
-    background: rgba(0,0,0,0.3);
+    background: rgba(250, 203, 27, 0.75);
 }
 
 .question__select {
@@ -365,6 +375,7 @@ a {
     background-repeat:no-repeat;
     background-position: right 10px top 15px;
     background-size: 16px 16px;
+    background-color: white;
     text-align:center;
     -webkit-border-radius:3px;
     -webkit-appearance: none;
