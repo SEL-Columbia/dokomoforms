@@ -50,7 +50,7 @@ ul {
 .icon {
     width: 25px;
     height: 25px;
-    fill: rgba(0,0,0,0.5);
+    fill: rgb(132, 70, 45);
 }
 
 .sel {
@@ -105,7 +105,7 @@ ul {
 }
 
 .nav__title {
-    font-size: 22px;
+    font-size: 24px;
     display: inline-block;
     padding: 10px;
 }
@@ -153,7 +153,7 @@ ul {
 }
 
 .page_nav__progress {
-    color: rgba(0,0,0,0.5);
+    color: rgb(132, 70, 45);
     font-size: 20px;
     text-align: center;
     padding: 15px 0;
@@ -164,15 +164,17 @@ ul {
 .page_nav__btn {
     width: 25px;
     height: 25px;
-    background: rgba(250, 203, 27, 0.5);
+    background: rgba(250, 203, 27, 1.0);
     padding: 15px;
     border-radius: 100px;
     cursor: pointer;
+    box-shadow: 4px 4px 2px #888888; 
 }
 
 .page_nav__btn:hover,
 .page_nav__btn:active {
     background: rgba(250, 203, 27, 0.75);
+    box-shadow: 1px 1px 1px #888888; 
 }
 
 .page_nav__prev {
@@ -183,6 +185,32 @@ ul {
     float: right;
 }
 
+
+.btn {
+    box-sizing: border-box;
+    cursor: pointer;
+    display: block;
+    padding: 13px 15px;
+    background: rgba(250, 203, 27, 1.0);
+    font-weight: 500;
+    text-align: center;
+    margin: 10px auto;
+    clear: both;
+
+    width: 100%;
+    border: 2px solid rgba(0,0,0,0.3);
+    background: rgba(250, 203, 27, 0.25);
+    box-shadow: 4px 4px 2px #888888; 
+    min-width: 140px;
+}
+
+.btn:hover {
+    background: rgba(250, 203, 27, 0.75);
+}
+
+.btn:active {
+    box-shadow: 1px 1px 1px #888888; 
+}
 
 /* Home Page Layout
 =================================================*/
@@ -195,22 +223,38 @@ ul {
 }
 
 .buffer {
-    padding-bottom: 100px !important;
+    padding: 25px 0px 100px 0px !important;
 }
 
 .welcome {
     margin: 0px auto;
+    width: 100%;
+    min-width: 140px;
+    color: rgb(132, 70, 45);
+    box-sizing: border-box;
+    background: rgba(255, 248, 243, 1);
+    padding: 25px;
 }
 
-.welcome_buttons {
+.welcome_box {
+    margin: 0px auto;
+    height: 140px;
+    padding: 25px;
 }
 
 
-.weclome_title {
+.welcome_title {
     text-align: center;
+    font-size: 24px;
+    margin: 0px auto;
+    margin-bottom: 25px;
+    font-weight: 500;
 }
 
 .welcome_blurb {
+    text-align: center;
+    font-size: 22px;
+    margin: 8px 0px;
 }
 
 .welcome_ulist {
@@ -227,9 +271,9 @@ ul {
 .text_input {
     display: block;
     font-size: 20px;
-    width: 80%;
+    width: 100%;
     padding: 10px 15px;
-    margin: 25px auto;
+    margin: 10px auto;
     border: 2px solid rgba(0,0,0,0.3);
     border-radius: 5px;
     outline: none;
@@ -248,7 +292,7 @@ ul {
 .name_input {
     display: inline;
     font-size: 20px;
-    width: 80%;
+    width: 100%;
     padding: 10px 15px;
     border: 2px solid rgba(0,0,0,0.3);
     border-radius: 5px;
@@ -270,6 +314,8 @@ ul {
 .question__title {
     text-align: center;
     font-size: 25px;
+    margin-bottom: 25px;
+    margin-top: 10px;
 }
 
 .question__name {
@@ -279,44 +325,30 @@ ul {
 }
 
 .question__btn {
+    box-sizing: border-box;
     cursor: pointer;
     display: block;
     padding: 13px 15px;
-    background: rgba(250, 203, 27, 0.5);
-    border-radius: 7px;
+    background: rgba(250, 203, 27, 1.0);
     font-weight: 500;
     text-align: center;
-    margin: 25px auto;
-    width: 140px;
+    margin: 10px auto;
     clear: both;
+
+    width: 100%;
+    border: 2px solid rgba(0,0,0,0.3);
+    background: rgba(250, 203, 27, 0.25);
+    box-shadow: 4px 4px 2px #888888; 
+    min-width: 140px;
 }
 
 .question__btn:hover {
     background: rgba(250, 203, 27, 0.75);
 }
 
-.question__inline__btn {
-    cursor: pointer;
-    display: inline-block;
-    padding: 13px 15px;
-    background: rgba(250, 203, 27, 0.5);
-    border-radius: 7px;
-    font-weight: 500;
-    text-align: center;
-    margin: 0px auto;
-    width: 140px;
+.question__btn:active {
+    box-shadow: 1px 1px 1px #888888; 
 }
-
-.question__inline__btn:hover {
-    background: rgba(250, 203, 27, 0.75);
-}
-
-.facility_input {
-    margin: 0px auto;
-    padding: 0px;
-    text-align: center;
-}
-
 .question__saving {
     display: block;
     width: 50px;
@@ -359,15 +391,21 @@ ul {
     height: 25px;
     display: block;
     margin: 0px auto;
-    background: rgba(250, 203, 27, 0.5);
+    background: rgba(250, 203, 27, 1.0);
     padding: 15px;
     border-radius: 100px;
     cursor: pointer;
     text-align: center;
+    box-shadow: 4px 4px 2px #888888; 
 }
 
 .question__add:hover {
     background: rgba(250, 203, 27, 0.75);
+    box-shadow: 4px 4px 2px #888888; 
+}
+
+.question__add:active {
+    box-shadow: 1px 1px 1px #888888; 
 }
 
 .question__select {
@@ -387,11 +425,11 @@ ul {
 
 
     display: block;
-    margin: 25px auto;
+    margin: 10px auto;
     padding: 10px 15px;
     border: 2px solid rgba(0,0,0,0.3);
     border-radius: 5px;
-    width: 80%;
+    width: 100%;
     height: auto;
     overflow-y: auto;
     overflow-x: hidden;
