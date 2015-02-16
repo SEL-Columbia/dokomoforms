@@ -7,7 +7,6 @@
     <meta name="viewport" content="width=device-width, user-scalable=no">
     <link rel="icon" href="/static/img/favicon.png">
     <link href="/static/css/style.css" rel="stylesheet" type="text/css">
-    <link href="/static/css/dokomo-buttons.css" rel="stylesheet" type="text/css"/>
 </head>
 
 <body>
@@ -29,19 +28,16 @@
         </symbol>
     </svg>
         
-    <div id="wrapper">
     <div class="nav">
-        <div class="nav__title">Dokomo Forms</div>
-        <div class="sel_logo nav__sync icon">
-            <a href="http://sel.columbia.edu">
-                <img src="/static/img/SEL_logo_sm.png">
-            </a>
+        <div class="nav__title">
+            {% try %} {{survey_title}} {% except NameError %} Dokomo Forms {% end %}
         </div>
+        <a class="sel" href="http://sel.columbia.edu">
+            <img src="/static/img/SEL_logo_sm.png" class="nav__sync"/>
+        </a>
     </div>
 
-    <script src="/static/lib.js"></script>
     {% block content %}{% end %}
-    </div>
 </body>
 
 </html>
