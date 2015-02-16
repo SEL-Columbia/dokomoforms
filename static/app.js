@@ -415,7 +415,7 @@ Widgets._input = function(question, page, type) {
 
     // Click the + for new input
     $(page)
-        .find('.next_input')
+        .find('.question__add')
         .click(function() { 
             self._addNewInput(page, $(page).find('input').last(), question);
         });
@@ -427,7 +427,7 @@ Widgets._addNewInput = function(page, input, question) {
         input
             .clone(true)
             .val(null)
-            .insertBefore(page.find(".next_input"))
+            .insertBefore(page.find(".question__add"))
             .focus();
     }
 };
