@@ -22,7 +22,7 @@ body {
     font-size: 18px;
     font-family: 'Droid Sans', 'Helvetica Neue', helvetica, sans-serif;
     color: rgb(16, 42, 16);
-    padding: 75px 0px;
+    padding: 60px 0px 0px 0px;
     overflow-x: hidden;
     -webkit-tap-highlight-color: transparent;
 }
@@ -83,7 +83,7 @@ a {
 .nav__title {
     font-size: 22px;
     display: inline-block;
-    padding: 15px;
+    padding: 10px;
 }
 
 .nav__sync {
@@ -172,12 +172,14 @@ a {
 
 /* Content, Welcome, About are main page stylings */
 .content {
-    box-sizing: border-box;
     width: 100%;
-    height: 100%;
-    padding: 25px;
+    padding: 25px 25px 25px 25px;
     margin: 0px auto;
     overflow-y: auto;
+}
+
+.buffer {
+    padding-bottom: 100px !important;
 }
 
 .welcome {
@@ -205,15 +207,18 @@ a {
 }
 
 .welcome_item a {
-    color: rgb(86, 102, 86);
+    /* color: rgb(86, 102, 86);
+     */
 }
 
 .welcome_item a:link, .welcome_item a:visited { 
-    color: rgb(86, 102, 86);
+   /* color: rgb(86, 102, 86);
+    */
 }
 
 .welcome_item a:link:active, .welcome_item a:visited:active { 
-    color: rgb(46, 72, 46);
+    /* color: rgb(46, 72, 46);
+     */
 }
 
 /* Survey Layout
@@ -228,7 +233,6 @@ a {
     border-radius: 5px;
     outline: none;
     box-sizing: border-box;
-
     min-width:200px;
 }
 
