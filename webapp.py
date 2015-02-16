@@ -28,6 +28,7 @@ from pages.debug import DebugLoginHandler, DebugLogoutHandler, \
 from pages.view.surveys import ViewHandler
 from pages.view.submissions import ViewSubmissionsHandler, \
     ViewSubmissionHandler
+from pages.view.visualize import VisualizationHandler
 import settings
 from utils.logger import setup_custom_logger
 from db.survey import SurveyPrefixDoesNotIdentifyASurveyError, \
@@ -104,6 +105,8 @@ pages = [
     (r'/view/?', ViewHandler),
     (r'/view/({})/?'.format(UUID_REGEX), ViewSubmissionsHandler),
     (r'/view/submission/({})/?'.format(UUID_REGEX), ViewSubmissionHandler),
+
+    (r'/visualize/({})/?'.format(UUID_REGEX), VisualizationHandler),
 
     # Survey Submissions
     (r'/survey/(.+)/?', Survey),

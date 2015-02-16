@@ -8,7 +8,8 @@
             <ul>
                 {% for stats in question_stats['result'] %}
                     <li>
-                        <p>{{ stats['question'].sequence_number }}. {{ stats['question'].question_title }} - {{ stats['question'].question_id }}</p>
+                        <!--<p>{{ stats['question'].sequence_number }}. {{ stats['question'].question_title }} - {{ stats['question'].question_id }}</p>-->
+                        <p><a href="/visualize/{{ stats['question'].question_id }}">{{ stats['question'].sequence_number }}. {{ stats['question'].question_title }}</a></p>
                         {% for stat in stats['stats'] %}
                             <p>{{ stat['query'] }}: {{ stat['result'] }}</p>
                         {% end %}
