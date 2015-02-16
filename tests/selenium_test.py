@@ -479,6 +479,9 @@ class LocationTest(TypeTest):
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
+        vis_map = self.drv.find_element_by_id('vis_map')
+        self.assertTrue(vis_map.is_displayed())
+
 
 if __name__ == '__main__':
     unittest.main()
