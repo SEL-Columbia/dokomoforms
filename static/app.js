@@ -234,6 +234,12 @@ Survey.prototype.render = function(question) {
     
     var index = question ? question.sequence_number : this.questions.length + 1;
 
+    // Clear any interval events
+    if (Widgets.interval) {
+        window.clearInterval(Widgets.interval);
+        Widgets.interval = null;
+    }
+
     if (question) {
         // Show widget
         widgetHTML = $('#widget_' + question.type_constraint_name).html();
@@ -271,12 +277,6 @@ Survey.prototype.render = function(question) {
             });
     }
     
-    // Clear any interval events
-    if (Widgets.interval) {
-        window.clearInterval(Widgets.interval);
-        Widgets.interval = null;
-    }
-
     // Update nav
     $('.page_nav__progress')
         .text((index) + ' / ' + (this.questions.length + 1));
@@ -841,7 +841,7 @@ Widgets.facility = function(question, page) {
 
     // Find me
     $(page)
-        .find('.find__btn')
+        .find('.question__find__btn')
         .click(function() {
             var sync = $('.nav__sync')[0];
             sync.classList.add('icon--spin');
