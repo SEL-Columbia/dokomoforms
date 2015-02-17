@@ -105,7 +105,7 @@ def get_column(table: Table, column_name: str) -> Column:
     :return: the column
     :raise NoSuchColumnError: if the column does not exist in the table
     """
-    if column_name in table.c:
+    if column_name in table.columns:
         return table.c.get(column_name)
     else:
         raise NoSuchColumnError(column_name)
