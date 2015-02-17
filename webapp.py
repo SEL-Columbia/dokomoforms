@@ -20,8 +20,7 @@ from pages.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler, SubmitAPIHandler
 from pages.api.surveys import SurveysAPIHandler, SingleSurveyAPIHandler, \
     CreateSurveyAPIHandler
-from pages.util.base import BaseHandler, get_json_request_body, \
-    validation_message, catch_bare_integrity_error
+from pages.util.base import BaseHandler, get_json_request_body
 import pages.util.ui
 from pages.debug import DebugLoginHandler, DebugLogoutHandler, \
     DebugUserCreationHandler
@@ -33,7 +32,7 @@ import settings
 from utils.logger import setup_custom_logger
 from db.survey import SurveyPrefixDoesNotIdentifyASurveyError, \
     SurveyPrefixTooShortError, \
-    get_survey_id_from_prefix, get_surveys_by_email, IncorrectQuestionIdError
+    get_survey_id_from_prefix, get_surveys_by_email
 
 
 logger = setup_custom_logger('dokomo')
@@ -64,9 +63,8 @@ class Survey(BaseHandler):
                 SurveyPrefixTooShortError):
             raise tornado.web.HTTPError(404)
 
-
     def post(self, uuid):
-        SubmitAPIHandler.post(self, uuid) # TODO: Hey Abdi kill this
+        SubmitAPIHandler.post(self, uuid)  # TODO: Hey Abdi kill this
 
 
 class APITokenGenerator(BaseHandler):
@@ -76,7 +74,6 @@ class APITokenGenerator(BaseHandler):
         self.write(
             api.user.generate_token(
                 {'email': self.current_user}))
-
 
     @tornado.web.authenticated
     def post(self):
@@ -132,8 +129,7 @@ pages = [
 if config.get('debug', False):
     pages += [(r'/debug/create/(.+)/?', DebugUserCreationHandler),
               (r'/debug/login/(.+)/?', DebugLoginHandler),
-              (r'/debug/logout/?', DebugLogoutHandler),
-    ]
+              (r'/debug/logout/?', DebugLogoutHandler), ]
 
 app = tornado.web.Application(pages, **config)
 

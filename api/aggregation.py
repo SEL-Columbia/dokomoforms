@@ -9,9 +9,9 @@ from sqlalchemy.sql.functions import GenericFunction, min as sqlmin, \
     max as sqlmax, sum as sqlsum, count as sqlcount
 from sqlalchemy.sql import func, and_
 from tornado.escape import json_decode
-from api import json_response
 
-from db import engine, NoSuchColumnError, get_column
+from api import json_response
+from db import engine, get_column
 from db.answer import answer_table
 from db.answer_choice import answer_choice_table
 from db.auth_user import get_auth_user_by_email

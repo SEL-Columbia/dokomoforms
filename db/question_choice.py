@@ -1,10 +1,10 @@
 """Allow access to the question_choice table."""
 from sqlalchemy import Table, MetaData
+
 from sqlalchemy.engine import RowProxy, ResultProxy
 from sqlalchemy.sql import Insert
 
 from db import engine
-from db.question import question_select
 
 
 question_choice_table = Table('question_choice', MetaData(bind=engine),
@@ -75,6 +75,7 @@ def question_choice_insert(*,
 class RepeatedChoiceError(Exception):
     """The same choice was supplied twice for a question."""
     pass
+
 
 class QuestionChoiceDoesNotExistError(Exception):
     """The specified question choice does not exist in the database."""

@@ -1,5 +1,6 @@
 """The dokomo JSON API"""
 from collections import Iterator
+
 from sqlalchemy.engine import ResultProxy, Connection
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import Insert, Update
@@ -31,6 +32,7 @@ def execute_with_exceptions(connection: Connection,
             if name in error:
                 raise exception
         raise
+
 
 def json_response(something: object) -> dict:
     """

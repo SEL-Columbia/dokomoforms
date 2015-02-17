@@ -19,7 +19,6 @@ class VisualizationHandler(BaseHandler):
             subs = api.submission.get_one(sub_id, email=self.current_user)
             yield [coord[0], coord[1], json_encode(subs['result'])]
 
-
     @tornado.web.authenticated
     @user_owns_question
     def get(self, question_id: str):

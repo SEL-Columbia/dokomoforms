@@ -293,7 +293,6 @@ def _create_survey(connection: Connection, data: dict) -> str:
     result = execute_with_exceptions(connection, executable, exc)
     survey_id = result.inserted_primary_key[0]
 
-
     # a map of old submission_id to new submission_id
     submission_map = None
     if is_update:

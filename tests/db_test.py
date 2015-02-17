@@ -221,8 +221,7 @@ class TestAnswerChoice(unittest.TestCase):
 class TestAuthUser(unittest.TestCase):
     def tearDown(self):
         auth_user_table.delete().where(
-            auth_user_table.c.email.in_(('a',
-            ))).execute()
+            auth_user_table.c.email.in_(('a',))).execute()
 
     def testGetAuthUser(self):
         result = auth_user_table.insert({'email': 'a'}).execute()
@@ -235,7 +234,7 @@ class TestAuthUser(unittest.TestCase):
         self.assertRaises(UserDoesNotExistError, get_auth_user, fake_id)
 
     def testGetAuthUserByEmail(self):
-        result = auth_user_table.insert({'email': 'a'}).execute()
+        auth_user_table.insert({'email': 'a'}).execute()
         user = get_auth_user_by_email('a')
         self.assertEqual(user.email, 'a')
 
@@ -258,7 +257,6 @@ class TestAuthUser(unittest.TestCase):
         user = get_auth_user(user_id)
         self.assertTrue(bcrypt_sha256.verify(token, user.token))
 
-
     def testVerifyAPIToken(self):
         result = auth_user_table.insert({'email': 'a'}).execute()
         user_id = result.inserted_primary_key[0]
@@ -276,7 +274,6 @@ class TestAuthUser(unittest.TestCase):
         auth_user_table.insert({'email': 'a'}).execute()
         self.assertFalse(
             verify_api_token(token=generate_api_token(), email='a'))
-
 
     def testTokenExpires(self):
         result = auth_user_table.insert({'email': 'a'}).execute()
@@ -525,23 +522,22 @@ class TestSubmission(unittest.TestCase):
             submission_exec = submission_insert(submitter='test_submitter',
                                                 survey_id=survey_id).execute()
             submission_id = submission_exec.inserted_primary_key[0]
-            answer_exec = answer_insert(answer=i, question_id=question_id,
-                                        submission_id=submission_id,
-                                        survey_id=survey_id,
-                                        type_constraint_name=tcn,
-                                        is_other=False,
-                                        sequence_number=seq,
-                                        allow_multiple=mul).execute()
+            answer_insert(answer=i, question_id=question_id,
+                          submission_id=submission_id,
+                          survey_id=survey_id,
+                          type_constraint_name=tcn,
+                          is_other=False,
+                          sequence_number=seq,
+                          allow_multiple=mul).execute()
         self.assertEqual(
             len(get_submissions_by_email(survey_id,
                                          email='test_email').fetchall()), 2)
         f_result = get_submissions_by_email(survey_id,
                                             email='test_email',
-                                            filters=[{
-                                                         'question_id':
-                                                             question_id,
-                                                         'answer_integer':
-                                                             1}]).fetchall()
+                                            filters=[
+                                                {'question_id': question_id,
+                                                 'answer_integer':
+                                                     1}]).fetchall()
         self.assertEqual(len(f_result), 1)
 
     def testSubmissionInsert(self):
@@ -565,7 +561,7 @@ class TestSubmission(unittest.TestCase):
         submission_exec = submission_insert(submitter='test_submitter',
                                             survey_id=survey_id).execute()
         submission_id = submission_exec.inserted_primary_key[0]
-        sub_exec = submission_table.select().where(
+        submission_table.select().where(
             submission_table.c.submission_id == submission_id).execute()
         self.assertEqual(get_number_of_submissions(survey_id), 1)
 
@@ -616,14 +612,14 @@ class TestSurvey(unittest.TestCase):
             survey_table.c.survey_title == 'test_title').execute().first()
         self.assertEqual(survey.survey_title,
                          survey_select(survey.survey_id,
-                                       auth_user_id=user.auth_user_id).survey_title)
+                                       auth_user_id=user.auth_user_id)
+                         .survey_title)
         self.assertEqual(survey.survey_title,
                          survey_select(survey.survey_id,
                                        email=user.email).survey_title)
         self.assertRaises(TypeError, survey_select, survey.survey_id,
                           auth_user_id=user.auth_user_id, email=user.email)
         self.assertRaises(TypeError, survey_select, survey.survey_id)
-
 
     def testSurveyInsert(self):
         auth_user_id = auth_user_table.select().where(
@@ -707,4 +703,3 @@ class TestUtils(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
