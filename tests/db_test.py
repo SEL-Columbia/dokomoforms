@@ -22,7 +22,7 @@ from db.auth_user import auth_user_table, get_auth_user, create_auth_user, \
 from db.question import get_questions_no_credentials, question_select, \
     question_table, \
     get_free_sequence_number, question_insert, get_questions, \
-    QuestionDoesNotExistError
+    QuestionDoesNotExistError, get_required
 from db.question_branch import get_branches, question_branch_insert, \
     question_branch_table
 from db.question_choice import get_choices, question_choice_select, \
@@ -370,7 +370,8 @@ class TestQuestion(unittest.TestCase):
         questions = get_questions(survey_id, email='test_email')
         self.assertGreater(questions.rowcount, 0)
 
-        questions = get_questions(survey_id, email='test_email')
+        auth_user_id = get_auth_user_by_email('test_email').auth_user_id
+        questions = get_questions(survey_id, auth_user_id=auth_user_id)
         self.assertGreater(questions.rowcount, 0)
 
         self.assertRaises(TypeError, get_questions, survey_id)
@@ -426,6 +427,14 @@ class TestQuestion(unittest.TestCase):
                             type_constraint_name='text',
                             survey_id=survey_id)
         self.assertEqual(str(exc.exception), 'logic must not be None')
+
+    def testGetRequired(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'what is life').execute().first(
+
+        ).survey_id
+        reqs = get_required(survey_id)
+        self.assertEqual(reqs.rowcount, 2)
 
 
 class TestQuestionBranch(unittest.TestCase):
