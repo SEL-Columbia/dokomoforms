@@ -370,6 +370,9 @@ class TestQuestion(unittest.TestCase):
         questions = get_questions(survey_id, email='test_email')
         self.assertGreater(questions.rowcount, 0)
 
+        questions = get_questions(survey_id, email='test_email')
+        self.assertGreater(questions.rowcount, 0)
+
         self.assertRaises(TypeError, get_questions, survey_id)
         self.assertRaises(TypeError, get_questions, survey_id, auth_user_id='',
                           email='')
