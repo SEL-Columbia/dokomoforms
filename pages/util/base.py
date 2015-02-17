@@ -101,7 +101,7 @@ def get_json_request_body(self: tornado.web.RequestHandler) -> dict:
             {'message': 'Problems parsing JSON'}))
 
 
-def validation_message(resource: str, field: str, code:str) -> str:
+def validation_message(resource: str, field: str, code: str) -> str:
     """
     Create a standard error message.
 

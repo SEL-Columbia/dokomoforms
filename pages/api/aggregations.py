@@ -26,7 +26,6 @@ class AggregationHandler(APIHandler):
                                    'no_submissions'))
         raise tornado.web.HTTPError(422, reason=reason)
 
-
     def get(self, question_id: str):
         response = [self._apply_aggregation(arg, question_id) for arg in
                     self.request.arguments]
