@@ -417,11 +417,13 @@ ul {
 .question__lat {
     width: 49.8%;
     float: left;
+    min-width: 70px !important;
 }
 
 .question__lon {
     width: 49.8%;
     float: right;
+    min-width: 70px !important;
 }
 
 .question__add {
