@@ -125,16 +125,16 @@ class SubmissionTest(DriverTest):
     def testSubmitSuccessfully(self):
         # Log in
         self.drv.get(base + '/debug/login/test_email')
-        self.drv.get(base + '/')
+        self.drv.get(base + '/view')
 
         # Click on the survey
-        self.drv.find_element_by_xpath('/html/body/div[3]/div/ul/li/a').click()
+        self.drv.find_element_by_xpath(
+            '/html/body/div[2]/div/ul/li/a[1]').click()
 
         # Click on the shareable link
         WebDriverWait(self.drv, 2).until(EC.presence_of_element_located(
             (By.XPATH, '/html/body/div[2]/div/a')))
-        self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/a').click()
+        self.drv.find_element_by_xpath('/html/body/div[2]/div/a').click()
 
         # Fill out the survey
         WebDriverWait(self.drv, 2).until(EC.presence_of_element_located(
@@ -192,7 +192,7 @@ class SubmissionTest(DriverTest):
             (By.XPATH, in_xpath + 'div[3]/input')))
         self.drv.find_element_by_xpath(in_xpath + 'div[3]/input').send_keys(
             'new_test_facility')
-        self.drv.find_element_by_xpath(in_xpath + 'div[4]/span[2]').click()
+        self.drv.find_element_by_xpath(in_xpath + 'div[3]/span[2]').click()
         next_button.click()
 
         self.drv.find_element_by_xpath(in_xpath + 'div[2]/input').send_keys(
@@ -203,11 +203,11 @@ class SubmissionTest(DriverTest):
             (By.XPATH, '/html/body/div[3]/input')))
 
         # Check the submissions
-        self.drv.get(base + '/')
+        self.drv.get(base + '/view')
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[3]/div/ul/li/a')))
+            (By.XPATH, '/html/body/div[2]/div/ul/li/a[1]')))
         self.drv.find_element_by_xpath(
-            '/html/body/div[3]/div/ul/li/a').click()
+            '/html/body/div[2]/div/ul/li/a[1]').click()
         submission_link = self.drv.find_element_by_xpath(
             '/html/body/div[2]/div/ul[2]/li/a')
         self.drv.execute_script(
