@@ -2,6 +2,7 @@ language: python
 python:
   - "3.3"
   - "3.4"
+cache: pip
 sudo: false
 env:
   global:
