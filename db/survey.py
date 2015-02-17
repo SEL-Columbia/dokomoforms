@@ -141,7 +141,7 @@ def _conflicting(title: str, surveys: ResultProxy) -> Iterator:
             yield int(number)
 
 
-def get_free_title(title: str) -> str:
+def get_free_title(title: str, auth_user_id: str) -> str:
     """
     Get a good version of the title to be inserted into the survey table. If
     the title as given already exists, this function will append a number.
@@ -151,13 +151,17 @@ def get_free_title(title: str) -> str:
     3. "survey(1)" in table  -> "survey(2)"
 
     :param title: the survey title
+    :param email: the user's UUID
     :return: a title that can be inserted safely
     """
     (does_exist, ), = engine.execute(
-        select((exists().where(survey_table.c.survey_title == title),)))
+        select((exists().where(and_(survey_table.c.survey_title == title,
+                                    survey_table.c.auth_user_id ==
+                                    auth_user_id)),)))
     if not does_exist:
         return title
-    cond = survey_table.c.survey_title.like(title + '%')
+    cond = and_(survey_table.c.survey_title.like(title + '%'),
+                survey_table.c.auth_user_id == auth_user_id)
     similar_surveys = survey_table.select().where(cond).execute().fetchall()
     conflicts = list(_conflicting(title, similar_surveys))
     free_number = max(conflicts) + 1 if len(conflicts) else 1

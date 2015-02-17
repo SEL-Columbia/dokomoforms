@@ -29,11 +29,12 @@ from db.question_choice import get_choices, question_choice_select, \
     question_choice_insert, question_choice_table, \
     QuestionChoiceDoesNotExistError
 from db.submission import submission_table, submission_insert, \
-    submission_select, get_submissions_by_email, get_number_of_submissions
+    submission_select, get_submissions_by_email, get_number_of_submissions, \
+    SubmissionDoesNotExistError
 from db.survey import survey_table, survey_insert, survey_select, \
     get_surveys_by_email, display, SurveyDoesNotExistError, \
     get_survey_id_from_prefix, SurveyPrefixDoesNotIdentifyASurveyError, \
-    SurveyPrefixTooShortError
+    SurveyPrefixTooShortError, get_email_address, get_free_title
 
 
 class TestAnswer(unittest.TestCase):
@@ -559,6 +560,10 @@ class TestSubmission(unittest.TestCase):
                           auth_user_id='', email='')
         self.assertRaises(TypeError, submission_select, submission_id)
 
+    def testSubmissionSelectDoesNotExist(self):
+        self.assertRaises(SubmissionDoesNotExistError, submission_select,
+                          str(uuid.uuid4()), email='test_email')
+
     def testGetSubmissionsByEmail(self):
         survey_id = survey_table.select().where(
             survey_table.c.survey_title == 'test_title').execute().first(
@@ -620,6 +625,36 @@ class TestSubmission(unittest.TestCase):
         submission = sub_exec.first()
         self.assertEqual(submission_id, submission.submission_id)
 
+    def testSubmissionInsertWithSubmissionTime(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        time = '2015-02-17 04:44:00'
+        submission_exec = submission_insert(submitter='test_submitter',
+                                            survey_id=survey_id,
+                                            submission_time=time).execute()
+        submission_id = submission_exec.inserted_primary_key[0]
+        sub_exec = submission_table.select().where(
+            submission_table.c.submission_id == submission_id).execute()
+        submission = sub_exec.first()
+        self.assertEqual(submission_id, submission.submission_id)
+
+    def testSubmissionInsertWithFieldUpdateTime(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        time = '2015-02-17 04:44:00'
+        submission_exec = submission_insert(submitter='test_submitter',
+                                            survey_id=survey_id,
+                                            field_update_time=time).execute()
+        submission_id = submission_exec.inserted_primary_key[0]
+        sub_exec = submission_table.select().where(
+            submission_table.c.submission_id == submission_id).execute()
+        submission = sub_exec.first()
+        self.assertEqual(submission_id, submission.submission_id)
+
     def testGetNumberOfSubmissions(self):
         survey_id = survey_table.select().where(
             survey_table.c.survey_title == 'test_title').execute().first(
@@ -636,7 +671,7 @@ class TestSubmission(unittest.TestCase):
 class TestSurvey(unittest.TestCase):
     def tearDown(self):
         survey_table.delete().where(
-            survey_table.c.survey_title == 'test insert').execute()
+            survey_table.c.survey_title.like('test insert%')).execute()
 
     def testGetSurveysForUserByEmail(self):
         user = auth_user_table.select().where(
@@ -688,6 +723,10 @@ class TestSurvey(unittest.TestCase):
                           auth_user_id=user.auth_user_id, email=user.email)
         self.assertRaises(TypeError, survey_select, survey.survey_id)
 
+    def testSurveySelectDoesNotExist(self):
+        self.assertRaises(SurveyDoesNotExistError, survey_select,
+                          str(uuid.uuid4()), email='test_email')
+
     def testSurveyInsert(self):
         auth_user_id = auth_user_table.select().where(
             auth_user_table.c.email == 'test_email').execute().first(
@@ -699,6 +738,31 @@ class TestSurvey(unittest.TestCase):
         condition = survey_table.c.survey_title == 'test insert'
         get_stmt = survey_table.select().where(condition).execute().first()
         self.assertEqual(get_stmt.survey_id, survey_id)
+
+    def testGetFreeTitle(self):
+        auth_user_id = auth_user_table.select().where(
+            auth_user_table.c.email == 'test_email').execute().first(
+
+        ).auth_user_id
+
+        self.assertEqual(get_free_title('test insert', auth_user_id),
+                         'test insert')
+
+        stmt = survey_insert(survey_title='test insert',
+                             auth_user_id=auth_user_id)
+        stmt.execute()
+        self.assertEqual(get_free_title('test insert', auth_user_id),
+                         'test insert(1)')
+        stmt2 = survey_insert(survey_title='test insert(1)',
+                              auth_user_id=auth_user_id)
+        stmt2.execute()
+        self.assertEqual(get_free_title('test insert', auth_user_id),
+                         'test insert(2)')
+
+    def testGetEmailAddress(self):
+        survey = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first()
+        self.assertEqual(get_email_address(survey.survey_id), 'test_email')
 
 
 class TestUtils(unittest.TestCase):
