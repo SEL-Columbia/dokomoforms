@@ -6,20 +6,27 @@
 =================================================*/
 
 html {
-    background: rgb(242,235,232);
     overflow: auto;
     height: 100%;
     width: 100%;
+    -webkit-tap-highlight-color: transparent;
+    background: rgba(255, 255, 255, 1.0);
 }
 
 body {
-    box-sizing: border-box;
     width: 100%;
     height: 100%;
+    overflow-x: hidden;
     margin: 0px auto;
     font-size: 18px;
     font-family: 'Droid Sans', 'Helvetica Neue', helvetica, sans-serif;
-    padding: 60px 0px 0px 0px;
+    overflow-y: hidden;
+}
+
+.wrapper {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
     overflow-x: hidden;
     -webkit-tap-highlight-color: transparent;
     background: rgba(255, 248, 243, 0.5);
@@ -43,6 +50,36 @@ ul {
     text-decoration: none;
     list-style-type: none;
     outline: none;
+}
+
+@media only screen and (min-width: 480px) {
+
+    .wrapper {
+        max-width: 1000px;
+        margin: auto;
+        overflow-x: hidden;
+        background: rgba(255, 248, 243, 0.5);
+    }
+
+    .nav {
+        max-width: 1000px;
+        margin: auto;
+    }
+
+    .content {
+        margin: 0px 25px !important;
+    }
+
+    html {
+        -webkit-tap-highlight-color: transparent;
+        background: rgba(255, 255, 255, 1.0);
+    }
+
+    body {
+        max-width: 1000px;
+        box-shadow: 0px 1px 1px 1px rgba(234, 208, 173, 0.75) !important;
+    }
+
 }
 
 /* SEL Logo
@@ -91,7 +128,6 @@ ul {
 /* Main Layout
 =================================================*/
 .nav {
-    position: fixed;
     box-sizing: border-box;
     top: 0;
     left: 0;
@@ -101,7 +137,7 @@ ul {
     padding: 5px;
     z-index: 10;
     height: 60px;
-    box-shadow: 4px 4px 2px #888888; 
+    box-shadow: 0px 2px 2px 0px #888888; 
 }
 
 .nav__title {
@@ -168,12 +204,16 @@ ul {
     padding: 15px;
     border-radius: 100px;
     cursor: pointer;
-    box-shadow: 4px 4px 2px #888888; 
+    box-shadow: 2px 2px 2px #888888; 
 }
 
-.page_nav__btn:hover,
+.page_nav__btn:hover {
+    background: rgba(250, 203, 27, 0.5);
+    box-shadow: 2px 2px 2px #888888; 
+}
+
 .page_nav__btn:active {
-    background: rgba(250, 203, 27, 0.75);
+    background: rgba(250, 203, 27, 0.5);
     box-shadow: 1px 1px 1px #888888; 
 }
 
@@ -195,20 +235,21 @@ ul {
     font-weight: 500;
     text-align: center;
     margin: 10px auto;
-    clear: both;
 
     width: 100%;
     border: 2px solid rgba(0,0,0,0.3);
     background: rgba(250, 203, 27, 0.25);
-    box-shadow: 4px 4px 2px #888888; 
+    box-shadow: 2px 2px 2px #888888; 
     min-width: 140px;
 }
 
 .btn:hover {
-    background: rgba(250, 203, 27, 0.75);
+    background: rgba(250, 203, 27, 0.5);
+    box-shadow: 2px 2px 2px #888888; 
 }
 
 .btn:active {
+    background: rgba(250, 203, 27, 0.5);
     box-shadow: 1px 1px 1px #888888; 
 }
 
@@ -217,13 +258,14 @@ ul {
 
 /* Content, Welcome, About are main page stylings */
 .content {
-    padding: 25px;
+    padding: 25px 25px 25px 25px;
     margin: 0px auto;
     overflow-y: auto;
+    margin-bottom: 75px;
 }
 
 .buffer {
-    padding: 25px 4px 100px 4px !important;
+    padding: 25px 4px 175px 4px !important;
 }
 
 .welcome {
@@ -238,7 +280,7 @@ ul {
 
 .welcome_box {
     margin: 0px auto;
-    height: 140px;
+    max-height: 140px;
     padding: 25px;
 }
 
@@ -275,10 +317,12 @@ ul {
     padding: 10px 15px;
     margin: 10px auto;
     border: 2px solid rgba(0,0,0,0.3);
-    border-radius: 5px;
+    /*border-radius: 5px;
+     */
     outline: none;
     box-sizing: border-box;
     min-width:200px;
+    height: 48px;
 }
 
 .text_input:focus {
@@ -295,11 +339,12 @@ ul {
     width: 100%;
     padding: 10px 15px;
     border: 2px solid rgba(0,0,0,0.3);
-    border-radius: 5px;
+    /*border-radius: 5px;
+     */
     outline: none;
     box-sizing: border-box;
     text-align: center;
-
+    height: 48px;
     min-width:200px;
 }
 
@@ -333,22 +378,24 @@ ul {
     font-weight: 500;
     text-align: center;
     margin: 10px auto;
-    clear: both;
 
     width: 100%;
     border: 2px solid rgba(0,0,0,0.3);
     background: rgba(250, 203, 27, 0.25);
-    box-shadow: 4px 4px 2px #888888; 
+    box-shadow: 2px 2px 2px #888888; 
     min-width: 140px;
 }
 
 .question__btn:hover {
-    background: rgba(250, 203, 27, 0.75);
+    box-shadow: 2px 2px 2px #888888; 
+    background: rgba(250, 203, 27, 0.5);
 }
 
 .question__btn:active {
     box-shadow: 1px 1px 1px #888888; 
+    background: rgba(250, 203, 27, 0.5);
 }
+
 .question__saving {
     display: block;
     width: 50px;
@@ -359,8 +406,8 @@ ul {
 
 .question__map {
     width: 100%;
-    height: 300px;
-    margin-top: 10px;
+    height: 200px;
+    margin: 10px auto;;
 }
 
 .question__location {
@@ -369,21 +416,13 @@ ul {
 }
 
 .question__lat {
-    float: left;
     width: 49.8%;
-    margin-right: 0.2%;
-    box-sizing: border-box;
-    margin-bottom: 10px;
-    margin-top: 10px;
+    float: left;
 }
 
 .question__lon {
-    float: right;
-    box-sizing: border-box;
     width: 49.8%;
-    margin-left: 0.2%;
-    margin-bottom: 10px;
-    margin-top: 10px;
+    float: right;
 }
 
 .question__add {
@@ -396,15 +435,16 @@ ul {
     border-radius: 100px;
     cursor: pointer;
     text-align: center;
-    box-shadow: 4px 4px 2px #888888; 
+    box-shadow: 2px 2px 2px #888888; 
 }
 
 .question__add:hover {
-    background: rgba(250, 203, 27, 0.75);
-    box-shadow: 4px 4px 2px #888888; 
+    background: rgba(250, 203, 27, 0.5);
+    box-shadow: 2px 2px 2px #888888; 
 }
 
 .question__add:active {
+    background: rgba(250, 203, 27, 0.5);
     box-shadow: 1px 1px 1px #888888; 
 }
 
@@ -428,9 +468,8 @@ ul {
     margin: 10px auto;
     padding: 10px 15px;
     border: 2px solid rgba(0,0,0,0.3);
-    border-radius: 5px;
     width: 100%;
-    height: auto;
+    height: 48px;
     overflow-y: auto;
     overflow-x: hidden;
     font-size: 20px;
@@ -438,6 +477,10 @@ ul {
 }
 
 .question__select:focus, .question__select:active {
+}
+
+.question__find__btn {
+    clear: both;
 }
 
 /* Move these */
