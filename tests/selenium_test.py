@@ -129,18 +129,19 @@ class SubmissionTest(DriverTest):
 
         # Click on the survey
         self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/ul/li/a[1]').click()
+            '/html/body/div[2]/div/div/ul/li/a[1]').click()
 
         # Click on the shareable link
         WebDriverWait(self.drv, 2).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[2]/div/a')))
-        self.drv.find_element_by_xpath('/html/body/div[2]/div/a').click()
+            (By.XPATH, '/html/body/div[2]/div/div/a')))
+        self.drv.find_element_by_xpath(
+            '/html/body/div[2]/div/div/a').click()
 
         # Fill out the survey
         WebDriverWait(self.drv, 2).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[3]/input')))
+            (By.XPATH, '/html/body/div[2]/div[2]/input')))
         next_button = self.drv.find_element_by_class_name('page_nav__next')
-        in_xpath = '/html/body/div[3]/'
+        in_xpath = '/html/body/div[2]/div[2]/'
 
         self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('1')
         next_button.click()
@@ -200,22 +201,22 @@ class SubmissionTest(DriverTest):
         self.drv.find_element_by_class_name('question__btn').click()
 
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[3]/input')))
+            (By.XPATH, in_xpath + 'input')))
 
         # Check the submissions
         self.drv.get(base + '/view')
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[2]/div/ul/li/a[1]')))
+            (By.XPATH, '/html/body/div[2]/div/div/ul/li/a[1]')))
         self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/ul/li/a[1]').click()
+            '/html/body/div[2]/div/div/ul/li/a[1]').click()
         submission_link = self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/ul[2]/li/a')
+            '/html/body/div[2]/div/div/ul[2]/li/a')
         self.drv.execute_script(
             'window.scrollTo(0, {});'.format(submission_link.location['y']))
         submission_link.click()
         # Check the submission
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[2]/div/ul/li')))
+            (By.XPATH, '/html/body/div[2]/div/div/ul/li')))
         self.assertIn('Answer: 1', self.drv.page_source)
         self.assertIn('Choice: 1. choice 1', self.drv.page_source)
         self.assertIn('Answer: 3.3', self.drv.page_source)
