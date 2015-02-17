@@ -280,10 +280,9 @@ ul {
 
 .welcome_box {
     margin: 0px auto;
-    max-height: 140px;
+    min-height: 140px;
     padding: 25px;
 }
-
 
 .welcome_title {
     text-align: center;
