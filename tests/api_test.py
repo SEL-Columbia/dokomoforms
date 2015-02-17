@@ -1325,7 +1325,6 @@ class TestAggregation(unittest.TestCase):
                 'test_email').auth_user_id),
             {'result': 2, 'query': 'mode'})
 
-
     def testModeDecimal(self):
         survey_id = survey_table.select().where(
             survey_table.c.survey_title == 'test_title').execute().first(
@@ -1427,7 +1426,7 @@ class TestAggregation(unittest.TestCase):
 
         self.assertEqual(
             api.aggregation.mode(q_id, email='test_email'),
-            {'result': 'choice 1', 'query': 'mode'})
+            {'result': get_choices(q_id).first().choice, 'query': 'mode'})
 
     def testTimeSeries(self):
         survey_id = survey_table.select().where(
