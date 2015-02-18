@@ -1414,7 +1414,7 @@ class TestAggregation(unittest.TestCase):
                               [{'question_id': q_id,
                                 'answer': choice.question_choice_id,
                                 'is_other': False}]}
-        api.submission.submit(input_data)
+            api.submission.submit(input_data)
         repeated_choice = get_choices(q_id).first().question_choice_id
         input_data = {'survey_id': survey_id,
                       'submitter': 'test_submitter',
