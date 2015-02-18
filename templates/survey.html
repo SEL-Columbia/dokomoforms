@@ -6,7 +6,7 @@
     
     <div class="message"></div>
     
-    <div class="content"></div>
+    <div class="content buffer"></div>
     
     <div class="page_nav">
         <div class="page_nav__center">
@@ -38,7 +38,7 @@
             <% }); %>
         <% } %>
 
-        <svg class="icon next_input" 
+        <svg class="icon question__add" 
             <% if (!question.allow_multiple) { %> 
                 style="display:none" 
             <% }%>
@@ -81,7 +81,7 @@
             <% }); %>
         <% } %>
         
-        <svg class="icon next_input" 
+        <svg class="icon question__add" 
             <% if (!question.allow_multiple) { %> 
                 style="display:none" 
             <% }%>
@@ -112,7 +112,7 @@
             <% }); %>
         <% } %>
         
-        <svg class="icon next_input" 
+        <svg class="icon question__add" 
             <% if (!question.allow_multiple) { %> 
                 style="display:none" 
             <% }%>
@@ -138,7 +138,7 @@
             <% }); %>
         <% } %>
 
-        <svg class="icon next_input" 
+        <svg class="icon question__add" 
             <% if (!question.allow_multiple) { %> 
                 style="display:none" 
             <% }%>
@@ -164,7 +164,7 @@
             <% }); %>
         <% } %>
         
-        <svg class="icon next_input" 
+        <svg class="icon question__add" 
             <% if (!question.allow_multiple) { %> 
                 style="display:none" 
             <% }%>
@@ -192,15 +192,19 @@
             </div>
         <% }); %>
         
-        <div class="question__btn">Find location</div>
+        <div class="question__btn question__find__btn">Find location</div>
     </script>
 
     <script id="widget_facility" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
         <div id="map" class="question__map"></div>
         <div>
+
+            <span class="question__btn question__find__btn">Find Me</span>
+            <span class="question__btn facility__btn">Add New Site</span>
+
             <input class="text_input facility__name" type="text"/>
-            <select class="facility__type">
+            <select class="question__select facility__type">
                 <option value="other">Other</option>
                 <option value="water">Water</option>
                 <option value="health">Health</option>
@@ -209,16 +213,11 @@
             </select>
         </div>
 
-        <div class="facility_input">
-            <span class="find__btn">Find Me</span>
-            <span class="facility__btn">Add New Site</span>
-        </div>
-
     </script>
 
     <script id="widget_multiple_choice" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
-        <select <%  if (question.allow_multiple) { %> 
+        <select class="question__select" <%  if (question.allow_multiple) { %> 
             multiple size=<%- question.choices.length + 1 + 1*question.logic['with_other']%> 
         <% } %>>
             <option value="null">Please choose an option</option>

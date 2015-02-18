@@ -11,21 +11,22 @@
 # Running with profiling:
 #
 # python -m cProfile -o /tmp/prof benchmark/benchmark.py --email={email}
-#   --token={token} --path={path} --post_file={file.json}
+# --token={token} --path={path} --post_file={file.json}
 # python -m pstats /tmp/prof
 # % sort time
 # % stats 20
 
-from webapp import pages, config
-
-from tornado.ioloop import IOLoop
-from tornado.options import define, options, parse_command_line
-from tornado.web import RequestHandler, Application
-from tornado.log import logging
-
 import random
 import signal
 import subprocess
+
+from tornado.ioloop import IOLoop
+from tornado.options import define, options, parse_command_line
+from tornado.web import Application
+from tornado.log import logging
+
+from webapp import pages, config
+
 
 # choose a random port to avoid colliding with TIME_WAIT sockets left over
 # from previous runs.
@@ -51,8 +52,10 @@ define('post_file', type=str)
 define('email', type=str)
 define('token', type=str)
 
+
 def handle_sigchld(sig, frame):
     IOLoop.instance().add_callback_from_signal(IOLoop.instance().stop)
+
 
 def main():
     logging.getLogger('tornado.access').propagate = False
@@ -61,6 +64,7 @@ def main():
         IOLoop.configure(options.ioloop)
     for _ in range(options.num_runs):
         run()
+
 
 def run():
     app = Application(pages, **config)
@@ -88,6 +92,7 @@ def run():
     IOLoop.instance().close()
     del IOLoop._instance
     assert not IOLoop.initialized()
+
 
 if __name__ == '__main__':
     main()

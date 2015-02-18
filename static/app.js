@@ -228,13 +228,23 @@ Survey.prototype.render = function(question) {
     var self = this;
     var content = $('.content');
     
+    var widgetHTML;
+    var widgetTemplate;
+    var compiledHTML;
+    
     var index = question ? question.sequence_number : this.questions.length + 1;
+
+    // Clear any interval events
+    if (Widgets.interval) {
+        window.clearInterval(Widgets.interval);
+        Widgets.interval = null;
+    }
 
     if (question) {
         // Show widget
-        var widgetHTML = $('#widget_' + question.type_constraint_name).html();
-        var widgetTemplate = _.template(widgetHTML);
-        var compiledHTML = widgetTemplate({question: question, start_loc: App.start_loc});
+        widgetHTML = $('#widget_' + question.type_constraint_name).html();
+        widgetTemplate = _.template(widgetHTML);
+        compiledHTML = widgetTemplate({question: question, start_loc: App.start_loc});
         self.current_question = question;
 
         // Render question
@@ -248,9 +258,9 @@ Survey.prototype.render = function(question) {
 
     } else {
         // Show submit page
-        var widgetHTML = $('#template_submit').html();
-        var widgetTemplate = _.template(widgetHTML);
-        var compiledHTML = widgetTemplate({name: App.submitter_name});
+        widgetHTML = $('#template_submit').html();
+        widgetTemplate = _.template(widgetHTML);
+        compiledHTML = widgetTemplate({name: App.submitter_name});
 
         content.empty()
             .data('index', index)
@@ -267,12 +277,6 @@ Survey.prototype.render = function(question) {
             });
     }
     
-    // Clear any interval events
-    if (Widgets.interval) {
-        window.clearInterval(Widgets.interval);
-        Widgets.interval = null;
-    }
-
     // Update nav
     $('.page_nav__progress')
         .text((index) + ' / ' + (this.questions.length + 1));
@@ -411,7 +415,7 @@ Widgets._input = function(question, page, type) {
 
     // Click the + for new input
     $(page)
-        .find('.next_input')
+        .find('.question__add')
         .click(function() { 
             self._addNewInput(page, $(page).find('input').last(), question);
         });
@@ -423,7 +427,7 @@ Widgets._addNewInput = function(page, input, question) {
         input
             .clone(true)
             .val(null)
-            .insertBefore(page.find(".next_input"))
+            .insertBefore(page.find(".question__add"))
             .focus();
     }
 };
@@ -837,7 +841,7 @@ Widgets.facility = function(question, page) {
 
     // Find me
     $(page)
-        .find('.find__btn')
+        .find('.question__find__btn')
         .click(function() {
             var sync = $('.nav__sync')[0];
             sync.classList.add('icon--spin');

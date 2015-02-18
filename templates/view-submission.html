@@ -1,44 +1,28 @@
 {% extends "base.html" %}
-
-
 {% block content %}
-    <div class="message"></div>
-
     <div class="content">
-        <h4>Welcome {{ current_user }}</h4>
-        <p> Submission {{ submission['submission_id'] }} by {{ submission['submitter'] }} at {{ submission['submission_time'] }} to survey {{ survey.survey_title }}: </p>
-        <ul>
-            {% for answer in submission['answers'] %}
-                <li>
-                    <strong>{{ answer['sequence_number'] }}. {{ answer['question_title'] }}</strong><br/>
-                    Type: {{ answer['type_constraint_name'] }}<br/>
-                    {% if answer['choice'] %}
-                        Choice: {{ answer['choice_number'] }}. {{ answer['choice'] }}<br/>
-                    {% else %}
-                        Answer: {{ answer['answer'] }}<br/>
-                    {% end %}
-                </li>
-            {% end %}
+        <div>
+            <h4>Welcome {{ current_user }}</h4>
+            <p> Submission {{ submission['submission_id'] }} by {{ submission['submitter'] }} at {{ submission['submission_time'] }} to survey {{ survey.survey_title }}: </p>
+            <ul>
+                {% for answer in submission['answers'] %}
+                    <li>
+                        <strong>{{ answer['sequence_number'] }}. {{ answer['question_title'] }}</strong><br/>
+                        Type: {{ answer['type_constraint_name'] }}<br/>
+                        {% if answer['choice'] %}
+                            Choice: {{ answer['choice_number'] }}. {{ answer['choice'] }}<br/>
+                        {% else %}
+                            Answer: {{ answer['answer'] }}<br/>
+                        {% end %}
+                    </li>
+                {% end %}
+            </ul>
         </div>
-        <div class="login">
-            <a href="#" class="dokomo-button persona-button" id="logout"><span>Logout</span></a>
-        </div>
+        <a class="btn" href="#" id="logout">Logout</a>
     </div>
 
-    <div class="page_nav">
-        <div class="sel_text_logo">
-        <span>
-            Dokomo Forms. Forms <em>Everywhere</em>
-        </span>
-        </div>
-    </div>
 
+    <script src="/static/lib.js"></script>
     <script src="https://login.persona.org/include.js"></script>
     <script src="/static/persona.js"></script>
-    <script src="/static/app.js"></script>
-    {% if message %}
-        <script>
-            App.message("{{ message }}");
-        </script>
-    {% end %}
 {% end %}

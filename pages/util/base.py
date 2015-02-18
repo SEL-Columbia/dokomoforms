@@ -1,4 +1,5 @@
 """Base handler classes and utility functions."""
+from collections.abc import Callable
 import functools
 from pprint import pformat
 
@@ -7,6 +8,8 @@ from tornado.escape import to_unicode, json_decode, json_encode
 import tornado.web
 
 from db.auth_user import verify_api_token
+from db.question import question_select
+from db.survey import get_email_address
 from utils.logger import setup_custom_logger
 
 
@@ -98,7 +101,7 @@ def get_json_request_body(self: tornado.web.RequestHandler) -> dict:
             {'message': 'Problems parsing JSON'}))
 
 
-def validation_message(resource: str, field: str, code:str) -> str:
+def validation_message(resource: str, field: str, code: str) -> str:
     """
     Create a standard error message.
 
@@ -132,5 +135,26 @@ def catch_bare_integrity_error(method, logger=setup_custom_logger('dokomo')):
             logger.error('\n' + pformat(e))
             reason = validation_message('submission', '', 'invalid')
             raise tornado.web.HTTPError(422, reason=reason)
+
+    return wrapper
+
+
+def user_owns_question(method: Callable) -> object:
+    """
+    Ensure that the user visiting a page relating to a question should be
+    able to see it.
+
+    :param method: an HTTP method
+    :return: the result of the method
+    :raise tornado.web.HTTPError: 404, if the user is not authorized
+    """
+
+    @functools.wraps(method)
+    def wrapper(self, question_id: str, *args):
+        question = question_select(question_id)
+        authorized_email = get_email_address(question.survey_id)
+        if self.current_user != authorized_email:
+            raise tornado.web.HTTPError(404)
+        return method(self, question_id, *args)
 
     return wrapper

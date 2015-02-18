@@ -1,4 +1,5 @@
 """Functions for aggregating and interacting with submission data."""
+from itertools import takewhile
 from numbers import Real
 from sqlalchemy import desc
 from collections import Iterator
@@ -9,14 +10,15 @@ from sqlalchemy.sql.functions import GenericFunction, min as sqlmin, \
     max as sqlmax, sum as sqlsum, count as sqlcount
 from sqlalchemy.sql import func, and_
 from tornado.escape import json_decode
-from api import json_response
 
-from db import engine, NoSuchColumnError, get_column
+from api import json_response
+from db import engine, get_column
 from db.answer import answer_table
 from db.answer_choice import answer_choice_table
 from db.auth_user import get_auth_user_by_email
 from db.question import question_select, QuestionDoesNotExistError, \
     get_questions
+from db.question_choice import question_choice_select
 from db.submission import submission_table
 from db.survey import survey_table
 
@@ -54,6 +56,9 @@ def _jsonify(answer: object, question_id: str) -> object:
         return answer.isoformat()
     elif type_constraint_name == 'decimal':
         return float(answer)
+    elif type_constraint_name == 'multiple_choice':
+        question_choice = question_choice_select(answer)
+        return question_choice.choice
     else:
         return answer
 
@@ -346,9 +351,10 @@ def time_series(question_id: str, auth_user_id: str=None,
     result = _return_sql(where_stmt.order_by('submission_time asc').execute(),
                          question.survey_id, auth_user_id, question_id)
     # transpose the result into two lists: time and value
-    genexp = ((r.submission_time.isoformat(),
-               _jsonify(r[column_name], question_id)) for r in result)
-    time_series_result = list(zip(*genexp))
+    tsr = [
+        [r.submission_time.isoformat(), _jsonify(r[column_name], question_id)]
+        for r in result]
+    time_series_result = tsr
     response = json_response(
         _return_sql(time_series_result, question.survey_id, user_id,
                     question_id))
@@ -403,28 +409,30 @@ def bar_graph(question_id: str,
 
     result = _return_sql(result, question.survey_id, user_id, question_id)
     # transpose the result into two lists: value and count
-    values = [(_jsonify(r[0], question_id), r[1]) for r in result]
-    bar_graph_result = list(zip(*values))
+    bar_graph_result = [[_jsonify(r[0], question_id), r[1]] for r in result]
     response = json_response(_return_sql(bar_graph_result, question.survey_id,
-                                         user_id, question_id)
-    )
+                                         user_id, question_id))
     response['query'] = 'bar_graph'
     return response
 
 
 def mode(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
     """
-    Get the mode of answers to the specified question, or the first one if
-    there are multiple equally-frequent results. You must provide either an
-    auth_user_id or e-mail address.
+    Get the mode of answers to the specified question in a list (since there
+    may be multiple). You must provide either an auth_user_id or e-mail
+    address.
 
     :param question_id: the UUID of the question
     :param auth_user_id: the UUID of the user
     :param email: the e-mail address of the user
     :return: a JSON dict containing the result
     """
-    bar_graph_top = bar_graph(question_id, auth_user_id, email, 1, True)
-    response = json_response(bar_graph_top['result'][0][0])
+    bar_graph_top = bar_graph(question_id, auth_user_id, email, None, True)
+    result = bar_graph_top['result']
+    most_frequent = result[0]
+    frequency = most_frequent[1]
+    the_mode = takewhile(lambda bar: bar[1] == frequency, result)
+    response = json_response(list(val_count[0] for val_count in the_mode))
     response['query'] = 'mode'
     return response
 

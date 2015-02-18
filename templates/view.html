@@ -1,9 +1,6 @@
 {% extends "base.html" %}
 
-
 {% block content %}
-    <div class="message"></div>
-
     <div class="content">
         <div>
             <h4>Welcome {{ current_user }}</h4>
@@ -19,27 +16,11 @@
                     </li>
                 {% end %}
             </ul>
-            </div>
-            <div class="login">
-                <a href="#" class="dokomo-button persona-button" id="logout"><span>Logout</span></a>
-            </div>
         </div>
+        <a class="btn" href="#" id="logout">Logout</a>
     </div>
 
-    <div class="page_nav">
-        <div class="sel_text_logo">
-        <span>
-            Dokomo Forms. Forms <em>Everywhere</em>
-        </span>
-        </div>
-    </div>
-
+    <script src="/static/lib.js"></script>
     <script src="https://login.persona.org/include.js"></script>
     <script src="/static/persona.js"></script>
-    <script src="/static/app.js"></script>
-    {% if message %}
-        <script>
-            App.message("{{ message }}");
-        </script>
-    {% end %}
 {% end %}

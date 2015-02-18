@@ -1,6 +1,5 @@
 """Submission views."""
 import tornado.web
-from db.question import get_questions_no_credentials
 
 from db.submission import get_submissions_by_email
 from db.survey import survey_select
