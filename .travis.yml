@@ -31,6 +31,7 @@ before_script:
 # command to run tests
 script: 
   - npm test
+  - sh frontend_cover.sh 
   - nosetests --with-coverage --cover-inclusive --cover-branches --cover-tests --cover-html --cover-erase --cover-package=api,db,webapp,pages.api,pages.util,pages.debug,pages.view
 
 after_success: coveralls
