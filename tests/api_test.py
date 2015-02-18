@@ -1307,7 +1307,7 @@ class TestAggregation(unittest.TestCase):
         question = q_where.execute().first()
         q_id = question.question_id
 
-        for i in (1, 2, 2, 2, 3, 3):
+        for i in (1, 2, 2, 2, 3, 3, 3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
                           'answers':
@@ -1316,14 +1316,12 @@ class TestAggregation(unittest.TestCase):
                                 'is_other': False}]}
             api.submission.submit(input_data)
 
-        self.assertEqual(
-            api.aggregation.mode(q_id, email='test_email'),
-            {'result': 2, 'query': 'mode'})
+        self.assertListEqual(
+            api.aggregation.mode(q_id, email='test_email')['result'], [2, 3])
 
-        self.assertEqual(
+        self.assertListEqual(
             api.aggregation.mode(q_id, auth_user_id=get_auth_user_by_email(
-                'test_email').auth_user_id),
-            {'result': 2, 'query': 'mode'})
+                'test_email').auth_user_id)['result'], [2, 3])
 
     def testModeDecimal(self):
         survey_id = survey_table.select().where(
@@ -1347,12 +1345,12 @@ class TestAggregation(unittest.TestCase):
 
         self.assertEqual(
             api.aggregation.mode(q_id, email='test_email'),
-            {'result': 2, 'query': 'mode'})
+            {'result': [2], 'query': 'mode'})
 
         self.assertEqual(
             api.aggregation.mode(q_id, auth_user_id=get_auth_user_by_email(
                 'test_email').auth_user_id),
-            {'result': 2, 'query': 'mode'})
+            {'result': [2], 'query': 'mode'})
 
     def testModeLocation(self):
         survey_id = survey_table.select().where(
@@ -1376,12 +1374,12 @@ class TestAggregation(unittest.TestCase):
 
         self.assertEqual(
             api.aggregation.mode(q_id, email='test_email'),
-            {'result': [2, 2], 'query': 'mode'})
+            {'result': [[2, 2]], 'query': 'mode'})
 
         self.assertEqual(
             api.aggregation.mode(q_id, auth_user_id=get_auth_user_by_email(
                 'test_email').auth_user_id),
-            {'result': [2, 2], 'query': 'mode'})
+            {'result': [[2, 2]], 'query': 'mode'})
 
     def testModeBadeType(self):
         q_where = question_table.select().where(
@@ -1426,7 +1424,7 @@ class TestAggregation(unittest.TestCase):
 
         self.assertEqual(
             api.aggregation.mode(q_id, email='test_email'),
-            {'result': get_choices(q_id).first().choice, 'query': 'mode'})
+            {'result': [get_choices(q_id).first().choice], 'query': 'mode'})
 
     def testTimeSeries(self):
         survey_id = survey_table.select().where(

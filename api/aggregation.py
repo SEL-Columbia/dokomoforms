@@ -1,4 +1,5 @@
 """Functions for aggregating and interacting with submission data."""
+from itertools import takewhile
 from numbers import Real
 from sqlalchemy import desc
 from collections import Iterator
@@ -417,17 +418,21 @@ def bar_graph(question_id: str,
 
 def mode(question_id: str, auth_user_id: str=None, email: str=None) -> dict:
     """
-    Get the mode of answers to the specified question, or the first one if
-    there are multiple equally-frequent results. You must provide either an
-    auth_user_id or e-mail address.
+    Get the mode of answers to the specified question in a list (since there
+    may be multiple). You must provide either an auth_user_id or e-mail
+    address.
 
     :param question_id: the UUID of the question
     :param auth_user_id: the UUID of the user
     :param email: the e-mail address of the user
     :return: a JSON dict containing the result
     """
-    bar_graph_top = bar_graph(question_id, auth_user_id, email, 1, True)
-    response = json_response(bar_graph_top['result'][0][0])
+    bar_graph_top = bar_graph(question_id, auth_user_id, email, None, True)
+    result = bar_graph_top['result']
+    most_frequent = result[0]
+    frequency = most_frequent[1]
+    the_mode = takewhile(lambda bar: bar[1] == frequency, result)
+    response = json_response(list(val_count[0] for val_count in the_mode))
     response['query'] = 'mode'
     return response
 
