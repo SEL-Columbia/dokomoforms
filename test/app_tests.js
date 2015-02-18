@@ -2,24 +2,24 @@ var jsdom = require('jsdom');
 var should = require('should');
 require('./emulate_dom.js')();
 
-var mah_code = require('../static/app.js');
-var App = mah_code.App;
-var Survey = mah_code.Survey;
-var Widgets = mah_code.Widgets;
-
 raw_survey = null;
 L = window.L;
 _ = window._;
 $ = window.$;
 alert = window.alert;
-setInterval = window.setInterval;
+setInterval = function(hey, you) {  } //console.log('pikachu'); }
 console = window.console;
 Image = window.Image;
 localStorage = {};
 
+var mah_code = require('../static/app.js');
+var App = mah_code.App;
+var Survey = mah_code.Survey;
+var Widgets = mah_code.Widgets;
 
 // Creating the app and loading up survey questions
 describe('App initalization Tests', function(done) {
+
     before(function(done) {
         done();
     });
@@ -71,7 +71,7 @@ describe('App initalization Tests', function(done) {
     it('should fill in submitter name', 
         function(done) {
             var name = 'viktor sucks';
-            window.localStorage['name'] = name;
+            localStorage['name'] = name;
             App.init(raw_survey);
             App.submitter_name.should.match(name);
             done();
@@ -85,7 +85,8 @@ describe('App initalization Tests', function(done) {
                 "6a4036b4-881b-4838-8cf6-4948cb113077":[[-73.965,40.80]],
                 "7cf402f6-841b-41fb-a585-1c4af49e570c":[null,null,"ewrwrwr"],
             }
-            window.localStorage["fc76fe08-9a6c-43cf-b30f-4b9b4ee97af2"] = 
+            
+            localStorage["fc76fe08-9a6c-43cf-b30f-4b9b4ee97af2"] = 
                JSON.stringify(answers); 
             
             App.init(raw_survey);

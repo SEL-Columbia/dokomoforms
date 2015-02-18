@@ -150,7 +150,6 @@ function Survey(id, questions, metadata) {
     $('.page_nav__prev, .page_nav__next').click(function() {
         var offset = this.classList.contains('page_nav__prev') ? PREV : NEXT;
         self.next(offset);
-        return false;
     });
     
     // Render first question
