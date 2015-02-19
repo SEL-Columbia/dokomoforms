@@ -87,7 +87,7 @@ def run():
     if options.quiet:
         # just stops the progress messages printed to stderr
         args.append('-q')
-    args.append('http://localhost:{}{}'.format(port, options.path))
+    args.append('http://127.0.0.1:{}{}'.format(port, options.path))
     subprocess.Popen(args)
     IOLoop.instance().start()
     IOLoop.instance().close()
