@@ -11,6 +11,12 @@ from logging import DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 #
 # General
+
+# DEBUG WARNING
+APP_DEBUG = False  # if True, anyone can sign in as any user
+# YOU HAVE BEEN WARNED
+# Also if you set TEST_USER, that account will be logged-in permanently
+
 LEVELS = {DEBUG, INFO, WARNING, ERROR, CRITICAL}
 LOG_LEVEL = ERROR  # for testing, use DEBUG in a local_settings.py file instead
 

@@ -73,7 +73,8 @@ def run():
     signal.signal(signal.SIGCHLD, handle_sigchld)
     args = ['ab']
     args.extend(['-n', str(options.n)])
-    args.extend(['-c', str(options.c)])
+    concurrency_level = min(options.c, options.n)
+    args.extend(['-c', str(concurrency_level)])
     if options.post_file is not None:
         args.extend(['-p', options.post_file])
         args.extend(['-T', 'application/json'])

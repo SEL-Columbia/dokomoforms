@@ -10,6 +10,7 @@ import tornado.web
 from db.auth_user import verify_api_token
 from db.question import question_select
 from db.survey import get_email_address
+import settings
 from utils.logger import setup_custom_logger
 
 
@@ -42,7 +43,10 @@ class BaseHandler(tornado.web.RequestHandler):
 
         :return: the current user's e-mail address
         """
-        user = self.get_secure_cookie('user')
+        try:
+            user = settings.TEST_USER
+        except AttributeError:
+            user = self.get_secure_cookie('user')
         if user:
             return to_unicode(user)
 
