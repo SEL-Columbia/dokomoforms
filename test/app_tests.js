@@ -1,7 +1,8 @@
 var jsdom = require('jsdom');
 var should = require('should');
-require('./emulate_dom.js')();
+global.window = require('./emulate_dom.js');
 
+document = window.document;
 raw_survey = null;
 L = window.L;
 _ = window._;
@@ -30,6 +31,8 @@ describe('App initalization Tests', function(done) {
     });
 
     afterEach(function(done) {
+        $(".page_nav__next").off('click');//XXX Find out why events are cached across windows
+        $(".page_nav__prev").off('click'); //(removing cached require not enough); 
         raw_survey = null;
         localStorage = {};
         done();

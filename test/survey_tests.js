@@ -1,7 +1,8 @@
 var jsdom = require('jsdom');
 var should = require('should');
-require('./emulate_dom.js')();
+global.window = require('./emulate_dom.js');
 
+document = window.document;
 L = window.L;
 _ = window._;
 $ = window.$;
@@ -29,6 +30,8 @@ describe('Survey unit and regression tests', function(done) {
     });
 
     afterEach(function(done) {
+        $(".page_nav__next").off('click'); //XXX Find out why events are cached
+        $(".page_nav__prev").off('click');
         localStorage = {};
         survey = null;
         done();
