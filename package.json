@@ -8,7 +8,8 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "node_modules/.bin/mocha"
+    "test": "node_modules/.bin/mocha js_tests",
+    "posttest": "./node_modules/.bin/istanbul cover --report lcovonly --dir ./reports  ./node_modules/.bin/_mocha -- -R spec js_tests/"
   },
   "repository": {
     "type": "git",
