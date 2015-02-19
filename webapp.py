@@ -80,11 +80,18 @@ class APITokenGenerator(BaseHandler):
         data = get_json_request_body(self)
         self.write(api.user.generate_token(data))
 
+use_xsrf_cookies = True
+# If TEST_USER is set, don't use XSRF tokens
+try:
+    _ = settings.TEST_USER
+    use_xsrf_cookies = False
+except AttributeError:
+    pass
 
 config = {
     'template_path': 'templates',
     'static_path': 'static',
-    'xsrf_cookies': True,
+    'xsrf_cookies': use_xsrf_cookies,
     'login_url': '/',
     'cookie_secret': settings.COOKIE_SECRET,
     'ui_methods': pages.util.ui,
