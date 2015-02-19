@@ -73,7 +73,7 @@ def run():
     signal.signal(signal.SIGCHLD, handle_sigchld)
     args = ['ab']
     args.extend(['-n', str(options.n)])
-    concurrency_level = options.c if options.c < options.n else options.n
+    concurrency_level = min(options.c, options.n)
     args.extend(['-c', str(concurrency_level)])
     if options.post_file is not None:
         args.extend(['-p', options.post_file])
