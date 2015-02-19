@@ -44,7 +44,7 @@ class BaseHandler(tornado.web.RequestHandler):
         :return: the current user's e-mail address
         """
         try:
-            user = settings._TEST_USER
+            user = settings.TEST_USER
         except AttributeError:
             user = self.get_secure_cookie('user')
         if user:
