@@ -1,5 +1,4 @@
 """Allow access to the answer table."""
-import json
 from sqlalchemy import Table, MetaData, text
 
 from sqlalchemy.engine import ResultProxy, RowProxy
@@ -8,7 +7,6 @@ from sqlalchemy.sql import func
 from tornado.escape import json_decode
 
 from db import engine
-from db.question import question_select
 
 
 answer_table = Table('answer', MetaData(bind=engine), autoload=True)
@@ -66,7 +64,6 @@ def answer_insert(*,
     :param survey_id: The UUID of the survey.
     :return: The Insert object. Execute this!
     """
-    question = question_select(question_id)
     tcn = type_constraint_name
 
     values = {'question_id': question_id,

@@ -84,8 +84,7 @@ def submit(data: dict) -> dict:
                            CannotAnswerMultipleTimesError(
                                answer['question_id'])),
                           ('answer_question_id_fkey',
-                           IncorrectQuestionIdError(answer['question_id']))
-            ]
+                           IncorrectQuestionIdError(answer['question_id']))]
             execute_with_exceptions(connection, executable, exceptions)
             unanswered_required.discard(answer['question_id'])
 

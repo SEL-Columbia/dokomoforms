@@ -7,13 +7,17 @@ import os
 import unittest
 
 from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+import api.survey
+import api.submission
 from db.auth_user import auth_user_table
 from db.submission import submission_table
+from db.survey import survey_table
 from settings import SAUCE_USERNAME, SAUCE_ACCESS_KEY, DEFAULT_BROWSER
 
 
@@ -121,22 +125,23 @@ class SubmissionTest(DriverTest):
     def testSubmitSuccessfully(self):
         # Log in
         self.drv.get(base + '/debug/login/test_email')
-        self.drv.get(base + '/')
+        self.drv.get(base + '/view')
 
         # Click on the survey
-        self.drv.find_element_by_xpath('/html/body/div[3]/div/ul/li/a').click()
+        self.drv.find_element_by_xpath(
+            '/html/body/div[2]/div/div/ul/li/a[1]').click()
 
         # Click on the shareable link
         WebDriverWait(self.drv, 2).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[2]/div/a')))
+            (By.XPATH, '/html/body/div[2]/div/div/a')))
         self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/a').click()
+            '/html/body/div[2]/div/div/a').click()
 
         # Fill out the survey
         WebDriverWait(self.drv, 2).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[3]/input')))
+            (By.XPATH, '/html/body/div[2]/div[2]/input')))
         next_button = self.drv.find_element_by_class_name('page_nav__next')
-        in_xpath = '/html/body/div[3]/'
+        in_xpath = '/html/body/div[2]/div[2]/'
 
         self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('1')
         next_button.click()
@@ -188,7 +193,7 @@ class SubmissionTest(DriverTest):
             (By.XPATH, in_xpath + 'div[3]/input')))
         self.drv.find_element_by_xpath(in_xpath + 'div[3]/input').send_keys(
             'new_test_facility')
-        self.drv.find_element_by_xpath(in_xpath + 'div[4]/span[2]').click()
+        self.drv.find_element_by_xpath(in_xpath + 'div[3]/span[2]').click()
         next_button.click()
 
         self.drv.find_element_by_xpath(in_xpath + 'div[2]/input').send_keys(
@@ -196,22 +201,22 @@ class SubmissionTest(DriverTest):
         self.drv.find_element_by_class_name('question__btn').click()
 
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[3]/input')))
+            (By.XPATH, in_xpath + 'input')))
 
         # Check the submissions
-        self.drv.get(base + '/')
+        self.drv.get(base + '/view')
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[3]/div/ul/li/a')))
+            (By.XPATH, '/html/body/div[2]/div/div/ul/li/a[1]')))
         self.drv.find_element_by_xpath(
-            '/html/body/div[3]/div/ul/li/a').click()
+            '/html/body/div[2]/div/div/ul/li/a[1]').click()
         submission_link = self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/ul[2]/li/a')
+            '/html/body/div[2]/div/div/ul[2]/li/a')
         self.drv.execute_script(
             'window.scrollTo(0, {});'.format(submission_link.location['y']))
         submission_link.click()
         # Check the submission
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[2]/div/ul/li')))
+            (By.XPATH, '/html/body/div[2]/div/div/ul/li')))
         self.assertIn('Answer: 1', self.drv.page_source)
         self.assertIn('Choice: 1. choice 1', self.drv.page_source)
         self.assertIn('Answer: 3.3', self.drv.page_source)
@@ -226,6 +231,257 @@ class SubmissionTest(DriverTest):
                       self.drv.page_source)
 
 
+class TypeTest(DriverTest):
+    def tearDown(self):
+        super().tearDown()
+        survey_table.delete().where(
+            survey_table.c.survey_title.like('test_question_type_%')).execute()
+
+    def _create_survey(self, type_constraint_name, choices=None):
+        tcn = type_constraint_name
+        survey_json = {'email': 'test_email',
+                       'survey_title': 'test_question_type_' + tcn,
+                       'questions': [{'question_title': tcn,
+                                      'type_constraint_name': tcn,
+                                      'allow_multiple': False,
+                                      'question_to_sequence_number': -1,
+                                      'logic': {'required': False,
+                                                'with_other': False},
+                                      'hint': None,
+                                      'choices': choices,
+                                      'branches': None}]}
+
+        survey = api.survey.create(survey_json)['result']
+        survey_id = survey['survey_id']
+        question_id = survey['questions'][0]['question_id']
+        return survey_id, question_id
+
+
+class IntegerTest(TypeTest):
+    @report_success_status
+    def testVisualization(self):
+        # Create the survey
+        survey_id, question_id = self._create_survey('integer')
+
+        # Get the survey
+        self.drv.get(base + '/survey/' + survey_id)
+
+        # Fill it out
+        self.drv.find_element_by_tag_name('input').send_keys('2')
+        self.drv.find_element_by_class_name('page_nav__next').click()
+        self.drv.find_element_by_class_name('question__btn').click()
+
+        # Log in
+        self.drv.get(base + '/debug/login/test_email')
+
+        # Get the visualization page
+        self.drv.get(base + '/visualize/' + question_id)
+
+        # Test it
+        line_graph = self.drv.find_element_by_id('line_graph')
+        self.assertTrue(line_graph.is_displayed())
+
+        bar_graph = self.drv.find_element_by_id('bar_graph')
+        self.assertTrue(bar_graph.is_displayed())
+
+
+class DecimalTest(TypeTest):
+    @report_success_status
+    def testVisualization(self):
+        # Create the survey
+        survey_id, question_id = self._create_survey('decimal')
+
+        # Get the survey
+        self.drv.get(base + '/survey/' + survey_id)
+
+        # Fill it out
+        self.drv.find_element_by_tag_name('input').send_keys('3.5')
+        self.drv.find_element_by_class_name('page_nav__next').click()
+        self.drv.find_element_by_class_name('question__btn').click()
+
+        # Log in
+        self.drv.get(base + '/debug/login/test_email')
+
+        # Get the visualization page
+        self.drv.get(base + '/visualize/' + question_id)
+
+        # Test it
+        line_graph = self.drv.find_element_by_id('line_graph')
+        self.assertTrue(line_graph.is_displayed())
+
+        bar_graph = self.drv.find_element_by_id('bar_graph')
+        self.assertTrue(bar_graph.is_displayed())
+
+
+class TextTest(TypeTest):
+    @report_success_status
+    def testVisualization(self):
+        # Create the survey
+        survey_id, question_id = self._create_survey('text')
+
+        # Get the survey
+        self.drv.get(base + '/survey/' + survey_id)
+
+        # Fill it out
+        self.drv.find_element_by_tag_name('input').send_keys('some text')
+        self.drv.find_element_by_class_name('page_nav__next').click()
+        self.drv.find_element_by_class_name('question__btn').click()
+
+        # Log in
+        self.drv.get(base + '/debug/login/test_email')
+
+        # Get the visualization page
+        self.drv.get(base + '/visualize/' + question_id)
+
+        # Test it
+        self.assertRaises(NoSuchElementException, self.drv.find_element_by_id,
+                          'line_graph')
+
+        bar_graph = self.drv.find_element_by_id('bar_graph')
+        self.assertTrue(bar_graph.is_displayed())
+
+
+class DateTest(TypeTest):
+    @report_success_status
+    def testVisualization(self):
+        # Create the survey
+        survey_id, question_id = self._create_survey('date')
+
+        # Get the survey
+        self.drv.get(base + '/survey/' + survey_id)
+
+        # Fill it out
+        if self.browser_name == 'android':
+            self.drv.find_element_by_tag_name('input').click()
+            self.drv.switch_to.window('NATIVE_APP')
+            self.drv.find_element_by_id('button1').click()
+            self.drv.switch_to.window('WEBVIEW_0')
+        else:
+            self.drv.find_element_by_tag_name('input').send_keys('4/4/44')
+        self.drv.find_element_by_class_name('page_nav__next').click()
+        self.drv.find_element_by_class_name('question__btn').click()
+
+        # Log in
+        self.drv.get(base + '/debug/login/test_email')
+
+        # Get the visualization page
+        self.drv.get(base + '/visualize/' + question_id)
+
+        # Test it
+        self.assertRaises(NoSuchElementException, self.drv.find_element_by_id,
+                          'line_graph')
+
+        bar_graph = self.drv.find_element_by_id('bar_graph')
+        self.assertTrue(bar_graph.is_displayed())
+
+
+class TimeTest(TypeTest):
+    @report_success_status
+    def testVisualization(self):
+        # Create the survey
+        survey_id, question_id = self._create_survey('time')
+
+        # Get the survey
+        self.drv.get(base + '/survey/' + survey_id)
+
+        # Fill it out
+        if self.browser_name == 'android':
+            self.drv.find_element_by_tag_name('input').click()
+            self.drv.switch_to.window('NATIVE_APP')
+            self.drv.find_element_by_id('button1').click()
+            self.drv.switch_to.window('WEBVIEW_0')
+        else:
+            self.drv.find_element_by_tag_name('input').send_keys('5:55')
+        self.drv.find_element_by_class_name('page_nav__next').click()
+        self.drv.find_element_by_class_name('question__btn').click()
+
+        # Log in
+        self.drv.get(base + '/debug/login/test_email')
+
+        # Get the visualization page
+        self.drv.get(base + '/visualize/' + question_id)
+
+        # Test it
+        self.assertRaises(NoSuchElementException,
+                          self.drv.find_element_by_id,
+                          'line_graph')
+
+        bar_graph = self.drv.find_element_by_id('bar_graph')
+        self.assertTrue(bar_graph.is_displayed())
+
+
+class MultipleChoiceTest(TypeTest):
+    @report_success_status
+    def testVisualization(self):
+        # Create the survey
+        survey_id, question_id = self._create_survey('multiple_choice',
+                                                     choices=['only choice'])
+
+        # Get the survey
+        self.drv.get(base + '/survey/' + survey_id)
+
+        # Fill it out
+        self.drv.find_elements_by_tag_name('option')[1].click()
+        self.drv.find_element_by_class_name('page_nav__next').click()
+        self.drv.find_element_by_class_name('question__btn').click()
+
+        # Log in
+        self.drv.get(base + '/debug/login/test_email')
+
+        # Get the visualization page
+        self.drv.get(base + '/visualize/' + question_id)
+
+        # Test it
+        self.assertRaises(NoSuchElementException,
+                          self.drv.find_element_by_id,
+                          'line_graph')
+
+        bar_graph = self.drv.find_element_by_id('bar_graph')
+        self.assertTrue(bar_graph.is_displayed())
+
+
+class LocationTest(TypeTest):
+    @report_success_status
+    def testVisualization(self):
+        # Create the survey
+        survey_id, question_id = self._create_survey('location')
+
+        # Get the survey
+        self.drv.get(base + '/survey/' + survey_id)
+
+        # Fill it out
+        self.drv.execute_script(
+            '''
+            window.navigator.geolocation.getCurrentPosition =
+              function (success) {
+                var position = {"coords": {"latitude":  "40",
+                                           "longitude": "-70"}
+                               };
+                success(position);
+              }
+            '''
+        )
+        self.drv.find_element_by_class_name('question__btn').click()
+        self.drv.find_element_by_class_name('page_nav__next').click()
+        self.drv.find_element_by_class_name('question__btn').click()
+
+        # Log in
+        self.drv.get(base + '/debug/login/test_email')
+
+        # Get the visualization page
+        self.drv.get(base + '/visualize/' + question_id)
+
+        # Test it
+        self.assertRaises(NoSuchElementException,
+                          self.drv.find_element_by_id,
+                          'line_graph')
+
+        bar_graph = self.drv.find_element_by_id('bar_graph')
+        self.assertTrue(bar_graph.is_displayed())
+
+        vis_map = self.drv.find_element_by_id('vis_map')
+        self.assertTrue(vis_map.is_displayed())
+
+
 if __name__ == '__main__':
     unittest.main()
-

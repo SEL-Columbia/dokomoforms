@@ -37,9 +37,9 @@ from db.type_constraint import TypeConstraintDoesNotExistError
 class TestSubmission(unittest.TestCase):
     def tearDown(self):
         submission_table.delete().execute()
-        survey_table.delete().where(
-            survey_table.c.survey_title.in_(('survey with required question',
-            ))).execute()
+        condition = survey_table.c.survey_title.in_(
+            ('survey with required question',))
+        survey_table.delete().where(condition).execute()
 
     def testSubmit(self):
         survey_id = survey_table.select().where(
@@ -241,7 +241,6 @@ class TestSubmission(unittest.TestCase):
                           api.submission.submit,
                           input_data)
 
-
     def testGet(self):
         survey_id = survey_table.select().where(
             survey_table.c.survey_title == 'test_title').execute().first(
@@ -311,9 +310,8 @@ class TestSubmission(unittest.TestCase):
 
 class TestSurvey(unittest.TestCase):
     def tearDown(self):
-        survey_table.delete().where(
-            survey_table.c.survey_title.in_(('updated',
-            ))).execute()
+        condition = survey_table.c.survey_title.in_(('updated',))
+        survey_table.delete().where(condition).execute()
         survey_table.delete().where(
             survey_table.c.survey_title.like('to_be_updated%')).execute()
         survey_table.delete().where(
@@ -364,8 +362,7 @@ class TestSurvey(unittest.TestCase):
                       'logic': {'required': False, 'with_other': False},
                       'choices': ['choice 1', 'choice 2'],
                       'branches': [{'choice_number': 0,
-                                    'to_question_number': 2}]
-                     },
+                                    'to_question_number': 2}]},
                      {'question_title': 'api_test question',
                       'type_constraint_name': 'text',
                       'sequence_number': None,
@@ -400,8 +397,7 @@ class TestSurvey(unittest.TestCase):
                       'logic': {},
                       'choices': ['choice 1', 'choice 2'],
                       'branches': [{'choice_number': 0,
-                                    'to_question_number': 1}]
-                     }]
+                                    'to_question_number': 1}]}]
         data = {'survey_title': 'api_test survey',
                 'questions': questions,
                 'email': 'test_email'}
@@ -417,8 +413,7 @@ class TestSurvey(unittest.TestCase):
                       'logic': {'required': False,
                                 'with_other': False},
                       'choices': None,
-                      'branches': None
-                     }]
+                      'branches': None}]
         data = {'survey_title': 'api_test survey',
                 'questions': questions,
                 'email': 'test_email'}
@@ -426,7 +421,6 @@ class TestSurvey(unittest.TestCase):
         self.assertRaises(api.survey.SurveyDoesNotEndError,
                           api.survey.create,
                           data)
-
 
     def testSurveyAlreadyExists(self):
         survey_id = survey_table.select().where(
@@ -472,8 +466,7 @@ class TestSurvey(unittest.TestCase):
                             'logic': {'required': False,
                                       'with_other': False},
                             'choices': None,
-                            'branches': None}
-        ]
+                            'branches': None}]
 
         api.survey.create({'survey_title': 'not in conflict(1)',
                            'questions': dummy_questions,
@@ -615,8 +608,7 @@ class TestSurvey(unittest.TestCase):
                                   'a',
                                   '1'],
                       'branches': [
-                          {'choice_number': 1, 'to_question_number': 3
-                          }]},
+                          {'choice_number': 1, 'to_question_number': 3}]},
                      {'question_id': inserted_qs[0].question_id,
                       'question_title': 'updated question title',
                       'allow_multiple': False,
@@ -822,8 +814,9 @@ class TestSurvey(unittest.TestCase):
                       'branches': []}]
         update_json['questions'] = questions
         new_survey = api.survey.update(update_json)['result']
-        new_submissions = get_submissions_by_email(new_survey['survey_id'],
-                                                   email='test_email').fetchall()
+        gsb = get_submissions_by_email
+        new_submissions = gsb(new_survey['survey_id'],
+                              email='test_email').fetchall()
         self.assertEqual(len(new_submissions), 1)
         choices = get_answer_choices(
             new_submissions[0].submission_id).fetchall()
@@ -932,7 +925,6 @@ class TestSurvey(unittest.TestCase):
         update_json['questions'] = questions
         self.assertRaises(RepeatedChoiceError, api.survey.update, update_json)
 
-
     def testDelete(self):
         data = {'survey_title': 'api_test survey',
                 'questions': [{'question_title': 'none',
@@ -943,8 +935,7 @@ class TestSurvey(unittest.TestCase):
                                'logic': {'required': False,
                                          'with_other': False},
                                'choices': None,
-                               'branches': None}
-                ],
+                               'branches': None}],
                 'email': 'test_email'}
         survey_id = api.survey.create(data)['result']['survey_id']
         api.survey.delete(survey_id)
@@ -972,8 +963,8 @@ class TestAPIToken(unittest.TestCase):
     def testGenerateToken(self):
         user_id = create_auth_user(
             email='api_test_email').execute().inserted_primary_key[0]
-        response = api.user.generate_token({'email':
-                                                'api_test_email'})['result']
+        token_res = api.user.generate_token({'email': 'api_test_email'})
+        response = token_res['result']
         user = get_auth_user(auth_user_id=user_id)
         self.assertTrue(bcrypt_sha256.verify(response['token'], user.token))
         self.assertEqual(response['expires_on'][:10],
@@ -990,7 +981,7 @@ class TestAPIToken(unittest.TestCase):
                          str(datetime.now().date()))
 
     def testTokenDurationTooLong(self):
-        user_id = create_auth_user(
+        create_auth_user(
             email='api_test_email').execute().inserted_primary_key[0]
         self.assertRaises(api.user.TokenDurationTooLong,
                           api.user.generate_token,
@@ -1204,7 +1195,6 @@ class TestAggregation(unittest.TestCase):
             api.aggregation.count(question_id, email='test_email'),
             {'result': 2, 'query': 'count'})
 
-
     def testCountMultipleChoice(self):
         survey_id = survey_table.select().where(
             survey_table.c.survey_title == 'test_title').execute().first(
@@ -1317,6 +1307,33 @@ class TestAggregation(unittest.TestCase):
         question = q_where.execute().first()
         q_id = question.question_id
 
+        for i in (1, 2, 2, 2, 3, 3, 3):
+            input_data = {'survey_id': survey_id,
+                          'submitter': 'test_submitter',
+                          'answers':
+                              [{'question_id': q_id,
+                                'answer': i,
+                                'is_other': False}]}
+            api.submission.submit(input_data)
+
+        self.assertListEqual(
+            api.aggregation.mode(q_id, email='test_email')['result'], [2, 3])
+
+        self.assertListEqual(
+            api.aggregation.mode(q_id, auth_user_id=get_auth_user_by_email(
+                'test_email').auth_user_id)['result'], [2, 3])
+
+    def testModeDecimal(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'decimal')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        q_id = question.question_id
+
         for i in (1, 2, 2, 2, 3, 3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
@@ -1328,57 +1345,86 @@ class TestAggregation(unittest.TestCase):
 
         self.assertEqual(
             api.aggregation.mode(q_id, email='test_email'),
-            {'result': 2, 'query': 'mode'})
+            {'result': [2], 'query': 'mode'})
 
         self.assertEqual(
             api.aggregation.mode(q_id, auth_user_id=get_auth_user_by_email(
                 'test_email').auth_user_id),
-            {'result': 2, 'query': 'mode'})
+            {'result': [2], 'query': 'mode'})
 
-    #
-    #
-    # def testModeBadeType(self):
-    # q_where = question_table.select().where(
-    # question_table.c.type_constraint_name == 'note')
-    # question = q_where.execute().first()
-    # question_id = question.question_id
-    # self.assertRaises(api.aggregation.InvalidTypeForAggregationError,
-    # api.aggregation.mode, question_id,
-    # email='test_email')
-    #
-    # def testModeMultipleChoice(self):
-    # survey_id = survey_table.select().where(
-    # survey_table.c.survey_title == 'test_title').execute().first(
-    # ).survey_id
-    # cond = and_(question_table.c.survey_id == survey_id,
-    # question_table.c.type_constraint_name ==
-    # 'multiple_choice')
-    # q_where = question_table.select().where(cond)
-    # question = q_where.execute().first()
-    #     q_id = question.question_id
-    #
-    #     self.assertEqual(
-    #         api.aggregation.count(q_id, email='test_email'),
-    #         {'result': 0, 'query': 'count'})
-    #
-    #     for choice in get_choices(q_id):
-    #         input_data = {'survey_id': survey_id,
-    #                       'answers':
-    #                           [{'question_id': q_id,
-    #                             'answer': choice.question_choice_id,
-    #                             'is_other': False}]}
-    #         api.submission.submit(input_data)
-    #     repeated_choice = get_choices(q_id).first().question_choice_id
-    #     input_data = {'survey_id': survey_id,
-    #                   'answers':
-    #                       [{'question_id': q_id,
-    #                         'answer': repeated_choice,
-    #                         'is_other': False}]}
-    #     api.submission.submit(input_data)
-    #
-    #     self.assertEqual(
-    #         api.aggregation.mode(q_id, email='test_email'),
-    #         {'result': repeated_choice, 'query': 'mode'})
+    def testModeLocation(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'location')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        q_id = question.question_id
+
+        for i in (1, 2, 2, 2, 3, 3):
+            input_data = {'survey_id': survey_id,
+                          'submitter': 'test_submitter',
+                          'answers':
+                              [{'question_id': q_id,
+                                'answer': [i, i],
+                                'is_other': False}]}
+            api.submission.submit(input_data)
+
+        self.assertEqual(
+            api.aggregation.mode(q_id, email='test_email'),
+            {'result': [[2, 2]], 'query': 'mode'})
+
+        self.assertEqual(
+            api.aggregation.mode(q_id, auth_user_id=get_auth_user_by_email(
+                'test_email').auth_user_id),
+            {'result': [[2, 2]], 'query': 'mode'})
+
+    def testModeBadeType(self):
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'note')
+        question = q_where.execute().first()
+        question_id = question.question_id
+        self.assertRaises(api.aggregation.InvalidTypeForAggregationError,
+                          api.aggregation.mode, question_id,
+                          email='test_email')
+
+    def testModeMultipleChoice(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+        ).survey_id
+        cond = and_(question_table.c.survey_id == survey_id,
+                    question_table.c.type_constraint_name ==
+                    'multiple_choice')
+        q_where = question_table.select().where(cond)
+        question = q_where.execute().first()
+        q_id = question.question_id
+
+        self.assertEqual(
+            api.aggregation.count(q_id, email='test_email'),
+            {'result': 0, 'query': 'count'})
+
+        for choice in get_choices(q_id):
+            input_data = {'survey_id': survey_id,
+                          'submitter': 'test_submitter',
+                          'answers':
+                              [{'question_id': q_id,
+                                'answer': choice.question_choice_id,
+                                'is_other': False}]}
+            api.submission.submit(input_data)
+        repeated_choice = get_choices(q_id).first().question_choice_id
+        input_data = {'survey_id': survey_id,
+                      'submitter': 'test_submitter',
+                      'answers':
+                          [{'question_id': q_id,
+                            'answer': repeated_choice,
+                            'is_other': False}]}
+        api.submission.submit(input_data)
+
+        self.assertEqual(
+            api.aggregation.mode(q_id, email='test_email'),
+            {'result': [get_choices(q_id).first().choice], 'query': 'mode'})
 
     def testTimeSeries(self):
         survey_id = survey_table.select().where(
@@ -1401,9 +1447,10 @@ class TestAggregation(unittest.TestCase):
             api.submission.submit(input_data)
 
         res = api.aggregation.time_series(q_id, email='test_email')['result']
-        self.assertEqual(len(res), 2)
-        self.assertEqual(len(res[0]), 3)
-        self.assertEqual(len(res[1]), 3)
+        self.assertEqual(len(res), 3)
+        self.assertEqual(res[0][1], 0)
+        self.assertEqual(res[1][1], 1)
+        self.assertEqual(res[2][1], 2)
 
     def testBarGraph(self):
         survey_id = survey_table.select().where(
@@ -1426,7 +1473,7 @@ class TestAggregation(unittest.TestCase):
             api.submission.submit(input_data)
 
         res = api.aggregation.bar_graph(q_id, email='test_email')
-        self.assertEqual(res, {'result': [(0, 1, 2), (2, 1, 1)],
+        self.assertEqual(res, {'result': [[0, 2], [1, 1], [2, 1]],
                                'query': 'bar_graph'})
 
     def testGetQuestionStats(self):
@@ -1441,4 +1488,3 @@ class TestAggregation(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

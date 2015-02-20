@@ -22,8 +22,7 @@ class DebugLoginHandler(BaseHandler):
             get_auth_user_by_email(email)
             self.set_secure_cookie('user', email, expires_days=None,
                                    # secure=True,
-                                   httponly=True,
-            )
+                                   httponly=True)
             self.write('You are now logged in as {}'.format(email))
         except UserDoesNotExistError:
             self.write('No such user')

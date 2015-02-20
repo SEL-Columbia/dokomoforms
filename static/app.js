@@ -123,7 +123,7 @@ function Survey(id, questions, metadata) {
 
     // Load answers from localStorage
     var answers = JSON.parse(localStorage[this.id] || '{}');
-    console.log(answers);
+    //console/g.log(answers);
     _.each(self.questions, function(question) {
         question.answer = answers[question.question_id] || [];
         // Set next pointers
@@ -144,13 +144,12 @@ function Survey(id, questions, metadata) {
     } while (curr_q);
     
 
-    console.log(questions);
+    //console/g.log(questions);
 
     // Page navigation
     $('.page_nav__prev, .page_nav__next').click(function() {
         var offset = this.classList.contains('page_nav__prev') ? PREV : NEXT;
         self.next(offset);
-        return false;
     });
     
     // Render first question
@@ -234,6 +233,12 @@ Survey.prototype.render = function(question) {
     
     var index = question ? question.sequence_number : this.questions.length + 1;
 
+    // Clear any interval events
+    if (Widgets.interval) {
+        window.clearInterval(Widgets.interval);
+        Widgets.interval = null;
+    }
+
     if (question) {
         // Show widget
         widgetHTML = $('#widget_' + question.type_constraint_name).html();
@@ -271,12 +276,6 @@ Survey.prototype.render = function(question) {
             });
     }
     
-    // Clear any interval events
-    if (Widgets.interval) {
-        window.clearInterval(Widgets.interval);
-        Widgets.interval = null;
-    }
-
     // Update nav
     $('.page_nav__progress')
         .text((index) + ' / ' + (this.questions.length + 1));
@@ -303,7 +302,7 @@ Survey.prototype.submit = function() {
     // Prepare POST request
     var survey_answers = [];
     self.questions.forEach(function(q) {
-        console.log('q', q);
+        //console/g.log('q', q);
         q.answer.forEach(function(ans, ind) {
             var is_other_val = q.is_other || false;
 
@@ -330,7 +329,7 @@ Survey.prototype.submit = function() {
     localStorage.setItem("unsynced_facilities", 
             JSON.stringify(App.unsynced_facilities));
 
-    console.log('revisit-ing', App.unsynced_facilities);
+    //console/g.log('revisit-ing', App.unsynced_facilities);
     _.map(App.unsynced_facilities, function(facility) {
         postNewFacility(facility); 
     });
@@ -341,7 +340,7 @@ Survey.prototype.submit = function() {
         answers: survey_answers
     };
 
-    console.log('submission:', data);
+    //console/g.log('submission:', data);
 
     sync.classList.add('icon--spin');
     save_btn.classList.add('icon--spin');
@@ -739,7 +738,7 @@ Widgets.facility = function(question, page) {
             // If selected uuid was from Revisit, paint it white
             if (selected === marker.uuid) {
                 selectFacility(marker);
-                console.log("match", selected);
+                //console/g.log("match", selected);
             }
 
             facilities_group.addLayer(marker);
@@ -748,7 +747,7 @@ Widgets.facility = function(question, page) {
         // UNSYNCED FACILITIES
         new_facilities_group.clearLayers(); // Clears synced facilities only
         _.map(App.unsynced_facilities, function(facility) {
-            console.log("new facility added", facility.name);
+            //console/g.log("new facility added", facility.name);
             var marker = drawNewPoint(facility.coordinates[1], 
                         facility.coordinates[0], 
                         facility.name, 
@@ -759,7 +758,7 @@ Widgets.facility = function(question, page) {
             if (selected === marker.uuid) {
                 selectFacility(marker);
                 $(page).find('.facility__btn').html("Remove New Site");
-                console.log("new match", selected);
+                //console/g.log("new match", selected);
             } 
 
             // They added a facility in this question before
@@ -841,7 +840,7 @@ Widgets.facility = function(question, page) {
 
     // Find me
     $(page)
-        .find('.find__btn')
+        .find('.question__find__btn')
         .click(function() {
             var sync = $('.nav__sync')[0];
             sync.classList.add('icon--spin');
@@ -922,7 +921,7 @@ Widgets.facility = function(question, page) {
     $(page)
         .find('.facility__name')
         .keyup(function() {
-            console.log(this.value);
+            //console/g.log(this.value);
             if (addedMarker && addedMarker === touchedMarker) {
                 // Update facility info
                 App.unsynced_facilities[addedMarker.uuid].name = this.value;
@@ -937,7 +936,7 @@ Widgets.facility = function(question, page) {
     $(page)
         .find('.facility__type')
         .change(function() {
-            console.log(this.value);
+            //console/g.log(this.value);
             if (addedMarker && addedMarker === touchedMarker) {
                 // Update facility info
                 App.unsynced_facilities[addedMarker.uuid].properties.sector = this.value;
@@ -955,7 +954,7 @@ function getNearbyFacilities(lat, lng, rad, lim, id, cb) {
     //var url = "http://staging.revisit.global/api/v0/facilities.json" 
     var url = "http://localhost:3000/api/v0/facilities.json"; // install revisit server from git
     // Revisit ajax req
-    console.log("MADE EXTERNAL REVISIT QUERY");
+    //console/g.log("MADE EXTERNAL REVISIT QUERY");
     $.get(url,{
             near: lat + "," + lng,
             rad: rad,
@@ -1002,7 +1001,7 @@ function postNewFacility(facility) {
             //TODO get these unsynced facilities to be drawn after map refresh?
             
             // Add it into facilities array so it can be selected later
-            console.log('storing it all');
+            //console/g.log('storing it all');
             localStorage.setItem("facilities", 
                     JSON.stringify(App.facilities));
 
@@ -1094,3 +1093,8 @@ function objectID() {
         return r.toString(16);
     });
 }
+
+exports.App = App;
+exports.Survey = Survey;
+exports.Widgets = Widgets; 
+//XXX Facility question functions will be borked

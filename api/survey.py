@@ -284,14 +284,13 @@ def _create_survey(connection: Connection, data: dict) -> str:
     data_q = data['questions']
 
     # First, create an entry in the survey table
-    safe_title = get_free_title(title)
+    safe_title = get_free_title(title, user_id)
     survey_values = {'auth_user_id': user_id, 'survey_title': safe_title}
     executable = survey_insert(**survey_values)
     exc = [('survey_title_survey_owner_key',
             SurveyAlreadyExistsError(safe_title))]
     result = execute_with_exceptions(connection, executable, exc)
     survey_id = result.inserted_primary_key[0]
-
 
     # a map of old submission_id to new submission_id
     submission_map = None

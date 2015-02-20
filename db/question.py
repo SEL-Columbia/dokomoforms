@@ -1,5 +1,6 @@
 """Allow access to the question table."""
 from sqlalchemy import Table, MetaData, cast, Text, Boolean
+
 from sqlalchemy.engine import RowProxy, ResultProxy
 from sqlalchemy.sql.dml import Insert
 from sqlalchemy.sql.elements import and_
@@ -9,7 +10,7 @@ from sqlalchemy.sql.functions import max as sqlmax
 
 from db import engine
 from db.auth_user import auth_user_table
-from db.survey import survey_table, SurveyDoesNotExistError
+from db.survey import survey_table
 
 
 question_table = Table('question', MetaData(bind=engine), autoload=True)
