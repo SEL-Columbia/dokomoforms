@@ -5,6 +5,7 @@ This tornado server creates the client app by serving html/css/js and
 it also functions as the wsgi container for accepting survey form post
 requests back from the client app.
 """
+from sqlalchemy import create_engine
 
 from tornado.escape import json_encode
 import tornado.web
@@ -14,6 +15,7 @@ import api.aggregation
 import api.survey
 import api.submission
 import api.user
+from db import engine
 from pages.api.aggregations import AggregationHandler
 from pages.auth import LogoutHandler, LoginHandler
 from pages.api.submissions import SubmissionsAPIHandler, \
@@ -80,6 +82,7 @@ class APITokenGenerator(BaseHandler):
         data = get_json_request_body(self)
         self.write(api.user.generate_token(data))
 
+
 use_xsrf_cookies = True
 # If TEST_USER is set, don't use XSRF tokens
 try:
@@ -98,17 +101,18 @@ config = {
     'debug': settings.APP_DEBUG
 }
 
-UUID_REGEX = '[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[' \
-             'a-f0-9]{12}'
+UUID_REGEX = '[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][' \
+             'a-f0-9]{3}-?[a-f0-9]{12}'
 
-pages = [
+handlers = [
     # Dokomo Forms
     (r'/', Index),
 
     # View surveys and submissions
     (r'/view/?', ViewHandler),
     (r'/view/({})/?'.format(UUID_REGEX), ViewSubmissionsHandler),
-    (r'/view/submission/({})/?'.format(UUID_REGEX), ViewSubmissionHandler),
+    (r'/view/submission/({})/?'.format(UUID_REGEX),
+     ViewSubmissionHandler),
 
     (r'/visualize/({})/?'.format(UUID_REGEX), VisualizationHandler),
 
@@ -121,12 +125,14 @@ pages = [
     # API tokens
     (r'/user/generate-api-token/?', APITokenGenerator),
 
-    # Testing
+    # JSON API
     (r'/api/aggregate/({})/?'.format(UUID_REGEX), AggregationHandler),
     (r'/api/surveys/?', SurveysAPIHandler),
     (r'/api/surveys/create/?', CreateSurveyAPIHandler),
-    (r'/api/surveys/({})/?'.format(UUID_REGEX), SingleSurveyAPIHandler),
-    (r'/api/surveys/({})/submit/?'.format(UUID_REGEX), SubmitAPIHandler),
+    (r'/api/surveys/({})/?'.format(UUID_REGEX),
+     SingleSurveyAPIHandler),
+    (r'/api/surveys/({})/submit/?'.format(UUID_REGEX),
+     SubmitAPIHandler),
     (r'/api/surveys/({})/submissions/?'.format(UUID_REGEX),
      SubmissionsAPIHandler),
     (r'/api/submissions/({})/?'.format(UUID_REGEX),
@@ -134,11 +140,18 @@ pages = [
 ]
 
 if config.get('debug', False):
-    pages += [(r'/debug/create/(.+)/?', DebugUserCreationHandler),
-              (r'/debug/login/(.+)/?', DebugLoginHandler),
-              (r'/debug/logout/?', DebugLogoutHandler), ]
+    handlers += [(r'/debug/create/(.+)/?', DebugUserCreationHandler),
+                 (r'/debug/login/(.+)/?', DebugLoginHandler),
+                 (r'/debug/logout/?', DebugLogoutHandler), ]
 
-app = tornado.web.Application(pages, **config)
+class Application(tornado.web.Application):
+    def __init__(self):
+        tornado.web.Application.__init__(self, pages, **config)
+
+        self.connection = engine.connect()
+
+
+app = Application()
 
 if __name__ == '__main__':
     app.listen(settings.WEBAPP_PORT, '0.0.0.0')

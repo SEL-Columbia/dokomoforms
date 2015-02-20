@@ -1,6 +1,6 @@
 """Allow access to the answer_choice table."""
 from sqlalchemy import Table, MetaData
-from sqlalchemy.engine import ResultProxy
+from sqlalchemy.engine import ResultProxy, Connection
 from sqlalchemy.sql.dml import Insert
 
 from db import engine
@@ -45,29 +45,33 @@ def answer_choice_insert(*,
     return answer_choice_table.insert().values(values)
 
 
-def get_answer_choices(submission_id: str) -> ResultProxy:
+def get_answer_choices(connection: Connection,
+                       submission_id: str) -> ResultProxy:
     """
     Get all the records from the answer_choice table identified by
     submission_id ordered by sequence number.
 
+    :param connection: a SQLAlchemy Connection
     :param submission_id: foreign key
     :return: an iterable of the answer choices (RowProxy)
     """
     select_stmt = answer_choice_table.select()
     where_stmt = select_stmt.where(
         answer_choice_table.c.submission_id == submission_id)
-    return where_stmt.order_by('sequence_number asc').execute()
+    return connection.execute(where_stmt.order_by('sequence_number asc'))
 
 
-def get_answer_choices_for_choice_id(question_choice_id: str) -> ResultProxy:
+def get_answer_choices_for_choice_id(connection: Connection,
+                                     question_choice_id: str) -> ResultProxy:
     """
     Get all the records from the answer_choice table identified by
     question_choice_id.
 
+    :param connection: a SQLAlchemy Connection
     :param question_choice_id: foreign key
     :return: an iterable of the answer choices (RowProxy)
     """
     select_stmt = answer_choice_table.select()
     where_stmt = select_stmt.where(
         answer_choice_table.c.question_choice_id == question_choice_id)
-    return where_stmt.execute()
+    return connection.execute(where_stmt)

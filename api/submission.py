@@ -2,7 +2,7 @@
 from heapq import merge
 from collections import Iterator
 
-from sqlalchemy.engine import ResultProxy, RowProxy
+from sqlalchemy.engine import ResultProxy, RowProxy, Connection
 from sqlalchemy.sql import Insert
 
 from api import execute_with_exceptions, json_response
@@ -23,11 +23,15 @@ class RequiredQuestionSkippedError(Exception):
     pass
 
 
-def _insert_answer(answer: dict, submission_id: str, survey_id: str) -> Insert:
+def _insert_answer(connection: Connection,
+                   answer: dict,
+                   submission_id: str,
+                   survey_id: str) -> Insert:
     """
     Insert an answer from a submission into either the answer or
     answer_choice table. Don't forget to use a transaction!
 
+    :param connection: a SQLAlchemy Connection
     :param answer: a dictionary of the answer values
     :param submission_id: the UUID of the submission
     :param survey_id: the UUID of the survey
@@ -37,7 +41,7 @@ def _insert_answer(answer: dict, submission_id: str, survey_id: str) -> Insert:
     value_dict = answer.copy()
     value_dict['submission_id'] = submission_id
     value_dict['survey_id'] = survey_id
-    question = question_select(value_dict['question_id'])
+    question = question_select(connection, value_dict['question_id'])
     value_dict['type_constraint_name'] = question.type_constraint_name
     value_dict['sequence_number'] = question.sequence_number
     value_dict['allow_multiple'] = question.allow_multiple
@@ -52,10 +56,11 @@ def _insert_answer(answer: dict, submission_id: str, survey_id: str) -> Insert:
     return insert(**value_dict)
 
 
-def submit(data: dict) -> dict:
+def submit(connection: Connection, data: dict) -> dict:
     """
     Create a submission with answers.
 
+    :param connection: a SQLAlchemy connection
     :param data: representation of the submission (from json.loads)
     :return: the UUID of the submission in the database
     :raise RequiredQuestionSkipped: if there is no answer for a required
@@ -65,9 +70,10 @@ def submit(data: dict) -> dict:
     submitter = data['submitter']
     all_answers = data['answers']
     answers = filter(lambda answer: answer['answer'] is not None, all_answers)
-    unanswered_required = {q.question_id for q in get_required(survey_id)}
+    unanswered_required = {q.question_id for q in
+                           get_required(connection, survey_id)}
 
-    with engine.begin() as connection:
+    with connection.begin():
         # create the submission and store its ID
         submission_values = {'submitter': submitter,
                              'survey_id': survey_id}
@@ -79,7 +85,8 @@ def submit(data: dict) -> dict:
 
         # insert each answer
         for answer in answers:
-            executable = _insert_answer(answer, submission_id, survey_id)
+            executable = _insert_answer(connection, answer, submission_id,
+                                        survey_id)
             exceptions = [('only_one_answer_allowed',
                            CannotAnswerMultipleTimesError(
                                answer['question_id'])),
@@ -92,7 +99,8 @@ def submit(data: dict) -> dict:
         if unanswered_required:
             raise RequiredQuestionSkippedError(unanswered_required)
 
-    return get_one(submission_id, email=get_email_address(survey_id))
+    return get_one(connection, submission_id,
+                   email=get_email_address(connection, survey_id))
 
 
 def _get_comparable(answers: ResultProxy) -> Iterator:
@@ -107,17 +115,20 @@ def _get_comparable(answers: ResultProxy) -> Iterator:
     return ((answer.sequence_number, answer) for answer in answers)
 
 
-def _jsonify(answer: RowProxy, type_constraint_name: str) -> object:
+def _jsonify(connection: Connection,
+             answer: RowProxy,
+             type_constraint_name: str) -> object:
     """
     This function returns a "nice" representation of an answer which can be
     serialized as JSON.
 
+    :param connection: a SQLAlchemy Connection
     :param answer: a record from the answer table
     :param type_constraint_name: the type constraint name
     :return: the nice representation
     """
     if type_constraint_name == 'location':
-        return get_geo_json(answer)['coordinates']
+        return get_geo_json(connection, answer)['coordinates']
     elif type_constraint_name in {'date', 'time'}:
         return answer['answer_' + type_constraint_name].isoformat()
     elif type_constraint_name == 'decimal':
@@ -126,17 +137,18 @@ def _jsonify(answer: RowProxy, type_constraint_name: str) -> object:
         return answer['answer_' + type_constraint_name]
 
 
-def _get_fields(answer: RowProxy) -> dict:
+def _get_fields(connection: Connection, answer: RowProxy) -> dict:
     """
     Extract the relevant fields for an answer (from the answer or
     answer_choice table).
 
+    :param connection: a SQLAlchemy connection
     :param answer: A record in the answer or answer_choice table
     :return: A dictionary of the fields.
     """
     tcn = answer.type_constraint_name
     question_id = answer.question_id
-    question = question_select(question_id)
+    question = question_select(connection, question_id)
     result_dict = {'question_id': question_id,
                    'question_title': question.question_title,
                    'sequence_number': question.sequence_number,
@@ -147,48 +159,51 @@ def _get_fields(answer: RowProxy) -> dict:
         result_dict['answer'] = choice_id
         result_dict['answer_id'] = answer.answer_choice_id
 
-        choice = question_choice_select(choice_id)
+        choice = question_choice_select(connection, choice_id)
         result_dict['choice'] = choice.choice
         result_dict['choice_number'] = choice.choice_number
         result_dict['is_other'] = False
     except AttributeError:
         # The answer is not a choice
-        question = question_select(answer.question_id)
+        question = question_select(connection, answer.question_id)
         if ((answer.answer_text is None) or (tcn == 'text')):
             result_dict['is_other'] = False
         else:
             tcn = 'text'
             result_dict['is_other'] = True
-        result_dict['answer'] = _jsonify(answer, tcn)
+        result_dict['answer'] = _jsonify(connection, answer, tcn)
         result_dict['answer_id'] = answer.answer_id
         result_dict['choice'] = None
         result_dict['choice_number'] = None
     return result_dict
 
 
-def get_one(submission_id: str, email: str) -> dict:
+def get_one(connection: Connection, submission_id: str, email: str) -> dict:
     """
     Create a JSON representation of a submission.
 
+    :param connection: a SQLAlchemy Connection
     :param submission_id: the UUID of the submission
     :param email: the user's e-mail address
     :return: a JSON dict
     """
-    submission = submission_select(submission_id, email=email)
-    answers = _get_comparable(get_answers(submission_id))
-    choices = _get_comparable(get_answer_choices(submission_id))
+    submission = submission_select(connection, submission_id, email=email)
+    answers = _get_comparable(get_answers(connection, submission_id))
+    choices = _get_comparable(get_answer_choices(connection, submission_id))
     # The merge is necessary to get the answers in sequence number order.
     result = merge(answers, choices)
+    c = connection
     sub_dict = {'submission_id': submission_id,
                 'survey_id': submission.survey_survey_id,
                 'submitter': submission.submission_submitter,
                 'submission_time':
                     submission.submission_submission_time.isoformat(),
-                'answers': [_get_fields(answer) for num, answer in result]}
+                'answers': [_get_fields(c, answer) for num, answer in result]}
     return json_response(sub_dict)
 
 
-def get_all(survey_id: str,
+def get_all(connection: Connection,
+            survey_id: str,
             email: str,
             submitters: Iterator=None,
             filters: list=None) -> dict:
@@ -196,28 +211,32 @@ def get_all(survey_id: str,
     Create a JSON representation of the submissions to a given survey and
     email.
 
+    :param connection: a SQLAlchemy Connection
     :param survey_id: the UUID of the survey
     :param email: the user's e-mail address
     :param submitters: if supplied, filters results by all given submitters
     :param filters: if supplied, filters results by answers
     :return: a JSON dict
     """
-    submissions = get_submissions_by_email(survey_id,
+    submissions = get_submissions_by_email(connection,
+                                           survey_id,
                                            email=email,
                                            submitters=submitters,
                                            filters=filters)
     # TODO: Check if this is a performance problem
-    result = [get_one(sub.submission_id, email=email) for sub in submissions]
+    result = [get_one(connection, sub.submission_id, email=email) for sub in
+              submissions]
     return json_response(result)
 
 
-def delete(submission_id: str):
+def delete(connection: Connection, submission_id: str):
     """
     Delete the submission specified by the given submission_id
 
+    :param connection: a SQLAlchemy Connection
     :param submission_id: the UUID of the submission
     """
-    with engine.connect() as connection:
+    with connection.begin():
         connection.execute(
             delete_record(submission_table, 'submission_id', submission_id))
     return json_response('Submission deleted')

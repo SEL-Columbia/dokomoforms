@@ -17,6 +17,11 @@ from utils.logger import setup_custom_logger
 class BaseHandler(tornado.web.RequestHandler):
     """Common handler functions here (e.g. user auth, template helpers)"""
 
+    @property
+    def db(self):
+        """A connection to the PostgreSQL database."""
+        return self.application.db
+
     def prepare(self):
         """
         This method runs before the HTTP-handling methods. It sets the XSRF

@@ -6,7 +6,7 @@ from time import localtime
 import uuid
 
 from sqlalchemy.sql.dml import Insert, Update
-from sqlalchemy.engine import RowProxy
+from sqlalchemy.engine import RowProxy, Connection
 from passlib.hash import bcrypt_sha256
 
 from db import engine, update_record
@@ -15,17 +15,18 @@ from db import engine, update_record
 auth_user_table = Table('auth_user', MetaData(bind=engine), autoload=True)
 
 
-def get_auth_user(auth_user_id: str) -> RowProxy:
+def get_auth_user(connection: Connection, auth_user_id: str) -> RowProxy:
     """
     Get a record from the auth_user table identified by auth_user_id.
 
+    :param connection: a SQLAlchemy Connection
     :param auth_user_id: primary key
     :return: the record
     """
     select_stmt = auth_user_table.select()
     where_stmt = select_stmt.where(
         auth_user_table.c.auth_user_id == auth_user_id)
-    auth_user = where_stmt.execute().first()
+    auth_user = connection.execute(where_stmt).first()
 
     if auth_user is None:
         raise UserDoesNotExistError(auth_user_id)
@@ -33,17 +34,18 @@ def get_auth_user(auth_user_id: str) -> RowProxy:
     return auth_user
 
 
-def get_auth_user_by_email(email: str) -> RowProxy:
+def get_auth_user_by_email(connection: Connection, email: str) -> RowProxy:
     """
     Get a record from the auth_user table identified by e-mail.
 
+    :param connection: a SQLAlchemy Connection
     :param email: the user's e-mail address
     :return: the record
     """
     select_stmt = auth_user_table.select()
     where_stmt = select_stmt.where(
         auth_user_table.c.email == email)
-    auth_user = where_stmt.execute().first()
+    auth_user = connection.execute(where_stmt).first()
 
     if auth_user is None:
         raise UserDoesNotExistError(email)
@@ -67,19 +69,23 @@ def generate_api_token() -> str:
 
     :return: The token as an alphanumeric string.
     """
-    return ''.join(ch for ch in str(uuid.uuid4()) if ch.isalnum())
+    return ''.join(char for char in str(uuid.uuid4()) if char.isalnum())
 
 
-def verify_api_token(*, token: str, email: str) -> bool:
+def verify_api_token(connection: Connection,
+                     *,
+                     token: str,
+                     email: str) -> bool:
     """
     Checks whether the supplied API token is valid for the specified user.
 
+    :param connection: a SQLAlchemy Connection
     :param token: the API token
     :param email: the e-mail address of the user
     :return: whether the token is correct and not expired
     """
     try:
-        auth_user = get_auth_user_by_email(email)
+        auth_user = get_auth_user_by_email(connection, email)
     except UserDoesNotExistError:
         return False
     token_is_fresh = auth_user.expires_on.timetuple() >= localtime()
