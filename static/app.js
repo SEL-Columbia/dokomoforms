@@ -404,12 +404,20 @@ var Widgets = {
 // All widgets store results in the questions.answer array
 Widgets._input = function(question, page, type) {
     var self = this;
+    
+    // Clean up answer array
+    question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
+    $(page).find('input').each(function(i, child) { 
+        question.answer[i] = self._validate(type, child.value);
+    });
 
+    // Set up input event listner
     $(page)
         .find('input')
-        .change(function() {
+        .change(function() { //XXX: Change isn't sensitive enough on safari?
             var ans_ind = $(page).find('input').index(this); 
             question.answer[ans_ind] = self._validate(type, this.value);
+
         });
 
     // Click the + for new input
@@ -458,7 +466,9 @@ Widgets._validate = function(type, answer) {
             break;
         case "time":
               //XXX: validation for time
-              val = answer;
+              if (answer) {
+                  val = answer;
+              }
               break;
         case "text":
               if (answer) {
@@ -467,7 +477,9 @@ Widgets._validate = function(type, answer) {
               break;
         default:
               //XXX: Others aren't validated the same
-              val = answer;
+              if (answer) {
+                  val = answer;
+              }
               break;
     }
 
@@ -1094,7 +1106,7 @@ function objectID() {
     });
 }
 
+var exports = exports || {} //XXX: Just to silence console; 
 exports.App = App;
 exports.Survey = Survey;
 exports.Widgets = Widgets; 
-//XXX Facility question functions will be borked
