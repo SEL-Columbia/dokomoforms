@@ -18,7 +18,7 @@ LOG_LEVEL = ERROR # for testing, use DEBUG in a local_settings.py file instead
 # Database
 
 CONNECTION_STRING = 'postgresql+psycopg2://postgres' \
-                    ':thisiagreatpasswordyouguys@localhost:5432/doko'
+                    ':password@localhost:5432/doko'
 
 #
 # Tornado webapp
