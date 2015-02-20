@@ -1,12 +1,26 @@
 var jsdom = require('jsdom');
 var should = require('should');
-var request = require('supertest');
+global.window = require('./emulate_dom.js');
 
-// User interaction, "window.trigger" tests
+document = window.document;
+raw_survey = null;
+L = window.L;
+_ = window._;
+$ = window.$;
+alert = window.alert;
+setInterval = function(hey, you) {  } //console.log('pikachu'); }
+console = window.console;
+Image = window.Image;
+localStorage = {};
+
+var mah_code = require('../static/app.js');
+var App = mah_code.App;
+var Survey = mah_code.Survey;
+var Widgets = mah_code.Widgets;
+
+
+// User interaction, "trigger" tests
 describe('User next/prev tests', function(done) {
-    // globals
-    var window;
-    var raw_survey;
 
     before(function(done) {
         done();
@@ -14,35 +28,21 @@ describe('User next/prev tests', function(done) {
 
     beforeEach(function(done) {
         raw_survey = require('./fixtures/survey.json');
-        jsdom.env('./test/widgets.html',  
-            [//'lib/blanket.min.js', 
-            'lib/classList_shim.js',
-            '../static/lib.js',  
-            '../static/app.js'], 
-            function(error, win) {
-                if (error) { 
-                    console.log(error);
-                    throw (error) 
-                }
-            
-                window = win;
-                window.localStorage = {};
-                window.App.init(raw_survey)
-                done();
-            });
-
+        App.init(raw_survey)
+        done();
     });
 
     afterEach(function(done) {
+        $("page_nav__next").off('click'); //XXX Find out why events are cached
+        $("page_nav__prev").off('click');
         raw_survey = null;
-        window.close();
-        window = null;
+        localStorage = {};
         done();
     });
 
     it('should move from question 0 to 1 when next is clicked', 
         function(done) {
-            var survey = window.App.survey;
+            var survey = App.survey;
             var questions = survey.questions;
 
             var first_question = questions[0];
@@ -50,7 +50,7 @@ describe('User next/prev tests', function(done) {
 
             first_question.should.equal(survey.current_question);
 
-            window.$(".page_nav__next").trigger("click");
+            $(".page_nav__next").trigger("click");
 
             first_question.should.not.equal(survey.current_question);
             second_question.should.equal(survey.current_question);
@@ -60,7 +60,7 @@ describe('User next/prev tests', function(done) {
 
     it('should move from last question to submit page when next is clicked',
         function(done) {
-            var survey = window.App.survey;
+            var survey = App.survey;
             var questions = survey.questions;
 
             var last_question = questions[questions.length - 1];
@@ -68,11 +68,11 @@ describe('User next/prev tests', function(done) {
             survey.render(last_question);
             last_question.should.equal(survey.current_question);
 
-            window.$(".page_nav__next").trigger("click");
+            $(".page_nav__next").trigger("click");
 
             // current question should remain the same on submitters page
             last_question.should.equal(survey.current_question);
-            window.$(".question__title").html().trim()
+            $(".question__title").html().trim()
                 .should.equal("That's it, you're finished!");
 
             done();
@@ -80,24 +80,24 @@ describe('User next/prev tests', function(done) {
 
     it('should move from question 0 to nowhere when prev is clicked', 
         function(done) {
-            var survey = window.App.survey;
+            var survey = App.survey;
             var questions = survey.questions;
 
             var first_question = questions[0];
 
             first_question.should.equal(survey.current_question);
-            var title = window.$(".question__title").html();
+            var title = $(".question__title").html();
 
-            window.$(".page_nav__prev").trigger("click");
+            $(".page_nav__prev").trigger("click");
             first_question.should.equal(survey.current_question);
-            window.$(".question__title").html().trim().should.equal(title);
+            $(".question__title").html().trim().should.equal(title);
 
             done();
         });
 
     it('should move from submit page to current question when prev is clicked', 
         function(done) {
-            var survey = window.App.survey;
+            var survey = App.survey;
             var questions = survey.questions;
             
             var last_question = questions[questions.length - 1];
@@ -105,66 +105,47 @@ describe('User next/prev tests', function(done) {
             var title = "another note";
 
             // render submit page
-            survey.render(undefined);
+            survey.next(1);
             last_question.should.equal(survey.current_question);
 
             // Now move back
-            window.$(".page_nav__prev").trigger("click");
+            $(".page_nav__prev").trigger("click");
             last_question.should.equal(survey.current_question);
-            window.$(".question__title").html().trim().should.match(title);
+            $(".question__title").html().trim().should.match(title);
             done();
         });
 });
 
 describe('User submission tests', function(done) {
-    // globals
-    var window;
-    var raw_survey;
-
     before(function(done) {
         done();
     });
 
+
     beforeEach(function(done) {
         raw_survey = require('./fixtures/survey.json');
-        jsdom.env('./test/widgets.html',  
-            [//'lib/blanket.min.js', 
-            'lib/classList_shim.js',
-            '../static/lib.js',  
-            '../static/app.js'], 
-            function(error, win) {
-                if (error) { 
-                    console.log(error);
-                    throw (error) 
-                }
-            
-                window = win;
-                window.localStorage = {'name': 'hello'};
-                window.App.init(raw_survey)
-                done();
-            });
-
+        localStorage.name = 'viktor sucks';
+        App.init(raw_survey);
+        done();
     });
 
     afterEach(function(done) {
         raw_survey = null;
-        window.close();
-        window = null;
+        localStorage = {};
         done();
     });
 
     it('should preload submitter name', 
         function(done) {
-
-            var survey = window.App.survey;
+            var survey = App.survey;
             var questions = survey.questions;
-            var name = window.App.submitter_name;
+            var name = App.submitter_name;
             
             survey.render(undefined);
-            window.$(".question__title").html().trim()
+            $(".question__title").html().trim()
                 .should.equal("That's it, you're finished!");
 
-            window.$(".name_input").val()
+            $(".name_input").val()
                 .should.equal(name);
 
             done();
@@ -172,30 +153,29 @@ describe('User submission tests', function(done) {
 
     it('should update submitter name', 
         function(done) {
-
-            var survey = window.App.survey;
+            var survey = App.survey;
             var questions = survey.questions;
-            var name = window.App.submitter_name;
+            var name = App.submitter_name;
             var new_name = '2chains'
             
             survey.render(undefined);
-            window.$(".question__title").html().trim()
+            $(".question__title").html().trim()
                 .should.equal("That's it, you're finished!");
 
-            window.$(".name_input").val(new_name)
-            window.$(".name_input").trigger('keyup');
+            $(".name_input").val(new_name)
+            $(".name_input").trigger('keyup');
 
             // No references to old name
-            window.$(".name_input").val()
+            $(".name_input").val()
                 .should.not.equal(name);
-            window.localStorage.name.should.not.equal(name);
-            window.App.submitter_name.should.not.equal(name);
+
+            localStorage.name.should.not.equal(name);
+            App.submitter_name.should.not.equal(name);
 
             // all the references
-            window.localStorage.name.should.equal(new_name);
-            window.$(".name_input").val()
-                .should.equal(new_name);
-            window.App.submitter_name.should.equal(new_name);
+            localStorage.name.should.equal(new_name);
+            $(".name_input").val().should.equal(new_name);
+            App.submitter_name.should.equal(new_name);
 
             done();
         });

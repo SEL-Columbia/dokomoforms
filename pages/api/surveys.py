@@ -3,7 +3,7 @@
 import api.survey
 from pages.util.base import APIHandler, get_email, \
     catch_bare_integrity_error, \
-    get_json_request_body, BaseHandler
+    get_json_request_body
 
 
 class SurveysAPIHandler(APIHandler):

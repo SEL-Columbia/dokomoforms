@@ -21,20 +21,18 @@
     </div>
 
     <script id="widget_text" type="text/html">
-        <div class="question__title"><%- question.question_title %></div>
-        <input class="text_input" type="text"
-            placeholder="Please provide any response"
-            value="<%- question.answer[0] || question.default || '' %>"
-        >
-
-        <% if (question.answer.length > 1){ %>
-            <% _.each(question.answer.slice(1), function(ans) { %>
-                <% if (ans !== null) { %>
-                    <input class="text_input" type="text" 
-                        placeholder="Please provide another response"
-                        value="<%- ans %>"
-                    >
-                <% } %>
+        <% if (question.answer.length === 0){ %>
+            <div class="question__title"><%- question.question_title %></div>
+            <input class="text_input" type="text"
+                placeholder="Please provide any response"
+                value="<%- question.default || '' %>"
+            >
+        <% } else { %>
+            <% _.each(question.answer, function(ans) { %>
+                <input class="text_input" type="text" 
+                    placeholder="Please provide another response"
+                    value="<%- ans %>"
+                >
             <% }); %>
         <% } %>
 
@@ -49,35 +47,29 @@
     
     <script id="widget_integer" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
-        <input class="text_input" type="number"
-            placeholder="Please provide a number"
-            <% if (question.answer[0] !== null) { %>
-                value="<%- question.answer[0] %>"
-            <% } else { %>
+        <% if (question.answer.length === 0 ) { %>
+            <input class="text_input" type="number"
+                placeholder="Please provide a number"
                 value="<%- question.default || '' %>"
-            <% } %>
-            <% if (question.min != null){ %>
-                min="<%- question.min %>"
-            <% } %>
-            <% if (question.max != null){ %>
-                max="<%- question.max %>"
-            <% } %>
-        >
-        
-        <% if (question.answer.length > 1){ %>
-            <% _.each(question.answer.slice(1), function(ans) { %>
-                <% if (ans !== null) { %>
-                    <input class="text_input" type="number"
-                        placeholder="Please provide another number"
-                        value="<%- ans %>"
-                        <% if (question.min != null){ %>
-                            min="<%- question.min %>"
-                        <% } %>
-                        <% if (question.max != null){ %>
-                            max="<%- question.max %>"
-                        <% } %>
-                    >
+                <% if (question.min != null){ %>
+                    min="<%- question.min %>"
                 <% } %>
+                <% if (question.max != null){ %>
+                    max="<%- question.max %>"
+                <% } %>
+            >
+        <% } else { %>
+            <% _.each(question.answer, function(ans) { %>
+                <input class="text_input" type="number"
+                    placeholder="Please provide another number"
+                    value="<%- ans %>"
+                    <% if (question.min != null){ %>
+                        min="<%- question.min %>"
+                    <% } %>
+                    <% if (question.max != null){ %>
+                        max="<%- question.max %>"
+                    <% } %>
+                >
             <% }); %>
         <% } %>
         
@@ -92,23 +84,17 @@
     
     <script id="widget_decimal" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
-        <input class="text_input" type="number" step="any"
-                placeholder="Please provide a number (decimal OK)"
-            <% if (question.answer[0] !== null){ %>
-                value="<%- question.answer[0] %>"
-            <% } else { %>
-                value="<%- question.default || '' %>"
-            <% } %> 
-        >
-
-        <% if (question.answer.length > 1){ %>
-            <% _.each(question.answer.slice(1), function(ans) { %>
-                <% if (ans !== null) { %>
-                    <input class="text_input" type="number" step="any"
-                        placeholder="Please provide another number (decimal OK)"
-                        value="<%- ans %>"
-                    >
-                <% } %>
+        <% if (question.answer.length === 0){ %>
+            <input class="text_input" type="number" step="any"
+                    placeholder="Please provide a number (decimal OK)"
+                    value="<%- question.default || '' %>"
+            >
+        <% } else { %>
+            <% _.each(question.answer, function(ans) { %>
+                <input class="text_input" type="number" step="any"
+                    placeholder="Please provide another number (decimal OK)"
+                    value="<%- ans %>"
+                >
             <% }); %>
         <% } %>
         
@@ -123,18 +109,17 @@
 
     <script id="widget_date" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
+        <% if (question.answer.length === 0){ %>
         <input class="text_input" type="date" 
                placeholder="Please provide a date"
-               value="<%- question.answer[0] || question.default || '' %>"
+               value="<%- question.default || '' %>"
         >
-        <% if (question.answer.length > 1){ %>
-            <% _.each(question.answer.slice(1), function(ans) { %>
-                <% if (ans !== null) { %>
-                    <input class="text_input" type="date" 
-                           placeholder="Please provide another date"
-                           value="<%- ans %>"
-                    >
-                <% } %>
+        <% } else { %>
+            <% _.each(question.answer, function(ans) { %>
+                <input class="text_input" type="date" 
+                       placeholder="Please provide another date"
+                       value="<%- ans %>"
+                >
             <% }); %>
         <% } %>
 
@@ -149,18 +134,17 @@
 
     <script id="widget_time" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
-        <input class="text_input" type="time" 
-               placeholder="Please provide a time"
-               value="<%- question.answer[0] || question.default || '' %>"
-        >
-        <% if (question.answer.length > 1){ %>
-            <% _.each(question.answer.slice(1), function(ans) { %>
-                <% if (ans !== null) { %>
-                    <input class="text_input" type="time" 
-                        placeholder="Please provide another time"
-                        value="<%- ans %>"
-                    >
-                <% } %>
+        <% if (question.answer.length === 0){ %>
+            <input class="text_input" type="time" 
+                   placeholder="Please provide a time"
+                   value="<%- question.default || '' %>"
+            >
+        <% } else { %>
+            <% _.each(question.answer, function(ans) { %>
+                <input class="text_input" type="time" 
+                    placeholder="Please provide another time"
+                    value="<%- ans %>"
+                >
             <% }); %>
         <% } %>
         
@@ -192,13 +176,17 @@
             </div>
         <% }); %>
         
-        <div class="question__btn">Find location</div>
+        <div class="question__btn question__find__btn">Find location</div>
     </script>
 
     <script id="widget_facility" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
         <div id="map" class="question__map"></div>
         <div>
+
+            <span class="question__btn question__find__btn">Find Me</span>
+            <span class="question__btn facility__btn">Add New Site</span>
+
             <input class="text_input facility__name" type="text"/>
             <select class="question__select facility__type">
                 <option value="other">Other</option>
@@ -207,11 +195,6 @@
                 <option value="education">Education</option>
                 <!-- <option value="power">Power</option> -->
             </select>
-        </div>
-
-        <div class="facility_input">
-            <span class="question__inline__btn find__btn">Find Me</span>
-            <span class="question__inline__btn facility__btn">Add New Site</span>
         </div>
 
     </script>

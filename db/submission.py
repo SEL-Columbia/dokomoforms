@@ -7,10 +7,10 @@ from sqlalchemy.engine import RowProxy, ResultProxy
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.dml import Insert
 from sqlalchemy.sql.elements import and_
+
 from db import engine, get_column
 from db.answer import answer_table
 from db.auth_user import auth_user_table
-from db.question import question_select
 from db.survey import survey_table
 
 

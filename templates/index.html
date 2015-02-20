@@ -4,30 +4,25 @@
     <div class="content content__index">
         <div class="welcome">
             {% if current_user %}
-                <h4 class="welcome_title">Welcome: {{ current_user }}</h4>
-                <p class="welcome_blurb"> Your top 10 Surveys: </p>
-                <ul class="welcome_ulist">
-                    {% for survey in surveys %}
-                        <li class="welcome_item">
-                            <a href="/view/{{ survey.survey_id }}">{{ survey.survey_title }}</a>
-                        </li>
-                    {% end %}
-                </ul>
-
+                <div class="welcome_box">
+                    <p class="welcome_title">Welcome: <em>{{ current_user }}</em><p>
+                    <p class="welcome_blurb">Dive in, choose an option below.</p>
+                </div>
                 <div class="welcome_buttons">
-                    <a href="view" id="">View</a>
-                    <a href="#" id="">Create</a>
-                    <a href="#" id="logout">Logout</a>
+                    <a class="btn" href="view" id="">View</a>
+                    <a class="btn" href="#" id="">Create</a>
+                    <a class="btn" href="#" id="logout">Logout</a>
                 </div>
 
             {% else %}
-
-                <h4 class="welcome_title"> Welcome to <em>Dokomo</em></h4>
-                <p class="welcome_blurb"> Sign up or login to create and view forms </p>
-                <div class="welcome_buttons">
-                    <a href="#" id="login">Login</a>
+                <div class="welcome_box">
+                    <p class="welcome_title"> Welcome to <em>Dokomoforms</em></p>
+                    <p class="welcome_blurb"> Simple, offline-capable surveys.</p>
+                    <p class="welcome_blurb"> Sign up or login to create and view forms.</p>
                 </div>
-
+                <div class="welcome_buttons">
+                    <a class="btn" href="#" id="login">Login or Register</a>
+                </div>
             {% end %}
         </div>
     </div>
