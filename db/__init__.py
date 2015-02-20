@@ -7,8 +7,7 @@ from sqlalchemy.sql.schema import Column
 from settings import CONNECTION_STRING
 
 
-engine = create_engine(CONNECTION_STRING, convert_unicode=True,
-                       pool_size=0, max_overflow=2000)
+engine = create_engine(CONNECTION_STRING, convert_unicode=True)
 
 
 def set_testing_engine(testing_engine: Engine):
