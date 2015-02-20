@@ -97,7 +97,6 @@ describe('App initalization Tests', function(done) {
             var response = App.survey.questions[0].answer[0];
             response.should.match(123);
             response = App.survey.questions[0].answer[2];
-            console.log(App.survey.questions[0].answer, response, "RESP");
             response.should.match(123123);
             response = App.survey.questions[2].answer[0][0];
             response.should.match(-73.965);
