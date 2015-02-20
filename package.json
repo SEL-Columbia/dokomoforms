@@ -9,7 +9,7 @@
   },
   "scripts": {
     "test": "node_modules/.bin/mocha js_tests",
-    "posttest": "./node_modules/.bin/istanbul cover --report lcovonly --dir ./reports  ./node_modules/.bin/_mocha -- -R spec js_tests/" && cat reports/lcov.info | ./node_modules/coveralls/bin/coveralls.js
+    "posttest": "./node_modules/.bin/istanbul cover --report lcovonly --dir ./reports  ./node_modules/.bin/_mocha -- -R spec js_tests/ && cat reports/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
   },
   "repository": {
     "type": "git",
