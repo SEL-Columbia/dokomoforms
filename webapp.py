@@ -5,7 +5,6 @@ This tornado server creates the client app by serving html/css/js and
 it also functions as the wsgi container for accepting survey form post
 requests back from the client app.
 """
-from sqlalchemy.orm import scoped_session
 
 from tornado.escape import json_encode
 import tornado.web
@@ -158,7 +157,6 @@ class Application(tornado.web.Application):  # pragma: no cover
         self.db = engine.connect()
 
 
-scoped_session
 if __name__ == '__main__':  # pragma: no cover
     http_server = tornado.httpserver.HTTPServer(Application())
     http_server.listen(settings.WEBAPP_PORT, '0.0.0.0')
