@@ -15,6 +15,7 @@ from selenium.webdriver.support import expected_conditions as EC
 
 import api.survey
 import api.submission
+import db
 from db.auth_user import auth_user_table
 from db.submission import submission_table
 from db.survey import survey_table
@@ -22,6 +23,8 @@ from settings import SAUCE_USERNAME, SAUCE_ACCESS_KEY, DEFAULT_BROWSER
 
 
 base = 'http://localhost:8888'
+
+connection = db.engine.connect()
 
 
 def go_to_new_window(driver: WebDriver):
@@ -251,7 +254,7 @@ class TypeTest(DriverTest):
                                       'choices': choices,
                                       'branches': None}]}
 
-        survey = api.survey.create(survey_json)['result']
+        survey = api.survey.create(connection, survey_json)['result']
         survey_id = survey['survey_id']
         question_id = survey['questions'][0]['question_id']
         return survey_id, question_id

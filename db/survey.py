@@ -3,7 +3,7 @@ import re
 from collections import Iterator
 from sqlalchemy import Table, MetaData, Text
 
-from sqlalchemy.engine import RowProxy, ResultProxy
+from sqlalchemy.engine import RowProxy, ResultProxy, Connection
 from sqlalchemy.sql import Insert, and_, cast, select, exists
 
 from db import engine
@@ -25,25 +25,30 @@ def survey_insert(*, auth_user_id: str, survey_title: str) -> Insert:
                                         auth_user_id=auth_user_id)
 
 
-def get_surveys_by_email(email: str, limit: int=None) -> ResultProxy:
+def get_surveys_by_email(connection: Connection,
+                         email: str,
+                         limit: int=None) -> ResultProxy:
     """
     Get all surveys for the specified user ordered by creation time.
 
+    :param connection: a SQLAlchemy Connection
     :param email: the e-mail address of the user
     :param limit: how many results to return. Defaults to all
     :return: the corresponding survey records
     """
     condition = survey_table.c.auth_user_id == auth_user_table.c.auth_user_id
     join_table = survey_table.join(auth_user_table, condition)
-    return join_table.select().limit(limit).where(
+    return connection.execute(join_table.select().limit(limit).where(
         auth_user_table.c.email == email).order_by(
-        'created_on asc').execute().fetchall()
+        'created_on asc')).fetchall()
 
 
-def get_survey_id_from_prefix(survey_prefix: str) -> str:
+def get_survey_id_from_prefix(connection: Connection,
+                              survey_prefix: str) -> str:
     """
     Return the survey UUID that is identified uniquely by the given prefix.
 
+    :param connection: a SQLAlchemy Connection
     :param survey_prefix: a string of characters that could be the prefix to
                           a UUID
     :return: the full UUID
@@ -54,34 +59,38 @@ def get_survey_id_from_prefix(survey_prefix: str) -> str:
         raise SurveyPrefixTooShortError(survey_prefix)
     survey_id_text = cast(survey_table.c.survey_id, Text)
     cond = survey_id_text.like('{}%'.format(survey_prefix))
-    surveys = survey_table.select().limit(2).where(cond).execute().fetchall()
+    surveys = connection.execute(
+        survey_table.select().limit(2).where(cond)).fetchall()
     if len(surveys) == 1:
         return surveys[0].survey_id
     raise SurveyPrefixDoesNotIdentifyASurveyError(survey_prefix)
 
 
-def display(survey_id: str) -> RowProxy:
+def display(connection: Connection, survey_id: str) -> RowProxy:
     """
     Only use this to display a single survey for submission purposes.
 
+    :param connection: a SQLAlchemy Connection
     :param survey_id: the UUID of the survey
     :return: the corresponding record
     :raise SurveyDoesNotExistError: if the UUID is not in the table
     """
-    survey = survey_table.select().where(
-        survey_table.c.survey_id == survey_id).execute().first()
+    survey = connection.execute(survey_table.select().where(
+        survey_table.c.survey_id == survey_id)).first()
     if survey is None:
         raise SurveyDoesNotExistError(survey_id)
     return survey
 
 
-def survey_select(survey_id: str,
+def survey_select(connection: Connection,
+                  survey_id: str,
                   auth_user_id: str=None,
                   email: str=None) -> RowProxy:
     """
     Get a record from the survey table. You must supply either the
     auth_user_id or the email.
 
+    :param connection: a SQLAlchemy Connection
     :param survey_id: the UUID of the survey
     :param auth_user_id: the UUID of the user
     :param email: the user's e-mail address
@@ -102,26 +111,28 @@ def survey_select(survey_id: str,
     else:
         raise TypeError('You must specify either auth_user_id or email')
 
-    survey = table.select().where(condition).execute().first()
+    survey = connection.execute(table.select().where(condition)).first()
     if survey is None:
         raise SurveyDoesNotExistError(survey_id)
     return survey
 
 
-def get_email_address(survey_id: str) -> str:
+def get_email_address(connection: Connection,
+                      survey_id: str) -> str:
     """
     Dangerous function! Do not use this to circumvent the restriction
     that a survey can only be seen by its owner!
 
     Gets the e-mail address associated with a survey.
 
+    :param connection: a SQLAlchemy Connection
     :param survey_id: the UUID of the survey
     :return: the user's e-mail address
     """
     condition = auth_user_table.c.auth_user_id == survey_table.c.auth_user_id
     join_table = auth_user_table.join(survey_table, condition)
-    return join_table.select().where(
-        survey_table.c.survey_id == survey_id).execute().first().email
+    return connection.execute(join_table.select().where(
+        survey_table.c.survey_id == survey_id)).first().email
 
 
 def _conflicting(title: str, surveys: ResultProxy) -> Iterator:
@@ -141,7 +152,9 @@ def _conflicting(title: str, surveys: ResultProxy) -> Iterator:
             yield int(number)
 
 
-def get_free_title(title: str, auth_user_id: str) -> str:
+def get_free_title(connection: Connection,
+                   title: str,
+                   auth_user_id: str) -> str:
     """
     Get a good version of the title to be inserted into the survey table. If
     the title as given already exists, this function will append a number.
@@ -150,11 +163,12 @@ def get_free_title(title: str, auth_user_id: str) -> str:
     2. "survey" in table     -> "survey(1)"
     3. "survey(1)" in table  -> "survey(2)"
 
+    :param connection: a SQLAlchemy Connection
     :param title: the survey title
-    :param email: the user's UUID
+    :param auth_user_id: the user's UUID
     :return: a title that can be inserted safely
     """
-    (does_exist, ), = engine.execute(
+    (does_exist, ), = connection.execute(
         select((exists().where(and_(survey_table.c.survey_title == title,
                                     survey_table.c.auth_user_id ==
                                     auth_user_id)),)))
@@ -162,7 +176,8 @@ def get_free_title(title: str, auth_user_id: str) -> str:
         return title
     cond = and_(survey_table.c.survey_title.like(title + '%'),
                 survey_table.c.auth_user_id == auth_user_id)
-    similar_surveys = survey_table.select().where(cond).execute().fetchall()
+    similar_surveys = connection.execute(
+        survey_table.select().where(cond)).fetchall()
     conflicts = list(_conflicting(title, similar_surveys))
     free_number = max(conflicts) + 1 if len(conflicts) else 1
     return title + '({})'.format(free_number)

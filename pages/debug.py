@@ -9,7 +9,7 @@ class DebugUserCreationHandler(BaseHandler):
     """User this page to create a user."""
 
     def get(self, email=''):
-        api.user.create_user({'email': email})
+        api.user.create_user(self.db, {'email': email})
         self.write('Created user {}'.format(email))
         self.set_status(201)
 
@@ -19,7 +19,7 @@ class DebugLoginHandler(BaseHandler):
 
     def get(self, email=""):
         try:
-            get_auth_user_by_email(email)
+            get_auth_user_by_email(self.db, email)
             self.set_secure_cookie('user', email, expires_days=None,
                                    # secure=True,
                                    httponly=True)
