@@ -24,7 +24,9 @@ tables = ['auth_user.tbl.sql',
           'answer_choice.tbl.sql']
 fixtures = ['type_constraint_fixture.sql']
 
-schema_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'schema')
+schema_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                          'schema')
+
 
 def init_db(engine):
     """Create all the tables and insert the fixtures."""

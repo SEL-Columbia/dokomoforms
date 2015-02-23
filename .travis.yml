@@ -2,6 +2,7 @@ language: python
 python:
   - "3.3"
   - "3.4"
+cache: pip
 sudo: false
 env:
   global:
@@ -16,13 +17,16 @@ install:
   - pip install -r requirements.txt
   - pip install -r requirements-testing.txt
   - pip install coverage coveralls
+  - pip install flake8
 
-# database
+# database and flake8
 before_script:
+  - python3 -m flake8 .
   - psql -c 'create database doko;' -U postgres
   - python3 manage_db.py
   - psql -U postgres -d doko -f tests/fixtures/all-encompassing.sql
   - npm install --python=python2.7
+  - echo 'APP_DEBUG=True' > local_settings.py
   - python3 webapp.py &
 
 # command to run tests

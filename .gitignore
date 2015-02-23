@@ -2,6 +2,7 @@
 *.swp
 *.sqlite
 *.pyc
+*.log
 local_settings.py
 .idea/
 .coverage
@@ -10,3 +11,5 @@ cover/
 node_modules/
 test/*.log
 .vagrant
+data/
+reports/

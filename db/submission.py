@@ -3,14 +3,14 @@ from collections import Iterator
 from sqlalchemy import Table, MetaData
 from datetime import datetime
 
-from sqlalchemy.engine import RowProxy, ResultProxy
+from sqlalchemy.engine import RowProxy, ResultProxy, Connection
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.dml import Insert
 from sqlalchemy.sql.elements import and_
+
 from db import engine, get_column
 from db.answer import answer_table
 from db.auth_user import auth_user_table
-from db.question import question_select
 from db.survey import survey_table
 
 
@@ -41,13 +41,15 @@ def submission_insert(*,
     return submission_table.insert().values(values)
 
 
-def submission_select(submission_id: str,
+def submission_select(connection: Connection,
+                      submission_id: str,
                       auth_user_id: str=None,
                       email: str=None) -> RowProxy:
     """
     Get a record from the submission table. You must supply either the
     auth_user_id or the email.
 
+    :param connection: a SQLAlchemy Connection
     :param submission_id: the UUID of the submission
     :param auth_user_id: the UUID of the user
     :param email: the user's e-mail address
@@ -73,38 +75,43 @@ def submission_select(submission_id: str,
     else:
         raise TypeError('You must specify either auth_user_id or email')
 
-    submission = table.select(use_labels=True).where(cond).execute().first()
+    submission = connection.execute(
+        table.select(use_labels=True).where(cond)).first()
     if submission is None:
         raise SubmissionDoesNotExistError(submission_id)
     return submission
 
 
-def _get_filtered_ids(filters: list) -> Iterator:
+def _get_filtered_ids(connection: Connection, filters: list) -> Iterator:
     """
     Given a list of filters like
     { 'question_id': <question_id>,
       '<type_constraint_name>': <value> },
     yield the submission_id values that pass the filters
+
+    :param connection: a SQLAlchemy Connection
     :param filters: a list of filters consisting of answers to questions
     """
     for filter_pair in filters:
         question_id = filter_pair.pop('question_id')
         type_constraint = list(filter_pair.keys())[0]  # TODO: better way...?
         value = filter_pair[type_constraint]
-        answers = answer_table.select().where(
+        answers = connection.execute(answer_table.select().where(
             and_(answer_table.c.question_id == question_id,
-                 get_column(answer_table, type_constraint) == value)).execute()
+                 get_column(answer_table, type_constraint) == value)))
         for answer in answers:
             yield answer.submission_id
 
 
-def get_submissions_by_email(survey_id: str,
+def get_submissions_by_email(connection: Connection,
+                             survey_id: str,
                              email: str,
                              submitters: Iterator=None,
                              filters: list=None) -> ResultProxy:
     """
     Get submissions to a survey.
 
+    :param connection: a SQLAlchemy Connection
     :param survey_id: the UUID of the survey
     :param email: the e-mail address of the user
     :param submitters: if supplied, filters results by all given submitters
@@ -122,10 +129,10 @@ def get_submissions_by_email(survey_id: str,
     if submitters is not None:
         conditions.append(submission_table.c.submitter.in_(submitters))
     if filters is not None:
-        filtered = set(_get_filtered_ids(filters))
+        filtered = set(_get_filtered_ids(connection, filters))
         conditions.append(submission_table.c.submission_id.in_(filtered))
-    return table.select().where(and_(*conditions)).order_by(
-        'submission_time').execute()
+    return connection.execute(table.select().where(and_(*conditions)).order_by(
+        'submission_time'))
 
 
 def get_number_of_submissions(survey_id: str) -> int:

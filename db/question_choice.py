@@ -1,17 +1,18 @@
 """Allow access to the question_choice table."""
 from sqlalchemy import Table, MetaData
-from sqlalchemy.engine import RowProxy, ResultProxy
+
+from sqlalchemy.engine import RowProxy, ResultProxy, Connection
 from sqlalchemy.sql import Insert
 
 from db import engine
-from db.question import question_select
 
 
 question_choice_table = Table('question_choice', MetaData(bind=engine),
                               autoload=True)
 
 
-def question_choice_select(question_choice_id: str) -> RowProxy:
+def question_choice_select(connection: Connection,
+                           question_choice_id: str) -> RowProxy:
     """
     Get a record from the question_choice table.
 
@@ -20,25 +21,26 @@ def question_choice_select(question_choice_id: str) -> RowProxy:
     :raise QuestionChoiceDoesNotExistError: if the UUID is not in the table
     """
     table = question_choice_table
-    choice = table.select().where(
-        table.c.question_choice_id == question_choice_id).execute().first()
+    choice = connection.execute(table.select().where(
+        table.c.question_choice_id == question_choice_id)).first()
     if choice is None:
         raise QuestionChoiceDoesNotExistError(question_choice_id)
     return choice
 
 
-def get_choices(question_id: str) -> ResultProxy:
+def get_choices(connection: Connection, question_id: str) -> ResultProxy:
     """
     Get all the choices for a question identified by question_id ordered by
     choice number.
 
+    :param connection: a SQLAlchemy Connection
     :param question_id: foreign key
     :return: an iterable of the choices (RowProxy)
     """
     select_stmt = question_choice_table.select()
     where_stmt = select_stmt.where(
         question_choice_table.c.question_id == question_id)
-    return where_stmt.order_by('choice_number asc').execute()
+    return connection.execute(where_stmt.order_by('choice_number asc'))
 
 
 def question_choice_insert(*,
@@ -75,6 +77,7 @@ def question_choice_insert(*,
 class RepeatedChoiceError(Exception):
     """The same choice was supplied twice for a question."""
     pass
+
 
 class QuestionChoiceDoesNotExistError(Exception):
     """The specified question choice does not exist in the database."""

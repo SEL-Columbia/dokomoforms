@@ -1,13 +1,16 @@
 """Set up database access."""
 from sqlalchemy import create_engine, Table
+
 from sqlalchemy.engine import Engine
+
 from sqlalchemy.sql import Update, Delete
 from sqlalchemy.sql.schema import Column
 
 from settings import CONNECTION_STRING
 
 
-engine = create_engine(CONNECTION_STRING, convert_unicode=True)
+engine = create_engine(CONNECTION_STRING, convert_unicode=True, pool_size=0,
+                       max_overflow=-1)
 
 
 def set_testing_engine(testing_engine: Engine):
@@ -105,7 +108,7 @@ def get_column(table: Table, column_name: str) -> Column:
     :return: the column
     :raise NoSuchColumnError: if the column does not exist in the table
     """
-    if table.c.has_key(column_name):
+    if column_name in table.columns:
         return table.c.get(column_name)
     else:
         raise NoSuchColumnError(column_name)

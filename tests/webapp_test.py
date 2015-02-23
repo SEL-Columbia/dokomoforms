@@ -22,6 +22,7 @@ import api.submission
 import api.survey
 import api.user
 from db import engine
+import db
 from db.answer import get_answers
 from db.auth_user import generate_api_token, auth_user_table, \
     get_auth_user_by_email
@@ -32,11 +33,12 @@ from pages.api.aggregations import AggregationHandler
 from pages.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler
 from pages.api.surveys import SurveysAPIHandler, SingleSurveyAPIHandler
-from pages.util.base import catch_bare_integrity_error
+from pages.util.base import catch_bare_integrity_error, user_owns_question
 from pages.view.submissions import ViewSubmissionsHandler, \
     ViewSubmissionHandler
 from pages.view.surveys import ViewHandler
-from webapp import config, pages
+from pages.view.visualize import VisualizationHandler
+from webapp import config, pages, Application
 from db.survey import survey_table
 
 
@@ -48,6 +50,8 @@ POST_HDRS = {"Content-type": "application/x-www-form-urlencoded",
 
 new_config = config.copy()
 new_config['xsrf_cookies'] = False  # convenient for testing...
+
+connection = db.engine.connect()
 
 
 def _create_submission() -> dict:
@@ -93,7 +97,7 @@ def _create_submission() -> dict:
                        {'question_id': fourth_q_id,
                         'answer': 3.5,
                         'is_other': False}]}
-    return api.submission.submit(input_data)['result']
+    return api.submission.submit(connection, input_data)['result']
 
 
 class APITest(AsyncHTTPTestCase):
@@ -104,7 +108,7 @@ class APITest(AsyncHTTPTestCase):
             'survey_created_through_api').execute()
 
     def get_app(self):
-        self.app = tornado.web.Application(pages, **new_config)
+        self.app = Application(pages, **new_config)
         return self.app
 
     def get_new_ioloop(self):
@@ -133,7 +137,8 @@ class APITest(AsyncHTTPTestCase):
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
-                         api.submission.get_all(survey_id, 'test_email'))
+                         api.submission.get_all(connection, survey_id,
+                                                'test_email'))
 
     def testGetSubmissionsBySubmitter(self):
         survey_id = survey_table.select().where(
@@ -150,7 +155,8 @@ class APITest(AsyncHTTPTestCase):
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
-                         api.submission.get_all(survey_id, 'test_email',
+                         api.submission.get_all(connection, survey_id,
+                                                'test_email',
                                                 submitters=['me']))
 
     def testGetSubmissionsWithFilter(self):
@@ -175,7 +181,8 @@ class APITest(AsyncHTTPTestCase):
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
-                         api.submission.get_all(survey_id, 'test_email',
+                         api.submission.get_all(connection, survey_id,
+                                                'test_email',
                                                 filters=filters))
 
     def testGetSubmissionsWithAPIToken(self):
@@ -183,13 +190,15 @@ class APITest(AsyncHTTPTestCase):
             survey_table.c.survey_title == 'test_title').execute().first(
 
         ).survey_id
-        token = api.user.generate_token({'email':
-                                             'test_email'})['result']['token']
+        token_result = api.user.generate_token(connection,
+                                               {'email': 'test_email'})
+        token = token_result['result']['token']
         response = self.fetch('/api/surveys/{}/submissions'.format(survey_id),
                               headers={'Token': token, 'Email': 'test_email'})
         self.assertEqual(response.code, 200)
         self.assertEqual(json_decode(to_unicode(response.body)),
-                         api.submission.get_all(survey_id, 'test_email'))
+                         api.submission.get_all(connection, survey_id,
+                                                'test_email'))
 
     def testGetSubmissionsWithoutAPIToken(self):
         survey_id = survey_table.select().where(
@@ -204,8 +213,7 @@ class APITest(AsyncHTTPTestCase):
             survey_table.c.survey_title == 'test_title').execute().first(
 
         ).survey_id
-        token = api.user.generate_token({'email':
-                                             'test_email'})['result']['token']
+        api.user.generate_token(connection, {'email': 'test_email'})
         response = self.fetch('/api/surveys/{}/submissions'.format(survey_id),
                               headers={'Token': generate_api_token(),
                                        'Email': 'test_email'})
@@ -221,7 +229,8 @@ class APITest(AsyncHTTPTestCase):
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
-                         api.submission.get_one(submission_id, 'test_email'))
+                         api.submission.get_one(connection, submission_id,
+                                                'test_email'))
 
     def testPostSubmission(self):
         survey_id = survey_table.select().where(
@@ -271,8 +280,9 @@ class APITest(AsyncHTTPTestCase):
                             'answer': 3.5,
                             'is_other': False}]}
 
-        token = api.user.generate_token({'email':
-                                             'test_email'})['result']['token']
+        token_result = api.user.generate_token(connection,
+                                               {'email': 'test_email'})
+        token = token_result['result']['token']
 
         response = self.fetch('/api/surveys/{}/submit'.format(survey_id),
                               method='POST', body=json_encode(input_data),
@@ -281,10 +291,9 @@ class APITest(AsyncHTTPTestCase):
         result = json_decode(to_unicode(response.body))['result']
         submission_id = result['submission_id']
         self.assertEqual(result,
-                         api.submission.get_one(submission_id,
+                         api.submission.get_one(connection, submission_id,
                                                 email='test_email')['result'])
         self.assertEqual(response.code, 201)
-
 
     def testGetSurveys(self):
         with mock.patch.object(SurveysAPIHandler, 'get_secure_cookie') as m:
@@ -293,7 +302,8 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(response.code, 200)
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
-        self.assertEqual(webpage_response, api.survey.get_all('test_email'))
+        self.assertEqual(webpage_response,
+                         api.survey.get_all(connection, 'test_email'))
 
     def testGetSingleSurvey(self):
         survey_id = survey_table.select().where(
@@ -308,7 +318,8 @@ class APITest(AsyncHTTPTestCase):
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
-                         api.survey.get_one(survey_id, email='test_email'))
+                         api.survey.get_one(connection, survey_id,
+                                            email='test_email'))
 
     def testCreateSurvey(self):
         input_data = {'email': 'test_email',
@@ -323,8 +334,9 @@ class APITest(AsyncHTTPTestCase):
                                      'choices': None,
                                      'branches': None}]}
 
-        token = api.user.generate_token({'email':
-                                             'test_email'})['result']['token']
+        token_result = api.user.generate_token(connection,
+                                               {'email': 'test_email'})
+        token = token_result['result']['token']
 
         response = self.fetch('/api/surveys/create',
                               method='POST', body=json_encode(input_data),
@@ -333,7 +345,7 @@ class APITest(AsyncHTTPTestCase):
         result = json_decode(to_unicode(response.body))['result']
         survey_id = result['survey_id']
         self.assertEqual(result,
-                         api.survey.get_one(survey_id,
+                         api.survey.get_one(connection, survey_id,
                                             email='test_email')['result'])
         self.assertEqual(response.code, 201)
 
@@ -355,7 +367,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': question_id,
                                 'answer': i,
                                 'is_other': False}]}
-            api.submission.submit(input_data)
+            api.submission.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
@@ -363,9 +375,9 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(response.code, 200)
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
-        self.assertEqual(webpage_response,
-                         json_response([api.aggregation.min(question_id,
-                                                            email='test_email')]))
+        min_res = api.aggregation.min(connection, question_id,
+                                      email='test_email')
+        self.assertEqual(webpage_response, json_response([min_res]))
 
     def testGetShmin(self):
         survey_id = survey_table.select().where(
@@ -403,7 +415,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': question_id,
                                 'answer': str(i),
                                 'is_other': False}]}
-            api.submission.submit(input_data)
+            api.submission.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
@@ -446,7 +458,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': question_id,
                                 'answer': i,
                                 'is_other': False}]}
-            api.submission.submit(input_data)
+            api.submission.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
@@ -454,9 +466,9 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(response.code, 200)
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
-        self.assertEqual(webpage_response,
-                         json_response([api.aggregation.max(question_id,
-                                                            email='test_email')]))
+        max_res = api.aggregation.max(connection, question_id,
+                                      email='test_email')
+        self.assertEqual(webpage_response, json_response([max_res]))
 
     def testGetMinAndMax(self):
         survey_id = survey_table.select().where(
@@ -476,7 +488,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': question_id,
                                 'answer': i,
                                 'is_other': False}]}
-            api.submission.submit(input_data)
+            api.submission.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
@@ -485,10 +497,12 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(response.code, 200)
         webpage_response = json_decode(to_unicode(response.body))['result']
         self.assertNotEqual(webpage_response, [])
-        self.assertIn(api.aggregation.min(question_id, email='test_email'),
-                      webpage_response)
-        self.assertIn(api.aggregation.max(question_id, email='test_email'),
-                      webpage_response)
+        self.assertIn(
+            api.aggregation.min(connection, question_id, email='test_email'),
+            webpage_response)
+        self.assertIn(
+            api.aggregation.max(connection, question_id, email='test_email'),
+            webpage_response)
 
     def testGetSum(self):
         survey_id = survey_table.select().where(
@@ -508,7 +522,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': question_id,
                                 'answer': i,
                                 'is_other': False}]}
-            api.submission.submit(input_data)
+            api.submission.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
@@ -516,9 +530,9 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(response.code, 200)
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
-        self.assertEqual(webpage_response,
-                         json_response([api.aggregation.sum(question_id,
-                                                            email='test_email')]))
+        sum_res = api.aggregation.sum(connection, question_id,
+                                      email='test_email')
+        self.assertEqual(webpage_response, json_response([sum_res]))
 
     def testGetCount(self):
         survey_id = survey_table.select(). \
@@ -537,7 +551,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': q_id,
                                 'answer': i,
                                 'is_other': False}]}
-            api.submission.submit(input_data)
+            api.submission.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
@@ -547,7 +561,8 @@ class APITest(AsyncHTTPTestCase):
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
                          json_response([
-                             api.aggregation.count(q_id, email='test_email')]))
+                             api.aggregation.count(connection, q_id,
+                                                   email='test_email')]))
 
     def testGetAvg(self):
         survey_id = survey_table.select().where(
@@ -567,7 +582,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': q_id,
                                 'answer': i,
                                 'is_other': False}]}
-            api.submission.submit(input_data)
+            api.submission.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
@@ -577,7 +592,8 @@ class APITest(AsyncHTTPTestCase):
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
                          json_response(
-                             [api.aggregation.avg(q_id, email='test_email')]))
+                             [api.aggregation.avg(connection, q_id,
+                                                  email='test_email')]))
 
     def testGetStddevPop(self):
         survey_id = survey_table.select().where(
@@ -597,7 +613,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': q_id,
                                 'answer': i,
                                 'is_other': False}]}
-            api.submission.submit(input_data)
+            api.submission.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
@@ -605,9 +621,9 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(response.code, 200)
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
-        self.assertEqual(webpage_response,
-                         json_response([api.aggregation.stddev_pop(q_id,
-                                                                   email='test_email')]))
+        stddev_pop_res = api.aggregation.stddev_pop(connection, q_id,
+                                                    email='test_email')
+        self.assertEqual(webpage_response, json_response([stddev_pop_res]))
 
     def testGetStddevSamp(self):
         survey_id = survey_table.select().where(
@@ -627,7 +643,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': q_id,
                                 'answer': i,
                                 'is_other': False}]}
-            api.submission.submit(input_data)
+            api.submission.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
@@ -635,9 +651,9 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(response.code, 200)
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
-        self.assertEqual(webpage_response,
-                         json_response([api.aggregation.stddev_samp(q_id,
-                                                                    email='test_email')]))
+        stddev_samp_res = api.aggregation.stddev_samp(connection, q_id,
+                                                      email='test_email')
+        self.assertEqual(webpage_response, json_response([stddev_samp_res]))
 
     def testGetMode(self):
         survey_id = survey_table.select().where(
@@ -657,7 +673,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': q_id,
                                 'answer': i,
                                 'is_other': False}]}
-            api.submission.submit(input_data)
+            api.submission.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
@@ -667,7 +683,8 @@ class APITest(AsyncHTTPTestCase):
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
                          json_response(
-                             [api.aggregation.mode(q_id, email='test_email')]))
+                             [api.aggregation.mode(connection, q_id,
+                                                   email='test_email')]))
 
     def testGetModeLocation(self):
         survey_id = survey_table.select().where(
@@ -686,7 +703,7 @@ class APITest(AsyncHTTPTestCase):
                           [{'question_id': q_id,
                             'answer': [90, 0],
                             'is_other': False}]}
-        api.submission.submit(input_data)
+        api.submission.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
@@ -696,8 +713,8 @@ class APITest(AsyncHTTPTestCase):
         self.assertNotEqual(webpage_response, [])
         self.assertEqual(webpage_response,
                          json_response(
-                             [api.aggregation.mode(q_id, email='test_email')]))
-
+                             [api.aggregation.mode(connection, q_id,
+                                                   email='test_email')]))
 
     def testGetTimeSeries(self):
         survey_id = survey_table.select().where(
@@ -717,7 +734,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': q_id,
                                 'answer': i,
                                 'is_other': False}]}
-            api.submission.submit(input_data)
+            api.submission.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
@@ -725,12 +742,12 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(response.code, 200)
         webpage_response = json_decode(to_unicode(response.body))['result']
         self.assertNotEqual(webpage_response, [])
-        api_response = api.aggregation.time_series(q_id, email='test_email')
+        api_response = api.aggregation.time_series(connection, q_id,
+                                                   email='test_email')
         self.assertSequenceEqual(webpage_response[0]['result'][0],
                                  api_response['result'][0])
         self.assertSequenceEqual(webpage_response[0]['result'][1],
                                  api_response['result'][1])
-
 
     def testGetBarGraph(self):
         survey_id = survey_table.select().where(
@@ -750,7 +767,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': q_id,
                                 'answer': i,
                                 'is_other': False}]}
-            api.submission.submit(input_data)
+            api.submission.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
@@ -758,7 +775,8 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(response.code, 200)
         webpage_response = json_decode(to_unicode(response.body))['result']
         self.assertNotEqual(webpage_response, [])
-        api_response = api.aggregation.bar_graph(q_id, email='test_email')
+        api_response = api.aggregation.bar_graph(connection, q_id,
+                                                 email='test_email')
         self.assertSequenceEqual(webpage_response[0]['result'][0],
                                  api_response['result'][0])
         self.assertSequenceEqual(webpage_response[0]['result'][1],
@@ -767,7 +785,7 @@ class APITest(AsyncHTTPTestCase):
 
 class DebugTest(AsyncHTTPTestCase):
     def get_app(self):
-        self.app = tornado.web.Application(pages, **new_config)
+        self.app = Application(pages, **new_config)
         return self.app
 
     def get_new_ioloop(self):
@@ -779,7 +797,8 @@ class DebugTest(AsyncHTTPTestCase):
 
     def testCreate(self):
         self.fetch('/debug/create/debug_test_email')
-        self.assertIsNotNone(get_auth_user_by_email('debug_test_email'))
+        self.assertIsNotNone(
+            get_auth_user_by_email(connection, 'debug_test_email'))
 
     def testLoginGet(self):
         response = self.fetch('/debug/login//')
@@ -800,7 +819,7 @@ class DebugTest(AsyncHTTPTestCase):
 
 class BaseHandlerTest(AsyncHTTPTestCase):
     def get_app(self):
-        self.app = tornado.web.Application(pages, **new_config)
+        self.app = Application(pages, **new_config)
         return self.app
 
     def get_new_ioloop(self):
@@ -821,10 +840,40 @@ class BaseHandlerTest(AsyncHTTPTestCase):
                 type_constraint_name='text').execute(), logger=Log())
         self.assertRaises(tornado.web.HTTPError, wrapped)
 
+    def testUserOwnsQuestion(self):
+        class UserDummy():
+            current_user = 'test_email'
+            db = connection
+
+        def dummy(self, question_id):
+            return True
+
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+        ).survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+
+        wrapped = user_owns_question(dummy)
+        self.assertTrue(wrapped(UserDummy(), question.question_id))
+
+        unauthorized = question_table.join(survey_table,
+                                           question_table.c.survey_id ==
+                                           survey_table.c.survey_id).join(
+            auth_user_table,
+            survey_table.c.auth_user_id ==
+            auth_user_table.c.auth_user_id).select().where(
+            auth_user_table.c.email != 'test_email').execute().first()
+
+        self.assertRaises(tornado.web.HTTPError, wrapped, UserDummy(),
+                          unauthorized.question_id)
+
 
 class IndexTest(AsyncHTTPTestCase):
     def get_app(self):
-        self.app = tornado.web.Application(pages, **new_config)
+        self.app = Application(pages, **new_config)
         return self.app
 
     def get_new_ioloop(self):
@@ -837,7 +886,7 @@ class IndexTest(AsyncHTTPTestCase):
 
 class SurveyTest(AsyncHTTPTestCase):
     def get_app(self):
-        self.app = tornado.web.Application(pages, **new_config)
+        self.app = Application(pages, **new_config)
         return self.app
 
     def get_new_ioloop(self):
@@ -874,8 +923,10 @@ class SurveyTest(AsyncHTTPTestCase):
 
         ).survey_id
         answer_json = {'submitter': 'me', 'survey_id': survey_id, 'answers': [
-            {'question_id': get_questions_no_credentials(
-                survey_id).first().question_id,
+            {'question_id': get_questions_no_credentials(connection,
+                                                         survey_id).first(
+
+            ).question_id,
              'answer': 1,
              'is_other': False}]}
         response = self.fetch('/survey/{}'.format(survey_id), method='POST',
@@ -887,7 +938,7 @@ class SurveyTest(AsyncHTTPTestCase):
         condition = submission_table.c.submission_id == result_submission_id
         self.assertEqual(
             submission_table.select().where(condition).execute().rowcount, 1)
-        sub_answers = get_answers(result_submission_id)
+        sub_answers = get_answers(connection, result_submission_id)
         self.assertEqual(sub_answers.rowcount, 1)
 
     def testPostNotJson(self):
@@ -924,8 +975,10 @@ class SurveyTest(AsyncHTTPTestCase):
 
         ).survey_id
         answer_json = {'survey_id': wrong_id, 'answers': [
-            {'question_id': get_questions_no_credentials(
-                survey_id).first().question_id,
+            {'question_id': get_questions_no_credentials(connection,
+                                                         survey_id).first(
+
+            ).question_id,
              'answer': 1,
              'is_other': False}]}
         response = self.fetch('/survey/{}'.format(survey_id), method='POST',
@@ -943,12 +996,14 @@ class SurveyTest(AsyncHTTPTestCase):
             survey_table.c.survey_title != 'test_title').execute().first(
 
         ).survey_id
+        gqnc = get_questions_no_credentials
+        question_id = gqnc(connection, wrong_id).first().question_id
+        answers = [{'question_id': question_id,
+                    'answer': 1,
+                    'is_other': False}]
         answer_json = {'submitter': 'me',
-                       'survey_id': survey_id, 'answers': [
-            {'question_id': get_questions_no_credentials(
-                wrong_id).first().question_id,
-             'answer': 1,
-             'is_other': False}]}
+                       'survey_id': survey_id,
+                       'answers': answers}
         response = self.fetch('/survey/{}'.format(survey_id), method='POST',
                               body=json_encode(answer_json))
 
@@ -961,7 +1016,7 @@ class ViewTest(AsyncHTTPTestCase):
         submission_table.delete().execute()
 
     def get_app(self):
-        self.app = tornado.web.Application(pages, **config)
+        self.app = Application(pages, **config)
         return self.app
 
     def get_new_ioloop(self):
@@ -994,6 +1049,107 @@ class ViewTest(AsyncHTTPTestCase):
         self.assertIn('Answer: 3.5', to_unicode(response.body))
 
 
+class VisualizationTest(AsyncHTTPTestCase):
+    def tearDown(self):
+        submission_table.delete().execute()
+
+    def get_app(self):
+        self.app = Application(pages, **config)
+        return self.app
+
+    def get_new_ioloop(self):
+        return tornado.ioloop.IOLoop.instance()
+
+    def testGetVisualizationForInteger(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        q_id = question.question_id
+
+        input_data = {'survey_id': survey_id,
+                      'submitter': 'test_submitter',
+                      'answers':
+                          [{'question_id': q_id,
+                            'answer': 1,
+                            'is_other': False}]}
+        api.submission.submit(connection, input_data)
+
+        with mock.patch.object(VisualizationHandler, 'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/visualize/{}'.format(q_id))
+        self.assertEqual(response.code, 200)
+        webpage_response = to_unicode(response.body)
+        self.assertIn('line_graph', webpage_response)
+        self.assertIn('bar_graph', webpage_response)
+
+    def testGetVisualizationsWithNoSubmissions(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        q_id = question.question_id
+
+        with mock.patch.object(VisualizationHandler, 'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/visualize/{}'.format(q_id))
+        self.assertEqual(response.code, 200)
+        webpage_response = to_unicode(response.body)
+        self.assertIn('No viewable submissions.', webpage_response)
+
+    def testGetVisualizationsForNote(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'note')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        q_id = question.question_id
+
+        with mock.patch.object(VisualizationHandler, 'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/visualize/{}'.format(q_id))
+        self.assertEqual(response.code, 200)
+        webpage_response = to_unicode(response.body)
+        self.assertIn('No viewable submissions.', webpage_response)
+
+    def testGetVisualizationForLocation(self):
+        survey_id = survey_table.select().where(
+            survey_table.c.survey_title == 'test_title').execute().first(
+
+        ).survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'location')
+        q_where = question_table.select().where(and_cond)
+        question = q_where.execute().first()
+        q_id = question.question_id
+
+        input_data = {'survey_id': survey_id,
+                      'submitter': 'test_submitter',
+                      'answers':
+                          [{'question_id': q_id,
+                            'answer': [0, 0],
+                            'is_other': False}]}
+        api.submission.submit(connection, input_data)
+
+        with mock.patch.object(VisualizationHandler, 'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/visualize/{}'.format(q_id))
+        self.assertEqual(response.code, 200)
+        webpage_response = to_unicode(response.body)
+        self.assertIn('bar_graph', webpage_response)
+        self.assertIn('vis_map', webpage_response)
+
+
 if __name__ == '__main__':
     unittest.main()
-

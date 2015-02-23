@@ -1,40 +1,49 @@
 var jsdom = require('jsdom');
 var should = require('should');
+global.window = require('./emulate_dom.js');
+
+document = window.document;
+L = window.L;
+_ = window._;
+$ = window.$;
+alert = window.alert;
+setInterval = function(hey, you) {  } //console.log('pikachu'); }
+console = window.console;
+Image = window.Image;
+localStorage = {};
+setTimeout = function(cb, time) { cb(); };
+
+var mah_code = require('../static/app.js');
+var App = mah_code.App;
+var Survey = mah_code.Survey;
+var Widgets = mah_code.Widgets;
+
+var survey = null;
 
 // Most important tests, survey functions
 describe('Survey unit and regression tests', function(done) {
-    // globals
-    var window;
-    var raw_survey;
-
     before(function(done) {
         done();
     });
 
     beforeEach(function(done) {
-        raw_survey = require('./fixtures/survey.json');
-        jsdom.env('./test/widgets.html',  
-            [//'lib/blanket.min.js', 
-            'lib/classList_shim.js',
-            '../static/lib.js',  
-            '../static/app.js'], 
-            function(error, win) {
-                if (error) { 
-                    console.log(error);
-                    throw (error) 
-                }
-            
-                window = win;
-                window.localStorage = {};
-                done();
-            });
+        localStorage = {};
+        localStorage.setItem = function(id, data) {
+            localStorage[id] = data;
+        }
 
+        done();
     });
 
     afterEach(function(done) {
-        raw_survey = null;
-        window.close();
-        window = null;
+        $(".page_nav__next").off('click'); //XXX Find out why events are cached
+        $(".page_nav__prev").off('click');
+        $(".message").clearQueue().text("");
+        survey = null;
+        done();
+    });
+    
+    after(function(done) {
         done();
     });
 
@@ -48,7 +57,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            var survey = new window.Survey("id", questions, {});
+            survey = new Survey("id", questions, {});
 
             // empty
             should(survey.getFirstResponse(questions[0])).not.be.ok;
@@ -79,7 +88,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            var survey = new window.Survey("id", questions, {});
+            survey = new Survey("id", questions, {});
 
             // empty
             should(survey.getFirstResponse(questions[0])).not.be.ok;
@@ -114,7 +123,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            var survey = new window.Survey("id", questions, {});
+            survey = new Survey("id", questions, {});
             questions[0].should.equal(survey.current_question);
 
             // state shouldn't change
@@ -151,7 +160,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            var survey = new window.Survey("id", questions, {});
+            survey = new Survey("id", questions, {});
             questions[0].should.equal(survey.current_question);
 
             // state shouldn't change
@@ -188,7 +197,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            var survey = new window.Survey("id", questions, {});
+            survey = new Survey("id", questions, {});
             questions[0].should.equal(survey.current_question);
 
             // state shouldn't change
@@ -225,7 +234,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            var survey = new window.Survey("id", questions, {});
+            survey = new Survey("id", questions, {});
             questions[0].should.equal(survey.current_question);
 
             // state shouldn't change
@@ -263,7 +272,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            var survey = new window.Survey("id", questions, {});
+            survey = new Survey("id", questions, {});
             questions[0].should.equal(survey.current_question);
 
             // state shouldn't change
@@ -302,7 +311,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            var survey = new window.Survey("id", questions, {});
+            survey = new Survey("id", questions, {});
             questions[0].should.equal(survey.current_question);
 
             // state shouldn't change
@@ -353,7 +362,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            var survey = new window.Survey("id", questions, {});
+            survey = new Survey("id", questions, {});
             questions[0].should.equal(survey.current_question);
 
             survey.next(NEXT);
@@ -424,7 +433,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            var survey = new window.Survey("id", questions, {});
+            survey = new Survey("id", questions, {});
             var brancher = questions[4];
             var next = questions[1];
             var end = questions[2];
@@ -457,6 +466,59 @@ describe('Survey unit and regression tests', function(done) {
             brancher.should.equal(survey.current_question);
             
 
+            done();
+
+        });
+
+    it('submit: empty submission',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "time",
+                    logic: {},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    logic: {},
+                    sequence_number: 2
+                },
+            ];
+
+            survey = new Survey("id", questions, {});
+            survey.submit();
+            $('.message').text().should.match("Submission failed, No questions answer in Survey!");
+            done();
+
+        });
+
+    it('submit: basic submission',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "text",
+                    logic: {},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    logic: {},
+                    sequence_number: 2
+                },
+            ];
+
+            survey = new Survey("id", questions, {});
+            questions[0].answer = ["hey baby"];
+            survey.submit();
+            $('.message').text().should.match("Submission failed, will try again later.");
             done();
 
         });

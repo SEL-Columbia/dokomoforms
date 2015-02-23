@@ -1,4 +1,5 @@
 """Base handler classes and utility functions."""
+from collections.abc import Callable
 import functools
 from pprint import pformat
 
@@ -7,11 +8,19 @@ from tornado.escape import to_unicode, json_decode, json_encode
 import tornado.web
 
 from db.auth_user import verify_api_token
+from db.question import question_select
+from db.survey import get_email_address
+import settings
 from utils.logger import setup_custom_logger
 
 
 class BaseHandler(tornado.web.RequestHandler):
     """Common handler functions here (e.g. user auth, template helpers)"""
+
+    @property
+    def db(self):
+        """A connection to the PostgreSQL database."""
+        return self.application.db
 
     def prepare(self):
         """
@@ -39,7 +48,10 @@ class BaseHandler(tornado.web.RequestHandler):
 
         :return: the current user's e-mail address
         """
-        user = self.get_secure_cookie('user')
+        try:
+            user = settings.TEST_USER
+        except AttributeError:
+            user = self.get_secure_cookie('user')
         if user:
             return to_unicode(user)
 
@@ -63,12 +75,13 @@ class APIHandler(BaseHandler):
 
         :raise tornado.web.HTTPError: 403, if neither condition is true
         """
+        super().prepare()
         if not self.current_user:
             token = self.request.headers.get('Token', None)
             email = self.request.headers.get('Email', None)
             if (token is None) or (email is None):
                 raise tornado.web.HTTPError(403)
-            if not verify_api_token(token=token, email=email):
+            if not verify_api_token(self.db, token=token, email=email):
                 raise tornado.web.HTTPError(403)
 
 
@@ -98,7 +111,7 @@ def get_json_request_body(self: tornado.web.RequestHandler) -> dict:
             {'message': 'Problems parsing JSON'}))
 
 
-def validation_message(resource: str, field: str, code:str) -> str:
+def validation_message(resource: str, field: str, code: str) -> str:
     """
     Create a standard error message.
 
@@ -132,5 +145,26 @@ def catch_bare_integrity_error(method, logger=setup_custom_logger('dokomo')):
             logger.error('\n' + pformat(e))
             reason = validation_message('submission', '', 'invalid')
             raise tornado.web.HTTPError(422, reason=reason)
+
+    return wrapper
+
+
+def user_owns_question(method: Callable) -> object:
+    """
+    Ensure that the user visiting a page relating to a question should be
+    able to see it.
+
+    :param method: an HTTP method
+    :return: the result of the method
+    :raise tornado.web.HTTPError: 404, if the user is not authorized
+    """
+
+    @functools.wraps(method)
+    def wrapper(self, question_id: str, *args):
+        question = question_select(self.db, question_id)
+        authorized_email = get_email_address(self.db, question.survey_id)
+        if self.current_user != authorized_email:
+            raise tornado.web.HTTPError(404)
+        return method(self, question_id, *args)
 
     return wrapper
