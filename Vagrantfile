@@ -69,7 +69,7 @@ Vagrant.configure(2) do |config|
   end
 
   config.trigger.after :up do
-    run "vagrant ssh -c 'cd /vagrant && python3 webapp.py'"
+    run "vagrant ssh -c 'cd /vagrant && nohup python3 webapp.py &'"
   end
  
 end
