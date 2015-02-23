@@ -5,6 +5,8 @@ This tornado server creates the client app by serving html/css/js and
 it also functions as the wsgi container for accepting survey form post
 requests back from the client app.
 """
+from sqlalchemy.orm import scoped_session
+
 from tornado.escape import json_encode
 import tornado.web
 import tornado.ioloop
@@ -69,7 +71,7 @@ class Survey(BaseHandler):
         SubmitAPIHandler.post(self, uuid)  # TODO: Hey Abdi kill this
 
 
-class APITokenGenerator(BaseHandler):
+class APITokenGenerator(BaseHandler):  # pragma: no cover
     @tornado.web.authenticated
     def get(self):
         # self.render('api-token.html')
@@ -92,7 +94,7 @@ config = {
 
 use_xsrf_cookies = True
 # If TEST_USER is set, don't use XSRF tokens
-try:
+try:  # pragma: no cover
     _ = settings.TEST_USER
     config['xsrf_cookies'] = False
 except AttributeError:
@@ -143,7 +145,7 @@ if config.get('debug', False):
               (r'/debug/logout/?', DebugLogoutHandler), ]
 
 
-class Application(tornado.web.Application):
+class Application(tornado.web.Application):  # pragma: no cover
     def __init__(self, handlers=None, default_host="", transforms=None,
                  **configs):
         if handlers is None:
@@ -156,7 +158,8 @@ class Application(tornado.web.Application):
         self.db = engine.connect()
 
 
-if __name__ == '__main__':
+scoped_session
+if __name__ == '__main__':  # pragma: no cover
     http_server = tornado.httpserver.HTTPServer(Application())
     http_server.listen(settings.WEBAPP_PORT, '0.0.0.0')
 

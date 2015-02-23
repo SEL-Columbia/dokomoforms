@@ -399,8 +399,8 @@ class TestQuestion(unittest.TestCase):
                                   auth_user_id=auth_user_id)
         self.assertGreater(questions.rowcount, 0)
 
-        self.assertRaises(TypeError, get_questions, survey_id)
-        self.assertRaises(TypeError, get_questions, survey_id,
+        self.assertRaises(TypeError, get_questions, connection, survey_id)
+        self.assertRaises(TypeError, get_questions, survey_id, connection,
                           auth_user_id='',
                           email='')
 
@@ -626,9 +626,11 @@ class TestSubmission(unittest.TestCase):
                                         auth_user_id=user_id)
         self.assertEqual(submission_id,
                          submission2.submission_submission_id)
-        self.assertRaises(TypeError, submission_select, submission_id,
+        self.assertRaises(TypeError, submission_select, connection,
+                          submission_id,
                           auth_user_id='', email='')
-        self.assertRaises(TypeError, submission_select, submission_id)
+        self.assertRaises(TypeError, submission_select, connection,
+                          submission_id)
 
     def testSubmissionSelectDoesNotExist(self):
         self.assertRaises(SubmissionDoesNotExistError,
@@ -823,10 +825,12 @@ class TestSurvey(unittest.TestCase):
         self.assertEqual(survey.survey_title,
                          survey_select(connection, survey.survey_id,
                                        email=user.email).survey_title)
-        self.assertRaises(TypeError, survey_select, survey.survey_id,
+        self.assertRaises(TypeError, survey_select, connection,
+                          survey.survey_id,
                           auth_user_id=user.auth_user_id,
                           email=user.email)
-        self.assertRaises(TypeError, survey_select, survey.survey_id)
+        self.assertRaises(TypeError, survey_select, connection,
+                          survey.survey_id)
 
     def testSurveySelectDoesNotExist(self):
         self.assertRaises(SurveyDoesNotExistError, survey_select,
