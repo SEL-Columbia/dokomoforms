@@ -14,20 +14,22 @@ class VisualizationHandler(BaseHandler):
     # TODO: consider absorbing this into api.aggregation
     def _get_map_data(self, raw_answers: ResultProxy):
         for raw_answer in raw_answers:
-            coord = get_geo_json(raw_answer)['coordinates']
+            coord = get_geo_json(self.db, raw_answer)['coordinates']
             sub_id = raw_answer.submission_id
-            subs = api.submission.get_one(sub_id, email=self.current_user)
+            subs = api.submission.get_one(self.db, sub_id,
+                                          email=self.current_user)
             yield [coord[0], coord[1], json_encode(subs['result'])]
 
     @tornado.web.authenticated
     @user_owns_question
     def get(self, question_id: str):
-        question = question_select(question_id)
-        answers = get_answers_for_question(question_id)
+        question = question_select(self.db, question_id)
+        answers = get_answers_for_question(self.db, question_id)
         time_data, bar_data, map_data = None, None, None
         if question.type_constraint_name in {'integer', 'decimal'}:
             try:
-                data = time_series(question_id, email=self.current_user)
+                data = time_series(self.db, question_id,
+                                   email=self.current_user)
                 time_data = data['result']
             except NoSubmissionsToQuestionError:
                 pass
@@ -35,7 +37,7 @@ class VisualizationHandler(BaseHandler):
                                              'date', 'time', 'location',
                                              'multiple_choice'}:
             try:
-                data = bar_graph(question_id, email=self.current_user)
+                data = bar_graph(self.db, question_id, email=self.current_user)
                 bar_data = data['result']
             except NoSubmissionsToQuestionError:
                 pass

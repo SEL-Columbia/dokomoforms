@@ -5,11 +5,10 @@ This tornado server creates the client app by serving html/css/js and
 it also functions as the wsgi container for accepting survey form post
 requests back from the client app.
 """
-from sqlalchemy import create_engine
-
 from tornado.escape import json_encode
 import tornado.web
 import tornado.ioloop
+import tornado.httpserver
 
 import api.aggregation
 import api.survey
@@ -42,7 +41,7 @@ logger = setup_custom_logger('dokomo')
 
 class Index(BaseHandler):
     def get(self, msg=""):
-        surveys = get_surveys_by_email(self.current_user, 10)
+        surveys = get_surveys_by_email(self.db, self.current_user, 10)
         self.render('index.html', message=msg, surveys=surveys)
 
     def post(self):
@@ -53,11 +52,12 @@ class Index(BaseHandler):
 class Survey(BaseHandler):
     def get(self, survey_prefix: str):
         try:
-            survey_id = get_survey_id_from_prefix(survey_prefix)
+            survey_id = get_survey_id_from_prefix(self.db, survey_prefix)
             if len(survey_prefix) < 36:
                 self.redirect('/survey/{}'.format(survey_id), permanent=False)
             else:
-                survey = api.survey.display_survey(survey_id)['result']
+                survey = api.survey.display_survey(self.db, survey_id)[
+                    'result']
                 self.render('survey.html',
                             survey=json_encode(survey),
                             survey_title=survey['survey_title'])
@@ -74,37 +74,35 @@ class APITokenGenerator(BaseHandler):
     def get(self):
         # self.render('api-token.html')
         self.write(
-            api.user.generate_token(
-                {'email': self.current_user}))
+            api.user.generate_token(self.db, {'email': self.current_user}))
 
     @tornado.web.authenticated
     def post(self):
         data = get_json_request_body(self)
-        self.write(api.user.generate_token(data))
+        self.write(api.user.generate_token(self.db, data))
 
+
+config = {
+    'template_path': 'templates',
+    'static_path': 'static',
+    'login_url': '/',
+    'ui_methods': pages.util.ui,
+    'debug': settings.APP_DEBUG
+}
 
 use_xsrf_cookies = True
 # If TEST_USER is set, don't use XSRF tokens
 try:
     _ = settings.TEST_USER
-    use_xsrf_cookies = False
+    config['xsrf_cookies'] = False
 except AttributeError:
-    pass
-
-config = {
-    'template_path': 'templates',
-    'static_path': 'static',
-    'xsrf_cookies': use_xsrf_cookies,
-    'login_url': '/',
-    'cookie_secret': settings.COOKIE_SECRET,
-    'ui_methods': pages.util.ui,
-    'debug': settings.APP_DEBUG
-}
+    config['xsrf_cookies'] = True
+    config['cookie_secret'] = settings.COOKIE_SECRET
 
 UUID_REGEX = '[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][' \
              'a-f0-9]{3}-?[a-f0-9]{12}'
 
-handlers = [
+pages = [
     # Dokomo Forms
     (r'/', Index),
 
@@ -140,21 +138,27 @@ handlers = [
 ]
 
 if config.get('debug', False):
-    handlers += [(r'/debug/create/(.+)/?', DebugUserCreationHandler),
-                 (r'/debug/login/(.+)/?', DebugLoginHandler),
-                 (r'/debug/logout/?', DebugLogoutHandler), ]
+    pages += [(r'/debug/create/(.+)/?', DebugUserCreationHandler),
+              (r'/debug/login/(.+)/?', DebugLoginHandler),
+              (r'/debug/logout/?', DebugLogoutHandler), ]
+
 
 class Application(tornado.web.Application):
-    def __init__(self):
-        tornado.web.Application.__init__(self, pages, **config)
+    def __init__(self, handlers=None, default_host="", transforms=None,
+                 **configs):
+        if handlers is None:
+            handlers = pages
+        if not configs:
+            configs = config
+        tornado.web.Application.__init__(self, handlers, default_host,
+                                         transforms, **configs)
 
-        self.connection = engine.connect()
+        self.db = engine.connect()
 
-
-app = Application()
 
 if __name__ == '__main__':
-    app.listen(settings.WEBAPP_PORT, '0.0.0.0')
+    http_server = tornado.httpserver.HTTPServer(Application())
+    http_server.listen(settings.WEBAPP_PORT, '0.0.0.0')
 
     logger.info('starting server on port ' + str(settings.WEBAPP_PORT))
 

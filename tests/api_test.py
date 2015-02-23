@@ -601,7 +601,7 @@ class TestSurvey(unittest.TestCase):
         inserted_qs = get_questions_no_credentials(connection,
                                                    survey_id).fetchall()
         choice_1 = \
-        get_choices(connection, inserted_qs[1].question_id).fetchall()[0]
+            get_choices(connection, inserted_qs[1].question_id).fetchall()[0]
         choice_1_id = choice_1.question_choice_id
 
         submission = {'submitter': 'me',
@@ -741,15 +741,18 @@ class TestSurvey(unittest.TestCase):
         data = {'survey_title': 'to_be_updated',
                 'questions': questions,
                 'email': 'test_email'}
-        survey_id = api.survey.create(data)['result']['survey_id']
-        inserted_qs = get_questions_no_credentials(survey_id).fetchall()
-        choice_1 = get_choices(inserted_qs[1].question_id).first()
+        survey_id = api.survey.create(connection, data)['result']['survey_id']
+        inserted_qs = get_questions_no_credentials(connection,
+                                                   survey_id).fetchall()
+        choice_1 = get_choices(connection, inserted_qs[1].question_id).first()
         choice_1_id = choice_1.question_choice_id
-        choice_a = get_choices(inserted_qs[2].question_id).first()
+        choice_a = get_choices(connection, inserted_qs[2].question_id).first()
         choice_a_id = choice_a.question_choice_id
-        other_choice = get_choices(inserted_qs[3].question_id).first()
+        other_choice = get_choices(connection,
+                                   inserted_qs[3].question_id).first()
         other_choice_id = other_choice.question_choice_id
-        other_choice_2 = get_choices(inserted_qs[4].question_id).first()
+        other_choice_2 = get_choices(connection,
+                                     inserted_qs[4].question_id).first()
         other_choice_2_id = other_choice_2.question_choice_id
 
         submission = {'submitter': 'me',
@@ -779,7 +782,7 @@ class TestSurvey(unittest.TestCase):
                                    'answer': 'my super fancy other answer',
                                    'is_other': True}]}
 
-        api.submission.submit(submission)
+        api.submission.submit(connection, submission)
 
         update_json = {'survey_id': survey_id,
                        'survey_title': 'updated',
@@ -840,15 +843,17 @@ class TestSurvey(unittest.TestCase):
                       'choices': [],
                       'branches': []}]
         update_json['questions'] = questions
-        new_survey = api.survey.update(update_json)['result']
+        new_survey = api.survey.update(connection, update_json)['result']
         gsb = get_submissions_by_email
-        new_submissions = gsb(new_survey['survey_id'],
+        new_submissions = gsb(connection, new_survey['survey_id'],
                               email='test_email').fetchall()
         self.assertEqual(len(new_submissions), 1)
-        choices = get_answer_choices(
-            new_submissions[0].submission_id).fetchall()
+        choices = get_answer_choices(connection,
+                                     new_submissions[
+                                         0].submission_id).fetchall()
         self.assertEqual(len(choices), 2)
-        answers = get_answers(new_submissions[0].submission_id).fetchall()
+        answers = get_answers(connection,
+                              new_submissions[0].submission_id).fetchall()
         self.assertEqual(len(answers), 1)
 
     def testLyingAboutOther(self):
@@ -893,8 +898,9 @@ class TestSurvey(unittest.TestCase):
         data = {'survey_title': 'bad update survey',
                 'questions': questions,
                 'email': 'test_email'}
-        survey_id = api.survey.create(data)['result']['survey_id']
-        inserted_questions = get_questions_no_credentials(survey_id).fetchall()
+        survey_id = api.survey.create(connection, data)['result']['survey_id']
+        inserted_questions = get_questions_no_credentials(connection,
+                                                          survey_id).fetchall()
 
         update_json = {'survey_id': survey_id,
                        'survey_title': 'updated survey title',
@@ -909,7 +915,8 @@ class TestSurvey(unittest.TestCase):
                       'choices': ['two', 'one', 'one'],
                       'branches': []}]
         update_json['questions'] = questions
-        self.assertRaises(RepeatedChoiceError, api.survey.update, update_json)
+        self.assertRaises(RepeatedChoiceError, api.survey.update, connection,
+                          update_json)
 
         questions = [{'question_id': inserted_questions[0].question_id,
                       'question_title': 'updated question title',
@@ -924,7 +931,7 @@ class TestSurvey(unittest.TestCase):
 
         update_json['questions'] = questions
         self.assertRaises(QuestionChoiceDoesNotExistError, api.survey.update,
-                          update_json)
+                          connection, update_json)
 
         questions = [{'question_id': inserted_questions[0].question_id,
                       'question_title': 'updated question title',
@@ -938,7 +945,8 @@ class TestSurvey(unittest.TestCase):
                       'branches': []}]
 
         update_json['questions'] = questions
-        self.assertRaises(RepeatedChoiceError, api.survey.update, update_json)
+        self.assertRaises(RepeatedChoiceError, api.survey.update, connection,
+                          update_json)
 
         questions = [{'question_id': inserted_questions[0].question_id,
                       'question_title': 'updated question title',
@@ -953,7 +961,8 @@ class TestSurvey(unittest.TestCase):
                       'branches': []}]
 
         update_json['questions'] = questions
-        self.assertRaises(RepeatedChoiceError, api.survey.update, update_json)
+        self.assertRaises(RepeatedChoiceError, api.survey.update, connection,
+                          update_json)
 
     def testDelete(self):
         data = {'survey_title': 'api_test survey',

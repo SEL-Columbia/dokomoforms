@@ -75,12 +75,13 @@ class APIHandler(BaseHandler):
 
         :raise tornado.web.HTTPError: 403, if neither condition is true
         """
+        super().prepare()
         if not self.current_user:
             token = self.request.headers.get('Token', None)
             email = self.request.headers.get('Email', None)
             if (token is None) or (email is None):
                 raise tornado.web.HTTPError(403)
-            if not verify_api_token(token=token, email=email):
+            if not verify_api_token(self.db, token=token, email=email):
                 raise tornado.web.HTTPError(403)
 
 
@@ -160,8 +161,8 @@ def user_owns_question(method: Callable) -> object:
 
     @functools.wraps(method)
     def wrapper(self, question_id: str, *args):
-        question = question_select(question_id)
-        authorized_email = get_email_address(question.survey_id)
+        question = question_select(self.db, question_id)
+        authorized_email = get_email_address(self.db, question.survey_id)
         if self.current_user != authorized_email:
             raise tornado.web.HTTPError(404)
         return method(self, question_id, *args)

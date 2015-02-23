@@ -11,7 +11,7 @@ class AggregationHandler(APIHandler):
     def _apply_aggregation(self, aggregation_name: str, question_id: str):
         try:
             method = getattr(api.aggregation, aggregation_name)
-            return method(question_id, email=get_email(self))
+            return method(self.db, question_id, email=get_email(self))
         except AttributeError:
             reason = json_encode(
                 validation_message('aggregation', aggregation_name,
