@@ -5,7 +5,7 @@ import datetime
 from sqlalchemy.engine import RowProxy, Connection
 
 from api import execute_with_exceptions, json_response
-from db import engine, delete_record, update_record
+from db import delete_record, update_record
 from db.answer import get_answers_for_question, answer_insert
 from db.answer_choice import get_answer_choices_for_choice_id, \
     answer_choice_insert

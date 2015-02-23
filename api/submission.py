@@ -6,7 +6,7 @@ from sqlalchemy.engine import ResultProxy, RowProxy, Connection
 from sqlalchemy.sql import Insert
 
 from api import execute_with_exceptions, json_response
-from db import engine, delete_record
+from db import delete_record
 from db.answer import answer_insert, get_answers, get_geo_json, \
     CannotAnswerMultipleTimesError
 from db.answer_choice import get_answer_choices, answer_choice_insert
