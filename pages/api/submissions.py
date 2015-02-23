@@ -17,7 +17,7 @@ class SubmissionsAPIHandler(APIHandler):
 
     def get(self, survey_id: str):
         subs = self._get_subs()
-        response = api.submission.get_all(survey_id,
+        response = api.submission.get_all(self.db, survey_id,
                                           email=get_email(self),
                                           submitters=subs)
         self.write(response)
@@ -26,7 +26,7 @@ class SubmissionsAPIHandler(APIHandler):
         body = get_json_request_body(self)
         subs = body.get('submitters', None)
         filters = body.get('filters', None)
-        response = api.submission.get_all(survey_id,
+        response = api.submission.get_all(self.db, survey_id,
                                           email=get_email(self),
                                           submitters=subs,
                                           filters=filters)
@@ -37,7 +37,8 @@ class SingleSubmissionAPIHandler(APIHandler):
     """The endpoint for getting a single submission."""
 
     def get(self, submission_id: str):
-        response = api.submission.get_one(submission_id, email=get_email(self))
+        response = api.submission.get_one(self.db, submission_id,
+                                          email=get_email(self))
         self.write(response)
 
 
@@ -52,7 +53,7 @@ class SubmitAPIHandler(APIHandler):
             reason = validation_message('submission', 'survey_id', 'invalid')
             raise tornado.web.HTTPError(422, reason=reason)
         try:
-            self.write(api.submission.submit(data))
+            self.write(api.submission.submit(self.db, data))
             self.set_status(201)
         except KeyError as e:
             reason = validation_message('submission', str(e), 'missing_field')

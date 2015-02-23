@@ -1,7 +1,7 @@
 """Allow access to the answer table."""
 from sqlalchemy import Table, MetaData, text
 
-from sqlalchemy.engine import ResultProxy, RowProxy
+from sqlalchemy.engine import ResultProxy, RowProxy, Connection
 from sqlalchemy.sql.dml import Insert
 from sqlalchemy.sql import func
 from tornado.escape import json_decode
@@ -83,33 +83,38 @@ def answer_insert(*,
     return answer_table.insert().values(values)
 
 
-def get_answers(submission_id: str) -> ResultProxy:
+def get_answers(connection: Connection,
+                submission_id: str) -> ResultProxy:
     """
     Get all the records from the answer table identified by submission_id
     ordered by sequence number.
 
+    :param connection: a SQLAlchemy Connection
     :param submission_id: foreign key
     :return: an iterable of the answers (RowProxy)
     """
     select_stmt = answer_table.select()
     where_stmt = select_stmt.where(
         answer_table.c.submission_id == submission_id)
-    return where_stmt.order_by('sequence_number asc').execute()
+    return connection.execute(where_stmt.order_by('sequence_number asc'))
 
 
-def get_answers_for_question(question_id: str) -> ResultProxy:
+def get_answers_for_question(connection: Connection,
+                             question_id: str) -> ResultProxy:
     """
     Get all the records from the answer table identified by question_id.
 
+    :param connection: a SQLAlchemy Connection
     :param question_id: foreign key
     :return: an iterable of the answers (RowProxy)
     """
     select_stmt = answer_table.select()
     where_stmt = select_stmt.where(answer_table.c.question_id == question_id)
-    return where_stmt.execute()
+    return connection.execute(where_stmt)
 
 
-def get_geo_json(answer: RowProxy) -> dict:
+def get_geo_json(connection: Connection,
+                 answer: RowProxy) -> dict:
     """
     The default string representation of a geometry in PostGIS is some
     garbage. This function returns, instead of garbage, a GeoJSON dict that
@@ -120,10 +125,12 @@ def get_geo_json(answer: RowProxy) -> dict:
     like this:
     {'coordinates': [], 'type': 'MultiPoint'}
 
+    :param connection: a SQLAlchemy Connection
     :param answer: a RowProxy object for a record in the answer table
     :return: a GeoJSON dict representing the answer's value
     """
-    result = engine.execute(func.ST_AsGeoJSON(answer.answer_location)).scalar()
+    result = connection.execute(
+        func.ST_AsGeoJSON(answer.answer_location)).scalar()
     return json_decode(result)
 
 

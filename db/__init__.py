@@ -1,6 +1,8 @@
 """Set up database access."""
 from sqlalchemy import create_engine, Table
+
 from sqlalchemy.engine import Engine
+
 from sqlalchemy.sql import Update, Delete
 from sqlalchemy.sql.schema import Column
 
