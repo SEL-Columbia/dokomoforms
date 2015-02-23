@@ -11,8 +11,10 @@ setInterval = function(hey, you) {  } //console.log('pikachu'); }
 console = window.console;
 Image = window.Image;
 localStorage = {};
+setTimeout = function(cb, time) { cb(); };
 
 var mah_code = require('../static/app.js');
+var App = mah_code.App;
 var Survey = mah_code.Survey;
 var Widgets = mah_code.Widgets;
 
@@ -24,15 +26,19 @@ describe('Survey unit and regression tests', function(done) {
         done();
     });
 
-
     beforeEach(function(done) {
+        localStorage = {};
+        localStorage.setItem = function(id, data) {
+            localStorage[id] = data;
+        }
+
         done();
     });
 
     afterEach(function(done) {
         $(".page_nav__next").off('click'); //XXX Find out why events are cached
         $(".page_nav__prev").off('click');
-        localStorage = {};
+        $(".message").clearQueue().text("");
         survey = null;
         done();
     });
@@ -460,6 +466,59 @@ describe('Survey unit and regression tests', function(done) {
             brancher.should.equal(survey.current_question);
             
 
+            done();
+
+        });
+
+    it('submit: empty submission',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "time",
+                    logic: {},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    logic: {},
+                    sequence_number: 2
+                },
+            ];
+
+            survey = new Survey("id", questions, {});
+            survey.submit();
+            $('.message').text().should.match("Submission failed, No questions answer in Survey!");
+            done();
+
+        });
+
+    it('submit: basic submission',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "text",
+                    logic: {},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    logic: {},
+                    sequence_number: 2
+                },
+            ];
+
+            survey = new Survey("id", questions, {});
+            questions[0].answer = ["hey baby"];
+            survey.submit();
+            $('.message').text().should.match("Submission failed, will try again later.");
             done();
 
         });
