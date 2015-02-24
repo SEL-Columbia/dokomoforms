@@ -21,8 +21,8 @@
     </div>
 
     <script id="widget_text" type="text/html">
+        <div class="question__title"><%- question.question_title %></div>
         <% if (question.answer.length === 0){ %>
-            <div class="question__title"><%- question.question_title %></div>
             <input class="text_input" type="text"
                 placeholder="Please provide any response"
                 value="<%- question.default || '' %>"
