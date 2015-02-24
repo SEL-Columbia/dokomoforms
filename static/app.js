@@ -918,8 +918,7 @@ Widgets.facility = function(question, page) {
             App.unsynced_facilities[uuid] = {
                 'name': 'New Facility', 'uuid': uuid, 
                 'properties' : {'sector': 'other'},
-                'coordinates' : [lng, lat],
-                'question_id' : question.question_id // XXX: Remove this from here
+                'coordinates' : [lng, lat]
             };
 
             // Get and place marker

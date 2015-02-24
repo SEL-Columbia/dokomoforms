@@ -10,6 +10,7 @@ alert = window.alert;
 setInterval = function(hey, you) {  } //console.log('pikachu'); }
 console = window.console;
 Image = window.Image;
+navigator = window.navigator;
 localStorage = {};
 setTimeout = function(cb, time) { cb(); };
 
@@ -32,6 +33,9 @@ describe('Survey unit and regression tests', function(done) {
             localStorage[id] = data;
         }
 
+        App.facilities = [];
+        App.unsynced_facilities = {};
+
         done();
     });
 
@@ -39,6 +43,7 @@ describe('Survey unit and regression tests', function(done) {
         $(".page_nav__next").off('click'); //XXX Find out why events are cached
         $(".page_nav__prev").off('click');
         $(".message").clearQueue().text("");
+        $('.content').empty();
         survey = null;
         done();
     });
@@ -497,6 +502,7 @@ describe('Survey unit and regression tests', function(done) {
         });
 
     it('submit: basic submission',
+        //XXX: Fake response so that this doesn't 404
         function(done) {
             var NEXT = 1;
             var PREV = -1;
@@ -518,10 +524,50 @@ describe('Survey unit and regression tests', function(done) {
             survey = new Survey("id", questions, {});
             questions[0].answer = ["hey baby"];
             survey.submit();
+            //XXX$('.message').text().should.match('Survey submitted!');
             $('.message').text().should.match("Submission failed, will try again later.");
             done();
 
         });
 
+
+    it('submit: facility submission',
+        //XXX: Fake response so that this doesn't 404
+        //XXX: Fake revisit response so that this doesn't 404
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "facility",
+                    logic: {},
+                    answer: [],
+                    question_title: "fac",
+                    sequence_number: 1
+                },
+            ];
+
+            console.log(App.facilities)
+            console.log(App.unsynced_facilities)
+
+            // Preload some facilities;
+            App.unsynced_facilities[1] = {
+                'name': 'New Facility', 'uuid': 1, 
+                'properties' : {'sector': 'health'},
+                'coordinates' : [40.01, 70.01]
+            };
+
+            survey = new Survey("id", questions, {});
+            questions[0].answer = [[1, [40.01, 70.01]]]; //So many arrays
+
+            survey.submit();
+            //XXX$('.message').text().should.match('Survey submitted!'); 
+            //XXX should(App.unsynced_facilities[1]).not.be.ok;
+            //XXX App.facilities.should.have.length(1);
+            $('.message').text().should.match("Submission failed, will try again later."); 
+            done();
+
+        });
 });
 
