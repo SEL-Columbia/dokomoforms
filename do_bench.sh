@@ -15,4 +15,4 @@ else
     sed -i 's/TEST_USER.*/TEST_USER="poop"/' local_settings.py
 fi
 
-python -m cProfile -o /tmp/prof benchmark/benchmark.py --path=/api/surveys/create --post_file=benchmark/survey.json -n=100
+python -m cProfile -o /tmp/prof benchmark/benchmark_tornado.py --path=/api/surveys/create --post_file=benchmark/survey.json -n=100
