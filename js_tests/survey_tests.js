@@ -548,9 +548,6 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            console.log(App.facilities)
-            console.log(App.unsynced_facilities)
-
             // Preload some facilities;
             App.unsynced_facilities[1] = {
                 'name': 'New Facility', 'uuid': 1, 
