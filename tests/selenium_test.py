@@ -193,10 +193,10 @@ class SubmissionTest(DriverTest):
         next_button.click()
         next_button.click()  # note question
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, in_xpath + 'div[3]/input')))
-        self.drv.find_element_by_xpath(in_xpath + 'div[3]/input').send_keys(
+            (By.XPATH, in_xpath + 'div[4]/input')))
+        self.drv.find_element_by_xpath(in_xpath + 'div[4]/input').send_keys(
             'new_test_facility')
-        self.drv.find_element_by_xpath(in_xpath + 'div[3]/span[2]').click()
+        self.drv.find_element_by_xpath(in_xpath + 'div[4]/span[2]').click()
         next_button.click()
 
         self.drv.find_element_by_xpath(in_xpath + 'div[2]/input').send_keys(
