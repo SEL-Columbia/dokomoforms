@@ -398,7 +398,6 @@ def time_series(connection: Connection,
                          connection.execute(
                              where_stmt.order_by('submission_time asc')),
                          question.survey_id, auth_user_id, question_id)
-    # transpose the result into two lists: time and value
     tsr = [[r.submission_time.isoformat(),
             _jsonify(connection, r[column_name], question_id)]
            for r in result]
@@ -459,7 +458,6 @@ def bar_graph(connection: Connection,
 
     result = _return_sql(connection, result, question.survey_id, user_id,
                          question_id)
-    # transpose the result into two lists: value and count
     bar_graph_result = [[_jsonify(connection, r[0], question_id), r[1]] for r
                         in result]
     response = json_response(
