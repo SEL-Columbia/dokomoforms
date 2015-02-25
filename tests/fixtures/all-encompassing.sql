@@ -24,12 +24,12 @@ VALUES (the_survey_id, 5, 'time question', 'time', 'Use a watch', False, 6),
 
 INSERT INTO question (survey_id, sequence_number, question_title,
     type_constraint_name, logic, allow_multiple, question_to_sequence_number)
-VALUES (the_survey_id, 1, 'integer question', 'integer', '{"required": true, "with_other": true}',
+VALUES (the_survey_id, 1, 'integer question', 'integer', '{"required": false, "with_other": true}',
            False, 2);
 
 INSERT INTO question (survey_id, sequence_number, question_title,
     type_constraint_name, allow_multiple, question_to_sequence_number)
-VALUES (the_survey_id, 2, 'multiple choice question', 'multiple_choice', 
+VALUES (the_survey_id, 2, 'multiple choice question', 'multiple_choice',
            False, 3)
 RETURNING question_id into the_from_question_id;
 
