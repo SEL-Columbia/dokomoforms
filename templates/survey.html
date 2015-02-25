@@ -22,6 +22,7 @@
 
     <script id="widget_text" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
+        <div class="question__hint"><%- question.hint || "" %></div>
         <% if (question.answer.length === 0){ %>
             <input class="text_input" type="text"
                 placeholder="Please provide any response"
@@ -47,6 +48,7 @@
     
     <script id="widget_integer" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
+        <div class="question__hint"><%- question.hint || "" %></div>
         <% if (question.answer.length === 0 ) { %>
             <input class="text_input" type="number"
                 placeholder="Please provide a number"
@@ -84,6 +86,7 @@
     
     <script id="widget_decimal" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
+        <div class="question__hint"><%- question.hint || "" %></div>
         <% if (question.answer.length === 0){ %>
             <input class="text_input" type="number" step="any"
                     placeholder="Please provide a number (decimal OK)"
@@ -109,6 +112,7 @@
 
     <script id="widget_date" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
+        <div class="question__hint"><%- question.hint || "" %></div>
         <% if (question.answer.length === 0){ %>
         <input class="text_input" type="date" 
                placeholder="Please provide a date"
@@ -134,6 +138,7 @@
 
     <script id="widget_time" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
+        <div class="question__hint"><%- question.hint || "" %></div>
         <% if (question.answer.length === 0){ %>
             <input class="text_input" type="time" 
                    placeholder="Please provide a time"
@@ -159,6 +164,7 @@
 
     <script id="widget_location" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
+        <div class="question__hint"><%- question.hint || "" %></div>
         <div id="map" class="question__map"></div>
         <div class="question__location">
             <input class="text_input question__lat" type="text" 
@@ -181,6 +187,7 @@
 
     <script id="widget_facility" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
+        <div class="question__hint"><%- question.hint || "" %></div>
         <div id="map" class="question__map"></div>
         <div>
 
@@ -201,6 +208,7 @@
 
     <script id="widget_multiple_choice" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
+        <div class="question__hint"><%- question.hint || "" %></div>
         <select class="question__select" <%  if (question.allow_multiple) { %> 
             multiple size=<%- question.choices.length + 1 + 1*question.logic['with_other']%> 
         <% } %>>
@@ -229,6 +237,7 @@
     
     <script id="widget_note" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
+        <div class="question__hint"><%- question.hint || "" %></div>
     </script>
 
     <script id="template_submit" type="text/html">

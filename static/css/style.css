@@ -260,10 +260,11 @@ ul {
     margin: 0px auto;
     overflow-y: auto;
     margin-bottom: 75px;
+    min-height: 200px;
 }
 
 .buffer {
-    padding: 25px 4px 175px 4px !important;
+    padding: 25px 4px 50px 4px !important;
 }
 
 .welcome {
@@ -358,6 +359,14 @@ ul {
     font-size: 25px;
     margin-bottom: 25px;
     margin-top: 10px;
+}
+
+.question__hint {
+    text-align: center;
+    font-size: 22px;
+    margin: -5px 15px 25px 15px;
+    color: rgb(152, 140, 135);
+    font-style: italic;
 }
 
 .question__name {
