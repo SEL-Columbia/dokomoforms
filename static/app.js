@@ -427,18 +427,41 @@ Widgets._input = function(question, page, type) {
             self._addNewInput(page, $(page).find('input').last(), question);
 
         });
+
+    // Click the - to remove the newest input
+    $(page)
+        .find('.question__minus')
+        .click(function() { 
+            self._removeNewestInput($(page).find('input'), question);
+
+        });
 };
 
 // Handle creating multiple inputs for widgets that support it 
 Widgets._addNewInput = function(page, input, question, before_class) {
     var before = before_class || '.question__repeat';
-    if (question.allow_multiple) {
+    if (question.allow_multiple) { //XXX: Technically this btn clickable => allow_multiple 
         input
             .clone(true)
             .val(null)
             .insertBefore(page.find(before))
             .focus();
     }
+};
+
+Widgets._removeNewestInput = function(inputs, question) {
+    if (question.allow_multiple && (inputs.length > 1)) {
+        console.log(inputs.length - 1, question.answer[inputs.length - 1]);
+        delete question.answer[inputs.length - 1];
+
+        inputs
+            .last()
+            .remove()
+    }
+
+    inputs
+        .last()
+        .focus()
 };
 
 // Basic input validation
@@ -635,9 +658,17 @@ Widgets.location = function(question, page) {
         updateLocation([map.getCenter().lng, map.getCenter().lat]);
     });
 
-    function updateLocation(coords) {
-        //XXX: Control which element is updated
+    // Clean up answer array
+    question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
+    $(page).find('.question__location').each(function(i, child) { 
+        question.answer[i] = [ 
+            $(child).find('.question__lon').val(),
+            $(child).find('.question__lat').val()
+        ];
 
+    });
+
+    function updateLocation(coords) {
         // Find current length of inputs and update the last one;
         var questions_len = $(page).find('.question__location').length;
 
@@ -688,6 +719,13 @@ Widgets.location = function(question, page) {
         .click(function() { 
             self._addNewInput(page, $(page).find('.question__location').last(), question, '.question__find__btn');
             $(page).find('.question__location').last().children().val(null);
+        });
+    
+    // Click the - to remove the newest input
+    $(page)
+        .find('.question__minus')
+        .click(function() { 
+            self._removeNewestInput($(page).find('.question__location'), question);
         });
 };
 
