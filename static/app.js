@@ -425,6 +425,7 @@ Widgets._input = function(question, page, type) {
         .find('.question__add')
         .click(function() { 
             self._addNewInput(page, $(page).find('input').last(), question);
+
         });
 };
 
@@ -686,6 +687,7 @@ Widgets.location = function(question, page) {
         .find('.question__add')
         .click(function() { 
             self._addNewInput(page, $(page).find('.question__location').last(), question, '.question__find__btn');
+            $(page).find('.question__location').last().children().val(null);
         });
 };
 
