@@ -264,7 +264,7 @@ ul {
 }
 
 .buffer {
-    padding: 25px 4px 50px 4px !important;
+    padding: 25px 4px 100px 4px !important;
 }
 
 .welcome {
@@ -433,11 +433,18 @@ ul {
     min-width: 70px !important;
 }
 
+.question__repeat {
+    display: block;
+    text-align: center;
+    margin: 0px auto;
+    padding: 25px 0px 10px 0px;
+}
+
 .question__add {
     width: 25px;
     height: 25px;
-    display: block;
-    margin: 0px auto;
+    display: inline-block;
+    margin: 0px 5px;
     background: rgba(250, 203, 27, 1.0);
     padding: 15px;
     border-radius: 100px;
@@ -452,6 +459,29 @@ ul {
 }
 
 .question__add:active {
+    background: rgba(250, 203, 27, 0.5);
+    box-shadow: 1px 1px 1px #888888; 
+}
+
+.question__minus {
+    width: 25px;
+    height: 25px;
+    display: inline-block;
+    margin: 0px 5px;
+    background: rgba(250, 203, 27, 1.0);
+    padding: 15px;
+    border-radius: 100px;
+    cursor: pointer;
+    text-align: center;
+    box-shadow: 2px 2px 2px #888888; 
+}
+
+.question__minus:hover {
+    background: rgba(250, 203, 27, 0.5);
+    box-shadow: 2px 2px 2px #888888; 
+}
+
+.question__minus:active {
     background: rgba(250, 203, 27, 0.5);
     box-shadow: 1px 1px 1px #888888; 
 }
