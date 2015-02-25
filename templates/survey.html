@@ -37,13 +37,21 @@
             <% }); %>
         <% } %>
 
-        <svg class="icon question__add" 
+        <div class="question__repeat"
             <% if (!question.allow_multiple) { %> 
                 style="display:none" 
             <% }%>
         >
-            <use xlink:href="#icon-add"></use>
-        </svg>
+            <svg class="icon question__add">
+                <use xlink:href="#icon-add"></use>
+            </svg>
+
+            <svg class="icon question__minus" >
+                <use xlink:href="#icon-minus"></use>
+            </svg>
+
+        </div>
+
     </script>
     
     <script id="widget_integer" type="text/html">
@@ -75,13 +83,20 @@
             <% }); %>
         <% } %>
         
-        <svg class="icon question__add" 
+        <div class="question__repeat"
             <% if (!question.allow_multiple) { %> 
                 style="display:none" 
             <% }%>
         >
-            <use xlink:href="#icon-add"></use>
-        </svg>
+            <svg class="icon question__add">
+                <use xlink:href="#icon-add"></use>
+            </svg>
+
+            <svg class="icon question__minus" >
+                <use xlink:href="#icon-minus"></use>
+            </svg>
+
+        </div>
     </script>
     
     <script id="widget_decimal" type="text/html">
@@ -101,13 +116,20 @@
             <% }); %>
         <% } %>
         
-        <svg class="icon question__add" 
+        <div class="question__repeat"
             <% if (!question.allow_multiple) { %> 
                 style="display:none" 
             <% }%>
         >
-            <use xlink:href="#icon-add"></use>
-        </svg>
+            <svg class="icon question__add">
+                <use xlink:href="#icon-add"></use>
+            </svg>
+
+            <svg class="icon question__minus" >
+                <use xlink:href="#icon-minus"></use>
+            </svg>
+
+        </div>
     </script>
 
     <script id="widget_date" type="text/html">
@@ -127,13 +149,20 @@
             <% }); %>
         <% } %>
 
-        <svg class="icon question__add" 
+        <div class="question__repeat"
             <% if (!question.allow_multiple) { %> 
                 style="display:none" 
             <% }%>
         >
-            <use xlink:href="#icon-add"></use>
-        </svg>
+            <svg class="icon question__add">
+                <use xlink:href="#icon-add"></use>
+            </svg>
+
+            <svg class="icon question__minus" >
+                <use xlink:href="#icon-minus"></use>
+            </svg>
+
+        </div>
     </script>
 
     <script id="widget_time" type="text/html">
@@ -152,14 +181,21 @@
                 >
             <% }); %>
         <% } %>
-        
-        <svg class="icon question__add" 
+
+        <div class="question__repeat"
             <% if (!question.allow_multiple) { %> 
                 style="display:none" 
             <% }%>
         >
-            <use xlink:href="#icon-add"></use>
-        </svg>
+            <svg class="icon question__add">
+                <use xlink:href="#icon-add"></use>
+            </svg>
+
+            <svg class="icon question__minus" >
+                <use xlink:href="#icon-minus"></use>
+            </svg>
+
+        </div>
     </script>
 
     <script id="widget_location" type="text/html">
@@ -183,6 +219,21 @@
         <% }); %>
         
         <div class="question__btn question__find__btn">Find location</div>
+
+        <div class="question__repeat"
+            <% if (!question.allow_multiple) { %> 
+                style="display:none" 
+            <% }%>
+        >
+            <svg class="icon question__add">
+                <use xlink:href="#icon-add"></use>
+            </svg>
+
+            <svg class="icon question__minus" >
+                <use xlink:href="#icon-minus"></use>
+            </svg>
+
+        </div>
     </script>
 
     <script id="widget_facility" type="text/html">

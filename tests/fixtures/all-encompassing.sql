@@ -101,7 +101,7 @@ VALUES (the_survey_id, 1, 'another integer question', 'integer', 'some val', Tru
        (the_survey_id, 5, 'another time question', 'time', 'any time', True, 6),
        (the_survey_id, 6, 'another location question', 'location', 'use the map', True, 7),
        (the_survey_id, 7, 'another text question', 'text', 'What? How many characters could a character character if character could character character character', True, 8),
-       (the_survey_id, 9, 'another note', 'note', 'Youre not so bad.', False, -1),
+       (the_survey_id, 9, 'another note', 'note', 'Youre not so bad.', False, 10),
        (the_survey_id, 10, 'facility question', 'facility', 'Please inform someone about missing facilities', False, -1);
 
 INSERT INTO question (survey_id, sequence_number, question_title,

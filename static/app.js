@@ -425,18 +425,43 @@ Widgets._input = function(question, page, type) {
         .find('.question__add')
         .click(function() { 
             self._addNewInput(page, $(page).find('input').last(), question);
+
+        });
+
+    // Click the - to remove the newest input
+    $(page)
+        .find('.question__minus')
+        .click(function() { 
+            self._removeNewestInput($(page).find('input'), question);
+
         });
 };
 
 // Handle creating multiple inputs for widgets that support it 
-Widgets._addNewInput = function(page, input, question) {
-    if (question.allow_multiple) {
+Widgets._addNewInput = function(page, input, question, before_class) {
+    var before = before_class || '.question__repeat';
+    if (question.allow_multiple) { //XXX: Technically this btn clickable => allow_multiple 
         input
             .clone(true)
             .val(null)
-            .insertBefore(page.find(".question__add"))
+            .insertBefore(page.find(before))
             .focus();
     }
+};
+
+Widgets._removeNewestInput = function(inputs, question) {
+    if (question.allow_multiple && (inputs.length > 1)) {
+        console.log(inputs.length - 1, question.answer[inputs.length - 1]);
+        delete question.answer[inputs.length - 1];
+
+        inputs
+            .last()
+            .remove()
+    }
+
+    inputs
+        .last()
+        .focus()
 };
 
 // Basic input validation
@@ -621,7 +646,7 @@ Widgets._getMap = function() {
 };
 
 Widgets.location = function(question, page) {
-    // Map
+    var self = this;
     var lat = $(page).find('.question__lat').last().val() || App.start_loc[0];
     var lng = $(page).find('.question__lon').last().val() || App.start_loc[1];
 
@@ -633,9 +658,17 @@ Widgets.location = function(question, page) {
         updateLocation([map.getCenter().lng, map.getCenter().lat]);
     });
 
-    function updateLocation(coords) {
-        //XXX: Control which element is updated
+    // Clean up answer array
+    question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
+    $(page).find('.question__location').each(function(i, child) { 
+        question.answer[i] = [ 
+            $(child).find('.question__lon').val(),
+            $(child).find('.question__lat').val()
+        ];
 
+    });
+
+    function updateLocation(coords) {
         // Find current length of inputs and update the last one;
         var questions_len = $(page).find('.question__location').length;
 
@@ -667,15 +700,6 @@ Widgets.location = function(question, page) {
                     map.circle
                         .setLatLng([coords[1], coords[0]]);
 
-                    // If allow multiple is set add there exists > 1 divs 
-                    if (question.allow_multiple && 
-                            typeof question.answer[0] !== "undefined") {
-                        $(page)
-                            .find('.question__location')
-                            .clone()
-                            .insertBefore(".question__btn");
-                    }
-
                     updateLocation(coords);
 
                 }, function error() {
@@ -688,11 +712,25 @@ Widgets.location = function(question, page) {
                     maximumAge: 0
                 });
         });
+
+    // Click the + for new input
+    $(page)
+        .find('.question__add')
+        .click(function() { 
+            self._addNewInput(page, $(page).find('.question__location').last(), question, '.question__find__btn');
+            $(page).find('.question__location').last().children().val(null);
+        });
+    
+    // Click the - to remove the newest input
+    $(page)
+        .find('.question__minus')
+        .click(function() { 
+            self._removeNewestInput($(page).find('.question__location'), question);
+        });
 };
 
 // Similar to location however you cannot just add location, 
 Widgets.facility = function(question, page) {
-    // Map
     var lat = question.answer[0] && question.answer[0][1][1] || App.start_loc[0];
     var lng = question.answer[0] && question.answer[0][1][0] || App.start_loc[1];
 
