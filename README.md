@@ -13,7 +13,7 @@
 [![Documentation Status](https://readthedocs.org/projects/dokomoforms/badge/?version=latest)](https://readthedocs.org/projects/dokomoforms/?badge=latest)
 
 Dokomo [どこも](http://tangorin.com/general/%E3%81%A9%E3%81%93%E3%82%82) Forms is a mobile data collection technology that doesn't suck.
- 
+
 # Installation
 
 1. Install PostgreSQL, the contributed packages, PostGIS, and the PostgreSQL server development packages:
@@ -61,3 +61,11 @@ postgres=# \q
 2. Install and run sauce-connect: https://docs.saucelabs.com/reference/sauce-connect/
 3. `nosetests --with-coverage --cover-inclusive --cover-branches --cover-tests --cover-html --cover-erase --cover-package=api,db,webapp,pages.api,pages.util,pages.debug,pages.view`
 
+# Local Dev Environment via Vagrant
+
+A [Vagrant](http://vagrantup.com) configuration is provided in order to get the application up and running quickly for local development. Vagrant creates a virtual machine and installs all of the necessary dependencies and prepare the database to run Dokomo. **You must have [virtualbox](https://www.virtualbox.org/) installed, as it is used as the virtual machine provider by Vagrant.**
+
+1. After cloning the repo, `cd` into the root directory and run `vagrant up`.
+2. The first time this is run, vagrant will download the appropriate virtual machine image and provision it -- this process may take several minutes depending on your network connection speed.
+3. Once it's complete, you can ssh into the virtual machine by running `vagrant ssh`.
+4. The root directory of the application on your host machine is shared with the virtual machine's '/vagrant' directory. So once you've ssh'd in, you can navigate to `/vagrant` and start the application: `python3 webapp.py`

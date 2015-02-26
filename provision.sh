@@ -7,9 +7,22 @@ wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-
 apt-get update
 apt-get upgrade
 
-# install python 3
-apt-get install -y python3
-apt-get install -y python3-pip
+# compilers and whatnot
+apt-get install -y build-essential
+apt-get install -y git
+
+# install ssh, required by pip
+apt-get install -y libssl-dev openssl
+
+# install python
+wget http://www.python.org/ftp/python/3.4.1/Python-3.4.1.tar.xz
+tar xJf ./Python-3.4.1.tar.xz
+cd Python-3.4.1
+./configure --with-ensurepip=install
+make
+make install
+
+# apt-get install -y python3-pip
 
 # for convenience later, install vim
 apt-get install -y vim
@@ -21,7 +34,8 @@ locale-gen
 apt-get install -y postgresql postgresql-contrib postgis postgresql-server-dev-all
 
 # install python deps
-pip-3.2 install -r /vagrant/requirements.txt
+# NOTE: this uses pip-3.2, which installed by default
+pip3 install -r /vagrant/requirements.txt
 
 # setup database and update postgres password
 sudo su - postgres -c "createdb doko"
