@@ -438,13 +438,12 @@ Widgets._input = function(question, page, type) {
 };
 
 // Handle creating multiple inputs for widgets that support it 
-Widgets._addNewInput = function(page, input, question, before_class) {
-    var before = before_class || '.question__repeat';
+Widgets._addNewInput = function(page, input, question) {
     if (question.allow_multiple) { //XXX: Technically this btn clickable => allow_multiple 
         input
             .clone(true)
             .val(null)
-            .insertBefore(page.find(before))
+            .insertAfter(input)
             .focus();
     }
 };
@@ -717,7 +716,7 @@ Widgets.location = function(question, page) {
     $(page)
         .find('.question__add')
         .click(function() { 
-            self._addNewInput(page, $(page).find('.question__location').last(), question, '.question__find__btn');
+            self._addNewInput(page, $(page).find('.question__location').last());
             $(page).find('.question__location').last().children().val(null);
         });
     
