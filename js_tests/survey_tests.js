@@ -67,16 +67,16 @@ describe('Survey unit and regression tests', function(done) {
             // empty
             should(survey.getFirstResponse(questions[0])).not.be.ok;
             // O value
-            questions[0].answer = [0];
+            questions[0].answer = [{response:0}];
             should(survey.getFirstResponse(questions[0])).match(0);;
             // some value
-            questions[0].answer = [1];
+            questions[0].answer = [{response:1}];
             should(survey.getFirstResponse(questions[0])).be.ok;
             // empty string
-            questions[0].answer = [""];
+            questions[0].answer = [{response:""}];
             should(survey.getFirstResponse(questions[0])).not.be.ok;
             // incorrect type (get getFirstResponse does not validate type)
-            questions[0].answer = ["bs"];
+            questions[0].answer = [{response:"bs"}];
             should(survey.getFirstResponse(questions[0])).not.be.ok;
 
             done();
@@ -98,10 +98,10 @@ describe('Survey unit and regression tests', function(done) {
             // empty
             should(survey.getFirstResponse(questions[0])).not.be.ok;
             // empty string
-            questions[0].answer = [""];
+            questions[0].answer = [{response:""}];
             should(survey.getFirstResponse(questions[0])).not.be.ok;
             // valid 
-            questions[0].answer = ["bs"];
+            questions[0].answer = [{response:"bs"}];
             should(survey.getFirstResponse(questions[0])).be.ok;
 
             done();
@@ -137,7 +137,7 @@ describe('Survey unit and regression tests', function(done) {
             questions[1].should.not.equal(survey.current_question);
             
             // state SHOULD change
-            questions[0].answer = ["yo"];
+            questions[0].answer = [{response:"yo"}];
             survey.next(NEXT);
             questions[0].should.not.equal(survey.current_question);
             questions[1].should.equal(survey.current_question);
@@ -174,7 +174,7 @@ describe('Survey unit and regression tests', function(done) {
             questions[1].should.not.equal(survey.current_question);
             
             // state SHOULD change
-            questions[0].answer = [0];
+            questions[0].answer = [{response:0}];
             survey.next(NEXT);
             questions[0].should.not.equal(survey.current_question);
             questions[1].should.equal(survey.current_question);
@@ -211,7 +211,7 @@ describe('Survey unit and regression tests', function(done) {
             questions[1].should.not.equal(survey.current_question);
             
             // state SHOULDNT change
-            questions[0].answer = [""];
+            questions[0].answer = [{response:""}];
             survey.next(NEXT);
             questions[0].should.equal(survey.current_question);
             questions[1].should.not.equal(survey.current_question);
@@ -248,7 +248,7 @@ describe('Survey unit and regression tests', function(done) {
             questions[1].should.not.equal(survey.current_question);
             
             // state SHOULDNT change
-            questions[0].answer = ["decimal"];
+            questions[0].answer = [{response:"decimal"}];
             survey.next(NEXT);
             questions[0].should.equal(survey.current_question);
             questions[1].should.not.equal(survey.current_question);
@@ -456,14 +456,14 @@ describe('Survey unit and regression tests', function(done) {
             survey.next(PREV);
             brancher.should.equal(survey.current_question);
             // branch to end 
-            brancher.answer = ["end"];
+            brancher.answer = [{response:"end"}];
             survey.next(NEXT); 
             end.should.equal(survey.current_question);
             // come back
             survey.next(PREV);
             brancher.should.equal(survey.current_question);
             // branch to skip 
-            brancher.answer = ["skip"];
+            brancher.answer = [{response:"skip"}];
             survey.next(NEXT); 
             skip.should.equal(survey.current_question);
             // come back again fine
@@ -522,7 +522,7 @@ describe('Survey unit and regression tests', function(done) {
             ];
 
             survey = new Survey("id", questions, {});
-            questions[0].answer = ["hey baby"];
+            questions[0].answer = [{response:"hey baby"}];
             survey.submit();
             //XXX$('.message').text().should.match('Survey submitted!');
             $('.message').text().should.match("Submission failed, will try again later.");
@@ -556,7 +556,7 @@ describe('Survey unit and regression tests', function(done) {
             };
 
             survey = new Survey("id", questions, {});
-            questions[0].answer = [[1, [40.01, 70.01]]]; //So many arrays
+            questions[0].answer = [{response:[1, [40.01, 70.01]]}]; //So many arrays
 
             survey.submit();
             //XXX$('.message').text().should.match('Survey submitted!'); 

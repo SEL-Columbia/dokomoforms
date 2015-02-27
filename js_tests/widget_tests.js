@@ -50,7 +50,7 @@ describe('Widget creation tests', function(done) {
                 question_to_sequence_number: -1,
                 type_constraint_name: "decimal",
                 logic: {},
-                answer: [1.01],
+                answer: [{response:1.01}],
                 question_title: "Whiplash was real good",
                 sequence_number: 1
             };
@@ -165,7 +165,7 @@ describe('Widget creation tests', function(done) {
                 question_to_sequence_number: -1,
                 type_constraint_name: "location",
                 logic: {},
-                answer: [[5, 7]],
+                answer: [{response:[5, 7]}],
                 question_title: "Birdman was meh, clearly appealed to the judges though",
                 sequence_number: 1
             };
@@ -384,7 +384,7 @@ describe('Widget creation tests', function(done) {
                 question_to_sequence_number: -1,
                 type_constraint_name: "multiple_choice",
                 logic: {with_other: true},
-                answer: ["other is selected since choices len = 0"],
+                answer: [{response: "other is selected since choices len = 0"}],
                 choices: [],
                 question_title: "Seriously, I'm gonna go back and check out all the noms+",
                 sequence_number: 1
@@ -414,7 +414,7 @@ describe('Widget creation tests', function(done) {
             $('.content')
                 .find('input')
                 .val()
-                .should.match(question.answer[0]);
+                .should.match(question.answer[0].response);
 
             done();
 

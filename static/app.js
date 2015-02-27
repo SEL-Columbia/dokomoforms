@@ -191,12 +191,8 @@ Survey.prototype.next = function(offset) {
     var index = $('.content').data('index');
     var first_response = this.getFirstResponse(this.current_question); 
 
+    console.log(this.current_question.question_title, offset);
     
-    console.log(this.current_question.question_title);
-    this.current_question.answer.forEach(function(ans, i) {
-        console.log(i, ans)
-    });
-
     //XXX: 0 is not the indicator anymore its lowest sequence num;
     if (index === self.lowest_sequence_number && offset === PREV) {
         // Going backwards on first q is a no-no;
@@ -312,10 +308,10 @@ Survey.prototype.submit = function() {
     // Prepare POST request
     var survey_answers = [];
     self.questions.forEach(function(q) {
-        console.log('q', q);
+        //console.log('q', q);
         q.answer.forEach(function(ans, ind) {
             var response =  ans.response;
-            var is_other = ans.is_other;
+            var is_other = ans.is_other || false;
 
             if (!response && response !== 0) { 
                 return;
@@ -347,7 +343,7 @@ Survey.prototype.submit = function() {
         answers: survey_answers
     };
 
-    console.log('submission:', data);
+    //console.log('submission:', data);
 
     sync.classList.add('icon--spin');
     save_btn.classList.add('icon--spin');
@@ -464,9 +460,7 @@ Widgets._addNewInput = function(page, input, question) {
 
 Widgets._removeNewestInput = function(inputs, question) {
     if (question.allow_multiple && (inputs.length > 1)) {
-        console.log(inputs.length - 1, question.answer[inputs.length - 1]);
         delete question.answer[inputs.length - 1];
-
         inputs
             .last()
             .remove()
@@ -591,7 +585,6 @@ Widgets.multiple_choice = function(question, page) {
             svals.forEach(function(opt) { 
 
                 var ind = choices.indexOf(opt);
-                console.log('choice', ind, opt);
                 
                 // Please choose something option wipes answers
                 if (opt === 'null') { 

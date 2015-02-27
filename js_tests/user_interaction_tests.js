@@ -37,6 +37,9 @@ describe('User next/prev tests', function(done) {
         $("page_nav__prev").off('click');
         raw_survey = null;
         localStorage = {};
+        $(".message").clearQueue().text("");
+        $(".content").off('click');
+        $('.content').empty();
         done();
     });
 
@@ -112,6 +115,32 @@ describe('User next/prev tests', function(done) {
             $(".page_nav__prev").trigger("click");
             last_question.should.equal(survey.current_question);
             $(".question__title").html().trim().should.match(title);
+            done();
+        });
+
+    it('should move from question 0 to 1 then back while maintaining answer value inputted at 0', 
+        function(done) {
+            console.log("STARTTT");
+            var survey = App.survey;
+            var questions = survey.questions;
+
+            var first_question = questions[0];
+            var second_question = questions[1];
+
+            first_question.should.equal(survey.current_question);
+
+            //$("input").val("1").trigger("change");
+            //first_question.answer[0].response.should.equal(1);
+
+            $(".page_nav__next").trigger("click");
+
+            first_question.should.not.equal(survey.current_question);
+            second_question.should.equal(survey.current_question);
+
+            $(".page_nav__prev").trigger("click");
+
+            first_question.answer[0].response.should.equal(1);
+            $("input").val().should.equal("1");
             done();
         });
 });
