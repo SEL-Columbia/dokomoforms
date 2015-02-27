@@ -1,13 +1,8 @@
 """Allow access to the question_branch table."""
-from sqlalchemy import Table, MetaData
 from sqlalchemy.engine import ResultProxy, Connection
 from sqlalchemy.sql import Insert
 
-from db import engine
-
-
-question_branch_table = Table('question_branch', MetaData(bind=engine),
-                              autoload=True)
+from db import question_branch_table
 
 
 def get_branches(connection: Connection, question_id: str) -> ResultProxy:

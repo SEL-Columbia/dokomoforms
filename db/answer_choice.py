@@ -1,13 +1,8 @@
 """Allow access to the answer_choice table."""
-from sqlalchemy import Table, MetaData
 from sqlalchemy.engine import ResultProxy, Connection
 from sqlalchemy.sql.dml import Insert
 
-from db import engine
-
-
-answer_choice_table = Table('answer_choice', MetaData(bind=engine),
-                            autoload=True)
+from db import answer_choice_table
 
 
 def answer_choice_insert(*,

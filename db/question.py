@@ -1,5 +1,5 @@
 """Allow access to the question table."""
-from sqlalchemy import Table, MetaData, cast, Text, Boolean
+from sqlalchemy import cast, Text, Boolean
 
 from sqlalchemy.engine import RowProxy, ResultProxy, Connection
 from sqlalchemy.sql.dml import Insert
@@ -8,12 +8,9 @@ from sqlalchemy.sql.functions import coalesce
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.functions import max as sqlmax
 
-from db import engine
+from db import engine, question_table
 from db.auth_user import auth_user_table
 from db.survey import survey_table
-
-
-question_table = Table('question', MetaData(bind=engine), autoload=True)
 
 
 def get_free_sequence_number(connection: Connection, survey_id: str) -> int:

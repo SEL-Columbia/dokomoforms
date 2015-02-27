@@ -1,15 +1,12 @@
 """Allow access to the answer table."""
-from sqlalchemy import Table, MetaData, text
+from sqlalchemy import text
 
 from sqlalchemy.engine import ResultProxy, RowProxy, Connection
 from sqlalchemy.sql.dml import Insert
 from sqlalchemy.sql import func
 from tornado.escape import json_decode
 
-from db import engine
-
-
-answer_table = Table('answer', MetaData(bind=engine), autoload=True)
+from db import answer_table
 
 
 def _sanitize_answer(answer, type_constraint_name: str) -> str:

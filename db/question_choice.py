@@ -1,14 +1,9 @@
 """Allow access to the question_choice table."""
-from sqlalchemy import Table, MetaData
 
 from sqlalchemy.engine import RowProxy, ResultProxy, Connection
 from sqlalchemy.sql import Insert
 
-from db import engine
-
-
-question_choice_table = Table('question_choice', MetaData(bind=engine),
-                              autoload=True)
+from db import question_choice_table
 
 
 def question_choice_select(connection: Connection,

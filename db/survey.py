@@ -1,16 +1,13 @@
 """Allow access to the survey table."""
 import re
 from collections import Iterator
-from sqlalchemy import Table, MetaData, Text
+from sqlalchemy import Text
 
 from sqlalchemy.engine import RowProxy, ResultProxy, Connection
 from sqlalchemy.sql import Insert, and_, cast, select, exists
 
-from db import engine
+from db import survey_table
 from db.auth_user import auth_user_table
-
-
-survey_table = Table('survey', MetaData(bind=engine), autoload=True)
 
 
 def survey_insert(*, auth_user_id: str, survey_title: str) -> Insert:

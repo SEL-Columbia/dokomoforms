@@ -1,6 +1,5 @@
 """Allow access to the submission table."""
 from collections import Iterator
-from sqlalchemy import Table, MetaData
 from datetime import datetime
 
 from sqlalchemy.engine import RowProxy, ResultProxy, Connection
@@ -8,13 +7,10 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.dml import Insert
 from sqlalchemy.sql.elements import and_
 
-from db import engine, get_column
+from db import engine, get_column, submission_table
 from db.answer import answer_table
 from db.auth_user import auth_user_table
 from db.survey import survey_table
-
-
-submission_table = Table('submission', MetaData(bind=engine), autoload=True)
 
 
 def submission_insert(*,

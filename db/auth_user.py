@@ -1,6 +1,5 @@
 """Allow access to the auth_user table."""
 
-from sqlalchemy import Table, MetaData
 from datetime import datetime, timedelta
 from time import localtime
 import uuid
@@ -9,10 +8,7 @@ from sqlalchemy.sql.dml import Insert, Update
 from sqlalchemy.engine import RowProxy, Connection
 from passlib.hash import bcrypt_sha256
 
-from db import engine, update_record
-
-
-auth_user_table = Table('auth_user', MetaData(bind=engine), autoload=True)
+from db import update_record, auth_user_table
 
 
 def get_auth_user(connection: Connection, auth_user_id: str) -> RowProxy:
