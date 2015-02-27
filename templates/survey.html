@@ -32,7 +32,7 @@
             <% _.each(question.answer, function(ans) { %>
                 <input class="text_input" type="text" 
                     placeholder="Please provide another response"
-                    value="<%- ans %>"
+                    value="<%- ans.response %>"
                 >
             <% }); %>
         <% } %>
@@ -72,7 +72,7 @@
             <% _.each(question.answer, function(ans) { %>
                 <input class="text_input" type="number"
                     placeholder="Please provide another number"
-                    value="<%- ans %>"
+                    value="<%- ans.response %>"
                     <% if (question.min != null){ %>
                         min="<%- question.min %>"
                     <% } %>
@@ -111,7 +111,7 @@
             <% _.each(question.answer, function(ans) { %>
                 <input class="text_input" type="number" step="any"
                     placeholder="Please provide another number (decimal OK)"
-                    value="<%- ans %>"
+                    value="<%- ans.response %>"
                 >
             <% }); %>
         <% } %>
@@ -144,7 +144,7 @@
             <% _.each(question.answer, function(ans) { %>
                 <input class="text_input" type="date" 
                        placeholder="Please provide another date"
-                       value="<%- ans %>"
+                       value="<%- ans.response %>"
                 >
             <% }); %>
         <% } %>
@@ -177,7 +177,7 @@
             <% _.each(question.answer, function(ans) { %>
                 <input class="text_input" type="time" 
                     placeholder="Please provide another time"
-                    value="<%- ans %>"
+                    value="<%- ans.response %>"
                 >
             <% }); %>
         <% } %>
@@ -204,17 +204,17 @@
         <div id="map" class="question__map"></div>
         <div class="question__location">
             <input class="text_input question__lat" type="text" 
-            value="<%- question.answer[0] && question.answer[0][1] || start_loc[0] %>">
+            value="<%- question.answer[0] && question.answer[0].response[1] || start_loc[0] %>">
             <input class="text_input question__lon" type="text" 
-            value="<%- question.answer[0] && question.answer[0][0] || start_loc[1] %>">
+            value="<%- question.answer[0] && question.answer[0].response[0] || start_loc[1] %>">
         </div>
 
         <% _.each(question.answer.slice(1), function(ans) { %>
             <div class="question__location">
                 <input class="text_input question__lat" type="text" 
-                       value="<%- ans[1] %>">
+                       value="<%- ans.response[1] %>">
                 <input class="text_input question__lon" type="text" 
-                       value="<%- ans[0] %>">
+                       value="<%- ans.response[0] %>">
             </div>
         <% }); %>
         
@@ -260,29 +260,32 @@
     <script id="widget_multiple_choice" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
         <div class="question__hint"><%- question.hint || "" %></div>
+
         <select class="question__select" <%  if (question.allow_multiple) { %> 
-            multiple size=<%- question.choices.length + 1 + 1*question.logic['with_other']%> 
+            multiple size=<%- question.choices.length + 1 + 1*question.logic.with_other%> 
         <% } %>>
             <option value="null">Please choose an option</option>
             <% _.each(question.choices, function(choice, ind) { %>
                 <option 
-                    <% if (choice.question_choice_id === question.answer[ind])  { %>
+                    <% if (question.answer[ind] && choice.question_choice_id === question.answer[ind].response) { %>
                         selected
                     <% } %>
                     value="<%- choice.question_choice_id %>"><%- choice.choice %></option>
             <% }); %>
-            <% if (question.logic['with_other']) { %>
-                <option id="with_other" 
-                    <% var val = question.answer[question.choices.length];
-                    if (val || val === '')  { %>
+            <% if (question.logic.with_other) { %>
+                <option 
+                    <% var ans = question.answer[question.choices.length];
+                    if (ans && (ans.response))  { %>
                         selected
                     <% } %>
-                value="other"><%- question.logic['other_text'] || 'Other' %></option>
+                value="other">
+                    <%- question.logic.other_text || 'Other' %>
+                </option>
             <% } %>
         </select>
 
         <input class="text_input" type="text"
-                value="<%- question.answer[question.choices.length] || '' %>"
+                value="<%- question.answer[question.choices.length] && question.answer[question.choices.length].response || '' %>"
         >
     </script>
     
@@ -296,7 +299,7 @@
             That's it, you're finished!
         </div>
         <svg class="icon question__saving">
-            <use xlink:href="#icon-save-disk"></use>
+            <use xlink:href="#icon-save-disk"></use.response>
         </svg>
         <div class="question__name">
             <input class="name_input" type="text"
