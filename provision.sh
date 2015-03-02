@@ -22,6 +22,9 @@ cd Python-3.4.1
 make
 make install
 
+# make python3 the default python
+ln -s /usr/local/bin/python3 /usr/local/bin/python
+
 # apt-get install -y python3-pip
 
 # for convenience later, install vim
