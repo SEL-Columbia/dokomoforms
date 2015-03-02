@@ -191,8 +191,6 @@ Survey.prototype.next = function(offset) {
     var index = $('.content').data('index');
     var first_response = this.getFirstResponse(this.current_question); 
 
-    console.log(this.current_question.question_title, offset);
-    
     //XXX: 0 is not the indicator anymore its lowest sequence num;
     if (index === self.lowest_sequence_number && offset === PREV) {
         // Going backwards on first q is a no-no;

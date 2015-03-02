@@ -27,19 +27,16 @@ describe('User next/prev tests', function(done) {
     });
 
     beforeEach(function(done) {
+        $(".page_nav__next").off(); //XXX Find out why events are cached
+        $(".page_nav__prev").off();
         raw_survey = require('./fixtures/survey.json');
         App.init(raw_survey)
         done();
     });
 
     afterEach(function(done) {
-        $("page_nav__next").off('click'); //XXX Find out why events are cached
-        $("page_nav__prev").off('click');
         raw_survey = null;
         localStorage = {};
-        $(".message").clearQueue().text("");
-        $(".content").off('click');
-        $('.content').empty();
         done();
     });
 
@@ -120,7 +117,6 @@ describe('User next/prev tests', function(done) {
 
     it('should move from question 0 to 1 then back while maintaining answer value inputted at 0', 
         function(done) {
-            console.log("STARTTT");
             var survey = App.survey;
             var questions = survey.questions;
 
@@ -129,8 +125,8 @@ describe('User next/prev tests', function(done) {
 
             first_question.should.equal(survey.current_question);
 
-            //$("input").val("1").trigger("change");
-            //first_question.answer[0].response.should.equal(1);
+            $("input").val("1").trigger("change");
+            first_question.answer[0].response.should.equal(1);
 
             $(".page_nav__next").trigger("click");
 
@@ -138,6 +134,9 @@ describe('User next/prev tests', function(done) {
             second_question.should.equal(survey.current_question);
 
             $(".page_nav__prev").trigger("click");
+
+            first_question.should.equal(survey.current_question);
+            second_question.should.not.equal(survey.current_question);
 
             first_question.answer[0].response.should.equal(1);
             $("input").val().should.equal("1");
@@ -207,5 +206,63 @@ describe('User submission tests', function(done) {
             App.submitter_name.should.equal(new_name);
 
             done();
+        });
+});
+
+describe('User multiple choice tests', function(done) {
+
+    before(function(done) {
+        done();
+    });
+
+    beforeEach(function(done) {
+        $(".page_nav__next").off(); //XXX Find out why events are cached
+        $(".page_nav__prev").off();
+        raw_survey = require('./fixtures/survey.json');
+        App.init(raw_survey)
+        done();
+    });
+
+    afterEach(function(done) {
+        raw_survey = null;
+        localStorage = {};
+        done();
+    });
+
+    it('should remember choice a was selected', 
+        function(done) {
+            var survey = App.survey;
+            var questions = survey.questions;
+
+            //XXX: Straight out of raw_surveys, update these when updating survey.json
+            var choices = [
+                {"question_choice_id":"8ffa4051-09bb-4966-bc77-098e40cbee27","choice":"choice a","choice_number":1},
+                {"question_choice_id":"e9cb9ea8-4d8f-4f7a-b669-689f15835bbc","choice":"choice b","choice_number":2}
+            ];
+
+            var first_question = questions[0];
+            var mc_question = questions[7];
+
+            survey.render(mc_question);
+
+            first_question.should.not.equal(survey.current_question);
+            mc_question.should.equal(survey.current_question);
+
+            $('.question__select').val("8ffa4051-09bb-4966-bc77-098e40cbee27").change();
+            mc_question.answer[0].response.should.match("8ffa4051-09bb-4966-bc77-098e40cbee27");
+
+            $(".page_nav__next").trigger("click");
+            //mc_question.should.not.equal(survey.current_question);
+            console.log(survey.current_question.question_title);
+            $(".page_nav__prev").trigger("click");
+            console.log(survey.current_question.question_title);
+            //mc_question.should.equal(survey.current_question);
+
+            $('.question__select').val().should.match("8ffa4051-09bb-4966-bc77-098e40cbee27");
+            mc_question.answer[0].response.should.match("8ffa4051-09bb-4966-bc77-098e40cbee27");
+
+            done();
+
+           
         });
 });
