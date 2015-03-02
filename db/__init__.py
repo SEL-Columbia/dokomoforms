@@ -32,7 +32,7 @@ auth_user_table = Table(
     Column('auth_user_last_update_time', DateTime(timezone=True),
            nullable=False,
            server_default=func.now(),
-           onupdate=func.utc_timestamp()),
+           onupdate=func.now()),
 )
 
 event.listen(
@@ -59,7 +59,7 @@ survey_table = Table(
     Column('survey_last_update_time', DateTime(timezone=True),
            nullable=False,
            server_default=func.now(),
-           onupdate=func.utc_timestamp()),
+           onupdate=func.now()),
     UniqueConstraint('survey_title', 'auth_user_id',
                      name='survey_title_survey_owner_key')
 )
@@ -81,7 +81,7 @@ type_constraint_table = Table(
     Column('type_constraint_last_update_time', DateTime(timezone=True),
            nullable=False,
            server_default=func.now(),
-           onupdate=func.utc_timestamp())
+           onupdate=func.now())
 )
 
 event.listen(
@@ -109,7 +109,7 @@ submission_table = Table(
     Column('submission_last_update_time', DateTime(timezone=True),
            nullable=False,
            server_default=func.now(),
-           onupdate=func.utc_timestamp())
+           onupdate=func.now())
 )
 
 event.listen(
@@ -157,7 +157,7 @@ question_table = Table(
     Column('question_last_update_time', DateTime(timezone=True),
            nullable=False,
            server_default=func.now(),
-           onupdate=func.utc_timestamp()),
+           onupdate=func.now()),
     UniqueConstraint('survey_id', 'sequence_number',
                      name='question_survey_id_sequence_number_key')
 )
@@ -186,7 +186,7 @@ question_choice_table = Table(
     Column('question_choice_last_update_time', DateTime(timezone=True),
            nullable=False,
            server_default=func.now(),
-           onupdate=func.utc_timestamp()),
+           onupdate=func.now()),
     ForeignKeyConstraint(
         ['question_id', 'type_constraint_name', 'question_sequence_number',
          'allow_multiple', 'survey_id'],
@@ -230,7 +230,7 @@ question_branch_table = Table(
     Column('question_branch_last_update_time', DateTime(timezone=True),
            nullable=False,
            server_default=func.now(),
-           onupdate=func.utc_timestamp()),
+           onupdate=func.now()),
     ForeignKeyConstraint(
         ['question_choice_id', 'from_question_id', 'from_type_constraint',
          'from_sequence_number', 'from_allow_multiple', 'from_survey_id'],
@@ -266,12 +266,6 @@ class Geometry(UserDefinedType):
     def get_col_spec(self):
         return "GEOMETRY"
 
-        # def bind_expression(self, bindvalue):
-        # return func.ST_GeomFromText(bindvalue, type_=self)
-        #
-        # def column_expression(self, colexpr):
-        # return func.ST_AsText(colexpr, type_=self)
-
 
 answer_table = Table(
     'answer', metadata,
@@ -299,7 +293,7 @@ answer_table = Table(
     Column('answer_last_update_time', DateTime(timezone=True),
            nullable=False,
            server_default=func.now(),
-           onupdate=func.utc_timestamp()),
+           onupdate=func.now()),
     ForeignKeyConstraint(
         ['question_id', 'type_constraint_name', 'sequence_number',
          'allow_multiple', 'survey_id'],
@@ -374,7 +368,7 @@ answer_choice_table = Table(
     Column('answer_choice_last_update_time', DateTime(timezone=True),
            nullable=False,
            server_default=func.now(),
-           onupdate=func.utc_timestamp()),
+           onupdate=func.now()),
     ForeignKeyConstraint(
         ['question_choice_id', 'question_id', 'type_constraint_name',
          'sequence_number', 'allow_multiple', 'survey_id'],
@@ -457,8 +451,6 @@ def update_record(table: Table,
         values = values_dict
     elif not values:
         raise TypeError('No update values specified.')
-    # An update bumps the record's last_update_time column
-    values[table.name + '_last_update_time'] = 'now()'
     condition = get_column(table, uuid_column_name) == uuid_value
     return table.update().where(condition).values(values)
 

@@ -390,7 +390,7 @@ class TestQuestion(unittest.TestCase):
         self.assertGreater(questions.rowcount, 0)
 
         self.assertRaises(TypeError, get_questions, connection, survey_id)
-        self.assertRaises(TypeError, get_questions, survey_id, connection,
+        self.assertRaises(TypeError, get_questions, connection, survey_id,
                           auth_user_id='',
                           email='')
 
@@ -567,14 +567,13 @@ class TestSubmission(unittest.TestCase):
         submission_id = submission_exec.inserted_primary_key[0]
         submission = submission_select(connection, submission_id,
                                        email='test_email')
-        self.assertEqual(submission_id,
-                         submission.submission_submission_id)
+        self.assertEqual(submission_id, submission.submission_id)
         user_id = connection.execute(auth_user_table.select().where(
             auth_user_table.c.email == 'test_email')).first().auth_user_id
         submission2 = submission_select(connection, submission_id,
                                         auth_user_id=user_id)
         self.assertEqual(submission_id,
-                         submission2.submission_submission_id)
+                         submission2.submission_id)
         self.assertRaises(TypeError, submission_select, connection,
                           submission_id,
                           auth_user_id='', email='')
@@ -684,7 +683,7 @@ class TestSubmission(unittest.TestCase):
         connection.execute(submission_table.select().where(
             submission_table.c.submission_id ==
             submission_id))
-        self.assertEqual(get_number_of_submissions(survey_id), 1)
+        self.assertEqual(get_number_of_submissions(connection, survey_id), 1)
 
 
 class TestSurvey(unittest.TestCase):

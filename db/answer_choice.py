@@ -1,4 +1,5 @@
 """Allow access to the answer_choice table."""
+from sqlalchemy import select
 from sqlalchemy.engine import ResultProxy, Connection
 from sqlalchemy.sql.dml import Insert
 
@@ -50,7 +51,7 @@ def get_answer_choices(connection: Connection,
     :param submission_id: foreign key
     :return: an iterable of the answer choices (RowProxy)
     """
-    select_stmt = answer_choice_table.select()
+    select_stmt = select([answer_choice_table])
     where_stmt = select_stmt.where(
         answer_choice_table.c.submission_id == submission_id)
     return connection.execute(where_stmt.order_by('sequence_number asc'))
@@ -66,7 +67,7 @@ def get_answer_choices_for_choice_id(connection: Connection,
     :param question_choice_id: foreign key
     :return: an iterable of the answer choices (RowProxy)
     """
-    select_stmt = answer_choice_table.select()
+    select_stmt = select([answer_choice_table])
     where_stmt = select_stmt.where(
         answer_choice_table.c.question_choice_id == question_choice_id)
     return connection.execute(where_stmt)

@@ -194,10 +194,9 @@ def get_one(connection: Connection, submission_id: str, email: str) -> dict:
     result = merge(answers, choices)
     c = connection
     sub_dict = {'submission_id': submission_id,
-                'survey_id': submission.survey_survey_id,
-                'submitter': submission.submission_submitter,
-                'submission_time':
-                    submission.submission_submission_time.isoformat(),
+                'survey_id': submission.survey_id,
+                'submitter': submission.submitter,
+                'submission_time': submission.submission_time.isoformat(),
                 'answers': [_get_fields(c, answer) for num, answer in result]}
     return json_response(sub_dict)
 
@@ -224,8 +223,9 @@ def get_all(connection: Connection,
                                            submitters=submitters,
                                            filters=filters)
     # TODO: Check if this is a performance problem
-    result = [get_one(connection, sub.submission_id, email=email) for sub in
-              submissions]
+    result = [get_one(connection,
+                      sub.submission_id,
+                      email=email) for sub in submissions]
     return json_response(result)
 
 
