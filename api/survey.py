@@ -168,12 +168,12 @@ def _create_questions(connection: Connection,
 
         if existing_q_id is not None:
             question_fields = {'question_id': q_id,
-                               'type_constraint_name': result_ipk[1],
-                               'sequence_number': result_ipk[2],
-                               'allow_multiple': result_ipk[3],
+                               'sequence_number': result_ipk[1],
+                               'allow_multiple': result_ipk[2],
+                               'type_constraint_name': result_ipk[3],
                                'survey_id': survey_id}
             for answer in get_answers_for_question(connection, existing_q_id):
-                new_tcn = result_ipk[1]
+                new_tcn = result_ipk[3]
                 old_tcn = question_select(connection,
                                           existing_q_id).type_constraint_name
                 if new_tcn != old_tcn:

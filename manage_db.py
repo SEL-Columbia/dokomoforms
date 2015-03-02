@@ -7,6 +7,7 @@ from argparse import ArgumentParser
 import os.path
 
 from sqlalchemy import create_engine
+from db import metadata
 
 from settings import CONNECTION_STRING
 
@@ -31,7 +32,12 @@ schema_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
 def init_db(engine):
     """Create all the tables and insert the fixtures."""
     with engine.begin() as connection:
-        for file_path in extensions + tables + fixtures:
+        for file_path in extensions:
+            with open(os.path.join(schema_dir, file_path)) as sqlfile:
+                connection.execute(sqlfile.read())
+    metadata.create_all(engine)
+    with engine.begin() as connection:
+        for file_path in fixtures:
             with open(os.path.join(schema_dir, file_path)) as sqlfile:
                 connection.execute(sqlfile.read())
 
