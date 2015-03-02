@@ -14,15 +14,6 @@ from settings import CONNECTION_STRING
 
 killall = 'killall.sql'
 extensions = ['uuid.sql', 'postgis.sql']
-tables = ['auth_user.tbl.sql',
-          'survey.tbl.sql',
-          'type_constraint.tbl.sql',
-          'submission.tbl.sql',
-          'question.tbl.sql',
-          'question_choice.tbl.sql',
-          'question_branch.tbl.sql',
-          'answer.tbl.sql',
-          'answer_choice.tbl.sql']
 fixtures = ['type_constraint_fixture.sql']
 
 schema_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
@@ -49,7 +40,7 @@ def kill_db(engine):
             connection.execute(sqlfile.read())
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = ArgumentParser(description='Create or kill the database.')
 
     group = parser.add_mutually_exclusive_group()  # create xor drop

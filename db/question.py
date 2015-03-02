@@ -136,8 +136,6 @@ def get_questions(connection: Connection,
     :param email: the user's e-mail address
     :return: an iterable of the questions (RowProxy)
     """
-    # q_sur_cond = question_table.c.survey_id == survey_table.c.survey_id
-    # question_survey = question_table.join(survey_table, q_sur_cond)
 
     table = question_table.join(survey_table)
     conds = [question_table.c.survey_id == survey_id]
