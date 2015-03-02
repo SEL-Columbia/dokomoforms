@@ -5,14 +5,13 @@ from sqlalchemy import desc
 from collections import Iterator
 
 from sqlalchemy.engine import RowProxy, ResultProxy, Connection
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.functions import GenericFunction, min as sqlmin, \
     max as sqlmax, sum as sqlsum, count as sqlcount
-from sqlalchemy.sql import func, and_
+from sqlalchemy.sql import func, and_, select
 from tornado.escape import json_decode
 
 from api import json_response
-from db import engine, get_column
+from db import get_column, question_table
 from db.answer import answer_table
 from db.answer_choice import answer_choice_table
 from db.auth_user import get_auth_user_by_email
@@ -86,7 +85,7 @@ def _return_sql(connection: Connection,
     """
     if result is None or result == []:
         condition = survey_table.c.survey_id == survey_id
-        stmt = survey_table.select().where(condition)
+        stmt = select([survey_table]).where(condition)
         proper_id = connection.execute(stmt).first().auth_user_id
         if auth_user_id == proper_id:
             raise NoSubmissionsToQuestionError(question_id)
@@ -171,20 +170,19 @@ def _scalar(connection: Connection,
     if is_other:
         tcn = 'text'
 
-    table, column_name = _table_and_column(tcn)
+    original_table, column_name = _table_and_column(tcn)
+    table = original_table.join(
+        question_table,
+        original_table.c.question_id == question_table.c.question_id
+    ).join(survey_table)
 
-    join_condition = table.c.survey_id == survey_table.c.survey_id
-    condition = (table.c.question_id == question_id,
-                 survey_table.c.auth_user_id == user_id)
-    column = get_column(table, column_name)
+    conds = [question_table.c.question_id == question_id,
+             survey_table.c.auth_user_id == user_id]
 
-    session = sessionmaker(bind=engine)()
-    try:
-        column_query = session.query(sql_function(column))
-        join_query = column_query.join(survey_table, join_condition)
-        result = join_query.filter(*condition).scalar()
-    finally:
-        session.close()
+    column = get_column(original_table, column_name)
+
+    result = connection.execute(select([sql_function(column)]).select_from(
+        table).where(and_(*conds))).scalar()
 
     return _return_sql(connection, result, question.survey_id, user_id,
                        question_id)
@@ -384,20 +382,28 @@ def time_series(connection: Connection,
     tcn = _get_type_constraint_name(allowable_types, question)
 
     # Assume that you only want to consider the non-other answers
-    table, column_name = _table_and_column(tcn)
+    original_table, column_name = _table_and_column(tcn)
+    table = original_table.join(
+        survey_table,
+        original_table.c.survey_id == survey_table.c.survey_id
+    ).join(
+        submission_table,
+        original_table.c.submission_id == submission_table.c.submission_id
+    )
+    column = get_column(original_table, column_name)
 
-    survey_condition = table.c.survey_id == survey_table.c.survey_id
-    join_table = table.join(survey_table, survey_condition)
-    submission_cond = table.c.submission_id == submission_table.c.submission_id
-    join_table = join_table.join(submission_table, submission_cond)
+    where_stmt = select(
+        [column, submission_table.c.submission_time]
+    ).select_from(table).where(
+        original_table.c.question_id == question_id
+    ).where(
+        survey_table.c.auth_user_id == user_id
+    )
 
-    where_stmt = join_table.select().where(
-        and_(table.c.question_id == question_id,
-             survey_table.c.auth_user_id == user_id))
-    result = _return_sql(connection,
-                         connection.execute(
-                             where_stmt.order_by('submission_time asc')),
-                         question.survey_id, auth_user_id, question_id)
+    result = _return_sql(
+        connection,
+        connection.execute(where_stmt.order_by('submission_time asc')),
+        question.survey_id, auth_user_id, question_id)
     tsr = [[r.submission_time.isoformat(),
             _jsonify(connection, r[column_name], question_id)]
            for r in result]
@@ -413,7 +419,7 @@ def bar_graph(connection: Connection,
               question_id: str,
               auth_user_id: str=None,
               email: str=None,
-              limit: int=None,
+              limit: [int, None]=None,
               count_order: bool=False) -> dict:
     """
     Get a list of the number of times each submission value appears. You must
@@ -437,24 +443,25 @@ def bar_graph(connection: Connection,
     tcn = _get_type_constraint_name(allowable_types, question)
 
     # Assume that you only want to consider the non-other answers
-    table, column_name = _table_and_column(tcn)
-    join_condition = table.c.survey_id == survey_table.c.survey_id
-    condition = (table.c.question_id == question_id,
-                 survey_table.c.auth_user_id == user_id)
-    column = get_column(table, column_name)
+    original_table, column_name = _table_and_column(tcn)
+    table = original_table.join(
+        question_table,
+        original_table.c.question_id == question_table.c.question_id
+    ).join(survey_table)
 
-    session = sessionmaker(bind=engine)()
-    try:
-        column_query = session.query(column, sqlcount(column)).group_by(column)
-        if count_order:
-            ordering = desc(sqlcount(column))
-        else:
-            ordering = column
-        ordered_query = column_query.order_by(ordering)
-        join_query = ordered_query.join(survey_table, join_condition)
-        result = join_query.filter(*condition).limit(limit)
-    finally:
-        session.close()
+    conds = [question_table.c.question_id == question_id,
+             survey_table.c.auth_user_id == user_id]
+    column = get_column(original_table, column_name)
+
+    column_query = select(
+        [column, sqlcount(column)]
+    ).select_from(table).group_by(column)
+    ordering = desc(sqlcount(column)) if count_order else column
+    ordered_query = column_query.order_by(ordering)
+
+    result = connection.execute(
+        ordered_query.where(and_(*conds)).limit(limit)
+    )
 
     result = _return_sql(connection, result, question.survey_id, user_id,
                          question_id)
@@ -520,8 +527,8 @@ def _get_stats(connection: Connection,
 
 def _get_question_stats(connection: Connection,
                         questions: ResultProxy,
-                        auth_user_id: str,
-                        email: str) -> Iterator:
+                        auth_user_id: [str, None],
+                        email: [str, None]) -> Iterator:
     """
     Returns a generator of question submission statistics for the given
     questions.

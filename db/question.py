@@ -124,8 +124,8 @@ class MissingMinimalLogicError(Exception):
 
 def get_questions(connection: Connection,
                   survey_id: str,
-                  auth_user_id: str=None,
-                  email: str=None) -> ResultProxy:
+                  auth_user_id: [str, None]=None,
+                  email: [str, None]=None) -> ResultProxy:
     """
     Get all the questions for a survey identified by survey_id ordered by
     sequence number restricted by auth_user.

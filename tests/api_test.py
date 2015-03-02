@@ -1478,9 +1478,8 @@ class TestAggregation(unittest.TestCase):
                                 'is_other': False}]}
             api.submission.submit(connection, input_data)
 
-        res = \
-            api.aggregation.time_series(connection, q_id, email='test_email')[
-                'result']
+        res = api.aggregation.time_series(
+            connection, q_id, email='test_email')['result']
         self.assertEqual(len(res), 3)
         self.assertEqual(res[0][1], 0)
         self.assertEqual(res[1][1], 1)
