@@ -71,8 +71,9 @@ def answer_insert(*,
               'survey_id': survey_id}
 
     if type_constraint_name == 'facility':
-        values['answer_text'] = answer[0]
-        values['answer_location'] = _sanitize_answer(answer[1], 'location')
+        values['answer_text'] = answer['id']
+        values['answer_location'] = _sanitize_answer(
+            [answer['lon'], answer['lat']], 'location')
     else:
         answer_type = 'answer_text' if is_other else 'answer_' + tcn
         values[answer_type] = _sanitize_answer(answer, tcn)
