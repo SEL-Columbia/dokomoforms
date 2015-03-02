@@ -55,30 +55,28 @@ connection = db.engine.connect()
 
 
 def _create_submission() -> dict:
-    survey_id = survey_table.select().where(
-        survey_table.c.survey_title == 'test_title').execute().first(
-
-    ).survey_id
+    survey_id = connection.execute(survey_table.select().where(
+        survey_table.c.survey_title == 'test_title')).first().survey_id
     and_cond = and_(question_table.c.survey_id == survey_id,
                     question_table.c.type_constraint_name == 'integer')
-    question_id = question_table.select().where(
-        and_cond).execute().first().question_id
+    question_id = connection.execute(question_table.select().where(
+        and_cond)).first().question_id
     second_cond = and_(question_table.c.survey_id == survey_id,
                        question_table.c.type_constraint_name ==
                        'multiple_choice')
-    second_q_id = question_table.select().where(
-        second_cond).execute().first().question_id
+    second_q_id = connection.execute(question_table.select().where(
+        second_cond)).first().question_id
     choice_cond = question_choice_table.c.question_id == second_q_id
-    choice_id = question_choice_table.select().where(
-        choice_cond).execute().first().question_choice_id
+    choice_id = connection.execute(question_choice_table.select().where(
+        choice_cond)).first().question_choice_id
     third_cond = and_(question_table.c.survey_id == survey_id,
                       question_table.c.type_constraint_name == 'text')
-    third_q_id = question_table.select().where(
-        third_cond).execute().first().question_id
+    third_q_id = connection.execute(question_table.select().where(
+        third_cond)).first().question_id
     fourth_cond = and_(question_table.c.survey_id == survey_id,
                        question_table.c.type_constraint_name == 'decimal')
-    fourth_q_id = question_table.select().where(
-        fourth_cond).execute().first().question_id
+    fourth_q_id = connection.execute(question_table.select().where(
+        fourth_cond)).first().question_id
     input_data = {'survey_id': survey_id,
                   'submitter': 'me',
                   'answers':
@@ -102,10 +100,10 @@ def _create_submission() -> dict:
 
 class APITest(AsyncHTTPTestCase):
     def tearDown(self):
-        submission_table.delete().execute()
-        survey_table.delete().where(
+        connection.execute(submission_table.delete())
+        connection.execute(survey_table.delete().where(
             survey_table.c.survey_title ==
-            'survey_created_through_api').execute()
+            'survey_created_through_api'))
 
     def get_app(self):
         self.app = Application(pages, **new_config)
@@ -115,18 +113,14 @@ class APITest(AsyncHTTPTestCase):
         return tornado.ioloop.IOLoop.instance()
 
     def testGetSubmissionsNotLoggedIn(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         response = self.fetch('/api/surveys/{}/submissions'.format(survey_id))
         self.assertEqual(response.code, 403)
 
     def testGetSubmissionsLoggedIn(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         _create_submission()
         with mock.patch.object(SubmissionsAPIHandler,
                                'get_secure_cookie') as m:
@@ -141,10 +135,8 @@ class APITest(AsyncHTTPTestCase):
                                                 'test_email'))
 
     def testGetSubmissionsBySubmitter(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         _create_submission()
         with mock.patch.object(SubmissionsAPIHandler,
                                'get_secure_cookie') as m:
@@ -160,15 +152,13 @@ class APITest(AsyncHTTPTestCase):
                                                 submitters=['me']))
 
     def testGetSubmissionsWithFilter(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
 
-        question_id = question_table.select().where(
-            and_cond).execute().first().question_id
+        question_id = connection.execute(question_table.select().where(
+            and_cond)).first().question_id
         _create_submission()
         filters = [{'question_id': question_id, 'answer_integer': 1}]
         with mock.patch.object(SubmissionsAPIHandler,
@@ -186,10 +176,8 @@ class APITest(AsyncHTTPTestCase):
                                                 filters=filters))
 
     def testGetSubmissionsWithAPIToken(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         token_result = api.user.generate_token(connection,
                                                {'email': 'test_email'})
         token = token_result['result']['token']
@@ -201,18 +189,14 @@ class APITest(AsyncHTTPTestCase):
                                                 'test_email'))
 
     def testGetSubmissionsWithoutAPIToken(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         response = self.fetch('/api/surveys/{}/submissions'.format(survey_id))
         self.assertEqual(response.code, 403)
 
     def testGetSubmissionsWithInvalidAPIToken(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         api.user.generate_token(connection, {'email': 'test_email'})
         response = self.fetch('/api/surveys/{}/submissions'.format(survey_id),
                               headers={'Token': generate_api_token(),
@@ -233,34 +217,28 @@ class APITest(AsyncHTTPTestCase):
                                                 'test_email'))
 
     def testPostSubmission(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
-        question_id = question_table.select().where(
-            and_cond).execute().first().question_id
+        question_id = connection.execute(question_table.select().where(
+            and_cond)).first().question_id
         second_cond = and_(question_table.c.survey_id == survey_id,
                            question_table.c.type_constraint_name ==
                            'multiple_choice')
-        second_q_id = question_table.select().where(
-            second_cond).execute().first().question_id
+        second_q_id = connection.execute(question_table.select().where(
+            second_cond)).first().question_id
         choice_cond = question_choice_table.c.question_id == second_q_id
-        choice_id = question_choice_table.select().where(
-            choice_cond).execute().first().question_choice_id
+        choice_id = connection.execute(question_choice_table.select().where(
+            choice_cond)).first().question_choice_id
         third_cond = and_(question_table.c.survey_id == survey_id,
                           question_table.c.type_constraint_name == 'text')
-        third_q_id = question_table.select().where(
-            third_cond).execute().first().question_id
+        third_q_id = connection.execute(question_table.select().where(
+            third_cond)).first().question_id
         fourth_cond = and_(question_table.c.survey_id == survey_id,
                            question_table.c.type_constraint_name == 'decimal')
-        fourth_q_id = question_table.select().where(
-            fourth_cond).execute().first().question_id
+        fourth_q_id = connection.execute(question_table.select().where(
+            fourth_cond)).first().question_id
         input_data = {'survey_id': survey_id,
                       'submitter': 'testPostSubmissionSubmitter',
                       'answers':
@@ -306,10 +284,8 @@ class APITest(AsyncHTTPTestCase):
                          api.survey.get_all(connection, 'test_email'))
 
     def testGetSingleSurvey(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         with mock.patch.object(SingleSurveyAPIHandler,
                                'get_secure_cookie') as m:
             m.return_value = 'test_email'
@@ -350,14 +326,12 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(response.code, 201)
 
     def testGetMin(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
 
         for i in range(2):
@@ -380,14 +354,12 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(webpage_response, json_response([min_res]))
 
     def testGetShmin(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
@@ -398,14 +370,12 @@ class APITest(AsyncHTTPTestCase):
         self.assertIn('no_such_method', str(response.error))
 
     def testGetMinInvalidType(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'text')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
 
         for i in range(2):
@@ -424,14 +394,12 @@ class APITest(AsyncHTTPTestCase):
         self.assertIn('invalid_type', str(response.error))
 
     def testGetMinNoSubmissions(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
@@ -441,14 +409,12 @@ class APITest(AsyncHTTPTestCase):
         self.assertIn('no_submissions', str(response.error))
 
     def testGetMax(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
 
         for i in range(2):
@@ -471,14 +437,12 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(webpage_response, json_response([max_res]))
 
     def testGetMinAndMax(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
 
         for i in range(2):
@@ -505,14 +469,12 @@ class APITest(AsyncHTTPTestCase):
             webpage_response)
 
     def testGetSum(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
 
         for i in range(2):
@@ -535,13 +497,12 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(webpage_response, json_response([sum_res]))
 
     def testGetCount(self):
-        survey_id = survey_table.select(). \
-            where(survey_table.c.survey_title == 'test_title').execute() \
-            .first().survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         for i in range(2):
@@ -565,14 +526,12 @@ class APITest(AsyncHTTPTestCase):
                                                    email='test_email')]))
 
     def testGetAvg(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         for i in range(2):
@@ -596,14 +555,12 @@ class APITest(AsyncHTTPTestCase):
                                                   email='test_email')]))
 
     def testGetStddevPop(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         for i in range(3):
@@ -626,14 +583,12 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(webpage_response, json_response([stddev_pop_res]))
 
     def testGetStddevSamp(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         for i in range(3):
@@ -656,14 +611,12 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(webpage_response, json_response([stddev_samp_res]))
 
     def testGetMode(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         for i in (1, 2, 2, 3):
@@ -687,14 +640,12 @@ class APITest(AsyncHTTPTestCase):
                                                    email='test_email')]))
 
     def testGetModeLocation(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'location')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         input_data = {'survey_id': survey_id,
@@ -717,14 +668,12 @@ class APITest(AsyncHTTPTestCase):
                                                    email='test_email')]))
 
     def testGetTimeSeries(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         for i in range(3):
@@ -750,14 +699,12 @@ class APITest(AsyncHTTPTestCase):
                                  api_response['result'][1])
 
     def testGetBarGraph(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         for i in [0, 2, 1, 0]:
@@ -792,8 +739,8 @@ class DebugTest(AsyncHTTPTestCase):
         return tornado.ioloop.IOLoop.instance()
 
     def tearDown(self):
-        auth_user_table.delete().where(
-            auth_user_table.c.email == 'debug_test_email').execute()
+        connection.execute(auth_user_table.delete().where(
+            auth_user_table.c.email == 'debug_test_email'))
 
     def testCreate(self):
         self.fetch('/debug/create/debug_test_email')
@@ -836,8 +783,8 @@ class BaseHandlerTest(AsyncHTTPTestCase):
 
         table = Table('type_constraint', MetaData(bind=engine), autoload=True)
         wrapped = catch_bare_integrity_error(
-            lambda: table.insert().values(
-                type_constraint_name='text').execute(), logger=Log())
+            lambda: connection.execute(table.insert().values(
+                type_constraint_name='text')), logger=Log())
         self.assertRaises(tornado.web.HTTPError, wrapped)
 
     def testUserOwnsQuestion(self):
@@ -848,24 +795,23 @@ class BaseHandlerTest(AsyncHTTPTestCase):
         def dummy(self, question_id):
             return True
 
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
 
         wrapped = user_owns_question(dummy)
         self.assertTrue(wrapped(UserDummy(), question.question_id))
 
-        unauthorized = question_table.join(survey_table,
-                                           question_table.c.survey_id ==
-                                           survey_table.c.survey_id).join(
+        unauthorized = connection.execute(question_table.join(
+            survey_table,
+            question_table.c.survey_id == survey_table.c.survey_id
+        ).join(
             auth_user_table,
-            survey_table.c.auth_user_id ==
-            auth_user_table.c.auth_user_id).select().where(
-            auth_user_table.c.email != 'test_email').execute().first()
+            survey_table.c.auth_user_id == auth_user_table.c.auth_user_id
+        ).select().where(auth_user_table.c.email != 'test_email')).first()
 
         self.assertRaises(tornado.web.HTTPError, wrapped, UserDummy(),
                           unauthorized.question_id)
@@ -893,23 +839,19 @@ class SurveyTest(AsyncHTTPTestCase):
         return tornado.ioloop.IOLoop.instance()
 
     def tearDown(self):
-        submission_table.delete().execute()
+        connection.execute(submission_table.delete())
 
     def testGetPrefix(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         response = self.fetch('/survey/{}'.format(survey_id[:35]))
         response2 = self.fetch('/survey/{}'.format(survey_id))
         self.assertEqual(response.code, 200)
         self.assertEqual(response.body, response2.body)
 
     def testGet(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         response = self.fetch('/survey/{}'.format(survey_id))
         self.assertEqual(response.code, 200)
 
@@ -918,10 +860,8 @@ class SurveyTest(AsyncHTTPTestCase):
         self.assertEqual(response.code, 404)
 
     def testPost(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         answer_json = {'submitter': 'me', 'survey_id': survey_id, 'answers': [
             {'question_id': get_questions_no_credentials(connection,
                                                          survey_id).first(
@@ -937,15 +877,14 @@ class SurveyTest(AsyncHTTPTestCase):
         result_submission_id = json_decode(result)['result']['submission_id']
         condition = submission_table.c.submission_id == result_submission_id
         self.assertEqual(
-            submission_table.select().where(condition).execute().rowcount, 1)
+            connection.execute(
+                submission_table.select().where(condition)).rowcount, 1)
         sub_answers = get_answers(connection, result_submission_id)
         self.assertEqual(sub_answers.rowcount, 1)
 
     def testPostNotJson(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         response = self.fetch('/survey/{}'.format(survey_id), method='POST',
                               body='not even close to json')
 
@@ -954,10 +893,8 @@ class SurveyTest(AsyncHTTPTestCase):
                          'HTTP 400: {"message": "Problems parsing JSON"}')
 
     def testPostMissingValue(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         answer_json = {'survey_id': survey_id}
         response = self.fetch('/survey/{}'.format(survey_id), method='POST',
                               body=json_encode(answer_json))
@@ -966,21 +903,16 @@ class SurveyTest(AsyncHTTPTestCase):
         self.assertIn('missing_field', str(response.error))
 
     def testPostWrongSurveyID(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
-        wrong_id = survey_table.select().where(
-            survey_table.c.survey_title != 'test_title').execute().first(
-
-        ).survey_id
-        answer_json = {'survey_id': wrong_id, 'answers': [
-            {'question_id': get_questions_no_credentials(connection,
-                                                         survey_id).first(
-
-            ).question_id,
-             'answer': 1,
-             'is_other': False}]}
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        wrong_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title != 'test_title')).first().survey_id
+        answer_json = {
+            'survey_id': wrong_id,
+            'answers': [{'question_id': get_questions_no_credentials(
+                connection, survey_id).first().question_id,
+                         'answer': 1,
+                         'is_other': False}]}
         response = self.fetch('/survey/{}'.format(survey_id), method='POST',
                               body=json_encode(answer_json))
 
@@ -988,14 +920,10 @@ class SurveyTest(AsyncHTTPTestCase):
         self.assertIn('invalid', str(response.error))
 
     def testPostWrongQuestionID(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
-        wrong_id = survey_table.select().where(
-            survey_table.c.survey_title != 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        wrong_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title != 'test_title')).first().survey_id
         gqnc = get_questions_no_credentials
         question_id = gqnc(connection, wrong_id).first().question_id
         answers = [{'question_id': question_id,
@@ -1013,7 +941,7 @@ class SurveyTest(AsyncHTTPTestCase):
 
 class ViewTest(AsyncHTTPTestCase):
     def tearDown(self):
-        submission_table.delete().execute()
+        connection.execute(submission_table.delete())
 
     def get_app(self):
         self.app = Application(pages, **config)
@@ -1029,10 +957,8 @@ class ViewTest(AsyncHTTPTestCase):
         self.assertIn('test_title', to_unicode(response.body))
 
     def testGetSubmissions(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         _create_submission()
         with mock.patch.object(ViewSubmissionsHandler,
                                'get_secure_cookie') as m:
@@ -1051,7 +977,7 @@ class ViewTest(AsyncHTTPTestCase):
 
 class VisualizationTest(AsyncHTTPTestCase):
     def tearDown(self):
-        submission_table.delete().execute()
+        connection.execute(submission_table.delete())
 
     def get_app(self):
         self.app = Application(pages, **config)
@@ -1061,14 +987,14 @@ class VisualizationTest(AsyncHTTPTestCase):
         return tornado.ioloop.IOLoop.instance()
 
     def testGetVisualizationForInteger(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first(
 
         ).survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         input_data = {'survey_id': survey_id,
@@ -1088,14 +1014,12 @@ class VisualizationTest(AsyncHTTPTestCase):
         self.assertIn('bar_graph', webpage_response)
 
     def testGetVisualizationsWithNoSubmissions(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         with mock.patch.object(VisualizationHandler, 'get_secure_cookie') as m:
@@ -1106,14 +1030,12 @@ class VisualizationTest(AsyncHTTPTestCase):
         self.assertIn('No viewable submissions.', webpage_response)
 
     def testGetVisualizationsForNote(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'note')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         with mock.patch.object(VisualizationHandler, 'get_secure_cookie') as m:
@@ -1124,14 +1046,12 @@ class VisualizationTest(AsyncHTTPTestCase):
         self.assertIn('No viewable submissions.', webpage_response)
 
     def testGetVisualizationForLocation(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'location')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         input_data = {'survey_id': survey_id,
