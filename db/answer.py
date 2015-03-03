@@ -15,9 +15,9 @@ def _sanitize_answer(answer, type_constraint_name: str) -> str:
     database properly. This function does that massaging.
 
     location: uses the ST_GeomFromText function in the database. The input
-    must be in the form [LON, LAT]. Uses SRID 4326 (AKA WGS 84
-    http://en.wikipedia.org/wiki/World_Geodetic_System), which should work with
-    the coordinates given by Android phones.
+    must be in the form {"lon": <lon>, "lat": <lat>}. Uses SRID 4326 (AKA
+    WGS 84http://en.wikipedia.org/wiki/World_Geodetic_System), which should
+    work with the coordinates given by Android phones.
 
     :param answer: The answer value.
     :param type_constraint_name: The type constraint for the question
@@ -27,8 +27,8 @@ def _sanitize_answer(answer, type_constraint_name: str) -> str:
         if answer is None:
             return text("ST_GeomFromText('POINT EMPTY', 4326)")
         else:
-            db_input = "ST_GeomFromText('POINT({ans[0]} {ans[1]})', 4326)"
-            return text(db_input.format(ans=answer))
+            db_input = "ST_GeomFromText('POINT({lon} {lat})', 4326)"
+            return text(db_input.format(**answer))
     return answer
 
 
@@ -72,8 +72,7 @@ def answer_insert(*,
 
     if type_constraint_name == 'facility':
         values['answer_text'] = answer['id']
-        values['answer_location'] = _sanitize_answer(
-            [answer['lon'], answer['lat']], 'location')
+        values['answer_location'] = _sanitize_answer(answer, 'location')
     else:
         answer_type = 'answer_text' if is_other else 'answer_' + tcn
         values[answer_type] = _sanitize_answer(answer, tcn)
