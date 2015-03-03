@@ -17,6 +17,7 @@ import api.submission
 import api.user
 from db import engine
 from pages.api.aggregations import AggregationHandler
+from pages.api.batch import BatchSubmissionAPIHandler
 from pages.auth import LogoutHandler, LoginHandler
 from pages.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler, SubmitAPIHandler
@@ -126,6 +127,7 @@ pages = [
 
     # JSON API
     (r'/api/aggregate/({})/?'.format(UUID_REGEX), AggregationHandler),
+
     (r'/api/surveys/?', SurveysAPIHandler),
     (r'/api/surveys/create/?', CreateSurveyAPIHandler),
     (r'/api/surveys/({})/?'.format(UUID_REGEX),
@@ -134,8 +136,12 @@ pages = [
      SubmitAPIHandler),
     (r'/api/surveys/({})/submissions/?'.format(UUID_REGEX),
      SubmissionsAPIHandler),
+
     (r'/api/submissions/({})/?'.format(UUID_REGEX),
      SingleSubmissionAPIHandler),
+
+    (r'/api/batch/submit/({})/?'.format(UUID_REGEX),
+     BatchSubmissionAPIHandler),
 ]
 
 if config.get('debug', False):

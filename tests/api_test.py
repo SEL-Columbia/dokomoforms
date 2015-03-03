@@ -17,6 +17,7 @@ import api.survey
 import api.submission
 import api.user
 import api.aggregation
+import api.batch
 import db
 from db.answer import answer_insert, CannotAnswerMultipleTimesError, \
     get_answers
@@ -1515,6 +1516,50 @@ class TestAggregation(unittest.TestCase):
         self.assertGreater(len(
             api.aggregation.get_question_stats(connection, survey_id,
                                                email='test_email')), 0)
+
+
+class TestBatch(unittest.TestCase):
+    def tearDown(self):
+        connection.execute(submission_table.delete())
+
+    def testSubmit(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        question_id = connection.execute(question_table.select().where(
+            and_cond)).first().question_id
+        second_cond = and_(question_table.c.survey_id == survey_id,
+                           question_table.c.type_constraint_name ==
+                           'multiple_choice')
+        second_q_id = connection.execute(question_table.select().where(
+            second_cond)).first().question_id
+        choice_cond = question_choice_table.c.question_id == second_q_id
+        choice_id = connection.execute(question_choice_table.select().where(
+            choice_cond)).first().question_choice_id
+        input_data = {
+            'survey_id': survey_id,
+            'submissions': [
+                {'submitter': 'me',
+                 'answers': [
+                     {'question_id': question_id,
+                      'answer': 1,
+                      'is_other': False}]},
+                {'submitter': 'me',
+                 'answers': [
+                     {'question_id': second_q_id,
+                      'answer': choice_id,
+                      'is_other': False}]},
+            ]}
+        response = api.batch.submit(connection, input_data)['result']
+        self.assertEqual(len(response), 2)
+        submission_1 = api.submission.get_one(
+            connection, response[0], 'test_email')
+        self.assertEqual(submission_1['result']['answers'][0]['answer'], 1)
+        submission_2 = api.submission.get_one(
+            connection, response[1], 'test_email')
+        self.assertEqual(submission_2['result']['answers'][0]['answer'],
+                         choice_id)
 
 
 if __name__ == '__main__':
