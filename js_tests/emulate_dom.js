@@ -4,7 +4,7 @@ module.exports = (function(url) {
 
     document = new jsdom.jsdom(fs.readFileSync("js_tests/widgets.html", "utf-8"),
         {
-            url: url || "http://localhost:3000" //XXX Cross domain error otherwise
+            url: url || "http://localhost" //XXX Cross domain error otherwise
         });
     window = document.parentWindow;
 

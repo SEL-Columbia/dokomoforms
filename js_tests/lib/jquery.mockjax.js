@@ -517,6 +517,8 @@
 			mockHandler.timeout = requestSettings.timeout;
 			mockHandler.global = requestSettings.global;
 
+            origSettings.crossDomain = false;
+
 			// In the case of a timeout, we just need to ensure
 			// an actual jQuery timeout (That is, our reponse won't)
 			// return faster than the timeout setting.
