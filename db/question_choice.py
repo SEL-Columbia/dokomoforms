@@ -1,14 +1,9 @@
 """Allow access to the question_choice table."""
-from sqlalchemy import Table, MetaData
 
 from sqlalchemy.engine import RowProxy, ResultProxy, Connection
-from sqlalchemy.sql import Insert
+from sqlalchemy.sql import Insert, select
 
-from db import engine
-
-
-question_choice_table = Table('question_choice', MetaData(bind=engine),
-                              autoload=True)
+from db import question_choice_table
 
 
 def question_choice_select(connection: Connection,
@@ -21,7 +16,7 @@ def question_choice_select(connection: Connection,
     :raise QuestionChoiceDoesNotExistError: if the UUID is not in the table
     """
     table = question_choice_table
-    choice = connection.execute(table.select().where(
+    choice = connection.execute(select([table]).where(
         table.c.question_choice_id == question_choice_id)).first()
     if choice is None:
         raise QuestionChoiceDoesNotExistError(question_choice_id)
@@ -37,7 +32,7 @@ def get_choices(connection: Connection, question_id: str) -> ResultProxy:
     :param question_id: foreign key
     :return: an iterable of the choices (RowProxy)
     """
-    select_stmt = question_choice_table.select()
+    select_stmt = select([question_choice_table])
     where_stmt = select_stmt.where(
         question_choice_table.c.question_id == question_id)
     return connection.execute(where_stmt.order_by('choice_number asc'))

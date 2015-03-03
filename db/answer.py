@@ -1,15 +1,12 @@
 """Allow access to the answer table."""
-from sqlalchemy import Table, MetaData, text
+from sqlalchemy import text, select
 
 from sqlalchemy.engine import ResultProxy, RowProxy, Connection
 from sqlalchemy.sql.dml import Insert
 from sqlalchemy.sql import func
 from tornado.escape import json_decode
 
-from db import engine
-
-
-answer_table = Table('answer', MetaData(bind=engine), autoload=True)
+from db import answer_table
 
 
 def _sanitize_answer(answer, type_constraint_name: str) -> str:
@@ -93,7 +90,7 @@ def get_answers(connection: Connection,
     :param submission_id: foreign key
     :return: an iterable of the answers (RowProxy)
     """
-    select_stmt = answer_table.select()
+    select_stmt = select([answer_table])
     where_stmt = select_stmt.where(
         answer_table.c.submission_id == submission_id)
     return connection.execute(where_stmt.order_by('sequence_number asc'))
@@ -108,7 +105,7 @@ def get_answers_for_question(connection: Connection,
     :param question_id: foreign key
     :return: an iterable of the answers (RowProxy)
     """
-    select_stmt = answer_table.select()
+    select_stmt = select([answer_table])
     where_stmt = select_stmt.where(answer_table.c.question_id == question_id)
     return connection.execute(where_stmt)
 

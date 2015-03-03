@@ -88,9 +88,9 @@ class DriverTest(unittest.TestCase):
         connection.request('PUT', path, body, headers=headers)
 
     def tearDown(self):
-        submission_table.delete().execute()
-        auth_user_table.delete().where(
-            auth_user_table.c.email == 'test@mockmyid.com').execute()
+        connection.execute(submission_table.delete())
+        connection.execute(auth_user_table.delete().where(
+            auth_user_table.c.email == 'test@mockmyid.com'))
         self.drv.quit()
 
         self._set_sauce_status()
@@ -237,8 +237,8 @@ class SubmissionTest(DriverTest):
 class TypeTest(DriverTest):
     def tearDown(self):
         super().tearDown()
-        survey_table.delete().where(
-            survey_table.c.survey_title.like('test_question_type_%')).execute()
+        connection.execute(survey_table.delete().where(
+            survey_table.c.survey_title.like('test_question_type_%')))
 
     def _create_survey(self, type_constraint_name, choices=None):
         tcn = type_constraint_name
@@ -270,7 +270,8 @@ class IntegerTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
-        self.drv.find_element_by_tag_name('input').send_keys('2')
+        self.drv.find_element_by_xpath(
+            '/html/body/div[2]/div[2]/input').send_keys('2')
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
 
@@ -298,7 +299,8 @@ class DecimalTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
-        self.drv.find_element_by_tag_name('input').send_keys('3.5')
+        self.drv.find_element_by_xpath(
+            '/html/body/div[2]/div[2]/input').send_keys('3.5')
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
 
@@ -326,7 +328,8 @@ class TextTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
-        self.drv.find_element_by_tag_name('input').send_keys('some text')
+        self.drv.find_element_by_xpath(
+            '/html/body/div[2]/div[2]/input').send_keys('some text')
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
 
@@ -355,12 +358,14 @@ class DateTest(TypeTest):
 
         # Fill it out
         if self.browser_name == 'android':
-            self.drv.find_element_by_tag_name('input').click()
+            self.drv.find_element_by_xpath(
+                '/html/body/div[2]/div[2]/input').click()
             self.drv.switch_to.window('NATIVE_APP')
             self.drv.find_element_by_id('button1').click()
             self.drv.switch_to.window('WEBVIEW_0')
         else:
-            self.drv.find_element_by_tag_name('input').send_keys('4/4/44')
+            self.drv.find_element_by_xpath(
+                '/html/body/div[2]/div[2]/input').send_keys('4/4/44')
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
 
@@ -389,12 +394,14 @@ class TimeTest(TypeTest):
 
         # Fill it out
         if self.browser_name == 'android':
-            self.drv.find_element_by_tag_name('input').click()
+            self.drv.find_element_by_xpath(
+                '/html/body/div[2]/div[2]/input').click()
             self.drv.switch_to.window('NATIVE_APP')
             self.drv.find_element_by_id('button1').click()
             self.drv.switch_to.window('WEBVIEW_0')
         else:
-            self.drv.find_element_by_tag_name('input').send_keys('5:55')
+            self.drv.find_element_by_xpath(
+                '/html/body/div[2]/div[2]/input').send_keys('5:55')
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
 
