@@ -1,5 +1,6 @@
 var jsdom = require('jsdom');
 var should = require('should');
+var assert = require('assert');
 global.window = require('./emulate_dom.js');
 
 document = window.document;
@@ -28,6 +29,7 @@ describe('Survey unit and regression tests', function(done) {
     });
 
     beforeEach(function(done) {
+        $.mockjax.clear();
         localStorage = {};
         localStorage.setItem = function(id, data) {
             localStorage[id] = data;
@@ -521,19 +523,30 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
+            $.mockjax({
+                  url: '',
+                  status: 200,
+                  onAfterSuccess: function() { 
+                    $('.message').text().should.match('Survey submitted!'); 
+                    done();
+                  },
+                  onAfterError: function() { 
+                      assert(false, "Failed to catch post correctly"); 
+                  },
+                  responseText: {
+                      status: "success",
+                  }
+            });
+
+
             survey = new Survey("id", questions, {});
             questions[0].answer = [{response:"hey baby"}];
             survey.submit();
-            //XXX$('.message').text().should.match('Survey submitted!');
-            $('.message').text().should.match("Submission failed, will try again later.");
-            done();
 
         });
 
 
     it('submit: facility submission',
-        //XXX: Fake response so that this doesn't 404
-        //XXX: Fake revisit response so that this doesn't 404
         function(done) {
             var NEXT = 1;
             var PREV = -1;
@@ -555,15 +568,44 @@ describe('Survey unit and regression tests', function(done) {
                 'coordinates' : [40.01, 70.01]
             };
 
+
+            var url = "http://localhost:3000/api/v0/facilities.json" // install revisit server from git
+            $.mockjax({
+                  url: url,
+                  status: 200,
+                  onAfterSuccess: function() { 
+                    $('.message').text().should.match('Facility Added!'); 
+                    //XXX async can hang if js error is encountered
+                    Object.keys(App.unsynced_facilities).should.have.length(0);
+                    App.facilities.should.have.length(1);
+                    done();
+                  },
+                  onAfterError: function() { 
+                      assert(false, "Failed to catch revisit correctly"); 
+                  },
+                  responseText: {
+                      status: "success",
+                  }
+            });
+            
+            $.mockjax({
+                  url: '',
+                  status: 200,
+                  onAfterSuccess: function() { 
+                  },
+                  onAfterError: function() { 
+                      assert(false, "Failed to catch post correctly"); 
+                  },
+                  responseText: {
+                      status: "success",
+                  }
+            });
+
+
             survey = new Survey("id", questions, {});
             questions[0].answer = [{response:[1, [40.01, 70.01]]}]; //So many arrays
 
             survey.submit();
-            //XXX$('.message').text().should.match('Survey submitted!'); 
-            //XXX should(App.unsynced_facilities[1]).not.be.ok;
-            //XXX App.facilities.should.have.length(1);
-            $('.message').text().should.match("Submission failed, will try again later."); 
-            done();
 
         });
 });

@@ -1046,15 +1046,14 @@ function getNearbyFacilities(lat, lng, rad, lim, id, cb) {
 
 // XXX: Really doesn't need to
 function postNewFacility(facility) {
-    var url = "http://staging.revisit.global/api/v0/facilities.json";
-    //var url = "http://localhost:3000/api/v0/facilities.json" // install revisit server from git
-
+    //var url = "http://staging.revisit.global/api/v0/facilities.json";
+    var url = "http://localhost:3000/api/v0/facilities.json" // install revisit server from git
     $.ajax({
         url: url,
         type: 'POST',
         contentType: 'application/json',
-        processData: false,
         data: JSON.stringify(facility),
+        processData: false,
         dataType: 'json',
         success: function() {
             App.message('Facility Added!');
@@ -1066,14 +1065,10 @@ function postNewFacility(facility) {
         
         error: function() {
             App.message('Facility submission failed, will try again later.');
-            //TODO: Way to resync on failure like submissions
         },
         
         complete: function() {
-            //TODO get these unsynced facilities to be drawn after map refresh?
-            
             // Add it into facilities array so it can be selected later
-            //console/g.log('storing it all');
             localStorage.setItem("facilities", 
                     JSON.stringify(App.facilities));
 

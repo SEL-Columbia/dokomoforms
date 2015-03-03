@@ -7,15 +7,10 @@ function getCookie(name) {
     navigator.id.watch({
       loggedInUser: localStorage['email'] || null,
       onlogin: function(assertion) {
-          console.log(window.location.href);
-          console.log(window.location.host);
-          console.log(document.URL);
         $.ajax({
           type: 'GET',
           url: '',
           success: function (res, status, xhr) {
-
-            console.log("SUCCESS ONE");
             var user = localStorage['email'] || null;
             if (user === null){
               $.ajax({
@@ -26,7 +21,6 @@ function getCookie(name) {
                   "X-XSRFToken": getCookie("_xsrf")
                 },
                 success: function(res, status, xhr){
-                    console.log("SUCCESS TWO");
                   localStorage['email'] = res.email;
                   location.href = decodeURIComponent(window.location.search.substring(6));
                 },
@@ -36,13 +30,7 @@ function getCookie(name) {
                 }
               });
             }
-          },
-          error: function(xhr, status, err) {
-              alert("Auth failure: " + err, xhr, status);
-              console.log(xhr);
-              console.log(status);
           }
-
         });
       },
       onlogout: function() {
@@ -50,7 +38,6 @@ function getCookie(name) {
         // Tear down the user's session by redirecting the user or making a call to your backend.
         // Also, make sure loggedInUser will get set to null on the next page load.
         // (That's a literal JavaScript null. Not false, 0, or undefined. null.)
-        console.log("LOG OUT");
         $.ajax({
           type: 'POST',
           url: '/', // This is a URL on your website.
