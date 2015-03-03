@@ -16,7 +16,7 @@ def _sanitize_answer(answer, type_constraint_name: str) -> str:
 
     location: uses the ST_GeomFromText function in the database. The input
     must be in the form {"lon": <lon>, "lat": <lat>}. Uses SRID 4326 (AKA
-    WGS 84http://en.wikipedia.org/wiki/World_Geodetic_System), which should
+    WGS 84 http://en.wikipedia.org/wiki/World_Geodetic_System), which should
     work with the coordinates given by Android phones.
 
     :param answer: The answer value.
