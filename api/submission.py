@@ -76,7 +76,7 @@ def _create_submission(connection: Connection,
 
     :param connection: a SQLAlchemy Connection
     :param survey_id: the UUID of the survey
-    :param required_ids: a set of UUIDS for questions which are marked
+    :param required_ids: a set of UUIDs for questions which are marked
                          "required"
     :param submission_data: the dict containing the submission information
     :return: the id of the submission
