@@ -252,11 +252,9 @@ describe('User multiple choice tests', function(done) {
             mc_question.answer[0].response.should.match("8ffa4051-09bb-4966-bc77-098e40cbee27");
 
             $(".page_nav__next").trigger("click");
-            //mc_question.should.not.equal(survey.current_question);
-            console.log(survey.current_question.question_title);
+            mc_question.should.not.equal(survey.current_question);
             $(".page_nav__prev").trigger("click");
-            console.log(survey.current_question.question_title);
-            //mc_question.should.equal(survey.current_question);
+            mc_question.should.equal(survey.current_question);
 
             $('.question__select').val().should.match("8ffa4051-09bb-4966-bc77-098e40cbee27");
             mc_question.answer[0].response.should.match("8ffa4051-09bb-4966-bc77-098e40cbee27");
