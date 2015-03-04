@@ -3,8 +3,8 @@ python:
   - "3.3"
   - "3.4"
 cache:
+  pip: true
   directories:
-    - $HOME/.cache/pip
     - node_modules
 sudo: false
 env:
