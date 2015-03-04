@@ -64,7 +64,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
 
             // empty
             should(survey.getFirstResponse(questions[0])).not.be.ok;
@@ -95,7 +95,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0,  questions, {});
 
             // empty
             should(survey.getFirstResponse(questions[0])).not.be.ok;
@@ -130,7 +130,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
             questions[0].should.equal(survey.current_question);
 
             // state shouldn't change
@@ -167,7 +167,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
             questions[0].should.equal(survey.current_question);
 
             // state shouldn't change
@@ -204,7 +204,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
             questions[0].should.equal(survey.current_question);
 
             // state shouldn't change
@@ -241,7 +241,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
             questions[0].should.equal(survey.current_question);
 
             // state shouldn't change
@@ -279,7 +279,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
             questions[0].should.equal(survey.current_question);
 
             // state shouldn't change
@@ -318,7 +318,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
             questions[0].should.equal(survey.current_question);
 
             // state shouldn't change
@@ -369,7 +369,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
             questions[0].should.equal(survey.current_question);
 
             survey.next(NEXT);
@@ -440,7 +440,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
             var brancher = questions[4];
             var next = questions[1];
             var end = questions[2];
@@ -496,7 +496,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
             survey.submit();
             $('.message').text().should.match("Submission failed, No questions answer in Survey!");
             done();
@@ -539,7 +539,7 @@ describe('Survey unit and regression tests', function(done) {
             });
 
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
             questions[0].answer = [{response:"hey baby"}];
             survey.submit();
 
@@ -602,7 +602,7 @@ describe('Survey unit and regression tests', function(done) {
             });
 
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
             questions[0].answer = [{response:[1, [40.01, 70.01]]}]; //So many arrays
 
             survey.submit();
