@@ -6,6 +6,8 @@ cache:
   pip: true
   directories:
     - node_modules
+    # This allows Travis to cache the actual packages. You must invalidate the cache manually if the dependencies change.
+    - $HOME/virtualenv/$TRAVIS_PYTHON_VERSION/lib/$TRAVIS_PYTHON_VERSION/site-packages
 sudo: false
 env:
   global:
@@ -38,6 +40,7 @@ script:
   - npm test
   - nosetests --with-coverage --cover-inclusive --cover-branches --cover-tests --cover-html --cover-erase --cover-package=api,db,webapp,pages.api,pages.util,pages.debug,pages.view
 
+# necessary to close the Sauce Connect tunnel properly
 after_script: 
   - kill $(ps aux | grep '[b]in/sc' | awk '{print $2}')
   - sleep 5
