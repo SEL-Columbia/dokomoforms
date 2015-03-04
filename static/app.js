@@ -12,7 +12,7 @@ var App = {
 
 App.init = function(survey) {
     var self = this;
-    self.survey = new Survey(survey.survey_id, survey.questions, survey.metadata);
+    self.survey = new Survey(survey.survey_id, survey.survey_version, survey.questions, survey.metadata);
     self.start_loc = survey.metadata.location || self.start_loc;
     self.facilities = JSON.parse(localStorage.facilities || "[]");
     self.submitter_name = localStorage.name;
@@ -115,11 +115,12 @@ App._getMapLayer = function() {
 
 };
 
-function Survey(id, questions, metadata) {
+function Survey(id, version, questions, metadata) {
     var self = this;
     this.id = id;
     this.questions = questions;
     this.metadata = metadata;
+    this.version = version;
 
     // Load answers from localStorage
     var answers = JSON.parse(localStorage[this.id] || '{}');
