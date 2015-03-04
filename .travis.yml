@@ -34,6 +34,8 @@ script:
   - npm test
   - nosetests --with-coverage --cover-inclusive --cover-branches --cover-tests --cover-html --cover-erase --cover-package=api,db,webapp,pages.api,pages.util,pages.debug,pages.view
 
+after_script: python3 kill_sauce_tunnel.py
+
 after_success: coveralls
 
 notifications:
