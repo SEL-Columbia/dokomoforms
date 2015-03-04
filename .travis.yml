@@ -34,7 +34,7 @@ script:
   - npm test
   - nosetests --with-coverage --cover-inclusive --cover-branches --cover-tests --cover-html --cover-erase --cover-package=api,db,webapp,pages.api,pages.util,pages.debug,pages.view
 
-after_script: kill $(ps aux | grep '[b]in/sc' | awk '{print $2}')
+after_script: ps aux | grep '[b]in/sc'
 
 after_success: coveralls
 
