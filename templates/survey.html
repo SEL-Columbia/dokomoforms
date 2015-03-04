@@ -23,18 +23,21 @@
     <script id="widget_text" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
         <div class="question__hint"><%- question.hint || "" %></div>
-        <% if (question.answer.length === 0){ %>
+        <%  var no_response = true;
+            _.each(question.answer, function(ans) {
+            if (ans && ans.response !== null) { 
+                no_response = false; %>
+                <input class="text_input" type="text" 
+                    placeholder="Please provide another response"
+                    value="<%- ans.response %>"
+                >
+            <% } %>
+        <% }); %>
+        <% if (no_response) { %>
             <input class="text_input" type="text"
                 placeholder="Please provide any response"
                 value="<%- question.default || '' %>"
             >
-        <% } else { %>
-            <% _.each(question.answer, function(ans) { %>
-                <input class="text_input" type="text" 
-                    placeholder="Please provide another response"
-                    value="<%- ans && ans.response %>"
-                >
-            <% }); %>
         <% } %>
 
         <div class="question__repeat"
@@ -57,7 +60,25 @@
     <script id="widget_integer" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
         <div class="question__hint"><%- question.hint || "" %></div>
-        <% if (question.answer.length === 0 ) { %>
+
+        <%  var no_response = true;
+            _.each(question.answer, function(ans) {
+            if (ans && ans.response !== null) { 
+                no_response = false; %>
+                <input class="text_input" type="number"
+                    placeholder="Please provide another number"
+                    value="<%- ans.response %>"
+                    <% if (question.min != null){ %>
+                        min="<%- question.min %>"
+                    <% } %>
+                    <% if (question.max != null){ %>
+                        max="<%- question.max %>"
+                    <% } %>
+                >
+            <% } %>
+        <% }); %>
+
+        <% if (no_response) { %>
             <input class="text_input" type="number"
                 placeholder="Please provide a number"
                 value="<%- question.default || '' %>"
@@ -68,19 +89,6 @@
                     max="<%- question.max %>"
                 <% } %>
             >
-        <% } else { %>
-            <% _.each(question.answer, function(ans) { %>
-                <input class="text_input" type="number"
-                    placeholder="Please provide another number"
-                    value="<%- ans && ans.response %>"
-                    <% if (question.min != null){ %>
-                        min="<%- question.min %>"
-                    <% } %>
-                    <% if (question.max != null){ %>
-                        max="<%- question.max %>"
-                    <% } %>
-                >
-            <% }); %>
         <% } %>
         
         <div class="question__repeat"
@@ -102,20 +110,25 @@
     <script id="widget_decimal" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
         <div class="question__hint"><%- question.hint || "" %></div>
-        <% if (question.answer.length === 0){ %>
+
+        <%  var no_response = true;
+            _.each(question.answer, function(ans) {
+            if (ans && ans.response !== null) { 
+                no_response = false; %>
+                <input class="text_input" type="number" step="any"
+                    placeholder="Please provide another number (decimal OK)"
+                    value="<%- ans.response %>"
+                >
+            <% } %>
+        <% }); %>
+
+        <% if (no_response) { %>
             <input class="text_input" type="number" step="any"
                     placeholder="Please provide a number (decimal OK)"
                     value="<%- question.default || '' %>"
             >
-        <% } else { %>
-            <% _.each(question.answer, function(ans) { %>
-                <input class="text_input" type="number" step="any"
-                    placeholder="Please provide another number (decimal OK)"
-                    value="<%- ans && ans.response %>"
-                >
-            <% }); %>
         <% } %>
-        
+
         <div class="question__repeat"
             <% if (!question.allow_multiple) { %> 
                 style="display:none" 
@@ -135,18 +148,23 @@
     <script id="widget_date" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
         <div class="question__hint"><%- question.hint || "" %></div>
-        <% if (question.answer.length === 0){ %>
-        <input class="text_input" type="date" 
-               placeholder="Please provide a date"
-               value="<%- question.default || '' %>"
-        >
-        <% } else { %>
-            <% _.each(question.answer, function(ans) { %>
+
+        <%  var no_response = true;
+            _.each(question.answer, function(ans) {
+            if (ans && ans.response !== null) { 
+                no_response = false; %>
                 <input class="text_input" type="date" 
                        placeholder="Please provide another date"
-                       value="<%- ans && ans.response %>"
+                       value="<%- ans.response %>"
                 >
-            <% }); %>
+            <% } %>
+        <% }); %>
+
+        <% if (no_response) { %>
+            <input class="text_input" type="date" 
+                   placeholder="Please provide a date"
+                   value="<%- question.default || '' %>"
+            >
         <% } %>
 
         <div class="question__repeat"
@@ -168,18 +186,23 @@
     <script id="widget_time" type="text/html">
         <div class="question__title"><%- question.question_title %></div>
         <div class="question__hint"><%- question.hint || "" %></div>
-        <% if (question.answer.length === 0){ %>
+
+        <%  var no_response = true;
+            _.each(question.answer, function(ans) {
+            if (ans && ans.response !== null) { 
+                no_response = false; %>
+                <input class="text_input" type="time" 
+                    placeholder="Please provide another time"
+                    value="<%- ans.response %>"
+                >
+            <% } %>
+        <% }); %>
+
+        <% if (no_response) { %>
             <input class="text_input" type="time" 
                    placeholder="Please provide a time"
                    value="<%- question.default || '' %>"
             >
-        <% } else { %>
-            <% _.each(question.answer, function(ans) { %>
-                <input class="text_input" type="time" 
-                    placeholder="Please provide another time"
-                    value="<%- ans && ans.response %>"
-                >
-            <% }); %>
         <% } %>
 
         <div class="question__repeat"
@@ -202,22 +225,29 @@
         <div class="question__title"><%- question.question_title %></div>
         <div class="question__hint"><%- question.hint || "" %></div>
         <div id="map" class="question__map"></div>
-        <div class="question__location">
-            <input class="text_input question__lat" type="text" 
-            value="<%- question.answer[0] && question.answer[0].response[1] || start_loc[0] %>">
-            <input class="text_input question__lon" type="text" 
-            value="<%- question.answer[0] && question.answer[0].response[0] || start_loc[1] %>">
-        </div>
 
-        <% _.each(question.answer.slice(1), function(ans) { %>
+        <%  var no_response = true;
+            _.each(question.answer, function(ans) {
+            if (ans && ans.response !== null) { 
+                no_response = false; %>
+                <div class="question__location">
+                    <input class="text_input question__lat" type="text" 
+                           value="<%- ans.response[1] %>">
+                    <input class="text_input question__lon" type="text" 
+                           value="<%- ans.response[0] %>">
+                </div>
+            <% } %>
+        <% }); %>
+
+        <% if (no_response) { %>
             <div class="question__location">
                 <input class="text_input question__lat" type="text" 
-                       value="<%- ans && ans.response[1] %>">
+                value="<%- start_loc[0] %>">
                 <input class="text_input question__lon" type="text" 
-                       value="<%- ans && ans.response[0] %>">
+                value="<%- start_loc[1] %>">
             </div>
-        <% }); %>
-        
+        <% } %>
+
         <div class="question__btn question__find__btn">Find location</div>
 
         <div class="question__repeat"
@@ -291,7 +321,7 @@
         </select>
 
         <input class="text_input" type="text"
-                value="<%- question.answer[question.choices.length] && question.answer[question.choices.length].response || '' %>"
+                value="<%- question.answer[question.choices.length] && question.answer[question.choices.length].response %>"
         >
     </script>
     
