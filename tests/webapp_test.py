@@ -652,7 +652,7 @@ class APITest(AsyncHTTPTestCase):
                       'submitter': 'test_submitter',
                       'answers':
                           [{'question_id': q_id,
-                            'answer': [90, 0],
+                            'answer': {'lon': 90, 'lat': 0},
                             'is_other': False}]}
         api.submission.submit(connection, input_data)
 
@@ -1058,7 +1058,7 @@ class VisualizationTest(AsyncHTTPTestCase):
                       'submitter': 'test_submitter',
                       'answers':
                           [{'question_id': q_id,
-                            'answer': [0, 0],
+                            'answer': {'lon': 0, 'lat': 0},
                             'is_other': False}]}
         api.submission.submit(connection, input_data)
 

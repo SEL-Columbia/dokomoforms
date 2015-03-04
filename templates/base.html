@@ -53,10 +53,18 @@
         
     <div class="nav">
         <div class="nav__title">
-            <svg class="icon">
+            <svg class="icon nav__title__icon">
                 <use xlink:href="#logo"></use>
             </svg>
             {% try %} {{survey_title}} {% except NameError %} Dokomoforms {% end %}
+            {% try %} 
+                {% if survey_version is not None %} 
+                <div class="nav__title__version">
+                    edition: {{survey_version}}
+                </div>
+                {% end %}
+            {% except NameError %} 
+            {% end %}
         </div>
         <a class="sel" href="http://sel.columbia.edu">
             <img src="/static/img/SEL_logo_sm.png" class="nav__sync"/>

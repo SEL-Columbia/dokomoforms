@@ -61,6 +61,7 @@ class Survey(BaseHandler):
                     'result']
                 self.render('survey.html',
                             survey=json_encode(survey),
+                            survey_version=survey['survey_version'],
                             survey_title=survey['survey_title'])
         except (SurveyPrefixDoesNotIdentifyASurveyError,
                 SurveyPrefixTooShortError):
