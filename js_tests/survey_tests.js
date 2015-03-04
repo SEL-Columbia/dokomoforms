@@ -603,8 +603,7 @@ describe('Survey unit and regression tests', function(done) {
 
 
             survey = new Survey("id", 0, questions, {});
-            questions[0].answer = [{response:[1, [40.01, 70.01]]}]; //So many arrays
-
+            questions[0].answer = [{response:{'id': 1, 'lat':40.01, 'lon':70.01 }}];
             survey.submit();
 
         });

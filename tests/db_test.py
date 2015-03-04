@@ -83,7 +83,8 @@ class TestAnswer(unittest.TestCase):
             submitter='test_submitter', survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = connection.execute(answer_insert(
-            answer=[90, 0], question_id=question_id,
+            answer={'lon': 90, 'lat': 0},
+            question_id=question_id,
             submission_id=submission_id,
             survey_id=survey_id,
             type_constraint_name=tcn,
@@ -131,7 +132,7 @@ class TestAnswer(unittest.TestCase):
                               survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = connection.execute(answer_insert(
-            answer=['revisit ID', [90, 0]],
+            answer={'id': 'revisit ID', 'lon': 90, 'lat': 0},
             question_id=question_id,
             submission_id=submission_id,
             survey_id=survey_id,

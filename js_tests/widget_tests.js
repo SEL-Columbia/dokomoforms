@@ -58,7 +58,7 @@ describe('Widget creation tests', function(done) {
             // Create content div with widget template
             var widgetHTML = $('#widget_' + question.type_constraint_name).html();
             var widgetTemplate = _.template(widgetHTML);
-            var compiledHTML = widgetTemplate({question: question, start_loc: [40, 70]});
+            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
 
             $('.content')
                 .data('index', 1)
@@ -96,7 +96,7 @@ describe('Widget creation tests', function(done) {
             // Create content div with widget template
             var widgetHTML = $('#widget_' + question.type_constraint_name).html();
             var widgetTemplate = _.template(widgetHTML);
-            var compiledHTML = widgetTemplate({question: question, start_loc: [40, 70]});
+            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
 
             $('.content')
                 .data('index', 1)
@@ -134,7 +134,7 @@ describe('Widget creation tests', function(done) {
             // Create content div with widget template
             var widgetHTML = $('#widget_' + question.type_constraint_name).html();
             var widgetTemplate = _.template(widgetHTML);
-            var compiledHTML = widgetTemplate({question: question, start_loc: [40, 70]});
+            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
 
             $('.content')
                 .data('index', 1)
@@ -165,7 +165,7 @@ describe('Widget creation tests', function(done) {
                 question_to_sequence_number: -1,
                 type_constraint_name: "location",
                 logic: {},
-                answer: [{response:[5, 7]}],
+                answer: [{response:{'lon':5, 'lat':7}}],
                 question_title: "Birdman was meh, clearly appealed to the judges though",
                 sequence_number: 1
             };
@@ -173,7 +173,7 @@ describe('Widget creation tests', function(done) {
             // Create content div with widget template
             var widgetHTML = $('#widget_' + question.type_constraint_name).html();
             var widgetTemplate = _.template(widgetHTML);
-            var compiledHTML = widgetTemplate({question: question, start_loc: [40, 70]});
+            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
 
             $('.content')
                 .data('index', 1)
@@ -213,7 +213,7 @@ describe('Widget creation tests', function(done) {
             // Create content div with widget template
             var widgetHTML = $('#widget_' + question.type_constraint_name).html();
             var widgetTemplate = _.template(widgetHTML);
-            var compiledHTML = widgetTemplate({question: question, start_loc: [40, 70]});
+            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
 
             $('.content')
                 .data('index', 1)
@@ -247,7 +247,7 @@ describe('Widget creation tests', function(done) {
             // Create content div with widget template
             var widgetHTML = $('#widget_' + question.type_constraint_name).html();
             var widgetTemplate = _.template(widgetHTML);
-            var compiledHTML = widgetTemplate({question: question, start_loc: [40, 70]});
+            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
 
             $('.content')
                 .data('index', 1)
@@ -280,7 +280,7 @@ describe('Widget creation tests', function(done) {
             // Create content div with widget template
             var widgetHTML = $('#widget_' + question.type_constraint_name).html();
             var widgetTemplate = _.template(widgetHTML);
-            var compiledHTML = widgetTemplate({question: question, start_loc: [40, 70]});
+            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
 
             $('.content')
                 .data('index', 1)
@@ -319,7 +319,7 @@ describe('Widget creation tests', function(done) {
             // Create content div with widget template
             var widgetHTML = $('#widget_' + question.type_constraint_name).html();
             var widgetTemplate = _.template(widgetHTML);
-            var compiledHTML = widgetTemplate({question: question, start_loc: [40, 70]});
+            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
 
             $('.content')
                 .data('index', 1)
@@ -352,7 +352,7 @@ describe('Widget creation tests', function(done) {
             // Create content div with widget template
             var widgetHTML = $('#widget_' + question.type_constraint_name).html();
             var widgetTemplate = _.template(widgetHTML);
-            var compiledHTML = widgetTemplate({question: question, start_loc: [40, 70]});
+            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
 
             $('.content')
                 .data('index', 1)
@@ -393,7 +393,7 @@ describe('Widget creation tests', function(done) {
             // Create content div with widget template
             var widgetHTML = $('#widget_' + question.type_constraint_name).html();
             var widgetTemplate = _.template(widgetHTML);
-            var compiledHTML = widgetTemplate({question: question, start_loc: [40, 70]});
+            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
 
             $('.content')
                 .data('index', 1)
@@ -436,7 +436,7 @@ describe('Widget creation tests', function(done) {
             // Create content div with widget template
             var widgetHTML = $('#widget_' + question.type_constraint_name).html();
             var widgetTemplate = _.template(widgetHTML);
-            var compiledHTML = widgetTemplate({question: question, start_loc: [40, 70]});
+            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
 
             $('.content')
                 .data('index', 1)

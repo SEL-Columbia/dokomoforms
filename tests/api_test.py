@@ -259,7 +259,7 @@ class TestSubmission(unittest.TestCase):
                               survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         connection.execute(answer_insert(
-            answer=[90, 0], question_id=question_id,
+            answer={'lon': 90, 'lat': 0}, question_id=question_id,
             submission_id=submission_id, survey_id=survey_id,
             type_constraint_name=tcn, is_other=False, sequence_number=seq,
             allow_multiple=mul))
@@ -1398,7 +1398,7 @@ class TestAggregation(unittest.TestCase):
                           'submitter': 'test_submitter',
                           'answers':
                               [{'question_id': q_id,
-                                'answer': [i, i],
+                                'answer': {'lon': i, 'lat': i},
                                 'is_other': False}]}
             api.submission.submit(connection, input_data)
 
