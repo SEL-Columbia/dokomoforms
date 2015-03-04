@@ -188,7 +188,7 @@ class SubmissionTest(DriverTest):
         next_button.click()
         self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('text 7')
         next_button.click()
-        self.drv.find_element_by_id('with_other').click()
+        self.drv.find_elements_by_tag_name('option')[-1].click()
         self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('other 8')
         next_button.click()
         next_button.click()  # note question
