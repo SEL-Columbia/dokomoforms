@@ -557,7 +557,7 @@ Widgets.multiple_choice = function(question, page) {
     // handle change for text field
     var $other = $(page)
         .find('.text_input')
-        .keyup(function() {
+        .change(function() {
             question.answer[question.choices.length] = { 
                 response: self._validate("text", this.value),
                 is_other: true
@@ -615,7 +615,8 @@ Widgets.multiple_choice = function(question, page) {
 
     // Selection is handled in _template however toggling of view is done here
     if (question.answer[question.choices.length] && 
-            question.answer[question.choices.length].is_other) {
+            question.answer[question.choices.length].is_other &&
+                question.answer[question.choices.length].response) {
         $other.show();
     }
 };

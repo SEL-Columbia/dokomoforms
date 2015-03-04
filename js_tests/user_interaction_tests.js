@@ -263,4 +263,74 @@ describe('User multiple choice tests', function(done) {
 
            
         });
+
+    it('should remember choice other was selected', 
+        function(done) {
+            var survey = App.survey;
+            var questions = survey.questions;
+
+            //XXX: Straight out of raw_surveys, update these when updating survey.json
+            var choices = [
+                {"question_choice_id":"8ffa4051-09bb-4966-bc77-098e40cbee27","choice":"choice a","choice_number":1},
+                {"question_choice_id":"e9cb9ea8-4d8f-4f7a-b669-689f15835bbc","choice":"choice b","choice_number":2}
+            ];
+
+            var first_question = questions[0];
+            var mc_question = questions[7];
+
+            survey.render(mc_question);
+
+            first_question.should.not.equal(survey.current_question);
+            mc_question.should.equal(survey.current_question);
+
+            $('.question__select').val("other").change();
+            $('.text_input').val("poop").change();
+
+            mc_question.answer[choices.length].response.should.match("poop");
+
+            $(".page_nav__next").trigger("click");
+            mc_question.should.not.equal(survey.current_question);
+            $(".page_nav__prev").trigger("click");
+            mc_question.should.equal(survey.current_question);
+
+            $('.question__select').val().should.match("other");
+            mc_question.answer[choices.length].response.should.match("poop");
+
+            done();
+           
+        });
+
+    it('should NOT remember choice other was selected', 
+        function(done) {
+            var survey = App.survey;
+            var questions = survey.questions;
+
+            //XXX: Straight out of raw_surveys, update these when updating survey.json
+            var choices = [
+                {"question_choice_id":"8ffa4051-09bb-4966-bc77-098e40cbee27","choice":"choice a","choice_number":1},
+                {"question_choice_id":"e9cb9ea8-4d8f-4f7a-b669-689f15835bbc","choice":"choice b","choice_number":2}
+            ];
+
+            var first_question = questions[0];
+            var mc_question = questions[7];
+
+            survey.render(mc_question);
+
+            first_question.should.not.equal(survey.current_question);
+            mc_question.should.equal(survey.current_question);
+
+            $('.question__select').val("other").change();
+            $('.text_input').val("").change(); // No value ==> you didn't fill out other
+
+            $(".page_nav__next").trigger("click");
+            mc_question.should.not.equal(survey.current_question);
+            $(".page_nav__prev").trigger("click");
+            mc_question.should.equal(survey.current_question);
+
+            $('.question__select').val().should.match("null"); //Go back to the "Please pick option" thing
+
+            done();
+
+           
+        });
 });
