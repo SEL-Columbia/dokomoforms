@@ -7,7 +7,7 @@ cache:
   directories:
     - node_modules
     # This allows Travis to cache the actual packages. You must invalidate the cache manually if the dependencies change.
-    - $HOME/virtualenv/$TRAVIS_PYTHON_VERSION
+    - $HOME/virtualenv/python$(python -V 2>&1 | awk '{print $2}')/lib/python$TRAVIS_PYTHON_VERSION/site-packages
 sudo: false
 env:
   global:
