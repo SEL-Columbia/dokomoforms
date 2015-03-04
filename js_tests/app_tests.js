@@ -86,26 +86,30 @@ describe('App initalization Tests', function(done) {
             answers = {
                 "22a915d2-19cd-4de3-8225-aaecc7a90c1b":[{response: 123},{response:null},{response:123123}, null],
                 "6a4036b4-881b-4838-8cf6-4948cb113077":[{response:[-73.965,40.80]}],
-                "7cf402f6-841b-41fb-a585-1c4af49e570c":[null,null,{response:"ewrwrwr"}],
+                "0c8a62fa-7859-424e-acfd-2b5c80e6a36d":[null,null,{response:"ewrwrwr"}],
+
             }
             
             localStorage["fc76fe08-9a6c-43cf-b30f-4b9b4ee97af2"] = 
                JSON.stringify(answers); 
             
             App.init(raw_survey);
+            App.survey.questions[0].answer.length.should.match(2); // Null responses are wiped;)
+            App.survey.render(App.survey.questions[6]); // Render does the array clean up 
+            App.survey.questions[6].answer.length.should.match(1); // Null responses are wiped;)
 
             var response = App.survey.questions[0].answer[0].response;
             response.should.match(123);
-            response = App.survey.questions[0].answer[2].response;
-            response.should.match(123123);
+
+            response = App.survey.questions[0].answer[1].response;
+            response.should.match(123123); // Confirm response moved to second place
+
             response = App.survey.questions[2].answer[0].response[0];
             response.should.match(-73.965);
-            response = App.survey.questions[7].answer[2].response;
-            response.should.match("ewrwrwr");
-            response = App.survey.questions[0].answer[3].response;
-            should(response).not.be.ok;
-            response = App.survey.questions[0].answer[1].response;
-            should(response).not.be.ok;
+
+            response = App.survey.questions[6].answer[0].response;
+            response.should.match("ewrwrwr"); // Confirm response moved to first slot
+
 
             done();
         });
