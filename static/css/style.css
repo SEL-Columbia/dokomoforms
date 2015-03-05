@@ -64,6 +64,14 @@ ul {
         margin: auto;
     }
 
+    .nav__title__version {
+        display: inline !important;
+    }
+
+    .sel {
+        display: block !important;
+    }
+
     .content {
         margin: 0px 25px !important;
     }
@@ -93,6 +101,7 @@ ul {
     height: 40px;
     float: right;
     margin-top: 4px;
+    display: none;
 }
 
 .nav__sync {
@@ -150,6 +159,7 @@ ul {
     padding-bottom: 0px;
     padding: 10px;
     color: rgb(182, 120, 95);
+    display: none;
 }
 
 .nav__title__icon {
@@ -413,6 +423,11 @@ ul {
     background: rgba(250, 203, 27, 0.5);
 }
 
+.question__btn__active {
+    box-shadow: 1px 1px 1px #888888; 
+    background: rgba(250, 203, 27, 0.5);
+}
+
 .question__saving {
     display: block;
     width: 50px;
@@ -445,6 +460,13 @@ ul {
 }
 
 .question__repeat {
+    display: block;
+    text-align: center;
+    margin: 0px auto;
+    padding: 25px 0px 10px 0px;
+}
+
+.question__other {
     display: block;
     text-align: center;
     margin: 0px auto;
@@ -504,7 +526,6 @@ ul {
     background-size: 16px 16px;
     background-color: white;
     text-align:center;
-    -webkit-border-radius:3px;
     -webkit-appearance: none;
     -webkit-transition:0.3s ease all;
     -moz-transition:0.3s ease all;
