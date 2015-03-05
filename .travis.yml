@@ -2,7 +2,10 @@ language: python
 python:
   - "3.3"
   - "3.4"
-cache: pip
+cache:
+  pip: true
+  directories:
+    - node_modules
 sudo: false
 env:
   global:
@@ -13,14 +16,15 @@ addons:
   sauce_connect: true
 
 # command to install dependencies
-install:
+# or at least it would be...? moving this to before_script so that Travis will cache dependencies
+
+# what would go in "install" plus
+# database and flake8
+before_script:
   - pip install -r requirements.txt
   - pip install -r requirements-testing.txt
   - pip install coverage coveralls
   - pip install flake8
-
-# database and flake8
-before_script:
   - python3 -m flake8 .
   - psql -c 'create database doko;' -U postgres
   - python3 manage_db.py
@@ -34,6 +38,7 @@ script:
   - npm test
   - nosetests --with-coverage --cover-inclusive --cover-branches --cover-tests --cover-html --cover-erase --cover-package=api,db,webapp,pages.api,pages.util,pages.debug,pages.view
 
+# necessary to close the Sauce Connect tunnel properly
 after_script: 
   - kill $(ps aux | grep '[b]in/sc' | awk '{print $2}')
   - sleep 5
