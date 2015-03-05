@@ -3,11 +3,9 @@ python:
   - "3.3"
   - "3.4"
 cache:
+  pip: true
   directories:
     - node_modules
-    # This allows Travis to cache the actual packages. You must invalidate the cache manually if the dependencies change.
-    - $HOME/virtualenv
-    - $HOME/.cache/pip
 sudo: false
 env:
   global:
