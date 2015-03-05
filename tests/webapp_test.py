@@ -21,6 +21,7 @@ import api.aggregation
 import api.submission
 import api.survey
 import api.user
+import api.batch
 from db import engine
 import db
 from db.answer import get_answers
@@ -30,6 +31,7 @@ from db.question import get_questions_no_credentials, question_table
 from db.question_choice import question_choice_table
 from db.submission import submission_table
 from pages.api.aggregations import AggregationHandler
+from pages.api.batch import BatchSubmissionAPIHandler
 from pages.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler
 from pages.api.surveys import SurveysAPIHandler, SingleSurveyAPIHandler
@@ -272,6 +274,125 @@ class APITest(AsyncHTTPTestCase):
                          api.submission.get_one(connection, submission_id,
                                                 email='test_email')['result'])
         self.assertEqual(response.code, 201)
+
+    def testBatchSubmission(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        question_id = connection.execute(question_table.select().where(
+            and_cond)).first().question_id
+        second_cond = and_(question_table.c.survey_id == survey_id,
+                           question_table.c.type_constraint_name ==
+                           'multiple_choice')
+        second_q_id = connection.execute(question_table.select().where(
+            second_cond)).first().question_id
+        choice_cond = question_choice_table.c.question_id == second_q_id
+        choice_id = connection.execute(question_choice_table.select().where(
+            choice_cond)).first().question_choice_id
+        input_data = {
+            'survey_id': survey_id,
+            'submissions': [
+                {'submitter': 'me',
+                 'answers': [
+                     {'question_id': question_id,
+                      'answer': 1,
+                      'is_other': False}]},
+                {'submitter': 'me',
+                 'answers': [
+                     {'question_id': second_q_id,
+                      'answer': choice_id,
+                      'is_other': False}]},
+            ]}
+
+        token_result = api.user.generate_token(connection,
+                                               {'email': 'test_email'})
+        token = token_result['result']['token']
+
+        with mock.patch.object(BatchSubmissionAPIHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/batch/submit/{}'.format(survey_id),
+                                  method='POST', body=json_encode(input_data),
+                                  headers={'Email': 'test_email',
+                                           'Token': token})
+        result = json_decode(to_unicode(response.body))['result']
+        self.assertEqual(len(result), 2)
+        submission_1 = api.submission.get_one(
+            connection, result[0], 'test_email')
+        self.assertEqual(submission_1['result']['answers'][0]['answer'], 1)
+        submission_2 = api.submission.get_one(
+            connection, result[1], 'test_email')
+        self.assertEqual(submission_2['result']['answers'][0]['answer'],
+                         choice_id)
+        self.assertEqual(response.code, 201)
+
+    def testBatchSubmitMissingValue(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        answer_json = {'survey_id': survey_id}
+        with mock.patch.object(BatchSubmissionAPIHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/batch/submit/{}'.format(survey_id),
+                                  method='POST',
+                                  body=json_encode(answer_json))
+
+        self.assertEqual(response.code, 422)
+        self.assertIn('missing_field', str(response.error))
+
+    def testBatchSubmitWrongSurveyID(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        wrong_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title != 'test_title')).first().survey_id
+        answer_json = {
+            'survey_id': wrong_id,
+            'submissions': [
+                {'submitter': 'me',
+                 'answers': [
+                     {'question_id': get_questions_no_credentials(
+                         connection, survey_id).first().question_id,
+                      'answer': 1,
+                      'is_other': False}]}
+            ]
+        }
+        with mock.patch.object(BatchSubmissionAPIHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/batch/submit/{}'.format(survey_id),
+                                  method='POST',
+                                  body=json_encode(answer_json))
+
+        self.assertEqual(response.code, 422)
+        self.assertIn('invalid', str(response.error))
+
+    def testBatchSubmitWrongQuestionID(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        wrong_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title != 'test_title')).first().survey_id
+        gqnc = get_questions_no_credentials
+        question_id = gqnc(connection, wrong_id).first().question_id
+        answers = [{'question_id': question_id,
+                    'answer': 1,
+                    'is_other': False}]
+        answer_json = {
+            'survey_id': survey_id,
+            'submissions': [
+                {'submitter': 'me',
+                 'answers': answers},
+            ]
+        }
+        with mock.patch.object(BatchSubmissionAPIHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/batch/submit/{}'.format(survey_id),
+                                  method='POST',
+                                  body=json_encode(answer_json))
+
+        self.assertEqual(response.code, 422)
+        self.assertIn('invalid', str(response.error))
 
     def testGetSurveys(self):
         with mock.patch.object(SurveysAPIHandler, 'get_secure_cookie') as m:
