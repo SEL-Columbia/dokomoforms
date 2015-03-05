@@ -144,6 +144,17 @@ ul {
     padding: 10px;
 }
 
+.nav__title__version {
+    font-size: 18px;
+    display: inline;
+    padding-bottom: 0px;
+    padding: 10px;
+    color: rgb(182, 120, 95);
+}
+
+.nav__title__icon {
+}
+
 .message {
     display: none;
     position: absolute;

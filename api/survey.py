@@ -395,8 +395,10 @@ def _to_json(connection: Connection, survey: RowProxy) -> dict:
     q_fields = [_get_fields(connection, question) for question in questions]
     return {'survey_id': survey.survey_id,
             'survey_title': survey.survey_title,
+            'survey_version': survey.survey_version,
             'metadata': survey.metadata,
-            'questions': q_fields}
+            'questions': q_fields,
+            'created_on': survey.created_on.isoformat()}
 
 
 def display_survey(connection: Connection, survey_id: str) -> dict:

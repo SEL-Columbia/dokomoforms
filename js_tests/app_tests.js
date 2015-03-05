@@ -85,7 +85,7 @@ describe('App initalization Tests', function(done) {
         function(done) {
             answers = {
                 "22a915d2-19cd-4de3-8225-aaecc7a90c1b":[{response: 123},{response:null},{response:123123}, null],
-                "6a4036b4-881b-4838-8cf6-4948cb113077":[{response:[-73.965,40.80]}],
+                "6a4036b4-881b-4838-8cf6-4948cb113077":[{response:{'lon':-73.965, 'lat': 40.80}}],
                 "0c8a62fa-7859-424e-acfd-2b5c80e6a36d":[null,null,{response:"ewrwrwr"}],
 
             }
@@ -104,7 +104,7 @@ describe('App initalization Tests', function(done) {
             response = App.survey.questions[0].answer[1].response;
             response.should.match(123123); // Confirm response moved to second place
 
-            response = App.survey.questions[2].answer[0].response[0];
+            response = App.survey.questions[2].answer[0].response.lon;
             response.should.match(-73.965);
 
             response = App.survey.questions[6].answer[0].response;

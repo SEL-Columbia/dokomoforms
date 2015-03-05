@@ -5,21 +5,21 @@ var App = {
     unsynced: [], // unsynced surveys
     facilities: [], // revisit facilities
     unsynced_facilities: {}, // new facilities
-    start_loc: [40.8138912, -73.9624327], 
+    start_loc: {'lat': 40.8138912, 'lon': -73.9624327}, 
     submitter_name: ''
    // defaults to nyc, updated by metadata and answers to location questions
 };
 
 App.init = function(survey) {
     var self = this;
-    self.survey = new Survey(survey.survey_id, survey.questions, survey.metadata);
+    self.survey = new Survey(survey.survey_id, survey.survey_version, survey.questions, survey.metadata);
     self.start_loc = survey.metadata.location || self.start_loc;
     self.facilities = JSON.parse(localStorage.facilities || "[]");
     self.submitter_name = localStorage.name;
 
     if (App.facilities.length === 0) {
         // See if you can get some facilities
-        getNearbyFacilities(App.start_loc[0], App.start_loc[1], 
+        getNearbyFacilities(App.start_loc.lat, App.start_loc.lon, 
                 5, // Radius in km 
                 100, // limit
                 "facilities", // id for localStorage
@@ -115,11 +115,12 @@ App._getMapLayer = function() {
 
 };
 
-function Survey(id, questions, metadata) {
+function Survey(id, version, questions, metadata) {
     var self = this;
     this.id = id;
     this.questions = questions;
     this.metadata = metadata;
+    this.version = version;
 
     // Load answers from localStorage
     var answers = JSON.parse(localStorage[this.id] || '{}');
@@ -556,7 +557,7 @@ Widgets.multiple_choice = function(question, page) {
     // handle change for text field
     var $other = $(page)
         .find('.text_input')
-        .keyup(function() {
+        .change(function() {
             question.answer[question.choices.length] = { 
                 response: self._validate("text", this.value),
                 is_other: true
@@ -614,14 +615,15 @@ Widgets.multiple_choice = function(question, page) {
 
     // Selection is handled in _template however toggling of view is done here
     if (question.answer[question.choices.length] && 
-            question.answer[question.choices.length].is_other) {
+            question.answer[question.choices.length].is_other &&
+                question.answer[question.choices.length].response) {
         $other.show();
     }
 };
 
 Widgets._getMap = function() {
     var map = L.map('map', {
-            center: App.start_loc,
+            center: [App.start_loc.lat, App.start_loc.lon],
             dragging: true,
             zoom: 13,
             zoomControl: false,
@@ -661,10 +663,10 @@ Widgets._getMap = function() {
 
 Widgets.location = function(question, page) {
     var self = this;
-    var lat = $(page).find('.question__lat').last().val() || App.start_loc[0];
-    var lng = $(page).find('.question__lon').last().val() || App.start_loc[1];
+    var lat = $(page).find('.question__lat').last().val() || App.start_loc.lat;
+    var lng = $(page).find('.question__lon').last().val() || App.start_loc.lon;
 
-    App.start_loc = [lat, lng];
+    App.start_loc = {'lat': lat, 'lon': lng};
 
     var map = this._getMap(); 
     map.on('drag', function() {
@@ -676,10 +678,10 @@ Widgets.location = function(question, page) {
     question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
     $(page).find('.question__location').each(function(i, child) { 
         question.answer[i] = { 
-            response: [ 
-                $(child).find('.question__lon').val(),
-                $(child).find('.question__lat').val()
-            ],
+            response: { 
+                'lon': $(child).find('.question__lon').val(),
+                'lat': $(child).find('.question__lat').val()
+            },
             is_other: false
         };
     });
@@ -690,7 +692,7 @@ Widgets.location = function(question, page) {
 
         // update array val
         question.answer[questions_len - 1] = {
-            response: coords,
+            response: {'lon': coords[0], 'lat': coords[1] },
             is_other: false
         }
             
@@ -750,11 +752,11 @@ Widgets.location = function(question, page) {
 
 // Similar to location however you cannot just add location, 
 Widgets.facility = function(question, page) {
-    var ans = question.answer[0];
-    var lat = ans && ans.response[1][1] || App.start_loc[0];
-    var lng = ans && ans.response[1][0] || App.start_loc[1];
+    var ans = question.answer[0]; // Facility questions only ever have one response
+    var lat = ans && ans.response.lat || App.start_loc.lat;
+    var lng = ans && ans.response.lon || App.start_loc.lon;
 
-    App.start_loc = [lat, lng];
+    App.start_loc = {'lat': lat, 'lon': lng};
 
     /* Buld inital state */
     var map = this._getMap(); 
@@ -776,7 +778,7 @@ Widgets.facility = function(question, page) {
     // Revisit API Call calls facilitiesCallback
     if (navigator.onLine) {
         // Refresh if possible
-        getNearbyFacilities(App.start_loc[0], App.start_loc[1], 
+        getNearbyFacilities(App.start_loc.lat, App.start_loc.lon, 
                 5, // Radius in km 
                 100, // limit
                 "facilities", // id for localStorage
@@ -791,7 +793,8 @@ Widgets.facility = function(question, page) {
 
     // handles calling drawPoint gets called once per getNearby call 
     function drawFacilities(facilities) {
-        var selected = question.answer[0] && question.answer[0].response[0] || null;
+        var ans = question.answer[0];
+        var selected = ans && ans.response.id || null;
 
         // SYNCED FACILITIES
         facilities_group.clearLayers(); // Clears synced facilities only
@@ -852,7 +855,11 @@ Widgets.facility = function(question, page) {
 
         touchedMarker = marker;
         question.answer[0] = {
-            response: [marker.uuid, [marker._latlng.lng, marker._latlng.lat]],
+            response: {
+                'id': marker.uuid, 
+                'lon': marker._latlng.lng, 
+                'lat': marker._latlng.lat
+            },
             is_other: false
         }
         $(page).find('.facility__name').val(marker.name);
