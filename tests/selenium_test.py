@@ -170,7 +170,7 @@ class SubmissionTest(DriverTest):
             next_button = self.drv.find_element_by_class_name('page_nav__next')
         else:
             self.drv.find_element_by_xpath(in_xpath + 'input').send_keys(
-                '5:55')
+                '5:55PM')
         next_button.click()
         # browser geolocation is complicated in selenium...
         self.drv.execute_script(
@@ -401,7 +401,7 @@ class TimeTest(TypeTest):
             self.drv.switch_to.window('WEBVIEW_0')
         else:
             self.drv.find_element_by_xpath(
-                '/html/body/div[2]/div[2]/input').send_keys('5:55')
+                '/html/body/div[2]/div[2]/input').send_keys('5:55PM')
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
 
@@ -416,6 +416,8 @@ class TimeTest(TypeTest):
                           self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
