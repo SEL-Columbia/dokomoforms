@@ -67,9 +67,5 @@ Vagrant.configure(2) do |config|
     # Use VBoxManage to customize the VM. For example to change memory:
     vb.customize ["modifyvm", :id, "--memory", "256"]
   end
-
-  config.trigger.after :up do
-    run "vagrant ssh -c 'cd /vagrant && nohup python3 webapp.py &'"
-  end
  
 end
