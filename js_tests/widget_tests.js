@@ -119,7 +119,77 @@ describe('Widget creation tests', function(done) {
             done();
 
         });
+
+    it('should render widget with +/- buttons',
+        //XXX: All inputs render +/- identically 
+        function(done) {
+            var question = {
+                question_to_sequence_number: -1,
+                type_constraint_name: "decimal",
+                logic: {},
+                allow_multiple: true,
+                question_title: "Whiplash was real good +-",
+                sequence_number: 1
+            };
+            
+            // Create content div with widget template
+            var widgetHTML = $('#widget_' + question.type_constraint_name).html();
+            var widgetTemplate = _.template(widgetHTML);
+            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
+
+            $('.content')
+                .data('index', 1)
+                .html(compiledHTML)
+
+            Widgets[question.type_constraint_name](question, $('.content'));
+
+            $('.content')
+                .find('.question__add')
+                .length.should.equal(1);
+
+            $('.content')
+                .find('.question__minus')
+                .length.should.equal(1);
+
+            done();
+
+    });
     
+    it('should NOT render widget with +/- buttons',
+        //XXX: All inputs render +/- identically 
+        function(done) {
+            var question = {
+                question_to_sequence_number: -1,
+                type_constraint_name: "decimal",
+                logic: {},
+                allow_multiple: false,
+                question_title: "Whiplash was real good +-",
+                sequence_number: 1
+            };
+            
+            // Create content div with widget template
+            var widgetHTML = $('#widget_' + question.type_constraint_name).html();
+            var widgetTemplate = _.template(widgetHTML);
+            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
+
+            $('.content')
+                .data('index', 1)
+                .html(compiledHTML)
+
+            Widgets[question.type_constraint_name](question, $('.content'));
+
+            $('.content')
+                .find('.question__add')
+                .length.should.equal(0);
+
+            $('.content')
+                .find('.question__minus')
+                .length.should.equal(0);
+
+            done();
+
+    });
+
     it('should render location widget with default location',
         function(done) {
             var question = {
