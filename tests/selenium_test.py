@@ -67,8 +67,10 @@ class DriverTest(unittest.TestCase):
             caps['tunnel-identifier'] = os.environ['TRAVIS_JOB_NUMBER']
             caps['build'] = os.environ['TRAVIS_BUILD_NUMBER']
             caps['tags'] = [os.environ['TRAVIS_PYTHON_VERSION'], 'CI']
-            caps['name'] = ' -- '.join([os.environ['TRAVIS_BUILD_NUMBER'],
-                                        self.browser_config])
+            caps['name'] = ' -- '.join([
+                os.environ['TRAVIS_BUILD_NUMBER'],
+                self.browser_config,
+                self.__class__.__name__])
         else:
             caps['name'] = 'Manual run -- ' + self.browser_config
         hub_url = '{}:{}@localhost:4445'.format(self.username, self.access_key)
