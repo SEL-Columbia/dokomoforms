@@ -27,6 +27,10 @@
             <path d="M42.939,19.742H28.505V5.319c0-2.283-1.842-4.134-4.125-4.134s-4.124,1.851-4.124,4.135v14.432l-14.442,0 c-2.283,0-4.139,1.851-4.138,4.135c-0.001,1.141,0.46,2.186,1.207,2.934c0.748,0.749,1.78,1.222,2.92,1.222h14.453v14.411 c0,1.142,0.453,2.176,1.201,2.923c0.748,0.748,1.777,1.211,2.919,1.211c2.282,0,4.129-1.851,4.129-4.134V28.042h14.434 c2.283,0,4.134-1.867,4.133-4.15C47.072,21.61,45.221,19.742,42.939,19.742z"/>
         </symbol>
 
+	    <symbol id="icon-minus" viewBox="0 0 384 384" xml:space="preserve">
+		    <path d="M349,227H35c-20,0-35-15-35-35s15-35,35-35h314c20,0,35,15,35,35S369,227,349,227z"/>
+        </symbol>
+
         <symbol id="logo" viewBox="0 0 100 100">
             <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
                 <g id="Rectangle-5-+-Multicolor_1_" sketch:type="MSLayerGroup">
@@ -49,10 +53,18 @@
         
     <div class="nav">
         <div class="nav__title">
-            <svg class="icon">
+            <svg class="icon nav__title__icon">
                 <use xlink:href="#logo"></use>
             </svg>
             {% try %} {{survey_title}} {% except NameError %} Dokomoforms {% end %}
+            {% try %} 
+                {% if survey_version is not None %} 
+                <div class="nav__title__version">
+                    edition: {{survey_version}}
+                </div>
+                {% end %}
+            {% except NameError %} 
+            {% end %}
         </div>
         <a class="sel" href="http://sel.columbia.edu">
             <img src="/static/img/SEL_logo_sm.png" class="nav__sync"/>

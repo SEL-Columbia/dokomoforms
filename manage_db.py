@@ -7,21 +7,13 @@ from argparse import ArgumentParser
 import os.path
 
 from sqlalchemy import create_engine
+from db import metadata
 
 from settings import CONNECTION_STRING
 
 
 killall = 'killall.sql'
 extensions = ['uuid.sql', 'postgis.sql']
-tables = ['auth_user.tbl.sql',
-          'survey.tbl.sql',
-          'type_constraint.tbl.sql',
-          'submission.tbl.sql',
-          'question.tbl.sql',
-          'question_choice.tbl.sql',
-          'question_branch.tbl.sql',
-          'answer.tbl.sql',
-          'answer_choice.tbl.sql']
 fixtures = ['type_constraint_fixture.sql']
 
 schema_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
@@ -31,7 +23,12 @@ schema_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
 def init_db(engine):
     """Create all the tables and insert the fixtures."""
     with engine.begin() as connection:
-        for file_path in extensions + tables + fixtures:
+        for file_path in extensions:
+            with open(os.path.join(schema_dir, file_path)) as sqlfile:
+                connection.execute(sqlfile.read())
+    metadata.create_all(engine)
+    with engine.begin() as connection:
+        for file_path in fixtures:
             with open(os.path.join(schema_dir, file_path)) as sqlfile:
                 connection.execute(sqlfile.read())
 
@@ -43,7 +40,7 @@ def kill_db(engine):
             connection.execute(sqlfile.read())
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = ArgumentParser(description='Create or kill the database.')
 
     group = parser.add_mutually_exclusive_group()  # create xor drop

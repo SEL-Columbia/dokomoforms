@@ -17,6 +17,7 @@ import api.survey
 import api.submission
 import api.user
 import api.aggregation
+import api.batch
 import db
 from db.answer import answer_insert, CannotAnswerMultipleTimesError, \
     get_answers
@@ -39,36 +40,34 @@ connection = db.engine.connect()
 
 class TestSubmission(unittest.TestCase):
     def tearDown(self):
-        submission_table.delete().execute()
+        connection.execute(submission_table.delete())
         condition = survey_table.c.survey_title.in_(
             ('survey with required question',))
-        survey_table.delete().where(condition).execute()
+        connection.execute(survey_table.delete().where(condition))
 
     def testSubmit(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
-        question_id = question_table.select().where(
-            and_cond).execute().first().question_id
+        question_id = connection.execute(question_table.select().where(
+            and_cond)).first().question_id
         second_cond = and_(question_table.c.survey_id == survey_id,
                            question_table.c.type_constraint_name ==
                            'multiple_choice')
-        second_q_id = question_table.select().where(
-            second_cond).execute().first().question_id
+        second_q_id = connection.execute(question_table.select().where(
+            second_cond)).first().question_id
         choice_cond = question_choice_table.c.question_id == second_q_id
-        choice_id = question_choice_table.select().where(
-            choice_cond).execute().first().question_choice_id
+        choice_id = connection.execute(question_choice_table.select().where(
+            choice_cond)).first().question_choice_id
         third_cond = and_(question_table.c.survey_id == survey_id,
                           question_table.c.type_constraint_name == 'text')
-        third_q_id = question_table.select().where(
-            third_cond).execute().first().question_id
+        third_q_id = connection.execute(question_table.select().where(
+            third_cond)).first().question_id
         fourth_cond = and_(question_table.c.survey_id == survey_id,
                            question_table.c.type_constraint_name == 'decimal')
-        fourth_q_id = question_table.select().where(
-            fourth_cond).execute().first().question_id
+        fourth_q_id = connection.execute(question_table.select().where(
+            fourth_cond)).first().question_id
         input_data = {'submitter': 'me',
                       'survey_id': survey_id,
                       'answers':
@@ -90,8 +89,8 @@ class TestSubmission(unittest.TestCase):
         response = api.submission.submit(connection, input_data)['result']
         submission_id = response['submission_id']
         condition = submission_table.c.submission_id == submission_id
-        self.assertEqual(
-            submission_table.select().where(condition).execute().rowcount, 1)
+        self.assertEqual(connection.execute(
+            submission_table.select().where(condition)).rowcount, 1)
         data = api.submission.get_one(connection, submission_id,
                                       email='test_email')['result']
         self.assertEqual(response, data)
@@ -102,14 +101,12 @@ class TestSubmission(unittest.TestCase):
         self.assertEqual(data['answers'][4]['answer'], 'answer two')
 
     def testIncorrectType(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
-        question_id = question_table.select().where(
-            and_cond).execute().first().question_id
+        question_id = connection.execute(question_table.select().where(
+            and_cond)).first().question_id
         input_data = {'submitter': 'me',
                       'survey_id': survey_id,
                       'answers':
@@ -118,7 +115,8 @@ class TestSubmission(unittest.TestCase):
                             'is_other': False}]}
         self.assertRaises(DataError, api.submission.submit, connection,
                           input_data)
-        self.assertEqual(submission_table.select().execute().rowcount, 0)
+        self.assertEqual(
+            connection.execute(submission_table.select()).rowcount, 0)
 
         input_data2 = {'survey_id': survey_id,
                        'submitter': 'test_submitter',
@@ -130,14 +128,12 @@ class TestSubmission(unittest.TestCase):
                           input_data2)
 
     def testIsOther(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
-        question_id = question_table.select().where(
-            and_cond).execute().first().question_id
+        question_id = connection.execute(question_table.select().where(
+            and_cond)).first().question_id
         input_data = {'survey_id': survey_id,
                       'submitter': 'test_submitter',
                       'answers':
@@ -181,8 +177,8 @@ class TestSubmission(unittest.TestCase):
                           api.submission.submit, connection, submission2)
 
     def testQuestionDoesNotExist(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first(
 
         ).survey_id
         input_data = {'submitter': 'me',
@@ -202,18 +198,16 @@ class TestSubmission(unittest.TestCase):
                           input_data)
 
     def testDateAndTime(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         date_cond = and_(question_table.c.survey_id == survey_id,
                          question_table.c.type_constraint_name == 'date')
-        date_question_id = question_table.select().where(
-            date_cond).execute().first().question_id
+        date_question_id = connection.execute(question_table.select().where(
+            date_cond)).first().question_id
         time_cond = and_(question_table.c.survey_id == survey_id,
                          question_table.c.type_constraint_name == 'time')
-        time_question_id = question_table.select().where(
-            time_cond).execute().first().question_id
+        time_question_id = connection.execute(question_table.select().where(
+            time_cond)).first().question_id
         input_data = {'submitter': 'me',
                       'survey_id': survey_id,
                       'answers':
@@ -228,14 +222,12 @@ class TestSubmission(unittest.TestCase):
         self.assertEqual(response['answers'][1]['answer'], '11:26:00-04:00')
 
     def testMultipleAnswersNotAllowed(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
-        question_id = question_table.select().where(
-            and_cond).execute().first().question_id
+        question_id = connection.execute(question_table.select().where(
+            and_cond)).first().question_id
         input_data = {'submitter': 'me',
                       'survey_id': survey_id,
                       'answers':
@@ -251,62 +243,59 @@ class TestSubmission(unittest.TestCase):
                           input_data)
 
     def testGet(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first(
 
         ).survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'location')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
         tcn = question.type_constraint_name
         seq = question.sequence_number
         mul = question.allow_multiple
-        submission_exec = submission_insert(submitter='test_submitter',
-                                            survey_id=survey_id).execute()
+        submission_exec = connection.execute(
+            submission_insert(submitter='test_submitter',
+                              survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
-        answer_insert(answer=[90, 0], question_id=question_id,
-                      submission_id=submission_id,
-                      survey_id=survey_id, type_constraint_name=tcn,
-                      is_other=False,
-                      sequence_number=seq, allow_multiple=mul).execute()
+        connection.execute(answer_insert(
+            answer={'lon': 90, 'lat': 0}, question_id=question_id,
+            submission_id=submission_id, survey_id=survey_id,
+            type_constraint_name=tcn, is_other=False, sequence_number=seq,
+            allow_multiple=mul))
         data = api.submission.get_one(connection, submission_id,
                                       email='test_email')['result']
         self.assertIsNotNone(data['submission_id'])
         self.assertIsNotNone(data['answers'])
 
     def testGetForSurvey(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
         tcn = question.type_constraint_name
         seq = question.sequence_number
         mul = question.allow_multiple
         for i in range(2):
-            submission_exec = submission_insert(submitter='test_submitter',
-                                                survey_id=survey_id).execute()
+            submission_exec = connection.execute(
+                submission_insert(submitter='test_submitter',
+                                  survey_id=survey_id))
             submission_id = submission_exec.inserted_primary_key[0]
-            answer_insert(answer=i, question_id=question_id,
-                          submission_id=submission_id,
-                          survey_id=survey_id, type_constraint_name=tcn,
-                          is_other=False,
-                          sequence_number=seq, allow_multiple=mul).execute()
+            connection.execute(answer_insert(
+                answer=i, question_id=question_id, submission_id=submission_id,
+                survey_id=survey_id, type_constraint_name=tcn, is_other=False,
+                sequence_number=seq, allow_multiple=mul))
         data = api.submission.get_all(connection, survey_id,
                                       email='test_email')
         self.assertGreater(len(data), 0)
 
     def testDelete(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         data = {'submitter': 'me',
                 'survey_id': survey_id,
                 'answers': [{'answer': None}]}
@@ -323,27 +312,25 @@ class TestSubmission(unittest.TestCase):
 class TestSurvey(unittest.TestCase):
     def tearDown(self):
         condition = survey_table.c.survey_title.in_(('updated',))
-        survey_table.delete().where(condition).execute()
-        survey_table.delete().where(
-            survey_table.c.survey_title.like('to_be_updated%')).execute()
-        survey_table.delete().where(
-            survey_table.c.survey_title.like('bad update survey%')).execute()
-        survey_table.delete().where(
-            survey_table.c.survey_title.like('api_test survey%')).execute()
-        survey_table.delete().where(
-            survey_table.c.survey_title.like('test_title(%')).execute()
-        survey_table.delete().where(
+        connection.execute(survey_table.delete().where(condition))
+        connection.execute(survey_table.delete().where(
+            survey_table.c.survey_title.like('to_be_updated%')))
+        connection.execute(survey_table.delete().where(
+            survey_table.c.survey_title.like('bad update survey%')))
+        connection.execute(survey_table.delete().where(
+            survey_table.c.survey_title.like('api_test survey%')))
+        connection.execute(survey_table.delete().where(
+            survey_table.c.survey_title.like('test_title(%')))
+        connection.execute(survey_table.delete().where(
             survey_table.c.survey_title.like(
-                'updated survey title%')).execute()
-        survey_table.delete().where(
-            survey_table.c.survey_title.like('not in conflict%')).execute()
-        submission_table.delete().execute()
+                'updated survey title%')))
+        connection.execute(survey_table.delete().where(
+            survey_table.c.survey_title.like('not in conflict%')))
+        connection.execute(submission_table.delete())
 
     def testGetOne(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         data = api.survey.get_one(connection, survey_id, email='test_email')[
             'result']
         self.assertIsNotNone(data['survey_id'])
@@ -351,17 +338,15 @@ class TestSurvey(unittest.TestCase):
         self.assertIsNotNone(data['metadata'])
 
     def testDisplaySurvey(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         data = api.survey.display_survey(connection, survey_id)['result']
         self.assertIsNotNone(data['survey_id'])
         self.assertIsNotNone(data['questions'])
 
     def testGetAll(self):
-        email = auth_user_table.select().where(
-            auth_user_table.c.email == 'test_email').execute().first().email
+        email = connection.execute(auth_user_table.select().where(
+            auth_user_table.c.email == 'test_email')).first().email
         surveys = api.survey.get_all(connection, email)['result']
         self.assertGreater(len(surveys), 0)
 
@@ -392,8 +377,8 @@ class TestSurvey(unittest.TestCase):
                 'email': 'test_email'}
         survey_id = api.survey.create(connection, data)['result']['survey_id']
         condition = survey_table.c.survey_id == survey_id
-        self.assertEqual(
-            survey_table.select().where(condition).execute().rowcount, 1)
+        self.assertEqual(connection.execute(
+            survey_table.select().where(condition)).rowcount, 1)
         questions = list(get_questions_no_credentials(connection, survey_id))
         self.assertEqual(questions[1].logic,
                          {'required': False, 'with_other': False, 'min': 3})
@@ -437,10 +422,8 @@ class TestSurvey(unittest.TestCase):
                           api.survey.create, connection, data)
 
     def testSurveyAlreadyExists(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         title = survey_select(connection, survey_id,
                               email='test_email').survey_title
         input_data = {'survey_title': title,
@@ -562,8 +545,8 @@ class TestSurvey(unittest.TestCase):
                           connection,
                           input_data)
         condition = survey_table.c.survey_title == 'type constraint error'
-        self.assertEqual(
-            survey_table.select().where(condition).execute().rowcount, 0)
+        self.assertEqual(connection.execute(
+            survey_table.select().where(condition)).rowcount, 0)
 
     def testUpdate(self):
         questions = [{'question_title': 'api_test question',
@@ -600,8 +583,8 @@ class TestSurvey(unittest.TestCase):
         survey_id = api.survey.create(connection, data)['result']['survey_id']
         inserted_qs = get_questions_no_credentials(connection,
                                                    survey_id).fetchall()
-        choice_1 = \
-            get_choices(connection, inserted_qs[1].question_id).fetchall()[0]
+        choice_1 = get_choices(
+            connection, inserted_qs[1].question_id).fetchall()[0]
         choice_1_id = choice_1.question_choice_id
 
         submission = {'submitter': 'me',
@@ -997,12 +980,12 @@ class TestUtils(unittest.TestCase):
 
 class TestAPIToken(unittest.TestCase):
     def tearDown(self):
-        auth_user_table.delete().where(
-            auth_user_table.c.email == 'api_test_email').execute()
+        connection.execute(auth_user_table.delete().where(
+            auth_user_table.c.email == 'api_test_email'))
 
     def testGenerateToken(self):
-        user_id = create_auth_user(
-            email='api_test_email').execute().inserted_primary_key[0]
+        user_id = connection.execute(create_auth_user(
+            email='api_test_email')).inserted_primary_key[0]
         token_res = api.user.generate_token(connection,
                                             {'email': 'api_test_email'})
         response = token_res['result']
@@ -1012,8 +995,8 @@ class TestAPIToken(unittest.TestCase):
                          str((datetime.now() + timedelta(days=60)).date()))
 
     def testGenerateTokenWithDuration(self):
-        user_id = create_auth_user(
-            email='api_test_email').execute().inserted_primary_key[0]
+        user_id = connection.execute(create_auth_user(
+            email='api_test_email')).inserted_primary_key[0]
         response = api.user.generate_token(connection,
                                            {'email': 'api_test_email',
                                             'duration': 5.0})['result']
@@ -1023,7 +1006,7 @@ class TestAPIToken(unittest.TestCase):
                          str(datetime.now().date()))
 
     def testTokenDurationTooLong(self):
-        create_auth_user(email='api_test_email').execute()
+        connection.execute(create_auth_user(email='api_test_email'))
         self.assertRaises(api.user.TokenDurationTooLong,
                           api.user.generate_token,
                           connection,
@@ -1033,8 +1016,8 @@ class TestAPIToken(unittest.TestCase):
 
 class TestUser(unittest.TestCase):
     def tearDown(self):
-        auth_user_table.delete().where(
-            auth_user_table.c.email == 'api_user_test_email').execute()
+        connection.execute(auth_user_table.delete().where(
+            auth_user_table.c.email == 'api_user_test_email'))
 
     def testCreateUser(self):
         expected = {'result': {'email': 'api_user_test_email',
@@ -1053,17 +1036,15 @@ class TestUser(unittest.TestCase):
 
 class TestAggregation(unittest.TestCase):
     def tearDown(self):
-        submission_table.delete().execute()
+        connection.execute(submission_table.delete())
 
     def testMin(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
 
         for i in range(2):
@@ -1088,7 +1069,7 @@ class TestAggregation(unittest.TestCase):
     def testMinNoUser(self):
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'integer')
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
         self.assertRaises(TypeError, api.aggregation.min, connection,
                           question_id)
@@ -1096,7 +1077,7 @@ class TestAggregation(unittest.TestCase):
     def testMinWrongUser(self):
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'integer')
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
         self.assertRaises(QuestionDoesNotExistError, api.aggregation.min,
                           connection,
@@ -1105,7 +1086,7 @@ class TestAggregation(unittest.TestCase):
     def testMinNoSubmissions(self):
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'integer')
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
         self.assertRaises(api.aggregation.NoSubmissionsToQuestionError,
                           api.aggregation.min, connection, question_id,
@@ -1114,21 +1095,21 @@ class TestAggregation(unittest.TestCase):
     def testMinInvalidType(self):
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'text')
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
         self.assertRaises(api.aggregation.InvalidTypeForAggregationError,
                           api.aggregation.min, connection, question_id,
                           email='test_email')
 
     def testMax(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first(
 
         ).survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
 
         for i in range(2):
@@ -1145,14 +1126,12 @@ class TestAggregation(unittest.TestCase):
             {'result': 1, 'query': 'max'})
 
     def testMinMaxDate(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'date')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
 
         for i in range(1, 3):
@@ -1172,14 +1151,12 @@ class TestAggregation(unittest.TestCase):
             {'result': str(date(2015, 1, 1)), 'query': 'min'})
 
     def testSum(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
 
         for i in range(-4, 4):
@@ -1196,14 +1173,12 @@ class TestAggregation(unittest.TestCase):
             {'result': -4, 'query': 'sum'})
 
     def testCount(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
 
         self.assertEqual(
@@ -1224,14 +1199,12 @@ class TestAggregation(unittest.TestCase):
             {'result': 2, 'query': 'count'})
 
     def testCountOther(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
 
         self.assertEqual(
@@ -1252,14 +1225,12 @@ class TestAggregation(unittest.TestCase):
             {'result': 2, 'query': 'count'})
 
     def testCountMultipleChoice(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         cond = and_(question_table.c.survey_id == survey_id,
                     question_table.c.type_constraint_name == 'multiple_choice')
         q_where = question_table.select().where(cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
 
         self.assertEqual(
@@ -1280,14 +1251,12 @@ class TestAggregation(unittest.TestCase):
             {'result': 2, 'query': 'count'})
 
     def testAvg(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
 
         for i in range(2):
@@ -1306,14 +1275,14 @@ class TestAggregation(unittest.TestCase):
             0.5)
 
     def testStddevPop(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first(
 
         ).survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         for i in range(3):
@@ -1332,14 +1301,14 @@ class TestAggregation(unittest.TestCase):
             expected_value)
 
     def testStddevSamp(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first(
 
         ).survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         for i in range(3):
@@ -1357,14 +1326,12 @@ class TestAggregation(unittest.TestCase):
             1)
 
     def testMode(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         for i in (1, 2, 2, 2, 3, 3, 3):
@@ -1388,14 +1355,12 @@ class TestAggregation(unittest.TestCase):
             [2, 3])
 
     def testModeDecimal(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'decimal')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         for i in (1, 2, 2, 2, 3, 3):
@@ -1419,14 +1384,14 @@ class TestAggregation(unittest.TestCase):
             {'result': [2], 'query': 'mode'})
 
     def testModeLocation(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first(
 
         ).survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'location')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         for i in (1, 2, 2, 2, 3, 3):
@@ -1434,7 +1399,7 @@ class TestAggregation(unittest.TestCase):
                           'submitter': 'test_submitter',
                           'answers':
                               [{'question_id': q_id,
-                                'answer': [i, i],
+                                'answer': {'lon': i, 'lat': i},
                                 'is_other': False}]}
             api.submission.submit(connection, input_data)
 
@@ -1452,21 +1417,21 @@ class TestAggregation(unittest.TestCase):
     def testModeBadeType(self):
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'note')
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         question_id = question.question_id
         self.assertRaises(api.aggregation.InvalidTypeForAggregationError,
                           api.aggregation.mode, connection, question_id,
                           email='test_email')
 
     def testModeMultipleChoice(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first(
         ).survey_id
         cond = and_(question_table.c.survey_id == survey_id,
                     question_table.c.type_constraint_name ==
                     'multiple_choice')
         q_where = question_table.select().where(cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         self.assertEqual(
@@ -1497,14 +1462,12 @@ class TestAggregation(unittest.TestCase):
              'query': 'mode'})
 
     def testTimeSeries(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         for i in range(3):
@@ -1516,23 +1479,22 @@ class TestAggregation(unittest.TestCase):
                                 'is_other': False}]}
             api.submission.submit(connection, input_data)
 
-        res = \
-            api.aggregation.time_series(connection, q_id, email='test_email')[
-                'result']
+        res = api.aggregation.time_series(
+            connection, q_id, email='test_email')['result']
         self.assertEqual(len(res), 3)
         self.assertEqual(res[0][1], 0)
         self.assertEqual(res[1][1], 1)
         self.assertEqual(res[2][1], 2)
 
     def testBarGraph(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first(
 
         ).survey_id
         and_cond = and_(question_table.c.survey_id == survey_id,
                         question_table.c.type_constraint_name == 'integer')
         q_where = question_table.select().where(and_cond)
-        question = q_where.execute().first()
+        question = connection.execute(q_where).first()
         q_id = question.question_id
 
         for i in [0, 2, 1, 0]:
@@ -1549,13 +1511,55 @@ class TestAggregation(unittest.TestCase):
                                'query': 'bar_graph'})
 
     def testGetQuestionStats(self):
-        survey_id = survey_table.select().where(
-            survey_table.c.survey_title == 'test_title').execute().first(
-
-        ).survey_id
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
         self.assertGreater(len(
             api.aggregation.get_question_stats(connection, survey_id,
                                                email='test_email')), 0)
+
+
+class TestBatch(unittest.TestCase):
+    def tearDown(self):
+        connection.execute(submission_table.delete())
+
+    def testSubmit(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        question_id = connection.execute(question_table.select().where(
+            and_cond)).first().question_id
+        second_cond = and_(question_table.c.survey_id == survey_id,
+                           question_table.c.type_constraint_name ==
+                           'multiple_choice')
+        second_q_id = connection.execute(question_table.select().where(
+            second_cond)).first().question_id
+        choice_cond = question_choice_table.c.question_id == second_q_id
+        choice_id = connection.execute(question_choice_table.select().where(
+            choice_cond)).first().question_choice_id
+        input_data = {
+            'survey_id': survey_id,
+            'submissions': [
+                {'submitter': 'me',
+                 'answers': [
+                     {'question_id': question_id,
+                      'answer': 1,
+                      'is_other': False}]},
+                {'submitter': 'me',
+                 'answers': [
+                     {'question_id': second_q_id,
+                      'answer': choice_id,
+                      'is_other': False}]},
+            ]}
+        response = api.batch.submit(connection, input_data)['result']
+        self.assertEqual(len(response), 2)
+        submission_1 = api.submission.get_one(
+            connection, response[0], 'test_email')
+        self.assertEqual(submission_1['result']['answers'][0]['answer'], 1)
+        submission_2 = api.submission.get_one(
+            connection, response[1], 'test_email')
+        self.assertEqual(submission_2['result']['answers'][0]['answer'],
+                         choice_id)
 
 
 if __name__ == '__main__':

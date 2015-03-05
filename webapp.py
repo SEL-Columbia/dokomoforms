@@ -17,6 +17,7 @@ import api.submission
 import api.user
 from db import engine
 from pages.api.aggregations import AggregationHandler
+from pages.api.batch import BatchSubmissionAPIHandler
 from pages.auth import LogoutHandler, LoginHandler
 from pages.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler, SubmitAPIHandler
@@ -61,6 +62,7 @@ class Survey(BaseHandler):
                     'result']
                 self.render('survey.html',
                             survey=json_encode(survey),
+                            survey_version=survey['survey_version'],
                             survey_title=survey['survey_title'])
         except (SurveyPrefixDoesNotIdentifyASurveyError,
                 SurveyPrefixTooShortError):
@@ -126,6 +128,7 @@ pages = [
 
     # JSON API
     (r'/api/aggregate/({})/?'.format(UUID_REGEX), AggregationHandler),
+
     (r'/api/surveys/?', SurveysAPIHandler),
     (r'/api/surveys/create/?', CreateSurveyAPIHandler),
     (r'/api/surveys/({})/?'.format(UUID_REGEX),
@@ -134,8 +137,12 @@ pages = [
      SubmitAPIHandler),
     (r'/api/surveys/({})/submissions/?'.format(UUID_REGEX),
      SubmissionsAPIHandler),
+
     (r'/api/submissions/({})/?'.format(UUID_REGEX),
      SingleSubmissionAPIHandler),
+
+    (r'/api/batch/submit/({})/?'.format(UUID_REGEX),
+     BatchSubmissionAPIHandler),
 ]
 
 if config.get('debug', False):
@@ -162,6 +169,14 @@ if __name__ == '__main__':  # pragma: no cover
     http_server.listen(settings.WEBAPP_PORT, '0.0.0.0')
 
     logger.info('starting server on port ' + str(settings.WEBAPP_PORT))
+
+    header_col = '\033[1m'
+    msg_col = '\033[92m'
+    end_col = '\033[0m'
+
+    print('{}Dokomoforms: {}{}starting server on port {}{}'.format(
+        header_col, end_col, msg_col, settings.WEBAPP_PORT, end_col
+    ))
 
     tornado.ioloop.IOLoop.current().set_blocking_log_threshold(1)
     tornado.ioloop.IOLoop.current().start()
