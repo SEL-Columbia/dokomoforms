@@ -164,5 +164,13 @@ if __name__ == '__main__':  # pragma: no cover
 
     logger.info('starting server on port ' + str(settings.WEBAPP_PORT))
 
+    header_col = '\033[1m'
+    msg_col = '\033[92m'
+    end_col = '\033[0m'
+
+    print(header_col + 'Dokomoforms: ' + end_col
+         + msg_col + 'starting server on port ' 
+         + str(settings.WEBAPP_PORT) + end_col)
+
     tornado.ioloop.IOLoop.current().set_blocking_log_threshold(1)
     tornado.ioloop.IOLoop.current().start()
