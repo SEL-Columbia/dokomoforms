@@ -36,7 +36,7 @@
     "jshint": "^2.6.0",
     "mocha": "^2.1.0",
     "mocha-istanbul": "^0.2.0",
-    "should": "^4.6.2",
+    "should": "^5.0.1",
     "supertest": "^0.15.0"
   }
 }
