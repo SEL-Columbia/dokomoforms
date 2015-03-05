@@ -22,10 +22,9 @@ import subprocess
 
 from tornado.ioloop import IOLoop
 from tornado.options import define, options, parse_command_line
-from tornado.web import Application
 from tornado.log import logging
 
-from webapp import pages, config
+from webapp import pages, config, Application
 
 
 # choose a random port to avoid colliding with TIME_WAIT sockets left over

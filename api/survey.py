@@ -5,7 +5,7 @@ import datetime
 from sqlalchemy.engine import RowProxy, Connection
 
 from api import execute_with_exceptions, json_response
-from db import engine, delete_record, update_record
+from db import delete_record, update_record
 from db.answer import get_answers_for_question, answer_insert
 from db.answer_choice import get_answer_choices_for_choice_id, \
     answer_choice_insert
@@ -23,11 +23,14 @@ from db.survey import survey_insert, survey_select, survey_table, \
 from db.type_constraint import TypeConstraintDoesNotExistError
 
 
-def _determine_choices(existing_question_id: str, choices: list) -> tuple:
+def _determine_choices(connection: Connection,
+                       existing_question_id: str,
+                       choices: list) -> tuple:
     """
     Pre-process the choices coming from the survey JSON to determine which
     choices to insert and which are updates.
 
+    :param connection: a SQLAlchemy Connection
     :param existing_question_id: the UUID of the existing question (if this is
                                  an update) or None otherwise
     :param choices: the list of choices from the JSON submission
@@ -40,7 +43,7 @@ def _determine_choices(existing_question_id: str, choices: list) -> tuple:
     # the choices associated with the existing question
     old_choices = []
     if existing_question_id is not None:
-        old_choices = get_choices(existing_question_id)
+        old_choices = get_choices(connection, existing_question_id)
     # a dictionary of choice text : choice id
     old_choice_dict = {ch.choice: ch.question_choice_id for ch in old_choices}
     # the choices to be inserted
@@ -91,7 +94,8 @@ def _create_choices(connection: Connection,
     :return: an iterable of the resultant choice fields
     """
     choices = values['choices']
-    new_choices, updates = _determine_choices(existing_question_id, choices)
+    new_choices, updates = _determine_choices(connection, existing_question_id,
+                                              choices)
 
     for number, choice in enumerate(new_choices):
         choice_dict = {'question_id': question_id,
@@ -113,7 +117,8 @@ def _create_choices(connection: Connection,
                                'sequence_number': result_ipk[3],
                                'allow_multiple': result_ipk[4],
                                'survey_id': values['survey_id']}
-            for answer in get_answer_choices_for_choice_id(updates[choice]):
+            for answer in get_answer_choices_for_choice_id(connection,
+                                                           updates[choice]):
                 answer_values = question_fields.copy()
                 new_submission_id = submission_map[answer.submission_id]
                 answer_values['question_choice_id'] = question_choice_id
@@ -163,13 +168,14 @@ def _create_questions(connection: Connection,
 
         if existing_q_id is not None:
             question_fields = {'question_id': q_id,
-                               'type_constraint_name': result_ipk[1],
-                               'sequence_number': result_ipk[2],
-                               'allow_multiple': result_ipk[3],
+                               'sequence_number': result_ipk[1],
+                               'allow_multiple': result_ipk[2],
+                               'type_constraint_name': result_ipk[3],
                                'survey_id': survey_id}
-            for answer in get_answers_for_question(existing_q_id):
-                new_tcn = result_ipk[1]
-                old_tcn = question_select(existing_q_id).type_constraint_name
+            for answer in get_answers_for_question(connection, existing_q_id):
+                new_tcn = result_ipk[3]
+                old_tcn = question_select(connection,
+                                          existing_q_id).type_constraint_name
                 if new_tcn != old_tcn:
                     continue
                 answer_values = question_fields.copy()
@@ -257,7 +263,8 @@ def _copy_submission_entries(connection: Connection,
     :param email: the user's e-mail address
     :return: a tuple containing the old and new submission IDs
     """
-    for sub in get_submissions_by_email(existing_survey_id, email=email):
+    for sub in get_submissions_by_email(connection, existing_survey_id,
+                                        email=email):
         values = {'submitter': sub.submitter,
                   'submission_time': sub.submission_time,
                   'field_update_time': sub.field_update_time,
@@ -279,12 +286,12 @@ def _create_survey(connection: Connection, data: dict) -> str:
     is_update = 'survey_id' in data
 
     email = data['email']
-    user_id = get_auth_user_by_email(email).auth_user_id
+    user_id = get_auth_user_by_email(connection, email).auth_user_id
     title = data['survey_title']
     data_q = data['questions']
 
     # First, create an entry in the survey table
-    safe_title = get_free_title(title, user_id)
+    safe_title = get_free_title(connection, title, user_id)
     survey_values = {'auth_user_id': user_id, 'survey_title': safe_title}
     executable = survey_insert(**survey_values)
     exc = [('survey_title_survey_owner_key',
@@ -312,17 +319,18 @@ def _create_survey(connection: Connection, data: dict) -> str:
     return survey_id
 
 
-def create(data: dict) -> dict:
+def create(connection: Connection, data: dict) -> dict:
     """
     Create a survey with questions.
 
+    :param connection: a SQLAlchemy Connection
     :param data: a JSON representation of the survey to be created
     :return: a JSON representation of the created survey
     """
-    with engine.begin() as connection:
+    with connection.begin():
         survey_id = _create_survey(connection, data)
 
-    return get_one(survey_id, email=data['email'])
+    return get_one(connection, survey_id, email=data['email'])
 
 
 def _get_choice_fields(choice: RowProxy) -> dict:
@@ -349,10 +357,11 @@ def _get_branch_fields(branch: RowProxy) -> dict:
             'to_sequence_number': branch.to_sequence_number}
 
 
-def _get_fields(question: RowProxy) -> dict:
+def _get_fields(connection: Connection, question: RowProxy) -> dict:
     """
     Extract the relevant fields from a record in the question table.
 
+    :param connection: a SQLAlchemy Connection
     :param question: A RowProxy for a record in the question table.
     :return: A dictionary of the fields.
     """
@@ -366,80 +375,91 @@ def _get_fields(question: RowProxy) -> dict:
               'type_constraint_name': question.type_constraint_name,
               'logic': question.logic}
     if question.type_constraint_name == 'multiple_choice':
-        choices = get_choices(question.question_id)
+        choices = get_choices(connection, question.question_id)
         result['choices'] = [_get_choice_fields(choice) for choice in choices]
-        branches = get_branches(question.question_id)
+        branches = get_branches(connection, question.question_id)
         if branches.rowcount > 0:
             result['branches'] = [_get_branch_fields(brn) for brn in branches]
     return result
 
 
-def _to_json(survey: RowProxy) -> dict:
+def _to_json(connection: Connection, survey: RowProxy) -> dict:
     """
     Return the JSON representation of the given survey
 
+    :param connection: a SQLAlchemy Connection
     :param survey: the survey object
     :return: a JSON dict representation
     """
-    questions = get_questions_no_credentials(survey.survey_id)
-    q_fields = [_get_fields(question) for question in questions]
+    questions = get_questions_no_credentials(connection, survey.survey_id)
+    q_fields = [_get_fields(connection, question) for question in questions]
     return {'survey_id': survey.survey_id,
             'survey_title': survey.survey_title,
+            'survey_version': survey.survey_version,
             'metadata': survey.metadata,
-            'questions': q_fields}
+            'questions': q_fields,
+            'created_on': survey.created_on.isoformat()}
 
 
-def display_survey(survey_id: str) -> dict:
+def display_survey(connection: Connection, survey_id: str) -> dict:
     """
     Get a JSON representation of a survey. Use this to display a survey for
     submission purposes.
 
+    :param connection: a SQLAlchemy Connection
     :param survey_id: the UUID of the survey
     :return: the JSON representation.
     """
-    return json_response(_to_json(display(survey_id)))
+    return json_response(_to_json(connection, display(connection, survey_id)))
 
 
-def get_one(survey_id: str, auth_user_id: str=None, email: str=None) -> dict:
+def get_one(connection: Connection,
+            survey_id: str,
+            auth_user_id: str=None,
+            email: str=None) -> dict:
     """
     Get a JSON representation of a survey. You must supply either the
     auth_user_id or the email of the user.
 
+    :param connection: a SQLAlchemy Connection
     :param survey_id: the UUID of the survey
     :param auth_user_id: the UUID of the user
     :param email: the e-mail address of the user
     :return: the JSON representation.
     """
-    survey = survey_select(survey_id, auth_user_id=auth_user_id, email=email)
-    return json_response(_to_json(survey))
+    survey = survey_select(connection, survey_id, auth_user_id=auth_user_id,
+                           email=email)
+    return json_response(_to_json(connection, survey))
 
 
-def get_all(email: str) -> dict:
+def get_all(connection: Connection, email: str) -> dict:
     """
     Return a JSON representation of all the surveys for a user.
 
+    :param connection: a SQLAlchemy Connection
     :param email: the user's e-mail address.
     :return: the JSON string representation
     """
-    surveys = get_surveys_by_email(email)
-    return json_response([_to_json(survey) for survey in surveys])
+    surveys = get_surveys_by_email(connection, email)
+    return json_response([_to_json(connection, survey) for survey in surveys])
 
 
-def update(data: dict):
+def update(connection: Connection, data: dict):
     """
     Update a survey (title, questions). You can also add or modify questions
     here. Note that this creates a new survey (with new submissions, etc),
     copying everything from the old survey. The old survey's title will be
     changed to end with "(new version created on <time>)".
 
+    :param connection: a SQLAlchemy Connection
     :param data: JSON containing the UUID of the survey and fields to update.
     """
     survey_id = data['survey_id']
     email = data['email']
-    existing_survey = survey_select(survey_id, email=email)
+    existing_survey = survey_select(connection, survey_id, email=email)
     update_time = datetime.datetime.now()
 
-    with engine.connect() as connection:
+    with connection.begin():
         new_title = '{} (new version created on {})'.format(
             existing_survey.survey_title, update_time.isoformat())
         executable = update_record(survey_table, 'survey_id', survey_id,
@@ -450,16 +470,17 @@ def update(data: dict):
 
         new_survey_id = _create_survey(connection, data)
 
-    return get_one(new_survey_id, email=email)
+    return get_one(connection, new_survey_id, email=email)
 
 
-def delete(survey_id: str):
+def delete(connection: Connection, survey_id: str):
     """
     Delete the survey specified by the given survey_id
 
+    :param connection: a SQLAlchemy connection
     :param survey_id: the UUID of the survey
     """
-    with engine.connect() as connection:
+    with connection.begin():
         connection.execute(delete_record(survey_table, 'survey_id', survey_id))
     return json_response('Survey deleted')
 

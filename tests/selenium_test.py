@@ -15,6 +15,7 @@ from selenium.webdriver.support import expected_conditions as EC
 
 import api.survey
 import api.submission
+import db
 from db.auth_user import auth_user_table
 from db.submission import submission_table
 from db.survey import survey_table
@@ -22,6 +23,8 @@ from settings import SAUCE_USERNAME, SAUCE_ACCESS_KEY, DEFAULT_BROWSER
 
 
 base = 'http://localhost:8888'
+
+connection = db.engine.connect()
 
 
 def go_to_new_window(driver: WebDriver):
@@ -85,9 +88,9 @@ class DriverTest(unittest.TestCase):
         connection.request('PUT', path, body, headers=headers)
 
     def tearDown(self):
-        submission_table.delete().execute()
-        auth_user_table.delete().where(
-            auth_user_table.c.email == 'test@mockmyid.com').execute()
+        connection.execute(submission_table.delete())
+        connection.execute(auth_user_table.delete().where(
+            auth_user_table.c.email == 'test@mockmyid.com'))
         self.drv.quit()
 
         self._set_sauce_status()
@@ -185,15 +188,15 @@ class SubmissionTest(DriverTest):
         next_button.click()
         self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('text 7')
         next_button.click()
-        self.drv.find_element_by_id('with_other').click()
+        self.drv.find_elements_by_tag_name('option')[-1].click()
         self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('other 8')
         next_button.click()
         next_button.click()  # note question
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, in_xpath + 'div[3]/input')))
-        self.drv.find_element_by_xpath(in_xpath + 'div[3]/input').send_keys(
+            (By.XPATH, in_xpath + 'div[4]/input')))
+        self.drv.find_element_by_xpath(in_xpath + 'div[4]/input').send_keys(
             'new_test_facility')
-        self.drv.find_element_by_xpath(in_xpath + 'div[3]/span[2]').click()
+        self.drv.find_element_by_xpath(in_xpath + 'div[4]/span[2]').click()
         next_button.click()
 
         self.drv.find_element_by_xpath(in_xpath + 'div[2]/input').send_keys(
@@ -234,8 +237,8 @@ class SubmissionTest(DriverTest):
 class TypeTest(DriverTest):
     def tearDown(self):
         super().tearDown()
-        survey_table.delete().where(
-            survey_table.c.survey_title.like('test_question_type_%')).execute()
+        connection.execute(survey_table.delete().where(
+            survey_table.c.survey_title.like('test_question_type_%')))
 
     def _create_survey(self, type_constraint_name, choices=None):
         tcn = type_constraint_name
@@ -251,7 +254,7 @@ class TypeTest(DriverTest):
                                       'choices': choices,
                                       'branches': None}]}
 
-        survey = api.survey.create(survey_json)['result']
+        survey = api.survey.create(connection, survey_json)['result']
         survey_id = survey['survey_id']
         question_id = survey['questions'][0]['question_id']
         return survey_id, question_id
@@ -267,7 +270,8 @@ class IntegerTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
-        self.drv.find_element_by_tag_name('input').send_keys('2')
+        self.drv.find_element_by_xpath(
+            '/html/body/div[2]/div[2]/input').send_keys('2')
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
 
@@ -295,7 +299,8 @@ class DecimalTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
-        self.drv.find_element_by_tag_name('input').send_keys('3.5')
+        self.drv.find_element_by_xpath(
+            '/html/body/div[2]/div[2]/input').send_keys('3.5')
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
 
@@ -323,7 +328,8 @@ class TextTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
-        self.drv.find_element_by_tag_name('input').send_keys('some text')
+        self.drv.find_element_by_xpath(
+            '/html/body/div[2]/div[2]/input').send_keys('some text')
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
 
@@ -352,12 +358,14 @@ class DateTest(TypeTest):
 
         # Fill it out
         if self.browser_name == 'android':
-            self.drv.find_element_by_tag_name('input').click()
+            self.drv.find_element_by_xpath(
+                '/html/body/div[2]/div[2]/input').click()
             self.drv.switch_to.window('NATIVE_APP')
             self.drv.find_element_by_id('button1').click()
             self.drv.switch_to.window('WEBVIEW_0')
         else:
-            self.drv.find_element_by_tag_name('input').send_keys('4/4/44')
+            self.drv.find_element_by_xpath(
+                '/html/body/div[2]/div[2]/input').send_keys('4/4/44')
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
 
@@ -386,12 +394,14 @@ class TimeTest(TypeTest):
 
         # Fill it out
         if self.browser_name == 'android':
-            self.drv.find_element_by_tag_name('input').click()
+            self.drv.find_element_by_xpath(
+                '/html/body/div[2]/div[2]/input').click()
             self.drv.switch_to.window('NATIVE_APP')
             self.drv.find_element_by_id('button1').click()
             self.drv.switch_to.window('WEBVIEW_0')
         else:
-            self.drv.find_element_by_tag_name('input').send_keys('5:55')
+            self.drv.find_element_by_xpath(
+                '/html/body/div[2]/div[2]/input').send_keys('5:55')
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
 

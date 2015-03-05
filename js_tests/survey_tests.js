@@ -1,5 +1,6 @@
 var jsdom = require('jsdom');
 var should = require('should');
+var assert = require('assert');
 global.window = require('./emulate_dom.js');
 
 document = window.document;
@@ -10,9 +11,12 @@ alert = window.alert;
 setInterval = function(hey, you) {  } //console.log('pikachu'); }
 console = window.console;
 Image = window.Image;
+navigator = window.navigator;
 localStorage = {};
+setTimeout = function(cb, time) { cb(); };
 
 var mah_code = require('../static/app.js');
+var App = mah_code.App;
 var Survey = mah_code.Survey;
 var Widgets = mah_code.Widgets;
 
@@ -24,15 +28,24 @@ describe('Survey unit and regression tests', function(done) {
         done();
     });
 
-
     beforeEach(function(done) {
+        $.mockjax.clear();
+        localStorage = {};
+        localStorage.setItem = function(id, data) {
+            localStorage[id] = data;
+        }
+
+        App.facilities = [];
+        App.unsynced_facilities = {};
+
         done();
     });
 
     afterEach(function(done) {
         $(".page_nav__next").off('click'); //XXX Find out why events are cached
         $(".page_nav__prev").off('click');
-        localStorage = {};
+        $(".message").clearQueue().text("");
+        $('.content').empty();
         survey = null;
         done();
     });
@@ -51,21 +64,21 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
 
             // empty
             should(survey.getFirstResponse(questions[0])).not.be.ok;
             // O value
-            questions[0].answer = [0];
+            questions[0].answer = [{response:0}];
             should(survey.getFirstResponse(questions[0])).match(0);;
             // some value
-            questions[0].answer = [1];
+            questions[0].answer = [{response:1}];
             should(survey.getFirstResponse(questions[0])).be.ok;
             // empty string
-            questions[0].answer = [""];
+            questions[0].answer = [{response:""}];
             should(survey.getFirstResponse(questions[0])).not.be.ok;
             // incorrect type (get getFirstResponse does not validate type)
-            questions[0].answer = ["bs"];
+            questions[0].answer = [{response:"bs"}];
             should(survey.getFirstResponse(questions[0])).not.be.ok;
 
             done();
@@ -82,15 +95,15 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0,  questions, {});
 
             // empty
             should(survey.getFirstResponse(questions[0])).not.be.ok;
             // empty string
-            questions[0].answer = [""];
+            questions[0].answer = [{response:""}];
             should(survey.getFirstResponse(questions[0])).not.be.ok;
             // valid 
-            questions[0].answer = ["bs"];
+            questions[0].answer = [{response:"bs"}];
             should(survey.getFirstResponse(questions[0])).be.ok;
 
             done();
@@ -117,7 +130,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
             questions[0].should.equal(survey.current_question);
 
             // state shouldn't change
@@ -126,7 +139,7 @@ describe('Survey unit and regression tests', function(done) {
             questions[1].should.not.equal(survey.current_question);
             
             // state SHOULD change
-            questions[0].answer = ["yo"];
+            questions[0].answer = [{response:"yo"}];
             survey.next(NEXT);
             questions[0].should.not.equal(survey.current_question);
             questions[1].should.equal(survey.current_question);
@@ -154,7 +167,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
             questions[0].should.equal(survey.current_question);
 
             // state shouldn't change
@@ -163,7 +176,7 @@ describe('Survey unit and regression tests', function(done) {
             questions[1].should.not.equal(survey.current_question);
             
             // state SHOULD change
-            questions[0].answer = [0];
+            questions[0].answer = [{response:0}];
             survey.next(NEXT);
             questions[0].should.not.equal(survey.current_question);
             questions[1].should.equal(survey.current_question);
@@ -191,7 +204,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
             questions[0].should.equal(survey.current_question);
 
             // state shouldn't change
@@ -200,7 +213,7 @@ describe('Survey unit and regression tests', function(done) {
             questions[1].should.not.equal(survey.current_question);
             
             // state SHOULDNT change
-            questions[0].answer = [""];
+            questions[0].answer = [{response:""}];
             survey.next(NEXT);
             questions[0].should.equal(survey.current_question);
             questions[1].should.not.equal(survey.current_question);
@@ -228,7 +241,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
             questions[0].should.equal(survey.current_question);
 
             // state shouldn't change
@@ -237,7 +250,7 @@ describe('Survey unit and regression tests', function(done) {
             questions[1].should.not.equal(survey.current_question);
             
             // state SHOULDNT change
-            questions[0].answer = ["decimal"];
+            questions[0].answer = [{response:"decimal"}];
             survey.next(NEXT);
             questions[0].should.equal(survey.current_question);
             questions[1].should.not.equal(survey.current_question);
@@ -266,7 +279,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
             questions[0].should.equal(survey.current_question);
 
             // state shouldn't change
@@ -305,7 +318,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
             questions[0].should.equal(survey.current_question);
 
             // state shouldn't change
@@ -356,7 +369,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
             questions[0].should.equal(survey.current_question);
 
             survey.next(NEXT);
@@ -427,7 +440,7 @@ describe('Survey unit and regression tests', function(done) {
                 },
             ];
 
-            survey = new Survey("id", questions, {});
+            survey = new Survey("id", 0, questions, {});
             var brancher = questions[4];
             var next = questions[1];
             var end = questions[2];
@@ -445,14 +458,14 @@ describe('Survey unit and regression tests', function(done) {
             survey.next(PREV);
             brancher.should.equal(survey.current_question);
             // branch to end 
-            brancher.answer = ["end"];
+            brancher.answer = [{response:"end"}];
             survey.next(NEXT); 
             end.should.equal(survey.current_question);
             // come back
             survey.next(PREV);
             brancher.should.equal(survey.current_question);
             // branch to skip 
-            brancher.answer = ["skip"];
+            brancher.answer = [{response:"skip"}];
             survey.next(NEXT); 
             skip.should.equal(survey.current_question);
             // come back again fine
@@ -464,5 +477,135 @@ describe('Survey unit and regression tests', function(done) {
 
         });
 
+    it('submit: empty submission',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "time",
+                    logic: {},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    logic: {},
+                    sequence_number: 2
+                },
+            ];
+
+            survey = new Survey("id", 0, questions, {});
+            survey.submit();
+            $('.message').text().should.match("Submission failed, No questions answer in Survey!");
+            done();
+
+        });
+
+    it('submit: basic submission',
+        //XXX: Fake response so that this doesn't 404
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "text",
+                    logic: {},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    logic: {},
+                    sequence_number: 2
+                },
+            ];
+
+            $.mockjax({
+                  url: '',
+                  status: 200,
+                  onAfterSuccess: function() { 
+                    $('.message').text().should.match('Survey submitted!'); 
+                    done();
+                  },
+                  onAfterError: function() { 
+                      assert(false, "Failed to catch post correctly"); 
+                  },
+                  responseText: {
+                      status: "success",
+                  }
+            });
+
+
+            survey = new Survey("id", 0, questions, {});
+            questions[0].answer = [{response:"hey baby"}];
+            survey.submit();
+
+        });
+
+
+    it('submit: facility submission',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "facility",
+                    logic: {},
+                    answer: [],
+                    question_title: "fac",
+                    sequence_number: 1
+                },
+            ];
+
+            // Preload some facilities;
+            App.unsynced_facilities[1] = {
+                'name': 'New Facility', 'uuid': 1, 
+                'properties' : {'sector': 'health'},
+                'coordinates' : [40.01, 70.01]
+            };
+
+
+            var url = "http://localhost:3000/api/v0/facilities.json" // install revisit server from git
+            $.mockjax({
+                  url: url,
+                  status: 200,
+                  onAfterSuccess: function() { 
+                    $('.message').text().should.match('Facility Added!'); 
+                    //XXX async can hang if js error is encountered
+                    Object.keys(App.unsynced_facilities).should.have.length(0);
+                    App.facilities.should.have.length(1);
+                    done();
+                  },
+                  onAfterError: function() { 
+                      assert(false, "Failed to catch revisit correctly"); 
+                  },
+                  responseText: {
+                      status: "success",
+                  }
+            });
+            
+            $.mockjax({
+                  url: '',
+                  status: 200,
+                  onAfterSuccess: function() { 
+                  },
+                  onAfterError: function() { 
+                      assert(false, "Failed to catch post correctly"); 
+                  },
+                  responseText: {
+                      status: "success",
+                  }
+            });
+
+
+            survey = new Survey("id", 0, questions, {});
+            questions[0].answer = [{response:{'id': 1, 'lat':40.01, 'lon':70.01 }}];
+            survey.submit();
+
+        });
 });
 

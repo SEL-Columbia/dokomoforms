@@ -1,26 +1,22 @@
 """Allow access to the question_branch table."""
-from sqlalchemy import Table, MetaData
-from sqlalchemy.engine import ResultProxy
-from sqlalchemy.sql import Insert
+from sqlalchemy.engine import ResultProxy, Connection
+from sqlalchemy.sql import Insert, select
 
-from db import engine
-
-
-question_branch_table = Table('question_branch', MetaData(bind=engine),
-                              autoload=True)
+from db import question_branch_table
 
 
-def get_branches(question_id: str) -> ResultProxy:
+def get_branches(connection: Connection, question_id: str) -> ResultProxy:
     """
     Get all the branches for a question identified by question_id.
 
+    :param connection: a SQLAlchemy Connection
     :param question_id: foreign key
     :return: an iterable of the branches (RowProxy)
     """
-    select_stmt = question_branch_table.select()
+    select_stmt = select([question_branch_table])
     where_stmt = select_stmt.where(
         question_branch_table.c.from_question_id == question_id)
-    return where_stmt.execute()
+    return connection.execute(where_stmt)
 
 
 def question_branch_insert(*,

@@ -5,8 +5,8 @@ if [ -z $USER ]; then
     USER='poop';
 fi
 
-python manage_db.py -d &&
-python manage_db.py -c &&
-psql -d doko -f tests/fixtures/all-encompassing.sql && 
+python manage_db.py -d ;
+python manage_db.py -c ;
+psql -d doko -f tests/fixtures/all-encompassing.sql ;
 curl -is http://localhost:8888/debug/create/$USER
 

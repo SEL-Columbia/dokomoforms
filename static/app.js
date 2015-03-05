@@ -5,21 +5,21 @@ var App = {
     unsynced: [], // unsynced surveys
     facilities: [], // revisit facilities
     unsynced_facilities: {}, // new facilities
-    start_loc: [40.8138912, -73.9624327], 
+    start_loc: {'lat': 40.8138912, 'lon': -73.9624327}, 
     submitter_name: ''
    // defaults to nyc, updated by metadata and answers to location questions
 };
 
 App.init = function(survey) {
     var self = this;
-    self.survey = new Survey(survey.survey_id, survey.questions, survey.metadata);
+    self.survey = new Survey(survey.survey_id, survey.survey_version, survey.questions, survey.metadata);
     self.start_loc = survey.metadata.location || self.start_loc;
     self.facilities = JSON.parse(localStorage.facilities || "[]");
     self.submitter_name = localStorage.name;
 
     if (App.facilities.length === 0) {
         // See if you can get some facilities
-        getNearbyFacilities(App.start_loc[0], App.start_loc[1], 
+        getNearbyFacilities(App.start_loc.lat, App.start_loc.lon, 
                 5, // Radius in km 
                 100, // limit
                 "facilities", // id for localStorage
@@ -115,11 +115,12 @@ App._getMapLayer = function() {
 
 };
 
-function Survey(id, questions, metadata) {
+function Survey(id, version, questions, metadata) {
     var self = this;
     this.id = id;
     this.questions = questions;
     this.metadata = metadata;
+    this.version = version;
 
     // Load answers from localStorage
     var answers = JSON.parse(localStorage[this.id] || '{}');
@@ -169,11 +170,15 @@ Survey.prototype.getQuestion = function(seq) {
 };
 
 // Answer array may have elements even if answer[0] is undefined
-// XXX: function name doesnt match return types
+// XXX: function name doesnt match return types or what its doing
 Survey.prototype.getFirstResponse = function(question) {
     for (var i = 0; i < question.answer.length; i++) {
-        if (Widgets._validate(question.type_constraint_name, question.answer[i]) !== null) {
-            return question.answer[i];
+        var answer = question.answer[i];
+        if (answer) {
+            var val = Widgets._validate(question.type_constraint_name, answer.response);
+            if ( val !== null) {
+             return val;
+            }
         }
     }
 
@@ -302,22 +307,19 @@ Survey.prototype.submit = function() {
     // Prepare POST request
     var survey_answers = [];
     self.questions.forEach(function(q) {
-        //console/g.log('q', q);
+        //console.log('q', q);
         q.answer.forEach(function(ans, ind) {
-            var is_other_val = q.is_other || false;
+            var response =  ans.response;
+            var is_other = ans.is_other || false;
 
-            if (typeof q.is_other === 'object') { 
-                is_other_val = q.is_other[ind];
-            }
-
-            if (!ans && ans !== 0) {
+            if (!response && response !== 0) { 
                 return;
             }
 
             survey_answers.push({
                 question_id: q.question_id,
-                answer: ans,
-                is_other: is_other_val 
+                answer: response,
+                is_other: is_other
             });
         });
     });
@@ -329,7 +331,7 @@ Survey.prototype.submit = function() {
     localStorage.setItem("unsynced_facilities", 
             JSON.stringify(App.unsynced_facilities));
 
-    //console/g.log('revisit-ing', App.unsynced_facilities);
+    //console.log('revisit-ing', App.unsynced_facilities);
     _.map(App.unsynced_facilities, function(facility) {
         postNewFacility(facility); 
     });
@@ -340,7 +342,7 @@ Survey.prototype.submit = function() {
         answers: survey_answers
     };
 
-    //console/g.log('submission:', data);
+    //console.log('submission:', data);
 
     sync.classList.add('icon--spin');
     save_btn.classList.add('icon--spin');
@@ -408,7 +410,11 @@ Widgets._input = function(question, page, type) {
     // Clean up answer array
     question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
     $(page).find('input').each(function(i, child) { 
-        question.answer[i] = self._validate(type, child.value);
+        question.answer[i] = {
+            response: self._validate(type, child.value),
+            is_other: false
+        }
+
     });
 
     // Set up input event listner
@@ -416,7 +422,10 @@ Widgets._input = function(question, page, type) {
         .find('input')
         .change(function() { //XXX: Change isn't sensitive enough on safari?
             var ans_ind = $(page).find('input').index(this); 
-            question.answer[ans_ind] = self._validate(type, this.value);
+            question.answer[ans_ind] = { 
+                response: self._validate(type, this.value),
+                is_other: false
+            }
 
         });
 
@@ -425,18 +434,40 @@ Widgets._input = function(question, page, type) {
         .find('.question__add')
         .click(function() { 
             self._addNewInput(page, $(page).find('input').last(), question);
+
+        });
+
+    // Click the - to remove the newest input
+    $(page)
+        .find('.question__minus')
+        .click(function() { 
+            self._removeNewestInput($(page).find('input'), question);
+
         });
 };
 
 // Handle creating multiple inputs for widgets that support it 
 Widgets._addNewInput = function(page, input, question) {
-    if (question.allow_multiple) {
+    if (question.allow_multiple) { //XXX: Technically this btn clickable => allow_multiple 
         input
             .clone(true)
             .val(null)
-            .insertBefore(page.find(".question__add"))
+            .insertAfter(input)
             .focus();
     }
+};
+
+Widgets._removeNewestInput = function(inputs, question) {
+    if (question.allow_multiple && (inputs.length > 1)) {
+        delete question.answer[inputs.length - 1];
+        inputs
+            .last()
+            .remove()
+    }
+
+    inputs
+        .last()
+        .focus()
 };
 
 // Basic input validation
@@ -516,52 +547,63 @@ Widgets.note = function() {
 Widgets.multiple_choice = function(question, page) {
     var self = this;
 
-    // record values for each select option to update answer array in consistent way
-    var $children = []; //XXX: Using question.choices is not enough
-    $(page).find('select').children().each(function(i, child){ 
-        $children.push(child.value);
-    });
+    // array of choice uuids
+    var choices = [];
+    question.choices.forEach(function(choice, ind) {
+        choices[ind] = choice.question_choice_id;
+    }); 
+    choices[question.choices.length] = "other"; 
 
     // handle change for text field
     var $other = $(page)
         .find('.text_input')
-        .keyup(function() {
-            question.answer[$children.length - 1 - 1] = self._validate("text", this.value);
+        .change(function() {
+            question.answer[question.choices.length] = { 
+                response: self._validate("text", this.value),
+                is_other: true
+            }
         });
 
 
+    // Hide input by default
     $other.hide();
 
+    // Deal with select (multiple or not)
     $(page)
         .find('select')
         .change(function() {
             // any change => answer is reset
             question.answer = [];
-            question.is_other = [];
             $other.hide();
 
-            // jquery is dumb and inconsistent 
-            var svals = $('select').val();
+            // jquery is dumb and inconsistent with val type
+            var svals = $('select').val(); 
             svals = typeof svals === 'string' ? [svals] : svals;
+
             // find all select options
             svals.forEach(function(opt) { 
+
+                var ind = choices.indexOf(opt);
+                
                 // Please choose something option wipes answers
-                var ind = $children.indexOf(opt) - 1;
                 if (opt === 'null') { 
                     return;
                 }
 
                 // Default, fill in values (other will be overwritten below if selected)
-                question.answer[ind] = opt;
-                question.is_other[ind] = false;
+                question.answer[ind] = {
+                    response: opt,
+                    is_other: false
+                }
 
                 if (opt === 'other') {
-                    // Choice is text input
-                    question.answer[ind] = $other.val();
-                    question.is_other[ind] = true;
+                    question.answer[ind] = {
+                        response: $other.val(), // Preserves prev response
+                        is_other: true
+                    }
+
                     $other.show();
                 } 
-
              });
 
             // Toggle off other if deselected on change event 
@@ -572,17 +614,16 @@ Widgets.multiple_choice = function(question, page) {
         });
 
     // Selection is handled in _template however toggling of view is done here
-    question.is_other =  question.is_other || [];
-    if (question.answer[question.choices.length] || 
-            question.answer[question.choices.length] === '') {
-        question.is_other[question.choices.length] = true;
+    if (question.answer[question.choices.length] && 
+            question.answer[question.choices.length].is_other &&
+                question.answer[question.choices.length].response) {
         $other.show();
     }
 };
 
 Widgets._getMap = function() {
     var map = L.map('map', {
-            center: App.start_loc,
+            center: [App.start_loc.lat, App.start_loc.lon],
             dragging: true,
             zoom: 13,
             zoomControl: false,
@@ -621,11 +662,11 @@ Widgets._getMap = function() {
 };
 
 Widgets.location = function(question, page) {
-    // Map
-    var lat = $(page).find('.question__lat').last().val() || App.start_loc[0];
-    var lng = $(page).find('.question__lon').last().val() || App.start_loc[1];
+    var self = this;
+    var lat = $(page).find('.question__lat').last().val() || App.start_loc.lat;
+    var lng = $(page).find('.question__lon').last().val() || App.start_loc.lon;
 
-    App.start_loc = [lat, lng];
+    App.start_loc = {'lat': lat, 'lon': lng};
 
     var map = this._getMap(); 
     map.on('drag', function() {
@@ -633,14 +674,27 @@ Widgets.location = function(question, page) {
         updateLocation([map.getCenter().lng, map.getCenter().lat]);
     });
 
-    function updateLocation(coords) {
-        //XXX: Control which element is updated
+    // Clean up answer array
+    question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
+    $(page).find('.question__location').each(function(i, child) { 
+        question.answer[i] = { 
+            response: { 
+                'lon': $(child).find('.question__lon').val(),
+                'lat': $(child).find('.question__lat').val()
+            },
+            is_other: false
+        };
+    });
 
+    function updateLocation(coords) {
         // Find current length of inputs and update the last one;
         var questions_len = $(page).find('.question__location').length;
 
         // update array val
-        question.answer[questions_len - 1] = coords;
+        question.answer[questions_len - 1] = {
+            response: {'lon': coords[0], 'lat': coords[1] },
+            is_other: false
+        }
             
         // update latest lon/lat values
         $(page).find('.question__lon').last().val(coords[0]);
@@ -667,15 +721,6 @@ Widgets.location = function(question, page) {
                     map.circle
                         .setLatLng([coords[1], coords[0]]);
 
-                    // If allow multiple is set add there exists > 1 divs 
-                    if (question.allow_multiple && 
-                            typeof question.answer[0] !== "undefined") {
-                        $(page)
-                            .find('.question__location')
-                            .clone()
-                            .insertBefore(".question__btn");
-                    }
-
                     updateLocation(coords);
 
                 }, function error() {
@@ -688,15 +733,30 @@ Widgets.location = function(question, page) {
                     maximumAge: 0
                 });
         });
+
+    // Click the + for new input
+    $(page)
+        .find('.question__add')
+        .click(function() { 
+            self._addNewInput(page, $(page).find('.question__location').last(), question);
+            $(page).find('.question__location').last().children().val(null);
+        });
+    
+    // Click the - to remove the newest input
+    $(page)
+        .find('.question__minus')
+        .click(function() { 
+            self._removeNewestInput($(page).find('.question__location'), question);
+        });
 };
 
 // Similar to location however you cannot just add location, 
 Widgets.facility = function(question, page) {
-    // Map
-    var lat = question.answer[0] && question.answer[0][1][1] || App.start_loc[0];
-    var lng = question.answer[0] && question.answer[0][1][0] || App.start_loc[1];
+    var ans = question.answer[0]; // Facility questions only ever have one response
+    var lat = ans && ans.response.lat || App.start_loc.lat;
+    var lng = ans && ans.response.lon || App.start_loc.lon;
 
-    App.start_loc = [lat, lng];
+    App.start_loc = {'lat': lat, 'lon': lng};
 
     /* Buld inital state */
     var map = this._getMap(); 
@@ -718,7 +778,7 @@ Widgets.facility = function(question, page) {
     // Revisit API Call calls facilitiesCallback
     if (navigator.onLine) {
         // Refresh if possible
-        getNearbyFacilities(App.start_loc[0], App.start_loc[1], 
+        getNearbyFacilities(App.start_loc.lat, App.start_loc.lon, 
                 5, // Radius in km 
                 100, // limit
                 "facilities", // id for localStorage
@@ -733,7 +793,8 @@ Widgets.facility = function(question, page) {
 
     // handles calling drawPoint gets called once per getNearby call 
     function drawFacilities(facilities) {
-        var selected = question.answer[0] && question.answer[0][0] || null;
+        var ans = question.answer[0];
+        var selected = ans && ans.response.id || null;
 
         // SYNCED FACILITIES
         facilities_group.clearLayers(); // Clears synced facilities only
@@ -793,7 +854,14 @@ Widgets.facility = function(question, page) {
         }
 
         touchedMarker = marker;
-        question.answer[0] = [marker.uuid, [marker._latlng.lng, marker._latlng.lat]];
+        question.answer[0] = {
+            response: {
+                'id': marker.uuid, 
+                'lon': marker._latlng.lng, 
+                'lat': marker._latlng.lat
+            },
+            is_other: false
+        }
         $(page).find('.facility__name').val(marker.name);
         $(page).find('.facility__type').val(marker.sector);
     }
@@ -918,8 +986,7 @@ Widgets.facility = function(question, page) {
             App.unsynced_facilities[uuid] = {
                 'name': 'New Facility', 'uuid': uuid, 
                 'properties' : {'sector': 'other'},
-                'coordinates' : [lng, lat],
-                'question_id' : question.question_id // XXX: Remove this from here
+                'coordinates' : [lng, lat]
             };
 
             // Get and place marker
@@ -986,15 +1053,14 @@ function getNearbyFacilities(lat, lng, rad, lim, id, cb) {
 
 // XXX: Really doesn't need to
 function postNewFacility(facility) {
-    var url = "http://staging.revisit.global/api/v0/facilities.json";
-    //var url = "http://localhost:3000/api/v0/facilities.json" // install revisit server from git
-
+    //var url = "http://staging.revisit.global/api/v0/facilities.json";
+    var url = "http://localhost:3000/api/v0/facilities.json" // install revisit server from git
     $.ajax({
         url: url,
         type: 'POST',
         contentType: 'application/json',
-        processData: false,
         data: JSON.stringify(facility),
+        processData: false,
         dataType: 'json',
         success: function() {
             App.message('Facility Added!');
@@ -1006,14 +1072,10 @@ function postNewFacility(facility) {
         
         error: function() {
             App.message('Facility submission failed, will try again later.');
-            //TODO: Way to resync on failure like submissions
         },
         
         complete: function() {
-            //TODO get these unsynced facilities to be drawn after map refresh?
-            
             // Add it into facilities array so it can be selected later
-            //console/g.log('storing it all');
             localStorage.setItem("facilities", 
                     JSON.stringify(App.facilities));
 

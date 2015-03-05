@@ -11,16 +11,16 @@ VALUES ('test_email')
 RETURNING auth_user_id INTO the_auth_user_id;
 
 INSERT INTO survey (survey_title, auth_user_id, metadata)
-VALUES ('test_title', the_auth_user_id, '{"location": [5.118915, 7.353078]}')
+VALUES ('test_title', the_auth_user_id, '{"location": {"lon": 5.118915, "lat": 7.353078}}')
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, question_title,
-    type_constraint_name, allow_multiple, question_to_sequence_number)
-VALUES (the_survey_id, 5, 'time question', 'time', False, 6),
-       (the_survey_id, 6, 'location question', 'location', False, 7),
-       (the_survey_id, 7, 'text question', 'text', True, 8),
-       (the_survey_id, 9, 'note', 'note', False, 10),
-       (the_survey_id, 10, 'facility question', 'facility', False, -1);
+    type_constraint_name, hint, allow_multiple, question_to_sequence_number)
+VALUES (the_survey_id, 5, 'time question', 'time', 'Use a watch', False, 6),
+       (the_survey_id, 6, 'location question', 'location', 'Drag window if button does not work', False, 7),
+       (the_survey_id, 7, 'text question', 'text', 'Anything goes', True, 8),
+       (the_survey_id, 9, 'note', 'note', 'Thanks for helping out', False, 10),
+       (the_survey_id, 10, 'facility question', 'facility', 'Please inform someone about missing facilities', False, -1);
 
 INSERT INTO question (survey_id, sequence_number, question_title,
     type_constraint_name, logic, allow_multiple, question_to_sequence_number)
@@ -29,7 +29,7 @@ VALUES (the_survey_id, 1, 'integer question', 'integer', '{"required": false, "w
 
 INSERT INTO question (survey_id, sequence_number, question_title,
     type_constraint_name, allow_multiple, question_to_sequence_number)
-VALUES (the_survey_id, 2, 'multiple choice question', 'multiple_choice', 
+VALUES (the_survey_id, 2, 'multiple choice question', 'multiple_choice',
            False, 3)
 RETURNING question_id into the_from_question_id;
 
@@ -92,16 +92,17 @@ VALUES ('a.dahir7@gmail.com')
 RETURNING auth_user_id INTO the_auth_user_id;
 
 INSERT INTO survey (survey_title, auth_user_id, metadata)
-VALUES ('test_title2', the_auth_user_id,'{"location": [5.118915, 7.353078]}')
+VALUES ('test_title2', the_auth_user_id, '{"location": {"lon": 5.118915, "lat": 7.353078}}')
 RETURNING survey_id INTO the_survey_id;
 
 INSERT INTO question (survey_id, sequence_number, question_title,
-    type_constraint_name, allow_multiple, question_to_sequence_number)
-VALUES (the_survey_id, 1, 'another integer question', 'integer', True, 2),
-       (the_survey_id, 5, 'another time question', 'time', True, 6),
-       (the_survey_id, 6, 'another location question', 'location', True, 7),
-       (the_survey_id, 7, 'another text question', 'text', True, 8),
-       (the_survey_id, 9, 'another note', 'note', False, -1);
+    type_constraint_name, hint, allow_multiple, question_to_sequence_number)
+VALUES (the_survey_id, 1, 'another integer question', 'integer', 'some val', True, 2),
+       (the_survey_id, 5, 'another time question', 'time', 'any time', True, 6),
+       (the_survey_id, 6, 'another location question', 'location', 'use the map', True, 7),
+       (the_survey_id, 7, 'another text question', 'text', 'What? How many characters could a character character if character could character character character', True, 8),
+       (the_survey_id, 9, 'another note', 'note', 'Youre not so bad.', False, 10),
+       (the_survey_id, 10, 'facility question', 'facility', 'Please inform someone about missing facilities', False, -1);
 
 INSERT INTO question (survey_id, sequence_number, question_title,
     type_constraint_name, allow_multiple, question_to_sequence_number)
