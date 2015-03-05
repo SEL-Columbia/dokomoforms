@@ -407,6 +407,9 @@ var Widgets = {
 Widgets._input = function(question, page, type) {
     var self = this;
     
+    // Render add/minus input buttons 
+    Widgets._renderRepeat(page, question);
+    
     // Clean up answer array
     question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
     $(page).find('input').each(function(i, child) { 
@@ -469,6 +472,16 @@ Widgets._removeNewestInput = function(inputs, question) {
         .last()
         .focus()
 };
+
+Widgets._renderRepeat = function(page, question) {
+    // Render add/minus input buttons 
+    if (question.allow_multiple) {
+        var repeatHTML = $('#template_repeat').html();
+        var widgetTemplate = _.template(repeatHTML);
+        var compiledHTML = widgetTemplate({question: question});
+        $(page).append(compiledHTML)
+    }
+}
 
 // Basic input validation
 Widgets._validate = function(type, answer) {
@@ -667,6 +680,9 @@ Widgets.location = function(question, page) {
     var lng = $(page).find('.question__lon').last().val() || App.start_loc.lon;
 
     App.start_loc = {'lat': lat, 'lon': lng};
+
+    // Add/Minus buttons 
+    Widgets._renderRepeat(page, question);
 
     var map = this._getMap(); 
     map.on('drag', function() {
