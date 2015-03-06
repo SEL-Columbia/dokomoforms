@@ -15,7 +15,7 @@ console = window.console;
 Image = window.Image;
 location = {};
 localStorage = {};
-require('../static/persona.js');
+require('../dokomoforms/static/persona.js');
 
 describe('Persona login tests', function(done) {
     before(function(done) {
