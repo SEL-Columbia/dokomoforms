@@ -13,7 +13,7 @@ Image = window.Image;
 navigator = window.navigator;
 localStorage = {};
 
-var mah_code = require('../static/app.js');
+var mah_code = require('../dokomoforms/static/app.js');
 var Widgets = mah_code.Widgets;
 var App = mah_code.App;
 
