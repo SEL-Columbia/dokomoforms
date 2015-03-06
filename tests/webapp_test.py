@@ -30,18 +30,18 @@ from dokomoforms.db.question import get_questions_no_credentials, \
     question_table
 from dokomoforms.db.question_choice import question_choice_table
 from dokomoforms.db.submission import submission_table
-from dokomoforms.pages.api.aggregations import AggregationHandler
-from dokomoforms.pages.api.batch import BatchSubmissionAPIHandler
-from dokomoforms.pages.api.submissions import SubmissionsAPIHandler, \
+from dokomoforms.handlers.api.aggregations import AggregationHandler
+from dokomoforms.handlers.api.batch import BatchSubmissionAPIHandler
+from dokomoforms.handlers.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler
-from dokomoforms.pages.api.surveys import SurveysAPIHandler, \
+from dokomoforms.handlers.api.surveys import SurveysAPIHandler, \
     SingleSurveyAPIHandler
-from dokomoforms.pages.util.base import catch_bare_integrity_error, \
+from dokomoforms.handlers.util.base import catch_bare_integrity_error, \
     user_owns_question
-from dokomoforms.pages.view.submissions import ViewSubmissionsHandler, \
+from dokomoforms.handlers.view.submissions import ViewSubmissionsHandler, \
     ViewSubmissionHandler
-from dokomoforms.pages.view.surveys import ViewHandler
-from dokomoforms.pages.view.visualize import VisualizationHandler
+from dokomoforms.handlers.view.surveys import ViewHandler
+from dokomoforms.handlers.view.visualize import VisualizationHandler
 from webapp import config, pages, Application
 from dokomoforms.db.survey import survey_table
 

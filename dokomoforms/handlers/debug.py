@@ -2,7 +2,7 @@
 
 from dokomoforms.db.auth_user import get_auth_user_by_email, \
     UserDoesNotExistError
-from dokomoforms.pages.util.base import BaseHandler
+from dokomoforms.handlers.util.base import BaseHandler
 import dokomoforms.api.user as user_api
 
 

@@ -7,7 +7,7 @@ from dokomoforms.api.aggregation import time_series, bar_graph, \
     NoSubmissionsToQuestionError
 from dokomoforms.db.answer import get_geo_json, get_answers_for_question
 from dokomoforms.db.question import question_select
-from dokomoforms.pages.util.base import BaseHandler, user_owns_question
+from dokomoforms.handlers.util.base import BaseHandler, user_owns_question
 
 
 class VisualizationHandler(BaseHandler):

@@ -2,7 +2,7 @@
 import tornado.web
 import dokomoforms.api.batch as batch_api
 from dokomoforms.db.survey import IncorrectQuestionIdError
-from dokomoforms.pages.util.base import APIHandler, \
+from dokomoforms.handlers.util.base import APIHandler, \
     catch_bare_integrity_error, \
     get_json_request_body, validation_message
 

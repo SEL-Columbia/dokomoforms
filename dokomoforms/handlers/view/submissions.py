@@ -3,7 +3,7 @@ import tornado.web
 
 from dokomoforms.db.submission import get_submissions_by_email
 from dokomoforms.db.survey import survey_select
-from dokomoforms.pages.util.base import BaseHandler
+from dokomoforms.handlers.util.base import BaseHandler
 import dokomoforms.api.submission as submission_api
 import dokomoforms.api.aggregation as aggregation_api
 

@@ -4,7 +4,7 @@ import tornado.web
 
 import dokomoforms.api.submission as submission_api
 from dokomoforms.db.survey import IncorrectQuestionIdError
-from dokomoforms.pages.util.base import APIHandler, get_email, \
+from dokomoforms.handlers.util.base import APIHandler, get_email, \
     get_json_request_body, \
     catch_bare_integrity_error, validation_message
 

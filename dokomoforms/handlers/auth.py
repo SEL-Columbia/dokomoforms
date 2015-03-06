@@ -7,7 +7,7 @@ import tornado.gen
 import tornado.httpclient
 
 import dokomoforms.api.user as user_api
-from dokomoforms.pages.util.base import BaseHandler
+from dokomoforms.handlers.util.base import BaseHandler
 
 
 class LoginHandler(BaseHandler):  # pragma: no cover

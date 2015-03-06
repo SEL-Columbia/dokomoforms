@@ -5,7 +5,7 @@ import tornado.web
 from dokomoforms.db.submission import get_number_of_submissions
 
 from dokomoforms.db.survey import get_surveys_by_email
-from dokomoforms.pages.util.base import BaseHandler
+from dokomoforms.handlers.util.base import BaseHandler
 
 
 class ViewHandler(BaseHandler):

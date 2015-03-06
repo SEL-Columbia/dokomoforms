@@ -14,21 +14,21 @@ import tornado.httpserver
 import dokomoforms.api.survey as survey_api
 import dokomoforms.api.user as user_api
 from dokomoforms.db import engine
-from dokomoforms.pages.api.aggregations import AggregationHandler
-from dokomoforms.pages.api.batch import BatchSubmissionAPIHandler
-from dokomoforms.pages.auth import LogoutHandler, LoginHandler
-from dokomoforms.pages.api.submissions import SubmissionsAPIHandler, \
+from dokomoforms.handlers.api.aggregations import AggregationHandler
+from dokomoforms.handlers.api.batch import BatchSubmissionAPIHandler
+from dokomoforms.handlers.auth import LogoutHandler, LoginHandler
+from dokomoforms.handlers.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler, SubmitAPIHandler
-from dokomoforms.pages.api.surveys import SurveysAPIHandler, \
+from dokomoforms.handlers.api.surveys import SurveysAPIHandler, \
     SingleSurveyAPIHandler, CreateSurveyAPIHandler
-from dokomoforms.pages.util.base import BaseHandler, get_json_request_body
-import dokomoforms.pages.util.ui
-from dokomoforms.pages.debug import DebugLoginHandler, DebugLogoutHandler, \
+from dokomoforms.handlers.util.base import BaseHandler, get_json_request_body
+import dokomoforms.handlers.util.ui
+from dokomoforms.handlers.debug import DebugLoginHandler, DebugLogoutHandler, \
     DebugUserCreationHandler
-from dokomoforms.pages.view.surveys import ViewHandler
-from dokomoforms.pages.view.submissions import ViewSubmissionsHandler, \
+from dokomoforms.handlers.view.surveys import ViewHandler
+from dokomoforms.handlers.view.submissions import ViewSubmissionsHandler, \
     ViewSubmissionHandler
-from dokomoforms.pages.view.visualize import VisualizationHandler
+from dokomoforms.handlers.view.visualize import VisualizationHandler
 from dokomoforms.utils.logger import setup_custom_logger
 from dokomoforms.db.survey import SurveyPrefixDoesNotIdentifyASurveyError, \
     SurveyPrefixTooShortError, get_survey_id_from_prefix, get_surveys_by_email
@@ -85,7 +85,7 @@ config = {
     'template_path': 'dokomoforms/templates',
     'static_path': 'dokomoforms/static',
     'login_url': '/',
-    'ui_methods': dokomoforms.pages.util.ui,
+    'ui_methods': dokomoforms.handlers.util.ui,
     'debug': settings.APP_DEBUG
 }
 

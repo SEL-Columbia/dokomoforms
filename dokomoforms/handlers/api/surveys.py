@@ -1,7 +1,7 @@
 """API endpoints dealing with surveys."""
 
 import dokomoforms.api.survey as survey_api
-from dokomoforms.pages.util.base import APIHandler, get_email, \
+from dokomoforms.handlers.util.base import APIHandler, get_email, \
     catch_bare_integrity_error, \
     get_json_request_body
 

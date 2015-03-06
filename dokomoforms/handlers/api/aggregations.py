@@ -4,7 +4,7 @@ import tornado.web
 from dokomoforms.api import json_response
 
 import dokomoforms.api.aggregation as aggregation_api
-from dokomoforms.pages.util.base import APIHandler, get_email, \
+from dokomoforms.handlers.util.base import APIHandler, get_email, \
     validation_message
 
 
