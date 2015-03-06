@@ -9,29 +9,35 @@ from datetime import timedelta
 
 from passlib.hash import bcrypt_sha256
 
-from db import update_record, delete_record
-import db
-from db.answer import answer_insert, answer_table, get_answers, get_geo_json, \
+from dokomoforms.db import update_record, delete_record
+from dokomoforms import db
+from dokomoforms.db.answer import answer_insert, answer_table, get_answers, \
+    get_geo_json, \
     get_answers_for_question
-from db.answer_choice import answer_choice_insert, get_answer_choices, \
+from dokomoforms.db.answer_choice import answer_choice_insert, \
+    get_answer_choices, \
     get_answer_choices_for_choice_id
-from db.auth_user import auth_user_table, get_auth_user, create_auth_user, \
+from dokomoforms.db.auth_user import auth_user_table, get_auth_user, \
+    create_auth_user, \
     generate_api_token, set_api_token, verify_api_token, \
     get_auth_user_by_email, \
     UserDoesNotExistError
-from db.question import get_questions_no_credentials, question_select, \
+from dokomoforms.db.question import get_questions_no_credentials, \
+    question_select, \
     question_table, \
     get_free_sequence_number, question_insert, get_questions, \
     QuestionDoesNotExistError, get_required
-from db.question_branch import get_branches, question_branch_insert, \
+from dokomoforms.db.question_branch import get_branches, \
+    question_branch_insert, \
     question_branch_table
-from db.question_choice import get_choices, question_choice_select, \
+from dokomoforms.db.question_choice import get_choices, \
+    question_choice_select, \
     question_choice_insert, question_choice_table, \
     QuestionChoiceDoesNotExistError
-from db.submission import submission_table, submission_insert, \
+from dokomoforms.db.submission import submission_table, submission_insert, \
     submission_select, get_submissions_by_email, get_number_of_submissions, \
     SubmissionDoesNotExistError
-from db.survey import survey_table, survey_insert, survey_select, \
+from dokomoforms.db.survey import survey_table, survey_insert, survey_select, \
     get_surveys_by_email, display, SurveyDoesNotExistError, \
     get_survey_id_from_prefix, SurveyPrefixDoesNotIdentifyASurveyError, \
     SurveyPrefixTooShortError, get_email_address, get_free_title
