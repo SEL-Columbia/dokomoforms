@@ -1112,8 +1112,8 @@ var icon_new_water = new L.icon({iconUrl: "/static/img/icons/unsynced_water.png"
 
 var icon_base = new L.icon({iconUrl: "/static/img/icons/normal_base.png", iconAnchor: [13, 31]});
 var icon_new_base = new L.icon({iconUrl: "/static/img/icons/unsynced_base.png", iconAnchor: [13, 31]});
-var icon_selected = new L.icon({iconUrl: "/static/img/icons/selected-point.png", iconAnchor: [15, 48]});
-var icon_added = new L.icon({iconUrl: "/static/img/icons/added-point.png", iconAnchor: [15, 48]});
+var icon_selected = new L.icon({iconUrl: "/static/img/icons/selected-point.png", iconAnchor: [16.2, 48]});
+var icon_added = new L.icon({iconUrl: "/static/img/icons/added-point.png", iconAnchor: [16.2, 48]});
 
 var icon_types = {
     "education" : icon_edu,
