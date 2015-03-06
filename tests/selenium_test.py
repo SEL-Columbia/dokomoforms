@@ -13,13 +13,13 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-import api.survey
-import api.submission
-import db
-from db.auth_user import auth_user_table
-from db.submission import submission_table
-from db.survey import survey_table
-from settings import SAUCE_USERNAME, SAUCE_ACCESS_KEY, DEFAULT_BROWSER
+import dokomoforms.api.survey as survey_api
+from dokomoforms import db
+from dokomoforms.db.auth_user import auth_user_table
+from dokomoforms.db.submission import submission_table
+from dokomoforms.db.survey import survey_table
+from dokomoforms.settings import SAUCE_USERNAME, SAUCE_ACCESS_KEY, \
+    DEFAULT_BROWSER
 
 
 base = 'http://localhost:8888'
@@ -72,7 +72,11 @@ class DriverTest(unittest.TestCase):
                 self.browser_config,
                 self.__class__.__name__])
         else:
-            caps['name'] = 'Manual run -- ' + self.browser_config
+            caps['name'] = ' -- '.join([
+                'Manual run',
+                self.browser_config,
+                self.__class__.__name__])
+
         hub_url = '{}:{}@localhost:4445'.format(self.username, self.access_key)
         cmd_executor = 'http://{}/wd/hub'.format(hub_url)
         self.drv = webdriver.Remote(desired_capabilities=caps,
@@ -256,7 +260,7 @@ class TypeTest(DriverTest):
                                       'choices': choices,
                                       'branches': None}]}
 
-        survey = api.survey.create(connection, survey_json)['result']
+        survey = survey_api.create(connection, survey_json)['result']
         survey_id = survey['survey_id']
         question_id = survey['questions'][0]['question_id']
         return survey_id, question_id

@@ -13,7 +13,7 @@ console = window.console;
 Image = window.Image;
 localStorage = {};
 
-var mah_code = require('../static/app.js');
+var mah_code = require('../dokomoforms/static/app.js');
 var App = mah_code.App;
 var Survey = mah_code.Survey;
 var Widgets = mah_code.Widgets;
