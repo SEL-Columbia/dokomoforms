@@ -72,7 +72,11 @@ class DriverTest(unittest.TestCase):
                 self.browser_config,
                 self.__class__.__name__])
         else:
-            caps['name'] = 'Manual run -- ' + self.browser_config
+            caps['name'] = ' -- '.join([
+                'Manual run',
+                self.browser_config,
+                self.__class__.__name__])
+
         hub_url = '{}:{}@localhost:4445'.format(self.username, self.access_key)
         cmd_executor = 'http://{}/wd/hub'.format(hub_url)
         self.drv = webdriver.Remote(desired_capabilities=caps,
