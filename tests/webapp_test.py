@@ -10,9 +10,11 @@ import uuid
 from sqlalchemy import Table, MetaData
 
 from tornado.escape import to_unicode, json_encode, json_decode
+import tornado.gen
 import tornado.httpserver
 import tornado.httpclient
 import tornado.ioloop
+import tornado.testing
 from tornado.testing import AsyncHTTPTestCase
 import tornado.web
 
@@ -36,6 +38,7 @@ from dokomoforms.handlers.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler
 from dokomoforms.handlers.api.surveys import SurveysAPIHandler, \
     SingleSurveyAPIHandler
+from dokomoforms.handlers.auth import LoginHandler
 from dokomoforms.handlers.util.base import catch_bare_integrity_error, \
     user_owns_question
 from dokomoforms.handlers.view.submissions import ViewSubmissionsHandler, \
@@ -940,7 +943,7 @@ class BaseHandlerTest(AsyncHTTPTestCase):
                           unauthorized.question_id)
 
 
-class IndexTest(AsyncHTTPTestCase):
+class AuthTest(AsyncHTTPTestCase):
     def get_app(self):
         self.app = Application(pages, **new_config)
         return self.app
@@ -948,7 +951,44 @@ class IndexTest(AsyncHTTPTestCase):
     def get_new_ioloop(self):
         return tornado.ioloop.IOLoop.instance()
 
-    def testPost(self):
+    @tornado.testing.gen_test
+    def testAsyncPost(self):  # flake8: noqa
+        con_dummy = lambda: None
+        con_dummy.set_close_callback = lambda x: None
+        dummy = lambda: None
+        dummy.connection = con_dummy
+        login = LoginHandler(self.app, dummy)
+        response = yield login._async_post(
+            tornado.httpclient.AsyncHTTPClient(), self.get_url('/'), '')
+        self.assertEqual(response.code, 200)
+
+    def testLoginSuccess(self):  # flake8: noqa
+        with mock.patch.object(LoginHandler, '_async_post') as m:
+            dummy = lambda: None
+            dummy.body = json_encode({'status': 'okay', 'email': 'test_email'})
+            m.return_value = tornado.gen.Task(
+                lambda callback=None: callback(dummy))
+            response = self.fetch(
+                '/user/login/persona?assertion=woah', method='POST', body='')
+        self.assertEqual(response.code, 200)
+        self.assertEqual(
+            json_decode(response.body),
+            {'next_url': '/', 'email': 'test_email'}
+        )
+
+    def testLoginFail(self):  # flake8: noqa
+        with mock.patch.object(LoginHandler, '_async_post') as m:
+            dummy = lambda: None
+            dummy.body = json_encode(
+                {'status': 'not okay', 'email': 'test_email'})
+            m.return_value = tornado.gen.Task(
+                lambda callback=None: callback(dummy))
+            response = self.fetch(
+                '/user/login/persona?assertion=woah', method='POST', body='')
+        self.assertEqual(response.code, 400)
+
+
+    def testLogout(self):
         response = self.fetch('/', method='POST', body='')
         self.assertEqual(response.code, 200)
 
