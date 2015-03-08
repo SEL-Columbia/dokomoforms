@@ -48,6 +48,6 @@ DEFAULT_BROWSER = 'firefox::Linux'
 # solar simulator and proxies for other devices
 
 try:
-    from dokomoforms.local_settings import *  # NOQA
+    from dokomoforms.local_settings import *  # flake8: noqa
 except ImportError:  # pragma: no cover
     pass
