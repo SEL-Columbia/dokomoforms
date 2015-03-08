@@ -38,6 +38,7 @@ COOKIE_SECRET = 'big secret'
 
 #
 # Testing
+SAUCE_CONNECT = False
 SAUCE_USERNAME = 'username'
 SAUCE_ACCESS_KEY = 'access key'
 DEFAULT_BROWSER = 'firefox::Linux'

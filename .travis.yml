@@ -28,6 +28,10 @@ before_script:
   - echo 'APP_DEBUG=True' > dokomoforms/local_settings.py
   - python3 webapp.py &
 
+before_install:
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+
 # command to run tests
 script: 
   - npm test

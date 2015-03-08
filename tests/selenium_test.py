@@ -19,7 +19,7 @@ from dokomoforms.db.auth_user import auth_user_table
 from dokomoforms.db.submission import submission_table
 from dokomoforms.db.survey import survey_table
 from dokomoforms.settings import SAUCE_USERNAME, SAUCE_ACCESS_KEY, \
-    DEFAULT_BROWSER
+    DEFAULT_BROWSER, SAUCE_CONNECT
 
 
 base = 'http://localhost:8888'
@@ -50,6 +50,11 @@ def report_success_status(method):
 class DriverTest(unittest.TestCase):
     def setUp(self):
         self.passed = False
+
+        if not SAUCE_CONNECT:
+            self.drv = webdriver.Firefox()
+            self.browser_name = 'Firefox'
+            return
 
         self.username = os.environ.get('SAUCE_USERNAME', SAUCE_USERNAME)
         self.access_key = os.environ.get('SAUCE_ACCESS_KEY', SAUCE_ACCESS_KEY)
@@ -99,7 +104,8 @@ class DriverTest(unittest.TestCase):
             auth_user_table.c.email == 'test@mockmyid.com'))
         self.drv.quit()
 
-        self._set_sauce_status()
+        if SAUCE_CONNECT:
+            self._set_sauce_status()
 
 
 # This test doesn't play nice with Sauce Labs, and I'm confident that
