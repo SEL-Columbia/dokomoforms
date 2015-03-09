@@ -30,7 +30,7 @@ Dokomo [どこも](http://tangorin.com/general/%E3%81%A9%E3%81%93%E3%82%82) Form
    
 2. `$ pip-python3 install -r requirements.txt` (or whatever the command is on your distribution)
 3. Create a "doko" database (or whatever other name you want) and a system user (if desired -- the postgres default user should work fine) with access to that database.
-4. Edit the [settings.py](settings.py) file with the correct PostgreSQL connection string.
+4. Edit your dokomoforms/local_settings.py file with the correct PostgreSQL `CONNECTION_STRING` (see [dokomoforms/settings.py](dokomoforms/settings.py)).
 
    If you run <tt>manage_db.py</tt> as user <tt>postgres</tt> (and because of the extension creation commands, you basically have to), here is how to change the <tt>postgres</tt> *database* (as opposed to unix user) password:
    
@@ -58,6 +58,22 @@ postgres=# \q
 # Running the tests
 
 1. `$ pip-python3 install nose coverage selenium`
-2. Install and run sauce-connect: https://docs.saucelabs.com/reference/sauce-connect/
-3. `nosetests -c .noserc`
+2. `$ nosetests -c .noserc`
+  * **Note:** Selenium tests involve browser windows popping up. If this causes issues on your machine or you'd just prefer for that not to happen, install [Xvfb](http://en.wikipedia.org/wiki/Xvfb) and use this command instead: `xvfb-run nosetests -c .noserc`
 
+## Running Selenium tests on Sauce Labs
+
+In order to make it easier to test across devices and browsers, you can run the Selenium tests on Sauce Labs.
+
+1. Sign up for an account at [saucelabs.com](https://saucelabs.com/)
+2. Install and run sauce-connect: https://docs.saucelabs.com/reference/sauce-connect/
+3. Using your username and access key from Sauce Labs, edit your dokomoforms/local_settings.py file like so:
+
+  ```
+  SAUCE_CONNECT = True
+  SAUCE_USERNAME = 'username'
+  SAUCE_ACCESS_KEY = 'access key'
+  DEFAULT_BROWSER = 'firefox::Linux'
+  ```
+
+4. `$ nosetests tests.selenium_test`
