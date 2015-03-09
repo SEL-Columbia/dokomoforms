@@ -1,32 +1,3 @@
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
-
-- [Generating an API token](#generating-an-api-token)
-- [Authentication](#authentication)
-- [Requests, Responses, and Errors](#requests-responses-and-errors)
-- [Surveys](#surveys)
-  - [List Surveys](#list-surveys)
-  - [Get Survey](#get-survey)
-  - [Create Survey](#create-survey)
-  - [Update Survey](#update-survey)
-  - [Delete Survey](#delete-survey)
-- [Survey Submissions](#survey-submissions)
-  - [List submissions](#list-submissions)
-  - [Get Submission](#get-submission)
-  - [New Submission](#new-submission)
-  - [Delete Submission](#delete-submission)
-- [Question & Answer Objects](#question-&-answer-objects)
-  - [Location](#location)
-  - [Date](#date)
-  - [Time (with timezone)](#time-with-timezone)
-  - [Integer](#integer)
-  - [Text](#text)
-  - [Multiple Choice](#multiple-choice)
-  - [Multiple Choice with Other](#multiple-choice-with-other)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
 Dokomoform's REST JSON API.
 
 ## Generating an API token

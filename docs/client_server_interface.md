@@ -1,13 +1,3 @@
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
-
-- [Client to Server Interaction](#client-to-server-interaction)
-  - [Survey schema](#survey-schema)
-  - [Survey response](#survey-response)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
 # Client to Server Interaction
 
 This occurs via message passing in json
