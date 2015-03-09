@@ -72,7 +72,7 @@ postgres=# \q
 2. `$ nosetests -c .noserc`
   * **Note:** Selenium tests involve browser windows popping up. If this causes issues on your machine or you'd just prefer for that not to happen, install [Xvfb](http://en.wikipedia.org/wiki/Xvfb) and use this command instead: `xvfb-run nosetests -c .noserc`
 
-## Running Selenium tests on [Sauce Labs](https://saucelabs.com/)
+## Running Selenium tests on Sauce Labs
 
 In order to make it easier to test across devices and browsers, you can run the Selenium tests on Sauce Labs.
 
