@@ -1,5 +1,7 @@
 var NEXT = 1;
 var PREV = -1;
+var ON = 1;
+var OFF = 0;
 
 var App = {
     unsynced: [], // unsynced surveys
@@ -406,12 +408,13 @@ var Widgets = {
 // All widgets store results in the questions.answer array
 Widgets._input = function(question, page, type) {
     var self = this;
+    self.state = OFF;
     
     // Render add/minus input buttons 
     Widgets._renderRepeat(page, question);
 
     //Render don't know
-    Widgets._renderOther(page, question);
+    Widgets._renderOther(page, question, self);
 
     // Clean up answer array
     question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
@@ -422,7 +425,6 @@ Widgets._input = function(question, page, type) {
         }
 
     });
-
     // Set up input event listner
     $(page)
         .find('input').not('.other_input')
@@ -455,7 +457,8 @@ Widgets._input = function(question, page, type) {
     $(page)
         .find('.question__btn__other')
         .click(function() { 
-            self._toggleOther(page, question);
+            self.state = (self.state + 1) % 2 // toggle btwn 1 and 0
+            self._toggleOther(page, question, self.state);
         });
 
 
@@ -495,7 +498,7 @@ Widgets._removeNewestInput = function(inputs, question) {
         .focus()
 };
 
-Widgets._renderOther = function(page, question) {
+Widgets._renderOther = function(page, question, input) {
     // Render don't know feature 
     if (question.logic.with_other) {
         var repeatHTML = $('#template_other').html();
@@ -506,7 +509,8 @@ Widgets._renderOther = function(page, question) {
         console.log(question.answer);
         if (question.answer[0] && question.answer[0].is_other) {
             // Disable main input
-            this._toggleOther(page, question, true);
+            this._toggleOther(page, question, ON);
+            input.state = ON;
         }
     }
 }
@@ -516,33 +520,37 @@ Widgets._toggleOther = function(page, question, state) {
     //XXX Answer array is a load or a clear here:
     question.answer = [];
     
-    // Disable inputs
-    $(page).find('.text_input').not('.other_input').each(function(i, child) { 
-            $(child).attr('disabled', true);
-    });
+    if (state == ON) {
+        // Disable inputs
+        $(page).find('.text_input').not('.other_input').each(function(i, child) { 
+                $(child).attr('disabled', true);
+        });
+        
+        $(page).find('.question__other').show();
+        
+        $(page).find('.other_input').each(function(i, child) { 
+            question.answer[0] = {
+                response: child.value,
+                is_other: true
+            }
+        });
+    } else if (state === OFF) { 
     
-    $(page).find('.question__other').show();
-    
-    $(page).find('.other_input').each(function(i, child) { 
-        question.answer[0] = {
-            response: child.value,
-            is_other: true
-        }
-    });
-    
-    // Or hide other
-    //$(page).find('.text_input').not('.other_input').each(function(i, child) { 
-    //      $(child).attr('disabled', true);
-    //});
-    //
-    //$(page).find('.question__other').hide();
-    //
-    //$(page).find('.text_input').not('.other_input').each(function(i, child) { 
-    //    question.answer[i] = {
-    //        response: child.value,
-    //        is_other: false
-    //    }
-    //});
+        // Or hide other
+        $(page).find('.text_input').not('.other_input').each(function(i, child) { 
+              $(child).attr('disabled', true);
+        });
+        
+        $(page).find('.question__other').hide();
+        
+        $(page).find('.text_input').not('.other_input').each(function(i, child) { 
+            question.answer[i] = {
+                response: child.value,
+                is_other: false
+            }
+        });
+    }
+
     
 
 }
