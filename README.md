@@ -58,8 +58,22 @@ postgres=# \q
 # Running the tests
 
 1. `$ pip-python3 install nose coverage selenium`
+2. `$ nosetests -c .noserc`
+  * **Note:** Selenium tests involve browser windows popping up. If this causes issues on your machine or you'd just prefer for that not to happen, install [Xvfb](http://en.wikipedia.org/wiki/Xvfb) and use this command instead: `xvfb-run nosetests -c .noserc`
+
+## Running Selenium tests on [Sauce Labs](https://saucelabs.com/)
+
+In order to make it easier to test across devices and browsers, you can run the Selenium tests on Sauce Labs.
+
+1. Sign up for an account at [saucelabs.com](https://saucelabs.com/)
 2. Install and run sauce-connect: https://docs.saucelabs.com/reference/sauce-connect/
-3. `nosetests -c .noserc`
+3. Using your username and access key from Sauce Labs, edit your dokomoforms/local_settings.py file like so:
 
-**Note:** Selenium tests involve browser windows popping up. If this causes issues on your machine or you'd just prefer for that not to happen, install [Xvfb](http://en.wikipedia.org/wiki/Xvfb) and use this command instead: `xvfb-run nosetests -c .noserc`
+  ```
+  SAUCE_CONNECT = True
+  SAUCE_USERNAME = 'username'
+  SAUCE_ACCESS_KEY = 'access key'
+  DEFAULT_BROWSER = 'firefox::Linux'
+  ```
 
+4. `$ nosetests tests.selenium_test`
