@@ -34,13 +34,42 @@ set :repo_url, 'https://github.com/SEL-Columbia/dokomoforms.git'
 # Default value for keep_releases is 5
 # set :keep_releases, 5
 
+
+namespace :app do
+
+  desc "Start the tornado server"
+  task :start do
+    on roles(:app) do
+      execute :sudo, "service dokomo start"
+    end
+  end
+
+
+  desc "Stop the tornado application"
+  task :stop do
+    on roles(:app) do
+      execute :sudo, "service dokomo stop"
+    end
+  end
+
+
+  desc "Restart the tornado application"
+  task :restart do
+    on roles(:app) do
+      invoke 'app:stop'
+      invoke 'app:start'
+    end
+  end
+end
+
+
 namespace :deploy do
 
   desc 'Restart application'
   task :restart do
     on roles(:app), in: :sequence, wait: 5 do
       # Your restart mechanism here, for example:
-      # execute :touch, release_path.join('tmp/restart.txt')
+      invoke 'app:restart'
     end
   end
 
