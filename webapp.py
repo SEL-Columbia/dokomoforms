@@ -11,32 +11,28 @@ import tornado.web
 import tornado.ioloop
 import tornado.httpserver
 
-import api.aggregation
-import api.survey
-import api.submission
-import api.user
-from db import engine
-from pages.api.aggregations import AggregationHandler
-from pages.api.batch import BatchSubmissionAPIHandler
-from pages.auth import LogoutHandler, LoginHandler
-from pages.api.submissions import SubmissionsAPIHandler, \
+import dokomoforms.api.survey as survey_api
+import dokomoforms.api.user as user_api
+from dokomoforms.db import engine
+from dokomoforms.handlers.api.aggregations import AggregationHandler
+from dokomoforms.handlers.api.batch import BatchSubmissionAPIHandler
+from dokomoforms.handlers.auth import LogoutHandler, LoginHandler
+from dokomoforms.handlers.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler, SubmitAPIHandler
-from pages.api.surveys import SurveysAPIHandler, SingleSurveyAPIHandler, \
-    CreateSurveyAPIHandler
-from pages.util.base import BaseHandler, get_json_request_body
-import pages.util.ui
-from pages.debug import DebugLoginHandler, DebugLogoutHandler, \
+from dokomoforms.handlers.api.surveys import SurveysAPIHandler, \
+    SingleSurveyAPIHandler, CreateSurveyAPIHandler
+from dokomoforms.handlers.util.base import BaseHandler, get_json_request_body
+import dokomoforms.handlers.util.ui
+from dokomoforms.handlers.debug import DebugLoginHandler, DebugLogoutHandler, \
     DebugUserCreationHandler
-from pages.view.surveys import ViewHandler
-from pages.view.submissions import ViewSubmissionsHandler, \
+from dokomoforms.handlers.view.surveys import ViewHandler
+from dokomoforms.handlers.view.submissions import ViewSubmissionsHandler, \
     ViewSubmissionHandler
-from pages.view.visualize import VisualizationHandler
-import settings
-from utils.logger import setup_custom_logger
-from db.survey import SurveyPrefixDoesNotIdentifyASurveyError, \
-    SurveyPrefixTooShortError, \
-    get_survey_id_from_prefix, get_surveys_by_email
-
+from dokomoforms.handlers.view.visualize import VisualizationHandler
+from dokomoforms.utils.logger import setup_custom_logger
+from dokomoforms.db.survey import SurveyPrefixDoesNotIdentifyASurveyError, \
+    SurveyPrefixTooShortError, get_survey_id_from_prefix, get_surveys_by_email
+from dokomoforms import settings
 
 logger = setup_custom_logger('dokomo')
 
@@ -58,8 +54,8 @@ class Survey(BaseHandler):
             if len(survey_prefix) < 36:
                 self.redirect('/survey/{}'.format(survey_id), permanent=False)
             else:
-                survey = api.survey.display_survey(self.db, survey_id)[
-                    'result']
+                survey = survey_api.display_survey(self.db,
+                                                   survey_id)['result']
                 self.render('survey.html',
                             survey=json_encode(survey),
                             survey_version=survey['survey_version'],
@@ -77,19 +73,19 @@ class APITokenGenerator(BaseHandler):  # pragma: no cover
     def get(self):
         # self.render('api-token.html')
         self.write(
-            api.user.generate_token(self.db, {'email': self.current_user}))
+            user_api.generate_token(self.db, {'email': self.current_user}))
 
     @tornado.web.authenticated
     def post(self):
         data = get_json_request_body(self)
-        self.write(api.user.generate_token(self.db, data))
+        self.write(user_api.generate_token(self.db, data))
 
 
 config = {
-    'template_path': 'templates',
-    'static_path': 'static',
+    'template_path': 'dokomoforms/templates',
+    'static_path': 'dokomoforms/static',
     'login_url': '/',
-    'ui_methods': pages.util.ui,
+    'ui_methods': dokomoforms.handlers.util.ui,
     'debug': settings.APP_DEBUG
 }
 

@@ -8,9 +8,9 @@
 from argparse import ArgumentParser
 
 import something
-import db
+import dokomoforms.db
 
-connection = db.engine.connect()
+connection = dokomoforms.db.engine.connect()
 
 
 def get_args():

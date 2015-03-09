@@ -59,7 +59,7 @@ postgres=# \q
 
 1. `$ pip-python3 install nose coverage selenium`
 2. Install and run sauce-connect: https://docs.saucelabs.com/reference/sauce-connect/
-3. `nosetests --with-coverage --cover-inclusive --cover-branches --cover-tests --cover-html --cover-erase --cover-package=api,db,webapp,pages.api,pages.util,pages.debug,pages.view`
+3. `nosetests --with-coverage --cover-inclusive --cover-branches --cover-tests --cover-html --cover-erase --cover-package=dokomoforms`
 
 # Local Dev Environment via Vagrant
 

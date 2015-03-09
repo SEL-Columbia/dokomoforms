@@ -25,13 +25,17 @@ before_script:
   - python3 manage_db.py
   - psql -U postgres -d doko -f tests/fixtures/all-encompassing.sql
   - npm install --python=python2.7
-  - echo 'APP_DEBUG=True' > local_settings.py
+  - echo 'APP_DEBUG=True' > dokomoforms/local_settings.py
   - python3 webapp.py &
+
+before_install:
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
 
 # command to run tests
 script: 
   - npm test
-  - nosetests -e selenium_test --with-coverage --cover-inclusive --cover-branches --cover-tests --cover-html --cover-erase --cover-package=api,db,webapp,pages.api,pages.util,pages.debug,pages.view
+  - nosetests -e selenium_test --with-coverage --cover-inclusive --cover-branches --cover-tests --cover-html --cover-erase --cover-package=dokomoforms
 
 after_success: coveralls
 

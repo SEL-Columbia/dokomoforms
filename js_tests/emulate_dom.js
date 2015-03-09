@@ -9,7 +9,7 @@ module.exports = (function(url) {
     window = document.parentWindow;
 
     script = document.createElement('script');
-    script.text = fs.readFileSync("static/lib.js", "utf-8");
+    script.text = fs.readFileSync("dokomoforms/static/lib.js", "utf-8");
     document.body.appendChild(script);
 
     script = document.createElement('script');
