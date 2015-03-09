@@ -5,7 +5,7 @@
 - [About](#about)
 - [Installation](#installation)
 - [Running the tests](#running-the-tests)
-  - [Running Selenium tests on Sauce Labs](#running-selenium-tests-on-sauce-labs)
+  - [Running Selenium tests on [Sauce Labs](https://saucelabs.com/)](#running-selenium-tests-on-sauce-labshttpssaucelabscom)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
