@@ -1,3 +1,13 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Contributor's Guide](#contributors-guide)
+  - [Issues](#issues)
+  - [Pull requests](#pull-requests)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Contributor's Guide
 
 Dokomo Forms is an open-source project and we encourage people to open issues at https://github.com/SEL-Columbia/dokomoforms/issues for bug reports and feature requests. We also accept pull requests as long as they meet our guidelines.
