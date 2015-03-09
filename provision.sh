@@ -43,7 +43,7 @@ pip3 install -r /vagrant/requirements.txt
 # setup database and update postgres password
 sudo su - postgres -c "createdb doko"
 sudo su - postgres -c "psql -U postgres -d postgres -c \"alter user postgres with password 'password';\""
-sudo su - postgres -c "python3 /vagrant/manage_db.py --create"
+sudo su - postgres -c "python /vagrant/manage_db.py --create"
 
 # link webroot
 rm -rf /var/www
