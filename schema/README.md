@@ -1,22 +1,3 @@
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
-
-- [[Schema](relationships.real.large.png) (click for diagram)](#schemarelationshipsreallargepng-click-for-diagram)
-  - [High level](#high-level)
-    - [Survey](#survey)
-      - [Question](#question)
-    - [Submission](#submission)
-      - [Answer](#answer)
-  - [Specifics](#specifics)
-    - [Question choices](#question-choices)
-    - [Question branching](#question-branching)
-  - [Notes](#notes)
-      - [No logical constraints](#no-logical-constraints)
-      - [Geolocation support](#geolocation-support)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
 #[Schema](relationships.real.large.png) (click for diagram)
 
 ##High level
