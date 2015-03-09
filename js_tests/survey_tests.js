@@ -60,6 +60,7 @@ describe('Survey unit and regression tests', function(done) {
                 {
                     question_to_sequence_number: -1,
                     type_constraint_name: "integer",
+                    logic: {},
                     sequence_number: 1
                 },
             ];
@@ -91,6 +92,7 @@ describe('Survey unit and regression tests', function(done) {
                 {
                     question_to_sequence_number: -1,
                     type_constraint_name: "text",
+                    logic: {},
                     sequence_number: 1
                 },
             ];

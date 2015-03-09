@@ -232,7 +232,11 @@
     </script>
 
     <script id="template_repeat" type="text/html">
-        <div class="question__repeat">
+        <div class="question__repeat"
+            <% if (!question.allow_multiple) { %> 
+                style="display:none" 
+            <% }%>
+        >
             <svg class="icon question__add">
                 <use xlink:href="#icon-add"></use>
             </svg>

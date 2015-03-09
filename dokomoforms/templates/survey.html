@@ -250,20 +250,17 @@
     </script>
 
     <script id="template_other" type="text/html">
-        <div class="question__btn"><%- question.logic.other_text || "Don't Know" %></div>
+        <div class="question__btn question__btn__other"><%- question.logic.other_text || "Don't Know" %></div>
         <div class="question__other"
-            <% if ((ans && ans.response !== null)) & ans.is_other) {
-            } %>
+            <% var ans = question.answer[0];
+            if (!(ans && ans.response !== null && ans.is_other)) { %>
+                style="display: none;"
+            <% } %>
+        >
             <div class="question__hint">Please provide a reason.</div>
-                if ((ans && ans.response !== null)) & ans.is_other) { %>
-                    <input class="text_input" type="text" 
-                           value="<%- ans.response %>"
-                    >
-            <%  } else { %>
-                    <input class="text_input" type="text" 
-                           placeholder="Response is required."
-                    >
-            <%  } %>
+                <input class="text_input other_input" type="text" 
+                    placeholder="Response is required."
+                >
         </div>
     </script>
 

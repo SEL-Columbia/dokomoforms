@@ -409,20 +409,23 @@ Widgets._input = function(question, page, type) {
     
     // Render add/minus input buttons 
     Widgets._renderRepeat(page, question);
-    
+
+    //Render don't know
+    Widgets._renderOther(page, question);
+
     // Clean up answer array
     question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
     $(page).find('input').each(function(i, child) { 
         question.answer[i] = {
             response: self._validate(type, child.value),
-            is_other: false
+            is_other: false //XXX check if child contains other_input class
         }
 
     });
 
     // Set up input event listner
     $(page)
-        .find('input')
+        .find('input').not('.other_input')
         .change(function() { //XXX: Change isn't sensitive enough on safari?
             var ans_ind = $(page).find('input').index(this); 
             question.answer[ans_ind] = { 
@@ -436,7 +439,7 @@ Widgets._input = function(question, page, type) {
     $(page)
         .find('.question__add')
         .click(function() { 
-            self._addNewInput(page, $(page).find('input').last(), question);
+            self._addNewInput(page, $(page).find('input').not('.other_input').last(), question);
 
         });
 
@@ -444,8 +447,27 @@ Widgets._input = function(question, page, type) {
     $(page)
         .find('.question__minus')
         .click(function() { 
-            self._removeNewestInput($(page).find('input'), question);
+            self._removeNewestInput($(page).find('input').not('.other_input'), question);
 
+        });
+    
+    // Click the other button when you don't know answer
+    $(page)
+        .find('.question__btn__other')
+        .click(function() { 
+            self._toggleOther(page, question);
+        });
+
+
+    // Set up input event liste 
+    $(page)
+        .find('.other_input')
+        .change(function() { //XXX: Change isn't sensitive enough on safari?
+            question.answer = [];
+            question.answer[0] = { 
+                response: self._validate('text', this.value),
+                is_other: true
+            }
         });
 };
 
@@ -472,6 +494,58 @@ Widgets._removeNewestInput = function(inputs, question) {
         .last()
         .focus()
 };
+
+Widgets._renderOther = function(page, question) {
+    // Render don't know feature 
+    if (question.logic.with_other) {
+        var repeatHTML = $('#template_other').html();
+        var widgetTemplate = _.template(repeatHTML);
+        var compiledHTML = widgetTemplate({question: question});
+        $(page).append(compiledHTML);
+
+        console.log(question.answer);
+        if (question.answer[0] && question.answer[0].is_other) {
+            // Disable main input
+            this._toggleOther(page, question, true);
+        }
+    }
+}
+
+Widgets._toggleOther = function(page, question, state) {
+    //XXX PRESS btn down or remove class: $('.question__btn__other').addClass
+    //XXX Answer array is a load or a clear here:
+    question.answer = [];
+    
+    // Disable inputs
+    $(page).find('.text_input').not('.other_input').each(function(i, child) { 
+            $(child).attr('disabled', true);
+    });
+    
+    $(page).find('.question__other').show();
+    
+    $(page).find('.other_input').each(function(i, child) { 
+        question.answer[0] = {
+            response: child.value,
+            is_other: true
+        }
+    });
+    
+    // Or hide other
+    //$(page).find('.text_input').not('.other_input').each(function(i, child) { 
+    //      $(child).attr('disabled', true);
+    //});
+    //
+    //$(page).find('.question__other').hide();
+    //
+    //$(page).find('.text_input').not('.other_input').each(function(i, child) { 
+    //    question.answer[i] = {
+    //        response: child.value,
+    //        is_other: false
+    //    }
+    //});
+    
+
+}
 
 Widgets._renderRepeat = function(page, question) {
     // Render add/minus input buttons 
@@ -698,7 +772,7 @@ Widgets.location = function(question, page) {
                 'lon': $(child).find('.question__lon').val(),
                 'lat': $(child).find('.question__lat').val()
             },
-            is_other: false
+            is_other: false //XXX Check if child contains other_input
         };
     });
 
