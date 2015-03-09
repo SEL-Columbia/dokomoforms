@@ -538,7 +538,7 @@ Widgets._toggleOther = function(page, question, state) {
     
         // Or hide other
         $(page).find('.text_input').not('.other_input').each(function(i, child) { 
-              $(child).attr('disabled', true);
+              $(child).attr('disabled', false);
         });
         
         $(page).find('.question__other').hide();
