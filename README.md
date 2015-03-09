@@ -61,3 +61,5 @@ postgres=# \q
 2. Install and run sauce-connect: https://docs.saucelabs.com/reference/sauce-connect/
 3. `nosetests -c .noserc`
 
+**Note:** Selenium tests involve browser windows popping up. If this causes issues on your machine or you'd just prefer for that not to happen, install [Xvfb](http://en.wikipedia.org/wiki/Xvfb) and use this command instead: `xvfb-run nosetests -c .noserc`
+
