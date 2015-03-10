@@ -50,7 +50,7 @@ def _jsonify(connection: Connection,
     """
     type_constraint_name = question_select(connection,
                                            question_id).type_constraint_name
-    if type_constraint_name == 'location':
+    if type_constraint_name in {'location', 'facility'}:
         geo_json = connection.execute(func.ST_AsGeoJSON(answer)).scalar()
         return json_decode(geo_json)['coordinates']
     elif type_constraint_name in {'date', 'time'}:
@@ -103,6 +103,8 @@ def _table_and_column(type_constraint_name: str) -> tuple:
         column_name = 'question_choice_id'
     else:
         table = answer_table
+        if type_constraint_name == 'facility':
+            type_constraint_name = 'location'
         column_name = 'answer_' + type_constraint_name
     return table, column_name
 
@@ -278,7 +280,7 @@ def count(connection: Connection,
     :return: a JSON dict containing the result
     """
     types = {'text', 'integer', 'decimal', 'multiple_choice', 'date', 'time',
-             'location'}
+             'location', 'facility'}
     regular = _scalar(connection, question_id, sqlcount,
                       auth_user_id=auth_user_id,
                       email=email, allowable_types=types)
@@ -434,7 +436,7 @@ def bar_graph(connection: Connection,
     user_id = _get_user_id(connection, auth_user_id, email)
 
     allowable_types = {'text', 'integer', 'decimal', 'multiple_choice', 'date',
-                       'time', 'location'}
+                       'time', 'location', 'facility'}
 
     question = question_select(connection, question_id)
 
