@@ -13,4 +13,4 @@ test/*.log
 .vagrant
 data/
 reports/
-config/*.rb
+config/deploy/*.rb
