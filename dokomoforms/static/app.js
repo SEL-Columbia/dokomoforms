@@ -409,6 +409,15 @@ var Widgets = {
 Widgets._input = function(question, page, type) {
     var self = this;
     self.state = OFF;
+
+    // Clean up answer array
+    question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
+    $(page).find('input').not('.other_input').each(function(i, child) { 
+            question.answer[i] = {
+                response: self._validate(type, child.value),
+                is_other: false
+            }
+    });
     
     // Render add/minus input buttons 
     Widgets._renderRepeat(page, question);
@@ -416,18 +425,9 @@ Widgets._input = function(question, page, type) {
     //Render don't know
     Widgets._renderOther(page, question, self);
 
-    // Clean up answer array
-    question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
-    $(page).find('input').each(function(i, child) { 
-        question.answer[i] = {
-            response: self._validate(type, child.value),
-            is_other: false //XXX check if child contains other_input class
-        }
-
-    });
     // Set up input event listner
     $(page)
-        .find('input').not('.other_input')
+        .find('.text_input').not('.other_input')
         .change(function() { //XXX: Change isn't sensitive enough on safari?
             var ans_ind = $(page).find('input').index(this); 
             question.answer[ans_ind] = { 
@@ -462,15 +462,15 @@ Widgets._input = function(question, page, type) {
         });
 
 
-    // Set up input event liste 
+    // Set up other input event listener
     $(page)
         .find('.other_input')
         .change(function() { //XXX: Change isn't sensitive enough on safari?
-            question.answer = [];
-            question.answer[0] = { 
+            console.log(this.value);
+            question.answer = [{ 
                 response: self._validate('text', this.value),
                 is_other: true
-            }
+            }];
         });
 };
 
@@ -499,6 +499,7 @@ Widgets._removeNewestInput = function(inputs, question) {
 };
 
 Widgets._renderOther = function(page, question, input) {
+    var self = this;
     // Render don't know feature 
     if (question.logic.with_other) {
         var repeatHTML = $('#template_other').html();
@@ -506,9 +507,14 @@ Widgets._renderOther = function(page, question, input) {
         var compiledHTML = widgetTemplate({question: question});
         $(page).append(compiledHTML);
 
-        console.log(question.answer);
-        if (question.answer[0] && question.answer[0].is_other) {
+        var response = this._validate('text', $(page).find('.other_input').val());
+        if (response) {
             // Disable main input
+            question.answer = [{
+                response: response,
+                is_other: true
+            }];
+
             this._toggleOther(page, question, ON);
             input.state = ON;
         }
@@ -534,6 +540,7 @@ Widgets._toggleOther = function(page, question, state) {
                 is_other: true
             }
         });
+
     } else if (state === OFF) { 
     
         // Or hide other
@@ -550,9 +557,6 @@ Widgets._toggleOther = function(page, question, state) {
             }
         });
     }
-
-    
-
 }
 
 Widgets._renderRepeat = function(page, question) {
