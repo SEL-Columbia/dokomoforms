@@ -447,6 +447,12 @@ class MultipleChoiceTest(TypeTest):
         # Fill it out
         self.drv.find_elements_by_tag_name('option')[1].click()
         self.drv.find_element_by_class_name('page_nav__next').click()
+
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located(
+                (By.CLASS_NAME, 'question__btn')
+            )
+        )
         self.drv.find_element_by_class_name('question__btn').click()
 
         # Log in
