@@ -1046,8 +1046,8 @@ Widgets.facility = function(question, page) {
 
 /* -------------------------- Revisit Stuff Below ----------------------------*/
 function getNearbyFacilities(lat, lng, rad, lim, id, cb) {
-    //var url = "http://staging.revisit.global/api/v0/facilities.json" 
-    var url = "http://localhost:3000/api/v0/facilities.json"; // install revisit server from git
+    var url = "http://staging.revisit.global/api/v0/facilities.json"; 
+
     // Revisit ajax req
     //console/g.log("MADE EXTERNAL REVISIT QUERY");
     $.get(url,{
@@ -1069,8 +1069,8 @@ function getNearbyFacilities(lat, lng, rad, lim, id, cb) {
 
 // XXX: Really doesn't need to
 function postNewFacility(facility) {
-    //var url = "http://staging.revisit.global/api/v0/facilities.json";
-    var url = "http://localhost:3000/api/v0/facilities.json" // install revisit server from git
+    var url = "http://staging.revisit.global/api/v0/facilities.json"; 
+
     $.ajax({
         url: url,
         type: 'POST',
@@ -1086,6 +1086,11 @@ function postNewFacility(facility) {
             App.facilities.push(facility);
         },
         
+        headers: {
+            "Authorization": "Basic " + btoa("dokomoforms" + ":" + "password")
+                //DONT DO THIS XXX XXX
+        },
+
         error: function() {
             App.message('Facility submission failed, will try again later.');
         },
