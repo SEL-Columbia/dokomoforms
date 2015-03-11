@@ -409,15 +409,7 @@ var Widgets = {
 Widgets._input = function(question, page, type) {
     var self = this;
     self.state = OFF;
-
-    // Clean up answer array
-    question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
-    $(page).find('input').not('.other_input').each(function(i, child) { 
-            question.answer[i] = {
-                response: self._validate(type, child.value),
-                is_other: false
-            }
-    });
+    console.log("START", question.answer);
     
     // Render add/minus input buttons 
     Widgets._renderRepeat(page, question);
@@ -425,6 +417,29 @@ Widgets._input = function(question, page, type) {
     //Render don't know
     Widgets._renderOther(page, question, self);
 
+    // Clean up answer array, short circuits on is_other responses
+    question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
+    $(page).find('input').each(function(i, child) { 
+        console.log(i, child.value, child.className);
+        if ((child.className.indexOf('other_input') > - 1) && child.value) {
+            console.log("SHORT");
+            // if don't know input field has a response, break 
+            question.answer = [{
+                response: self._validate(type, child.value),
+                is_other: true
+            }];
+
+            return false;
+        }
+
+        question.answer[i] = {
+            response: self._validate(type, child.value),
+            is_other: false
+        }
+    });
+
+    console.log('Restored question ans array', question.answer);
+    
     // Set up input event listner
     $(page)
         .find('.text_input').not('.other_input')
@@ -498,6 +513,8 @@ Widgets._removeNewestInput = function(inputs, question) {
         .focus()
 };
 
+// Render 'don't know' section if question has with_other logic
+// Display response and alter widget state if first response is other
 Widgets._renderOther = function(page, question, input) {
     var self = this;
     // Render don't know feature 
@@ -507,20 +524,17 @@ Widgets._renderOther = function(page, question, input) {
         var compiledHTML = widgetTemplate({question: question});
         $(page).append(compiledHTML);
 
-        var response = this._validate('text', $(page).find('.other_input').val());
-        if (response) {
+        var other_response = question.answer[0] && question.answer[0].is_other;
+        if (other_response) {
             // Disable main input
-            question.answer = [{
-                response: response,
-                is_other: true
-            }];
-
             this._toggleOther(page, question, ON);
             input.state = ON;
         }
     }
 }
 
+// Toggle the 'don't know' section based on passed in state value on given page
+// Alters question.answer array
 Widgets._toggleOther = function(page, question, state) {
     //XXX PRESS btn down or remove class: $('.question__btn__other').addClass
     //XXX Answer array is a load or a clear here:
@@ -559,6 +573,7 @@ Widgets._toggleOther = function(page, question, state) {
     }
 }
 
+// Render +/- buttons on given page
 Widgets._renderRepeat = function(page, question) {
     // Render add/minus input buttons 
     if (question.allow_multiple) {

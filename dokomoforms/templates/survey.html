@@ -253,15 +253,17 @@
         <div class="question__btn question__btn__other"><%- question.logic.other_text || "Don't Know" %></div>
         <div class="question__other"
             <% var ans = question.answer[0];
-               var response = ans && ans.is_other && ans.response || '';
-            if (!(ans && ans.response !== null && ans.is_other)) { %>
+               var is_other = ans && ans.is_other;
+               console.log('temp', ans, is_other);
+            %>
                 style="display: none;"
-            <% } %>
         >
             <div class="question__hint">Please provide a reason.</div>
                 <input class="text_input other_input" type="text" 
                     placeholder="Response is required."
-                    value="<%- response %>"
+                    <% if (is_other) { %>
+                        value="<%- ans.response %>"
+                    <% } %>
                 >
         </div>
     </script>
