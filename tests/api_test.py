@@ -1278,7 +1278,7 @@ class TestAggregation(unittest.TestCase):
                                     'lat': 0,
                                     'lon': 0
                                 },
-                                'is_other': True}]}
+                                'is_other': False}]}
             submission_api.submit(connection, input_data)
 
         self.assertEqual(
