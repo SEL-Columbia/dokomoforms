@@ -415,7 +415,7 @@ var Widgets = {
 Widgets._input = function(question, page, type) {
     var self = this;
     self.state = OFF;
-    console.log("Initial question ans array", question.answer);
+    //console.log("Initial question ans array", question.answer);
     
     // Render add/minus input buttons 
     Widgets._renderRepeat(page, question);
@@ -445,7 +445,7 @@ Widgets._input = function(question, page, type) {
         }
     });
 
-    console.log('Restored question ans array', question.answer);
+    //console.log('Restored question ans array', question.answer);
     
     // Set up input event listner
     $(page)
@@ -488,7 +488,6 @@ Widgets._input = function(question, page, type) {
     $(page)
         .find('.other_input')
         .change(function() { //XXX: Change isn't sensitive enough on safari?
-            console.log(this.value);
             question.answer = [{ 
                 response: self._validate('text', this.value),
                 is_other: true
