@@ -235,11 +235,11 @@ describe('Widget creation tests', function(done) {
         function(done) {
             var question = {
                 question_to_sequence_number: -1,
-                type_constraint_name: "text",
+                type_constraint_name: "decimal",
                 logic: {with_other: true},
                 allow_multiple: true,
                 question_title: "Whiplash was real good otttherr",
-                answer: [{response: "good times", is_other: true }, {response: "bad times", is_other: false }], //order matters
+                answer: [{response: 'good times', is_other: true }, {response: 1111, is_other: false }], //order matters
                 sequence_number: 1
             };
             
@@ -268,7 +268,7 @@ describe('Widget creation tests', function(done) {
             $('.text_input').not('.other_input')[0].disabled.should.equal(true);
 
             // Response is cleaned up
-            question.answer.should.match([{response: "good times", is_other: true }]);
+            question.answer.should.match([{response: 'good times', is_other: true }]);
 
             done();
     });
@@ -279,11 +279,11 @@ describe('Widget creation tests', function(done) {
         function(done) {
             var question = {
                 question_to_sequence_number: -1,
-                type_constraint_name: "text",
+                type_constraint_name: "decimal",
                 logic: {with_other: true},
                 allow_multiple: true,
                 question_title: "Whiplash was real good otttherr",
-                answer: [{response: "good times", is_other: false}, {response: "bad times", is_other: true}], //order matters
+                answer: [{response: 777, is_other: false}, {response: "bad times", is_other: true}], //order matters
                 sequence_number: 1
             };
             
@@ -310,10 +310,10 @@ describe('Widget creation tests', function(done) {
 
             // Regular input is ACTIVE
             $('.text_input').not('.other_input')[0].disabled.should.equal(false);
-            $('.text_input').not('.other_input').val().should.equal('good times');
+            $('.text_input').not('.other_input').val().should.equal('777');
 
             // Response is cleaned up
-            question.answer.should.match([{response: "good times", is_other: false }]);
+            question.answer.should.match([{response: 777, is_other: false }]);
 
             done();
     });

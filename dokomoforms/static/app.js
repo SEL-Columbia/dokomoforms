@@ -420,17 +420,17 @@ Widgets._input = function(question, page, type) {
     // Clean up answer array, short circuits on is_other responses
     question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
     $(page).find('input').each(function(i, child) { 
-        if ((child.className.indexOf('other_input') > - 1) && child.value) {
+        if ((child.className.indexOf('other_input') > - 1) && child.value !== "") {
             // if don't know input field has a response, break 
             question.answer = [{
-                response: self._validate(type, child.value),
+                response: self._validate('text', child.value),
                 is_other: true
             }];
 
             return false;
         }
 
-        if ((child.className.indexOf('other_input') === -1)) {
+        if ((child.className.indexOf('other_input') === -1) && child.value !== "") {
             // Ignore other responses if they don't short circut the loop above
             question.answer[i] = {
                 response: self._validate(type, child.value),
@@ -537,8 +537,7 @@ Widgets._renderOther = function(page, question, input) {
 // Toggle the 'don't know' section based on passed in state value on given page
 // Alters question.answer array
 Widgets._toggleOther = function(page, question, state) {
-    //XXX PRESS btn down or remove class: $('.question__btn__other').addClass
-    //XXX Answer array is a load or a clear here:
+    var self = this;
     question.answer = [];
     
     if (state == ON) {
@@ -550,9 +549,11 @@ Widgets._toggleOther = function(page, question, state) {
         $(page).find('.question__other').show();
         
         $(page).find('.other_input').each(function(i, child) { 
-            question.answer[0] = {
-                response: child.value,
-                is_other: true
+            if (child.value !== "") {
+                question.answer[0] = {
+                    response: self._validate('text', child.value),
+                    is_other: true
+                }
             }
         });
 
@@ -569,9 +570,11 @@ Widgets._toggleOther = function(page, question, state) {
         $(page).find('.question__other').hide();
         
         $(page).find('.text_input').not('.other_input').each(function(i, child) { 
-            question.answer[i] = {
-                response: child.value,
-                is_other: false
+            if (child.value !== "") { 
+                question.answer[i] = {
+                    response: self._validate(question.type_constraint_name, child.value),
+                    is_other: false
+                }
             }
         });
         
