@@ -14,6 +14,7 @@ Image = window.Image;
 navigator = window.navigator;
 localStorage = {};
 setTimeout = function(cb, time) { cb(); };
+btoa = function(str) { return ''; }; // w.e we don't need to post anyway
 
 var mah_code = require('../dokomoforms/static/app.js');
 var App = mah_code.App;
@@ -571,7 +572,7 @@ describe('Survey unit and regression tests', function(done) {
             };
 
 
-            var url = "http://localhost:3000/api/v0/facilities.json" // install revisit server from git
+            var url = "http://staging.revisit.global/api/v0/facilities.json" // install revisit server from git
             $.mockjax({
                   url: url,
                   status: 200,
@@ -584,6 +585,7 @@ describe('Survey unit and regression tests', function(done) {
                   },
                   onAfterError: function() { 
                       assert(false, "Failed to catch revisit correctly"); 
+                      done();
                   },
                   responseText: {
                       status: "success",

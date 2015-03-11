@@ -41,7 +41,7 @@ class VisualizationHandler(BaseHandler):
                 bar_data = data['result']
             except NoSubmissionsToQuestionError:
                 pass
-        if question.type_constraint_name == 'location':
+        if question.type_constraint_name in {'location', 'facility'}:
             map_data = list(self._get_map_data(answers))
         self.render('visualization.html', time_data=time_data,
                     bar_data=bar_data,
