@@ -555,6 +555,9 @@ Widgets._toggleOther = function(page, question, state) {
             }
         });
 
+
+        $('.question__btn__other')[0].classList.add('question__btn__active');
+
     } else if (state === OFF) { 
     
         // Or hide other
@@ -570,6 +573,8 @@ Widgets._toggleOther = function(page, question, state) {
                 is_other: false
             }
         });
+        
+        $('.question__btn__other')[0].classList.remove('question__btn__active');
     }
 }
 

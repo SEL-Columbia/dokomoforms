@@ -424,7 +424,7 @@ ul {
 }
 
 .question__btn__active {
-    box-shadow: 1px 1px 1px #888888; 
+    box-shadow: 1px 1px 1px #999999; 
     background: rgba(250, 203, 27, 0.5);
 }
 
@@ -463,7 +463,7 @@ ul {
     display: block;
     text-align: center;
     margin: 0px auto;
-    padding: 25px 0px 10px 0px;
+    padding: 25px 0px 25px 0px;
 }
 
 .question__other {
