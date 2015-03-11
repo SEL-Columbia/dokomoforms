@@ -8,7 +8,7 @@ from sqlalchemy.sql import Insert
 from dokomoforms.api import execute_with_exceptions, json_response
 from dokomoforms.db import delete_record, submission_table
 from dokomoforms.db.answer import answer_insert, get_answers, get_geo_json, \
-    CannotAnswerMultipleTimesError
+    CannotAnswerMultipleTimesError, _get_is_other
 from dokomoforms.db.answer_choice import get_answer_choices, \
     answer_choice_insert
 from dokomoforms.db.question import question_select, get_required
@@ -172,20 +172,6 @@ def _jsonify(connection: Connection,
         return float(answer['answer_' + type_constraint_name])
     else:
         return answer['answer_' + type_constraint_name]
-
-
-def _get_is_other(answer: RowProxy) -> bool:
-    """
-    Return whether this answer object contains an "other" answer (text for a
-    non-text question).
-
-    :param answer: a record in the answer or answer_choice table
-    :return: whether this is an "other" answer
-    """
-    try:
-        return answer.is_other
-    except AttributeError:
-        return False
 
 
 def _get_fields(connection: Connection, answer: RowProxy) -> dict:

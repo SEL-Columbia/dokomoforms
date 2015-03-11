@@ -6,7 +6,8 @@ from sqlalchemy.engine import RowProxy, Connection
 
 from dokomoforms.api import execute_with_exceptions, json_response
 from dokomoforms.db import delete_record, update_record, survey_table
-from dokomoforms.db.answer import get_answers_for_question, answer_insert
+from dokomoforms.db.answer import get_answers_for_question, answer_insert, \
+    _get_is_other
 from dokomoforms.db.answer_choice import get_answer_choices_for_choice_id, \
     answer_choice_insert
 from dokomoforms.db.auth_user import get_auth_user_by_email
@@ -183,13 +184,12 @@ def _create_questions(connection: Connection,
                 answer_values = question_fields.copy()
                 new_submission_id = submission_map[answer.submission_id]
 
-                if answer.answer_text is None:
-                    answer_values['answer'] = answer['answer_' + new_tcn]
-                    answer_values['is_other'] = False
-                else:
+                is_other = _get_is_other(answer)
+                answer_values['is_other'] = is_other
+                if is_other:
                     answer_values['answer'] = answer.answer_text
-                    is_other = False if new_tcn == 'text' else True
-                    answer_values['is_other'] = is_other
+                else:
+                    answer_values['answer'] = answer['answer_' + new_tcn]
                 with_other = values['logic']['with_other']
 
                 if new_tcn == 'multiple_choice' and not with_other:

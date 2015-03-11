@@ -32,6 +32,21 @@ def _sanitize_answer(answer, type_constraint_name: str) -> str:
     return answer
 
 
+# TODO: Create an abstraction over answer and answer_choice
+def _get_is_other(answer: RowProxy) -> bool:
+    """
+    Return whether this answer object contains an "other" answer (text for a
+    non-text question).
+
+    :param answer: a record in the answer or answer_choice table
+    :return: whether this is an "other" answer
+    """
+    try:
+        return answer.is_other
+    except AttributeError:
+        return False
+
+
 def answer_insert(*,
                   answer,
                   question_id: str,
