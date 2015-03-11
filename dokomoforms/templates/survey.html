@@ -252,7 +252,7 @@
     <script id="template_other" type="text/html">
         <div class="question__btn question__btn__other"><%- question.logic.other_text || "Don't Know" %></div>
         <div class="question__other"
-            <% var ans = question.answer[0];
+            <% var ans = question.answer && question.answer[0];
                var is_other = ans && ans.is_other;
                console.log('temp', ans, is_other);
             %>

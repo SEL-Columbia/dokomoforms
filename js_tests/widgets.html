@@ -16,7 +16,7 @@
         <div class="question__hint"><%- question.hint || "" %></div>
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null) { 
+            if (ans && ans.response !== null && !ans.is_other) { 
                 no_response = false; %>
                 <input class="text_input" type="text" 
                     placeholder="Please provide another response"
@@ -39,7 +39,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null) { 
+            if (ans && ans.response !== null && !ans.is_other) { 
                 no_response = false; %>
                 <input class="text_input" type="number"
                     placeholder="Please provide another number"
@@ -97,7 +97,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null) { 
+            if (ans && ans.response !== null && !ans.is_other) { 
                 no_response = false; %>
                 <input class="text_input" type="date" 
                        placeholder="Please provide another date"
@@ -120,7 +120,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null) { 
+            if (ans && ans.response !== null && !ans.is_other) { 
                 no_response = false; %>
                 <input class="text_input" type="time" 
                     placeholder="Please provide another time"
@@ -144,7 +144,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null) { 
+            if (ans && ans.response !== null && !ans.is_other) { 
                 no_response = false; %>
                 <div class="question__location">
                     <input class="text_input question__lat" type="text" 
@@ -221,7 +221,7 @@
             <% } %>
         </select>
 
-        <input class="text_input" type="text"
+        <input class="text_input other_input" type="text"
                 value="<%- question.answer[question.choices.length] && question.answer[question.choices.length].response %>"
         >
     </script>
@@ -232,11 +232,7 @@
     </script>
 
     <script id="template_repeat" type="text/html">
-        <div class="question__repeat"
-            <% if (!question.allow_multiple) { %> 
-                style="display:none" 
-            <% }%>
-        >
+        <div class="question__repeat">
             <svg class="icon question__add">
                 <use xlink:href="#icon-add"></use>
             </svg>
@@ -244,7 +240,24 @@
             <svg class="icon question__minus" >
                 <use xlink:href="#icon-minus"></use>
             </svg>
+        </div>
+    </script>
 
+    <script id="template_other" type="text/html">
+        <div class="question__btn question__btn__other"><%- question.logic.other_text || "Don't Know" %></div>
+        <div class="question__other"
+            <% var ans = question.answer && question.answer[0];
+               var is_other = ans && ans.is_other;
+            %>
+                style="display: none;"
+        >
+            <div class="question__hint">Please provide a reason.</div>
+                <input class="text_input other_input" type="text" 
+                    placeholder="Response is required."
+                    <% if (is_other) { %>
+                        value="<%- ans.response %>"
+                    <% } %>
+                >
         </div>
     </script>
 
@@ -262,7 +275,6 @@
         </div>
         <div class="question__btn">Submit</div>
     </script>
-
     </body>
 </html>
 
