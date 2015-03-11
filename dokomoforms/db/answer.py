@@ -64,18 +64,21 @@ def answer_insert(*,
     tcn = type_constraint_name
 
     values = {'question_id': question_id,
+              'is_other': is_other,
               'submission_id': submission_id,
               'type_constraint_name': tcn,
               'sequence_number': sequence_number,
               'allow_multiple': allow_multiple,
               'survey_id': survey_id}
 
-    if type_constraint_name == 'facility':
-        values['answer_text'] = answer['id']
-        values['answer_location'] = _sanitize_answer(answer, 'location')
+    if is_other:
+        values['answer_text'] = answer
     else:
-        answer_type = 'answer_text' if is_other else 'answer_' + tcn
-        values[answer_type] = _sanitize_answer(answer, tcn)
+        if type_constraint_name == 'facility':
+            values['answer_text'] = answer['id']
+            values['answer_location'] = _sanitize_answer(answer, 'location')
+        else:
+            values['answer_' + tcn] = _sanitize_answer(answer, tcn)
 
     return answer_table.insert().values(values)
 

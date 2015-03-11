@@ -1449,7 +1449,38 @@ class TestAggregation(unittest.TestCase):
                                      'test_email').auth_user_id),
             {'result': [[2, 2]], 'query': 'mode'})
 
-    def testModeBadeType(self):
+    def testModeFacility(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first(
+
+        ).survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'facility')
+        q_where = question_table.select().where(and_cond)
+        question = connection.execute(q_where).first()
+        q_id = question.question_id
+
+        for i in (1, 2, 2, 2, 3, 3):
+            input_data = {'survey_id': survey_id,
+                          'submitter': 'test_submitter',
+                          'answers':
+                              [{'question_id': q_id,
+                                'answer': {'id': 'woah', 'lon': i, 'lat': i},
+                                'is_other': False}]}
+            submission_api.submit(connection, input_data)
+
+        self.assertEqual(
+            aggregation_api.mode(connection, q_id, email='test_email'),
+            {'result': [[2, 2]], 'query': 'mode'})
+
+        self.assertEqual(
+            aggregation_api.mode(connection, q_id,
+                                 auth_user_id=get_auth_user_by_email(
+                                     connection,
+                                     'test_email').auth_user_id),
+            {'result': [[2, 2]], 'query': 'mode'})
+
+    def testModeBadType(self):
         q_where = question_table.select().where(
             question_table.c.type_constraint_name == 'note')
         question = connection.execute(q_where).first()
