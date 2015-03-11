@@ -281,6 +281,9 @@ answer_table = Table(
     Column('answer_date', Date),
     Column('answer_time', Time(timezone=True)),
     Column('answer_location', Geometry),
+    Column('is_other', Boolean,
+           nullable=False,
+           server_default='FALSE'),
     Column('question_id', postgresql.UUID, nullable=False),
     Column('type_constraint_name', String,
            CheckConstraint("type_constraint_name != 'note'",
@@ -309,33 +312,34 @@ answer_table = Table(
     ),
     CheckConstraint(
         '''
-        (CASE WHEN type_constraint_name in ('text', 'multiple_choice')
-                                        AND   answer_text     IS NOT NULL
-          THEN 1 ELSE 0 END) +
-        (CASE WHEN type_constraint_name =   'integer'
-                                        AND ((answer_integer  IS NULL) !=
-                                             (answer_text     IS NULL))
-          THEN 1 ELSE 0 END) +
-        (CASE WHEN type_constraint_name =   'decimal'
-                                        AND ((answer_decimal  IS NULL) !=
-                                             (answer_text     IS NULL))
-          THEN 1 ELSE 0 END) +
-        (CASE WHEN type_constraint_name =   'date'
-                                        AND ((answer_date     IS NULL) !=
-                                             (answer_text     IS NULL))
-          THEN 1 ELSE 0 END) +
-        (CASE WHEN type_constraint_name =   'time'
-                                        AND ((answer_time     IS NULL) !=
-                                             (answer_text     IS NULL))
-          THEN 1 ELSE 0 END) +
-        (CASE WHEN type_constraint_name =   'location'
-                                        AND ((answer_location IS NULL) !=
-                                             (answer_text     IS NULL))
-          THEN 1 ELSE 0 END) +
-        (CASE WHEN type_constraint_name =   'facility'
-                                        AND answer_location IS NOT NULL
-                                        AND answer_text     IS NOT NULL
-          THEN 1 ELSE 0 END)
+        (CASE WHEN is_other AND answer_text IS NOT NULL THEN 1 ELSE 0 END)
+        +
+        (CASE WHEN (
+          NOT is_other AND
+            (CASE WHEN type_constraint_name =   'text'
+                                           AND   answer_text     IS NOT NULL
+             THEN 1 ELSE 0 END) +
+            (CASE WHEN type_constraint_name =   'integer'
+                                           AND   answer_integer  IS NOT NULL
+             THEN 1 ELSE 0 END) +
+            (CASE WHEN type_constraint_name =   'decimal'
+                                           AND   answer_decimal  IS NOT NULL
+             THEN 1 ELSE 0 END) +
+            (CASE WHEN type_constraint_name =   'date'
+                                           AND   answer_date     IS NOT NULL
+             THEN 1 ELSE 0 END) +
+            (CASE WHEN type_constraint_name =   'time'
+                                           AND   answer_time     IS NOT NULL
+             THEN 1 ELSE 0 END) +
+            (CASE WHEN type_constraint_name =   'location'
+                                           AND   answer_location IS NOT NULL
+             THEN 1 ELSE 0 END) +
+            (CASE WHEN type_constraint_name =   'facility'
+                                           AND answer_location IS NOT NULL
+                                           AND answer_text     IS NOT NULL
+             THEN 1 ELSE 0 END)
+          = 1
+        ) THEN 1 ELSE 0 END)
         = 1
         '''
     )

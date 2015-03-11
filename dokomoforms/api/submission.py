@@ -8,7 +8,7 @@ from sqlalchemy.sql import Insert
 from dokomoforms.api import execute_with_exceptions, json_response
 from dokomoforms.db import delete_record, submission_table
 from dokomoforms.db.answer import answer_insert, get_answers, get_geo_json, \
-    CannotAnswerMultipleTimesError
+    CannotAnswerMultipleTimesError, _get_is_other
 from dokomoforms.db.answer_choice import get_answer_choices, \
     answer_choice_insert
 from dokomoforms.db.question import question_select, get_required
@@ -164,7 +164,7 @@ def _jsonify(connection: Connection,
     :param type_constraint_name: the type constraint name
     :return: the nice representation
     """
-    if type_constraint_name == 'location':
+    if type_constraint_name in {'location', 'facility'}:
         return get_geo_json(connection, answer)['coordinates']
     elif type_constraint_name in {'date', 'time'}:
         return answer['answer_' + type_constraint_name].isoformat()
@@ -189,7 +189,8 @@ def _get_fields(connection: Connection, answer: RowProxy) -> dict:
     result_dict = {'question_id': question_id,
                    'question_title': question.question_title,
                    'sequence_number': question.sequence_number,
-                   'type_constraint_name': tcn}
+                   'type_constraint_name': tcn,
+                   'is_other': _get_is_other(answer)}
     try:
         # Get the choice for a multiple choice question
         choice_id = answer.question_choice_id
@@ -199,15 +200,11 @@ def _get_fields(connection: Connection, answer: RowProxy) -> dict:
         choice = question_choice_select(connection, choice_id)
         result_dict['choice'] = choice.choice
         result_dict['choice_number'] = choice.choice_number
-        result_dict['is_other'] = False
     except AttributeError:
         # The answer is not a choice
         question = question_select(connection, answer.question_id)
-        if ((answer.answer_text is None) or (tcn == 'text')):
-            result_dict['is_other'] = False
-        else:
+        if answer.is_other:
             tcn = 'text'
-            result_dict['is_other'] = True
         result_dict['answer'] = _jsonify(connection, answer, tcn)
         result_dict['answer_id'] = answer.answer_id
         result_dict['choice'] = None

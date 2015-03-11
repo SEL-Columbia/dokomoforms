@@ -103,8 +103,6 @@ def _table_and_column(type_constraint_name: str) -> tuple:
         column_name = 'question_choice_id'
     else:
         table = answer_table
-        if type_constraint_name == 'facility':
-            type_constraint_name = 'location'
         column_name = 'answer_' + type_constraint_name
     return table, column_name
 
@@ -120,6 +118,8 @@ def _get_type_constraint_name(allowable_types: set, question: RowProxy) -> str:
     tcn = question.type_constraint_name
     if tcn not in allowable_types:
         raise InvalidTypeForAggregationError(tcn)
+    if tcn == 'facility':
+        tcn = 'location'
     return tcn
 
 
@@ -166,18 +166,22 @@ def _scalar(connection: Connection,
 
     question = question_select(connection, question_id)
 
-    tcn = _get_type_constraint_name(allowable_types, question)
-    if is_other:
-        tcn = 'text'
+    conds = [question_table.c.question_id == question_id,
+             survey_table.c.auth_user_id == user_id]
 
-    original_table, column_name = _table_and_column(tcn)
+    if is_other:
+        original_table = answer_table
+        column_name = 'answer_text'
+    else:
+        tcn = _get_type_constraint_name(allowable_types, question)
+        original_table, column_name = _table_and_column(tcn)
+
     table = original_table.join(
         question_table,
         original_table.c.question_id == question_table.c.question_id
     ).join(survey_table)
-
-    conds = [question_table.c.question_id == question_id,
-             survey_table.c.auth_user_id == user_id]
+    if is_other:
+        conds.append(original_table.c.is_other)
 
     column = get_column(original_table, column_name)
 
