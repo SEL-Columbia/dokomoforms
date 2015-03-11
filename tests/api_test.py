@@ -1255,6 +1255,36 @@ class TestAggregation(unittest.TestCase):
             aggregation_api.count(connection, question_id, email='test_email'),
             {'result': 2, 'query': 'count'})
 
+    def testCountFacility(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        cond = and_(question_table.c.survey_id == survey_id,
+                    question_table.c.type_constraint_name == 'facility')
+        q_where = question_table.select().where(cond)
+        question = connection.execute(q_where).first()
+        question_id = question.question_id
+
+        self.assertEqual(
+            aggregation_api.count(connection, question_id, email='test_email'),
+            {'result': 0, 'query': 'count'})
+
+        for i in range(2):
+            input_data = {'survey_id': survey_id,
+                          'submitter': 'test_submitter',
+                          'answers':
+                              [{'question_id': question_id,
+                                'answer': {
+                                    'id': 'bleh{}'.format(i),
+                                    'lat': 0,
+                                    'lon': 0
+                                },
+                                'is_other': True}]}
+            submission_api.submit(connection, input_data)
+
+        self.assertEqual(
+            aggregation_api.count(connection, question_id, email='test_email'),
+            {'result': 2, 'query': 'count'})
+
     def testAvg(self):
         survey_id = connection.execute(survey_table.select().where(
             survey_table.c.survey_title == 'test_title')).first().survey_id
