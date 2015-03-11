@@ -179,7 +179,7 @@ Survey.prototype.getFirstResponse = function(question) {
         if (answer) {
             var val = Widgets._validate(question.type_constraint_name, answer.response);
             if ( val !== null) {
-             return val;
+                return val;
             }
         }
     }
@@ -208,6 +208,12 @@ Survey.prototype.next = function(offset) {
     if (offset === NEXT) {
         if (this.current_question.logic.required && (first_response === null)) {
             App.message('Survey requires this question to be completed.');
+            return;
+        }
+
+        var other_response = this.current_question.answer && this.current_question.answer[0]; // I know its position always
+        if (other_response && other_response.is_other && !other_response.response) {
+            App.message('Please provide a reason before moving on.');
             return;
         }
 
@@ -549,11 +555,10 @@ Widgets._toggleOther = function(page, question, state) {
         $(page).find('.question__other').show();
         
         $(page).find('.other_input').each(function(i, child) { 
-            if (child.value !== "") {
-                question.answer[0] = {
-                    response: self._validate('text', child.value),
-                    is_other: true
-                }
+            // Doesn't matter if response is there or not
+            question.answer[0] = {
+                response: self._validate('text', child.value),
+                is_other: true
             }
         });
 

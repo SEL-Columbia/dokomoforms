@@ -432,17 +432,18 @@ describe('User dont know tests', function(done) {
 
             $('.text_input').not('.other_input').val('1').trigger('change');
             first_question.answer[0].response.should.equal(1);
+            first_question.answer[0].is_other.should.equal(false);
 
             // clicking clears it
             $(".question__btn__other").trigger("click");
-            first_question.answer.length.should.equal(0);
+            should(first_question.answer[0].response).equal(null);
+            first_question.answer[0].is_other.should.equal(true);
 
             // clicking again restores it
             $(".question__btn__other").trigger("click");
-            first_question.answer.length.should.equal(1);
-            
             first_question.answer[0].response.should.equal(1);
-
+            first_question.answer[0].is_other.should.equal(false);
+            
             done();
            
         });

@@ -341,6 +341,44 @@ describe('Survey unit and regression tests', function(done) {
 
         });
     
+    it('next: should enforce required correctly for dont-know',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "date",
+                    logic: {with_other: true},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    logic: {},
+                    sequence_number: 2
+                },
+            ];
+
+            survey = new Survey("id", 0, questions, {});
+            questions[0].should.equal(survey.current_question);
+
+            // state SHOULDNT change
+            questions[0].answer = [{response:"", is_other: true}]; // didn't fill out real response
+            survey.next(NEXT);
+            questions[0].should.equal(survey.current_question);
+            questions[1].should.not.equal(survey.current_question);
+
+            // state should change
+            questions[0].answer = [];
+            survey.next(NEXT);
+            questions[0].should.not.equal(survey.current_question);
+            questions[1].should.equal(survey.current_question);
+            
+            done();
+
+        });
+    
     it('next: should follow sequence number ordering not list ordering',
         function(done) {
             var NEXT = 1;
