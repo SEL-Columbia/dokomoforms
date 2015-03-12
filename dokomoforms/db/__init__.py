@@ -281,6 +281,8 @@ answer_table = Table(
     Column('answer_date', Date),
     Column('answer_time', Time(timezone=True)),
     Column('answer_location', Geometry),
+    Column('answer_metadata', postgresql.json.JSON,
+           nullable=False, server_default='{}'),
     Column('is_other', Boolean,
            nullable=False,
            server_default='FALSE'),

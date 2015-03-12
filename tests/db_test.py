@@ -66,6 +66,7 @@ class TestAnswer(unittest.TestCase):
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = connection.execute(answer_insert(
             answer=1, question_id=question_id,
+            answer_metadata={},
             submission_id=submission_id,
             survey_id=survey_id,
             type_constraint_name=tcn,
@@ -90,6 +91,7 @@ class TestAnswer(unittest.TestCase):
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = connection.execute(answer_insert(
             answer={'lon': 90, 'lat': 0},
+            answer_metadata={},
             question_id=question_id,
             submission_id=submission_id,
             survey_id=survey_id,
@@ -110,6 +112,7 @@ class TestAnswer(unittest.TestCase):
         submission_2_id = submission_2_exec.inserted_primary_key[0]
         answer_2_exec = connection.execute(answer_insert(
             answer=None, question_id=question_id,
+            answer_metadata={},
             submission_id=submission_2_id,
             survey_id=survey_id,
             type_constraint_name=tcn,
@@ -139,6 +142,7 @@ class TestAnswer(unittest.TestCase):
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = connection.execute(answer_insert(
             answer={'id': 'revisit ID', 'lon': 90, 'lat': 0},
+            answer_metadata={'name': 'cool facility', 'type': 'health'},
             question_id=question_id,
             submission_id=submission_id,
             survey_id=survey_id,
@@ -171,6 +175,7 @@ class TestAnswer(unittest.TestCase):
                               survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         connection.execute(answer_insert(answer=1, question_id=question_id,
+                                         answer_metadata={},
                                          submission_id=submission_id,
                                          survey_id=survey_id,
                                          type_constraint_name=tcn,
@@ -194,6 +199,7 @@ class TestAnswer(unittest.TestCase):
                               survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         connection.execute(answer_insert(answer=1, question_id=question_id,
+                                         answer_metadata={},
                                          submission_id=submission_id,
                                          survey_id=survey_id,
                                          type_constraint_name=tcn,
@@ -625,6 +631,7 @@ class TestSubmission(unittest.TestCase):
             submission_id = submission_exec.inserted_primary_key[0]
             connection.execute(answer_insert(
                 answer=i, question_id=question_id, submission_id=submission_id,
+                answer_metadata={},
                 survey_id=survey_id, type_constraint_name=tcn, is_other=False,
                 sequence_number=seq, allow_multiple=mul))
         self.assertEqual(
