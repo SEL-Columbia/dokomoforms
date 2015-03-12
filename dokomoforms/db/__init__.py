@@ -55,7 +55,7 @@ survey_table = Table(
                       onupdate='CASCADE',
                       ondelete='CASCADE'),
            nullable=False),
-    Column('metadata', postgresql.json.JSON,
+    Column('survey_metadata', postgresql.json.JSON,
            nullable=False, server_default='{}'),
     Column('created_on', DateTime(timezone=True),
            nullable=False,

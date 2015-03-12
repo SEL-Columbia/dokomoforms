@@ -398,7 +398,7 @@ def _to_json(connection: Connection, survey: RowProxy) -> dict:
     return {'survey_id': survey.survey_id,
             'survey_title': survey.survey_title,
             'survey_version': survey.survey_version,
-            'metadata': survey.metadata,
+            'survey_metadata': survey.survey_metadata,
             'questions': q_fields,
             'created_on': survey.created_on.isoformat()}
 

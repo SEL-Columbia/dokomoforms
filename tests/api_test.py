@@ -340,7 +340,7 @@ class TestSurvey(unittest.TestCase):
             'result']
         self.assertIsNotNone(data['survey_id'])
         self.assertIsNotNone(data['questions'])
-        self.assertIsNotNone(data['metadata'])
+        self.assertIsNotNone(data['survey_metadata'])
 
     def testDisplaySurvey(self):
         survey_id = connection.execute(survey_table.select().where(
