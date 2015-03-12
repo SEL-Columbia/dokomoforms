@@ -6,7 +6,11 @@ module.exports = (function(url) {
         {
             url: url || "http://localhost" //XXX Cross domain error otherwise
         });
+
     window = document.parentWindow;
+    window.applicationCache = { 
+        addEventListener : function() {}
+    };
 
     script = document.createElement('script');
     script.text = fs.readFileSync("dokomoforms/static/lib.js", "utf-8");
@@ -25,6 +29,7 @@ module.exports = (function(url) {
     document.body.appendChild(script);
 
     //jsdom.getVirtualConsole(window).sendTo(console);
+
 
     return window;
 

@@ -32,8 +32,9 @@ App.init = function(survey) {
         JSON.parse(localStorage.unsynced_facilities || "{}");
 
     // Manual sync    
-    $('.nav__sync')
-        .click(function() {
+    $('.sel')
+        .click(function(e) {
+            e.preventDefault();
             self.sync();
         });
         
@@ -52,7 +53,6 @@ App.sync = function() {
         _.each(App.unsynced, function(survey) {
             survey.submit();
         });
-        App.unsynced = []; //XXX: Surveys can fail again, better to pop unsuccess;
     }
 };
 
@@ -289,7 +289,7 @@ Survey.prototype.render = function(question) {
 Survey.prototype.submit = function() {
     var self = this;
     var sync = $('.nav__sync')[0];
-    var save_btn = $('.question__saving')[0];
+    var save_btn = $('.question__saving')[0]; //TODO sync not guranteed to happen on submit page
     var answers = {};
 
     function getCookie(name) {
@@ -343,16 +343,21 @@ Survey.prototype.submit = function() {
     };
 
     //console.log('submission:', data);
-
+    if (save_btn) {
+        save_btn.classList.add('icon--spin');
+    }
     sync.classList.add('icon--spin');
-    save_btn.classList.add('icon--spin');
     
     // Don't post with no replies
     if (JSON.stringify(survey_answers) === '[]') {
       // Not doing instantly to make it seem like App tried reaaall hard
       setTimeout(function() {
         sync.classList.remove('icon--spin');
-        save_btn.classList.remove('icon--spin');
+
+        if (save_btn) { 
+            save_btn.classList.remove('icon--spin');
+        }
+
         App.message('Submission failed, No questions answer in Survey!');
         self.render(self.questions[0]);
       }, 1000);
@@ -371,6 +376,11 @@ Survey.prototype.submit = function() {
         dataType: 'json',
         success: function() {
             App.message('Survey submitted!');
+            // Clear unsynced on success
+            var idx = App.unsynced.indexOf(self);
+            if (idx > -1) {
+                delete App.unsynced[idx];
+            }
         },
         error: function() {
             App.message('Submission failed, will try again later.');
@@ -378,7 +388,9 @@ Survey.prototype.submit = function() {
         },
         complete: function() {
             setTimeout(function() {
-                save_btn.classList.remove('icon--spin');
+                if (save_btn) {
+                    save_btn.classList.remove('icon--spin');
+                }
                 sync.classList.remove('icon--spin');
                 self.render(self.questions[0]);
             }, 1000);

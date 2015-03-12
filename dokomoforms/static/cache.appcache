@@ -1,19 +1,29 @@
 CACHE MANIFEST
-# Version 0.001234
+# Version 0.0012345678
 
 /static/persona.js
 /static/lib.js
 /static/app.js
 
-/static/css
 /static/css/style.css
 
-/static/img
 /static/img/favicon.png
 /static/img/icons
 /static/img/logo.svg
 /static/img/SEL_logo_sm.png
 /static/img/SEL_text_logo_sm.png
 
+/static/img/icons/added-point.png
+/static/img/icons/normal_base.png
+/static/img/icons/normal_education.png
+/static/img/icons/normal_health.png
+/static/img/icons/normal_water.png
+/static/img/icons/selected-point.png
+/static/img/icons/unsynced_base.png
+/static/img/icons/unsynced_education.png
+/static/img/icons/unsynced_health.png
+/static/img/icons/unsynced_water.png
+
 NETWORK:
 *
+
