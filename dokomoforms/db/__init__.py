@@ -350,7 +350,7 @@ answer_table = Table(
         type_constraint_name != 'facility'
         OR
         (((answer_metadata->>'facility_name'))          IS NOT NULL AND
-         ((answer_metadata->>'facility_type')) IS NOT NULL)
+         ((answer_metadata->>'facility_sector')) IS NOT NULL)
         ''',
         name='facility_requires_metadata'
     )

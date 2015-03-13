@@ -170,7 +170,7 @@ class TestAnswer(unittest.TestCase):
         answer_exec = connection.execute(answer_insert(
             answer={'id': 'revisit ID', 'lon': 90, 'lat': 0},
             answer_metadata={'facility_name': 'cool facility',
-                             'facility_type': 'health'},
+                             'facility_sector': 'health'},
             question_id=question_id,
             submission_id=submission_id,
             survey_id=survey_id,

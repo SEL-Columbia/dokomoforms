@@ -1312,7 +1312,7 @@ class TestAggregation(unittest.TestCase):
                                 },
                                 'answer_metadata': {
                                     'facility_name': 'bleh_name',
-                                    'facility_type': 'bleh type'},
+                                    'facility_sector': 'bleh type'},
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -1509,7 +1509,7 @@ class TestAggregation(unittest.TestCase):
                                 'answer': {'id': 'woah', 'lon': i, 'lat': i},
                                 'answer_metadata': {
                                     'facility_name': 'name',
-                                    'facility_type': 'type'},
+                                    'facility_sector': 'type'},
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 

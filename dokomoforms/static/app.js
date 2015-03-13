@@ -878,7 +878,11 @@ Widgets.facility = function(question, page) {
                 'lon': marker._latlng.lng, 
                 'lat': marker._latlng.lat
             },
-            is_other: false
+            is_other: false,
+            metadata: {
+                'facility_name': marker.name,
+                'facility_sector': marker.sector
+            } 
         }
         $(page).find('.facility__name').val(marker.name);
         $(page).find('.facility__type').val(marker.sector);
