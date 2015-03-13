@@ -311,6 +311,7 @@ Survey.prototype.submit = function() {
         q.answer.forEach(function(ans, ind) {
             var response =  ans.response;
             var is_other = ans.is_other || false;
+            var metadata = ans.metadata || null;
 
             if (!response && response !== 0) { 
                 return;
@@ -319,6 +320,7 @@ Survey.prototype.submit = function() {
             survey_answers.push({
                 question_id: q.question_id,
                 answer: response,
+                answer_metadata: metadata,
                 is_other: is_other
             });
         });
