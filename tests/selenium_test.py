@@ -8,7 +8,9 @@ import unittest
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -252,13 +254,15 @@ class TypeTest(DriverTest):
         connection.execute(survey_table.delete().where(
             survey_table.c.survey_title.like('test_question_type_%')))
 
-    def _create_survey(self, type_constraint_name, choices=None):
+    def _create_survey(self, type_constraint_name,
+                       allow_multiple=False,
+                       choices=None):
         tcn = type_constraint_name
         survey_json = {'email': 'test_email',
                        'survey_title': 'test_question_type_' + tcn,
                        'questions': [{'question_title': tcn,
                                       'type_constraint_name': tcn,
-                                      'allow_multiple': False,
+                                      'allow_multiple': allow_multiple,
                                       'question_to_sequence_number': -1,
                                       'logic': {'required': False,
                                                 'with_other': False},
@@ -457,6 +461,71 @@ class MultipleChoiceTest(TypeTest):
 
         # Log in
         self.drv.get(base + '/debug/login/test_email')
+
+        # Get the visualization page
+        self.drv.get(base + '/visualize/' + question_id)
+
+        # Test it
+        self.assertRaises(NoSuchElementException,
+                          self.drv.find_element_by_id,
+                          'line_graph')
+
+        bar_graph = self.drv.find_element_by_id('bar_graph')
+        self.assertTrue(bar_graph.is_displayed())
+
+
+class MultiSelectTest(TypeTest):
+    @report_success_status
+    def testVisualization(self):
+        # Create the survey
+        survey_id, question_id = self._create_survey(
+            'multiple_choice',
+            allow_multiple=True,
+            choices=['choice 1', 'choice 2'])
+
+        # Get the survey
+        self.drv.get(base + '/survey/' + survey_id)
+
+        # Fill it out
+        choices = self.drv.find_elements_by_tag_name('option')
+        ActionChains(
+            self.drv
+        ).key_down(
+            Keys.CONTROL
+        ).click(
+            choices[1]
+        ).click(
+            choices[2]
+        ).key_up(
+            Keys.CONTROL
+        ).perform()
+        self.drv.find_element_by_class_name('page_nav__next').click()
+
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located(
+                (By.CLASS_NAME, 'question__btn')
+            )
+        )
+        self.drv.find_element_by_class_name('question__btn').click()
+
+        # Log in
+        self.drv.get(base + '/debug/login/test_email')
+
+        # Get the submission page
+        self.drv.get(base + '/view/' + survey_id)
+        submission_link = self.drv.find_element_by_xpath(
+            '/html/body/div[2]/div/div/ul[2]/li/a')
+        self.drv.execute_script(
+            'window.scrollTo(0, {});'.format(submission_link.location['y']))
+        submission_link.click()
+
+        # Test it
+        self.assertEqual(
+            len(self.drv.find_elements_by_xpath(
+                '/html/body/div[2]/div/div/ul/li'
+            )),
+            2
+        )
 
         # Get the visualization page
         self.drv.get(base + '/visualize/' + question_id)
