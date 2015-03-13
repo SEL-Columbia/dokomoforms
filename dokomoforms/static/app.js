@@ -12,8 +12,8 @@ var App = {
 
 App.init = function(survey) {
     var self = this;
-    self.survey = new Survey(survey.survey_id, survey.survey_version, survey.questions, survey.metadata);
-    self.start_loc = survey.metadata.location || self.start_loc;
+    self.survey = new Survey(survey.survey_id, survey.survey_version, survey.questions, survey.survey_metadata);
+    self.start_loc = survey.survey_metadata.location || self.start_loc;
     self.facilities = JSON.parse(localStorage.facilities || "[]");
     self.submitter_name = localStorage.name;
 
@@ -311,6 +311,7 @@ Survey.prototype.submit = function() {
         q.answer.forEach(function(ans, ind) {
             var response =  ans.response;
             var is_other = ans.is_other || false;
+            var metadata = ans.metadata || null;
 
             if (!response && response !== 0) { 
                 return;
@@ -319,6 +320,7 @@ Survey.prototype.submit = function() {
             survey_answers.push({
                 question_id: q.question_id,
                 answer: response,
+                answer_metadata: metadata,
                 is_other: is_other
             });
         });
@@ -876,7 +878,11 @@ Widgets.facility = function(question, page) {
                 'lon': marker._latlng.lng, 
                 'lat': marker._latlng.lat
             },
-            is_other: false
+            is_other: false,
+            metadata: {
+                'facility_name': marker.name,
+                'facility_sector': marker.sector
+            } 
         }
         $(page).find('.facility__name').val(marker.name);
         $(page).find('.facility__type').val(marker.sector);

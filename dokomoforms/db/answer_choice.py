@@ -9,6 +9,7 @@ from dokomoforms.db import answer_choice_table
 def answer_choice_insert(*,
                          is_other: bool=None,
                          question_choice_id: str,
+                         answer_choice_metadata: dict,
                          question_id: str,
                          submission_id: str,
                          type_constraint_name: str,
@@ -23,6 +24,7 @@ def answer_choice_insert(*,
     :param is_other: may be passed in for convenience, but is unused
     :param question_choice_id: The answer value. References the
                                question_choice table.
+    :param answer_choice_metadata: metadata associated with the answer
     :param question_id: The UUID of the question.
     :param submission_id: The UUID of the submission.
     :param type_constraint_name: the type constraint
@@ -31,7 +33,10 @@ def answer_choice_insert(*,
     :param survey_id: The UUID of the survey.
     :return: The Insert object. Execute this!
     """
+    if answer_choice_metadata is None:
+        answer_choice_metadata = {}
     values = {'question_choice_id': question_choice_id,
+              'answer_choice_metadata': answer_choice_metadata,
               'question_id': question_id,
               'submission_id': submission_id,
               'type_constraint_name': type_constraint_name,

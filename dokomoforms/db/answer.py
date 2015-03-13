@@ -49,6 +49,7 @@ def _get_is_other(answer: RowProxy) -> bool:
 
 def answer_insert(*,
                   answer,
+                  answer_metadata: dict,
                   question_id: str,
                   submission_id: str,
                   type_constraint_name: str,
@@ -67,6 +68,7 @@ def answer_insert(*,
                    date,
                    time,
                    location (given as [LON, LAT])
+    :param answer_metadata: metadata associated with the answer
     :param question_id: The UUID of the question.
     :param submission_id: The UUID of the submission.
     :param type_constraint_name: the type constraint
@@ -77,8 +79,11 @@ def answer_insert(*,
     :return: The Insert object. Execute this!
     """
     tcn = type_constraint_name
+    if answer_metadata is None:
+        answer_metadata = {}
 
     values = {'question_id': question_id,
+              'answer_metadata': answer_metadata,
               'is_other': is_other,
               'submission_id': submission_id,
               'type_constraint_name': tcn,

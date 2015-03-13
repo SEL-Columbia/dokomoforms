@@ -89,18 +89,23 @@ def _create_submission() -> dict:
                   'answers':
                       [{'question_id': question_id,
                         'answer': 1,
+                        'answer_metadata': None,
                         'is_other': False},
                        {'question_id': second_q_id,
                         'answer': choice_id,
+                        'answer_metadata': None,
                         'is_other': False},
                        {'question_id': third_q_id,
                         'answer': 'answer one',
+                        'answer_metadata': None,
                         'is_other': False},
                        {'question_id': third_q_id,
                         'answer': 'answer two',
+                        'answer_metadata': None,
                         'is_other': False},
                        {'question_id': fourth_q_id,
                         'answer': 3.5,
+                        'answer_metadata': None,
                         'is_other': False}]}
     return submission_api.submit(connection, input_data)['result']
 
@@ -251,18 +256,23 @@ class APITest(AsyncHTTPTestCase):
                       'answers':
                           [{'question_id': question_id,
                             'answer': 1,
+                            'answer_metadata': None,
                             'is_other': False},
                            {'question_id': second_q_id,
                             'answer': choice_id,
+                            'answer_metadata': None,
                             'is_other': False},
                            {'question_id': third_q_id,
                             'answer': 'answer one',
+                            'answer_metadata': None,
                             'is_other': False},
                            {'question_id': third_q_id,
                             'answer': 'answer two',
+                            'answer_metadata': None,
                             'is_other': False},
                            {'question_id': fourth_q_id,
                             'answer': 3.5,
+                            'answer_metadata': None,
                             'is_other': False}]}
 
         token_result = user_api.generate_token(connection,
@@ -302,11 +312,13 @@ class APITest(AsyncHTTPTestCase):
                  'answers': [
                      {'question_id': question_id,
                       'answer': 1,
+                      'answer_metadata': None,
                       'is_other': False}]},
                 {'submitter': 'me',
                  'answers': [
                      {'question_id': second_q_id,
                       'answer': choice_id,
+                      'answer_metadata': None,
                       'is_other': False}]},
             ]}
 
@@ -381,6 +393,7 @@ class APITest(AsyncHTTPTestCase):
         question_id = gqnc(connection, wrong_id).first().question_id
         answers = [{'question_id': question_id,
                     'answer': 1,
+                    'answer_metadata': None,
                     'is_other': False}]
         answer_json = {
             'survey_id': survey_id,
@@ -466,6 +479,7 @@ class APITest(AsyncHTTPTestCase):
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
+                                'answer_metadata': None,
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -510,6 +524,7 @@ class APITest(AsyncHTTPTestCase):
                           'answers':
                               [{'question_id': question_id,
                                 'answer': str(i),
+                                'answer_metadata': None,
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -549,6 +564,7 @@ class APITest(AsyncHTTPTestCase):
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
+                                'answer_metadata': None,
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -577,6 +593,7 @@ class APITest(AsyncHTTPTestCase):
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
+                                'answer_metadata': None,
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -609,6 +626,7 @@ class APITest(AsyncHTTPTestCase):
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
+                                'answer_metadata': None,
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -637,6 +655,7 @@ class APITest(AsyncHTTPTestCase):
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
+                                'answer_metadata': None,
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -666,6 +685,7 @@ class APITest(AsyncHTTPTestCase):
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
+                                'answer_metadata': None,
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -695,6 +715,7 @@ class APITest(AsyncHTTPTestCase):
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
+                                'answer_metadata': None,
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -723,6 +744,7 @@ class APITest(AsyncHTTPTestCase):
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
+                                'answer_metadata': None,
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -751,6 +773,7 @@ class APITest(AsyncHTTPTestCase):
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
+                                'answer_metadata': None,
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -779,6 +802,7 @@ class APITest(AsyncHTTPTestCase):
                       'answers':
                           [{'question_id': q_id,
                             'answer': {'lon': 90, 'lat': 0},
+                            'answer_metadata': None,
                             'is_other': False}]}
         submission_api.submit(connection, input_data)
 
@@ -808,6 +832,7 @@ class APITest(AsyncHTTPTestCase):
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
+                                'answer_metadata': None,
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -839,6 +864,7 @@ class APITest(AsyncHTTPTestCase):
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
+                                'answer_metadata': None,
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -1025,13 +1051,19 @@ class SurveyTest(AsyncHTTPTestCase):
     def testPost(self):
         survey_id = connection.execute(survey_table.select().where(
             survey_table.c.survey_title == 'test_title')).first().survey_id
-        answer_json = {'submitter': 'me', 'survey_id': survey_id, 'answers': [
-            {'question_id': get_questions_no_credentials(connection,
-                                                         survey_id).first(
-
-            ).question_id,
-             'answer': 1,
-             'is_other': False}]}
+        answer_json = {
+            'submitter': 'me',
+            'survey_id': survey_id,
+            'answers': [
+                {
+                    'question_id': get_questions_no_credentials(
+                        connection, survey_id).first().question_id,
+                    'answer': 1,
+                    'answer_metadata': None,
+                    'is_other': False
+                }
+            ]
+        }
         response = self.fetch('/survey/{}'.format(survey_id), method='POST',
                               body=json_encode(answer_json))
 
@@ -1072,10 +1104,16 @@ class SurveyTest(AsyncHTTPTestCase):
             survey_table.c.survey_title != 'test_title')).first().survey_id
         answer_json = {
             'survey_id': wrong_id,
-            'answers': [{'question_id': get_questions_no_credentials(
-                connection, survey_id).first().question_id,
-                         'answer': 1,
-                         'is_other': False}]}
+            'answers': [
+                {
+                    'question_id': get_questions_no_credentials(
+                        connection, survey_id).first().question_id,
+                    'answer': 1,
+                    'answer_metadata': None,
+                    'is_other': False
+                }
+            ]
+        }
         response = self.fetch('/survey/{}'.format(survey_id), method='POST',
                               body=json_encode(answer_json))
 
@@ -1091,6 +1129,7 @@ class SurveyTest(AsyncHTTPTestCase):
         question_id = gqnc(connection, wrong_id).first().question_id
         answers = [{'question_id': question_id,
                     'answer': 1,
+                    'answer_metadata': None,
                     'is_other': False}]
         answer_json = {'submitter': 'me',
                        'survey_id': survey_id,
@@ -1165,6 +1204,7 @@ class VisualizationTest(AsyncHTTPTestCase):
                       'answers':
                           [{'question_id': q_id,
                             'answer': 1,
+                            'answer_metadata': None,
                             'is_other': False}]}
         submission_api.submit(connection, input_data)
 
@@ -1222,6 +1262,7 @@ class VisualizationTest(AsyncHTTPTestCase):
                       'answers':
                           [{'question_id': q_id,
                             'answer': {'lon': 0, 'lat': 0},
+                            'answer_metadata': None,
                             'is_other': False}]}
         submission_api.submit(connection, input_data)
 
