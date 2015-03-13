@@ -344,15 +344,6 @@ answer_table = Table(
         ) THEN 1 ELSE 0 END)
         = 1
         '''
-    ),
-    CheckConstraint(
-        '''
-        type_constraint_name != 'facility'
-        OR
-        (((answer_metadata->>'facility_name'))          IS NOT NULL AND
-         ((answer_metadata->>'facility_type')) IS NOT NULL)
-        ''',
-        name='facility_requires_metadata'
     )
 )
 
