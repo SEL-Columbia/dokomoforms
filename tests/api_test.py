@@ -78,7 +78,7 @@ class TestSubmission(unittest.TestCase):
                       'answers':
                           [{'question_id': question_id,
                             'answer': 1,
-                            'answer_metadata': None,
+                            'answer_metadata': {'key': 'value'},
                             'is_other': False},
                            {'question_id': second_q_id,
                             'answer': choice_id,
@@ -105,8 +105,11 @@ class TestSubmission(unittest.TestCase):
                                       email='test_email')['result']
         self.assertEqual(response, data)
         self.assertEqual(data['answers'][0]['answer'], 1)
+        self.assertEqual(data['answers'][0]['answer_metadata']['key'], 'value')
         self.assertEqual(data['answers'][1]['answer'], choice_id)
+        self.assertEqual(data['answers'][1]['answer_choice_metadata'], {})
         self.assertEqual(data['answers'][2]['answer'], 3.5)
+        self.assertEqual(data['answers'][2]['answer_metadata'], {})
         self.assertEqual(data['answers'][3]['answer'], 'answer one')
         self.assertEqual(data['answers'][4]['answer'], 'answer two')
 

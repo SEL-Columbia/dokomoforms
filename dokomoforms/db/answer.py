@@ -79,6 +79,8 @@ def answer_insert(*,
     :return: The Insert object. Execute this!
     """
     tcn = type_constraint_name
+    if answer_metadata is None:
+        answer_metadata = {}
 
     values = {'question_id': question_id,
               'answer_metadata': answer_metadata,

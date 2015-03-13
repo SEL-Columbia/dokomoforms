@@ -198,6 +198,7 @@ def _get_fields(connection: Connection, answer: RowProxy) -> dict:
         # Get the choice for a multiple choice question
         choice_id = answer.question_choice_id
         result_dict['answer'] = choice_id
+        result_dict['answer_choice_metadata'] = answer.answer_choice_metadata
         result_dict['answer_id'] = answer.answer_choice_id
 
         choice = question_choice_select(connection, choice_id)
@@ -209,6 +210,7 @@ def _get_fields(connection: Connection, answer: RowProxy) -> dict:
         if answer.is_other:
             tcn = 'text'
         result_dict['answer'] = _jsonify(connection, answer, tcn)
+        result_dict['answer_metadata'] = answer.answer_metadata
         result_dict['answer_id'] = answer.answer_id
         result_dict['choice'] = None
         result_dict['choice_number'] = None

@@ -33,6 +33,8 @@ def answer_choice_insert(*,
     :param survey_id: The UUID of the survey.
     :return: The Insert object. Execute this!
     """
+    if answer_choice_metadata is None:
+        answer_choice_metadata = {}
     values = {'question_choice_id': question_choice_id,
               'answer_choice_metadata': answer_choice_metadata,
               'question_id': question_id,
