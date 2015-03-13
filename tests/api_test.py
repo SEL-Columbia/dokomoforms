@@ -78,18 +78,23 @@ class TestSubmission(unittest.TestCase):
                       'answers':
                           [{'question_id': question_id,
                             'answer': 1,
+                            'answer_metadata': None,
                             'is_other': False},
                            {'question_id': second_q_id,
                             'answer': choice_id,
+                            'answer_metadata': None,
                             'is_other': False},
                            {'question_id': third_q_id,
                             'answer': 'answer one',
+                            'answer_metadata': None,
                             'is_other': False},
                            {'question_id': third_q_id,
                             'answer': 'answer two',
+                            'answer_metadata': None,
                             'is_other': False},
                            {'question_id': fourth_q_id,
                             'answer': 3.5,
+                            'answer_metadata': None,
                             'is_other': False}]}
         response = submission_api.submit(connection, input_data)['result']
         submission_id = response['submission_id']
@@ -117,6 +122,7 @@ class TestSubmission(unittest.TestCase):
                       'answers':
                           [{'question_id': question_id,
                             'answer': 'one',
+                            'answer_metadata': None,
                             'is_other': False}]}
         self.assertRaises(DataError, submission_api.submit, connection,
                           input_data)
@@ -128,6 +134,7 @@ class TestSubmission(unittest.TestCase):
                        'answers':
                            [{'question_id': question_id,
                              'answer': 1j,
+                             'answer_metadata': None,
                              'is_other': False}]}
         self.assertRaises(ProgrammingError, submission_api.submit, connection,
                           input_data2)
@@ -144,6 +151,7 @@ class TestSubmission(unittest.TestCase):
                       'answers':
                           [{'question_id': question_id,
                             'answer': 'one',
+                            'answer_metadata': None,
                             'is_other': True}]}
         result = submission_api.submit(connection, input_data)['result']
         self.assertEqual(result['answers'][0]['answer'], 'one')
@@ -218,9 +226,11 @@ class TestSubmission(unittest.TestCase):
                       'answers':
                           [{'question_id': date_question_id,
                             'answer': '2014-10-27',
+                            'answer_metadata': {},
                             'is_other': False},
                            {'question_id': time_question_id,
                             'answer': '11:26-04:00',
+                            'answer_metadata': {},
                             'is_other': False}]}  # UTC-04:00
         response = submission_api.submit(connection, input_data)['result']
         self.assertEqual(response['answers'][0]['answer'], '2014-10-27')
@@ -238,9 +248,11 @@ class TestSubmission(unittest.TestCase):
                       'answers':
                           [{'question_id': question_id,
                             'answer': 1,
+                            'answer_metadata': None,
                             'is_other': False},
                            {'question_id': question_id,
                             'answer': 2,
+                            'answer_metadata': None,
                             'is_other': False}]}
         self.assertRaises(CannotAnswerMultipleTimesError,
                           submission_api.submit,
@@ -266,6 +278,7 @@ class TestSubmission(unittest.TestCase):
         submission_id = submission_exec.inserted_primary_key[0]
         connection.execute(answer_insert(
             answer={'lon': 90, 'lat': 0}, question_id=question_id,
+            answer_metadata={},
             submission_id=submission_id, survey_id=survey_id,
             type_constraint_name=tcn, is_other=False, sequence_number=seq,
             allow_multiple=mul))
@@ -292,6 +305,7 @@ class TestSubmission(unittest.TestCase):
             submission_id = submission_exec.inserted_primary_key[0]
             connection.execute(answer_insert(
                 answer=i, question_id=question_id, submission_id=submission_id,
+                answer_metadata={},
                 survey_id=survey_id, type_constraint_name=tcn, is_other=False,
                 sequence_number=seq, allow_multiple=mul))
         data = submission_api.get_all(connection, survey_id,
@@ -596,9 +610,11 @@ class TestSurvey(unittest.TestCase):
                       'survey_id': survey_id,
                       'answers': [{'question_id': inserted_qs[0].question_id,
                                    'answer': 5,
+                                   'answer_metadata': None,
                                    'is_other': False},
                                   {'question_id': inserted_qs[1].question_id,
                                    'answer': choice_1_id,
+                                   'answer_metadata': None,
                                    'is_other': False}]}
         submission_api.submit(connection, submission)
 
@@ -747,27 +763,35 @@ class TestSurvey(unittest.TestCase):
                       'survey_id': survey_id,
                       'answers': [{'question_id': inserted_qs[0].question_id,
                                    'answer': 'text answer',
+                                   'answer_metadata': None,
                                    'is_other': False},
                                   {'question_id': inserted_qs[1].question_id,
                                    'answer': choice_1_id,
+                                   'answer_metadata': None,
                                    'is_other': False},
                                   {'question_id': inserted_qs[2].question_id,
                                    'answer': choice_a_id,
+                                   'answer_metadata': None,
                                    'is_other': False},
                                   {'question_id': inserted_qs[3].question_id,
                                    'answer': 'my fancy other answer',
+                                   'answer_metadata': None,
                                    'is_other': True},
                                   {'question_id': inserted_qs[3].question_id,
                                    'answer': other_choice_id,
+                                   'answer_metadata': None,
                                    'is_other': False},
                                   {'question_id': inserted_qs[4].question_id,
                                    'answer': 'my fancier other answer',
+                                   'answer_metadata': None,
                                    'is_other': True},
                                   {'question_id': inserted_qs[4].question_id,
                                    'answer': other_choice_2_id,
+                                   'answer_metadata': None,
                                    'is_other': False},
                                   {'question_id': inserted_qs[5].question_id,
                                    'answer': 'my super fancy other answer',
+                                   'answer_metadata': None,
                                    'is_other': True}]}
 
         submission_api.submit(connection, submission)
@@ -868,6 +892,7 @@ class TestSurvey(unittest.TestCase):
                       'survey_id': survey_id,
                       'answers': [{'question_id': inserted_q_id,
                                    'answer': 'text answer',
+                                   'answer_metadata': None,
                                    'is_other': False}]}
 
         self.assertRaises(DataError, submission_api.submit, connection,
@@ -1058,6 +1083,7 @@ class TestAggregation(unittest.TestCase):
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
+                                'answer_metadata': {},
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -1123,6 +1149,7 @@ class TestAggregation(unittest.TestCase):
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
+                                'answer_metadata': {},
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -1145,6 +1172,7 @@ class TestAggregation(unittest.TestCase):
                           'answers':
                               [{'question_id': question_id,
                                 'answer': '1/{}/2015'.format(i),
+                                'answer_metadata': {},
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -1170,6 +1198,7 @@ class TestAggregation(unittest.TestCase):
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
+                                'answer_metadata': None,
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -1196,6 +1225,7 @@ class TestAggregation(unittest.TestCase):
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
+                                'answer_metadata': {},
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -1222,6 +1252,7 @@ class TestAggregation(unittest.TestCase):
                           'answers':
                               [{'question_id': question_id,
                                 'answer': str(i),
+                                'answer_metadata': {},
                                 'is_other': True}]}
             submission_api.submit(connection, input_data)
 
@@ -1248,6 +1279,7 @@ class TestAggregation(unittest.TestCase):
                           'answers':
                               [{'question_id': question_id,
                                 'answer': choice.question_choice_id,
+                                'answer_metadata': {},
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -1278,6 +1310,9 @@ class TestAggregation(unittest.TestCase):
                                     'lat': 0,
                                     'lon': 0
                                 },
+                                'answer_metadata': {
+                                    'facility_name': 'bleh_name',
+                                    'facility_type': 'bleh type'},
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -1300,6 +1335,7 @@ class TestAggregation(unittest.TestCase):
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
+                                'answer_metadata': {},
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -1326,6 +1362,7 @@ class TestAggregation(unittest.TestCase):
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
+                                'answer_metadata': {},
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -1352,6 +1389,7 @@ class TestAggregation(unittest.TestCase):
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
+                                'answer_metadata': None,
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -1375,6 +1413,7 @@ class TestAggregation(unittest.TestCase):
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
+                                'answer_metadata': None,
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -1404,6 +1443,7 @@ class TestAggregation(unittest.TestCase):
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
+                                'answer_metadata': None,
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -1435,6 +1475,7 @@ class TestAggregation(unittest.TestCase):
                           'answers':
                               [{'question_id': q_id,
                                 'answer': {'lon': i, 'lat': i},
+                                'answer_metadata': {},
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -1466,6 +1507,9 @@ class TestAggregation(unittest.TestCase):
                           'answers':
                               [{'question_id': q_id,
                                 'answer': {'id': 'woah', 'lon': i, 'lat': i},
+                                'answer_metadata': {
+                                    'facility_name': 'name',
+                                    'facility_type': 'type'},
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -1510,6 +1554,7 @@ class TestAggregation(unittest.TestCase):
                           'answers':
                               [{'question_id': q_id,
                                 'answer': choice.question_choice_id,
+                                'answer_metadata': {},
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
         repeated_choice = get_choices(connection,
@@ -1519,6 +1564,7 @@ class TestAggregation(unittest.TestCase):
                       'answers':
                           [{'question_id': q_id,
                             'answer': repeated_choice,
+                            'answer_metadata': {},
                             'is_other': False}]}
         submission_api.submit(connection, input_data)
 
@@ -1542,6 +1588,7 @@ class TestAggregation(unittest.TestCase):
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
+                                'answer_metadata': None,
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -1569,6 +1616,7 @@ class TestAggregation(unittest.TestCase):
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
+                                'answer_metadata': {},
                                 'is_other': False}]}
             submission_api.submit(connection, input_data)
 
@@ -1610,11 +1658,13 @@ class TestBatch(unittest.TestCase):
                  'answers': [
                      {'question_id': question_id,
                       'answer': 1,
+                      'answer_metadata': {},
                       'is_other': False}]},
                 {'submitter': 'me',
                  'answers': [
                      {'question_id': second_q_id,
                       'answer': choice_id,
+                      'answer_metadata': {},
                       'is_other': False}]},
             ]}
         response = batch_api.submit(connection, input_data)['result']

@@ -76,6 +76,32 @@ class TestAnswer(unittest.TestCase):
         answer_id = answer_exec.inserted_primary_key[0]
         self.assertIsNotNone(answer_id)
 
+    def testAnswerInsertOther(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'integer')
+        question = connection.execute(q_where).first()
+        question_id = question.question_id
+        tcn = question.type_constraint_name
+        seq = question.sequence_number
+        mul = question.allow_multiple
+        submission_exec = connection.execute(
+            submission_insert(submitter='test_submitter',
+                              survey_id=survey_id))
+        submission_id = submission_exec.inserted_primary_key[0]
+        answer_exec = connection.execute(answer_insert(
+            answer='one', question_id=question_id,
+            answer_metadata={},
+            submission_id=submission_id,
+            survey_id=survey_id,
+            type_constraint_name=tcn,
+            is_other=True,
+            sequence_number=seq,
+            allow_multiple=mul))
+        answer_id = answer_exec.inserted_primary_key[0]
+        self.assertIsNotNone(answer_id)
+
     def testInsertLocation(self):
         survey_id = connection.execute(survey_table.select().where(
             survey_table.c.survey_title == 'test_title')).first().survey_id
@@ -124,7 +150,8 @@ class TestAnswer(unittest.TestCase):
         answer_2 = connection.execute(
             answer_table.select().where(condition_2)).first()
         location_2 = get_geo_json(connection, answer_2)
-        self.assertEqual(location_2, {'coordinates': [], 'type': 'MultiPoint'})
+        self.assertEqual(location_2,
+                         {'coordinates': [], 'type': 'MultiPoint'})
 
     def testInsertFacility(self):
         survey_id = connection.execute(survey_table.select().where(
@@ -142,7 +169,8 @@ class TestAnswer(unittest.TestCase):
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = connection.execute(answer_insert(
             answer={'id': 'revisit ID', 'lon': 90, 'lat': 0},
-            answer_metadata={'name': 'cool facility', 'type': 'health'},
+            answer_metadata={'facility_name': 'cool facility',
+                             'facility_type': 'health'},
             question_id=question_id,
             submission_id=submission_id,
             survey_id=survey_id,
@@ -231,6 +259,7 @@ class TestAnswerChoice(unittest.TestCase):
         the_choice = choices.first()
         exec_stmt = connection.execute(answer_choice_insert(
             question_choice_id=the_choice.question_choice_id,
+            answer_choice_metadata={},
             question_id=question_id,
             submission_id=submission_id,
             survey_id=survey_id, type_constraint_name=tcn, sequence_number=seq,
@@ -255,6 +284,7 @@ class TestAnswerChoice(unittest.TestCase):
         the_choice = choices.first()
         connection.execute(answer_choice_insert(
             question_choice_id=the_choice.question_choice_id,
+            answer_choice_metadata={},
             question_id=question_id,
             submission_id=submission_id,
             survey_id=survey_id, type_constraint_name=tcn, sequence_number=seq,
@@ -279,6 +309,7 @@ class TestAnswerChoice(unittest.TestCase):
         the_choice = choices.first()
         connection.execute(answer_choice_insert(
             question_choice_id=the_choice.question_choice_id,
+            answer_choice_metadata={},
             question_id=question_id,
             submission_id=submission_id,
             survey_id=survey_id, type_constraint_name=tcn, sequence_number=seq,

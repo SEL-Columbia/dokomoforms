@@ -51,6 +51,9 @@ def _insert_answer(connection: Connection,
     is_other = value_dict.get('is_other')
     if is_mc and not is_other:
         value_dict['question_choice_id'] = value_dict.pop('answer')
+        # Might want to change 'answer_choice_metadata' to 'answer_metadata'...
+        answer_metadata = value_dict.pop('answer_metadata')
+        value_dict['answer_choice_metadata'] = answer_metadata
         insert = answer_choice_insert
     else:
         insert = answer_insert

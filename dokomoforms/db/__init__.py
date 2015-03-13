@@ -344,6 +344,15 @@ answer_table = Table(
         ) THEN 1 ELSE 0 END)
         = 1
         '''
+    ),
+    CheckConstraint(
+        '''
+        type_constraint_name != 'facility'
+        OR
+        (((answer_metadata->>'facility_name'))          IS NOT NULL AND
+         ((answer_metadata->>'facility_type')) IS NOT NULL)
+        ''',
+        name='facility_requires_metadata'
     )
 )
 
@@ -362,6 +371,9 @@ answer_choice_table = Table(
     Column('answer_choice_id', postgresql.UUID, primary_key=True,
            server_default=func.uuid_generate_v4()),
     Column('question_choice_id', postgresql.UUID, nullable=False),
+    # maybe this should also be 'answer_metadata'
+    Column('answer_choice_metadata', postgresql.json.JSON,
+           nullable=False, server_default='{}'),
     Column('question_id', postgresql.UUID, nullable=False),
     Column('type_constraint_name', String,
            CheckConstraint("type_constraint_name = 'multiple_choice'",
