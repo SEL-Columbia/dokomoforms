@@ -149,13 +149,13 @@ class SubmissionTest(DriverTest):
             '/html/body/div[2]/div/div/ul/li/a[1]').click()
 
         # Click on the shareable link
-        WebDriverWait(self.drv, 2).until(EC.presence_of_element_located(
+        WebDriverWait(self.drv, 4).until(EC.presence_of_element_located(
             (By.XPATH, '/html/body/div[2]/div/div/a')))
         self.drv.find_element_by_xpath(
             '/html/body/div[2]/div/div/a').click()
 
         # Fill out the survey
-        WebDriverWait(self.drv, 2).until(EC.presence_of_element_located(
+        WebDriverWait(self.drv, 4).until(EC.presence_of_element_located(
             (By.XPATH, '/html/body/div[2]/div[2]/input')))
         next_button = self.drv.find_element_by_class_name('page_nav__next')
         in_xpath = '/html/body/div[2]/div[2]/'
