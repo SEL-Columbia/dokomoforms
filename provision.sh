@@ -45,8 +45,8 @@ sudo su - postgres -c "createdb doko"
 sudo su - postgres -c "psql -U postgres -d postgres -c \"alter user postgres with password 'password';\""
 sudo su - postgres -c "python /vagrant/manage_db.py --create"
 
-# add nginx
-sudo apt-get install nginx
+# add nginx and xvfb
+sudo apt-get install nginx xvfb
 
 # link webroot
 rm -rf /var/www
