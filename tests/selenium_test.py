@@ -8,18 +8,20 @@ import unittest
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-import api.survey
-import api.submission
-import db
-from db.auth_user import auth_user_table
-from db.submission import submission_table
-from db.survey import survey_table
-from settings import SAUCE_USERNAME, SAUCE_ACCESS_KEY, DEFAULT_BROWSER
+import dokomoforms.api.survey as survey_api
+from dokomoforms import db
+from dokomoforms.db.auth_user import auth_user_table
+from dokomoforms.db.submission import submission_table
+from dokomoforms.db.survey import survey_table
+from dokomoforms.settings import SAUCE_USERNAME, SAUCE_ACCESS_KEY, \
+    DEFAULT_BROWSER, SAUCE_CONNECT
 
 
 base = 'http://localhost:8888'
@@ -51,6 +53,11 @@ class DriverTest(unittest.TestCase):
     def setUp(self):
         self.passed = False
 
+        if not SAUCE_CONNECT:
+            self.drv = webdriver.Firefox()
+            self.browser_name = 'Firefox'
+            return
+
         self.username = os.environ.get('SAUCE_USERNAME', SAUCE_USERNAME)
         self.access_key = os.environ.get('SAUCE_ACCESS_KEY', SAUCE_ACCESS_KEY)
         self.browser_config = os.environ.get('BROWSER', DEFAULT_BROWSER)
@@ -67,10 +74,16 @@ class DriverTest(unittest.TestCase):
             caps['tunnel-identifier'] = os.environ['TRAVIS_JOB_NUMBER']
             caps['build'] = os.environ['TRAVIS_BUILD_NUMBER']
             caps['tags'] = [os.environ['TRAVIS_PYTHON_VERSION'], 'CI']
-            caps['name'] = ' -- '.join([os.environ['TRAVIS_BUILD_NUMBER'],
-                                        self.browser_config])
+            caps['name'] = ' -- '.join([
+                os.environ['TRAVIS_BUILD_NUMBER'],
+                self.browser_config,
+                self.__class__.__name__])
         else:
-            caps['name'] = 'Manual run -- ' + self.browser_config
+            caps['name'] = ' -- '.join([
+                'Manual run',
+                self.browser_config,
+                self.__class__.__name__])
+
         hub_url = '{}:{}@localhost:4445'.format(self.username, self.access_key)
         cmd_executor = 'http://{}/wd/hub'.format(hub_url)
         self.drv = webdriver.Remote(desired_capabilities=caps,
@@ -93,7 +106,8 @@ class DriverTest(unittest.TestCase):
             auth_user_table.c.email == 'test@mockmyid.com'))
         self.drv.quit()
 
-        self._set_sauce_status()
+        if SAUCE_CONNECT:
+            self._set_sauce_status()
 
 
 # This test doesn't play nice with Sauce Labs, and I'm confident that
@@ -170,7 +184,7 @@ class SubmissionTest(DriverTest):
             next_button = self.drv.find_element_by_class_name('page_nav__next')
         else:
             self.drv.find_element_by_xpath(in_xpath + 'input').send_keys(
-                '5:55')
+                '5:55PM')
         next_button.click()
         # browser geolocation is complicated in selenium...
         self.drv.execute_script(
@@ -240,13 +254,15 @@ class TypeTest(DriverTest):
         connection.execute(survey_table.delete().where(
             survey_table.c.survey_title.like('test_question_type_%')))
 
-    def _create_survey(self, type_constraint_name, choices=None):
+    def _create_survey(self, type_constraint_name,
+                       allow_multiple=False,
+                       choices=None):
         tcn = type_constraint_name
         survey_json = {'email': 'test_email',
                        'survey_title': 'test_question_type_' + tcn,
                        'questions': [{'question_title': tcn,
                                       'type_constraint_name': tcn,
-                                      'allow_multiple': False,
+                                      'allow_multiple': allow_multiple,
                                       'question_to_sequence_number': -1,
                                       'logic': {'required': False,
                                                 'with_other': False},
@@ -254,7 +270,7 @@ class TypeTest(DriverTest):
                                       'choices': choices,
                                       'branches': None}]}
 
-        survey = api.survey.create(connection, survey_json)['result']
+        survey = survey_api.create(connection, survey_json)['result']
         survey_id = survey['survey_id']
         question_id = survey['questions'][0]['question_id']
         return survey_id, question_id
@@ -401,7 +417,7 @@ class TimeTest(TypeTest):
             self.drv.switch_to.window('WEBVIEW_0')
         else:
             self.drv.find_element_by_xpath(
-                '/html/body/div[2]/div[2]/input').send_keys('5:55')
+                '/html/body/div[2]/div[2]/input').send_keys('5:55PM')
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
 
@@ -416,6 +432,8 @@ class TimeTest(TypeTest):
                           self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -433,10 +451,81 @@ class MultipleChoiceTest(TypeTest):
         # Fill it out
         self.drv.find_elements_by_tag_name('option')[1].click()
         self.drv.find_element_by_class_name('page_nav__next').click()
+
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located(
+                (By.CLASS_NAME, 'question__btn')
+            )
+        )
         self.drv.find_element_by_class_name('question__btn').click()
 
         # Log in
         self.drv.get(base + '/debug/login/test_email')
+
+        # Get the visualization page
+        self.drv.get(base + '/visualize/' + question_id)
+
+        # Test it
+        self.assertRaises(NoSuchElementException,
+                          self.drv.find_element_by_id,
+                          'line_graph')
+
+        bar_graph = self.drv.find_element_by_id('bar_graph')
+        self.assertTrue(bar_graph.is_displayed())
+
+
+class MultiSelectTest(TypeTest):
+    @report_success_status
+    def testVisualization(self):
+        # Create the survey
+        survey_id, question_id = self._create_survey(
+            'multiple_choice',
+            allow_multiple=True,
+            choices=['choice 1', 'choice 2'])
+
+        # Get the survey
+        self.drv.get(base + '/survey/' + survey_id)
+
+        # Fill it out
+        choices = self.drv.find_elements_by_tag_name('option')
+        ActionChains(
+            self.drv
+        ).key_down(
+            Keys.CONTROL
+        ).click(
+            choices[1]
+        ).click(
+            choices[2]
+        ).key_up(
+            Keys.CONTROL
+        ).perform()
+        self.drv.find_element_by_class_name('page_nav__next').click()
+
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located(
+                (By.CLASS_NAME, 'question__btn')
+            )
+        )
+        self.drv.find_element_by_class_name('question__btn').click()
+
+        # Log in
+        self.drv.get(base + '/debug/login/test_email')
+
+        # Get the submission page
+        self.drv.get(base + '/view/' + survey_id)
+        submission_link = self.drv.find_element_by_xpath(
+            '/html/body/div[2]/div/div/ul[2]/li/a')
+        self.drv.execute_script(
+            'window.scrollTo(0, {});'.format(submission_link.location['y']))
+        submission_link.click()
+
+        # Test it
+        self.assertEqual(
+            len(self.drv.find_elements_by_xpath(
+                '/html/body/div[2]/div/div/ul/li'
+            )),
+            2
+        )
 
         # Get the visualization page
         self.drv.get(base + '/visualize/' + question_id)

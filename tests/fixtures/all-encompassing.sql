@@ -10,7 +10,7 @@ INSERT INTO auth_user (email)
 VALUES ('test_email')
 RETURNING auth_user_id INTO the_auth_user_id;
 
-INSERT INTO survey (survey_title, auth_user_id, metadata)
+INSERT INTO survey (survey_title, auth_user_id, survey_metadata)
 VALUES ('test_title', the_auth_user_id, '{"location": {"lon": 5.118915, "lat": 7.353078}}')
 RETURNING survey_id INTO the_survey_id;
 
@@ -91,7 +91,7 @@ INSERT INTO auth_user (email)
 VALUES ('a.dahir7@gmail.com')
 RETURNING auth_user_id INTO the_auth_user_id;
 
-INSERT INTO survey (survey_title, auth_user_id, metadata)
+INSERT INTO survey (survey_title, auth_user_id, survey_metadata)
 VALUES ('test_title2', the_auth_user_id, '{"location": {"lon": 5.118915, "lat": 7.353078}}')
 RETURNING survey_id INTO the_survey_id;
 
@@ -203,7 +203,7 @@ VALUES (the_survey_id, 1, 'rate me', 'integer', True, 2),
        (the_survey_id, 2, 'will you go out with me?', 'text', True, 3),
        (the_survey_id, 3, 'im gonan ask you out anyway', 'note', False, -1);
 
-INSERT INTO survey (survey_title, auth_user_id, metadata)
+INSERT INTO survey (survey_title, auth_user_id, survey_metadata)
 VALUES ('my favourite number', the_auth_user_id, '{"location": [5.118915, 7.353078]}')
 RETURNING survey_id INTO the_survey_id;
 

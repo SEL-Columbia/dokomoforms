@@ -7,9 +7,9 @@ from argparse import ArgumentParser
 import os.path
 
 from sqlalchemy import create_engine
-from db import metadata
+from dokomoforms.db import metadata
 
-from settings import CONNECTION_STRING
+from dokomoforms.settings import CONNECTION_STRING
 
 
 killall = 'killall.sql'

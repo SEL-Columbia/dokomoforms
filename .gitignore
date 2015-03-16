@@ -10,5 +10,7 @@ cover/
 .python-version
 node_modules/
 test/*.log
+.vagrant
 data/
 reports/
+config/deploy/*.rb

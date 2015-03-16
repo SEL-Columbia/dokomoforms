@@ -9,29 +9,35 @@ from datetime import timedelta
 
 from passlib.hash import bcrypt_sha256
 
-from db import update_record, delete_record
-import db
-from db.answer import answer_insert, answer_table, get_answers, get_geo_json, \
+from dokomoforms.db import update_record, delete_record
+from dokomoforms import db
+from dokomoforms.db.answer import answer_insert, answer_table, get_answers, \
+    get_geo_json, \
     get_answers_for_question
-from db.answer_choice import answer_choice_insert, get_answer_choices, \
+from dokomoforms.db.answer_choice import answer_choice_insert, \
+    get_answer_choices, \
     get_answer_choices_for_choice_id
-from db.auth_user import auth_user_table, get_auth_user, create_auth_user, \
+from dokomoforms.db.auth_user import auth_user_table, get_auth_user, \
+    create_auth_user, \
     generate_api_token, set_api_token, verify_api_token, \
     get_auth_user_by_email, \
     UserDoesNotExistError
-from db.question import get_questions_no_credentials, question_select, \
+from dokomoforms.db.question import get_questions_no_credentials, \
+    question_select, \
     question_table, \
     get_free_sequence_number, question_insert, get_questions, \
     QuestionDoesNotExistError, get_required
-from db.question_branch import get_branches, question_branch_insert, \
+from dokomoforms.db.question_branch import get_branches, \
+    question_branch_insert, \
     question_branch_table
-from db.question_choice import get_choices, question_choice_select, \
+from dokomoforms.db.question_choice import get_choices, \
+    question_choice_select, \
     question_choice_insert, question_choice_table, \
     QuestionChoiceDoesNotExistError
-from db.submission import submission_table, submission_insert, \
+from dokomoforms.db.submission import submission_table, submission_insert, \
     submission_select, get_submissions_by_email, get_number_of_submissions, \
     SubmissionDoesNotExistError
-from db.survey import survey_table, survey_insert, survey_select, \
+from dokomoforms.db.survey import survey_table, survey_insert, survey_select, \
     get_surveys_by_email, display, SurveyDoesNotExistError, \
     get_survey_id_from_prefix, SurveyPrefixDoesNotIdentifyASurveyError, \
     SurveyPrefixTooShortError, get_email_address, get_free_title
@@ -60,10 +66,37 @@ class TestAnswer(unittest.TestCase):
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = connection.execute(answer_insert(
             answer=1, question_id=question_id,
+            answer_metadata={},
             submission_id=submission_id,
             survey_id=survey_id,
             type_constraint_name=tcn,
             is_other=False,
+            sequence_number=seq,
+            allow_multiple=mul))
+        answer_id = answer_exec.inserted_primary_key[0]
+        self.assertIsNotNone(answer_id)
+
+    def testAnswerInsertOther(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'integer')
+        question = connection.execute(q_where).first()
+        question_id = question.question_id
+        tcn = question.type_constraint_name
+        seq = question.sequence_number
+        mul = question.allow_multiple
+        submission_exec = connection.execute(
+            submission_insert(submitter='test_submitter',
+                              survey_id=survey_id))
+        submission_id = submission_exec.inserted_primary_key[0]
+        answer_exec = connection.execute(answer_insert(
+            answer='one', question_id=question_id,
+            answer_metadata={},
+            submission_id=submission_id,
+            survey_id=survey_id,
+            type_constraint_name=tcn,
+            is_other=True,
             sequence_number=seq,
             allow_multiple=mul))
         answer_id = answer_exec.inserted_primary_key[0]
@@ -84,6 +117,7 @@ class TestAnswer(unittest.TestCase):
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = connection.execute(answer_insert(
             answer={'lon': 90, 'lat': 0},
+            answer_metadata={},
             question_id=question_id,
             submission_id=submission_id,
             survey_id=survey_id,
@@ -104,6 +138,7 @@ class TestAnswer(unittest.TestCase):
         submission_2_id = submission_2_exec.inserted_primary_key[0]
         answer_2_exec = connection.execute(answer_insert(
             answer=None, question_id=question_id,
+            answer_metadata={},
             submission_id=submission_2_id,
             survey_id=survey_id,
             type_constraint_name=tcn,
@@ -115,7 +150,8 @@ class TestAnswer(unittest.TestCase):
         answer_2 = connection.execute(
             answer_table.select().where(condition_2)).first()
         location_2 = get_geo_json(connection, answer_2)
-        self.assertEqual(location_2, {'coordinates': [], 'type': 'MultiPoint'})
+        self.assertEqual(location_2,
+                         {'coordinates': [], 'type': 'MultiPoint'})
 
     def testInsertFacility(self):
         survey_id = connection.execute(survey_table.select().where(
@@ -133,6 +169,8 @@ class TestAnswer(unittest.TestCase):
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = connection.execute(answer_insert(
             answer={'id': 'revisit ID', 'lon': 90, 'lat': 0},
+            answer_metadata={'facility_name': 'cool facility',
+                             'facility_sector': 'health'},
             question_id=question_id,
             submission_id=submission_id,
             survey_id=survey_id,
@@ -165,6 +203,7 @@ class TestAnswer(unittest.TestCase):
                               survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         connection.execute(answer_insert(answer=1, question_id=question_id,
+                                         answer_metadata={},
                                          submission_id=submission_id,
                                          survey_id=survey_id,
                                          type_constraint_name=tcn,
@@ -188,6 +227,7 @@ class TestAnswer(unittest.TestCase):
                               survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         connection.execute(answer_insert(answer=1, question_id=question_id,
+                                         answer_metadata={},
                                          submission_id=submission_id,
                                          survey_id=survey_id,
                                          type_constraint_name=tcn,
@@ -219,6 +259,7 @@ class TestAnswerChoice(unittest.TestCase):
         the_choice = choices.first()
         exec_stmt = connection.execute(answer_choice_insert(
             question_choice_id=the_choice.question_choice_id,
+            answer_choice_metadata={},
             question_id=question_id,
             submission_id=submission_id,
             survey_id=survey_id, type_constraint_name=tcn, sequence_number=seq,
@@ -243,6 +284,7 @@ class TestAnswerChoice(unittest.TestCase):
         the_choice = choices.first()
         connection.execute(answer_choice_insert(
             question_choice_id=the_choice.question_choice_id,
+            answer_choice_metadata={},
             question_id=question_id,
             submission_id=submission_id,
             survey_id=survey_id, type_constraint_name=tcn, sequence_number=seq,
@@ -267,6 +309,7 @@ class TestAnswerChoice(unittest.TestCase):
         the_choice = choices.first()
         connection.execute(answer_choice_insert(
             question_choice_id=the_choice.question_choice_id,
+            answer_choice_metadata={},
             question_id=question_id,
             submission_id=submission_id,
             survey_id=survey_id, type_constraint_name=tcn, sequence_number=seq,
@@ -619,6 +662,7 @@ class TestSubmission(unittest.TestCase):
             submission_id = submission_exec.inserted_primary_key[0]
             connection.execute(answer_insert(
                 answer=i, question_id=question_id, submission_id=submission_id,
+                answer_metadata={},
                 survey_id=survey_id, type_constraint_name=tcn, is_other=False,
                 sequence_number=seq, allow_multiple=mul))
         self.assertEqual(
