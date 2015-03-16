@@ -1,5 +1,7 @@
 var NEXT = 1;
 var PREV = -1;
+var NUM_FAC = 256;
+var FAC_RAD = 200;
 
 var App = {
     unsynced: [], // unsynced surveys
@@ -20,11 +22,11 @@ App.init = function(survey) {
     if (App.facilities.length === 0) {
         // See if you can get some facilities
         getNearbyFacilities(App.start_loc.lat, App.start_loc.lon, 
-                5, // Radius in km 
-                100, // limit
-                "facilities", // id for localStorage
-                null// what to do with facilities
-            );
+            FAC_RAD, // Radius in km 
+            NUM_FAC, // limit
+            "facilities", // id for localStorage
+            null// what to do with facilities
+        );
     }
 
     // Load up any unsynced facilities
@@ -782,6 +784,9 @@ Widgets.facility = function(question, page) {
         map.circle.setLatLng(map.getCenter());
     });
 
+    $(page).find('.facility__name').attr('disabled', true);
+    $(page).find('.facility__type').attr('disabled', true);
+
     // Know which marker is currently "up" 
     var touchedMarker = null;
     // Added facility  
@@ -794,20 +799,23 @@ Widgets.facility = function(question, page) {
     new_facilities_group.addTo(map);
 
     // Revisit API Call calls facilitiesCallback
-    if (navigator.onLine) {
-        // Refresh if possible
-        getNearbyFacilities(App.start_loc.lat, App.start_loc.lon, 
-                5, // Radius in km 
-                100, // limit
-                "facilities", // id for localStorage
-                drawFacilities // what to do with facilities
-            );
-
-    } else {
-        drawFacilities(App.facilities); // Otherwise draw our synced facilities
-    }
+    reloadFacilities(App.start_loc.lat, App.start_loc.lon);
 
     /* Helper functions for updates  */
+    function reloadFacilities(lat, lon) {
+        if (navigator.onLine) {
+            // Refresh if possible
+            getNearbyFacilities(lat, lon, 
+                    FAC_RAD, // Radius in km 
+                    NUM_FAC, // limit
+                    "facilities", // id for localStorage
+                    drawFacilities // what to do with facilities
+                );
+
+        } else {
+            drawFacilities(App.facilities); // Otherwise draw our synced facilities
+        }
+    }
 
     // handles calling drawPoint gets called once per getNearby call 
     function drawFacilities(facilities) {
@@ -865,10 +873,15 @@ Widgets.facility = function(question, page) {
 
     function selectFacility(marker) {
         marker.setZIndexOffset(666); // above 250 so it can't be hidden by hovering over neighbour
+        $(page).find('.facility__name').attr('disabled', true);
+        $(page).find('.facility__type').attr('disabled', true);
+
         marker.setIcon(icon_selected);
         if (marker.is_new) { 
             marker.setIcon(icon_added);
             addedMarker = marker;
+            $(page).find('.facility__name').attr('disabled', false);
+            $(page).find('.facility__type').attr('disabled', false);
         }
 
         touchedMarker = marker;
@@ -884,6 +897,7 @@ Widgets.facility = function(question, page) {
                 'facility_sector': marker.sector
             } 
         }
+
         $(page).find('.facility__name').val(marker.name);
         $(page).find('.facility__type').val(marker.sector);
     }
@@ -957,15 +971,7 @@ Widgets.facility = function(question, page) {
                         .setLatLng([coords[1], coords[0]]);
 
                     // Revisit api call
-                    if (navigator.onLine) {
-                        // refresh if possible
-                        getNearbyFacilities(coords[1], coords[0],
-                                5, // Radius in km 
-                                100, // limit
-                                "facilities", // id for localStorage
-                                drawFacilities// what to do with facilities
-                        );
-                    }
+                    reloadFacilities(coords[1], coords[0]); 
 
                     sync.classList.remove('icon--spin');
                 }, function error() {
@@ -994,6 +1000,9 @@ Widgets.facility = function(question, page) {
                 }
 
                 $(page).find('.facility__btn').text("Add New Site");
+                $(page).find('.facility__name').attr('disabled', true);
+                $(page).find('.facility__type').attr('disabled', true);
+
                 addedMarker = null;
                 question._new_facility = null;
                 return;
@@ -1014,6 +1023,8 @@ Widgets.facility = function(question, page) {
             // Get and place marker
             addedMarker = addFacility(lat, lng, uuid);
             $(page).find('.facility__btn').html("Remove New Site");
+            $(page).find('.facility__name').attr('disabled', false);
+            $(page).find('.facility__type').attr('disabled', false);
             question._new_facility = uuid; // state to prevent multiple facilities
 
         });
@@ -1064,7 +1075,7 @@ function getNearbyFacilities(lat, lng, rad, lim, id, cb) {
             fields: "name,uuid,coordinates,properties:sector", //filters results to include just those three fields,
         },
         function(data) {
-            localStorage.setItem(id, JSON.stringify(data.facilities));
+            localStorage[id] = JSON.stringify(data.facilities);
             if (cb) {
                 App.facilities = data.facilities;
                 cb(data.facilities);
