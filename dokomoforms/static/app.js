@@ -1,7 +1,7 @@
 var NEXT = 1;
 var PREV = -1;
 var NUM_FAC = 256;
-var FAC_RAD = 200;
+var FAC_RAD = 20; //in KM
 
 var App = {
     unsynced: [], // unsynced surveys
@@ -24,7 +24,6 @@ App.init = function(survey) {
         getNearbyFacilities(App.start_loc.lat, App.start_loc.lon, 
             FAC_RAD, // Radius in km 
             NUM_FAC, // limit
-            "facilities", // id for localStorage
             null// what to do with facilities
         );
     }
@@ -726,6 +725,7 @@ Widgets.location = function(question, page) {
         .click(function() {
             var sync = $('.nav__sync')[0];
             sync.classList.add('icon--spin');
+            App.message('Searching ...');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
                     sync.classList.remove('icon--spin');
@@ -746,7 +746,7 @@ Widgets.location = function(question, page) {
                 }, function error() {
                     //TODO: If cannot Get location" for some reason, 
                     sync.classList.remove('icon--spin');
-                    alert('error'); //XXX Replace with our message thing
+                    App.message('Could not get your location, please make sure your GPS device is active.');
                 }, {
                     enableHighAccuracy: true,
                     timeout: 20000,
@@ -808,7 +808,6 @@ Widgets.facility = function(question, page) {
             getNearbyFacilities(lat, lon, 
                     FAC_RAD, // Radius in km 
                     NUM_FAC, // limit
-                    "facilities", // id for localStorage
                     drawFacilities // what to do with facilities
                 );
 
@@ -827,20 +826,23 @@ Widgets.facility = function(question, page) {
         facilities = facilities || [];
         for (var i = 0; i < facilities.length; i++) {
             var facility = facilities[i];
-            var marker = drawPoint(facility.coordinates[1], 
-                        facility.coordinates[0], 
-                        facility.name, 
-                        facility.properties.sector,
-                        facility.uuid,
-                        onFacilityClick);
 
-            // If selected uuid was from Revisit, paint it white
-            if (selected === marker.uuid) {
-                selectFacility(marker);
-                //console/g.log("match", selected);
-            }
+            //if ((facility.coordinates[1] < top_y && facility.coordinates[1] > bot_y)
+            //&& (facility.coordinates[0] < top_x && facility.coordinates[0] > bot_x)) {
+                var marker = drawPoint(facility.coordinates[1], 
+                            facility.coordinates[0], 
+                            facility.name, 
+                            facility.properties.sector,
+                            facility.uuid,
+                            onFacilityClick);
 
-            facilities_group.addLayer(marker);
+                // If selected uuid was from Revisit, paint it white
+                if (selected === marker.uuid) {
+                    selectFacility(marker);
+                }
+
+                facilities_group.addLayer(marker);
+            //}
         }
 
         // UNSYNCED FACILITIES
@@ -960,6 +962,7 @@ Widgets.facility = function(question, page) {
         .click(function() {
             var sync = $('.nav__sync')[0];
             sync.classList.add('icon--spin');
+            App.message('Searching ...');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
                     // Server accepts [lon, lat]
@@ -976,7 +979,7 @@ Widgets.facility = function(question, page) {
                     sync.classList.remove('icon--spin');
                 }, function error() {
                     sync.classList.remove('icon--spin');
-                    alert('error'); ///XXX: DONT FORGET MEMEE
+                    App.message('Could not get your location, please make sure your GPS device is active.');
                 }, {
                     enableHighAccuracy: true,
                     timeout: 20000,
@@ -1062,7 +1065,7 @@ Widgets.facility = function(question, page) {
 
 
 /* -------------------------- Revisit Stuff Below ----------------------------*/
-function getNearbyFacilities(lat, lng, rad, lim, id, cb) {
+function getNearbyFacilities(lat, lng, rad, lim, cb) {
     var url = "http://staging.revisit.global/api/v0/facilities.json"; 
 
     // Revisit ajax req
@@ -1075,10 +1078,10 @@ function getNearbyFacilities(lat, lng, rad, lim, id, cb) {
             fields: "name,uuid,coordinates,properties:sector", //filters results to include just those three fields,
         },
         function(data) {
-            localStorage[id] = JSON.stringify(data.facilities);
+            localStorage.setItem("facilities", JSON.stringify(data.facilities));
             if (cb) {
                 App.facilities = data.facilities;
-                cb(data.facilities);
+                cb(data.facilities); //drawFacillities callback probs
             }
         }
     );
