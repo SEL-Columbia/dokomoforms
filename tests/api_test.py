@@ -4,12 +4,12 @@ Tests for the dokomo JSON api
 """
 import unittest
 import uuid
-from sqlalchemy import and_
 from datetime import datetime, timedelta, date
 from math import sqrt
 
-from sqlalchemy.exc import ProgrammingError
-from sqlalchemy.exc import DataError, IntegrityError
+from sqlalchemy import and_
+from sqlalchemy.exc import ProgrammingError, StatementError, DataError, \
+    IntegrityError
 from passlib.hash import bcrypt_sha256
 
 from dokomoforms.api import execute_with_exceptions
@@ -886,10 +886,8 @@ class TestSurvey(unittest.TestCase):
                 'email': 'test_email'}
 
         survey_id = survey_api.create(connection, data)['result']['survey_id']
-        inserted_q_id = get_questions_no_credentials(connection,
-                                                     survey_id).first(
-
-        ).question_id
+        inserted_q_id = get_questions_no_credentials(
+            connection, survey_id).first().question_id
 
         submission = {'submitter': 'me',
                       'survey_id': survey_id,
@@ -898,7 +896,7 @@ class TestSurvey(unittest.TestCase):
                                    'answer_metadata': None,
                                    'is_other': False}]}
 
-        self.assertRaises(DataError, submission_api.submit, connection,
+        self.assertRaises(StatementError, submission_api.submit, connection,
                           submission)
 
     def testUpdateBadChoices(self):
