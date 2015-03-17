@@ -3,7 +3,7 @@ var PREV = -1;
 var ON = 1;
 var OFF = 0;
 var NUM_FAC = 256;
-var FAC_RAD = 20; //in KM
+var FAC_RAD = 2; //in KM
 
 var App = {
     unsynced: [], // unsynced surveys
@@ -353,7 +353,7 @@ Survey.prototype.submit = function() {
         answers: survey_answers
     };
 
-    //console.log('submission:', data);
+    console.log('submission:', data);
 
     sync.classList.add('icon--spin');
     save_btn.classList.add('icon--spin');
@@ -756,6 +756,8 @@ Widgets._getMap = function() {
             center: [App.start_loc.lat, App.start_loc.lon],
             dragging: true,
             zoom: 13,
+            minZoom: 13,
+            maxZoom: 14,
             zoomControl: false,
             doubleClickZoom: false,
             attributionControl: false
@@ -787,7 +789,7 @@ Widgets._getMap = function() {
     Widgets.interval = window.setInterval(updateColour, 50); // XXX: could be CSS
 
     map.addLayer(App._getMapLayer());
-
+    map.setMaxBounds(map.getBounds().pad(0.5));
     return map;
 };
 
@@ -1083,9 +1085,10 @@ Widgets.facility = function(question, page) {
                     var coords = [position.coords.longitude, position.coords.latitude];
 
                     // Update map position and set indicator position again
+                    map.setMaxBounds(null);
                     map.setView([coords[1], coords[0]]);
-                    map.circle
-                        .setLatLng([coords[1], coords[0]]);
+                    map.circle.setLatLng([coords[1], coords[0]]);
+                    map.setMaxBounds(map.getBounds().pad(0.5));
 
                     // Revisit api call
                     reloadFacilities(coords[1], coords[0]); 
