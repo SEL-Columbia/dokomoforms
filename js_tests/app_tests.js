@@ -41,13 +41,13 @@ describe('App initalization Tests', function(done) {
     it('should init app and survey juust fine', 
         function(done) {
             App.init(raw_survey);
-            raw_survey.metadata.location.should.match(App.start_loc);
+            raw_survey.survey_metadata.location.should.match(App.start_loc);
             should(App.survey).be.ok;
 
             var survey = App.survey;
             should(survey.id).match(raw_survey.survey_id);
             should(survey.questions).match(raw_survey.questions);
-            should(survey.metadata).match(raw_survey.metadata);
+            should(survey.metadata).match(raw_survey.survey_metadata);
             done();
         });
 

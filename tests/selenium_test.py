@@ -56,6 +56,7 @@ class DriverTest(unittest.TestCase):
         if not SAUCE_CONNECT:
             self.drv = webdriver.Firefox()
             self.browser_name = 'Firefox'
+            self.platform = 'Linux'
             return
 
         self.username = os.environ.get('SAUCE_USERNAME', SAUCE_USERNAME)
@@ -149,13 +150,13 @@ class SubmissionTest(DriverTest):
             '/html/body/div[2]/div/div/ul/li/a[1]').click()
 
         # Click on the shareable link
-        WebDriverWait(self.drv, 2).until(EC.presence_of_element_located(
+        WebDriverWait(self.drv, 4).until(EC.presence_of_element_located(
             (By.XPATH, '/html/body/div[2]/div/div/a')))
         self.drv.find_element_by_xpath(
             '/html/body/div[2]/div/div/a').click()
 
         # Fill out the survey
-        WebDriverWait(self.drv, 2).until(EC.presence_of_element_located(
+        WebDriverWait(self.drv, 4).until(EC.presence_of_element_located(
             (By.XPATH, '/html/body/div[2]/div[2]/input')))
         next_button = self.drv.find_element_by_class_name('page_nav__next')
         in_xpath = '/html/body/div[2]/div[2]/'
@@ -301,6 +302,8 @@ class IntegerTest(TypeTest):
         line_graph = self.drv.find_element_by_id('line_graph')
         self.assertTrue(line_graph.is_displayed())
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -330,6 +333,8 @@ class DecimalTest(TypeTest):
         line_graph = self.drv.find_element_by_id('line_graph')
         self.assertTrue(line_graph.is_displayed())
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -359,6 +364,8 @@ class TextTest(TypeTest):
         self.assertRaises(NoSuchElementException, self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -395,6 +402,8 @@ class DateTest(TypeTest):
         self.assertRaises(NoSuchElementException, self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -470,6 +479,8 @@ class MultipleChoiceTest(TypeTest):
                           self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -487,17 +498,19 @@ class MultiSelectTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
+        is_osx = self.platform.startswith('OS X')
+        ctrl_key = Keys.COMMAND if is_osx else Keys.CONTROL
         choices = self.drv.find_elements_by_tag_name('option')
         ActionChains(
             self.drv
         ).key_down(
-            Keys.CONTROL
+            ctrl_key
         ).click(
             choices[1]
         ).click(
             choices[2]
         ).key_up(
-            Keys.CONTROL
+            ctrl_key
         ).perform()
         self.drv.find_element_by_class_name('page_nav__next').click()
 
@@ -535,6 +548,8 @@ class MultiSelectTest(TypeTest):
                           self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -575,6 +590,8 @@ class LocationTest(TypeTest):
                           self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
