@@ -498,20 +498,30 @@ class MultiSelectTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
-        is_osx = self.platform.startswith('OS X')
-        ctrl_key = Keys.COMMAND if is_osx else Keys.CONTROL
-        choices = self.drv.find_elements_by_tag_name('option')
-        ActionChains(
-            self.drv
-        ).key_down(
-            ctrl_key
-        ).click(
-            choices[1]
-        ).click(
-            choices[2]
-        ).key_up(
-            ctrl_key
-        ).perform()
+        if self.browser_name == 'android':
+            self.drv.find_element_by_tag_name('select').click()
+            self.drv.switch_to.window('NATIVE_APP')
+            choices = self.drv.find_elements_by_tag_name('CheckedTextView')
+            choices[1].click()
+            choices[2].click()
+            # Click "OK"
+            self.drv.find_elements_by_tag_name('Button')[-1].click()
+            self.drv.switch_to.window('WEBVIEW_0')
+        else:
+            is_osx = self.platform.startswith('OS X')
+            ctrl_key = Keys.COMMAND if is_osx else Keys.CONTROL
+            choices = self.drv.find_elements_by_tag_name('option')
+            ActionChains(
+                self.drv
+            ).key_down(
+                ctrl_key
+            ).click(
+                choices[1]
+            ).click(
+                choices[2]
+            ).key_up(
+                ctrl_key
+            ).perform()
         self.drv.find_element_by_class_name('page_nav__next').click()
 
         WebDriverWait(self.drv, 5).until(
