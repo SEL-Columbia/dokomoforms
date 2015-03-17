@@ -789,7 +789,7 @@ Widgets._getMap = function() {
     Widgets.interval = window.setInterval(updateColour, 50); // XXX: could be CSS
 
     map.addLayer(App._getMapLayer());
-    map.setMaxBounds(map.getBounds().pad(0.5));
+    map.setMaxBounds(map.getBounds().pad(1));
     return map;
 };
 
@@ -812,10 +812,17 @@ Widgets.location = function(question, page) {
     // Clean up answer array
     question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
     $(page).find('.question__location').each(function(i, child) { 
+        var lon = $(child).find('.question__lon').val();
+        var lat = $(child).find('.question__lat').val();
+
+        if (!lat || !lon) {
+            return false;
+        }
+
         question.answer[i] = { 
             response: { 
-                'lon': $(child).find('.question__lon').val(),
-                'lat': $(child).find('.question__lat').val()
+                'lon': lon,
+                'lat': lat
             },
             is_other: false //XXX Check if child contains other_input
         };
@@ -853,9 +860,10 @@ Widgets.location = function(question, page) {
                     ];
 
                     // Set map view and update indicator position
+                    map.setMaxBounds(null);
                     map.setView([coords[1], coords[0]]);
-                    map.circle
-                        .setLatLng([coords[1], coords[0]]);
+                    map.circle.setLatLng([coords[1], coords[0]]);
+                    map.setMaxBounds(map.getBounds().pad(1));
 
                     updateLocation(coords);
 
@@ -1088,7 +1096,7 @@ Widgets.facility = function(question, page) {
                     map.setMaxBounds(null);
                     map.setView([coords[1], coords[0]]);
                     map.circle.setLatLng([coords[1], coords[0]]);
-                    map.setMaxBounds(map.getBounds().pad(0.5));
+                    map.setMaxBounds(map.getBounds().pad(1));
 
                     // Revisit api call
                     reloadFacilities(coords[1], coords[0]); 
