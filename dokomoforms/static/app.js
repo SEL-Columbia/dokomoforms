@@ -353,7 +353,7 @@ Survey.prototype.submit = function() {
         answers: survey_answers
     };
 
-    console.log('submission:', data);
+    //console.log('submission:', data);
 
     sync.classList.add('icon--spin');
     save_btn.classList.add('icon--spin');

@@ -379,10 +379,10 @@ describe('User facility questions', function(done) {
             first_question.should.not.equal(survey.current_question);
             fac_question.should.equal(survey.current_question);
 
-            //$('.leaflet-marker-icon').first().click();
-            //console.log($('.facility__name').val());
-            //$('.leaflet-marker-icon').first().click();
-            //console.log($('.facility__name').val());
+            $('.leaflet-marker-icon').first().click();
+            console.log($('.facility__name').val());
+            $('.leaflet-marker-icon').first().click();
+            console.log($('.facility__name').val());
             
             done();
 
