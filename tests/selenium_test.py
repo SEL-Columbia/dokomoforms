@@ -301,6 +301,8 @@ class IntegerTest(TypeTest):
         line_graph = self.drv.find_element_by_id('line_graph')
         self.assertTrue(line_graph.is_displayed())
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -330,6 +332,8 @@ class DecimalTest(TypeTest):
         line_graph = self.drv.find_element_by_id('line_graph')
         self.assertTrue(line_graph.is_displayed())
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -359,6 +363,8 @@ class TextTest(TypeTest):
         self.assertRaises(NoSuchElementException, self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -395,6 +401,8 @@ class DateTest(TypeTest):
         self.assertRaises(NoSuchElementException, self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -539,6 +547,8 @@ class MultiSelectTest(TypeTest):
                           self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -579,6 +589,8 @@ class LocationTest(TypeTest):
                           self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
