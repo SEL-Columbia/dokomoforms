@@ -40,6 +40,10 @@ describe('User next/prev tests', function(done) {
     afterEach(function(done) {
         raw_survey = null;
         localStorage = {};
+        $(".page_nav__next").off('click'); //XXX Find out why events are cached
+        $(".page_nav__prev").off('click');
+        $(".message").clearQueue().text("");
+        $('.content').empty();
         done();
     });
 
@@ -355,6 +359,10 @@ describe('User facility questions', function(done) {
     afterEach(function(done) {
         raw_survey = null;
         localStorage = {};
+        $(".page_nav__next").off('click'); //XXX Find out why events are cached
+        $(".page_nav__prev").off('click');
+        $(".message").clearQueue().text("");
+        $('.content').empty();
         done();
     });
 
