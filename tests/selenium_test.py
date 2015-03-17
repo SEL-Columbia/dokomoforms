@@ -56,6 +56,7 @@ class DriverTest(unittest.TestCase):
         if not SAUCE_CONNECT:
             self.drv = webdriver.Firefox()
             self.browser_name = 'Firefox'
+            self.platform = 'Linux'
             return
 
         self.username = os.environ.get('SAUCE_USERNAME', SAUCE_USERNAME)
