@@ -432,7 +432,7 @@ Widgets._input = function(question, page, type) {
         if ((child.className.indexOf('other_input') > - 1) && child.value !== "") {
             // if don't know input field has a response, break 
             question.answer = [{
-                response: self._validate('text', child.value),
+                response: self._validate('text', child.value, question.logic),
                 is_other: true
             }];
 
@@ -442,7 +442,7 @@ Widgets._input = function(question, page, type) {
         if ((child.className.indexOf('other_input') === -1) && child.value !== "") {
             // Ignore other responses if they don't short circut the loop above
             question.answer[i] = {
-                response: self._validate(type, child.value),
+                response: self._validate(type, child.value, question.logic),
                 is_other: false
             }
         }
@@ -456,7 +456,7 @@ Widgets._input = function(question, page, type) {
         .change(function() { //XXX: Change isn't sensitive enough on safari?
             var ans_ind = $(page).find('input').index(this); 
             question.answer[ans_ind] = { 
-                response: self._validate(type, this.value),
+                response: self._validate(type, this.value, question.logic),
                 is_other: false
             }
 
@@ -492,7 +492,7 @@ Widgets._input = function(question, page, type) {
         .find('.other_input')
         .change(function() { //XXX: Change isn't sensitive enough on safari?
             question.answer = [{ 
-                response: self._validate('text', this.value),
+                response: self._validate('text', this.value, question.logic),
                 is_other: true
             }];
         });
@@ -559,7 +559,7 @@ Widgets._toggleOther = function(page, question, state) {
         $(page).find('.other_input').each(function(i, child) { 
             // Doesn't matter if response is there or not
             question.answer[0] = {
-                response: self._validate('text', child.value),
+                response: self._validate('text', child.value, question.logic),
                 is_other: true
             }
         });
@@ -579,7 +579,7 @@ Widgets._toggleOther = function(page, question, state) {
         $(page).find('.text_input').not('.other_input').each(function(i, child) { 
             if (child.value !== "") { 
                 question.answer[i] = {
-                    response: self._validate(question.type_constraint_name, child.value),
+                    response: self._validate(question.type_constraint_name, child.value, question.logic),
                     is_other: false
                 }
             }
@@ -601,7 +601,8 @@ Widgets._renderRepeat = function(page, question) {
 }
 
 // Basic input validation
-Widgets._validate = function(type, answer) {
+Widgets._validate = function(type, answer, logic) {
+    //XXX enforce logic
     var val = null;
     switch(type) {
         case "decimal":
@@ -689,7 +690,7 @@ Widgets.multiple_choice = function(question, page) {
         .find('.text_input')
         .change(function() {
             question.answer[question.choices.length] = { 
-                response: self._validate("text", this.value),
+                response: self._validate("text", this.value, question.logic),
                 is_other: true
             }
         });
