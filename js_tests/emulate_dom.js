@@ -4,6 +4,9 @@ module.exports = (function(url) {
 
     document = new jsdom.jsdom(fs.readFileSync("js_tests/widgets.html", "utf-8"),
         {
+            features: {
+                FetchExternalResources : ['script', 'css']
+            },
             url: url || "http://localhost" //XXX Cross domain error otherwise
         });
 
@@ -30,6 +33,26 @@ module.exports = (function(url) {
 
     //jsdom.getVirtualConsole(window).sendTo(console);
 
+    // leaflet monkeypatches thanks to jieter on github
+    window.L.Map.prototype.getSize = function () {
+        return L.point(1024, 1024);
+    };
+
+    document._ce = document.createElement;
+    document.createElement = function(elem) {
+        var div = document._ce(elem);
+        if (elem === 'canvas') {
+            div.getContext = function() {
+                return {
+                    drawImage: function() {}
+                }
+            }
+
+            div.toDataURL = function() { return "troolollol" }
+        }
+
+        return div;
+    }
 
     return window;
 

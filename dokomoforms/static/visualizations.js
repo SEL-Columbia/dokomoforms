@@ -193,7 +193,11 @@ function drawMap(map_data) {
         var submission_text = "<ul>";
         for (j = 0; j < answers.length; j++) {
             var ans = answers[j];
-            submission_text += "<li><strong>" + ans.sequence_number + ". " + ans.question_title + "</strong><br />" + ans.answer + "</li>";
+            var metadata = "";
+            if (ans.answer_metadata) {
+                metadata += "<br />" + JSON.stringify(ans.answer_metadata);
+            }
+            submission_text += "<li><strong>" + ans.sequence_number + ". " + ans.question_title + "</strong><br />" + ans.answer + metadata + "</li>";
         }
         submission_text += "</ul";
 

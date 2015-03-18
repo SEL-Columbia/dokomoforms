@@ -55,12 +55,13 @@ describe('Survey unit and regression tests', function(done) {
         done();
     });
 
-    it('getFirstResponse: should return null if theres no valid integer input',
+    it('getFirstResponse: should return first non empty response',
         function(done) {
             var questions = [
                 {
                     question_to_sequence_number: -1,
                     type_constraint_name: "integer",
+                    logic: {},
                     sequence_number: 1
                 },
             ];
@@ -68,19 +69,19 @@ describe('Survey unit and regression tests', function(done) {
             survey = new Survey("id", 0, questions, {});
 
             // empty
-            should(survey.getFirstResponse(questions[0])).not.be.ok;
+            should(survey.getFirstResponse(questions[0])).match(null);
             // O value
-            questions[0].answer = [{response:0}];
+            questions[0].answer = [{}, {response:0}];
             should(survey.getFirstResponse(questions[0])).match(0);;
             // some value
-            questions[0].answer = [{response:1}];
-            should(survey.getFirstResponse(questions[0])).be.ok;
+            questions[0].answer = [{response:1}, {}];
+            should(survey.getFirstResponse(questions[0])).match(1);
+            // some value doubled
+            questions[0].answer = [{response:1}, {response: 2}];
+            should(survey.getFirstResponse(questions[0])).match(1);
             // empty string
             questions[0].answer = [{response:""}];
-            should(survey.getFirstResponse(questions[0])).not.be.ok;
-            // incorrect type (get getFirstResponse does not validate type)
-            questions[0].answer = [{response:"bs"}];
-            should(survey.getFirstResponse(questions[0])).not.be.ok;
+            should(survey.getFirstResponse(questions[0])).match("");
 
             done();
 
@@ -92,6 +93,7 @@ describe('Survey unit and regression tests', function(done) {
                 {
                     question_to_sequence_number: -1,
                     type_constraint_name: "text",
+                    logic: {},
                     sequence_number: 1
                 },
             ];
@@ -99,19 +101,17 @@ describe('Survey unit and regression tests', function(done) {
             survey = new Survey("id", 0,  questions, {});
 
             // empty
-            should(survey.getFirstResponse(questions[0])).not.be.ok;
+            should(survey.getFirstResponse(questions[0])).match(null);
             // empty string
-            questions[0].answer = [{response:""}];
-            should(survey.getFirstResponse(questions[0])).not.be.ok;
-            // valid 
-            questions[0].answer = [{response:"bs"}];
-            should(survey.getFirstResponse(questions[0])).be.ok;
+            questions[0].answer = [{response:Widgets._validate("text", "")}];
+            should(survey.getFirstResponse(questions[0])).match(null);
 
             done();
 
         });
 
     
+    // Note answer field can only be populated with data returned from widget._validate normally
     it('next: should enforce required questions',
         function(done) {
             var NEXT = 1;
@@ -140,7 +140,7 @@ describe('Survey unit and regression tests', function(done) {
             questions[1].should.not.equal(survey.current_question);
             
             // state SHOULD change
-            questions[0].answer = [{response:"yo"}];
+            questions[0].answer = [{response: Widgets._validate("text", "yo")}];
             survey.next(NEXT);
             questions[0].should.not.equal(survey.current_question);
             questions[1].should.equal(survey.current_question);
@@ -214,7 +214,7 @@ describe('Survey unit and regression tests', function(done) {
             questions[1].should.not.equal(survey.current_question);
             
             // state SHOULDNT change
-            questions[0].answer = [{response:""}];
+            questions[0].answer = [{response: Widgets._validate("text", "")}];
             survey.next(NEXT);
             questions[0].should.equal(survey.current_question);
             questions[1].should.not.equal(survey.current_question);
@@ -251,7 +251,7 @@ describe('Survey unit and regression tests', function(done) {
             questions[1].should.not.equal(survey.current_question);
             
             // state SHOULDNT change
-            questions[0].answer = [{response:"decimal"}];
+            questions[0].answer = [{response: Widgets._validate("decimal", "bs")}];
             survey.next(NEXT);
             questions[0].should.equal(survey.current_question);
             questions[1].should.not.equal(survey.current_question);
@@ -335,6 +335,102 @@ describe('Survey unit and regression tests', function(done) {
             //XXX: VALIDATION FOR DATE NOT ENFORCED;
 
 
+            done();
+
+        });
+    
+    it('next: should enforce required for empty dont-know response',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "date",
+                    logic: {with_other: true},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    logic: {},
+                    sequence_number: 2
+                },
+            ];
+
+            survey = new Survey("id", 0, questions, {});
+            questions[0].should.equal(survey.current_question);
+
+            // state SHOULDNT change
+            questions[0].answer = [{response:"", is_other: true}]; // didn't fill out real response
+            survey.next(NEXT);
+            questions[0].should.equal(survey.current_question);
+            questions[1].should.not.equal(survey.current_question);
+
+            done();
+
+        });
+    
+    it('next: should not enforce required for filled out dont-know response',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "date",
+                    logic: {with_other: true},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    logic: {},
+                    sequence_number: 2
+                },
+            ];
+
+            survey = new Survey("id", 0, questions, {});
+            questions[0].should.equal(survey.current_question);
+
+            // state SHOULD change
+            questions[0].answer = [{response:"viktor is a dingus", is_other: true}];
+            survey.next(NEXT);
+            questions[0].should.not.equal(survey.current_question);
+            questions[1].should.equal(survey.current_question);
+
+            done();
+
+        });
+    
+    it('next: should not enforce required for no response with_other questions',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "date",
+                    logic: {with_other: true},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    logic: {},
+                    sequence_number: 2
+                },
+            ];
+
+            survey = new Survey("id", 0, questions, {});
+            questions[0].should.equal(survey.current_question);
+
+            // state should change
+            questions[0].answer = [];
+            survey.next(NEXT);
+            questions[0].should.not.equal(survey.current_question);
+            questions[1].should.equal(survey.current_question);
+            
             done();
 
         });

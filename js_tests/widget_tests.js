@@ -189,6 +189,134 @@ describe('Widget creation tests', function(done) {
             done();
 
     });
+    
+    it('should render widget with dont-know button but no displayed other input and active regular inputs',
+        //XXX: All inputs render +/- identically 
+        function(done) {
+            var question = {
+                question_to_sequence_number: -1,
+                type_constraint_name: "decimal",
+                logic: {with_other: true},
+                allow_multiple: true,
+                question_title: "Whiplash was real good dont-know",
+                sequence_number: 1
+            };
+            
+            // Create content div with widget template
+            var widgetHTML = $('#widget_' + question.type_constraint_name).html();
+            var widgetTemplate = _.template(widgetHTML);
+            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
+
+            $('.content')
+                .data('index', 1)
+                .html(compiledHTML)
+
+            Widgets[question.type_constraint_name](question, $('.content'));
+
+
+            $('.content')
+                .find('.question__btn__other')
+                .length.should.equal(1);
+
+            // Isn't active if no other_response was picked
+            var other_div = $('.content').find('.question__other');
+            other_div.length.should.equal(1);
+            other_div[0].style.display.should.equal('none');
+
+            // Regular input is active
+            $('.text_input').not('.other_input')[0].disabled.should.equal(false);
+
+            done();
+
+    });
+
+    it('should render widget with dont-know button but AND displayed other input and INACTIVE regular inputs',
+        //XXX: All inputs render +/- identically 
+        function(done) {
+            var question = {
+                question_to_sequence_number: -1,
+                type_constraint_name: "decimal",
+                logic: {with_other: true},
+                allow_multiple: true,
+                question_title: "Whiplash was real good otttherr",
+                answer: [{response: 'good times', is_other: true }, {response: 1111, is_other: false }], //order matters
+                sequence_number: 1
+            };
+            
+            // Create content div with widget template
+            var widgetHTML = $('#widget_' + question.type_constraint_name).html();
+            var widgetTemplate = _.template(widgetHTML);
+            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
+
+            $('.content')
+                .data('index', 1)
+                .html(compiledHTML)
+
+            Widgets[question.type_constraint_name](question, $('.content'));
+
+            $('.content')
+                .find('.question__btn__other')
+                .length.should.equal(1);
+
+            //  Is active with correct response
+            var other_div = $('.content').find('.question__other');
+            other_div.length.should.equal(1);
+            other_div[0].style.display.should.equal('');
+            $('.other_input').val().should.equal('good times');
+
+            // Regular input is INACTIVE
+            $('.text_input').not('.other_input')[0].disabled.should.equal(true);
+
+            // Response is cleaned up
+            question.answer.should.match([{response: 'good times', is_other: true }]);
+
+            done();
+    });
+
+    it('should render widget with dont-know button but AND NO displayed other input and ACTIVE regular inputs' 
+            + ' when theres just a regular response and some out of order other response',
+        //XXX: All inputs render +/- identically 
+        function(done) {
+            var question = {
+                question_to_sequence_number: -1,
+                type_constraint_name: "decimal",
+                logic: {with_other: true},
+                allow_multiple: true,
+                question_title: "Whiplash was real good otttherr",
+                answer: [{response: 777, is_other: false}, {response: "bad times", is_other: true}], //order matters
+                sequence_number: 1
+            };
+            
+            // Create content div with widget template
+            var widgetHTML = $('#widget_' + question.type_constraint_name).html();
+            var widgetTemplate = _.template(widgetHTML);
+            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
+
+            $('.content')
+                .data('index', 1)
+                .html(compiledHTML)
+
+            Widgets[question.type_constraint_name](question, $('.content'));
+
+            $('.content')
+                .find('.question__btn__other')
+                .length.should.equal(1);
+
+            //  Is inactive with no response
+            var other_div = $('.content').find('.question__other');
+            other_div.length.should.equal(1);
+            other_div[0].style.display.should.equal('none');
+            $('.other_input').val().should.equal('');
+
+            // Regular input is ACTIVE
+            $('.text_input').not('.other_input')[0].disabled.should.equal(false);
+            $('.text_input').not('.other_input').val().should.equal('777');
+
+            // Response is cleaned up
+            question.answer.should.match([{response: 777, is_other: false }]);
+
+            done();
+    });
 
     it('should render location widget with default location',
         function(done) {
@@ -212,12 +340,16 @@ describe('Widget creation tests', function(done) {
 
             Widgets[question.type_constraint_name](question, $('.content'));
 
-            $('.question__lon')
+            $('.text_input')
+                .not('.other_input')
                 .val()
+                .split(" ")[1]
                 .should.match("70");
             
-            $('.question__lat')
+            $('.text_input')
+                .not('.other_input')
                 .val()
+                .split(" ")[0]
                 .should.match("40");
 
 
@@ -251,12 +383,16 @@ describe('Widget creation tests', function(done) {
 
             Widgets[question.type_constraint_name](question, $('.content'));
 
-            $('.question__lon')
+            $('.text_input')
+                .not('.other_input')
                 .val()
+                .split(" ")[1]
                 .should.match("5");
             
-            $('.question__lat')
+            $('.text_input')
+                .not('.other_input')
                 .val()
+                .split(" ")[0]
                 .should.match("7");
 
 
@@ -528,3 +664,106 @@ describe('Widget creation tests', function(done) {
         });
 });
 
+describe('Widget validate tests', function(done) {
+    before(function(done) {
+        done();
+    });
+
+
+    beforeEach(function(done) {
+        App.facilities = [];
+        App.unsynced_facilities = {};
+        done();
+    });
+
+    afterEach(function(done) {
+        $(".page_nav__next").off('click'); //XXX Find out why events are cached
+        $(".page_nav__prev").off('click');
+        $('.content').empty();
+        localStorage = {};
+        done();
+    });
+
+    it('should validate lat lon questions passed in as "lat lon" correctly',
+        function(done) {
+            var question = {
+                question_to_sequence_number: -1,
+                type_constraint_name: "location",
+                logic: {},
+                allow_multiple: true,
+                answer: [],
+                choices: [],
+                question_title: "loco",
+                sequence_number: 1
+            };
+            
+            
+            var response = Widgets._validate(question.type_constraint_name, "40.1 70.1");
+            response.should.match({'lat': 40.1, 'lon': 70.1});
+            done();
+
+        });
+    
+    it('should validate lat lon questions passed in as "lat " correctly as invalid',
+        function(done) {
+            var question = {
+                question_to_sequence_number: -1,
+                type_constraint_name: "location",
+                logic: {},
+                allow_multiple: true,
+                answer: [],
+                choices: [],
+                question_title: "loco",
+                sequence_number: 1
+            };
+            
+            
+            var response = Widgets._validate(question.type_constraint_name, "40.1 ");
+            should(response).match(null);
+            done();
+
+        });
+    
+    it('should validate lat lon questions passed in as " " correctly as invalid',
+        function(done) {
+            var question = {
+                question_to_sequence_number: -1,
+                type_constraint_name: "location",
+                logic: {},
+                allow_multiple: true,
+                answer: [],
+                choices: [],
+                question_title: "loco",
+                sequence_number: 1
+            };
+            
+            
+            var response = Widgets._validate(question.type_constraint_name, " ");
+            should(response).match(null);
+
+            var response = Widgets._validate(question.type_constraint_name, "");
+            should(response).match(null);
+            done();
+
+        });
+    
+    it('should validate lat lon questions passed in as "poop 40.1" correctly as invalid',
+        function(done) {
+            var question = {
+                question_to_sequence_number: -1,
+                type_constraint_name: "location",
+                logic: {},
+                allow_multiple: true,
+                answer: [],
+                choices: [],
+                question_title: "loco",
+                sequence_number: 1
+            };
+            
+            
+            var response = Widgets._validate(question.type_constraint_name, "poop 40.1");
+            should(response).match(null);
+            done();
+
+        });
+});

@@ -8,7 +8,9 @@ import unittest
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -54,6 +56,7 @@ class DriverTest(unittest.TestCase):
         if not SAUCE_CONNECT:
             self.drv = webdriver.Firefox()
             self.browser_name = 'Firefox'
+            self.platform = 'Linux'
             return
 
         self.username = os.environ.get('SAUCE_USERNAME', SAUCE_USERNAME)
@@ -147,13 +150,13 @@ class SubmissionTest(DriverTest):
             '/html/body/div[2]/div/div/ul/li/a[1]').click()
 
         # Click on the shareable link
-        WebDriverWait(self.drv, 2).until(EC.presence_of_element_located(
+        WebDriverWait(self.drv, 4).until(EC.presence_of_element_located(
             (By.XPATH, '/html/body/div[2]/div/div/a')))
         self.drv.find_element_by_xpath(
             '/html/body/div[2]/div/div/a').click()
 
         # Fill out the survey
-        WebDriverWait(self.drv, 2).until(EC.presence_of_element_located(
+        WebDriverWait(self.drv, 4).until(EC.presence_of_element_located(
             (By.XPATH, '/html/body/div[2]/div[2]/input')))
         next_button = self.drv.find_element_by_class_name('page_nav__next')
         in_xpath = '/html/body/div[2]/div[2]/'
@@ -206,9 +209,9 @@ class SubmissionTest(DriverTest):
         next_button.click()  # note question
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
             (By.XPATH, in_xpath + 'div[4]/input')))
+        self.drv.find_element_by_class_name('facility__btn').click()
         self.drv.find_element_by_xpath(in_xpath + 'div[4]/input').send_keys(
             'new_test_facility')
-        self.drv.find_element_by_xpath(in_xpath + 'div[4]/span[2]').click()
         next_button.click()
 
         self.drv.find_element_by_xpath(in_xpath + 'div[2]/input').send_keys(
@@ -252,13 +255,15 @@ class TypeTest(DriverTest):
         connection.execute(survey_table.delete().where(
             survey_table.c.survey_title.like('test_question_type_%')))
 
-    def _create_survey(self, type_constraint_name, choices=None):
+    def _create_survey(self, type_constraint_name,
+                       allow_multiple=False,
+                       choices=None):
         tcn = type_constraint_name
         survey_json = {'email': 'test_email',
                        'survey_title': 'test_question_type_' + tcn,
                        'questions': [{'question_title': tcn,
                                       'type_constraint_name': tcn,
-                                      'allow_multiple': False,
+                                      'allow_multiple': allow_multiple,
                                       'question_to_sequence_number': -1,
                                       'logic': {'required': False,
                                                 'with_other': False},
@@ -297,6 +302,8 @@ class IntegerTest(TypeTest):
         line_graph = self.drv.find_element_by_id('line_graph')
         self.assertTrue(line_graph.is_displayed())
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -326,6 +333,8 @@ class DecimalTest(TypeTest):
         line_graph = self.drv.find_element_by_id('line_graph')
         self.assertTrue(line_graph.is_displayed())
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -355,6 +364,8 @@ class TextTest(TypeTest):
         self.assertRaises(NoSuchElementException, self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -391,6 +402,8 @@ class DateTest(TypeTest):
         self.assertRaises(NoSuchElementException, self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -466,6 +479,87 @@ class MultipleChoiceTest(TypeTest):
                           self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
+        bar_graph = self.drv.find_element_by_id('bar_graph')
+        self.assertTrue(bar_graph.is_displayed())
+
+
+class MultiSelectTest(TypeTest):
+    @report_success_status
+    def testVisualization(self):
+        # Create the survey
+        survey_id, question_id = self._create_survey(
+            'multiple_choice',
+            allow_multiple=True,
+            choices=['choice 1', 'choice 2'])
+
+        # Get the survey
+        self.drv.get(base + '/survey/' + survey_id)
+
+        # Fill it out
+        if self.browser_name == 'android':
+            self.drv.find_element_by_tag_name('select').click()
+            self.drv.switch_to.window('NATIVE_APP')
+            choices = self.drv.find_elements_by_tag_name('CheckedTextView')
+            choices[1].click()
+            choices[2].click()
+            # Click "OK"
+            self.drv.find_elements_by_tag_name('Button')[-1].click()
+            self.drv.switch_to.window('WEBVIEW_0')
+        else:
+            is_osx = self.platform.startswith('OS X')
+            ctrl_key = Keys.COMMAND if is_osx else Keys.CONTROL
+            choices = self.drv.find_elements_by_tag_name('option')
+            ActionChains(
+                self.drv
+            ).key_down(
+                ctrl_key
+            ).click(
+                choices[1]
+            ).click(
+                choices[2]
+            ).key_up(
+                ctrl_key
+            ).perform()
+        self.drv.find_element_by_class_name('page_nav__next').click()
+
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located(
+                (By.CLASS_NAME, 'question__btn')
+            )
+        )
+        self.drv.find_element_by_class_name('question__btn').click()
+
+        # Log in
+        self.drv.get(base + '/debug/login/test_email')
+
+        # Get the submission page
+        self.drv.get(base + '/view/' + survey_id)
+        submission_link = self.drv.find_element_by_xpath(
+            '/html/body/div[2]/div/div/ul[2]/li/a')
+        self.drv.execute_script(
+            'window.scrollTo(0, {});'.format(submission_link.location['y']))
+        submission_link.click()
+
+        # Test it
+        self.assertEqual(
+            len(self.drv.find_elements_by_xpath(
+                '/html/body/div[2]/div/div/ul/li'
+            )),
+            2
+        )
+
+        # Get the visualization page
+        self.drv.get(base + '/visualize/' + question_id)
+
+        # Test it
+        self.assertRaises(NoSuchElementException,
+                          self.drv.find_element_by_id,
+                          'line_graph')
+
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -506,6 +600,8 @@ class LocationTest(TypeTest):
                           self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 10).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 

@@ -11,6 +11,7 @@ alert = window.alert;
 setInterval = function(hey, you) {  } //console.log('pikachu'); }
 console = window.console;
 Image = window.Image;
+navigator = window.navigator;
 localStorage = {};
 
 var mah_code = require('../dokomoforms/static/app.js');
@@ -30,6 +31,8 @@ describe('User next/prev tests', function(done) {
         $(".page_nav__next").off(); //XXX Find out why events are cached
         $(".page_nav__prev").off();
         raw_survey = require('./fixtures/survey.json');
+        raw_survey.survey_metadata.location.lat = 40.80250524727603
+        raw_survey.survey_metadata.location.lon =  -73.93695831298828
         App.init(raw_survey)
         done();
     });
@@ -37,6 +40,10 @@ describe('User next/prev tests', function(done) {
     afterEach(function(done) {
         raw_survey = null;
         localStorage = {};
+        $(".page_nav__next").off('click'); //XXX Find out why events are cached
+        $(".page_nav__prev").off('click');
+        $(".message").clearQueue().text("");
+        $('.content').empty();
         done();
     });
 
@@ -102,7 +109,7 @@ describe('User next/prev tests', function(done) {
             
             var last_question = questions[questions.length - 1];
             survey.current_question = last_question;
-            var title = "another note";
+            var title = "another facility question";
 
             // render submit page
             survey.next(1);
@@ -125,7 +132,7 @@ describe('User next/prev tests', function(done) {
 
             first_question.should.equal(survey.current_question);
 
-            $("input").val("1").trigger("change");
+            $("input").not('.other_input').val("1").trigger("change");
             first_question.answer[0].response.should.equal(1);
 
             $(".page_nav__next").trigger("click");
@@ -177,7 +184,7 @@ describe('User submission tests', function(done) {
                 .should.equal(name);
 
             done();
-        });
+    });
 
     it('should update submitter name', 
         function(done) {
@@ -330,7 +337,199 @@ describe('User multiple choice tests', function(done) {
             $('.question__select').val().should.match("null"); //Go back to the "Please pick option" thing
 
             done();
+   });
+
+});
+
+describe('User facility questions', function(done) {
+
+    before(function(done) {
+        done();
+    });
+
+    beforeEach(function(done) {
+        $(".page_nav__next").off(); //XXX Find out why events are cached
+        $(".page_nav__prev").off();
+        raw_survey = require('./fixtures/survey.json');
+        App.init(raw_survey)
+        App.facilities = require('./fixtures/facilities.json');
+        done();
+    });
+
+    afterEach(function(done) {
+        raw_survey = null;
+        localStorage = {};
+        $(".page_nav__next").off('click'); //XXX Find out why events are cached
+        $(".page_nav__prev").off('click');
+        $(".message").clearQueue().text("");
+        $('.content').empty();
+        done();
+    });
+
+    it('should pick an existing facility', 
+        function(done) {
+            var survey = App.survey;
+            var questions = survey.questions;
+
+            var first_question = questions[0];
+            var fac_question = questions[questions.length - 1];
+
+            survey.render(fac_question);
+
+            first_question.should.not.equal(survey.current_question);
+            fac_question.should.equal(survey.current_question);
+
+            //XXX Fix, event not happening
+            $('.leaflet-marker-icon').first().click();
+            //console.log($('.facility__name').val());
+            //$('.leaflet-marker-icon').first().click();
+            //console.log($('.facility__name').val());
+            
+            done();
+
+   });
+});
+
+describe('User dont know tests', function(done) {
+
+    before(function(done) {
+        done();
+    });
+
+    beforeEach(function(done) {
+        $(".page_nav__next").off(); //XXX Find out why events are cached
+        $(".page_nav__prev").off();
+        raw_survey = require('./fixtures/survey.json');
+        App.init(raw_survey)
+        done();
+    });
+
+    afterEach(function(done) {
+        raw_survey = null;
+        localStorage = {};
+        done();
+    });
+
+    it('should display other_input after dont know button is clicked', 
+        function(done) {
+            var survey = App.survey;
+            var questions = survey.questions;
+
+            var first_question = questions[0];
+            first_question.should.equal(survey.current_question);
+
+            //  Is inactive
+            var other_div = $('.content').find('.question__other');
+            other_div.length.should.equal(1);
+            other_div[0].style.display.should.equal('none');
+
+            $(".question__btn__other").trigger("click");
+
+            //  Is active
+            var other_div = $('.content').find('.question__other');
+            other_div.length.should.equal(1);
+            other_div[0].style.display.should.equal('');
+            done();
+
+           
+        });
+
+    it('should save response as other when filled', 
+        function(done) {
+            var survey = App.survey;
+            var questions = survey.questions;
+
+            var first_question = questions[0];
+            first_question.should.equal(survey.current_question);
+
+            $(".question__btn__other").trigger("click");
+
+            $(".other_input").val("poop").trigger("change");
+            first_question.answer[0].response.should.match("poop");
+            first_question.answer[0].is_other.should.match(true);
+            done();
+
+           
+        });
+
+    it('should clear other response when dont know is unclicked', 
+        function(done) {
+            var survey = App.survey;
+            var questions = survey.questions;
+
+            var first_question = questions[0];
+            first_question.should.equal(survey.current_question);
+
+            $(".question__btn__other").trigger("click");
+
+            $(".other_input").val("poop").trigger("change");
+            first_question.answer.length.should.equal(1);
+
+            $(".question__btn__other").trigger("click");
+            first_question.answer.length.should.equal(0);
+
+            //  Is inactive
+            var other_div = $('.content').find('.question__other');
+            other_div.length.should.equal(1);
+            other_div[0].style.display.should.equal('none');
+
+            done();
+
+        });
+
+    it('should clear restore value TO CORRECT TYPE after dont know is cycled', 
+        function(done) {
+            var survey = App.survey;
+            var questions = survey.questions;
+
+            var first_question = questions[0];
+            first_question.should.equal(survey.current_question);
+
+            $('.text_input').not('.other_input').val('1').trigger('change');
+            first_question.answer[0].response.should.equal(1);
+            first_question.answer[0].is_other.should.equal(false);
+
+            // clicking clears it
+            $(".question__btn__other").trigger("click");
+            should(first_question.answer[0].response).equal(null);
+            first_question.answer[0].is_other.should.equal(true);
+
+            // clicking again restores it
+            $(".question__btn__other").trigger("click");
+            first_question.answer[0].response.should.equal(1);
+            first_question.answer[0].is_other.should.equal(false);
+            
+            done();
+           
+        });
+
+    it('should save response as other when filled and moved away from', 
+        function(done) {
+            var survey = App.survey;
+            var questions = survey.questions;
+
+            var first_question = questions[0];
+            first_question.should.equal(survey.current_question);
+
+            $(".question__btn__other").trigger("click");
+
+            // change value
+            $(".other_input").val("poop").trigger("change");
+            first_question.answer[0].response.should.match("poop");
+            first_question.answer[0].is_other.should.match(true);
+
+            $(".page_nav__next").trigger("click");
+            first_question.should.not.equal(survey.current_question);
+            $(".page_nav__prev").trigger("click");
+            first_question.should.equal(survey.current_question);
+
+            // value still displayed
+            $(".other_input").val().should.equal("poop");
+            first_question.answer[0].response.should.match("poop");
+            first_question.answer[0].is_other.should.match(true);
+            done();
 
            
         });
 });
+
