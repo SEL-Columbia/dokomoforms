@@ -806,9 +806,9 @@ Widgets._getMap = function() {
 
     // Save the interval id, clear it every time a page is rendered
     Widgets.interval = window.setInterval(updateColour, 50); // XXX: could be CSS
-
+    
     map.addLayer(App._getMapLayer());
-    map.setMaxBounds(map.getBounds().pad(1));
+    //map.setMaxBounds(map.getBounds().pad(1));
     return map;
 };
 
@@ -860,10 +860,10 @@ Widgets.location = function(question, page) {
                     ];
 
                     // Set map view and update indicator position
-                    map.setMaxBounds(null);
+                    //map.setMaxBounds(null);
                     map.setView([coords[1], coords[0]]);
                     map.circle.setLatLng([coords[1], coords[0]]);
-                    map.setMaxBounds(map.getBounds().pad(1));
+                    //map.setMaxBounds(map.getBounds().pad(1));
 
                     updateLocation(coords);
 
@@ -1083,10 +1083,10 @@ Widgets.facility = function(question, page) {
                     var coords = [position.coords.longitude, position.coords.latitude];
 
                     // Update map position and set indicator position again
-                    map.setMaxBounds(null);
+                    //map.setMaxBounds(null);
                     map.setView([coords[1], coords[0]]);
                     map.circle.setLatLng([coords[1], coords[0]]);
-                    map.setMaxBounds(map.getBounds().pad(1));
+                    //map.setMaxBounds(map.getBounds().pad(1));
 
                     // Revisit api call
                     reloadFacilities(coords[1], coords[0]); 
