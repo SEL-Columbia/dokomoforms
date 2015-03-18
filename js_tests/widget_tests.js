@@ -340,12 +340,16 @@ describe('Widget creation tests', function(done) {
 
             Widgets[question.type_constraint_name](question, $('.content'));
 
-            $('.question__lon')
+            $('.text_input')
+                .not('.other_input')
                 .val()
+                .split(" ")[1]
                 .should.match("70");
             
-            $('.question__lat')
+            $('.text_input')
+                .not('.other_input')
                 .val()
+                .split(" ")[0]
                 .should.match("40");
 
 
@@ -379,12 +383,16 @@ describe('Widget creation tests', function(done) {
 
             Widgets[question.type_constraint_name](question, $('.content'));
 
-            $('.question__lon')
+            $('.text_input')
+                .not('.other_input')
                 .val()
+                .split(" ")[1]
                 .should.match("5");
             
-            $('.question__lat')
+            $('.text_input')
+                .not('.other_input')
                 .val()
+                .split(" ")[0]
                 .should.match("7");
 
 
@@ -656,3 +664,106 @@ describe('Widget creation tests', function(done) {
         });
 });
 
+describe('Widget validate tests', function(done) {
+    before(function(done) {
+        done();
+    });
+
+
+    beforeEach(function(done) {
+        App.facilities = [];
+        App.unsynced_facilities = {};
+        done();
+    });
+
+    afterEach(function(done) {
+        $(".page_nav__next").off('click'); //XXX Find out why events are cached
+        $(".page_nav__prev").off('click');
+        $('.content').empty();
+        localStorage = {};
+        done();
+    });
+
+    it('should validate lat lon questions passed in as "lat lon" correctly',
+        function(done) {
+            var question = {
+                question_to_sequence_number: -1,
+                type_constraint_name: "location",
+                logic: {},
+                allow_multiple: true,
+                answer: [],
+                choices: [],
+                question_title: "loco",
+                sequence_number: 1
+            };
+            
+            
+            var response = Widgets._validate(question.type_constraint_name, "40.1 70.1");
+            response.should.match({'lat': 40.1, 'lon': 70.1});
+            done();
+
+        });
+    
+    it('should validate lat lon questions passed in as "lat " correctly as invalid',
+        function(done) {
+            var question = {
+                question_to_sequence_number: -1,
+                type_constraint_name: "location",
+                logic: {},
+                allow_multiple: true,
+                answer: [],
+                choices: [],
+                question_title: "loco",
+                sequence_number: 1
+            };
+            
+            
+            var response = Widgets._validate(question.type_constraint_name, "40.1 ");
+            should(response).match(null);
+            done();
+
+        });
+    
+    it('should validate lat lon questions passed in as " " correctly as invalid',
+        function(done) {
+            var question = {
+                question_to_sequence_number: -1,
+                type_constraint_name: "location",
+                logic: {},
+                allow_multiple: true,
+                answer: [],
+                choices: [],
+                question_title: "loco",
+                sequence_number: 1
+            };
+            
+            
+            var response = Widgets._validate(question.type_constraint_name, " ");
+            should(response).match(null);
+
+            var response = Widgets._validate(question.type_constraint_name, "");
+            should(response).match(null);
+            done();
+
+        });
+    
+    it('should validate lat lon questions passed in as "poop 40.1" correctly as invalid',
+        function(done) {
+            var question = {
+                question_to_sequence_number: -1,
+                type_constraint_name: "location",
+                logic: {},
+                allow_multiple: true,
+                answer: [],
+                choices: [],
+                question_title: "loco",
+                sequence_number: 1
+            };
+            
+            
+            var response = Widgets._validate(question.type_constraint_name, "poop 40.1");
+            should(response).match(null);
+            done();
+
+        });
+});
