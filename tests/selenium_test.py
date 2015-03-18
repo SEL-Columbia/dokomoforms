@@ -381,7 +381,7 @@ class DateTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
-        if self.browser_name == 'android':
+        if self.browser_name == 'android' and self.version < 4.4:
             self.drv.find_element_by_xpath(
                 '/html/body/div[2]/div[2]/input').click()
             self.drv.switch_to.window('NATIVE_APP')
@@ -419,7 +419,7 @@ class TimeTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
-        if self.browser_name == 'android':
+        if self.browser_name == 'android' and self.version < 4.4:
             self.drv.find_element_by_xpath(
                 '/html/body/div[2]/div[2]/input').click()
             self.drv.switch_to.window('NATIVE_APP')
