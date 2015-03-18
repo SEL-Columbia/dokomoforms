@@ -439,6 +439,7 @@ class APITest(AsyncHTTPTestCase):
     def testCreateSurvey(self):
         input_data = {'email': 'test_email',
                       'survey_title': 'survey_created_through_api',
+                      'survey_metadata': {},
                       'questions': [{'question_title': 'a question',
                                      'type_constraint_name': 'text',
                                      'hint': '',

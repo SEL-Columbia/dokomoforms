@@ -9,7 +9,10 @@ from sqlalchemy.sql import Insert, and_, cast, select, exists
 from dokomoforms.db import survey_table, auth_user_table
 
 
-def survey_insert(*, auth_user_id: str, survey_title: str) -> Insert:
+def survey_insert(*,
+                  auth_user_id: str,
+                  survey_title: str,
+                  survey_metadata) -> Insert:
     """
     Insert a record into the survey table.
 
@@ -17,8 +20,10 @@ def survey_insert(*, auth_user_id: str, survey_title: str) -> Insert:
     :param survey_title: The survey's title
     :return: The Insert object. Execute this!
     """
-    return survey_table.insert().values(survey_title=survey_title,
-                                        auth_user_id=auth_user_id)
+    return survey_table.insert().values(
+        survey_title=survey_title,
+        auth_user_id=auth_user_id,
+        survey_metadata=survey_metadata)
 
 
 def get_surveys_by_email(connection: Connection,

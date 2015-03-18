@@ -261,6 +261,7 @@ class TypeTest(DriverTest):
         tcn = type_constraint_name
         survey_json = {'email': 'test_email',
                        'survey_title': 'test_question_type_' + tcn,
+                       'survey_metadata': {},
                        'questions': [{'question_title': tcn,
                                       'type_constraint_name': tcn,
                                       'allow_multiple': allow_multiple,
