@@ -878,7 +878,7 @@ Widgets._getMap = function() {
     );
 
     map.addLayer(roadTileLayer);
-    map.addLayer(roadLabelTileLayer);
+    map.addLayer(roadLabelsTileLayer);
     map.addLayer(waterTileLayer);
     map.addLayer(poiTileLayer);
     map.addLayer(landTileLayer);
@@ -985,6 +985,9 @@ Widgets.facility = function(question, page) {
 
     facilities_group.addTo(map);
     new_facilities_group.addTo(map);
+
+    facilities_group.bringToFront();
+    new_facilities_group.bringToFront();
 
     // Revisit API Call calls facilitiesCallback
     reloadFacilities(App.start_loc.lat, App.start_loc.lon);
