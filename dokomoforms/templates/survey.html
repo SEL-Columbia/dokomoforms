@@ -214,7 +214,7 @@
             <% if (question.logic.with_other) { %>
                 <option 
                     <% var ans = question.answer[question.choices.length];
-                    if (ans && (ans.response))  { %>
+                    if (ans && (ans.is_other))  { %>
                         selected
                     <% } %>
                 value="other">

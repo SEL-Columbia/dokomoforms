@@ -419,8 +419,7 @@ var Widgets = {
 // All widgets store results in the questions.answer array
 Widgets._input = function(question, page, type) {
     var self = this;
-    self.state = OFF;
-    //console.log("Initial question ans array", question.answer);
+    self.dontknow_state = OFF;
     
     // Render add/minus input buttons 
     Widgets._renderRepeat(page, question);
@@ -450,8 +449,6 @@ Widgets._input = function(question, page, type) {
         }
     });
 
-    //console.log('Restored question ans array', question.answer);
-    
     // Set up input event listner
     $(page)
         .find('.text_input').not('.other_input')
@@ -484,8 +481,8 @@ Widgets._input = function(question, page, type) {
     $(page)
         .find('.question__btn__other')
         .click(function() { 
-            self.state = (self.state + 1) % 2 // toggle btwn 1 and 0
-            self._toggleOther(page, question, self.state);
+            self.dontknow_state = (self.dontknow_state + 1) % 2 // toggle btwn 1 and 0
+            self._toggleOther(page, question, self.dontknow_state);
         });
 
 
@@ -769,7 +766,7 @@ Widgets.multiple_choice = function(question, page) {
     // Selection is handled in _template however toggling of view is done here
     if (question.answer[question.choices.length] && 
             question.answer[question.choices.length].is_other &&
-                question.answer[question.choices.length].response) {
+                question.answer[question.choices.length]) {
         $other.show();
     }
 };
