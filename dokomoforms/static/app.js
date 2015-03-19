@@ -173,16 +173,15 @@ Survey.prototype.getQuestion = function(seq) {
 };
 
 // Answer array may have elements even if answer[0] is undefined
-// XXX: function name doesnt match return types or what its doing
+// Return a non empty response or an empty one if none found
 Survey.prototype.getFirstResponse = function(question) {
     for (var i = 0; i < question.answer.length; i++) {
         var answer = question.answer[i];
         if (answer && typeof answer.response !== 'undefined') {
-            return answer.response
+            return answer
         }
     }
-
-    return null;
+    return {'response': null, 'is_other': false};
 };
 
 // Choose next question, deals with branching and back/forth movement
@@ -190,7 +189,12 @@ Survey.prototype.next = function(offset) {
     var self = this;
     var next_question = offset === PREV ? this.current_question.prev : this.current_question.next;
     var index = $('.content').data('index');
-    var first_response = this.getFirstResponse(this.current_question); 
+
+    var first_answer = this.getFirstResponse(this.current_question); 
+    var first_response = first_answer.response;
+    var first_is_other = first_answer.is_other;
+
+
 
     //XXX: 0 is not the indicator anymore its lowest sequence num;
     if (index === self.lowest_sequence_number && offset === PREV) {
@@ -209,14 +213,15 @@ Survey.prototype.next = function(offset) {
             return;
         }
 
-        var other_response = this.current_question.answer && this.current_question.answer[0]; // I know its position always
-        if (other_response && other_response.is_other && !other_response.response) {
+        //var other_response = this.current_question.answer && this.current_question.answer[0]; // I know its position always
+        if (first_is_other && !first_response) {
+        //if (other_response && other_response.is_other && !other_response.response) {
             App.message('Please provide a reason before moving on.');
             return;
         }
 
         // Check if question was a branching question
-        if (this.current_question.branches && first_response) {
+        if (this.current_question.branches && (first_response !== null)) {
             var branches = this.current_question.branches;
             for (var i=0; i < branches.length; i++) {
                 if (branches[i].question_choice_id === first_response) {
@@ -319,7 +324,7 @@ Survey.prototype.submit = function() {
             var is_other = ans.is_other || false;
             var metadata = ans.metadata || null;
 
-            if (typeof response === undefined) { 
+            if (response == null) { 
                 return;
             }
 
@@ -409,7 +414,6 @@ var Widgets = {
 //
 //      multiple choice
 //      facility
-//      location
 //      note
 //
 // All widgets store results in the questions.answer array

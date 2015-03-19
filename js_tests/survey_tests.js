@@ -69,19 +69,19 @@ describe('Survey unit and regression tests', function(done) {
             survey = new Survey("id", 0, questions, {});
 
             // empty
-            should(survey.getFirstResponse(questions[0])).match(null);
+            should(survey.getFirstResponse(questions[0]).response).match(null);
             // O value
             questions[0].answer = [{}, {response:0}];
-            should(survey.getFirstResponse(questions[0])).match(0);;
+            should(survey.getFirstResponse(questions[0]).response).match(0);;
             // some value
             questions[0].answer = [{response:1}, {}];
-            should(survey.getFirstResponse(questions[0])).match(1);
+            should(survey.getFirstResponse(questions[0]).response).match(1);
             // some value doubled
             questions[0].answer = [{response:1}, {response: 2}];
-            should(survey.getFirstResponse(questions[0])).match(1);
+            should(survey.getFirstResponse(questions[0]).response).match(1);
             // empty string
             questions[0].answer = [{response:""}];
-            should(survey.getFirstResponse(questions[0])).match("");
+            should(survey.getFirstResponse(questions[0]).response).match("");
 
             done();
 
@@ -101,10 +101,10 @@ describe('Survey unit and regression tests', function(done) {
             survey = new Survey("id", 0,  questions, {});
 
             // empty
-            should(survey.getFirstResponse(questions[0])).match(null);
+            should(survey.getFirstResponse(questions[0]).response).match(null);
             // empty string
             questions[0].answer = [{response:Widgets._validate("text", "")}];
-            should(survey.getFirstResponse(questions[0])).match(null);
+            should(survey.getFirstResponse(questions[0]).response).match(null);
 
             done();
 

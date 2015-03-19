@@ -307,7 +307,7 @@ describe('User multiple choice tests', function(done) {
            
         });
 
-    it('should NOT remember choice other was selected', 
+    it('should NOT allow you to move forward when other is selected and not filled', 
         function(done) {
             var survey = App.survey;
             var questions = survey.questions;
@@ -330,11 +330,11 @@ describe('User multiple choice tests', function(done) {
             $('.text_input').val("").change(); // No value ==> you didn't fill out other
 
             $(".page_nav__next").trigger("click");
-            mc_question.should.not.equal(survey.current_question);
-            $(".page_nav__prev").trigger("click");
-            mc_question.should.equal(survey.current_question);
+            mc_question.should.equal(survey.current_question); // cant move until answer is filled
 
-            $('.question__select').val().should.match("null"); //Go back to the "Please pick option" thing
+            $('.text_input').val("poop").change(); // No value ==> you didn't fill out other
+            $(".page_nav__next").trigger("click");
+            mc_question.should.not.equal(survey.current_question); // now things are good
 
             done();
    });
