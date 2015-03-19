@@ -421,20 +421,12 @@ class TimeTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
-        lollipop = StrictVersion('5.0')
         if self.browser_name == 'android':
-            if self.version == lollipop:
-                # In the Android 5.0 webview you can't pick a time... you
-                # just can't
-                self.drv.execute_script('''
-                    document.getElementsByTagName("input")[0].value="5:55PM";
-                ''')
-            else:
-                self.drv.find_element_by_xpath(
-                    '/html/body/div[2]/div[2]/input').click()
-                self.drv.switch_to.window('NATIVE_APP')
-                self.drv.find_element_by_id('button1').click()
-                self.drv.switch_to.window('WEBVIEW_0')
+            self.drv.find_element_by_xpath(
+                '/html/body/div[2]/div[2]/input').click()
+            self.drv.switch_to.window('NATIVE_APP')
+            self.drv.find_element_by_id('button1').click()
+            self.drv.switch_to.window('WEBVIEW_0')
         else:
             self.drv.find_element_by_xpath(
                 '/html/body/div[2]/div[2]/input').send_keys('5:55PM')
