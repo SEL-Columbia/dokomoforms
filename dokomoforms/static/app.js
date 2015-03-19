@@ -808,8 +808,81 @@ Widgets._getMap = function() {
     // Save the interval id, clear it every time a page is rendered
     Widgets.interval = window.setInterval(updateColour, 50); // XXX: could be CSS
     
-    map.addLayer(App._getMapLayer());
+    //map.addLayer(App._getMapLayer());
     //map.setMaxBounds(map.getBounds().pad(1));
+    
+    var road_style = {
+        "color": "#000",
+        "fillColor": "#000",
+        "weight": 1.0,
+    };
+    var road = 'http://tile.openstreetmap.us/vectiles-highroad/{z}/{x}/{y}.json';
+    var roadTileLayer = new L.TileLayer.GeoJSON(road, 
+        { clipTiles: false},
+        { style: road_style}
+    );
+
+    var road_labels_style = {
+        "color": "#000",
+        "fillColor": "#000",
+        "weight": 1.0,
+    };
+    var road_labels = 'http://tile.openstreetmap.us/vectiles-skeletron/{z}/{x}/{y}.json';
+    var roadLabelsTileLayer = new L.TileLayer.GeoJSON(road_labels, 
+        { clipTiles: false},
+        { style: road_labels_style}
+    );
+
+    var building_style = {
+        "color": "#ffa500",
+        "fillColor": "#ffa500",
+        "weight": 1.0,
+    };
+    var building = 'http://tile.openstreetmap.us/vectiles-buildings/{z}/{x}/{y}.json'; 
+    var buildingTileLayer = new L.TileLayer.GeoJSON(building, 
+        { clipTiles: false},
+        { style: building_style}
+    );
+
+    var poi_style = {
+        "color": "#f00",
+        "fillColor": "#f00",
+        "weight": 1.0,
+    };
+    var poi = 'http://tile.openstreetmap.us/vectiles-pois/{z}/{x}/{y}.json';
+    var poiTileLayer = new L.TileLayer.GeoJSON(poi, 
+        { clipTiles: false},
+        { style: poi_style}
+    );
+
+    var water_style = {
+        "color": "#00f",
+        "fillColor": "#00f",
+        "weight": 1.0,
+    };
+    var water = 'http://tile.openstreetmap.us/vectiles-water-areas/{z}/{x}/{y}.json';
+    var waterTileLayer = new L.TileLayer.GeoJSON(water, 
+        { clipTiles: false},
+        { style: water_style}
+    );
+
+    var land_style = {
+        "color": "#0f0",
+        "fillColor": "#0f0",
+        "weight": 1.0,
+    };
+    var land = 'http://tile.openstreetmap.us/vectiles-land-usages/{z}/{x}/{y}.json';
+    var landTileLayer = new L.TileLayer.GeoJSON(land, 
+        { clipTiles: false},
+        { style: land_style}
+    );
+
+    map.addLayer(roadTileLayer);
+    map.addLayer(roadLabelTileLayer);
+    map.addLayer(waterTileLayer);
+    map.addLayer(poiTileLayer);
+    map.addLayer(landTileLayer);
+    map.addLayer(buildingTileLayer);
     return map;
 };
 
@@ -1224,7 +1297,6 @@ function postNewFacility(facility) {
         
         headers: {
             "Authorization": "Basic " + btoa("dokomoforms" + ":" + "password")
-                //DONT DO THIS XXX XXX
         },
 
         error: function() {
