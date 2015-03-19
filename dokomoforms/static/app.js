@@ -776,8 +776,6 @@ Widgets._getMap = function() {
             center: [App.start_loc.lat, App.start_loc.lon],
             dragging: true,
             zoom: 13,
-            minZoom: 13,
-            maxZoom: 14,
             zoomControl: false,
             doubleClickZoom: false,
             attributionControl: false
@@ -878,9 +876,9 @@ Widgets._getMap = function() {
     );
 
     map.addLayer(roadTileLayer);
-    map.addLayer(roadLabelsTileLayer);
+    //map.addLayer(roadLabelsTileLayer);
     map.addLayer(waterTileLayer);
-    map.addLayer(poiTileLayer);
+    //map.addLayer(poiTileLayer);
     map.addLayer(landTileLayer);
     map.addLayer(buildingTileLayer);
     return map;
@@ -985,9 +983,6 @@ Widgets.facility = function(question, page) {
 
     facilities_group.addTo(map);
     new_facilities_group.addTo(map);
-
-    facilities_group.bringToFront();
-    new_facilities_group.bringToFront();
 
     // Revisit API Call calls facilitiesCallback
     reloadFacilities(App.start_loc.lat, App.start_loc.lon);
