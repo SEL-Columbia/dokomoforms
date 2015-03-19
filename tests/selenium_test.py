@@ -1,5 +1,6 @@
 """Front-end tests"""
 import base64
+from distutils.version import StrictVersion
 import functools
 from http.client import HTTPConnection
 import json
@@ -90,6 +91,7 @@ class DriverTest(unittest.TestCase):
         self.drv = webdriver.Remote(desired_capabilities=caps,
                                     command_executor=cmd_executor)
         self.drv.implicitly_wait(10)
+        self.version = StrictVersion(self.version)
 
     def _set_sauce_status(self):
         credential_s = ':'.join([self.username, self.access_key])
@@ -243,7 +245,7 @@ class SubmissionTest(DriverTest):
         self.assertIn('<strong>5. time question</strong><br',
                       self.drv.page_source)
         self.assertIn('Answer: [-70, 40]', self.drv.page_source)
-        self.assertIn('Answer: [-70, 40]', self.drv.page_source)
+        self.assertIn('Answer: text 7', self.drv.page_source)
         self.assertIn('Answer: other 8', self.drv.page_source)
         self.assertIn('<strong>10. facility question</strong><br',
                       self.drv.page_source)
@@ -381,7 +383,7 @@ class DateTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
-        if self.browser_name == 'android' and self.version >= 5:
+        if self.browser_name == 'android':
             self.drv.find_element_by_xpath(
                 '/html/body/div[2]/div[2]/input').click()
             self.drv.switch_to.window('NATIVE_APP')
@@ -419,12 +421,20 @@ class TimeTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
-        if self.browser_name == 'android' and self.version >= 5:
-            self.drv.find_element_by_xpath(
-                '/html/body/div[2]/div[2]/input').click()
-            self.drv.switch_to.window('NATIVE_APP')
-            self.drv.find_element_by_id('button1').click()
-            self.drv.switch_to.window('WEBVIEW_0')
+        lollipop = StrictVersion('5.0')
+        if self.browser_name == 'android':
+            if self.version == lollipop:
+                # In the Android 5.0 webview you can't pick a time... you
+                # just can't
+                self.drv.execute_script('''
+                    document.getElementsByTagName("input")[0].value="5:55PM";
+                ''')
+            else:
+                self.drv.find_element_by_xpath(
+                    '/html/body/div[2]/div[2]/input').click()
+                self.drv.switch_to.window('NATIVE_APP')
+                self.drv.find_element_by_id('button1').click()
+                self.drv.switch_to.window('WEBVIEW_0')
         else:
             self.drv.find_element_by_xpath(
                 '/html/body/div[2]/div[2]/input').send_keys('5:55PM')
