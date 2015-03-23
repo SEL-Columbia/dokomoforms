@@ -10,7 +10,6 @@ var App = {
     facilities: [], // revisit facilities
     unsynced_facilities: {}, // new facilities
     start_loc: {'lat': 40.8138912, 'lon': -73.9624327}, // defaults to nyc, updated constantly
-    tile_layer: null,
     tile_url: 'http://{s}.tiles.mapbox.com/v3/examples.map-20v6611k/{z}/{x}/{y}.png',
     submitter_name: ''
 };
@@ -35,25 +34,6 @@ App.init = function(survey) {
     // Load up any unsynced facilities
     App.unsynced_facilities = 
         JSON.parse(localStorage.unsynced_facilities || "{}");
-
-    // Seedmap 
-    App.tile_layer =  L.tileLayer(App.tile_url, {
-        maxZoom: 18,
-        useCache: true
-    });
-
-    var sw = L.latLng(App.start_loc.lat - 0.25 , App.start_loc.lon - 0.25);
-    var ne = L.latLng(App.start_loc.lat + 0.25, App.start_loc.lon + 0.25); 
-    //TODO: version that requires no map;
-    //App.tile_layer.seed(new L.latLngBounds(sw, ne), 13, 14)
-
-    App.tile_layer.on('tilecachehit',function(ev){
-        console.log('Cache hit: ', ev.url);
-    });
-
-    App.tile_layer.on('tilecachemiss',function(ev){
-        console.log('Cache miss: ', ev.url);
-    });
 
     // Manual sync    
     $('.nav__sync')
@@ -758,6 +738,19 @@ Widgets._getMap = function() {
             attributionControl: false
         });
     
+    var tile_layer =  new L.tileLayer(App.tile_url, {
+        maxZoom: 18,
+        useCache: true
+    });
+
+    tile_layer.on('tilecachehit',function(ev){
+        console.log('Cache hit: ', ev.url);
+    });
+
+    tile_layer.on('tilecachemiss',function(ev){
+        console.log('Cache miss: ', ev.url);
+    });
+
     // Blinking location indicator
     var circle = L.circle(App.start_loc, 5, {
             color: 'red',
@@ -783,7 +776,7 @@ Widgets._getMap = function() {
     // Save the interval id, clear it every time a page is rendered
     Widgets.interval = window.setInterval(updateColour, 50); // XXX: could be CSS
     
-    map.addLayer(App.tile_layer);
+    map.addLayer(tile_layer);
     return map;
 };
 
