@@ -70,53 +70,6 @@ App.message = function(text) {
         .fadeOut('fast');
 };
 
-// Handle caching map layer
-App._getMapLayer = function() {
-    //XXX: TODO: Some how cache this on survey load 
-    function getImage(url, cb) {
-        // Retrieves an image from cache, possibly fetching it first
-        var imgKey = url.split('.').slice(1).join('.').replace(/\//g, '');
-        var img = localStorage[imgKey];
-        if (img) {
-            cb(img);
-        } else {
-            imgToBase64(url, 'image/png', function(img) {
-                localStorage[imgKey] = img;
-                cb(img);
-            });
-        }
-    }
-    
-    function imgToBase64(url, outputFormat, callback){
-        var canvas = document.createElement('canvas'),
-            ctx = canvas.getContext('2d'),
-            img = new Image();
-        img.crossOrigin = 'Anonymous';
-        img.onload = function(){
-            var dataURL;
-            canvas.height = img.height;
-            canvas.width = img.width;
-            ctx.drawImage(img, 0, 0);
-            dataURL = canvas.toDataURL(outputFormat);
-            callback.call(this, dataURL);
-            canvas = null; 
-        };
-        img.src = url;
-    }
-
-    // Tile layer
-    return new L.TileLayer.Functional(function(view) {
-        var deferred = $.Deferred();
-        var url = 'http://{s}.tiles.mapbox.com/v3/examples.map-20v6611k/{z}/{y}/{x}.png'
-            .replace('{s}', 'abcd'[Math.round(Math.random() * 3)])
-            .replace('{z}', Math.floor(view.zoom))
-            .replace('{x}', view.tile.row)
-            .replace('{y}', view.tile.column);
-        getImage(url, deferred.resolve);
-        return deferred.promise();
-    });
-
-};
 
 function Survey(id, version, questions, metadata) {
     var self = this;
@@ -772,12 +725,11 @@ Widgets.multiple_choice = function(question, page) {
 };
 
 Widgets._getMap = function() {
+
     var map = L.map('map', {
             center: [App.start_loc.lat, App.start_loc.lon],
             dragging: true,
             zoom: 13,
-            minZoom: 13,
-            maxZoom: 14,
             zoomControl: false,
             doubleClickZoom: false,
             attributionControl: false
@@ -808,8 +760,14 @@ Widgets._getMap = function() {
     // Save the interval id, clear it every time a page is rendered
     Widgets.interval = window.setInterval(updateColour, 50); // XXX: could be CSS
     
-    map.addLayer(App._getMapLayer());
-    //map.setMaxBounds(map.getBounds().pad(1));
+    // Tile layer
+    var url = 'http://{s}.tiles.mapbox.com/v3/examples.map-20v6611k/{z}/{x}/{y}.png';
+    var layer =  L.tileLayer(url, {
+        maxZoom: 18,
+        useCache: true
+    });
+
+    map.addLayer(layer);
     return map;
 };
 
