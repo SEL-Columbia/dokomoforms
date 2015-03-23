@@ -9,9 +9,10 @@ var App = {
     unsynced: [], // unsynced surveys
     facilities: [], // revisit facilities
     unsynced_facilities: {}, // new facilities
-    start_loc: {'lat': 40.8138912, 'lon': -73.9624327}, 
+    start_loc: {'lat': 40.8138912, 'lon': -73.9624327}, // defaults to nyc, updated constantly
+    tile_layer: null,
+    tile_url: 'http://{s}.tiles.mapbox.com/v3/examples.map-20v6611k/{z}/{x}/{y}.png',
     submitter_name: ''
-   // defaults to nyc, updated by metadata and answers to location questions
 };
 
 App.init = function(survey) {
@@ -21,18 +22,38 @@ App.init = function(survey) {
     self.facilities = JSON.parse(localStorage.facilities || "[]");
     self.submitter_name = localStorage.name;
 
+    // Load any facilities
     if (App.facilities.length === 0) {
-        // See if you can get some facilities
+        // See if you can get some new facilities
         getNearbyFacilities(App.start_loc.lat, App.start_loc.lon, 
             FAC_RAD, // Radius in km 
             NUM_FAC, // limit
-            null// what to do with facilities
+            null// what to do with facilities 
         );
     }
 
     // Load up any unsynced facilities
     App.unsynced_facilities = 
         JSON.parse(localStorage.unsynced_facilities || "{}");
+
+    // Seedmap 
+    App.tile_layer =  L.tileLayer(App.tile_url, {
+        maxZoom: 18,
+        useCache: true
+    });
+
+    var sw = L.latLng(App.start_loc.lat - 0.25 , App.start_loc.lon - 0.25);
+    var ne = L.latLng(App.start_loc.lat + 0.25, App.start_loc.lon + 0.25); 
+    //TODO: version that requires no map;
+    //App.tile_layer.seed(new L.latLngBounds(sw, ne), 13, 14)
+
+    App.tile_layer.on('tilecachehit',function(ev){
+        console.log('Cache hit: ', ev.url);
+    });
+
+    App.tile_layer.on('tilecachemiss',function(ev){
+        console.log('Cache miss: ', ev.url);
+    });
 
     // Manual sync    
     $('.nav__sync')
@@ -729,6 +750,8 @@ Widgets._getMap = function() {
     var map = L.map('map', {
             center: [App.start_loc.lat, App.start_loc.lon],
             dragging: true,
+            maxZoom: 15,
+            minZoom: 11,
             zoom: 13,
             zoomControl: false,
             doubleClickZoom: false,
@@ -760,14 +783,7 @@ Widgets._getMap = function() {
     // Save the interval id, clear it every time a page is rendered
     Widgets.interval = window.setInterval(updateColour, 50); // XXX: could be CSS
     
-    // Tile layer
-    var url = 'http://{s}.tiles.mapbox.com/v3/examples.map-20v6611k/{z}/{x}/{y}.png';
-    var layer =  L.tileLayer(url, {
-        maxZoom: 18,
-        useCache: true
-    });
-
-    map.addLayer(layer);
+    map.addLayer(App.tile_layer);
     return map;
 };
 
