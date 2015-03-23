@@ -744,11 +744,11 @@ Widgets._getMap = function() {
     });
 
     tile_layer.on('tilecachehit',function(ev){
-        console.log('Cache hit: ', ev.url);
+        //console.log('Cache hit: ', ev.url);
     });
 
     tile_layer.on('tilecachemiss',function(ev){
-        console.log('Cache miss: ', ev.url);
+        //console.log('Cache miss: ', ev.url);
     });
 
     // Blinking location indicator
