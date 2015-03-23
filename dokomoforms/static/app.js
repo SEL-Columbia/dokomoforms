@@ -730,9 +730,9 @@ Widgets._getMap = function() {
     var map = L.map('map', {
             center: [App.start_loc.lat, App.start_loc.lon],
             dragging: true,
-            maxZoom: 15,
+            maxZoom: 18,
             minZoom: 11,
-            zoom: 13,
+            zoom: 14,
             zoomControl: false,
             doubleClickZoom: false,
             attributionControl: false
