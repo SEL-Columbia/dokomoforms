@@ -32,7 +32,7 @@
     "coveralls": "^2.11.2",
     "faux-jax": "^1.6.0",
     "istanbul": "^0.3.5",
-    "jsdom": "^4.0.4",
+    "jsdom": "^4.0.5",
     "jshint": "^2.6.0",
     "mocha": "^2.1.0",
     "mocha-istanbul": "^0.2.0",
