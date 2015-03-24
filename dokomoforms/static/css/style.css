@@ -352,6 +352,11 @@ ul {
     border-color: rgb(216, 84, 90);
 }
 
+
+.location_input {
+    text-align: center;
+}
+
 .name_input {
     display: inline;
     font-size: 20px;
@@ -424,7 +429,7 @@ ul {
 }
 
 .question__btn__active {
-    box-shadow: 1px 1px 1px #888888; 
+    box-shadow: 1px 1px 1px #999999; 
     background: rgba(250, 203, 27, 0.5);
 }
 
@@ -442,28 +447,11 @@ ul {
     margin: 10px auto;;
 }
 
-.question__location {
-    margin: 0px;
-    padding: 0px;
-}
-
-.question__lat {
-    width: 49.8%;
-    float: left;
-    min-width: 70px !important;
-}
-
-.question__lon {
-    width: 49.8%;
-    float: right;
-    min-width: 70px !important;
-}
-
 .question__repeat {
     display: block;
     text-align: center;
     margin: 0px auto;
-    padding: 25px 0px 10px 0px;
+    padding: 25px 0px 25px 0px;
 }
 
 .question__other {

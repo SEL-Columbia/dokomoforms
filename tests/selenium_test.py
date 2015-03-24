@@ -1,5 +1,6 @@
 """Front-end tests"""
 import base64
+from distutils.version import StrictVersion
 import functools
 from http.client import HTTPConnection
 import json
@@ -56,6 +57,7 @@ class DriverTest(unittest.TestCase):
         if not SAUCE_CONNECT:
             self.drv = webdriver.Firefox()
             self.browser_name = 'Firefox'
+            self.platform = 'Linux'
             return
 
         self.username = os.environ.get('SAUCE_USERNAME', SAUCE_USERNAME)
@@ -89,6 +91,7 @@ class DriverTest(unittest.TestCase):
         self.drv = webdriver.Remote(desired_capabilities=caps,
                                     command_executor=cmd_executor)
         self.drv.implicitly_wait(10)
+        self.version = StrictVersion(self.version)
 
     def _set_sauce_status(self):
         credential_s = ':'.join([self.username, self.access_key])
@@ -149,13 +152,13 @@ class SubmissionTest(DriverTest):
             '/html/body/div[2]/div/div/ul/li/a[1]').click()
 
         # Click on the shareable link
-        WebDriverWait(self.drv, 2).until(EC.presence_of_element_located(
+        WebDriverWait(self.drv, 4).until(EC.presence_of_element_located(
             (By.XPATH, '/html/body/div[2]/div/div/a')))
         self.drv.find_element_by_xpath(
             '/html/body/div[2]/div/div/a').click()
 
         # Fill out the survey
-        WebDriverWait(self.drv, 2).until(EC.presence_of_element_located(
+        WebDriverWait(self.drv, 4).until(EC.presence_of_element_located(
             (By.XPATH, '/html/body/div[2]/div[2]/input')))
         next_button = self.drv.find_element_by_class_name('page_nav__next')
         in_xpath = '/html/body/div[2]/div[2]/'
@@ -208,9 +211,9 @@ class SubmissionTest(DriverTest):
         next_button.click()  # note question
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
             (By.XPATH, in_xpath + 'div[4]/input')))
+        self.drv.find_element_by_class_name('facility__btn').click()
         self.drv.find_element_by_xpath(in_xpath + 'div[4]/input').send_keys(
             'new_test_facility')
-        self.drv.find_element_by_xpath(in_xpath + 'div[4]/span[2]').click()
         next_button.click()
 
         self.drv.find_element_by_xpath(in_xpath + 'div[2]/input').send_keys(
@@ -242,7 +245,7 @@ class SubmissionTest(DriverTest):
         self.assertIn('<strong>5. time question</strong><br',
                       self.drv.page_source)
         self.assertIn('Answer: [-70, 40]', self.drv.page_source)
-        self.assertIn('Answer: [-70, 40]', self.drv.page_source)
+        self.assertIn('Answer: text 7', self.drv.page_source)
         self.assertIn('Answer: other 8', self.drv.page_source)
         self.assertIn('<strong>10. facility question</strong><br',
                       self.drv.page_source)
@@ -260,6 +263,7 @@ class TypeTest(DriverTest):
         tcn = type_constraint_name
         survey_json = {'email': 'test_email',
                        'survey_title': 'test_question_type_' + tcn,
+                       'survey_metadata': {},
                        'questions': [{'question_title': tcn,
                                       'type_constraint_name': tcn,
                                       'allow_multiple': allow_multiple,
@@ -301,6 +305,8 @@ class IntegerTest(TypeTest):
         line_graph = self.drv.find_element_by_id('line_graph')
         self.assertTrue(line_graph.is_displayed())
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -330,6 +336,8 @@ class DecimalTest(TypeTest):
         line_graph = self.drv.find_element_by_id('line_graph')
         self.assertTrue(line_graph.is_displayed())
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -359,6 +367,8 @@ class TextTest(TypeTest):
         self.assertRaises(NoSuchElementException, self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -395,6 +405,8 @@ class DateTest(TypeTest):
         self.assertRaises(NoSuchElementException, self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -470,6 +482,8 @@ class MultipleChoiceTest(TypeTest):
                           self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -487,18 +501,30 @@ class MultiSelectTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
-        choices = self.drv.find_elements_by_tag_name('option')
-        ActionChains(
-            self.drv
-        ).key_down(
-            Keys.CONTROL
-        ).click(
-            choices[1]
-        ).click(
-            choices[2]
-        ).key_up(
-            Keys.CONTROL
-        ).perform()
+        if self.browser_name == 'android':
+            self.drv.find_element_by_tag_name('select').click()
+            self.drv.switch_to.window('NATIVE_APP')
+            choices = self.drv.find_elements_by_tag_name('CheckedTextView')
+            choices[1].click()
+            choices[2].click()
+            # Click "OK"
+            self.drv.find_elements_by_tag_name('Button')[-1].click()
+            self.drv.switch_to.window('WEBVIEW_0')
+        else:
+            is_osx = self.platform.startswith('OS X')
+            ctrl_key = Keys.COMMAND if is_osx else Keys.CONTROL
+            choices = self.drv.find_elements_by_tag_name('option')
+            ActionChains(
+                self.drv
+            ).key_down(
+                ctrl_key
+            ).click(
+                choices[1]
+            ).click(
+                choices[2]
+            ).key_up(
+                ctrl_key
+            ).perform()
         self.drv.find_element_by_class_name('page_nav__next').click()
 
         WebDriverWait(self.drv, 5).until(
@@ -535,6 +561,8 @@ class MultiSelectTest(TypeTest):
                           self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 
@@ -575,6 +603,8 @@ class LocationTest(TypeTest):
                           self.drv.find_element_by_id,
                           'line_graph')
 
+        WebDriverWait(self.drv, 10).until(
+            EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
 

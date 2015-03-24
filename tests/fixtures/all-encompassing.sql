@@ -95,14 +95,14 @@ INSERT INTO survey (survey_title, auth_user_id, survey_metadata)
 VALUES ('test_title2', the_auth_user_id, '{"location": {"lon": 5.118915, "lat": 7.353078}}')
 RETURNING survey_id INTO the_survey_id;
 
-INSERT INTO question (survey_id, sequence_number, question_title,
+INSERT INTO question (survey_id, sequence_number, logic, question_title,
     type_constraint_name, hint, allow_multiple, question_to_sequence_number)
-VALUES (the_survey_id, 1, 'another integer question', 'integer', 'some val', True, 2),
-       (the_survey_id, 5, 'another time question', 'time', 'any time', True, 6),
-       (the_survey_id, 6, 'another location question', 'location', 'use the map', True, 7),
-       (the_survey_id, 7, 'another text question', 'text', 'What? How many characters could a character character if character could character character character', True, 8),
-       (the_survey_id, 9, 'another note', 'note', 'Youre not so bad.', False, 10),
-       (the_survey_id, 10, 'facility question', 'facility', 'Please inform someone about missing facilities', False, -1);
+VALUES (the_survey_id, 1, '{"required": false, "with_other": true}', 'another integer question', 'integer', 'some val', True, 2),
+       (the_survey_id, 5, '{"required": false, "with_other": true}', 'another time question', 'time', 'any time', True, 6),
+       (the_survey_id, 6, '{"required": false, "with_other": true}', 'another location question', 'location', 'use the map', True, 7),
+       (the_survey_id, 7, '{"required": false, "with_other": true}', 'another text question', 'text', 'What? How many characters could a character character if character could character character character', True, 8),
+       (the_survey_id, 9, '{"required": false, "with_other": true}', 'another note', 'note', 'Youre not so bad.', False, 10),
+       (the_survey_id, 10,'{"required": false, "with_other": true}',  'facility question', 'facility', 'Please inform someone about missing facilities', False, -1);
 
 INSERT INTO question (survey_id, sequence_number, question_title,
     type_constraint_name, allow_multiple, question_to_sequence_number)

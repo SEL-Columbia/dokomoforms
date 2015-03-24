@@ -171,6 +171,7 @@ class TestSubmission(unittest.TestCase):
                       'choices': None,
                       'branches': None}]
         data = {'survey_title': 'survey with required question',
+                'survey_metadata': {},
                 'questions': questions,
                 'email': 'test_email'}
         survey = survey_api.create(connection, data)['result']
@@ -395,6 +396,7 @@ class TestSurvey(unittest.TestCase):
                       'choices': None,
                       'branches': None}]
         data = {'survey_title': 'api_test survey',
+                'survey_metadata': {},
                 'questions': questions,
                 'email': 'test_email'}
         survey_id = survey_api.create(connection, data)['result']['survey_id']
@@ -420,6 +422,7 @@ class TestSurvey(unittest.TestCase):
                       'branches': [{'choice_number': 0,
                                     'to_question_number': 1}]}]
         data = {'survey_title': 'api_test survey',
+                'survey_metadata': {},
                 'questions': questions,
                 'email': 'test_email'}
         self.assertRaises(MissingMinimalLogicError, survey_api.create,
@@ -437,6 +440,7 @@ class TestSurvey(unittest.TestCase):
                       'choices': None,
                       'branches': None}]
         data = {'survey_title': 'api_test survey',
+                'survey_metadata': {},
                 'questions': questions,
                 'email': 'test_email'}
 
@@ -449,6 +453,7 @@ class TestSurvey(unittest.TestCase):
         title = survey_select(connection, survey_id,
                               email='test_email').survey_title
         input_data = {'survey_title': title,
+                      'survey_metadata': {},
                       'questions': [{'question_title': 'none',
                                      'type_constraint_name': 'text',
                                      'question_to_sequence_number': -1,
@@ -465,6 +470,7 @@ class TestSurvey(unittest.TestCase):
         self.assertEqual(result2['survey_title'], 'test_title(2)')
         result3 = survey_api.create(connection,
                                     {'survey_title': 'test_title(1)',
+                                     'survey_metadata': {},
                                      'questions': [
                                          {'question_title': 'none',
                                           'type_constraint_name': 'text',
@@ -490,16 +496,19 @@ class TestSurvey(unittest.TestCase):
                             'branches': None}]
 
         survey_api.create(connection, {'survey_title': 'not in conflict(1)',
+                                       'survey_metadata': {},
                                        'questions': dummy_questions,
                                        'email': 'test_email'})
-        result4 = \
-            survey_api.create(connection, {'survey_title': 'not in conflict',
-                                           'questions': dummy_questions,
-                                           'email': 'test_email'})['result']
+        result4 = survey_api.create(
+            connection, {'survey_title': 'not in conflict',
+                         'survey_metadata': {},
+                         'questions': dummy_questions,
+                         'email': 'test_email'})['result']
         self.assertEqual(result4['survey_title'], 'not in conflict')
 
     def testTwoChoicesWithSameName(self):
         input_data = {'survey_title': 'choice error',
+                      'survey_metadata': {},
                       'email': 'test_email',
                       'questions': [{'question_title': 'choice error',
                                      'type_constraint_name': 'multiple_choice',
@@ -515,6 +524,7 @@ class TestSurvey(unittest.TestCase):
 
     def testTwoBranchesFromOneChoice(self):
         input_data = {'survey_title': 'choice error',
+                      'survey_metadata': {},
                       'email': 'test_email',
                       'questions': [{'question_title': 'choice error',
                                      'type_constraint_name': 'multiple_choice',
@@ -554,6 +564,7 @@ class TestSurvey(unittest.TestCase):
 
     def testTypeConstraintDoesNotExist(self):
         input_data = {'survey_title': 'type constraint error',
+                      'survey_metadata': {},
                       'email': 'test_email',
                       'questions': [{'question_title': 'type constraint error',
                                      'type_constraint_name': 'not real',
@@ -600,6 +611,7 @@ class TestSurvey(unittest.TestCase):
                       'choices': [],
                       'branches': []}]
         data = {'survey_title': 'api_test survey',
+                'survey_metadata': {},
                 'questions': questions,
                 'email': 'test_email'}
         survey_id = survey_api.create(connection, data)['result']['survey_id']
@@ -746,6 +758,7 @@ class TestSurvey(unittest.TestCase):
                       'choices': ['use other 3'],
                       'branches': []}]
         data = {'survey_title': 'to_be_updated',
+                'survey_metadata': {},
                 'questions': questions,
                 'email': 'test_email'}
         survey_id = survey_api.create(connection, data)['result']['survey_id']
@@ -882,6 +895,7 @@ class TestSurvey(unittest.TestCase):
                       'choices': ['use other'],
                       'branches': []}]
         data = {'survey_title': 'to_be_updated',
+                'survey_metadata': {},
                 'questions': questions,
                 'email': 'test_email'}
 
@@ -910,6 +924,7 @@ class TestSurvey(unittest.TestCase):
                       'choices': ['one', 'two'],
                       'branches': []}]
         data = {'survey_title': 'bad update survey',
+                'survey_metadata': {},
                 'questions': questions,
                 'email': 'test_email'}
         survey_id = survey_api.create(connection, data)['result']['survey_id']
@@ -980,6 +995,7 @@ class TestSurvey(unittest.TestCase):
 
     def testDelete(self):
         data = {'survey_title': 'api_test survey',
+                'survey_metadata': {},
                 'questions': [{'question_title': 'none',
                                'type_constraint_name': 'text',
                                'question_to_sequence_number': -1,

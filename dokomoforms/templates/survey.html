@@ -152,22 +152,18 @@
             _.each(question.answer, function(ans) {
             if (ans && ans.response !== null && !ans.is_other) { 
                 no_response = false; %>
-                <div class="question__location">
-                    <input class="text_input question__lat" type="text" 
-                           value="<%- ans.response.lat %>">
-                    <input class="text_input question__lon" type="text" 
-                           value="<%- ans.response.lon %>">
-                </div>
+                <input class="text_input location_input" type="text" 
+                    placeholder=""
+                    value="<%- ans.response.lat + ' ' + ans.response.lon %>"
+                >
             <% } %>
         <% }); %>
 
         <% if (no_response) { %>
-            <div class="question__location">
-                <input class="text_input question__lat" type="text" 
-                value="<%- start_loc.lat %>">
-                <input class="text_input question__lon" type="text" 
-                value="<%- start_loc.lon %>">
-            </div>
+            <input class="text_input location_input" type="text" 
+                   placeholder=""
+                   value="<%- start_loc.lat + ' ' + start_loc.lon || '' %>"
+            >
         <% } %>
 
         <div class="question__btn question__find__btn">Find location</div>
@@ -218,7 +214,7 @@
             <% if (question.logic.with_other) { %>
                 <option 
                     <% var ans = question.answer[question.choices.length];
-                    if (ans && (ans.response))  { %>
+                    if (ans && (ans.is_other))  { %>
                         selected
                     <% } %>
                 value="other">
@@ -250,20 +246,21 @@
     </script>
 
     <script id="template_other" type="text/html">
-        <div class="question__btn"><%- question.logic.other_text || "Don't Know" %></div>
+        <div class="question__btn question__btn__other"><%- question.logic.other_text || "Don't Know" %></div>
         <div class="question__other"
-            <% if ((ans && ans.response !== null)) & ans.is_other) {
-            } %>
+            <% var ans = question.answer && question.answer[0];
+               var is_other = ans && ans.is_other;
+            %>
+                style="display: none;"
+        >
             <div class="question__hint">Please provide a reason.</div>
-                if ((ans && ans.response !== null)) & ans.is_other) { %>
-                    <input class="text_input" type="text" 
-                           value="<%- ans.response %>"
-                    >
-            <%  } else { %>
-                    <input class="text_input" type="text" 
-                           placeholder="Response is required."
-                    >
-            <%  } %>
+                <input class="text_input other_input" type="text" 
+                    placeholder="Response is required."
+                    disabled=true
+                    <% if (is_other) { %>
+                        value="<%- ans.response %>"
+                    <% } %>
+                >
         </div>
     </script>
 
