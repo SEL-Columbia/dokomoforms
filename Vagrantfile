@@ -11,14 +11,15 @@ Vagrant.configure(2) do |config|
 
   # Every Vagrant virtual environment requires a box to build off of.
   # config.vm.box = "debian-squeeze607-x64-vbox43"
-  config.vm.box = "xezpeleta/wheezy64"
+  config.vm.box = "fgrehm/wheezy64-lxc"
 
   # The url from where the 'config.vm.box' box will be fetched if it
   # doesn't already exist on the user's system.
   # config.vm.box_url = "http://puppet-vagrant-boxes.puppetlabs.com/debian-73-x64-virtualbox-nocm.box"
 
 
-  config.vm.network :private_network, ip: "192.168.0.200"
+  config.vm.network :private_network, ip: "192.168.0.200", lxc__bridge_name: 'lxcbr0'
+
   config.vm.hostname = "local.dokomoforms.org"
 
   # Create a forwarded port mapping which allows access to a specific port
@@ -44,7 +45,7 @@ Vagrant.configure(2) do |config|
   config.vm.synced_folder ".", "/vagrant", id: "vagrant-root", 
     :owner => "vagrant", 
     :group => "www-data",
-    :mount_options => ["dmode=777","fmode=666"]
+    :mount_options => ["bind","dmode=777","fmode=666"]
 
   # config.vm.synced_folder "./app/storage", "/vagrant/app/storage", id: "vagrant-storage",
   #     :owner => "vagrant",
@@ -59,7 +60,7 @@ Vagrant.configure(2) do |config|
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
   # Example for VirtualBox:
-  #
+  
   config.vm.provider :virtualbox do |vb|
     # Don't boot with headless mode
     # vb.gui = true
@@ -67,5 +68,5 @@ Vagrant.configure(2) do |config|
     # Use VBoxManage to customize the VM. For example to change memory:
     vb.customize ["modifyvm", :id, "--memory", "256"]
   end
- 
+  
 end

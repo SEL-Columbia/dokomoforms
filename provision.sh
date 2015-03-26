@@ -36,6 +36,9 @@ locale-gen
 # install database deps
 apt-get install -y postgresql postgresql-contrib postgis postgresql-server-dev-all
 
+# chown shared folder
+sudo chown vagrant:www-data /vagrant
+
 # install python deps
 # NOTE: this uses pip-3.2, which installed by default
 pip3 install -r /vagrant/requirements.txt
