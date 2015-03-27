@@ -41,15 +41,10 @@ App.init = function(survey) {
     App.unsynced_facilities = 
         JSON.parse(localStorage.unsynced_facilities || "{}");
 
-    // TODO: Store unsynced array in localStorage
-    // TODO: Restore unsynced array from localStorage
+    // Load up any unsynced submissions
+    App.unsynced = 
+        JSON.parse(localStorage.unsynced || "[]");
 
-    // Manual sync    
-    //$('.nav__sync')
-    //    .click(function() {
-    //        self.sync();
-    //    });
-        
     // AppCache updates
     //window.applicationCache.addEventListener('updateready', function() {
     //    alert('app updated, reloading...');
@@ -61,11 +56,13 @@ App.init = function(survey) {
 
 App.sync = function() {
     if (navigator.onLine && App.unsynced.length) {
-        _.each(App.unsynced, function(survey) {
-            survey.submit();
+        _.each(App.unsynced, function(survey, idx) {
+            // XXX SUBMIT CALLBACK ERROR STUFF
+            console.log(idx);
+            App.submit(survey, function() { console.log('done') });
         });
 
-        App.unsynced = []; //XXX: Surveys can fail again, better to pop unsuccess;
+        App.unsynced = [];
     }
 };
 
@@ -104,8 +101,47 @@ App.splash = function(title, created_on, name) {
             $('.page_nav').show();
             App.survey.render(App.survey.first_question);
         });
+
+    content
+        .find('.sync_btn')
+        .one('click', function() {
+            console.log(App.unsynced);
+            App.sync();
+            console.log(App.unsynced);
+        });
 };
 
+App.submit = function(survey, cb) {
+    _.map(App.unsynced_facilities, function(facility) {
+        postNewFacility(facility); 
+    });
+
+    function getCookie(name) {
+        var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
+        return r ? r[1] : undefined;
+    }
+    
+    $.ajax({
+        url: '',
+        type: 'POST',
+        contentType: 'application/json',
+        processData: false,
+        data: JSON.stringify(survey),
+        headers: {
+            "X-XSRFToken": getCookie("_xsrf")
+        },
+        dataType: 'json',
+        success: function() {
+            App.message('Survey submitted!');
+        },
+        error: function() {
+            App.message('Submission failed, will try again later.');
+        },
+        complete: function() {
+            cb();
+        }
+    });
+}
 
 function Survey(id, version, questions, metadata, title, created_on) {
     var self = this;
@@ -171,6 +207,7 @@ Survey.prototype.getFirstResponse = function(question) {
             return answer
         }
     }
+
     return {'response': null, 'is_other': false};
 };
 
@@ -293,12 +330,7 @@ Survey.prototype.submit = function() {
     var save_btn = $('.question__saving')[0];
     var answers = {};
 
-    function getCookie(name) {
-        var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
-        return r ? r[1] : undefined;
-    }
-    
-    // Save answers locally
+    // Save answers locally 
     _.each(self.questions, function(question) {
         answers[question.question_id] = question.answer;
     });
@@ -310,6 +342,11 @@ Survey.prototype.submit = function() {
     self.questions.forEach(function(q) {
         //console.log('q', q);
         q.answer.forEach(function(ans, ind) {
+
+            if (ans == null) {
+                return;
+            }
+
             var response =  ans.response;
             var is_other = ans.is_other || false;
             var metadata = ans.metadata || null;
@@ -328,18 +365,6 @@ Survey.prototype.submit = function() {
         });
     });
 
-    // Post to Revisit 
-    localStorage.setItem("facilities", 
-            JSON.stringify(App.facilities));
-
-    localStorage.setItem("unsynced_facilities", 
-            JSON.stringify(App.unsynced_facilities));
-
-    //console.log('revisit-ing', App.unsynced_facilities);
-    _.map(App.unsynced_facilities, function(facility) {
-        postNewFacility(facility); 
-    });
-
     var data = {
         submitter: App.submitter_name || "anon",
         survey_id: self.id,
@@ -347,7 +372,6 @@ Survey.prototype.submit = function() {
     };
 
     //console.log('submission:', data);
-
     sync.classList.add('icon--spin');
     save_btn.classList.add('icon--spin');
     
@@ -355,39 +379,32 @@ Survey.prototype.submit = function() {
     if (JSON.stringify(survey_answers) === '[]') {
       // Not doing instantly to make it seem like App tried reaaall hard
       setTimeout(function() {
-        sync.classList.remove('icon--spin');
-        save_btn.classList.remove('icon--spin');
-        App.message('Submission failed, No questions answer in Survey!');
-        self.render(self.questions[0]);
+            sync.classList.remove('icon--spin');
+            save_btn.classList.remove('icon--spin');
+            App.message('Saving failed, No questions answer in Survey!');
+            App.splash(App.survey.title, App.survey.created_on, 'name');
       }, 1000);
       return;
-    }
+    } 
 
-    $.ajax({
-        url: '',
-        type: 'POST',
-        contentType: 'application/json',
-        processData: false,
-        data: JSON.stringify(data),
-        headers: {
-            "X-XSRFToken": getCookie("_xsrf")
-        },
-        dataType: 'json',
-        success: function() {
-            App.message('Survey submitted!');
-        },
-        error: function() {
-            App.message('Submission failed, will try again later.');
-            App.unsynced.push(self);
-        },
-        complete: function() {
-            setTimeout(function() {
-                save_btn.classList.remove('icon--spin');
-                sync.classList.remove('icon--spin');
-                self.render(self.questions[0]);
-            }, 1000);
-        }
-    });
+    // Save Revisit data 
+    localStorage.setItem("facilities", 
+            JSON.stringify(App.facilities));
+
+    localStorage.setItem("unsynced_facilities", 
+            JSON.stringify(App.unsynced_facilities));
+
+    // Save Submission data
+    App.unsynced.push(data);
+    localStorage.setItem("unsynced", 
+            JSON.stringify(App.unsynced));
+
+    App.message('Saved Submission!');
+    App.splash(App.survey.title, App.survey.created_on, 'name');
+
+    sync.classList.remove('icon--spin');
+    save_btn.classList.remove('icon--spin');
+
 };
 
 

@@ -595,6 +595,7 @@ describe('Survey unit and regression tests', function(done) {
 
             survey = new Survey("id", 0, questions, {});
             survey.submit();
+            App.sync();
             $('.message').text().should.match("Submission failed, No questions answer in Survey!");
             done();
 
@@ -639,7 +640,7 @@ describe('Survey unit and regression tests', function(done) {
             survey = new Survey("id", 0, questions, {});
             questions[0].answer = [{response:"hey baby"}];
             survey.submit();
-
+            App.sync();
         });
 
 
@@ -703,7 +704,7 @@ describe('Survey unit and regression tests', function(done) {
             survey = new Survey("id", 0, questions, {});
             questions[0].answer = [{response:{'id': 1, 'lat':40.01, 'lon':70.01 }}];
             survey.submit();
-
+            App.sync();
         });
 });
 
