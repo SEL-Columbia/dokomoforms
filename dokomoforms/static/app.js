@@ -16,11 +16,17 @@ var App = {
 
 App.init = function(survey) {
     var self = this;
-    self.survey = new Survey(survey.survey_id, survey.survey_version, survey.questions, survey.survey_metadata);
+    self.survey = new Survey(survey.survey_id, 
+            survey.survey_version, 
+            survey.questions, 
+            survey.survey_metadata, 
+            survey.survey_title, 
+            survey.created_on);
+
     self.start_loc = survey.survey_metadata.location || self.start_loc;
     self.facilities = JSON.parse(localStorage.facilities || "[]");
     self.submitter_name = localStorage.name;
-
+    
     // Load any facilities
     if (App.facilities.length === 0) {
         // See if you can get some new facilities
@@ -35,20 +41,22 @@ App.init = function(survey) {
     App.unsynced_facilities = 
         JSON.parse(localStorage.unsynced_facilities || "{}");
 
+    // TODO: Store unsynced array in localStorage
+    // TODO: Restore unsynced array from localStorage
+
     // Manual sync    
-    $('.nav__sync')
-        .click(function() {
-            self.sync();
-        });
+    //$('.nav__sync')
+    //    .click(function() {
+    //        self.sync();
+    //    });
         
-    // Syncing intervals
-    setInterval(App.sync, 10000);
-    
     // AppCache updates
     //window.applicationCache.addEventListener('updateready', function() {
     //    alert('app updated, reloading...');
     //    window.location.reload();
     //});
+    
+    App.splash(self.survey.title, self.survey.created_on, 'name');
 };
 
 App.sync = function() {
@@ -56,6 +64,7 @@ App.sync = function() {
         _.each(App.unsynced, function(survey) {
             survey.submit();
         });
+
         App.unsynced = []; //XXX: Surveys can fail again, better to pop unsuccess;
     }
 };
@@ -71,13 +80,41 @@ App.message = function(text) {
         .fadeOut('fast');
 };
 
+App.splash = function(title, created_on, name) {
+    var self = this;
+    var content = $('.content');
+    var splashHTML = $('#template_splash').html();
+    var splashTemplate = _.template(splashHTML);
+    var compiledHTML = splashTemplate({
+        'title': title,
+        'created_on': created_on,
+        'name': name,
+        'unsynced': App.unsynced,
+        'unsynced_facilities': App.unsynced_facilities
+    });
 
-function Survey(id, version, questions, metadata) {
+    $('.page_nav').hide();
+
+    content.empty()
+        .data('index', 0)
+        .html(compiledHTML)
+        .find('.start_btn')
+        .one('click', function() {
+            // Render first question
+            $('.page_nav').show();
+            App.survey.render(App.survey.first_question);
+        });
+};
+
+
+function Survey(id, version, questions, metadata, title, created_on) {
     var self = this;
     this.id = id;
     this.questions = questions;
     this.metadata = metadata;
     this.version = version;
+    this.title = title;
+    this.created_on = created_on;
 
     // Load answers from localStorage
     var answers = JSON.parse(localStorage[this.id] || '{}');
@@ -91,6 +128,7 @@ function Survey(id, version, questions, metadata) {
     // Know where to start, and number
     self.current_question = self.questions[0];
     self.lowest_sequence_number = self.current_question.sequence_number;
+    self.first_question = self.current_question;
 
     // Now that you know order, you can set prev pointers
     var curr_q = self.current_question;
@@ -110,8 +148,6 @@ function Survey(id, version, questions, metadata) {
         self.next(offset);
     });
     
-    // Render first question
-    self.render(self.current_question);
 }
 
 // Search by sequence number instead of array pos
@@ -148,28 +184,28 @@ Survey.prototype.next = function(offset) {
     var first_response = first_answer.response;
     var first_is_other = first_answer.is_other;
 
-
-
-    //XXX: 0 is not the indicator anymore its lowest sequence num;
+    // Backward at first question
     if (index === self.lowest_sequence_number && offset === PREV) {
-        // Going backwards on first q is a no-no;
+        App.splash(self.title, self.created_on, 'name');
         return;
     }
 
+    // Backwards at submit page
     if (index === this.questions.length + 1 && offset === PREV) {
         // Going backwards at submit means render ME;
         next_question = this.current_question;
     } 
     
+    // Normal forward
     if (offset === NEXT) {
+        // Are you required?
         if (this.current_question.logic.required && (first_response === null)) {
             App.message('Survey requires this question to be completed.');
             return;
         }
 
-        //var other_response = this.current_question.answer && this.current_question.answer[0]; // I know its position always
+        // Is the only response and empty is other response?
         if (first_is_other && !first_response) {
-        //if (other_response && other_response.is_other && !other_response.response) {
             App.message('Please provide a reason before moving on.');
             return;
         }
