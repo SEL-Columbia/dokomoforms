@@ -292,6 +292,8 @@ class IntegerTest(TypeTest):
         # Fill it out
         self.drv.find_element_by_xpath(
             '/html/body/div[2]/div[2]/input').send_keys('2')
+        if self.browser_name == 'safari':
+            self.drv.execute_script("$('input').change()")
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
 
