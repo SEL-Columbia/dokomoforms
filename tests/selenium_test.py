@@ -504,7 +504,7 @@ class MultipleChoiceTest(TypeTest):
                           self.drv.find_element_by_id,
                           'line_graph')
 
-        WebDriverWait(self.drv, 5).until(
+        WebDriverWait(self.drv, 10).until(
             EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
@@ -544,9 +544,11 @@ class MultiSelectTest(TypeTest):
             if self.browser_name == 'safari':
                 self.drv.execute_script("$('select').change()")
         else:
+            is_osx = self.platform.startswith('OS X')
+            ctrl_key = Keys.COMMAND if is_osx else Keys.CONTROL
             choices = self.drv.find_elements_by_tag_name('option')
             ActionChains(
-                self.drv
+                ctrl_key
             ).key_down(
                 Keys.CONTROL
             ).click(
@@ -554,7 +556,7 @@ class MultiSelectTest(TypeTest):
             ).click(
                 choices[2]
             ).key_up(
-                Keys.CONTROL
+                ctrl_key
             ).perform()
         self.drv.find_element_by_class_name('page_nav__next').click()
 
