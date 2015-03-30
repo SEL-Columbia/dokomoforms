@@ -596,13 +596,12 @@ describe('Survey unit and regression tests', function(done) {
             survey = new Survey("id", 0, questions, {});
             survey.submit();
             App.sync();
-            $('.message').text().should.match("Submission failed, No questions answer in Survey!");
+            $('.message').text().should.match("Saving failed, No questions answer in Survey!");
             done();
 
         });
 
     it('submit: basic submission',
-        //XXX: Fake response so that this doesn't 404
         function(done) {
             var NEXT = 1;
             var PREV = -1;

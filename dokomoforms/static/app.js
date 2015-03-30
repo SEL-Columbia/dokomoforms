@@ -55,15 +55,12 @@ App.init = function(survey) {
 };
 
 App.sync = function() {
-    if (navigator.onLine && App.unsynced.length) {
-        _.each(App.unsynced, function(survey, idx) {
-            // XXX SUBMIT CALLBACK ERROR STUFF
-            console.log(idx);
-            App.submit(survey, function() { console.log('done') });
-        });
+    _.each(App.unsynced, function(survey, idx) {
+        // XXX SUBMIT CALLBACK ERROR STUFF
+        App.submit(survey, function() { console.log('done') });
+    });
 
-        App.unsynced = [];
-    }
+    App.unsynced = [];
 };
 
 App.message = function(text) {
@@ -105,9 +102,11 @@ App.splash = function(title, created_on, name) {
     content
         .find('.sync_btn')
         .one('click', function() {
-            console.log(App.unsynced);
-            App.sync();
-            console.log(App.unsynced);
+            if (navigator.onLine) {
+                App.sync();
+            } else {
+                App.message('Please connect to the internet first.');
+            }
         });
 };
 
