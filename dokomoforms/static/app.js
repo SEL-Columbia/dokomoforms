@@ -16,11 +16,17 @@ var App = {
 
 App.init = function(survey) {
     var self = this;
-    self.survey = new Survey(survey.survey_id, survey.survey_version, survey.questions, survey.survey_metadata);
+    self.survey = new Survey(survey.survey_id, 
+            survey.survey_version, 
+            survey.questions, 
+            survey.survey_metadata, 
+            survey.survey_title, 
+            survey.created_on);
+
     self.start_loc = survey.survey_metadata.location || self.start_loc;
     self.facilities = JSON.parse(localStorage.facilities || "[]");
     self.submitter_name = localStorage.name;
-
+    
     // Load any facilities
     if (App.facilities.length === 0) {
         // See if you can get some new facilities
@@ -35,29 +41,57 @@ App.init = function(survey) {
     App.unsynced_facilities = 
         JSON.parse(localStorage.unsynced_facilities || "{}");
 
-    // Manual sync    
-    $('.nav__sync')
-        .click(function() {
-            self.sync();
-        });
-        
-    // Syncing intervals
-    setInterval(App.sync, 10000);
-    
+    // Load up any unsynced submissions
+    App.unsynced = 
+        JSON.parse(localStorage.unsynced || "[]");
+
     // AppCache updates
     //window.applicationCache.addEventListener('updateready', function() {
     //    alert('app updated, reloading...');
     //    window.location.reload();
     //});
+    
+    App.splash(self.survey.title, self.survey.created_on, 'name');
 };
 
 App.sync = function() {
-    if (navigator.onLine && App.unsynced.length) {
-        _.each(App.unsynced, function(survey) {
-            survey.submit();
-        });
-        App.unsynced = []; //XXX: Surveys can fail again, better to pop unsuccess;
-    }
+    var self = this;
+    self.countdown = App.unsynced.length; //JS is single threaded, no race condition on counter
+    self.failed = [];
+    var restore = function() {
+        // Were done!
+        App.unsynced = self.failed;
+        self.failed = [];
+        localStorage.setItem("unsynced", 
+                JSON.stringify(App.unsynced));
+
+        // Reload page to update template values
+        App.splash(App.survey.title, App.survey.created_on, 'name');
+    };
+    _.each(App.unsynced, function(survey, idx) {
+        App.submit(survey, 
+            function(survey) { 
+                //console.log('done');
+                --self.countdown; 
+                
+                if (self.countdown === 0) 
+                    restore();
+            },
+
+            function(survey) { 
+                //console.log('fail');
+                --self.countdown; 
+                App.failed.push(survey);
+
+                if (self.countdown === 0) 
+                    restore();
+            } 
+        );
+    });
+
+    App.unsynced = [];
+    localStorage.setItem("unsynced", 
+        JSON.stringify(App.unsynced));
 };
 
 App.message = function(text) {
@@ -71,13 +105,83 @@ App.message = function(text) {
         .fadeOut('fast');
 };
 
+App.splash = function(title, created_on, name) {
+    var self = this;
+    var content = $('.content');
+    var splashHTML = $('#template_splash').html();
+    var splashTemplate = _.template(splashHTML);
+    var compiledHTML = splashTemplate({
+        'title': title,
+        'created_on': created_on,
+        'name': name,
+        'unsynced': App.unsynced,
+        'unsynced_facilities': App.unsynced_facilities
+    });
 
-function Survey(id, version, questions, metadata) {
+    $('.page_nav').hide();
+
+    content.empty()
+        .data('index', 0)
+        .html(compiledHTML)
+        .find('.start_btn')
+        .one('click', function() {
+            // Render first question
+            $('.page_nav').show();
+            App.survey.render(App.survey.first_question);
+        });
+
+    content
+        .find('.sync_btn')
+        .one('click', function() {
+            if (navigator.onLine) {
+                App.sync();
+                // Reload page to update template values
+                App.splash(App.survey.title, App.survey.created_on, 'name');
+            } else {
+                App.message('Please connect to the internet first.');
+            }
+        });
+};
+
+App.submit = function(survey, done, fail) {
+    _.map(App.unsynced_facilities, function(facility) {
+        postNewFacility(facility); 
+    });
+
+    function getCookie(name) {
+        var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
+        return r ? r[1] : undefined;
+    }
+    
+    $.ajax({
+        url: '',
+        type: 'POST',
+        contentType: 'application/json',
+        processData: false,
+        data: JSON.stringify(survey),
+        headers: {
+            "X-XSRFToken": getCookie("_xsrf")
+        },
+        dataType: 'json',
+        success: function() {
+            App.message('Survey submitted!');
+            done(survey);
+        },
+        error: function() {
+            App.message('Submission failed, will try again later.');
+            fail(survey);
+        }
+    });
+}
+
+function Survey(id, version, questions, metadata, title, created_on) {
     var self = this;
     this.id = id;
     this.questions = questions;
     this.metadata = metadata;
     this.version = version;
+    this.title = title;
+    this.created_on = created_on;
 
     // Load answers from localStorage
     var answers = JSON.parse(localStorage[this.id] || '{}');
@@ -91,6 +195,7 @@ function Survey(id, version, questions, metadata) {
     // Know where to start, and number
     self.current_question = self.questions[0];
     self.lowest_sequence_number = self.current_question.sequence_number;
+    self.first_question = self.current_question;
 
     // Now that you know order, you can set prev pointers
     var curr_q = self.current_question;
@@ -110,8 +215,6 @@ function Survey(id, version, questions, metadata) {
         self.next(offset);
     });
     
-    // Render first question
-    self.render(self.current_question);
 }
 
 // Search by sequence number instead of array pos
@@ -135,6 +238,7 @@ Survey.prototype.getFirstResponse = function(question) {
             return answer
         }
     }
+
     return {'response': null, 'is_other': false};
 };
 
@@ -148,28 +252,28 @@ Survey.prototype.next = function(offset) {
     var first_response = first_answer.response;
     var first_is_other = first_answer.is_other;
 
-
-
-    //XXX: 0 is not the indicator anymore its lowest sequence num;
+    // Backward at first question
     if (index === self.lowest_sequence_number && offset === PREV) {
-        // Going backwards on first q is a no-no;
+        App.splash(self.title, self.created_on, 'name');
         return;
     }
 
+    // Backwards at submit page
     if (index === this.questions.length + 1 && offset === PREV) {
         // Going backwards at submit means render ME;
         next_question = this.current_question;
     } 
     
+    // Normal forward
     if (offset === NEXT) {
+        // Are you required?
         if (this.current_question.logic.required && (first_response === null)) {
             App.message('Survey requires this question to be completed.');
             return;
         }
 
-        //var other_response = this.current_question.answer && this.current_question.answer[0]; // I know its position always
+        // Is the only response and empty is other response?
         if (first_is_other && !first_response) {
-        //if (other_response && other_response.is_other && !other_response.response) {
             App.message('Please provide a reason before moving on.');
             return;
         }
@@ -257,12 +361,7 @@ Survey.prototype.submit = function() {
     var save_btn = $('.question__saving')[0];
     var answers = {};
 
-    function getCookie(name) {
-        var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
-        return r ? r[1] : undefined;
-    }
-    
-    // Save answers locally
+    // Save answers locally 
     _.each(self.questions, function(question) {
         answers[question.question_id] = question.answer;
     });
@@ -274,6 +373,11 @@ Survey.prototype.submit = function() {
     self.questions.forEach(function(q) {
         //console.log('q', q);
         q.answer.forEach(function(ans, ind) {
+
+            if (ans == null) {
+                return;
+            }
+
             var response =  ans.response;
             var is_other = ans.is_other || false;
             var metadata = ans.metadata || null;
@@ -292,18 +396,6 @@ Survey.prototype.submit = function() {
         });
     });
 
-    // Post to Revisit 
-    localStorage.setItem("facilities", 
-            JSON.stringify(App.facilities));
-
-    localStorage.setItem("unsynced_facilities", 
-            JSON.stringify(App.unsynced_facilities));
-
-    //console.log('revisit-ing', App.unsynced_facilities);
-    _.map(App.unsynced_facilities, function(facility) {
-        postNewFacility(facility); 
-    });
-
     var data = {
         submitter: App.submitter_name || "anon",
         survey_id: self.id,
@@ -311,7 +403,6 @@ Survey.prototype.submit = function() {
     };
 
     //console.log('submission:', data);
-
     sync.classList.add('icon--spin');
     save_btn.classList.add('icon--spin');
     
@@ -319,39 +410,32 @@ Survey.prototype.submit = function() {
     if (JSON.stringify(survey_answers) === '[]') {
       // Not doing instantly to make it seem like App tried reaaall hard
       setTimeout(function() {
-        sync.classList.remove('icon--spin');
-        save_btn.classList.remove('icon--spin');
-        App.message('Submission failed, No questions answer in Survey!');
-        self.render(self.questions[0]);
+            sync.classList.remove('icon--spin');
+            save_btn.classList.remove('icon--spin');
+            App.message('Saving failed, No questions answer in Survey!');
+            App.splash(App.survey.title, App.survey.created_on, 'name');
       }, 1000);
       return;
-    }
+    } 
 
-    $.ajax({
-        url: '',
-        type: 'POST',
-        contentType: 'application/json',
-        processData: false,
-        data: JSON.stringify(data),
-        headers: {
-            "X-XSRFToken": getCookie("_xsrf")
-        },
-        dataType: 'json',
-        success: function() {
-            App.message('Survey submitted!');
-        },
-        error: function() {
-            App.message('Submission failed, will try again later.');
-            App.unsynced.push(self);
-        },
-        complete: function() {
-            setTimeout(function() {
-                save_btn.classList.remove('icon--spin');
-                sync.classList.remove('icon--spin');
-                self.render(self.questions[0]);
-            }, 1000);
-        }
-    });
+    // Save Revisit data 
+    localStorage.setItem("facilities", 
+            JSON.stringify(App.facilities));
+
+    localStorage.setItem("unsynced_facilities", 
+            JSON.stringify(App.unsynced_facilities));
+
+    // Save Submission data
+    App.unsynced.push(data);
+    localStorage.setItem("unsynced", 
+            JSON.stringify(App.unsynced));
+
+    App.message('Saved Submission!');
+    App.splash(App.survey.title, App.survey.created_on, 'name');
+
+    sync.classList.remove('icon--spin');
+    save_btn.classList.remove('icon--spin');
+
 };
 
 

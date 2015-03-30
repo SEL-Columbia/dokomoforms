@@ -158,6 +158,7 @@ class SubmissionTest(DriverTest):
             '/html/body/div[2]/div/div/a').click()
 
         # Fill out the survey
+        self.drv.find_element_by_class_name('start_btn').click()
         WebDriverWait(self.drv, 4).until(EC.presence_of_element_located(
             (By.XPATH, '/html/body/div[2]/div[2]/input')))
         next_button = self.drv.find_element_by_class_name('page_nav__next')
@@ -231,9 +232,7 @@ class SubmissionTest(DriverTest):
         self.drv.find_element_by_xpath(in_xpath + 'div[2]/input').send_keys(
             'super cool ghost submitter')
         self.drv.find_element_by_class_name('question__btn').click()
-
-        WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, in_xpath + 'input')))
+        self.drv.find_element_by_class_name('sync_btn').click()
 
         # Check the submissions
         self.drv.get(base + '/view')
@@ -302,12 +301,14 @@ class IntegerTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
+        self.drv.find_element_by_class_name('start_btn').click()
         self.drv.find_element_by_xpath(
             '/html/body/div[2]/div[2]/input').send_keys('2')
         if self.browser_name == 'safari':
             self.drv.execute_script("$('input').change()")
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
+        self.drv.find_element_by_class_name('sync_btn').click()
 
         # Log in
         self.drv.get(base + '/debug/login/test_email')
@@ -335,12 +336,14 @@ class DecimalTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
+        self.drv.find_element_by_class_name('start_btn').click()
         self.drv.find_element_by_xpath(
             '/html/body/div[2]/div[2]/input').send_keys('3.5')
         if self.browser_name == 'safari':
             self.drv.execute_script("$('input').change()")
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
+        self.drv.find_element_by_class_name('sync_btn').click()
 
         # Log in
         self.drv.get(base + '/debug/login/test_email')
@@ -368,12 +371,14 @@ class TextTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
+        self.drv.find_element_by_class_name('start_btn').click()
         self.drv.find_element_by_xpath(
             '/html/body/div[2]/div[2]/input').send_keys('some text')
         if self.browser_name == 'safari':
             self.drv.execute_script("$('input').change()")
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
+        self.drv.find_element_by_class_name('sync_btn').click()
 
         # Log in
         self.drv.get(base + '/debug/login/test_email')
@@ -401,6 +406,7 @@ class DateTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
+        self.drv.find_element_by_class_name('start_btn').click()
         if self.browser_name == 'android':
             self.drv.find_element_by_xpath(
                 '/html/body/div[2]/div[2]/input').click()
@@ -414,6 +420,7 @@ class DateTest(TypeTest):
                 self.drv.execute_script("$('input').change()")
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
+        self.drv.find_element_by_class_name('sync_btn').click()
 
         # Log in
         self.drv.get(base + '/debug/login/test_email')
@@ -441,6 +448,7 @@ class TimeTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
+        self.drv.find_element_by_class_name('start_btn').click()
         if self.browser_name == 'android':
             self.drv.find_element_by_xpath(
                 '/html/body/div[2]/div[2]/input').click()
@@ -454,6 +462,7 @@ class TimeTest(TypeTest):
                 self.drv.execute_script("$('input').change()")
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
+        self.drv.find_element_by_class_name('sync_btn').click()
 
         # Log in
         self.drv.get(base + '/debug/login/test_email')
@@ -483,6 +492,7 @@ class MultipleChoiceTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
+        self.drv.find_element_by_class_name('start_btn').click()
         self.drv.find_elements_by_tag_name('option')[1].click()
         self.drv.find_element_by_class_name('page_nav__next').click()
 
@@ -492,6 +502,7 @@ class MultipleChoiceTest(TypeTest):
             )
         )
         self.drv.find_element_by_class_name('question__btn').click()
+        self.drv.find_element_by_class_name('sync_btn').click()
 
         # Log in
         self.drv.get(base + '/debug/login/test_email')
@@ -523,6 +534,7 @@ class MultiSelectTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
+        self.drv.find_element_by_class_name('start_btn').click()
         if self.browser_name == 'android':
             self.drv.find_element_by_tag_name('select').click()
             self.drv.switch_to.window('NATIVE_APP')
@@ -566,6 +578,7 @@ class MultiSelectTest(TypeTest):
             )
         )
         self.drv.find_element_by_class_name('question__btn').click()
+        self.drv.find_element_by_class_name('sync_btn').click()
 
         # Log in
         self.drv.get(base + '/debug/login/test_email')
@@ -610,6 +623,7 @@ class LocationTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
+        self.drv.find_element_by_class_name('start_btn').click()
         self.drv.execute_script(
             '''
             window.navigator.geolocation.getCurrentPosition =
@@ -624,6 +638,7 @@ class LocationTest(TypeTest):
         self.drv.find_element_by_class_name('question__btn').click()
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
+        self.drv.find_element_by_class_name('sync_btn').click()
 
         # Log in
         self.drv.get(base + '/debug/login/test_email')

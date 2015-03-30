@@ -34,6 +34,7 @@ describe('User next/prev tests', function(done) {
         raw_survey.survey_metadata.location.lat = 40.80250524727603
         raw_survey.survey_metadata.location.lon =  -73.93695831298828
         App.init(raw_survey)
+        $('.start_btn').click(); // Start the survey;
         done();
     });
 
@@ -85,7 +86,7 @@ describe('User next/prev tests', function(done) {
             done();
         });
 
-    it('should move from question 0 to nowhere when prev is clicked', 
+    it('should move from question 0 to homepage when prev is clicked ', 
         function(done) {
             var survey = App.survey;
             var questions = survey.questions;
@@ -97,7 +98,7 @@ describe('User next/prev tests', function(done) {
 
             $(".page_nav__prev").trigger("click");
             first_question.should.equal(survey.current_question);
-            $(".question__title").html().trim().should.equal(title);
+            $(".question__title").html().trim().should.equal(App.survey.title); //XXX homepage
 
             done();
         });
@@ -161,6 +162,7 @@ describe('User submission tests', function(done) {
         raw_survey = require('./fixtures/survey.json');
         localStorage.name = 'viktor sucks';
         App.init(raw_survey);
+        $('.start_btn').click(); // Start the survey;
         done();
     });
 
@@ -227,6 +229,7 @@ describe('User multiple choice tests', function(done) {
         $(".page_nav__prev").off();
         raw_survey = require('./fixtures/survey.json');
         App.init(raw_survey)
+        $('.start_btn').click(); // Start the survey;
         done();
     });
 
@@ -353,6 +356,7 @@ describe('User facility questions', function(done) {
         raw_survey = require('./fixtures/survey.json');
         App.init(raw_survey)
         App.facilities = require('./fixtures/facilities.json');
+        $('.start_btn').click(); // Start the survey;
         done();
     });
 
@@ -401,6 +405,7 @@ describe('User dont know tests', function(done) {
         $(".page_nav__prev").off();
         raw_survey = require('./fixtures/survey.json');
         App.init(raw_survey)
+        $('.start_btn').click(); // Start the survey;
         done();
     });
 
