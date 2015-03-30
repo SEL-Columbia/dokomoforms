@@ -55,12 +55,43 @@ App.init = function(survey) {
 };
 
 App.sync = function() {
+    var self = this;
+    self.countdown = App.unsynced.length; //JS is single threaded, no race condition on counter
+    self.failed = [];
+    var restore = function() {
+        // Were done!
+        App.unsynced = self.failed;
+        self.failed = [];
+        localStorage.setItem("unsynced", 
+                JSON.stringify(App.unsynced));
+
+        // Reload page to update template values
+        App.splash(App.survey.title, App.survey.created_on, 'name');
+    };
     _.each(App.unsynced, function(survey, idx) {
-        // XXX SUBMIT CALLBACK ERROR STUFF
-        App.submit(survey, function() { console.log('done') });
+        App.submit(survey, 
+            function(survey) { 
+                //console.log('done');
+                --self.countdown; 
+                
+                if (self.countdown === 0) 
+                    restore();
+            },
+
+            function(survey) { 
+                //console.log('fail');
+                --self.countdown; 
+                App.failed.push(survey);
+
+                if (self.countdown === 0) 
+                    restore();
+            } 
+        );
     });
 
     App.unsynced = [];
+    localStorage.setItem("unsynced", 
+        JSON.stringify(App.unsynced));
 };
 
 App.message = function(text) {
@@ -104,13 +135,15 @@ App.splash = function(title, created_on, name) {
         .one('click', function() {
             if (navigator.onLine) {
                 App.sync();
+                // Reload page to update template values
+                App.splash(App.survey.title, App.survey.created_on, 'name');
             } else {
                 App.message('Please connect to the internet first.');
             }
         });
 };
 
-App.submit = function(survey, cb) {
+App.submit = function(survey, done, fail) {
     _.map(App.unsynced_facilities, function(facility) {
         postNewFacility(facility); 
     });
@@ -132,12 +165,11 @@ App.submit = function(survey, cb) {
         dataType: 'json',
         success: function() {
             App.message('Survey submitted!');
+            done(survey);
         },
         error: function() {
             App.message('Submission failed, will try again later.');
-        },
-        complete: function() {
-            cb();
+            fail(survey);
         }
     });
 }
