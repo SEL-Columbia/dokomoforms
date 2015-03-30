@@ -560,9 +560,9 @@ class MultiSelectTest(TypeTest):
             ctrl_key = Keys.COMMAND if is_osx else Keys.CONTROL
             choices = self.drv.find_elements_by_tag_name('option')
             ActionChains(
-                ctrl_key
+                self.drv
             ).key_down(
-                Keys.CONTROL
+                ctrl_key
             ).click(
                 choices[1]
             ).click(
