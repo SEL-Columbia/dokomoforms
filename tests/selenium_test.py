@@ -548,17 +548,23 @@ class MultiSelectTest(TypeTest):
             # Click "OK"
             self.drv.find_elements_by_tag_name('Button')[-1].click()
             self.drv.switch_to.window('WEBVIEW_0')
-        elif self.browser_name == 'safari':
+        elif self.browser_name in {'safari', 'internet explorer'}:
             # The COMMAND key approach fails due to
             # https://code.google.com/p/selenium/issues/detail?id=4136
             # I think...
             self.drv.execute_script('''
-               var choices = $('option')
+               var choices = $('option');
                choices[1].selected = true;
                choices[2].selected = true;
             ''')
-            if self.browser_name == 'safari':
-                self.drv.execute_script("$('select').change()")
+            self.drv.execute_script("$('select').change()")
+        # elif self.browser_name == 'internet explorer':
+        #     # No idea why the ActionChains approach doesn't work...
+        #     self.drv.execute_script('''
+        #         var choices = $('option');
+        #         choices[1].selected = true;
+        #         choices[2].selected = true;
+        #      ''')
         else:
             is_osx = self.platform.startswith('OS X')
             ctrl_key = Keys.COMMAND if is_osx else Keys.CONTROL
