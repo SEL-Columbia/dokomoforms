@@ -21,7 +21,8 @@ App.init = function(survey) {
             survey.questions, 
             survey.survey_metadata, 
             survey.survey_title, 
-            survey.created_on);
+            survey.created_on,
+            survey.last_updated);
 
     self.start_loc = survey.survey_metadata.location || self.start_loc;
     self.facilities = JSON.parse(localStorage.facilities || "[]");
@@ -51,7 +52,11 @@ App.init = function(survey) {
     //    window.location.reload();
     //});
     
-    App.splash(self.survey.title, self.survey.created_on, 'name');
+    App.splash(App.survey.title, 
+                App.survey.created_on, 
+                App.survey.last_updated, 
+                App.survey.author, 
+                App.survey.org);
 };
 
 App.sync = function() {
@@ -66,7 +71,11 @@ App.sync = function() {
                 JSON.stringify(App.unsynced));
 
         // Reload page to update template values
-        App.splash(App.survey.title, App.survey.created_on, 'name');
+        App.splash(App.survey.title, 
+                    App.survey.created_on, 
+                    App.survey.last_updated, 
+                    App.survey.author, 
+                    App.survey.org);
     };
     _.each(App.unsynced, function(survey, idx) {
         App.submit(survey, 
@@ -105,7 +114,7 @@ App.message = function(text) {
         .fadeOut('fast');
 };
 
-App.splash = function(title, created_on, name) {
+App.splash = function(title, created_on, last_updated, author, org) {
     var self = this;
     var content = $('.content');
     var splashHTML = $('#template_splash').html();
@@ -113,7 +122,9 @@ App.splash = function(title, created_on, name) {
     var compiledHTML = splashTemplate({
         'title': title,
         'created_on': created_on,
-        'name': name,
+        'last_updated': last_updated,
+        'author': author,
+        'org': org,
         'unsynced': App.unsynced,
         'unsynced_facilities': App.unsynced_facilities
     });
@@ -136,7 +147,7 @@ App.splash = function(title, created_on, name) {
             if (navigator.onLine) {
                 App.sync();
                 // Reload page to update template values
-                App.splash(App.survey.title, App.survey.created_on, 'name');
+                App.splash(title, created_on, last_updated, author, org);
             } else {
                 App.message('Please connect to the internet first.');
             }
@@ -174,14 +185,17 @@ App.submit = function(survey, done, fail) {
     });
 }
 
-function Survey(id, version, questions, metadata, title, created_on) {
+function Survey(id, version, questions, metadata, title, created_on, last_updated) {
     var self = this;
     this.id = id;
     this.questions = questions;
     this.metadata = metadata;
+    this.author = metadata.author || 'anon';
+    this.org = metadata.organization || 'independant';
     this.version = version;
     this.title = title;
-    this.created_on = created_on;
+    this.created_on = new Date(created_on).toDateString();
+    this.last_updated = new Date(last_updated).toDateString();
 
     // Load answers from localStorage
     var answers = JSON.parse(localStorage[this.id] || '{}');
@@ -206,7 +220,6 @@ function Survey(id, version, questions, metadata, title, created_on) {
         curr_q = curr_q.next;
     } while (curr_q);
     
-
     //console/g.log(questions);
 
     // Page navigation
@@ -254,7 +267,7 @@ Survey.prototype.next = function(offset) {
 
     // Backward at first question
     if (index === self.lowest_sequence_number && offset === PREV) {
-        App.splash(self.title, self.created_on, 'name');
+        App.splash(self.title, self.created_on, self.last_updated, self.author, self.org);
         return;
     }
 
@@ -413,7 +426,11 @@ Survey.prototype.submit = function() {
             $(sync).removeClass('icon--spin');
             $(save_btn).removeClass('icon--spin');
             App.message('Saving failed, No questions answer in Survey!');
-            App.splash(App.survey.title, App.survey.created_on, 'name');
+            App.splash(App.survey.title, 
+                        App.survey.created_on, 
+                        App.survey.last_updated, 
+                        App.survey.author, 
+                        App.survey.org);
       }, 1000);
       return;
     } 
@@ -431,7 +448,11 @@ Survey.prototype.submit = function() {
             JSON.stringify(App.unsynced));
 
     App.message('Saved Submission!');
-    App.splash(App.survey.title, App.survey.created_on, 'name');
+    App.splash(App.survey.title, 
+                App.survey.created_on, 
+                App.survey.last_updated, 
+                App.survey.author, 
+                App.survey.org);
 
     $(sync).removeClass('icon--spin');
     $(save_btn).removeClass('icon--spin');
