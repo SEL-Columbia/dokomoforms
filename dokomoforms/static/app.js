@@ -202,8 +202,12 @@ function remove_class(element, class_name) {
     if (typeof element.classList !== 'undefined') {
         element.classList.remove(class_name);
     } else if (typeof element.className !== 'undefined') {
+        var className = element.className;
+        if (className.baseVal !== null) {
+            className = className.baseVal;
+        }
         var regexp = new RegExp('(?:^|\s)' + class_name + '(?!\S)', 'g');
-        element.className = element.className.replace(regexp, '');
+        element.className = className.replace(regexp, '');
     } else {
         element.removeClass(class_name)
     }
