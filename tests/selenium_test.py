@@ -184,6 +184,7 @@ class SubmissionTest(DriverTest):
             self.drv.find_element_by_xpath(in_xpath + 'input').send_keys(
                 '4/4/44')
             if self.browser_name == 'safari':
+                self.drv.execute_script("$('input')[0].value = '4/4/44'")
                 self.drv.execute_script("$('input').change()")
         next_button.click()
         if self.browser_name == 'android':
@@ -196,6 +197,7 @@ class SubmissionTest(DriverTest):
             self.drv.find_element_by_xpath(in_xpath + 'input').send_keys(
                 '5:55PM')
             if self.browser_name == 'safari':
+                self.drv.execute_script("$('input')[0].value = '5:55PM'")
                 self.drv.execute_script("$('input').change()")
         next_button.click()
         # browser geolocation is complicated in selenium...
@@ -414,9 +416,10 @@ class DateTest(TypeTest):
             self.drv.find_element_by_id('button1').click()
             self.drv.switch_to.window('WEBVIEW_0')
         else:
-            self.drv.find_element_by_xpath(
-                '/html/body/div[2]/div[2]/input').send_keys('4/4/44')
-            if self.browser_name == 'safari':
+            is_safari = self.browser_name == 'safari'
+            self.drv.find_element_by_tag_name('input').send_keys('4/4/44')
+            if is_safari:
+                self.drv.execute_script("$('input')[0].value = '4/4/44'")
                 self.drv.execute_script("$('input').change()")
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
@@ -459,6 +462,7 @@ class TimeTest(TypeTest):
             self.drv.find_element_by_xpath(
                 '/html/body/div[2]/div[2]/input').send_keys('5:55PM')
             if self.browser_name == 'safari':
+                self.drv.execute_script("$('input')[0].value = '5:55PM'")
                 self.drv.execute_script("$('input').change()")
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
@@ -544,25 +548,31 @@ class MultiSelectTest(TypeTest):
             # Click "OK"
             self.drv.find_elements_by_tag_name('Button')[-1].click()
             self.drv.switch_to.window('WEBVIEW_0')
-        elif self.browser_name == 'safari':
+        elif self.browser_name in {'safari', 'internet explorer'}:
             # The COMMAND key approach fails due to
             # https://code.google.com/p/selenium/issues/detail?id=4136
             # I think...
             self.drv.execute_script('''
-               var choices = $('option')
+               var choices = $('option');
                choices[1].selected = true;
                choices[2].selected = true;
             ''')
-            if self.browser_name == 'safari':
-                self.drv.execute_script("$('select').change()")
+            self.drv.execute_script("$('select').change()")
+        # elif self.browser_name == 'internet explorer':
+        #     # No idea why the ActionChains approach doesn't work...
+        #     self.drv.execute_script('''
+        #         var choices = $('option');
+        #         choices[1].selected = true;
+        #         choices[2].selected = true;
+        #      ''')
         else:
             is_osx = self.platform.startswith('OS X')
             ctrl_key = Keys.COMMAND if is_osx else Keys.CONTROL
             choices = self.drv.find_elements_by_tag_name('option')
             ActionChains(
-                ctrl_key
+                self.drv
             ).key_down(
-                Keys.CONTROL
+                ctrl_key
             ).click(
                 choices[1]
             ).click(
