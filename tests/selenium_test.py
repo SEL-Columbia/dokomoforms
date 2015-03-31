@@ -184,6 +184,7 @@ class SubmissionTest(DriverTest):
             self.drv.find_element_by_xpath(in_xpath + 'input').send_keys(
                 '4/4/44')
             if self.browser_name == 'safari':
+                self.drv.execute_script("$('input')[0].value = '4/4/44'")
                 self.drv.execute_script("$('input').change()")
         next_button.click()
         if self.browser_name == 'android':
@@ -196,6 +197,7 @@ class SubmissionTest(DriverTest):
             self.drv.find_element_by_xpath(in_xpath + 'input').send_keys(
                 '5:55PM')
             if self.browser_name == 'safari':
+                self.drv.execute_script("$('input')[0].value = '5:55PM'")
                 self.drv.execute_script("$('input').change()")
         next_button.click()
         # browser geolocation is complicated in selenium...
@@ -414,9 +416,10 @@ class DateTest(TypeTest):
             self.drv.find_element_by_id('button1').click()
             self.drv.switch_to.window('WEBVIEW_0')
         else:
-            self.drv.find_element_by_xpath(
-                '/html/body/div[2]/div[2]/input').send_keys('4/4/44')
-            if self.browser_name == 'safari':
+            is_safari = self.browser_name == 'safari'
+            self.drv.find_element_by_tag_name('input').send_keys('4/4/44')
+            if is_safari:
+                self.drv.execute_script("$('input')[0].value = '4/4/44'")
                 self.drv.execute_script("$('input').change()")
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
@@ -459,6 +462,7 @@ class TimeTest(TypeTest):
             self.drv.find_element_by_xpath(
                 '/html/body/div[2]/div[2]/input').send_keys('5:55PM')
             if self.browser_name == 'safari':
+                self.drv.execute_script("$('input')[0].value = '5:55PM'")
                 self.drv.execute_script("$('input').change()")
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
