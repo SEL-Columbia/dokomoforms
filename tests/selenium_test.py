@@ -558,13 +558,6 @@ class MultiSelectTest(TypeTest):
                choices[2].selected = true;
             ''')
             self.drv.execute_script("$('select').change()")
-        # elif self.browser_name == 'internet explorer':
-        #     # No idea why the ActionChains approach doesn't work...
-        #     self.drv.execute_script('''
-        #         var choices = $('option');
-        #         choices[1].selected = true;
-        #         choices[2].selected = true;
-        #      ''')
         else:
             is_osx = self.platform.startswith('OS X')
             ctrl_key = Keys.COMMAND if is_osx else Keys.CONTROL
