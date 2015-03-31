@@ -174,6 +174,41 @@ App.submit = function(survey, done, fail) {
     });
 }
 
+function add_class(element, class_name) {
+    if (typeof element.classList !== 'undefined') {
+        element.classList.add(class_name);
+    } else if (typeof element.className !== 'undefined') {
+        element.className = element.className + ' ' + class_name;
+    } else {
+        element.addClass(class_name);
+    }
+}
+
+function has_class(element, class_name) {
+    if (typeof element.classList !== 'undefined') {
+        return element.classList.contains(class_name);
+    } else if (typeof element.className !== 'undefined') {
+        var className = element.className;
+        if (className.baseVal !== null) {
+            className = className.baseVal;
+        }
+        return className.indexOf(class_name) > -1;
+    } else {
+        return element.attr('class').indexOf(class_name) > -1;
+    }
+}
+
+function remove_class(element, class_name) {
+    if (typeof element.classList !== 'undefined') {
+        element.classList.remove(class_name);
+    } else if (typeof element.className !== 'undefined') {
+        var regexp = new RegExp('(?:^|\s)' + class_name + '(?!\S)', 'g');
+        element.className = element.className.replace(regexp, '');
+    } else {
+        element.removeClass(class_name)
+    }
+}
+
 function Survey(id, version, questions, metadata, title, created_on) {
     var self = this;
     this.id = id;
@@ -211,7 +246,7 @@ function Survey(id, version, questions, metadata, title, created_on) {
 
     // Page navigation
     $('.page_nav__prev, .page_nav__next').click(function() {
-        var offset = this.classList.contains('page_nav__prev') ? PREV : NEXT;
+        var offset = has_class(this, 'page_nav__prev') ? PREV : NEXT;
         self.next(offset);
     });
     
@@ -403,15 +438,15 @@ Survey.prototype.submit = function() {
     };
 
     //console.log('submission:', data);
-    sync.classList.add('icon--spin');
-    save_btn.classList.add('icon--spin');
-    
+    add_class(sync, 'icon--spin');
+    add_class(save_btn, 'icon--spin');
+
     // Don't post with no replies
     if (JSON.stringify(survey_answers) === '[]') {
       // Not doing instantly to make it seem like App tried reaaall hard
       setTimeout(function() {
-            sync.classList.remove('icon--spin');
-            save_btn.classList.remove('icon--spin');
+            remove_class(sync, 'icon--spin');
+            remove_class(save_btn, 'icon--spin');
             App.message('Saving failed, No questions answer in Survey!');
             App.splash(App.survey.title, App.survey.created_on, 'name');
       }, 1000);
@@ -433,9 +468,8 @@ Survey.prototype.submit = function() {
     App.message('Saved Submission!');
     App.splash(App.survey.title, App.survey.created_on, 'name');
 
-    sync.classList.remove('icon--spin');
-    save_btn.classList.remove('icon--spin');
-
+    remove_class(sync, 'icon--spin');
+    remove_class(save_btn, 'icon--spin');
 };
 
 
@@ -607,7 +641,7 @@ Widgets._toggleOther = function(page, question, state) {
                 $(child).attr('disabled', false);
         });
 
-        $('.question__btn__other')[0].classList.add('question__btn__active');
+        add_class($('.question__btn__other')[0], 'question__btn__active');
 
     } else if (state === OFF) { 
     
@@ -632,7 +666,7 @@ Widgets._toggleOther = function(page, question, state) {
                 $(child).attr('disabled', true);
         });
 
-        $('.question__btn__other')[0].classList.remove('question__btn__active');
+        remove_class($('.question__btn__other')[0], 'question__btn__active');
     }
 }
 
@@ -899,11 +933,11 @@ Widgets.location = function(question, page) {
         .find('.question__find__btn')
         .click(function() {
             var sync = $('.nav__sync')[0];
-            sync.classList.add('icon--spin');
+            add_class(sync, 'icon--spin');
             App.message('Searching ...');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
-                    sync.classList.remove('icon--spin');
+                    remove_class(sync, 'icon--spin');
 
                     // Server accepts [lon, lat]
                     var coords = [
@@ -920,8 +954,8 @@ Widgets.location = function(question, page) {
                     updateLocation(coords);
 
                 }, function error() {
-                    //If cannot Get location" for some reason, 
-                    sync.classList.remove('icon--spin');
+                    //If cannot Get location" for some reason,
+                    remove_class(sync, 'icon--spin');
                     App.message('Could not get your location, please make sure your GPS device is active.');
                 }, {
                     enableHighAccuracy: true,
@@ -1127,7 +1161,7 @@ Widgets.facility = function(question, page) {
         .find('.question__find__btn')
         .click(function() {
             var sync = $('.nav__sync')[0];
-            sync.classList.add('icon--spin');
+            add_class(sync, 'icon--spin');
             App.message('Searching ...');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
@@ -1143,9 +1177,9 @@ Widgets.facility = function(question, page) {
                     // Revisit api call
                     reloadFacilities(coords[1], coords[0]); 
 
-                    sync.classList.remove('icon--spin');
+                    remove_class(sync, 'icon--spin');
                 }, function error() {
-                    sync.classList.remove('icon--spin');
+                    remove_class(sync, 'icon--spin');
                     App.message('Could not get your location, please make sure your GPS device is active.');
                 }, {
                     enableHighAccuracy: true,
