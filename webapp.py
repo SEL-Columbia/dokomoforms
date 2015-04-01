@@ -16,6 +16,7 @@ import dokomoforms.api.user as user_api
 from dokomoforms.db import engine
 from dokomoforms.handlers.api.aggregations import AggregationHandler
 from dokomoforms.handlers.api.batch import BatchSubmissionAPIHandler
+from dokomoforms.handlers.api.data_table import SurveyDataTableHandler
 from dokomoforms.handlers.auth import LogoutHandler, LoginHandler
 from dokomoforms.handlers.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler, SubmitAPIHandler
@@ -124,6 +125,8 @@ pages = [
 
     # JSON API
     (r'/api/aggregate/({})/?'.format(UUID_REGEX), AggregationHandler),
+
+    (r'/api/survey_data_table/?', SurveyDataTableHandler),
 
     (r'/api/surveys/?', SurveysAPIHandler),
     (r'/api/surveys/create/?', CreateSurveyAPIHandler),

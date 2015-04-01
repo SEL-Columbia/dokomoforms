@@ -5,17 +5,21 @@
         <div>
             <h4>Welcome {{ current_user }}</h4>
             <p> Your surveys: </p>
-            <ul>
-                {% for survey, num_submissions in surveys %}
-                    <li>
-                        <a href="/view/{{ survey.survey_id }}">{{ survey.survey_title }}</a>
-                        <!- THIS IS BAD AND LOOKS BAD -- SORRY -- VIKTOR ->
-                        Number of submissions: {{ num_submissions }}
-                        ---
-                        <a href="/survey/{{ survey.survey_id }}">Shareable link!!!</a>
-                    </li>
-                {% end %}
-            </ul>
+            <table id="surveys" class="display" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Survey title</th>
+                        <th>Number of submissions</th>
+                    </tr>
+                </thead>
+
+                <tfoot>
+                    <tr>
+                        <th>Survey title</th>
+                        <th>Number of submissions</th>
+                    </tr>
+                </tfoot>
+            </table>
         </div>
         <a class="btn" href="#" id="logout">Logout</a>
     </div>
@@ -23,4 +27,25 @@
     <script src="/static/lib.js"></script>
     <script src="https://login.persona.org/include.js"></script>
     <script src="/static/persona.js"></script>
+    <script src="http://cdn.datatables.net/1.10.5/js/jquery.dataTables.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#surveys').dataTable( {
+                "pagingType": "full_numbers",
+                "order": [],
+                "columns": [
+                    {"name": "survey_title"},
+                    {"name": "num_submissions"}
+                ],
+                "processing": true,
+                "serverSide": true,
+                "ajax": {
+                    "url": "api/survey_data_table",
+                    "data": function(d) {
+                        return {"args": JSON.stringify(d)};
+                    }
+                }
+            } );
+        } );
+    </script>
 {% end %}
