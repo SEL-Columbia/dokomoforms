@@ -1,25 +1,62 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-status-bar-style" content="black">
+    <meta name="viewport" content="width=device-width, user-scalable=no,  initial-scale=1, maximum-scale=1">
 
-{% block content %}
+    <title>Dokomoforms</title>
+
+    <link href="/static/ratchet-2.0.2/dist/css/ratchet.min.css" rel="stylesheet">
+    <script src="/static/ratchet-2.0.2/dist/js/ratchet.js"></script>
+    <!-- RIP <link href="/static/css/style.css" rel="stylesheet" type="text/css">-->
+    <link href="/static/css/survey.css" rel="stylesheet" type="text/css">-->
+
+    <link rel="icon" href="/static/img/favicon.png">
+</head>
+<body>
+
+    <header class="bar bar-nav"></header>
     <div class="message"></div>
+    <div class="content content-padded"></div>
+    <div class="bar bar-standard bar-footer"></div>
     
-    <div class="content buffer"></div>
-    
-    <div class="page_nav">
-        <div class="page_nav__center">
-            <svg class="icon page_nav__btn page_nav__prev">
-                <use xlink:href="#icon-chevron-left"></use>
-            </svg>
-            <svg class="icon page_nav__btn page_nav__next">
-                <use xlink:href="#icon-chevron-right"></use>
-            </svg>
-            <div class="page_nav__progress">1 / 1</div>
+    <script id="template_nav" type="text/html">
+        <button class="btn btn-link btn-nav pull-left page_nav__prev">
+            <span class="icon icon-left-nav"</span>
+            Previous
+        </button>
+        <a class="icon icon-info pull-right"></a>
+        <h1 class="title"><%- index + "/" + total %></h1>
+    </script>
+
+    <script id="template_footer" type="text/html">
+        <button class="btn btn-block btn-primary navigate-right page_nav__next">
+            Next Question
+        </button>
+        <div class="question__btn__other" style="display: none;">
+            <input type="checkbox" name='dont-know' value='selected'/>
+            <%- other_text || "I don't know the answer" %>
         </div>
-    </div>
+    </script>
+    
+    <script id="template_nav__splash" type="text/html">
+        <a class="icon icon-info pull-right"></a>
+        <h1 class="title"><%- org || 'Dokomoforms' %></h1>
+    </script>
+
+    <script id="template_footer__splash" type="text/html">
+        <button class="btn btn-block btn-positive navigate-right start_btn">
+            Begin a New Survey 
+        </button>
+    </script>
 
     <script id="widget_text" type="text/html">
-        <div class="question__title"><%- question.question_title %></div>
-        <div class="question__hint"><%- question.hint || "" %></div>
+        <h3 class="question__title"><%- question.question_title %></h3>
+        <p class="question__hint"><%- question.hint || "" %></p>
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
             if (ans && ans.response !== null && !ans.is_other) { 
@@ -40,8 +77,8 @@
     </script>
     
     <script id="widget_integer" type="text/html">
-        <div class="question__title"><%- question.question_title %></div>
-        <div class="question__hint"><%- question.hint || "" %></div>
+        <h3 class="question__title"><%- question.question_title %></h3>
+        <p class="question__hint"><%- question.hint || "" %></p>
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
@@ -75,8 +112,8 @@
     </script>
     
     <script id="widget_decimal" type="text/html">
-        <div class="question__title"><%- question.question_title %></div>
-        <div class="question__hint"><%- question.hint || "" %></div>
+        <h3 class="question__title"><%- question.question_title %></h3
+        <p class="question__hint"><%- question.hint || "" %></p>
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
@@ -98,8 +135,8 @@
     </script>
 
     <script id="widget_date" type="text/html">
-        <div class="question__title"><%- question.question_title %></div>
-        <div class="question__hint"><%- question.hint || "" %></div>
+        <h3 class="question__title"><%- question.question_title %></h3>
+        <p class="question__hint"><%- question.hint || "" %></p>
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
@@ -121,8 +158,8 @@
     </script>
 
     <script id="widget_time" type="text/html">
-        <div class="question__title"><%- question.question_title %></div>
-        <div class="question__hint"><%- question.hint || "" %></div>
+        <h3 class="question__title"><%- question.question_title %></h3>
+        <p class="question__hint"><%- question.hint || "" %></p>
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
@@ -144,8 +181,14 @@
     </script>
 
     <script id="widget_location" type="text/html">
-        <div class="question__title"><%- question.question_title %></div>
-        <div class="question__hint"><%- question.hint || "" %></div>
+        <h3 class="question__title"><%- question.question_title %></h3>
+        <p class="question__hint"><%- question.hint || "" %></p>
+
+        <button class="btn question__find__btn">
+            <span class="icon icon-star"></span>
+            Capture Location
+        </button>
+
         <div id="map" class="question__map"></div>
 
         <%  var no_response = true;
@@ -166,17 +209,21 @@
             >
         <% } %>
 
-        <div class="question__btn question__find__btn">Find location</div>
     </script>
 
     <script id="widget_facility" type="text/html">
-        <div class="question__title"><%- question.question_title %></div>
-        <div class="question__hint"><%- question.hint || "" %></div>
+        <h3 class="question__title"><%- question.question_title %></h3>
+        <p class="question__hint"><%- question.hint || "" %></p>
+
+        <button class="btn question__find__btn">
+            <span class="icon icon-star"></span>
+            Capture Location
+        </button>
+
         <div id="map" class="question__map"></div>
         <div>
 
-            <span class="question__btn question__find__btn">Find Me</span>
-            <span class="question__btn facility__btn">Add New Site</span>
+            <button class="btn facility__btn">Add New Site</button>
 
             <input class="text_input facility__name" type="text"/>
             <select class="question__select facility__type">
@@ -190,8 +237,8 @@
     </script>
 
     <script id="widget_multiple_choice" type="text/html">
-        <div class="question__title"><%- question.question_title %></div>
-        <div class="question__hint"><%- question.hint || "" %></div>
+        <h3 class="question__title"><%- question.question_title %></h3>
+        <p class="question__hint"><%- question.hint || "" %></p>
 
         <select class="question__select" 
             <%  if (question.allow_multiple) { %> 
@@ -229,82 +276,84 @@
     </script>
     
     <script id="widget_note" type="text/html">
-        <div class="question__title"><%- question.question_title %></div>
-        <div class="question__hint"><%- question.hint || "" %></div>
+        <h3 class="question__title"><%- question.question_title %></h3>
+        <p class="question__hint"><%- question.hint || "" %></p>
     </script>
 
     <script id="template_repeat" type="text/html">
         <div class="question__repeat">
-            <svg class="icon question__add">
-                <use xlink:href="#icon-add"></use>
-            </svg>
-
-            <svg class="icon question__minus" >
-                <use xlink:href="#icon-minus"></use>
-            </svg>
+            <button class="btn question__add">
+                add another answer
+            </button>
         </div>
     </script>
 
     <script id="template_other" type="text/html">
-        <div class="question__btn question__btn__other"><%- question.logic.other_text || "Don't Know" %></div>
         <div class="question__other"
-            <% var ans = question.answer && question.answer[0];
+            <% var ans = question.answer && question.answer[0]; //i know the position
                var is_other = ans && ans.is_other;
             %>
                 style="display: none;"
         >
-            <div class="question__hint">Please provide a reason.</div>
-                <input class="text_input other_input" type="text" 
-                    placeholder="Response is required."
-                    disabled=true
-                    <% if (is_other) { %>
-                        value="<%- ans.response %>"
-                    <% } %>
-                >
+            <input class="text_input other_input" type="text" 
+                placeholder="Enter an excuse for your incompetence."
+                disabled=true
+                <% if (is_other) { %>
+                    value="<%- ans.response %>"
+                <% } %>
+            >
         </div>
+
     </script>
 
     <script id="template_submit" type="text/html">
-        <div class="question__title">
-            That's it, you're finished!
+        <h3>Ready to Save?</h3>
+        <p>If youre satisfied with the answers to all the questions, you can save the survey now.</p>
+        <br>
+        <br>
+        <p>Enter your name and email id.</p>
+        <input class="email_input" type="text"
+            placeholder="Please provide your name"
+            value="<%- email || '' %>">
+
+        <input class="name_input" type="text"
+            placeholder="Please provide your name"
+            value="<%- name || '' %>">
+
+        <div class="card"> 
+            <span>Saved surveys must be uploaded when you next have network connectivity</span>
         </div>
-        <svg class="icon question__saving">
-            <use xlink:href="#icon-save-disk"></use.response>
-        </svg>
-        <div class="question__name">
-            <input class="name_input" type="text"
-                placeholder="Please provide your name"
-                value="<%- name || '' %>">
-        </div>
-        <div class="question__btn">Submit</div>
+
+        <button class="btn btn-block btn-positive question__btn">Submit</button>
     </script>
 
     <script id="template_splash" type="text/html">
-        <div class="question__title">
-            <%- title %>
-        </div>
-        
-        <div class="survey__stats">
-            Survey Creator: <%- author %> 
-        </div>
-        <div class="survey__stats">
-            Survey Organization: <%- org %> 
-        </div>
-        <div class="survey__stats">
-            Survey Created On: <%- created_on %> 
-        </div>
-        <div class="survey__stats">
-            Survey Last Updated: <%- last_updated %> 
-        </div>
-        <div class="survey__stats">
-            Unsynced Surveys: <%- unsynced.length %> 
-        </div>
-        <div class="survey__stats">
-            Unsynced Facilities: <%- Object.keys(unsynced_facilities).length %> 
-        </div>
+        <h3> <%- survey.title %> Survey</h3>
+        <p>version <%- survey.version %> | last updated <%- survey.last_updated %></p>
 
-        <div class="question__btn sync_btn">Sync</div>
-        <div class="question__btn start_btn">Start</div>
+        <% if (unsynced.length > 0 && online) { %>
+            <div class="card"> 
+                <span>You have <strong><%- unsynced.length %></strong> unsynced surveys. Please submit them now. </span>  
+            </div>
+            <button class="btn btn-block btn-primary sync_btn">
+                Submit Completed Surveys
+                <span class="icon icon-right"></span>
+            </button>
+        <% } else if (unsynced.length > 0  && !online) { %>
+            <div class="card"> 
+                <span>You have <strong><%- unsynced.length %></strong> unsynced surveys. </span>  
+                <br>
+                <br>
+                <span>At present, you do not have a network connection - please remember to submit these surveys the next time you do have access to the internet.</span>  
+            </div>
+        <% } else { %>
+            <div class="card"> 
+                <span> Hi, <strong><%- name %></strong> and welcome to the <%- survey.title %> Survey.</span>
+                <br>
+                <br>
+                <span> If you have any questions regarding this survey, please contact the survey administrator.</span>  
+            </div>
+        <% } %>
     </script>
 
     <script src="/static/lib.js"></script>
@@ -312,5 +361,7 @@
     <script>
         App.init({% raw survey %});
     </script>
-{% end %}
 
+</body>
+
+</html>

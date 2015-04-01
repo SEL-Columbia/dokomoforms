@@ -8,16 +8,16 @@
             <ul>
                 {% for survey, num_submissions in surveys %}
                     <li>
-                        <a href="/view/{{ survey.survey_id }}">{{ survey.survey_title }}</a>
+                        <a data-ignore="push" href="/view/{{ survey.survey_id }}">{{ survey.survey_title }}</a>
                         <!- THIS IS BAD AND LOOKS BAD -- SORRY -- VIKTOR ->
                         Number of submissions: {{ num_submissions }}
                         ---
-                        <a href="/survey/{{ survey.survey_id }}">Shareable link!!!</a>
+                        <a data-ignore="push" href="/survey/{{ survey.survey_id }}">Shareable link!!!</a>
                     </li>
                 {% end %}
             </ul>
         </div>
-        <a class="btn" href="#" id="logout">Logout</a>
+        <a class="btn btn-block" href="#" id="logout">Logout</a>
     </div>
 
     <script src="/static/lib.js"></script>

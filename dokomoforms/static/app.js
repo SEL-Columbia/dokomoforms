@@ -1,7 +1,7 @@
 var NEXT = 1;
 var PREV = -1;
-var ON = 1;
-var OFF = 0;
+var ON = true;
+var OFF = false;
 var NUM_FAC = 256;
 var FAC_RAD = 2; //in KM
 
@@ -52,11 +52,7 @@ App.init = function(survey) {
     //    window.location.reload();
     //});
     
-    App.splash(App.survey.title, 
-                App.survey.created_on, 
-                App.survey.last_updated, 
-                App.survey.author, 
-                App.survey.org);
+    App.splash();
 };
 
 App.sync = function() {
@@ -71,11 +67,7 @@ App.sync = function() {
                 JSON.stringify(App.unsynced));
 
         // Reload page to update template values
-        App.splash(App.survey.title, 
-                    App.survey.created_on, 
-                    App.survey.last_updated, 
-                    App.survey.author, 
-                    App.survey.org);
+        App.splash();
     };
     _.each(App.unsynced, function(survey, idx) {
         App.submit(survey, 
@@ -114,40 +106,56 @@ App.message = function(text) {
         .fadeOut('fast');
 };
 
-App.splash = function(title, created_on, last_updated, author, org) {
+App.splash = function() {
     var self = this;
-    var content = $('.content');
-    var splashHTML = $('#template_splash').html();
-    var splashTemplate = _.template(splashHTML);
-    var compiledHTML = splashTemplate({
-        'title': title,
-        'created_on': created_on,
-        'last_updated': last_updated,
-        'author': author,
-        'org': org,
-        'unsynced': App.unsynced,
-        'unsynced_facilities': App.unsynced_facilities
+    var survey = self.survey;
+
+    // Update page nav bar
+    var barnav  = $('.bar-nav');
+    var barnavHTML = $('#template_nav__splash').html();
+    var barnavTemplate = _.template(barnavHTML);
+    var compiledHTML = barnavTemplate({
+        'org': survey.org,
+    });
+    
+    barnav.empty()
+        .html(compiledHTML);
+
+    var barfoot = $('.bar-footer');
+    var barfootHTML = $('#template_footer__splash').html();
+    var barfootTemplate = _.template(barfootHTML);
+    compiledHTML = barfootTemplate({
     });
 
-    $('.page_nav').hide();
-
-    content.empty()
-        .data('index', 0)
+    barfoot.empty()
         .html(compiledHTML)
         .find('.start_btn')
         .one('click', function() {
             // Render first question
-            $('.page_nav').show();
             App.survey.render(App.survey.first_question);
         });
 
-    content
+
+    // Set up content
+    var content = $('.content');
+    var splashHTML = $('#template_splash').html();
+    var splashTemplate = _.template(splashHTML);
+    compiledHTML = splashTemplate({
+        'survey': survey,
+        'online': navigator.onLine,
+        'unsynced': App.unsynced,
+        'unsynced_facilities': App.unsynced_facilities
+    });
+
+    content.empty()
+        .data('index', 0)
+        .html(compiledHTML)
         .find('.sync_btn')
         .one('click', function() {
             if (navigator.onLine) {
                 App.sync();
                 // Reload page to update template values
-                App.splash(title, created_on, last_updated, author, org);
+                App.splash();
             } else {
                 App.message('Please connect to the internet first.');
             }
@@ -220,14 +228,6 @@ function Survey(id, version, questions, metadata, title, created_on, last_update
         curr_q = curr_q.next;
     } while (curr_q);
     
-    //console/g.log(questions);
-
-    // Page navigation
-    $('.page_nav__prev, .page_nav__next').click(function() {
-        var offset = $(this).hasClass('page_nav__prev') ? PREV : NEXT;
-        self.next(offset);
-    });
-    
 }
 
 // Search by sequence number instead of array pos
@@ -267,7 +267,7 @@ Survey.prototype.next = function(offset) {
 
     // Backward at first question
     if (index === self.lowest_sequence_number && offset === PREV) {
-        App.splash(self.title, self.created_on, self.last_updated, self.author, self.org);
+        App.splash();
         return;
     }
 
@@ -312,13 +312,6 @@ Survey.prototype.next = function(offset) {
 // Render template for given question
 Survey.prototype.render = function(question) {
     var self = this;
-    var content = $('.content');
-    
-    var widgetHTML;
-    var widgetTemplate;
-    var compiledHTML;
-    
-    var index = question ? question.sequence_number : this.questions.length + 1;
 
     // Clear any interval events
     if (Widgets.interval) {
@@ -326,7 +319,47 @@ Survey.prototype.render = function(question) {
         Widgets.interval = null;
     }
 
+    var index = question ? question.sequence_number : this.questions.length + 1;
+
+    var barnav  = $('.bar-nav');
+    var barnavHTML = $('#template_nav').html();
+    var barnavTemplate = _.template(barnavHTML);
+    var compiledHTML = barnavTemplate({
+        'index': index,
+        'total': this.questions.length + 1,
+    });
+
+    barnav.empty()
+        .html(compiledHTML);
+
+    var barfoot = $('.bar-footer');
+    var barfootHTML = $('#template_footer').html();
+    var barfootTemplate = _.template(barfootHTML);
+    compiledHTML = barfootTemplate({
+        'other_text': question && question.logic.other_text
+    });
+
+    barfoot.empty()
+        .html(compiledHTML);
+
+    var content = $('.content');
+    var widgetHTML;
+    var widgetTemplate;
+    var compiledHTML;
+    
     if (question) {
+
+        // Add the next button
+        var barfoot = $('.bar-footer');
+        var barfootHTML = $('#template_footer').html();
+        var barfootTemplate = _.template(barfootHTML);
+        compiledHTML = barfootTemplate({
+            'other_text': question.logic.other_text
+        });
+
+        barfoot.empty()
+            .html(compiledHTML);
+
         // Show widget
         widgetHTML = $('#widget_' + question.type_constraint_name).html();
         widgetTemplate = _.template(widgetHTML);
@@ -346,7 +379,10 @@ Survey.prototype.render = function(question) {
         // Show submit page
         widgetHTML = $('#template_submit').html();
         widgetTemplate = _.template(widgetHTML);
-        compiledHTML = widgetTemplate({name: App.submitter_name});
+        compiledHTML = widgetTemplate({
+                'name': App.submitter_name,
+                'email': App.submitter_email
+        });
 
         content.empty()
             .data('index', index)
@@ -366,6 +402,14 @@ Survey.prototype.render = function(question) {
     // Update nav
     $('.page_nav__progress')
         .text((index) + ' / ' + (this.questions.length + 1));
+    
+    // Page navigation
+    $('.page_nav__prev, .page_nav__next').click(function() {
+        var offset = $(this).hasClass('page_nav__prev') ? PREV : NEXT;
+        self.next(offset);
+    });
+    
+
 };
 
 Survey.prototype.submit = function() {
@@ -426,11 +470,7 @@ Survey.prototype.submit = function() {
             $(sync).removeClass('icon--spin');
             $(save_btn).removeClass('icon--spin');
             App.message('Saving failed, No questions answer in Survey!');
-            App.splash(App.survey.title, 
-                        App.survey.created_on, 
-                        App.survey.last_updated, 
-                        App.survey.author, 
-                        App.survey.org);
+            App.splash();
       }, 1000);
       return;
     } 
@@ -448,11 +488,7 @@ Survey.prototype.submit = function() {
             JSON.stringify(App.unsynced));
 
     App.message('Saved Submission!');
-    App.splash(App.survey.title, 
-                App.survey.created_on, 
-                App.survey.last_updated, 
-                App.survey.author, 
-                App.survey.org);
+    App.splash();
 
     $(sync).removeClass('icon--spin');
     $(save_btn).removeClass('icon--spin');
@@ -478,13 +514,12 @@ var Widgets = {
 // All widgets store results in the questions.answer array
 Widgets._input = function(question, page, type) {
     var self = this;
-    self.dontknow_state = OFF;
     
     // Render add/minus input buttons 
     Widgets._renderRepeat(page, question);
 
     //Render don't know
-    Widgets._renderOther(page, question, self);
+    Widgets._renderOther(page, question);
 
     // Clean up answer array, short circuits on is_other responses
     question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
@@ -537,11 +572,12 @@ Widgets._input = function(question, page, type) {
         });
     
     // Click the other button when you don't know answer
-    $(page)
-        .find('.question__btn__other')
-        .click(function() { 
-            self.dontknow_state = (self.dontknow_state + 1) % 2 // toggle btwn 1 and 0
-            self._toggleOther(page, question, self.dontknow_state);
+    $('.bar-footer') //XXX PASS THIS BOY IN 
+        .find('.question__btn__other :checkbox')
+        .change(function() { 
+            var selected = $(this).is(':checked'); 
+            console.log('state', selected);
+            self._toggleOther(page, question, selected);
         });
 
 
@@ -582,10 +618,12 @@ Widgets._removeNewestInput = function(inputs, question) {
 
 // Render 'don't know' section if question has with_other logic
 // Display response and alter widget state if first response is other
-Widgets._renderOther = function(page, question, input) {
+Widgets._renderOther = function(page, question) {
     var self = this;
     // Render don't know feature 
     if (question.logic.with_other) {
+        $('.question__btn__other').show();
+
         var repeatHTML = $('#template_other').html();
         var widgetTemplate = _.template(repeatHTML);
         var compiledHTML = widgetTemplate({question: question});
@@ -593,9 +631,8 @@ Widgets._renderOther = function(page, question, input) {
 
         var other_response = question.answer && question.answer[0] && question.answer[0].is_other;
         if (other_response) {
-            // Disable main input
+            $('.question__btn__other').find('input').prop('checked', true);
             this._toggleOther(page, question, ON);
-            input.state = ON;
         }
     }
 }
@@ -606,8 +643,7 @@ Widgets._toggleOther = function(page, question, state) {
     var self = this;
     question.answer = [];
     
-    if (state == ON) {
-
+    if (state === ON) {
         // Disable regular inputs
         $(page).find('.text_input').not('.other_input').each(function(i, child) { 
                 $(child).attr('disabled', true);
@@ -628,10 +664,7 @@ Widgets._toggleOther = function(page, question, state) {
                 $(child).attr('disabled', false);
         });
 
-        $('.question__btn__other').first().addClass('question__btn__active');
-
     } else if (state === OFF) { 
-    
         // Enable regular inputs
         $(page).find('.text_input').not('.other_input').each(function(i, child) { 
               $(child).attr('disabled', false);
@@ -652,9 +685,9 @@ Widgets._toggleOther = function(page, question, state) {
         $(page).find('.other_input').each(function(i, child) { 
                 $(child).attr('disabled', true);
         });
-
-        $('.question__btn__other').first().removeClass('question__btn__active');
     }
+
+    console.log('hey');
 }
 
 // Render +/- buttons on given page

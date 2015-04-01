@@ -1,0 +1,25 @@
+{
+  "name": "ratchet",
+  "description": "Build mobile apps with simple HTML, CSS, and JS components.",
+  "version": "2.0.2",
+  "keywords": [
+    "css",
+    "js",
+    "fonts",
+    "ios",
+    "android",
+    "mobile",
+    "prototype"
+  ],
+  "main": [
+    "./dist/css/ratchet.css",
+    "./dist/js/ratchet.js"
+  ],
+  "ignore": [
+    "_config.yml",
+    ".travis.yml",
+    "CNAME",
+    "CONTRIBUTING.md",
+    "docs"
+  ]
+}
