@@ -1333,19 +1333,19 @@ class DataTableTest(AsyncHTTPTestCase):
         query = _base_query(
             survey_table.join(auth_user_table),
             'a.dahir7@gmail.com',
-            ['survey_title', 'survey_id']
+            ['survey_title', 'created_on']
         )
         args = {
             'order': [
                 {'column': 1, 'dir': 'desc'},
                 {'column': 0, 'dir': 'asc'}
             ],
-            'columns': [{'name': 'survey_title'}, {'name': 'survey_id'}]
+            'columns': [{'name': 'survey_title'}, {'name': 'created_on'}]
         }
         query = _apply_ordering(query, args, 'created_on', 'desc')
         result = connection.execute(query).fetchall()
-        self.assertEqual(result[0]['survey_title'], 'test_title2')
-        self.assertEqual(result[1]['survey_title'], 'what is life')
+        self.assertEqual(result[0]['survey_title'], 'days of the month')
+        self.assertEqual(result[1]['survey_title'], 'days of the week')
 
     def test_applyLimit(self):
         query = _base_query(
