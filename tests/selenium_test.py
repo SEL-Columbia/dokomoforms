@@ -246,7 +246,7 @@ class SubmissionTest(DriverTest):
             '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a'
         ).click()
         submission_link = self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/div/ul[2]/li/a')
+            '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a')
         self.drv.execute_script(
             'window.scrollTo(0, {});'.format(submission_link.location['y']))
         submission_link.click()
@@ -592,7 +592,7 @@ class MultiSelectTest(TypeTest):
         # Get the submission page
         self.drv.get(base + '/view/' + survey_id)
         submission_link = self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/div/ul[2]/li/a')
+            '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a')
         self.drv.execute_script(
             'window.scrollTo(0, {});'.format(submission_link.location['y']))
         submission_link.click()
