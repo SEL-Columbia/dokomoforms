@@ -148,6 +148,9 @@ class SubmissionTest(DriverTest):
         self.drv.get(base + '/view')
 
         # Click on the survey
+        WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
+            (By.XPATH,
+             '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a')))
         self.drv.find_element_by_xpath(
             '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a'
         ).click()
@@ -239,7 +242,7 @@ class SubmissionTest(DriverTest):
 
         # Check the submissions
         self.drv.get(base + '/view')
-        WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
+        WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
             (By.XPATH,
              '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a')))
         self.drv.find_element_by_xpath(
@@ -595,6 +598,9 @@ class MultiSelectTest(TypeTest):
 
         # Get the submission page
         self.drv.get(base + '/view/' + survey_id)
+        WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
+            (By.XPATH,
+             '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a')))
         submission_link = self.drv.find_element_by_xpath(
             '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a')
         self.drv.execute_script(
