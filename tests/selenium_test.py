@@ -245,6 +245,10 @@ class SubmissionTest(DriverTest):
         self.drv.find_element_by_xpath(
             '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a'
         ).click()
+        WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
+            (By.XPATH,
+             '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a')
+        ))
         submission_link = self.drv.find_element_by_xpath(
             '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a')
         self.drv.execute_script(
