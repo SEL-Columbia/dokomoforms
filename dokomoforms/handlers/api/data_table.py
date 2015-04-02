@@ -6,6 +6,7 @@ from sqlalchemy.sql.functions import count
 from tornado.escape import json_encode, json_decode
 
 from dokomoforms.db import auth_user_table, survey_table, submission_table
+from dokomoforms.db.survey import get_number_of_surveys
 from dokomoforms.handlers.util.base import APIHandler
 
 
@@ -24,27 +25,20 @@ class SurveyDataTableHandler(APIHandler):
         args = json_decode(self.get_argument('args'))
         email = self.get_email()
 
-        total_query = select(
-            [count(distinct(survey_table.c.survey_id))]
-        ).select_from(
-            auth_user_table.join(survey_table)
-        ).where(
-            auth_user_table.c.email == email
-        )
-        total_surveys = self.db.execute(total_query).scalar()
-
         table = auth_user_table.join(survey_table).outerjoin(submission_table)
         submission_id = submission_table.c.submission_id
         submission_count = count(distinct(submission_id))
         survey_title = survey_table.c.survey_title
         query = select(
             [survey_title,
+             survey_table.c.survey_id,
+             survey_table.c.created_on,
              submission_count.label('num_submissions'),
-             count().over()]
+             count().over().label('filtered')]
         ).select_from(
             table
         ).group_by(
-            survey_title, survey_table.c.created_on
+            survey_title, survey_table.c.survey_id, survey_table.c.created_on
         ).where(
             auth_user_table.c.email == email
         )
@@ -72,10 +66,14 @@ class SurveyDataTableHandler(APIHandler):
 
         response = {
             'draw': int(args['draw']),
-            'recordsTotal': total_surveys,
-            'recordsFiltered': result[0][2] if result else 0,
+            'recordsTotal': get_number_of_surveys(self.db, email),
+            'recordsFiltered': result[0]['filtered'] if result else 0,
             'data': [
-                [str(title), str(num)] for title, num, _ in result
+                [str(title),
+                 str(survey_id),
+                 created_on.isoformat(),
+                 str(num)]
+                for title, survey_id, created_on, num, _ in result
             ]
         }
         self.write(json_encode(response))

@@ -9,6 +9,8 @@
                 <thead>
                     <tr>
                         <th>Survey title</th>
+                        <th>Survey ID</th>
+                        <th>Created on</th>
                         <th>Number of submissions</th>
                     </tr>
                 </thead>
@@ -16,6 +18,8 @@
                 <tfoot>
                     <tr>
                         <th>Survey title</th>
+                        <th>Survey ID</th>
+                        <th>Created on</th>
                         <th>Number of submissions</th>
                     </tr>
                 </tfoot>
@@ -31,10 +35,25 @@
     <script>
         $(document).ready(function() {
             $('#surveys').dataTable( {
+                language: {
+                    search: "Search by survey title:"
+                },
+                "lengthMenu": [[20, 50, 100], [20, 50, 100]],
                 "pagingType": "full_numbers",
-                "order": [],
+                "order": [[2, 'desc']],
+                "columnDefs": [
+                    {
+                        "render": function (data, type, row) {
+                            return '<a href="/view/' + row[1] + '">' + data + '</a>';
+                        },
+                        "targets": 0
+                    },
+                    {"visible": false, "targets": 1}
+                ],
                 "columns": [
                     {"name": "survey_title"},
+                    {"name": "survey_id"},
+                    {"name": "created_on"},
                     {"name": "num_submissions"}
                 ],
                 "processing": true,
