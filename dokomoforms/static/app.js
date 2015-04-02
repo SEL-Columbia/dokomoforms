@@ -143,6 +143,7 @@ App.splash = function() {
     compiledHTML = splashTemplate({
         'survey': survey,
         'online': navigator.onLine,
+        'name': App.submitter_name,
         'unsynced': App.unsynced,
         'unsynced_facilities': App.unsynced_facilities
     });
@@ -321,6 +322,7 @@ Survey.prototype.render = function(question) {
 
     var index = question ? question.sequence_number : this.questions.length + 1;
 
+    // Update navs
     var barnav  = $('.bar-nav');
     var barnavHTML = $('#template_nav').html();
     var barnavTemplate = _.template(barnavHTML);
@@ -332,27 +334,21 @@ Survey.prototype.render = function(question) {
     barnav.empty()
         .html(compiledHTML);
 
+    // Update footer
     var barfoot = $('.bar-footer');
-    var barfootHTML = $('#template_footer').html();
-    var barfootTemplate = _.template(barfootHTML);
-    compiledHTML = barfootTemplate({
-        'other_text': question && question.logic.other_text
-    });
+    var barfootHTML;
+    var barfootTemplate;
 
-    barfoot.empty()
-        .html(compiledHTML);
-
+    // Update content
     var content = $('.content');
     var widgetHTML;
     var widgetTemplate;
-    var compiledHTML;
     
     if (question) {
 
         // Add the next button
-        var barfoot = $('.bar-footer');
-        var barfootHTML = $('#template_footer').html();
-        var barfootTemplate = _.template(barfootHTML);
+        barfootHTML = $('#template_footer').html();
+        barfootTemplate = _.template(barfootHTML);
         compiledHTML = barfootTemplate({
             'other_text': question.logic.other_text
         });
@@ -376,6 +372,19 @@ Survey.prototype.render = function(question) {
         Widgets[question.type_constraint_name](question, content);
 
     } else {
+        // Add submit button
+        barfootHTML = $('#template_footer__submit').html();
+        barfootTemplate = _.template(barfootHTML);
+        compiledHTML = barfootTemplate({
+        });
+
+        barfoot.empty()
+            .html(compiledHTML)
+            .find('.submit_btn')
+                .one('click', function() {
+                    self.submit();
+                });
+
         // Show submit page
         widgetHTML = $('#template_submit').html();
         widgetTemplate = _.template(widgetHTML);
@@ -387,15 +396,17 @@ Survey.prototype.render = function(question) {
         content.empty()
             .data('index', index)
             .html(compiledHTML)
-            .find('.question__btn')
-                .one('click', function() {
-                    self.submit();
-                });
-        content
             .find('.name_input')
             .keyup(function() {
                 App.submitter_name = this.value;
                 localStorage.name = App.submitter_name;
+            });
+
+        content
+            .find('.email_input')
+            .keyup(function() {
+                App.submitter_email = this.value;
+                localStorage.email = App.submitter_email;
             });
     }
     

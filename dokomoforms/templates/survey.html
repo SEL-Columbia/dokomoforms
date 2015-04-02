@@ -7,6 +7,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-status-bar-style" content="black">
     <meta name="viewport" content="width=device-width, user-scalable=no,  initial-scale=1, maximum-scale=1">
+    <link href='http://fonts.googleapis.com/css?family=Roboto:400,300,500,700,100' rel='stylesheet' type='text/css'>
 
     <title>Dokomoforms</title>
 
@@ -19,24 +20,26 @@
 </head>
 <body>
 
-    <header class="bar bar-nav"></header>
+    <header class="bar bar-nav bar-padded"></header>
     <div class="message"></div>
     <div class="content content-padded"></div>
     <div class="bar bar-standard bar-footer"></div>
     
     <script id="template_nav" type="text/html">
         <button class="btn btn-link btn-nav pull-left page_nav__prev">
-            <span class="icon icon-left-nav"</span>
-            Previous
+            <span class="icon icon-left-nav"></span>
+            <span class="">Previous</span>
         </button>
         <a class="icon icon-info pull-right"></a>
         <h1 class="title"><%- index + "/" + total %></h1>
     </script>
 
     <script id="template_footer" type="text/html">
-        <button class="btn btn-block btn-primary navigate-right page_nav__next">
-            Next Question
-        </button>
+        <div class="bar-padded">
+            <button class="btn btn-block btn-primary navigate-right page_nav__next">
+                Next Question
+            </button>
+        </div>
         <div class="question__btn__other" style="display: none;">
             <input type="checkbox" name='dont-know' value='selected'/>
             <%- other_text || "I don't know the answer" %>
@@ -44,15 +47,27 @@
     </script>
     
     <script id="template_nav__splash" type="text/html">
+        <h1 class="title align-left"><%- org || 'Dokomoforms' %></h1>
         <a class="icon icon-info pull-right"></a>
-        <h1 class="title"><%- org || 'Dokomoforms' %></h1>
     </script>
 
     <script id="template_footer__splash" type="text/html">
-        <button class="btn btn-block btn-positive navigate-right start_btn">
-            Begin a New Survey 
-        </button>
+        <div class="bar-padded">
+            <button class="btn btn-block btn-positive navigate-right start_btn">
+                Begin a New Survey 
+            </button>
+        </div>
     </script>
+    
+    <script id="template_footer__submit" type="text/html">
+        <div class="bar-padded">
+            <button class="btn btn-block btn-positive submit_btn">
+                <span class="btn-text pull-left"> Save Survey</span>
+                <span class="icon icon-check pull-right"></span>
+            </button>
+        </div>
+    </script>
+
 
     <script id="widget_text" type="text/html">
         <h3 class="question__title"><%- question.question_title %></h3>
@@ -69,10 +84,10 @@
         <% }); %>
 
         <% if (no_response) { %>
-            <input class="text_input" type="text"
-                placeholder="Please provide any response"
-                value="<%- question.default || '' %>"
-            >
+           <input class="text_input" type="text"
+               placeholder="Please provide any response"
+               value="<%- question.default || '' %>"
+           >
         <% } %>
     </script>
     
@@ -320,11 +335,9 @@
             placeholder="Please provide your name"
             value="<%- name || '' %>">
 
-        <div class="card"> 
-            <span>Saved surveys must be uploaded when you next have network connectivity</span>
+        <div class="message-box-primary"> 
+            <span>Saved surveys must be uploaded when you next have network connectivity.</span>
         </div>
-
-        <button class="btn btn-block btn-positive question__btn">Submit</button>
     </script>
 
     <script id="template_splash" type="text/html">
@@ -332,22 +345,21 @@
         <p>version <%- survey.version %> | last updated <%- survey.last_updated %></p>
 
         <% if (unsynced.length > 0 && online) { %>
-            <div class="card"> 
+            <div class="message-box-warning"> 
                 <span>You have <strong><%- unsynced.length %></strong> unsynced surveys. Please submit them now. </span>  
             </div>
-            <button class="btn btn-block btn-primary sync_btn">
+            <button class="btn btn-block btn-primary sync_btn navigate-right">
                 Submit Completed Surveys
-                <span class="icon icon-right"></span>
             </button>
         <% } else if (unsynced.length > 0  && !online) { %>
-            <div class="card"> 
+            <div class="message-box-warning"> 
                 <span>You have <strong><%- unsynced.length %></strong> unsynced surveys. </span>  
                 <br>
                 <br>
                 <span>At present, you do not have a network connection - please remember to submit these surveys the next time you do have access to the internet.</span>  
             </div>
         <% } else { %>
-            <div class="card"> 
+            <div class="message-box-primary"> 
                 <span> Hi, <strong><%- name %></strong> and welcome to the <%- survey.title %> Survey.</span>
                 <br>
                 <br>
