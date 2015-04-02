@@ -1157,7 +1157,7 @@ class ViewTest(AsyncHTTPTestCase):
         with mock.patch.object(ViewHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
             response = self.fetch('/view')
-        self.assertIn('test_title', to_unicode(response.body))
+        self.assertIn('table', to_unicode(response.body))
 
     def testGetSubmissions(self):
         survey_id = connection.execute(survey_table.select().where(

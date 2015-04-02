@@ -149,7 +149,8 @@ class SubmissionTest(DriverTest):
 
         # Click on the survey
         self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/div/ul/li/a[1]').click()
+            '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a'
+        ).click()
 
         # Click on the shareable link
         WebDriverWait(self.drv, 4).until(EC.presence_of_element_located(
@@ -239,9 +240,11 @@ class SubmissionTest(DriverTest):
         # Check the submissions
         self.drv.get(base + '/view')
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[2]/div/div/ul/li/a[1]')))
+            (By.XPATH,
+             '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a')))
         self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/div/ul/li/a[1]').click()
+            '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a'
+        ).click()
         submission_link = self.drv.find_element_by_xpath(
             '/html/body/div[2]/div/div/ul[2]/li/a')
         self.drv.execute_script(
