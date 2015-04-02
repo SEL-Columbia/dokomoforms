@@ -48,7 +48,14 @@
                         },
                         "targets": 0
                     },
-                    {"visible": false, "targets": 1}
+                    {"visible": false, "targets": 1},
+                    {
+                        "render": function (data, type, row) {
+                            var datetime = new Date(data);
+                            return datetime.toDateString() + '<br />' + datetime.toTimeString();
+                        },
+                        "targets": 2
+                    }
                 ],
                 "columns": [
                     {"name": "survey_title"},
