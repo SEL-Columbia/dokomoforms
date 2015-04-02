@@ -40,7 +40,8 @@ from dokomoforms.db.submission import submission_table, submission_insert, \
 from dokomoforms.db.survey import survey_table, survey_insert, survey_select, \
     get_surveys_by_email, display, SurveyDoesNotExistError, \
     get_survey_id_from_prefix, SurveyPrefixDoesNotIdentifyASurveyError, \
-    SurveyPrefixTooShortError, get_email_address, get_free_title
+    SurveyPrefixTooShortError, get_email_address, get_free_title, \
+    get_number_of_surveys
 
 
 connection = db.engine.connect()
@@ -786,6 +787,9 @@ class TestSurvey(unittest.TestCase):
     def tearDown(self):
         connection.execute(survey_table.delete().where(
             survey_table.c.survey_title.like('test insert%')))
+        connection.execute(auth_user_table.delete().where(
+            auth_user_table.c.email == 'TestSurveyEmail'
+        ))
 
     def testGetSurveysForUserByEmail(self):
         user = connection.execute(auth_user_table.select().where(
@@ -797,6 +801,14 @@ class TestSurvey(unittest.TestCase):
         self.assertEqual(len(surveys), len(surveys_by_email))
         self.assertEqual(surveys[0].survey_id,
                          surveys_by_email[0].survey_id)
+
+    def testGetNumberOfSurveys(self):
+        number_of_surveys = get_number_of_surveys(connection, 'test_email')
+        self.assertEqual(number_of_surveys, 1)
+
+        connection.execute(create_auth_user(email='TestSurveyEmail'))
+        zero_surveys = get_number_of_surveys(connection, 'TestSurveyEmail')
+        self.assertEqual(zero_surveys, 0)
 
     def testGetSurveyIdFromPrefix(self):
         survey_id = connection.execute(survey_table.select().where(
