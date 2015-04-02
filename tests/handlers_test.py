@@ -5,10 +5,11 @@ Tests for the dokomo webapp
 
 import unittest
 from unittest import mock
-from sqlalchemy import and_
+from urllib.parse import urlencode, quote_plus
 import uuid
-from sqlalchemy import Table, MetaData
 
+from sqlalchemy import and_
+from sqlalchemy import Table, MetaData
 from tornado.escape import to_unicode, json_encode, json_decode
 import tornado.gen
 import tornado.httpserver
@@ -34,6 +35,10 @@ from dokomoforms.db.question_choice import question_choice_table
 from dokomoforms.db.submission import submission_table
 from dokomoforms.handlers.api.aggregations import AggregationHandler
 from dokomoforms.handlers.api.batch import BatchSubmissionAPIHandler
+from dokomoforms.handlers.api.data_table import _base_query, \
+    _apply_text_filter, \
+    _get_orderings, _apply_ordering, _apply_limit, SurveyDataTableHandler, \
+    SubmissionDataTableHandler
 from dokomoforms.handlers.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler
 from dokomoforms.handlers.api.surveys import SurveysAPIHandler, \
@@ -1274,6 +1279,139 @@ class VisualizationTest(AsyncHTTPTestCase):
         webpage_response = to_unicode(response.body)
         self.assertIn('bar_graph', webpage_response)
         self.assertIn('vis_map', webpage_response)
+
+
+class DataTableTest(AsyncHTTPTestCase):
+    def tearDown(self):
+        connection.execute(submission_table.delete())
+
+    def get_app(self):
+        self.app = Application(pages, **config)
+        return self.app
+
+    def get_new_ioloop(self):
+        return tornado.ioloop.IOLoop.instance()
+
+    def test_BaseQuery(self):
+        query = _base_query(
+            survey_table.join(auth_user_table),
+            'a.dahir7@gmail.com',
+            ['survey_title']
+        )
+        self.assertEqual(connection.execute(query).first()[1], 10)
+
+    def test_BaseQueryWhere(self):
+        query = _base_query(
+            survey_table.join(auth_user_table),
+            'a.dahir7@gmail.com',
+            ['survey_title'],
+            where=survey_table.c.survey_title.like('days%')
+        )
+        self.assertEqual(connection.execute(query).rowcount, 2)
+
+    def test_ApplyTextFilter(self):
+        query = _base_query(
+            survey_table.join(auth_user_table),
+            'a.dahir7@gmail.com',
+            ['survey_title'],
+        )
+        query = _apply_text_filter(
+            query,
+            {'search': {'value': 'day'}},
+            survey_table.c.survey_title
+        )
+        self.assertEqual(connection.execute(query).rowcount, 2)
+
+    def test_getOrderings(self):
+        args = {
+            'order': [{'column': 1, 'dir': 'a'}, {'column': 0, 'dir': 'b'}],
+            'columns': [{'name': 'c'}, {'name': 'd'}]
+        }
+        self.assertEqual(list(_get_orderings(args)), ['d a', 'c b'])
+
+    def test_applyOrdering(self):
+        query = _base_query(
+            survey_table.join(auth_user_table),
+            'a.dahir7@gmail.com',
+            ['survey_title', 'survey_id']
+        )
+        args = {
+            'order': [
+                {'column': 1, 'dir': 'desc'},
+                {'column': 0, 'dir': 'asc'}
+            ],
+            'columns': [{'name': 'survey_title'}, {'name': 'survey_id'}]
+        }
+        query = _apply_ordering(query, args, 'created_on', 'desc')
+        result = connection.execute(query).fetchall()
+        self.assertEqual(result[0]['survey_title'], 'test_title2')
+        self.assertEqual(result[1]['survey_title'], 'what is life')
+
+    def test_applyLimit(self):
+        query = _base_query(
+            survey_table.join(auth_user_table),
+            'a.dahir7@gmail.com',
+            ['survey_title']
+        )
+        query = _apply_limit(query, {'length': 2})
+        self.assertEqual(connection.execute(query).rowcount, 2)
+
+    def test_applyLimitNoLimit(self):
+        query = _base_query(
+            survey_table.join(auth_user_table),
+            'a.dahir7@gmail.com',
+            ['survey_title']
+        )
+        query = _apply_limit(query, {'length': -1})
+        self.assertEqual(connection.execute(query).rowcount, 10)
+
+    def testGetSurveyDataTable(self):
+        args = {
+            'search': {
+                'value': ''
+            },
+            'order': [],
+            'length': 10,
+            'draw': 1
+        }
+        urle = quote_plus(json_encode(args))
+        with mock.patch.object(SurveyDataTableHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/survey_data_table?args=' + urle)
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertEqual(webpage_response['recordsFiltered'], 1)
+        self.assertEqual(webpage_response['draw'], 1)
+        self.assertEqual(webpage_response['recordsTotal'], 1)
+        data = webpage_response['data']
+        self.assertEqual(data[0][0], 'test_title')
+        self.assertEqual(data[0][-1], '0')
+
+    def testGetSubmissionDataTable(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        _create_submission()
+        args = {
+            'search': {
+                'value': ''
+            },
+            'order': [],
+            'length': 10,
+            'draw': 1
+        }
+        urle = quote_plus(json_encode(args))
+        with mock.patch.object(SubmissionDataTableHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch(
+                '/api/submission_data_table/{}?args='.format(survey_id) + urle
+            )
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertEqual(webpage_response['recordsFiltered'], 1)
+        self.assertEqual(webpage_response['draw'], 1)
+        self.assertEqual(webpage_response['recordsTotal'], 1)
+        data = webpage_response['data']
+        self.assertEqual(data[0][1], 'me')
 
 
 if __name__ == '__main__':

@@ -50,7 +50,7 @@ def _base_query(table: Table,
     ).where(
         auth_user_table.c.email == email
     )
-    if where:
+    if where is not None:
         query = query.where(where)
     return query
 
