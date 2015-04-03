@@ -34,6 +34,7 @@ describe('User next/prev tests', function(done) {
         raw_survey.survey_metadata.location.lat = 40.80250524727603
         raw_survey.survey_metadata.location.lon =  -73.93695831298828
         App.init(raw_survey)
+        $('.start_btn').click(); // Start the survey;
         done();
     });
 
@@ -85,7 +86,7 @@ describe('User next/prev tests', function(done) {
             done();
         });
 
-    it('should move from question 0 to nowhere when prev is clicked', 
+    it('should move from question 0 to homepage when prev is clicked ', 
         function(done) {
             var survey = App.survey;
             var questions = survey.questions;
@@ -97,7 +98,7 @@ describe('User next/prev tests', function(done) {
 
             $(".page_nav__prev").trigger("click");
             first_question.should.equal(survey.current_question);
-            $(".question__title").html().trim().should.equal(title);
+            $(".question__title").html().trim().should.equal(App.survey.title); //XXX homepage
 
             done();
         });
@@ -161,6 +162,7 @@ describe('User submission tests', function(done) {
         raw_survey = require('./fixtures/survey.json');
         localStorage.name = 'viktor sucks';
         App.init(raw_survey);
+        $('.start_btn').click(); // Start the survey;
         done();
     });
 
@@ -227,6 +229,7 @@ describe('User multiple choice tests', function(done) {
         $(".page_nav__prev").off();
         raw_survey = require('./fixtures/survey.json');
         App.init(raw_survey)
+        $('.start_btn').click(); // Start the survey;
         done();
     });
 
@@ -307,7 +310,7 @@ describe('User multiple choice tests', function(done) {
            
         });
 
-    it('should NOT remember choice other was selected', 
+    it('should NOT allow you to move forward when other is selected and not filled', 
         function(done) {
             var survey = App.survey;
             var questions = survey.questions;
@@ -330,11 +333,11 @@ describe('User multiple choice tests', function(done) {
             $('.text_input').val("").change(); // No value ==> you didn't fill out other
 
             $(".page_nav__next").trigger("click");
-            mc_question.should.not.equal(survey.current_question);
-            $(".page_nav__prev").trigger("click");
-            mc_question.should.equal(survey.current_question);
+            mc_question.should.equal(survey.current_question); // cant move until answer is filled
 
-            $('.question__select').val().should.match("null"); //Go back to the "Please pick option" thing
+            $('.text_input').val("poop").change(); // No value ==> you didn't fill out other
+            $(".page_nav__next").trigger("click");
+            mc_question.should.not.equal(survey.current_question); // now things are good
 
             done();
    });
@@ -353,6 +356,7 @@ describe('User facility questions', function(done) {
         raw_survey = require('./fixtures/survey.json');
         App.init(raw_survey)
         App.facilities = require('./fixtures/facilities.json');
+        $('.start_btn').click(); // Start the survey;
         done();
     });
 
@@ -381,7 +385,7 @@ describe('User facility questions', function(done) {
 
             //XXX Fix, event not happening
             $('.leaflet-marker-icon').first().click();
-            //console.log($('.facility__name').val());
+            console.log($('.facility__name').val());
             //$('.leaflet-marker-icon').first().click();
             //console.log($('.facility__name').val());
             
@@ -401,6 +405,7 @@ describe('User dont know tests', function(done) {
         $(".page_nav__prev").off();
         raw_survey = require('./fixtures/survey.json');
         App.init(raw_survey)
+        $('.start_btn').click(); // Start the survey;
         done();
     });
 

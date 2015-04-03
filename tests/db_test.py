@@ -40,7 +40,8 @@ from dokomoforms.db.submission import submission_table, submission_insert, \
 from dokomoforms.db.survey import survey_table, survey_insert, survey_select, \
     get_surveys_by_email, display, SurveyDoesNotExistError, \
     get_survey_id_from_prefix, SurveyPrefixDoesNotIdentifyASurveyError, \
-    SurveyPrefixTooShortError, get_email_address, get_free_title
+    SurveyPrefixTooShortError, get_email_address, get_free_title, \
+    get_number_of_surveys
 
 
 connection = db.engine.connect()
@@ -67,6 +68,32 @@ class TestAnswer(unittest.TestCase):
         answer_exec = connection.execute(answer_insert(
             answer=1, question_id=question_id,
             answer_metadata={},
+            submission_id=submission_id,
+            survey_id=survey_id,
+            type_constraint_name=tcn,
+            is_other=False,
+            sequence_number=seq,
+            allow_multiple=mul))
+        answer_id = answer_exec.inserted_primary_key[0]
+        self.assertIsNotNone(answer_id)
+
+    def testAnswerInsertNoMetadata(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'integer')
+        question = connection.execute(q_where).first()
+        question_id = question.question_id
+        tcn = question.type_constraint_name
+        seq = question.sequence_number
+        mul = question.allow_multiple
+        submission_exec = connection.execute(
+            submission_insert(submitter='test_submitter',
+                              survey_id=survey_id))
+        submission_id = submission_exec.inserted_primary_key[0]
+        answer_exec = connection.execute(answer_insert(
+            answer=1, question_id=question_id,
+            answer_metadata=None,
             submission_id=submission_id,
             survey_id=survey_id,
             type_constraint_name=tcn,
@@ -260,6 +287,31 @@ class TestAnswerChoice(unittest.TestCase):
         exec_stmt = connection.execute(answer_choice_insert(
             question_choice_id=the_choice.question_choice_id,
             answer_choice_metadata={},
+            question_id=question_id,
+            submission_id=submission_id,
+            survey_id=survey_id, type_constraint_name=tcn, sequence_number=seq,
+            allow_multiple=mul))
+        answer_id = exec_stmt.inserted_primary_key[0]
+        self.assertIsNotNone(answer_id)
+
+    def testAnswerChoiceInsertNoMetadata(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        q_where = question_table.select().where(
+            question_table.c.type_constraint_name == 'multiple_choice')
+        question = connection.execute(q_where).first()
+        question_id = question.question_id
+        tcn = question.type_constraint_name
+        seq = question.sequence_number
+        mul = question.allow_multiple
+        submission_exec = connection.execute(submission_insert(
+            submitter='test_submitter', survey_id=survey_id))
+        submission_id = submission_exec.inserted_primary_key[0]
+        choices = get_choices(connection, question_id)
+        the_choice = choices.first()
+        exec_stmt = connection.execute(answer_choice_insert(
+            question_choice_id=the_choice.question_choice_id,
+            answer_choice_metadata=None,
             question_id=question_id,
             submission_id=submission_id,
             survey_id=survey_id, type_constraint_name=tcn, sequence_number=seq,
@@ -735,6 +787,9 @@ class TestSurvey(unittest.TestCase):
     def tearDown(self):
         connection.execute(survey_table.delete().where(
             survey_table.c.survey_title.like('test insert%')))
+        connection.execute(auth_user_table.delete().where(
+            auth_user_table.c.email == 'TestSurveyEmail'
+        ))
 
     def testGetSurveysForUserByEmail(self):
         user = connection.execute(auth_user_table.select().where(
@@ -746,6 +801,14 @@ class TestSurvey(unittest.TestCase):
         self.assertEqual(len(surveys), len(surveys_by_email))
         self.assertEqual(surveys[0].survey_id,
                          surveys_by_email[0].survey_id)
+
+    def testGetNumberOfSurveys(self):
+        number_of_surveys = get_number_of_surveys(connection, 'test_email')
+        self.assertEqual(number_of_surveys, 1)
+
+        connection.execute(create_auth_user(email='TestSurveyEmail'))
+        zero_surveys = get_number_of_surveys(connection, 'TestSurveyEmail')
+        self.assertEqual(zero_surveys, 0)
 
     def testGetSurveyIdFromPrefix(self):
         survey_id = connection.execute(survey_table.select().where(
@@ -799,6 +862,7 @@ class TestSurvey(unittest.TestCase):
         auth_user_id = connection.execute(auth_user_table.select().where(
             auth_user_table.c.email == 'test_email')).first().auth_user_id
         stmt = survey_insert(survey_title='test insert',
+                             survey_metadata=None,
                              auth_user_id=auth_user_id)
         survey_id = connection.execute(stmt).inserted_primary_key[0]
         condition = survey_table.c.survey_title == 'test insert'
@@ -815,12 +879,14 @@ class TestSurvey(unittest.TestCase):
             'test insert')
 
         stmt = survey_insert(survey_title='test insert',
+                             survey_metadata={},
                              auth_user_id=auth_user_id)
         connection.execute(stmt)
         self.assertEqual(
             get_free_title(connection, 'test insert', auth_user_id),
             'test insert(1)')
         stmt2 = survey_insert(survey_title='test insert(1)',
+                              survey_metadata={},
                               auth_user_id=auth_user_id)
         connection.execute(stmt2)
         self.assertEqual(
@@ -862,7 +928,9 @@ class TestUtils(unittest.TestCase):
         auth_user_id = connection.execute(auth_user_table.select().where(
             auth_user_table.c.email == 'test_email')).first().auth_user_id
         exec_stmt = connection.execute(survey_insert(
-            survey_title='delete me', auth_user_id=auth_user_id))
+            survey_title='delete me',
+            survey_metadata={},
+            auth_user_id=auth_user_id))
         survey_id = exec_stmt.inserted_primary_key[0]
         connection.execute(delete_record(survey_table, 'survey_id', survey_id))
         condition = survey_table.c.survey_id == survey_id
@@ -875,7 +943,9 @@ class TestUtils(unittest.TestCase):
         auth_user_id = connection.execute(auth_user_table.select().where(
             auth_user_table.c.email == 'test_email')).first().auth_user_id
         exec_stmt = connection.execute(survey_insert(
-            survey_title='update me', auth_user_id=auth_user_id))
+            survey_title='update me',
+            survey_metadata={},
+            auth_user_id=auth_user_id))
         survey_id = exec_stmt.inserted_primary_key[0]
         connection.execute(update_record(survey_table, 'survey_id', survey_id,
                                          survey_title='updated'))

@@ -214,7 +214,7 @@
             <% if (question.logic.with_other) { %>
                 <option 
                     <% var ans = question.answer[question.choices.length];
-                    if (ans && (ans.response))  { %>
+                    if (ans && (ans.is_other))  { %>
                         selected
                     <% } %>
                 value="other">
@@ -277,6 +277,34 @@
                 value="<%- name || '' %>">
         </div>
         <div class="question__btn">Submit</div>
+    </script>
+
+    <script id="template_splash" type="text/html">
+        <div class="question__title">
+            <%- title %>
+        </div>
+        
+        <div class="survey__stats">
+            Survey Creator: <%- author %> 
+        </div>
+        <div class="survey__stats">
+            Survey Organization: <%- org %> 
+        </div>
+        <div class="survey__stats">
+            Survey Created On: <%- created_on %> 
+        </div>
+        <div class="survey__stats">
+            Survey Last Updated: <%- last_updated %> 
+        </div>
+        <div class="survey__stats">
+            Unsynced Surveys: <%- unsynced.length %> 
+        </div>
+        <div class="survey__stats">
+            Unsynced Facilities: <%- Object.keys(unsynced_facilities).length %> 
+        </div>
+
+        <div class="question__btn sync_btn">Sync</div>
+        <div class="question__btn start_btn">Start</div>
     </script>
 
     <script src="/static/lib.js"></script>

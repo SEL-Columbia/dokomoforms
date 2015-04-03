@@ -1,15 +1,19 @@
 """Allow access to the survey table."""
 import re
 from collections import Iterator
-from sqlalchemy import Text
 
+from sqlalchemy import Text
 from sqlalchemy.engine import RowProxy, ResultProxy, Connection
 from sqlalchemy.sql import Insert, and_, cast, select, exists
+from sqlalchemy.sql.functions import count
 
 from dokomoforms.db import survey_table, auth_user_table
 
 
-def survey_insert(*, auth_user_id: str, survey_title: str) -> Insert:
+def survey_insert(*,
+                  auth_user_id: str,
+                  survey_title: str,
+                  survey_metadata) -> Insert:
     """
     Insert a record into the survey table.
 
@@ -17,8 +21,10 @@ def survey_insert(*, auth_user_id: str, survey_title: str) -> Insert:
     :param survey_title: The survey's title
     :return: The Insert object. Execute this!
     """
-    return survey_table.insert().values(survey_title=survey_title,
-                                        auth_user_id=auth_user_id)
+    return survey_table.insert().values(
+        survey_title=survey_title,
+        auth_user_id=auth_user_id,
+        survey_metadata=survey_metadata)
 
 
 def get_surveys_by_email(connection: Connection,
@@ -37,6 +43,26 @@ def get_surveys_by_email(connection: Connection,
         select([survey_table]).select_from(table).limit(limit).where(
             auth_user_table.c.email == email
         ).order_by('created_on asc')).fetchall()
+
+
+def get_number_of_surveys(connection: Connection,
+                          email: str) -> int:
+    """
+    Return the number of surveys for the given user.
+
+    :param connection: a SQLAlchemy Connection
+    :param email: the user's e-mail address
+    :return: the number of surveys the user has
+    """
+    return connection.execute(
+        select(
+            [count(survey_table.c.survey_id)]
+        ).select_from(
+            auth_user_table.join(survey_table)
+        ).where(
+            auth_user_table.c.email == email
+        )
+    ).scalar()
 
 
 def get_survey_id_from_prefix(connection: Connection,

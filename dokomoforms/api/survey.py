@@ -298,7 +298,10 @@ def _create_survey(connection: Connection, data: dict) -> str:
 
     # First, create an entry in the survey table
     safe_title = get_free_title(connection, title, user_id)
-    survey_values = {'auth_user_id': user_id, 'survey_title': safe_title}
+    survey_values = {
+        'auth_user_id': user_id,
+        'survey_metadata': data['survey_metadata'],
+        'survey_title': safe_title}
     executable = survey_insert(**survey_values)
     exc = [('survey_title_survey_owner_key',
             SurveyAlreadyExistsError(safe_title))]
@@ -404,6 +407,7 @@ def _to_json(connection: Connection, survey: RowProxy) -> dict:
             'survey_version': survey.survey_version,
             'survey_metadata': survey.survey_metadata,
             'questions': q_fields,
+            'last_updated': survey.survey_last_update_time.isoformat(),
             'created_on': survey.created_on.isoformat()}
 
 
@@ -463,6 +467,8 @@ def update(connection: Connection, data: dict):
     survey_id = data['survey_id']
     email = data['email']
     existing_survey = survey_select(connection, survey_id, email=email)
+    if 'survey_metadata' not in data:
+        data['survey_metadata'] = existing_survey.survey_metadata
     update_time = datetime.datetime.now()
 
     with connection.begin():

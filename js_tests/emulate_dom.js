@@ -9,8 +9,8 @@ module.exports = (function(url) {
             },
             url: url || "http://localhost" //XXX Cross domain error otherwise
         });
-
-    window = document.parentWindow;
+    
+    window = document._global;
     window.applicationCache = { 
         addEventListener : function() {}
     };

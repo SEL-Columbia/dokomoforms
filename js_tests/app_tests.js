@@ -94,6 +94,10 @@ describe('App initalization Tests', function(done) {
                JSON.stringify(answers); 
             
             App.init(raw_survey);
+
+            App.survey.render(App.survey.questions[0]); // Render does the array clean up 
+            App.survey.questions[0].answer.length.should.match(2); // Null responses are wiped;)
+            App.survey.render(App.survey.questions[6]); // Render does the array clean up 
             App.survey.questions[0].answer.length.should.match(2); // Null responses are wiped;)
             App.survey.render(App.survey.questions[6]); // Render does the array clean up 
             App.survey.questions[6].answer.length.should.match(1); // Null responses are wiped;)

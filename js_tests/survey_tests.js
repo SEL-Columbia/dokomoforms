@@ -69,19 +69,19 @@ describe('Survey unit and regression tests', function(done) {
             survey = new Survey("id", 0, questions, {});
 
             // empty
-            should(survey.getFirstResponse(questions[0])).match(null);
+            should(survey.getFirstResponse(questions[0]).response).match(null);
             // O value
             questions[0].answer = [{}, {response:0}];
-            should(survey.getFirstResponse(questions[0])).match(0);;
+            should(survey.getFirstResponse(questions[0]).response).match(0);;
             // some value
             questions[0].answer = [{response:1}, {}];
-            should(survey.getFirstResponse(questions[0])).match(1);
+            should(survey.getFirstResponse(questions[0]).response).match(1);
             // some value doubled
             questions[0].answer = [{response:1}, {response: 2}];
-            should(survey.getFirstResponse(questions[0])).match(1);
+            should(survey.getFirstResponse(questions[0]).response).match(1);
             // empty string
             questions[0].answer = [{response:""}];
-            should(survey.getFirstResponse(questions[0])).match("");
+            should(survey.getFirstResponse(questions[0]).response).match("");
 
             done();
 
@@ -101,10 +101,10 @@ describe('Survey unit and regression tests', function(done) {
             survey = new Survey("id", 0,  questions, {});
 
             // empty
-            should(survey.getFirstResponse(questions[0])).match(null);
+            should(survey.getFirstResponse(questions[0]).response).match(null);
             // empty string
             questions[0].answer = [{response:Widgets._validate("text", "")}];
-            should(survey.getFirstResponse(questions[0])).match(null);
+            should(survey.getFirstResponse(questions[0]).response).match(null);
 
             done();
 
@@ -595,13 +595,13 @@ describe('Survey unit and regression tests', function(done) {
 
             survey = new Survey("id", 0, questions, {});
             survey.submit();
-            $('.message').text().should.match("Submission failed, No questions answer in Survey!");
+            App.sync();
+            $('.message').text().should.match("Saving failed, No questions answer in Survey!");
             done();
 
         });
 
     it('submit: basic submission',
-        //XXX: Fake response so that this doesn't 404
         function(done) {
             var NEXT = 1;
             var PREV = -1;
@@ -639,7 +639,7 @@ describe('Survey unit and regression tests', function(done) {
             survey = new Survey("id", 0, questions, {});
             questions[0].answer = [{response:"hey baby"}];
             survey.submit();
-
+            App.sync();
         });
 
 
@@ -703,7 +703,7 @@ describe('Survey unit and regression tests', function(done) {
             survey = new Survey("id", 0, questions, {});
             questions[0].answer = [{response:{'id': 1, 'lat':40.01, 'lon':70.01 }}];
             survey.submit();
-
+            App.sync();
         });
 });
 
