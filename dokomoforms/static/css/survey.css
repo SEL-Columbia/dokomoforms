@@ -18,6 +18,25 @@ h3 {
     margin: 5px 0px;
 }
 
+input[type] {
+    border: 1px solid #DDD;
+    border-left: 0px solid #DDD;
+    border-right: 0px solid #DDD;
+    padding: 10px 15px;
+    font-size: 14px;
+    min-height: 50px;
+    outline: none;
+    margin: 0px;
+}
+
+input[type]:focus {
+    border-color: rgb(84, 216, 90);
+}
+
+input[type]:invalid {
+    border-color: rgb(216, 84, 90);
+}
+
 input[type=checkbox] {
     /* Double-sized Checkboxes */
     -ms-transform: scale(2); /* IE */
@@ -27,16 +46,48 @@ input[type=checkbox] {
     margin-left: 2px;
     margin-right: 5px;
     margin-top: 8px;
-    border: 2px solid #DDD;
+    height: 20px;
 }
 
-input {
-    border: 2px solid #DDD;
-    border-left: none;
-    border-right: none;
-    padding: 10px 15px;
+select {
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='50px' height='50px'><polyline points='46.139,15.518 25.166,36.49 4.193,15.519'/></svg>");
+    background-repeat:no-repeat;
+    background-position: right 10px top 20px;
+    background-size: 10px 10px;
+    background-color: white;
+    text-align:center;
+
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+    -webkit-transition:0.3s ease all;
+    -moz-transition:0.3s ease all;
+    -ms-transition:0.3s ease all;
+    -o-transition:0.3s ease all;
+    transition:0.3s ease all;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-shadow: none;
+
+    border: 1px solid #DDD;
+    border-left: 0px solid #DDD;
+    border-right: 0px solid #DDD;
+    padding: 14px 15px;
+    font-size: 14px;
+    min-height: 50px;
+    outline: none;
+
 }
 
+select:focus {
+}
 
 /* Survey styles
 =================================================*/
@@ -88,41 +139,19 @@ input {
     text-align: center;
 }
 
-.question__select {
-    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='50px' height='50px'><polyline points='46.139,15.518 25.166,36.49 4.193,15.519'/></svg>");
-    background-repeat:no-repeat;
-    background-position: right 10px top 15px;
-    background-size: 16px 16px;
-    background-color: white;
-    text-align:center;
-
-    -webkit-appearance: none;
-    -moz-appearance: none;
-
-    -webkit-transition:0.3s ease all;
-    -moz-transition:0.3s ease all;
-    -ms-transition:0.3s ease all;
-    -o-transition:0.3s ease all;
-    transition:0.3s ease all;
-
-
-    display: block;
-    padding: 10px 15px;
-    border: 2px solid #DDD;
-    
-    width: 100%;
-    min-height: 48px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    font-size: 20px;
-    outline: none;
-    box-shadow: none;
-}
-
-.question__select:focus, .question__select:active {
-}
-
 .question__hint {
+    margin-bottom: 20px;
+}
+
+.question__add {
+    margin: 20px 0px;
+}
+
+.location_input {
+    text-align: center;
+}
+
+.text_input {
 }
 
 /* Rachet style changes
@@ -134,7 +163,7 @@ input {
     box-shadow: 0px 4px 0px #aaa;
 }
 
-.bar .btn .icon {
+.bar-footer .btn .icon {
     /* fix the height issues when adding icon to block btn */
     height: 5px;
     top: 0px;
