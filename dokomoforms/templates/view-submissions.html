@@ -1,14 +1,8 @@
 {% extends "base.html" %}
-
-{% block stylesheets %}
-<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.5/css/jquery.dataTables.min.css">
-{% end %}
-
 {% block content %}
-    <div class="content">
-        <div>
+    <div class="content-padded">
             <h4>Welcome {{ current_user }}</h4>
-            <a href="/survey/{{ survey.survey_id }}">Shareable link!!!</a>
+            <a data-ignore="push" href="/survey/{{ survey.survey_id }}">Shareable link!!!</a>
             <p>Questions with submission statistics:</p>
             <ul>
                 {% for stats in question_stats['result'] %}
@@ -39,8 +33,6 @@
                     </tr>
                 </tfoot>
             </table>
-        </div>
-        <a class="btn btn-block" href="#" id="logout">Logout</a>
     </div>
 
     <script src="/static/lib.js"></script>
@@ -87,4 +79,11 @@
             } );
         } );
     </script>
+{% end %}
+{% block footer %}
+    <div class="bar bar-standard bar-footer">
+        <div class="bar-padded">
+            <a data-ignore="push" class="btn btn-block" href="#" id="logout">Logout</a>
+        </div>
+    </div>
 {% end %}

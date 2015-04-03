@@ -1,9 +1,6 @@
 {% extends "base.html" %}
-
-
 {% block content %}
-    <div class="content">
-        <div>
+    <div class="content-padded">
             <h4>Welcome {{ current_user }}</h4>
             {% if time_data %}
                 <p>Value over time:</p>
@@ -20,8 +17,6 @@
             {% if not(time_data or bar_data or map_data) %}
                 <p>No viewable submissions.</p>
             {% end %}
-        </div>
-    <a class="btn btn-block" href="#" id="logout">Logout</a>
     </div>
         
 
@@ -45,4 +40,11 @@
         drawMap({% raw map_data %});
     </script>
     {% end %}
+{% end %}
+{% block footer %}
+    <div class="bar bar-standard bar-footer">
+        <div class="bar-padded">
+            <a data-ignore="push" class="btn btn-block" href="#" id="logout">Logout</a>
+        </div>
+    </div>
 {% end %}

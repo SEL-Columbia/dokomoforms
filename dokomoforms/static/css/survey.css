@@ -46,7 +46,7 @@ input[type=checkbox] {
     margin-left: 2px;
     margin-right: 5px;
     margin-top: 8px;
-    height: 20px;
+    min-height: 0px;
 }
 
 select {
@@ -171,8 +171,19 @@ select:focus {
 
 .bar-footer {
     padding-top: 2px;
+    height: 80px;
+}
+
+.bar-footer-extended {
     height: 120px;
-    
+}
+
+.content {
+    margin-bottom: 80px;
+}
+
+.content-shrunk {
+    margin-bottom: 120px;
 }
 
 header {

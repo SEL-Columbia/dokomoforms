@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-    <div class="content">
-        <div>
+    <div class="content-padded">
             <h4>Welcome {{ current_user }}</h4>
             <p> Submission {{ submission['submission_id'] }} by {{ submission['submitter'] }} at {{ submission['submission_time'] }} to survey {{ survey.survey_title }}: </p>
             <ul>
@@ -17,12 +16,18 @@
                     </li>
                 {% end %}
             </ul>
-        </div>
-        <a class="btn btn-block" href="#" id="logout">Logout</a>
     </div>
 
 
     <script src="/static/lib.js"></script>
     <script src="https://login.persona.org/include.js"></script>
     <script src="/static/persona.js"></script>
+{% end %}
+
+{% block footer %}
+    <div class="bar bar-standard bar-footer">
+        <div class="bar-padded">
+            <a data-ignore="push" class="btn btn-block" href="#" id="logout">Logout</a>
+        </div>
+    </div>
 {% end %}

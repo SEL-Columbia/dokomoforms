@@ -17,13 +17,12 @@
     <link href="/static/css/survey.css" rel="stylesheet" type="text/css">-->
 
     <link rel="icon" href="/static/img/favicon.png">
-    {% block stylesheets %}{% end %}
 </head>
 
 <body>
     <header class="bar bar-nav bar-padded">
         <a class="icon icon-info pull-right"></a>
-        <h1 class="title">Dokomoforms</h1>
+        <h1 class="title"><a data-ignore="push" href="/">Dokomoforms</a></h1>
     </header>
 
     <div class="message"></div>
@@ -31,6 +30,8 @@
     <div class="content">
         {% block content %}{% end %}
     </div>
+
+    {% block footer %} {% end %}
 </body>
 
 </html>
