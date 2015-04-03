@@ -4,15 +4,14 @@ import tornado.web
 from dokomoforms.api import json_response
 
 import dokomoforms.api.aggregation as aggregation_api
-from dokomoforms.handlers.util.base import APIHandler, get_email, \
-    validation_message
+from dokomoforms.handlers.util.base import APIHandler, validation_message
 
 
 class AggregationHandler(APIHandler):
     def _apply_aggregation(self, aggregation_name: str, question_id: str):
         try:
             method = getattr(aggregation_api, aggregation_name)
-            return method(self.db, question_id, email=get_email(self))
+            return method(self.db, question_id, email=self.get_email())
         except AttributeError:
             reason = json_encode(
                 validation_message('aggregation', aggregation_name,

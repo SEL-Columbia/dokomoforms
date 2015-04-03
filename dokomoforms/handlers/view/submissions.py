@@ -1,7 +1,6 @@
 """Submission views."""
 import tornado.web
 
-from dokomoforms.db.submission import get_submissions_by_email
 from dokomoforms.db.survey import survey_select
 from dokomoforms.handlers.util.base import BaseHandler
 import dokomoforms.api.submission as submission_api
@@ -13,13 +12,11 @@ class ViewSubmissionsHandler(BaseHandler):
 
     @tornado.web.authenticated
     def get(self, survey_id: str):
-        submissions = get_submissions_by_email(self.db, survey_id,
-                                               self.current_user)
         stats = aggregation_api.get_question_stats
         question_stats = stats(self.db, survey_id, email=self.current_user)
         survey = survey_select(self.db, survey_id, email=self.current_user)
         self.render('view-submissions.html', message=None, survey=survey,
-                    submissions=submissions, question_stats=question_stats)
+                    question_stats=question_stats)
 
 
 class ViewSubmissionHandler(BaseHandler):
