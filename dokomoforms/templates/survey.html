@@ -22,7 +22,7 @@
 
     <header class="bar bar-nav bar-padded"></header>
     <div class="message"></div>
-    <div class="content content-padded"></div>
+    <div class="content content-shrunk"></div>
     <div class="bar bar-standard bar-footer bar-footer-extended"></div>
     
     <script id="template_nav" type="text/html">
@@ -31,7 +31,7 @@
             <span class="">Previous</span>
         </button>
         <a class="icon icon-info pull-right"></a>
-        <h1 class="title"><%- index + "/" + total %></h1>
+        <h1 class="title"><%- index + " / " + total %></h1>
     </script>
 
     <script id="template_footer" type="text/html">
@@ -70,14 +70,17 @@
 
 
     <script id="widget_text" type="text/html">
-        <h3 class="question__title"><%- question.question_title %></h3>
-        <p class="question__hint"><%- question.hint || "" %></p>
+        <div class="content-padded">
+            <h3 class="question__title  "><%- question.question_title %></h3>
+            <p class="question__hint "><%- question.hint || "" %></p>
+        </div>
+
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
             if (ans && ans.response !== null && !ans.is_other) { 
                 no_response = false; %>
                 <input class="text_input" type="text" 
-                    placeholder="Please provide another response"
+                    placeholder="Please provide another response."
                     value="<%- ans.response %>"
                 >
             <% } %>
@@ -85,22 +88,24 @@
 
         <% if (no_response) { %>
            <input class="text_input" type="text"
-               placeholder="Please provide any response"
+               placeholder="Please provide any response."
                value="<%- question.default || '' %>"
            >
         <% } %>
     </script>
     
     <script id="widget_integer" type="text/html">
-        <h3 class="question__title"><%- question.question_title %></h3>
-        <p class="question__hint"><%- question.hint || "" %></p>
+        <div class="content-padded">
+            <h3 class="question__title "><%- question.question_title %></h3>
+            <p class="question__hint "><%- question.hint || "" %></p>
+        </div>
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
             if (ans && ans.response !== null && !ans.is_other) { 
                 no_response = false; %>
                 <input class="text_input" type="number"
-                    placeholder="Please provide another number"
+                    placeholder="Please provide another number."
                     value="<%- ans.response %>"
                     <% if (question.min != null){ %>
                         min="<%- question.min %>"
@@ -114,7 +119,7 @@
 
         <% if (no_response) { %>
             <input class="text_input" type="number"
-                placeholder="Please provide a number"
+                placeholder="Please provide a number."
                 value="<%- question.default || '' %>"
                 <% if (question.min != null){ %>
                     min="<%- question.min %>"
@@ -127,15 +132,17 @@
     </script>
     
     <script id="widget_decimal" type="text/html">
-        <h3 class="question__title"><%- question.question_title %></h3>
-        <p class="question__hint"><%- question.hint || "" %></p>
+        <div class="content-padded">
+            <h3 class="question__title "><%- question.question_title %></h3>
+            <p class="question__hint "><%- question.hint || "" %></p>
+        </div>
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
             if (ans && ans.response !== null) { 
                 no_response = false; %>
                 <input class="text_input" type="number" step="any"
-                    placeholder="Please provide another number (decimal OK)"
+                    placeholder="Please provide another number (decimal OK)."
                     value="<%- ans.response %>"
                 >
             <% } %>
@@ -143,22 +150,24 @@
 
         <% if (no_response) { %>
             <input class="text_input" type="number" step="any"
-                    placeholder="Please provide a number (decimal OK)"
+                    placeholder="Please provide a number (decimal OK)."
                     value="<%- question.default || '' %>"
             >
         <% } %>
     </script>
 
     <script id="widget_date" type="text/html">
-        <h3 class="question__title"><%- question.question_title %></h3>
-        <p class="question__hint"><%- question.hint || "" %></p>
+        <div class="content-padded">
+            <h3 class="question__title "><%- question.question_title %></h3>
+            <p class="question__hint "><%- question.hint || "" %></p>
+        </div>
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
             if (ans && ans.response !== null && !ans.is_other) { 
                 no_response = false; %>
                 <input class="text_input" type="date" 
-                       placeholder="Please provide another date"
+                       placeholder="Please provide another date."
                        value="<%- ans.response %>"
                 >
             <% } %>
@@ -166,22 +175,24 @@
 
         <% if (no_response) { %>
             <input class="text_input" type="date" 
-                   placeholder="Please provide a date"
+                   placeholder="Please provide a date."
                    value="<%- question.default || '' %>"
             >
         <% } %>
     </script>
 
     <script id="widget_time" type="text/html">
-        <h3 class="question__title"><%- question.question_title %></h3>
-        <p class="question__hint"><%- question.hint || "" %></p>
+        <div class="content-padded">
+            <h3 class="question__title "><%- question.question_title %></h3>
+            <p class="question__hint "><%- question.hint || "" %></p>
+        </div>
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
             if (ans && ans.response !== null && !ans.is_other) { 
                 no_response = false; %>
                 <input class="text_input" type="time" 
-                    placeholder="Please provide another time"
+                    placeholder="Please provide another time."
                     value="<%- ans.response %>"
                 >
             <% } %>
@@ -189,20 +200,22 @@
 
         <% if (no_response) { %>
             <input class="text_input" type="time" 
-                   placeholder="Please provide a time"
+                   placeholder="Please provide a time."
                    value="<%- question.default || '' %>"
             >
         <% } %>
     </script>
 
     <script id="widget_location" type="text/html">
-        <h3 class="question__title"><%- question.question_title %></h3>
-        <p class="question__hint"><%- question.hint || "" %></p>
+        <div class="content-padded">
+            <h3 class="question__title "><%- question.question_title %></h3>
+            <p class="question__hint "><%- question.hint || "" %></p>
 
-        <button class="btn question__find__btn">
-            <span class="icon icon-star"></span>
-            Capture Location
-        </button>
+            <button class="btn question__find__btn ">
+                <span class="icon icon-star"></span>
+                Capture Location
+            </button>
+        </div>
 
         <div id="map" class="question__map"></div>
 
@@ -227,76 +240,83 @@
     </script>
 
     <script id="widget_facility" type="text/html">
-        <h3 class="question__title"><%- question.question_title %></h3>
-        <p class="question__hint"><%- question.hint || "" %></p>
+        <div class="content-padded">
+        <h3 class="question__title "><%- question.question_title %></h3>
+        <p class="question__hint "><%- question.hint || "" %></p>
 
-        <button class="btn question__find__btn">
+        <button class="btn question__find__btn ">
             <span class="icon icon-star"></span>
             Capture Location
         </button>
+        </div>
 
         <div id="map" class="question__map"></div>
-        <div>
 
-            <button class="btn facility__btn">Add New Site</button>
-
-            <input class="text_input facility__name" type="text"/>
-            <select class="question__select facility__type">
-                <option value="other">Other</option>
-                <option value="water">Water</option>
-                <option value="health">Health</option>
-                <option value="education">Education</option>
-            </select>
+        <div class="content-padded">
+            <button class="btn facility__btn ">Add New Site</button>
         </div>
+
+        <input class="text_input facility__name" type="text"/>
+        <select class="question__select facility__type ">
+            <option value="other">Other</option>
+            <option value="water">Water</option>
+            <option value="health">Health</option>
+            <option value="education">Education</option>
+        </select>
 
     </script>
 
     <script id="widget_multiple_choice" type="text/html">
-        <h3 class="question__title"><%- question.question_title %></h3>
-        <p class="question__hint"><%- question.hint || "" %></p>
+        <div class="content-padded">
+            <h3 class="question__title "><%- question.question_title %></h3>
+            <p class="question__hint "><%- question.hint || "" %></p>
 
-        <select class="question__select" 
-            <%  if (question.allow_multiple) { %> 
-                multiple 
-                size=<%- question.choices.length + 1 + 1*question.logic.with_other %> 
-            <% } %>
-        >
+            <select class="question__select " 
+                <%  if (question.allow_multiple) { %> 
+                    multiple 
+                    size=<%- question.choices.length + 1 + 1*question.logic.with_other %> 
+                <% } %>
+            >
 
-            <option value="null">Please choose an option</option>
-            <% _.each(question.choices, function(choice, ind) { %>
-                <option 
-                    <% if (question.answer[ind] &&
-                    choice.question_choice_id === question.answer[ind].response) { %>
-                        selected
-                    <% } %>
-                    value="<%- choice.question_choice_id %>"><%- choice.choice %>
-                </option>
-            <% }); %>
+                <option value="null">Please choose an option</option>
+                <% _.each(question.choices, function(choice, ind) { %>
+                    <option 
+                        <% if (question.answer[ind] &&
+                        choice.question_choice_id === question.answer[ind].response) { %>
+                            selected
+                        <% } %>
+                        value="<%- choice.question_choice_id %>"><%- choice.choice %>
+                    </option>
+                <% }); %>
 
-            <% if (question.logic.with_other) { %>
-                <option 
-                    <% var ans = question.answer[question.choices.length];
-                    if (ans && (ans.is_other))  { %>
-                        selected
-                    <% } %>
-                value="other">
-                    <%- question.logic.other_text || 'Other' %>
-                </option>
-            <% } %>
-        </select>
+                <% if (question.logic.with_other) { %>
+                    <option 
+                        <% var ans = question.answer[question.choices.length];
+                        if (ans && (ans.is_other))  { %>
+                            selected
+                        <% } %>
+                    value="other">
+                        <%- question.logic.other_text || 'Other' %>
+                    </option>
+                <% } %>
+            </select>
+        </div>
 
         <input class="text_input other_input" type="text"
+                placeholder="Enter an excuse for your incompetence."
                 value="<%- question.answer[question.choices.length] && question.answer[question.choices.length].response %>"
         >
     </script>
     
     <script id="widget_note" type="text/html">
-        <h3 class="question__title"><%- question.question_title %></h3>
-        <p class="question__hint"><%- question.hint || "" %></p>
+        <div class="content-padded">
+            <h3 class="question__title "><%- question.question_title %></h3>
+            <p class="question__hint "><%- question.hint || "" %></p>
+        </div>
     </script>
 
     <script id="template_repeat" type="text/html">
-        <div class="question__repeat">
+        <div class="question__repeat content-padded">
             <button class="btn question__add">
                 add another answer
             </button>
@@ -322,50 +342,56 @@
     </script>
 
     <script id="template_submit" type="text/html">
-        <h3>Ready to Save?</h3>
-        <p>If youre satisfied with the answers to all the questions, you can save the survey now.</p>
-        <br>
-        <br>
-        <p>Enter your name and email id.</p>
+        <div class="content-padded">
+            <h3 class="">Ready to Save?</h3>
+            <p class="">If youre satisfied with the answers to all the questions, you can save the survey now.</p>
+            <br>
+            <p class="">Enter your name and email id.</p>
+        </div>
+
         <input class="email_input" type="text"
-            placeholder="Please provide your name"
+            placeholder="Please provide your email."
             value="<%- email || '' %>">
 
         <input class="name_input" type="text"
-            placeholder="Please provide your name"
+            placeholder="Please provide your name."
             value="<%- name || '' %>">
 
-        <div class="message-box-primary"> 
-            <span>Saved surveys must be uploaded when you next have network connectivity.</span>
+        <div class="content-padded">
+            <div class="message-box-primary"> 
+                <span>Saved surveys must be uploaded when you next have network connectivity.</span>
+            </div>
         </div>
     </script>
 
     <script id="template_splash" type="text/html">
-        <h3> <%- survey.title %> Survey</h3>
-        <p>version <%- survey.version %> | last updated <%- survey.last_updated %></p>
+        <div class="content-padded">
+            <h3 class=""> <%- survey.title %> Survey</h3>
+            <p class="">version <%- survey.version %> | last updated <%- survey.last_updated %></p>
 
-        <% if (unsynced.length > 0 && online) { %>
-            <div class="message-box-warning"> 
-                <span>You have <strong><%- unsynced.length %></strong> unsynced surveys. Please submit them now. </span>  
-            </div>
-            <button class="btn btn-block btn-primary sync_btn navigate-right">
-                Submit Completed Surveys
-            </button>
-        <% } else if (unsynced.length > 0  && !online) { %>
-            <div class="message-box-warning"> 
-                <span>You have <strong><%- unsynced.length %></strong> unsynced surveys. </span>  
-                <br>
-                <br>
-                <span>At present, you do not have a network connection - please remember to submit these surveys the next time you do have access to the internet.</span>  
-            </div>
-        <% } else { %>
-            <div class="message-box-primary"> 
-                <span> Hi, <strong><%- name %></strong> and welcome to the <%- survey.title %> Survey.</span>
-                <br>
-                <br>
-                <span> If you have any questions regarding this survey, please contact the survey administrator.</span>  
-            </div>
-        <% } %>
+            <% if (unsynced.length > 0 && online) { %>
+                <div class="message-box-warning"> 
+                    <span>You have <strong><%- unsynced.length %></strong> unsynced surveys. Please submit them now. </span>  
+                </div>
+                <button class="btn btn-block btn-primary sync_btn navigate-right ">
+                    Submit Completed Surveys
+                </button>
+            <% } else if (unsynced.length > 0  && !online) { %>
+                <div class="message-box-warning"> 
+                    <span>You have <strong><%- unsynced.length %></strong> unsynced surveys. </span>  
+                    <br>
+                    <br>
+                    <span>At present, you do not have a network connection - please remember to submit these surveys the next time you do have access to the internet.</span>  
+                </div>
+            <% } else { %>
+                <div class="message-box-primary"> 
+                    <span> Hi, <strong><%- name %></strong> and welcome to the <%- survey.title %> Survey.</span>
+                    <br>
+                    <br>
+                    <span> If you have any questions regarding this survey, please contact the survey administrator.</span>  
+                </div>
+            <% } %>
+        </div>
     </script>
 
     <script src="/static/lib.js"></script>

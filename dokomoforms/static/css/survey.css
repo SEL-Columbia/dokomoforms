@@ -13,6 +13,10 @@ h1 {
     font-weight: 700;
 }
 
+body {
+    background-color: rgb(250, 250, 250);
+}
+
 h3 {
     font-weight: 500;
     margin: 5px 0px;
@@ -27,14 +31,17 @@ input[type] {
     min-height: 50px;
     outline: none;
     margin: 0px;
+    border-radius: 0px;
 }
 
 input[type]:focus {
     border-color: rgb(84, 216, 90);
+    box-shadow: none;
 }
 
 input[type]:invalid {
     border-color: rgb(216, 84, 90);
+    box-shadow: none;
 }
 
 input[type=checkbox] {
@@ -48,6 +55,17 @@ input[type=checkbox] {
     margin-top: 8px;
     min-height: 0px;
 }
+
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type=number] {
+    -moz-appearance:textfield;
+}
+
 
 select {
     background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='50px' height='50px'><polyline points='46.139,15.518 25.166,36.49 4.193,15.519'/></svg>");
@@ -77,24 +95,27 @@ select {
     box-shadow: none;
 
     border: 1px solid #DDD;
-    border-left: 0px solid #DDD;
-    border-right: 0px solid #DDD;
     padding: 14px 15px;
     font-size: 14px;
     min-height: 50px;
     outline: none;
+    color: #777;
 
 }
 
 select:focus {
 }
 
+a, .icon {
+    color: #555;
+}
+
 /* Survey styles
 =================================================*/
 .question__map {
     width: 100%;
-    height: 200px;
-    margin: 10px auto;;
+    height: 256px;
+    margin-top: 20px;
 }
 
 .question__btn__other {
@@ -144,7 +165,7 @@ select:focus {
 }
 
 .question__add {
-    margin: 20px 0px;
+    margin: 0px 0px;
 }
 
 .location_input {
@@ -179,6 +200,7 @@ select:focus {
 }
 
 .content {
+    background-color: inherit;
     margin-bottom: 80px;
 }
 
@@ -214,3 +236,9 @@ header {
     padding-left: 20px;
     padding-right: 20px;
 }
+
+.bar, .btn-link {
+    color: #000 !important;
+    font-weight: 500 !important;
+}
+
