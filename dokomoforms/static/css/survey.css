@@ -32,6 +32,9 @@ input[type] {
     outline: none;
     margin: 0px;
     border-radius: 0px;
+    
+    /* x button space */
+    padding-right: 35px;
 }
 
 input[type]:focus {
@@ -166,6 +169,20 @@ a, .icon {
 
 .question__add {
     margin: 0px 0px;
+}
+
+.question__minus {
+    background-color: #FFF;
+    border: 1px solid #DDD;
+    border-left: 0px solid #DDD;
+    border-right: 0px solid #DDD;
+    padding-top: 13px;
+    padding-bottom: 12px;
+    margin-left: -35px;
+    padding-left: 5px;
+    padding-right: 5px;
+    float: right;
+    cursor: pointer;
 }
 
 .location_input {

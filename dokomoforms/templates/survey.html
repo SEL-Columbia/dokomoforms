@@ -83,14 +83,16 @@
                     placeholder="Please provide another response."
                     value="<%- ans.response %>"
                 >
+                <span class="icon icon-close question__minus"></span>
             <% } %>
         <% }); %>
 
         <% if (no_response) { %>
-           <input class="text_input" type="text"
+           <input class="text_input x_buffer" type="text"
                placeholder="Please provide any response."
                value="<%- question.default || '' %>"
            >
+           <span class="icon icon-close question__minus"></span>
         <% } %>
     </script>
     
@@ -114,6 +116,7 @@
                         max="<%- question.max %>"
                     <% } %>
                 >
+                <span class="icon icon-close question__minus"></span>
             <% } %>
         <% }); %>
 
@@ -128,6 +131,7 @@
                     max="<%- question.max %>"
                 <% } %>
             >
+            <span class="icon icon-close question__minus"></span>
         <% } %>
     </script>
     
@@ -145,6 +149,7 @@
                     placeholder="Please provide another number (decimal OK)."
                     value="<%- ans.response %>"
                 >
+                <span class="icon icon-close question__minus"></span>
             <% } %>
         <% }); %>
 
@@ -153,6 +158,7 @@
                     placeholder="Please provide a number (decimal OK)."
                     value="<%- question.default || '' %>"
             >
+            <span class="icon icon-close question__minus"></span>
         <% } %>
     </script>
 
@@ -170,6 +176,7 @@
                        placeholder="Please provide another date."
                        value="<%- ans.response %>"
                 >
+                <span class="icon icon-close question__minus"></span>
             <% } %>
         <% }); %>
 
@@ -178,6 +185,7 @@
                    placeholder="Please provide a date."
                    value="<%- question.default || '' %>"
             >
+            <span class="icon icon-close question__minus"></span>
         <% } %>
     </script>
 
@@ -195,6 +203,7 @@
                     placeholder="Please provide another time."
                     value="<%- ans.response %>"
                 >
+                <span class="icon icon-close question__minus"></span>
             <% } %>
         <% }); %>
 
@@ -203,6 +212,7 @@
                    placeholder="Please provide a time."
                    value="<%- question.default || '' %>"
             >
+            <span class="icon icon-close question__minus"></span>
         <% } %>
     </script>
 
@@ -227,6 +237,7 @@
                     placeholder=""
                     value="<%- ans.response.lat + ' ' + ans.response.lon %>"
                 >
+                <span class="icon icon-close question__minus"></span>
             <% } %>
         <% }); %>
 
@@ -235,6 +246,7 @@
                    placeholder=""
                    value="<%- start_loc.lat + ' ' + start_loc.lon || '' %>"
             >
+            <span class="icon icon-close question__minus"></span>
         <% } %>
 
     </script>
