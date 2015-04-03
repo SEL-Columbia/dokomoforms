@@ -40,7 +40,7 @@
                 "columnDefs": [
                     {
                         "render": function (data, type, row) {
-                            return '<a data-ignore="push" href="/view/' + row[1] + '">' + data + '</a>';
+                            return '<a data-ignore="push" href="/view/' + row[1] + '">' + data + '</a><br />(<a data-ignore="push" href="/survey/' + row[1] + '">Click here for a shareable link</a>)';
                         },
                         "targets": 0
                     },
