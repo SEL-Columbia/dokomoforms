@@ -4,7 +4,7 @@
     <div class="content-padded">
     <h3>Welcome {{ current_user }}</h3>
     <p> Your surveys: </p>
-    <table id="surveys" class="display" width="100%" cellspacing="0">
+    <table id="surveys" class="table-view display" width="100%" cellspacing="0">
         <thead>
             <tr>
                 <th>Survey title</th>
@@ -25,8 +25,6 @@
     </table>
 
     <script src="/static/lib.js"></script>
-    <script src="https://login.persona.org/include.js"></script>
-    <script src="/static/persona.js"></script>
     <script src="http://cdn.datatables.net/1.10.5/js/jquery.dataTables.min.js"></script>
     <script>
         $(document).ready(function() {
@@ -79,4 +77,6 @@
             <a data-ignore="push" class="btn btn-block" href="#" id="logout">Logout</a>
         </div>
     </div>
+    <script src="https://login.persona.org/include.js"></script>
+    <script src="/static/persona.js"></script>
 {% end %}
