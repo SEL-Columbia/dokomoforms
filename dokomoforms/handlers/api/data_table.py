@@ -6,7 +6,7 @@ https://github.com/DataTables/DataTables/blob
 """
 from collections import Iterator
 
-from sqlalchemy import select, distinct, Table, Column
+from sqlalchemy import select, Table, Column
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlalchemy.sql.functions import count
@@ -141,7 +141,7 @@ class SurveyDataTableHandler(APIHandler):
 
         email = self.get_email()
         table = auth_user_table.join(survey_table).outerjoin(submission_table)
-        num_submissions = count(distinct(submission_table.c.submission_id))
+        num_submissions = count(submission_table.c.submission_id)
         selected = [
             survey_table.c.survey_title,
             survey_table.c.survey_id,

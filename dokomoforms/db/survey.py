@@ -1,10 +1,10 @@
 """Allow access to the survey table."""
 import re
 from collections import Iterator
-from sqlalchemy import Text
 
+from sqlalchemy import Text
 from sqlalchemy.engine import RowProxy, ResultProxy, Connection
-from sqlalchemy.sql import Insert, and_, cast, select, exists, distinct
+from sqlalchemy.sql import Insert, and_, cast, select, exists
 from sqlalchemy.sql.functions import count
 
 from dokomoforms.db import survey_table, auth_user_table
@@ -56,7 +56,7 @@ def get_number_of_surveys(connection: Connection,
     """
     return connection.execute(
         select(
-            [count(distinct(survey_table.c.survey_id))]
+            [count(survey_table.c.survey_id)]
         ).select_from(
             auth_user_table.join(survey_table)
         ).where(
