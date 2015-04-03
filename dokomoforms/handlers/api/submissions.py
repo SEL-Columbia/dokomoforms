@@ -4,8 +4,7 @@ import tornado.web
 
 import dokomoforms.api.submission as submission_api
 from dokomoforms.db.survey import IncorrectQuestionIdError
-from dokomoforms.handlers.util.base import APIHandler, get_email, \
-    get_json_request_body, \
+from dokomoforms.handlers.util.base import APIHandler, get_json_request_body, \
     catch_bare_integrity_error, validation_message
 
 
@@ -19,7 +18,7 @@ class SubmissionsAPIHandler(APIHandler):
     def get(self, survey_id: str):
         subs = self._get_subs()
         response = submission_api.get_all(self.db, survey_id,
-                                          email=get_email(self),
+                                          email=self.get_email(),
                                           submitters=subs)
         self.write(response)
 
@@ -28,7 +27,7 @@ class SubmissionsAPIHandler(APIHandler):
         subs = body.get('submitters', None)
         filters = body.get('filters', None)
         response = submission_api.get_all(self.db, survey_id,
-                                          email=get_email(self),
+                                          email=self.get_email(),
                                           submitters=subs,
                                           filters=filters)
         self.write(response)
@@ -39,7 +38,7 @@ class SingleSubmissionAPIHandler(APIHandler):
 
     def get(self, submission_id: str):
         response = submission_api.get_one(
-            self.db, submission_id, email=get_email(self))
+            self.db, submission_id, email=self.get_email())
         self.write(response)
 
 

@@ -1,4 +1,9 @@
 {% extends "base.html" %}
+
+{% block stylesheets %}
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.5/css/jquery.dataTables.min.css">
+{% end %}
+
 {% block content %}
     <div class="content">
         <div>
@@ -17,13 +22,23 @@
                 {% end %}
             </ul>
             <p>Submissions to {{ survey.survey_title }}: </p>
-            <ul>
-                {% for submission in submissions %}
-                    <li>
-                        <a data-ignore="push" href="/view/submission/{{ submission.submission_id }}">{{ submission.submitter }} - {{ submission.submission_time }}</a>
-                    </li>
-                {% end %}
-            </ul>
+            <table id="submissions" class="display" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Submission ID</th>
+                        <th>Submitter Name</th>
+                        <th>Submission Time</th>
+                    </tr>
+                </thead>
+
+                <tfoot>
+                    <tr>
+                        <th>Submission ID</th>
+                        <th>Submitter Name</th>
+                        <th>Submission Time</th>
+                    </tr>
+                </tfoot>
+            </table>
         </div>
         <a class="btn btn-block" href="#" id="logout">Logout</a>
     </div>
@@ -31,4 +46,45 @@
     <script src="/static/lib.js"></script>
     <script src="https://login.persona.org/include.js"></script>
     <script src="/static/persona.js"></script>
+    <script src="http://cdn.datatables.net/1.10.5/js/jquery.dataTables.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#submissions').dataTable( {
+                language: {
+                    search: "Search by submitter name:"
+                },
+                "lengthMenu": [[20, 50, 100], [20, 50, 100]],
+                "pagingType": "full_numbers",
+                "order": [[2, 'desc']],
+                "columnDefs": [
+                    {
+                        "render": function (data, type, row) {
+                            return '<a data-ignore="push" href="/view/submission/' + data + '">' + data + '</a>';
+                        },
+                        "targets": 0
+                    },
+                    {
+                        "render": function (data, type, row) {
+                            var datetime = new Date(data);
+                            return datetime.toDateString() + '<br />' + datetime.toTimeString();
+                        },
+                        "targets": 2
+                    }
+                ],
+                "columns": [
+                    {"name": "submission_id"},
+                    {"name": "submitter"},
+                    {"name": "submission_time"}
+                ],
+                "processing": true,
+                "serverSide": true,
+                "ajax": {
+                    "url": "/api/submission_data_table/{{ survey.survey_id }}",
+                    "data": function(d) {
+                        return {"args": JSON.stringify(d)};
+                    }
+                }
+            } );
+        } );
+    </script>
 {% end %}
