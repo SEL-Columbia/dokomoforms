@@ -109,6 +109,7 @@ App.message = function(text) {
 App.splash = function() {
     var self = this;
     var survey = self.survey;
+    $('.overlay').hide(); // Always remove overlay after moving
 
     // Update page nav bar
     var barnav  = $('.bar-nav');
@@ -122,6 +123,9 @@ App.splash = function() {
         .html(compiledHTML);
 
     var barfoot = $('.bar-footer');
+    barfoot.removeClass('bar-footer-extended');
+    barfoot.removeClass('bar-footer-super-extended');
+
     var barfootHTML = $('#template_footer__splash').html();
     var barfootTemplate = _.template(barfootHTML);
     compiledHTML = barfootTemplate({
@@ -138,6 +142,9 @@ App.splash = function() {
 
     // Set up content
     var content = $('.content');
+    content.removeClass('content-shrunk');
+    content.removeClass('content-super-shrunk');
+
     var splashHTML = $('#template_splash').html();
     var splashTemplate = _.template(splashHTML);
     compiledHTML = splashTemplate({
@@ -259,6 +266,7 @@ Survey.prototype.getFirstResponse = function(question) {
 // Choose next question, deals with branching and back/forth movement
 Survey.prototype.next = function(offset) {
     var self = this;
+
     var next_question = offset === PREV ? this.current_question.prev : this.current_question.next;
     var index = $('.content').data('index');
 
@@ -313,6 +321,7 @@ Survey.prototype.next = function(offset) {
 // Render template for given question
 Survey.prototype.render = function(question) {
     var self = this;
+    $('.overlay').hide(); // Always remove overlay after moving
 
     // Clear any interval events
     if (Widgets.interval) {
@@ -339,6 +348,9 @@ Survey.prototype.render = function(question) {
     var barfootHTML;
     var barfootTemplate;
 
+    barfoot.removeClass('bar-footer-extended');
+    barfoot.removeClass('bar-footer-super-extended');
+
     // Update content
     var content = $('.content');
     var widgetHTML;
@@ -363,13 +375,15 @@ Survey.prototype.render = function(question) {
         self.current_question = question;
 
         // Render question
+        content.removeClass('content-shrunk');
+        content.removeClass('content-super-shrunk');
         content.empty()
             .data('index', index)
             .html(compiledHTML)
             .scrollTop(); //XXX: Ignored in chrome ...
         
         // Attach widget events
-        Widgets[question.type_constraint_name](question, content);
+        Widgets[question.type_constraint_name](question, content); //XXX supply footer?
 
     } else {
         // Add submit button
@@ -393,6 +407,9 @@ Survey.prototype.render = function(question) {
                 'email': App.submitter_email
         });
 
+        // Render submit page
+        content.removeClass('content-shrunk');
+        content.removeClass('content-super-shrunk');
         content.empty()
             .data('index', index)
             .html(compiledHTML)
@@ -525,12 +542,13 @@ var Widgets = {
 // All widgets store results in the questions.answer array
 Widgets._input = function(question, page, type) {
     var self = this;
+    var footer = $('.bar-footer');
     
     // Render add/minus input buttons 
     Widgets._renderRepeat(page, question);
 
     //Render don't know
-    Widgets._renderOther(page, question);
+    Widgets._renderOther(page, footer, question);
 
     // Clean up answer array, short circuits on is_other responses
     question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
@@ -583,17 +601,17 @@ Widgets._input = function(question, page, type) {
         });
     
     // Click the other button when you don't know answer
-    $('.bar-footer') //XXX PASS THIS BOY IN 
+    $(footer)
         .find('.question__btn__other :checkbox')
         .change(function() { 
             var selected = $(this).is(':checked'); 
             console.log('state', selected);
-            self._toggleOther(page, question, selected);
+            self._toggleOther(page, footer, question, selected);
         });
 
 
     // Set up other input event listener
-    $(page)
+    $(footer)
         .find('.other_input')
         .change(function() { //XXX: Change isn't sensitive enough on safari?
             question.answer = [{ 
@@ -629,28 +647,32 @@ Widgets._removeNewestInput = function(inputs, question) {
 
 // Render 'don't know' section if question has with_other logic
 // Display response and alter widget state if first response is other
-Widgets._renderOther = function(page, question) {
+Widgets._renderOther = function(page, footer, question) {
+
     var self = this;
     // Render don't know feature 
     if (question.logic.with_other) {
         $('.question__btn__other').show();
+        footer.addClass('bar-footer-extended');
+        page.addClass('content-shrunk');
+
 
         var repeatHTML = $('#template_other').html();
         var widgetTemplate = _.template(repeatHTML);
         var compiledHTML = widgetTemplate({question: question});
-        $(page).append(compiledHTML);
+        $(footer).append(compiledHTML);
 
         var other_response = question.answer && question.answer[0] && question.answer[0].is_other;
         if (other_response) {
             $('.question__btn__other').find('input').prop('checked', true);
-            this._toggleOther(page, question, ON);
+            this._toggleOther(page, footer, question, ON);
         }
     }
 }
 
 // Toggle the 'don't know' section based on passed in state value on given page
 // Alters question.answer array
-Widgets._toggleOther = function(page, question, state) {
+Widgets._toggleOther = function(page, footer, question, state) {
     var self = this;
     question.answer = [];
     
@@ -659,10 +681,13 @@ Widgets._toggleOther = function(page, question, state) {
         $(page).find('.text_input').not('.other_input').each(function(i, child) { 
                 $(child).attr('disabled', true);
         });
+
+        // Disable adder if its around
+        $(page).find('.question__add').attr('disabled', true);
         
-        $(page).find('.question__other').show();
+        $(footer).find('.question__other').show();
         
-        $(page).find('.other_input').each(function(i, child) { 
+        $(footer).find('.other_input').each(function(i, child) { 
             // Doesn't matter if response is there or not
             question.answer[0] = {
                 response: self._validate('text', child.value, question.logic),
@@ -670,18 +695,27 @@ Widgets._toggleOther = function(page, question, state) {
             }
         });
 
+        footer.addClass('bar-footer-super-extended');
+        page.addClass('content-super-shrunk');
+
+        //Add overlay
+        $('.overlay').show();
+
         // Enable other input
-        $(page).find('.other_input').each(function(i, child) { 
+        $(footer).find('.other_input').each(function(i, child) { 
                 $(child).attr('disabled', false);
         });
 
     } else if (state === OFF) { 
         // Enable regular inputs
-        $(page).find('.text_input').not('.other_input').each(function(i, child) { 
+        $(footer).find('.text_input').not('.other_input').each(function(i, child) { 
               $(child).attr('disabled', false);
         });
-        
-        $(page).find('.question__other').hide();
+
+        // Enable adder if its around 
+        $(page).find('.question__add').attr('disabled', false);
+
+        $(footer).find('.question__other').hide();
         
         $(page).find('.text_input').not('.other_input').each(function(i, child) { 
             if (child.value !== "") { 
@@ -692,8 +726,12 @@ Widgets._toggleOther = function(page, question, state) {
             }
         });
         
+        $('.overlay').hide();
+        footer.removeClass('bar-footer-super-extended');
+        page.removeClass('content-super-shrunk');
+
         // Disable other input
-        $(page).find('.other_input').each(function(i, child) { 
+        $(footer).find('.other_input').each(function(i, child) { 
                 $(child).attr('disabled', true);
         });
     }

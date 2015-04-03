@@ -192,6 +192,17 @@ a, .icon {
 .text_input {
 }
 
+.overlay {
+    width: 100%;
+    height: 100%;
+    background: #000;
+    opacity: 0.5;
+    position: absolute;
+    top: 0;
+    left: 0;
+    zIndex: 100;
+}
+
 /* Rachet style changes
 =================================================*/
 .btn-block {
@@ -216,6 +227,10 @@ a, .icon {
     height: 120px;
 }
 
+.bar-footer-super-extended {
+    height: 220px;
+}
+
 .content {
     background-color: inherit;
     margin-bottom: 80px;
@@ -223,6 +238,10 @@ a, .icon {
 
 .content-shrunk {
     margin-bottom: 120px;
+}
+
+.content-super-shrunk {
+    margin-bottom: 220px;
 }
 
 header {

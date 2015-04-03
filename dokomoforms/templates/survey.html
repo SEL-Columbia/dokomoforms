@@ -22,8 +22,9 @@
 
     <header class="bar bar-nav bar-padded"></header>
     <div class="message"></div>
-    <div class="content content-shrunk"></div>
-    <div class="bar bar-standard bar-footer bar-footer-extended"></div>
+    <div class="content"></div>
+    <div class="overlay" style="display:none;"></div>
+    <div class="bar bar-standard bar-footer"></div>
     
     <script id="template_nav" type="text/html">
         <button class="btn btn-link btn-nav pull-left page_nav__prev">
@@ -361,7 +362,7 @@
             <p class="">Enter your name and email id.</p>
         </div>
 
-        <input class="email_input" type="text"
+        <input class="email_input" type="email"
             placeholder="Please provide your email."
             value="<%- email || '' %>">
 
