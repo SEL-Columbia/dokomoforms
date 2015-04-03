@@ -59,6 +59,17 @@ class BaseHandler(tornado.web.RequestHandler):
 class APIHandler(BaseHandler):
     """Handler for API endpoints."""
 
+    def get_email(self) -> str:
+        """
+        Get the user's e-mail address from the header given to the API endpoint
+        or the currently logged-in user account.
+
+        :param self: the API endpoint handler
+        :return: the e-mail address
+        """
+        header = self.request.headers.get('Email', None)
+        return header if header is not None else self.current_user
+
     def check_xsrf_cookie(self):  # pragma: no cover
         """
         Only check the xsrf cookie if this doesn't appear to be an API
@@ -83,18 +94,6 @@ class APIHandler(BaseHandler):
                 raise tornado.web.HTTPError(403)
             if not verify_api_token(self.db, token=token, email=email):
                 raise tornado.web.HTTPError(403)
-
-
-def get_email(self: APIHandler) -> str:
-    """
-    Get the user's e-mail address from the header given to the API endpoint
-    or the currently logged-in user account.
-
-    :param self: the API endpoint handler
-    :return: the e-mail address
-    """
-    header = self.request.headers.get('Email', None)
-    return header if header is not None else self.current_user
 
 
 def get_json_request_body(self: tornado.web.RequestHandler) -> dict:
