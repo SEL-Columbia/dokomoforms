@@ -21,7 +21,6 @@
 <body>
 
     <header class="bar bar-nav bar-padded"></header>
-    <div class="message"></div>
     <div class="content"></div>
     <div class="overlay" style="display:none;"></div>
     <div class="bar bar-standard bar-footer"></div>
@@ -361,13 +360,12 @@
             <p class="">Enter your name and email id.</p>
         </div>
 
-        <input class="email_input" type="email"
-            placeholder="Please provide your email."
-            value="<%- email || '' %>">
-
         <input class="name_input" type="text"
             placeholder="Please provide your name."
             value="<%- name || '' %>">
+        <input class="email_input" type="email"
+            placeholder="Please provide your email."
+            value="<%- email || '' %>">
 
         <div class="content-padded">
             <div class="message-box-primary"> 

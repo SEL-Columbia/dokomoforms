@@ -80,6 +80,7 @@ select {
 
     -webkit-appearance: none;
     -moz-appearance: none;
+
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
@@ -103,10 +104,6 @@ select {
     min-height: 50px;
     outline: none;
     color: #777;
-
-}
-
-select:focus {
 }
 
 a, .icon {
@@ -117,7 +114,7 @@ a, .icon {
 =================================================*/
 .question__map {
     width: 100%;
-    height: 256px;
+    height: 222px;
     margin-top: 20px;
 }
 
@@ -203,6 +200,33 @@ a, .icon {
     zIndex: 100;
 }
 
+.message {
+    display: none;
+    position: absolute;
+    left: 20%;
+    width: 60%;
+    padding: 12px;
+    box-sizing: border-box;
+    border-radius: 7px;
+    text-align: center;
+    font-size: 18px;
+    z-index: 99;
+    margin-top: 30px;
+    color: #FFF;
+}
+
+.message_warning {
+    background: rgba(0, 0, 255, 0.95);
+}
+
+.message_error {
+    background: rgba(255, 0, 0, 0.95);
+}
+
+.message_success {
+    background: rgba(0, 255, 0, 0.95);
+}
+
 /* Rachet style changes
 =================================================*/
 .btn-block {
@@ -216,6 +240,7 @@ a, .icon {
     /* fix the height issues when adding icon to block btn */
     height: 5px;
     top: 0px;
+    color: #FFF;
 }
 
 .bar-footer {
@@ -257,6 +282,28 @@ header {
     font-weight: 300;
 }
 
+.btn-primary {
+    box-shadow: 0px 4px 0px #FF5511;
+    background-color: #FF7700;
+    border: 1px solid #FF7700;
+}
+
+.btn-primary:focus {
+    background-color: #FF5511;
+    border: 1px solid #FF5511;
+}
+
+.btn-positive {
+    box-shadow: 0px 4px 0px #53B695;
+    background-color: #53C6A5;
+    border: 1px solid #53C6A5;
+}
+
+.btn-positive:focus {
+    background-color: #53B695;
+    border: 1px solid #53B695;
+}
+
 .content-padded {
     margin: 20px;
     margin-bottom: 10px;
@@ -276,5 +323,9 @@ header {
 .bar, .btn-link {
     color: #000 !important;
     font-weight: 500 !important;
+}
+
+.navigate-right::after, .navigate-left::after {
+    color: #FFF;
 }
 

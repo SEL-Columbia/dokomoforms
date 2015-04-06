@@ -26,7 +26,8 @@ App.init = function(survey) {
 
     self.start_loc = survey.survey_metadata.location || self.start_loc;
     self.facilities = JSON.parse(localStorage.facilities || "[]");
-    self.submitter_name = localStorage.name;
+    self.submitter_name = localStorage.name || "";
+    self.submitter_email = localStorage.email || "";
     
     // Load any facilities
     if (App.facilities.length === 0) {
@@ -95,15 +96,21 @@ App.sync = function() {
         JSON.stringify(App.unsynced));
 };
 
-App.message = function(text) {
+App.message = function(text, style) {
     // Shows a message to user
     // E.g. "Your survey has been submitted"
-    $('.message')
-        .clearQueue()
+    $('<div></div>')
+        .addClass('message')
+        .addClass(style)
         .text(text)
         .fadeIn('fast')
         .delay(3000)
-        .fadeOut('fast');
+        .fadeOut('fast')
+        .queue(function(next) {
+            $(this).remove();
+            next();
+        }).appendTo('body');
+
 };
 
 App.splash = function() {
@@ -165,7 +172,7 @@ App.splash = function() {
                 // Reload page to update template values
                 App.splash();
             } else {
-                App.message('Please connect to the internet first.');
+                App.message('Please connect to the internet first.', 'message_error');
             }
         });
 };
@@ -191,11 +198,9 @@ App.submit = function(survey, done, fail) {
         },
         dataType: 'json',
         success: function() {
-            App.message('Survey submitted!');
             done(survey);
         },
         error: function() {
-            App.message('Submission failed, will try again later.');
             fail(survey);
         }
     });
@@ -276,7 +281,8 @@ Survey.prototype.next = function(offset) {
 
     // Backward at first question
     if (index === self.lowest_sequence_number && offset === PREV) {
-        App.splash();
+        //XXX Shouldn't show splash page right 
+        //App.splash();
         return;
     }
 
@@ -290,13 +296,13 @@ Survey.prototype.next = function(offset) {
     if (offset === NEXT) {
         // Are you required?
         if (this.current_question.logic.required && (first_response === null)) {
-            App.message('Survey requires this question to be completed.');
+            App.message('Survey requires this question to be completed.', 'message_error');
             return;
         }
 
         // Is the only response and empty is other response?
         if (first_is_other && !first_response) {
-            App.message('Please provide a reason before moving on.');
+            App.message('Please provide a reason before moving on.', 'message_error');
             return;
         }
 
@@ -483,21 +489,18 @@ Survey.prototype.submit = function() {
 
     var data = {
         submitter: App.submitter_name || "anon",
+        submitter_email: App.submitter_email || "anon@anon.org",
         survey_id: self.id,
         answers: survey_answers
     };
 
     //console.log('submission:', data);
-    $(sync).addClass('icon--spin');
-    $(save_btn).addClass('icon--spin');
     
     // Don't post with no replies
     if (JSON.stringify(survey_answers) === '[]') {
       // Not doing instantly to make it seem like App tried reaaall hard
       setTimeout(function() {
-            $(sync).removeClass('icon--spin');
-            $(save_btn).removeClass('icon--spin');
-            App.message('Saving failed, No questions answer in Survey!');
+            App.message('Saving failed, No questions answer in Survey!', 'message_error');
             App.splash();
       }, 1000);
       return;
@@ -515,11 +518,9 @@ Survey.prototype.submit = function() {
     localStorage.setItem("unsynced", 
             JSON.stringify(App.unsynced));
 
-    App.message('Saved Submission!');
+    App.message('Saved Submission!', 'message_success');
     App.splash();
 
-    $(sync).removeClass('icon--spin');
-    $(save_btn).removeClass('icon--spin');
 
 };
 
@@ -1024,13 +1025,9 @@ Widgets.location = function(question, page, footer) {
     $(page)
         .find('.question__find__btn')
         .click(function() {
-            var sync = $('.nav__sync')[0];
-            $(sync).addClass('icon--spin');
-            App.message('Searching ...');
+            App.message('Searching ...', 'message_warning');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
-                    $(sync).removeClass('icon--spin');
-
                     // Server accepts [lon, lat]
                     var coords = [
                         position.coords.longitude, 
@@ -1047,8 +1044,8 @@ Widgets.location = function(question, page, footer) {
 
                 }, function error() {
                     //If cannot Get location" for some reason,
-                    $(sync).removeClass('icon--spin');
-                    App.message('Could not get your location, please make sure your GPS device is active.');
+                    App.message('Could not get your location, please make sure your GPS device is active.',
+                            'message_error');
                 }, {
                     enableHighAccuracy: true,
                     timeout: 20000,
@@ -1252,9 +1249,7 @@ Widgets.facility = function(question, page, footer) {
     $(page)
         .find('.question__find__btn')
         .click(function() {
-            var sync = $('.nav__sync')[0];
-            $(sync).addClass('icon--spin');
-            App.message('Searching ...');
+            App.message('Searching ...', 'message_warning');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
                     // Server accepts [lon, lat]
@@ -1269,10 +1264,9 @@ Widgets.facility = function(question, page, footer) {
                     // Revisit api call
                     reloadFacilities(coords[1], coords[0]); 
 
-                    $(sync).removeClass('icon--spin');
                 }, function error() {
-                    $(sync).removeClass('icon--spin');
-                    App.message('Could not get your location, please make sure your GPS device is active.');
+                    App.message('Could not get your location, please make sure your GPS device is active.',
+                            'message_error');
                 }, {
                     enableHighAccuracy: true,
                     timeout: 20000,
@@ -1392,7 +1386,7 @@ function postNewFacility(facility) {
         processData: false,
         dataType: 'json',
         success: function() {
-            App.message('Facility Added!');
+            App.message('Facility Added!', 'message_success');
 
             // If posted, we don't an unsynced reference to it anymore
             delete App.unsynced_facilities[facility.uuid];
@@ -1405,7 +1399,7 @@ function postNewFacility(facility) {
         },
 
         error: function() {
-            App.message('Facility submission failed, will try again later.');
+            App.message('Facility submission failed, will try again later.', 'message_error');
         },
         
         complete: function() {
