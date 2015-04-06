@@ -23,6 +23,7 @@ before_script:
   - psql -c 'create database doko;' -U postgres
   - python3 manage_db.py
   - psql -U postgres -d doko -f tests/fixtures/all-encompassing.sql
+  - nvm install iojs
   - npm install --python=python2.7
   - echo 'APP_DEBUG=True' > dokomoforms/local_settings.py
   - python3 webapp.py &

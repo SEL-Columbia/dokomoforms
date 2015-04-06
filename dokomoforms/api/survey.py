@@ -407,6 +407,7 @@ def _to_json(connection: Connection, survey: RowProxy) -> dict:
             'survey_version': survey.survey_version,
             'survey_metadata': survey.survey_metadata,
             'questions': q_fields,
+            'last_updated': survey.survey_last_update_time.isoformat(),
             'created_on': survey.created_on.isoformat()}
 
 

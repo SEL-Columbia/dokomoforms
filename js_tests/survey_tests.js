@@ -595,13 +595,13 @@ describe('Survey unit and regression tests', function(done) {
 
             survey = new Survey("id", 0, questions, {});
             survey.submit();
-            $('.message').text().should.match("Submission failed, No questions answer in Survey!");
+            App.sync();
+            $('.message').text().should.match("Saving failed, No questions answer in Survey!");
             done();
 
         });
 
     it('submit: basic submission',
-        //XXX: Fake response so that this doesn't 404
         function(done) {
             var NEXT = 1;
             var PREV = -1;
@@ -639,7 +639,7 @@ describe('Survey unit and regression tests', function(done) {
             survey = new Survey("id", 0, questions, {});
             questions[0].answer = [{response:"hey baby"}];
             survey.submit();
-
+            App.sync();
         });
 
 
@@ -703,7 +703,7 @@ describe('Survey unit and regression tests', function(done) {
             survey = new Survey("id", 0, questions, {});
             questions[0].answer = [{response:{'id': 1, 'lat':40.01, 'lon':70.01 }}];
             survey.submit();
-
+            App.sync();
         });
 });
 

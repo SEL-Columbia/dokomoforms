@@ -1,9 +1,8 @@
 """API endpoints dealing with surveys."""
 
 import dokomoforms.api.survey as survey_api
-from dokomoforms.handlers.util.base import APIHandler, get_email, \
-    catch_bare_integrity_error, \
-    get_json_request_body
+from dokomoforms.handlers.util.base import APIHandler, \
+    catch_bare_integrity_error, get_json_request_body
 
 
 class SurveysAPIHandler(APIHandler):
@@ -14,14 +13,14 @@ class SurveysAPIHandler(APIHandler):
         I hope you like parentheses.
 
         """
-        self.write(survey_api.get_all(self.db, get_email(self)))
+        self.write(survey_api.get_all(self.db, self.get_email()))
 
 
 class SingleSurveyAPIHandler(APIHandler):
     """The endpoint for getting a single survey."""
 
     def get(self, survey_id: str):
-        email = get_email(self)
+        email = self.get_email()
         self.write(survey_api.get_one(self.db, survey_id, email=email))
 
 

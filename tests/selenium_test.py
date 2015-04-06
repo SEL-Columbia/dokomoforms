@@ -148,8 +148,12 @@ class SubmissionTest(DriverTest):
         self.drv.get(base + '/view')
 
         # Click on the survey
+        WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
+            (By.XPATH,
+             '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a')))
         self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/div/ul/li/a[1]').click()
+            '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a'
+        ).click()
 
         # Click on the shareable link
         WebDriverWait(self.drv, 4).until(EC.presence_of_element_located(
@@ -158,16 +162,21 @@ class SubmissionTest(DriverTest):
             '/html/body/div[2]/div/div/a').click()
 
         # Fill out the survey
+        self.drv.find_element_by_class_name('start_btn').click()
         WebDriverWait(self.drv, 4).until(EC.presence_of_element_located(
             (By.XPATH, '/html/body/div[2]/div[2]/input')))
         next_button = self.drv.find_element_by_class_name('page_nav__next')
         in_xpath = '/html/body/div[2]/div[2]/'
 
-        self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('1')
+        self.drv.find_elements_by_tag_name('input')[0].send_keys('1')
+        if self.browser_name == 'safari':
+            self.drv.execute_script("$('input').first().change()")
         next_button.click()
         self.drv.find_element_by_xpath(in_xpath + 'select/option[2]').click()
         next_button.click()
         self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('3.3')
+        if self.browser_name == 'safari':
+            self.drv.execute_script("$('input').change()")
         next_button.click()
         if self.browser_name == 'android':
             self.drv.find_element_by_xpath(in_xpath + 'input').click()
@@ -178,6 +187,9 @@ class SubmissionTest(DriverTest):
         else:
             self.drv.find_element_by_xpath(in_xpath + 'input').send_keys(
                 '4/4/44')
+            if self.browser_name == 'safari':
+                self.drv.execute_script("$('input')[0].value = '4/4/44'")
+                self.drv.execute_script("$('input').change()")
         next_button.click()
         if self.browser_name == 'android':
             self.drv.find_element_by_xpath(in_xpath + 'input').click()
@@ -188,6 +200,9 @@ class SubmissionTest(DriverTest):
         else:
             self.drv.find_element_by_xpath(in_xpath + 'input').send_keys(
                 '5:55PM')
+            if self.browser_name == 'safari':
+                self.drv.execute_script("$('input')[0].value = '5:55PM'")
+                self.drv.execute_script("$('input').change()")
         next_button.click()
         # browser geolocation is complicated in selenium...
         self.drv.execute_script(
@@ -204,9 +219,13 @@ class SubmissionTest(DriverTest):
         self.drv.find_element_by_class_name('question__btn').click()
         next_button.click()
         self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('text 7')
+        if self.browser_name == 'safari':
+            self.drv.execute_script("$('input').change()")
         next_button.click()
         self.drv.find_elements_by_tag_name('option')[-1].click()
         self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('other 8')
+        if self.browser_name == 'safari':
+            self.drv.execute_script("$('input').change()")
         next_button.click()
         next_button.click()  # note question
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
@@ -219,18 +238,22 @@ class SubmissionTest(DriverTest):
         self.drv.find_element_by_xpath(in_xpath + 'div[2]/input').send_keys(
             'super cool ghost submitter')
         self.drv.find_element_by_class_name('question__btn').click()
-
-        WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, in_xpath + 'input')))
+        self.drv.find_element_by_class_name('sync_btn').click()
 
         # Check the submissions
         self.drv.get(base + '/view')
-        WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[2]/div/div/ul/li/a[1]')))
+        WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
+            (By.XPATH,
+             '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a')))
         self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/div/ul/li/a[1]').click()
+            '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a'
+        ).click()
+        WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
+            (By.XPATH,
+             '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a')
+        ))
         submission_link = self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/div/ul[2]/li/a')
+            '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a')
         self.drv.execute_script(
             'window.scrollTo(0, {});'.format(submission_link.location['y']))
         submission_link.click()
@@ -290,10 +313,14 @@ class IntegerTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
+        self.drv.find_element_by_class_name('start_btn').click()
         self.drv.find_element_by_xpath(
             '/html/body/div[2]/div[2]/input').send_keys('2')
+        if self.browser_name == 'safari':
+            self.drv.execute_script("$('input').change()")
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
+        self.drv.find_element_by_class_name('sync_btn').click()
 
         # Log in
         self.drv.get(base + '/debug/login/test_email')
@@ -321,10 +348,14 @@ class DecimalTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
+        self.drv.find_element_by_class_name('start_btn').click()
         self.drv.find_element_by_xpath(
             '/html/body/div[2]/div[2]/input').send_keys('3.5')
+        if self.browser_name == 'safari':
+            self.drv.execute_script("$('input').change()")
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
+        self.drv.find_element_by_class_name('sync_btn').click()
 
         # Log in
         self.drv.get(base + '/debug/login/test_email')
@@ -352,10 +383,14 @@ class TextTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
+        self.drv.find_element_by_class_name('start_btn').click()
         self.drv.find_element_by_xpath(
             '/html/body/div[2]/div[2]/input').send_keys('some text')
+        if self.browser_name == 'safari':
+            self.drv.execute_script("$('input').change()")
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
+        self.drv.find_element_by_class_name('sync_btn').click()
 
         # Log in
         self.drv.get(base + '/debug/login/test_email')
@@ -383,6 +418,7 @@ class DateTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
+        self.drv.find_element_by_class_name('start_btn').click()
         if self.browser_name == 'android':
             self.drv.find_element_by_xpath(
                 '/html/body/div[2]/div[2]/input').click()
@@ -390,10 +426,14 @@ class DateTest(TypeTest):
             self.drv.find_element_by_id('button1').click()
             self.drv.switch_to.window('WEBVIEW_0')
         else:
-            self.drv.find_element_by_xpath(
-                '/html/body/div[2]/div[2]/input').send_keys('4/4/44')
+            is_safari = self.browser_name == 'safari'
+            self.drv.find_element_by_tag_name('input').send_keys('4/4/44')
+            if is_safari:
+                self.drv.execute_script("$('input')[0].value = '4/4/44'")
+                self.drv.execute_script("$('input').change()")
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
+        self.drv.find_element_by_class_name('sync_btn').click()
 
         # Log in
         self.drv.get(base + '/debug/login/test_email')
@@ -421,6 +461,7 @@ class TimeTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
+        self.drv.find_element_by_class_name('start_btn').click()
         if self.browser_name == 'android':
             self.drv.find_element_by_xpath(
                 '/html/body/div[2]/div[2]/input').click()
@@ -430,8 +471,12 @@ class TimeTest(TypeTest):
         else:
             self.drv.find_element_by_xpath(
                 '/html/body/div[2]/div[2]/input').send_keys('5:55PM')
+            if self.browser_name == 'safari':
+                self.drv.execute_script("$('input')[0].value = '5:55PM'")
+                self.drv.execute_script("$('input').change()")
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
+        self.drv.find_element_by_class_name('sync_btn').click()
 
         # Log in
         self.drv.get(base + '/debug/login/test_email')
@@ -461,6 +506,7 @@ class MultipleChoiceTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
+        self.drv.find_element_by_class_name('start_btn').click()
         self.drv.find_elements_by_tag_name('option')[1].click()
         self.drv.find_element_by_class_name('page_nav__next').click()
 
@@ -470,6 +516,7 @@ class MultipleChoiceTest(TypeTest):
             )
         )
         self.drv.find_element_by_class_name('question__btn').click()
+        self.drv.find_element_by_class_name('sync_btn').click()
 
         # Log in
         self.drv.get(base + '/debug/login/test_email')
@@ -482,7 +529,7 @@ class MultipleChoiceTest(TypeTest):
                           self.drv.find_element_by_id,
                           'line_graph')
 
-        WebDriverWait(self.drv, 5).until(
+        WebDriverWait(self.drv, 10).until(
             EC.presence_of_element_located((By.ID, 'bar_graph')))
         bar_graph = self.drv.find_element_by_id('bar_graph')
         self.assertTrue(bar_graph.is_displayed())
@@ -501,6 +548,7 @@ class MultiSelectTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
+        self.drv.find_element_by_class_name('start_btn').click()
         if self.browser_name == 'android':
             self.drv.find_element_by_tag_name('select').click()
             self.drv.switch_to.window('NATIVE_APP')
@@ -510,6 +558,16 @@ class MultiSelectTest(TypeTest):
             # Click "OK"
             self.drv.find_elements_by_tag_name('Button')[-1].click()
             self.drv.switch_to.window('WEBVIEW_0')
+        elif self.browser_name in {'safari', 'internet explorer'}:
+            # The COMMAND key approach fails due to
+            # https://code.google.com/p/selenium/issues/detail?id=4136
+            # I think...
+            self.drv.execute_script('''
+               var choices = $('option');
+               choices[1].selected = true;
+               choices[2].selected = true;
+            ''')
+            self.drv.execute_script("$('select').change()")
         else:
             is_osx = self.platform.startswith('OS X')
             ctrl_key = Keys.COMMAND if is_osx else Keys.CONTROL
@@ -533,14 +591,18 @@ class MultiSelectTest(TypeTest):
             )
         )
         self.drv.find_element_by_class_name('question__btn').click()
+        self.drv.find_element_by_class_name('sync_btn').click()
 
         # Log in
         self.drv.get(base + '/debug/login/test_email')
 
         # Get the submission page
         self.drv.get(base + '/view/' + survey_id)
+        WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
+            (By.XPATH,
+             '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a')))
         submission_link = self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/div/ul[2]/li/a')
+            '/html/body/div[2]/div/div/div/table/tbody/tr[1]/td[1]/a')
         self.drv.execute_script(
             'window.scrollTo(0, {});'.format(submission_link.location['y']))
         submission_link.click()
@@ -577,6 +639,7 @@ class LocationTest(TypeTest):
         self.drv.get(base + '/survey/' + survey_id)
 
         # Fill it out
+        self.drv.find_element_by_class_name('start_btn').click()
         self.drv.execute_script(
             '''
             window.navigator.geolocation.getCurrentPosition =
@@ -591,6 +654,7 @@ class LocationTest(TypeTest):
         self.drv.find_element_by_class_name('question__btn').click()
         self.drv.find_element_by_class_name('page_nav__next').click()
         self.drv.find_element_by_class_name('question__btn').click()
+        self.drv.find_element_by_class_name('sync_btn').click()
 
         # Log in
         self.drv.get(base + '/debug/login/test_email')

@@ -1,21 +1,33 @@
 {% extends "base.html" %}
 
+{% block stylesheets %}
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.5/css/jquery.dataTables.min.css">
+{% end %}
+
 {% block content %}
     <div class="content">
         <div>
             <h4>Welcome {{ current_user }}</h4>
             <p> Your surveys: </p>
-            <ul>
-                {% for survey, num_submissions in surveys %}
-                    <li>
-                        <a href="/view/{{ survey.survey_id }}">{{ survey.survey_title }}</a>
-                        <!- THIS IS BAD AND LOOKS BAD -- SORRY -- VIKTOR ->
-                        Number of submissions: {{ num_submissions }}
-                        ---
-                        <a href="/survey/{{ survey.survey_id }}">Shareable link!!!</a>
-                    </li>
-                {% end %}
-            </ul>
+            <table id="surveys" class="display" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Survey title</th>
+                        <th>Survey ID</th>
+                        <th>Created on</th>
+                        <th>Number of submissions</th>
+                    </tr>
+                </thead>
+
+                <tfoot>
+                    <tr>
+                        <th>Survey title</th>
+                        <th>Survey ID</th>
+                        <th>Created on</th>
+                        <th>Number of submissions</th>
+                    </tr>
+                </tfoot>
+            </table>
         </div>
         <a class="btn" href="#" id="logout">Logout</a>
     </div>
@@ -23,4 +35,47 @@
     <script src="/static/lib.js"></script>
     <script src="https://login.persona.org/include.js"></script>
     <script src="/static/persona.js"></script>
+    <script src="http://cdn.datatables.net/1.10.5/js/jquery.dataTables.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#surveys').dataTable( {
+                language: {
+                    search: "Search by survey title:"
+                },
+                "lengthMenu": [[20, 50, 100], [20, 50, 100]],
+                "pagingType": "full_numbers",
+                "order": [[2, 'desc']],
+                "columnDefs": [
+                    {
+                        "render": function (data, type, row) {
+                            return '<a href="/view/' + row[1] + '">' + data + '</a><br />(<a href="/survey/' + row[1] + '">Click here for a shareable link</a>)';
+                        },
+                        "targets": 0
+                    },
+                    {"visible": false, "targets": 1},
+                    {
+                        "render": function (data, type, row) {
+                            var datetime = new Date(data);
+                            return datetime.toDateString() + '<br />' + datetime.toTimeString();
+                        },
+                        "targets": 2
+                    }
+                ],
+                "columns": [
+                    {"name": "survey_title"},
+                    {"name": "survey_id"},
+                    {"name": "created_on"},
+                    {"name": "num_submissions"}
+                ],
+                "processing": true,
+                "serverSide": true,
+                "ajax": {
+                    "url": "/api/survey_data_table",
+                    "data": function(d) {
+                        return {"args": JSON.stringify(d)};
+                    }
+                }
+            } );
+        } );
+    </script>
 {% end %}
