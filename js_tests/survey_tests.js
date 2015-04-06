@@ -675,7 +675,6 @@ describe('Survey unit and regression tests', function(done) {
             $.mockjax({
                   url: url,
                   status: 200,
-                  contentType: "application/json",
                   onAfterSuccess: function() { 
                     $('.message').text().should.match('Facility Added!'); 
                     //XXX async can hang if js error is encountered
@@ -686,6 +685,9 @@ describe('Survey unit and regression tests', function(done) {
                   onAfterError: function() { 
                       assert(false, "Failed to catch revisit correctly"); 
                       done();
+                  },
+                  responseText: {
+                      status: "success",
                   }
             });
             
@@ -697,6 +699,9 @@ describe('Survey unit and regression tests', function(done) {
                   },
                   onAfterError: function() { 
                       assert(false, "Failed to catch post correctly"); 
+                  },
+                  responseText: {
+                      status: "success",
                   }
             });
 
