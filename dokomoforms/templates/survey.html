@@ -235,7 +235,7 @@
             if (ans && ans.response !== null && !ans.is_other) { 
                 no_response = false; %>
                 <input class="text_input location_input" type="text" 
-                    placeholder=""
+                    placeholder="Please click 'Capture Location' or drag map."
                     value="<%- ans.response.lat + ' ' + ans.response.lon %>"
                 >
                 <span class="icon icon-close question__minus"></span>
@@ -244,8 +244,7 @@
 
         <% if (no_response) { %>
             <input class="text_input location_input" type="text" 
-                   placeholder=""
-                   value="<%- start_loc.lat + ' ' + start_loc.lon || '' %>"
+                   placeholder="Please click 'Capture Location' or drag map."
             >
             <span class="icon icon-close question__minus"></span>
         <% } %>

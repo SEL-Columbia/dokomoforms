@@ -383,7 +383,7 @@ Survey.prototype.render = function(question) {
             .scrollTop(); //XXX: Ignored in chrome ...
         
         // Attach widget events
-        Widgets[question.type_constraint_name](question, content); //XXX supply footer?
+        Widgets[question.type_constraint_name](question, content, barfoot);
 
     } else {
         // Add submit button
@@ -540,64 +540,49 @@ var Widgets = {
 //      note
 //
 // All widgets store results in the questions.answer array
-Widgets._input = function(question, page, type) {
+Widgets._input = function(question, page, footer, type) {
     var self = this;
     var footer = $('.bar-footer');
     
     // Render add/minus input buttons 
-    Widgets._renderRepeat(page, question);
+    self._renderRepeat(page, question);
 
     //Render don't know
-    Widgets._renderOther(page, footer, question);
+    self._renderOther(page, footer, type, question);
 
     // Clean up answer array, short circuits on is_other responses
-    question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
-    $(page).find('input').each(function(i, child) { 
-        if ((child.className.indexOf('other_input') > - 1) && !child.disabled) {
-            // if don't know input field has a response, break 
-            question.answer = [{
-                response: self._validate('text', child.value, question.logic),
-                is_other: true
-            }];
-
-            return false;
-        }
-
-        if ((child.className.indexOf('other_input') === -1) && child.value !== "") {
-            // Ignore other responses if they don't short circut the loop above
-            question.answer[i] = {
-                response: self._validate(type, child.value, question.logic),
-                is_other: false
-            }
-        }
-    });
+    self._orderAnswerArray(page, footer, question, type);
 
     // Set up input event listner
     $(page)
-        .find('.text_input').not('.other_input')
+        .find('.text_input')
         .change(function() { //XXX: Change isn't sensitive enough on safari?
             var ans_ind = $(page).find('input').index(this); 
             question.answer[ans_ind] = { 
                 response: self._validate(type, this.value, question.logic),
                 is_other: false
             }
-
+            // XXX Should i write the value back after validation?
         });
 
     // Click the + for new input
     $(page)
         .find('.question__add')
         .click(function() { 
-            self._addNewInput(page, $(page).find('input').not('.other_input').last(), question);
+            var delete_icon =  $(page).find('.question__minus').last();
+            var input = $(page).find('.text_input').last();
+            self._addNewInput(page, input, delete_icon,  question);
 
         });
 
-    // Click the - to remove the newest input
+    // Click the - to remove that element
     $(page)
         .find('.question__minus')
         .click(function() { 
-            self._removeNewestInput($(page).find('input').not('.other_input'), question);
-
+            var delete_icons = $(page).find('.question__minus');
+            var inputs = $(page).find('.text_input');
+            var index = delete_icons.index(this);
+            self._removeInput(page, footer, type, inputs, delete_icons, question, index);
         });
     
     // Click the other button when you don't know answer
@@ -605,8 +590,7 @@ Widgets._input = function(question, page, type) {
         .find('.question__btn__other :checkbox')
         .change(function() { 
             var selected = $(this).is(':checked'); 
-            console.log('state', selected);
-            self._toggleOther(page, footer, question, selected);
+            self._toggleOther(page, footer, type, question, selected);
         });
 
 
@@ -622,22 +606,34 @@ Widgets._input = function(question, page, type) {
 };
 
 // Handle creating multiple inputs for widgets that support it 
-Widgets._addNewInput = function(page, input, question) {
+Widgets._addNewInput = function(page, input, delete_icon, question) {
     if (question.allow_multiple) { //XXX: Technically this btn clickable => allow_multiple 
-        input
+        var new_input = input
             .clone(true)
             .val(null)
-            .insertAfter(input)
+            .insertAfter(delete_icon)
+            .focus();
+
+        delete_icon
+            .clone(true)
+            .val(null)
+            .insertAfter(new_input)
             .focus();
     }
 };
 
-Widgets._removeNewestInput = function(inputs, question) {
-    if (question.allow_multiple && (inputs.length > 1)) {
-        delete question.answer[inputs.length - 1];
-        inputs
-            .last()
-            .remove()
+Widgets._removeInput = function(page, footer, type, inputs, delete_icons, question, index) {
+    var self = this;
+    if (question.allow_multiple && (inputs.length > 1)) { //XXX: Technically this btn clickable => allow_multiple 
+        delete question.answer[index];
+        $(inputs[index]).remove();
+        $(delete_icons[index]).remove(); 
+        self._orderAnswerArray(page, footer, question, type);
+    } else {
+        // atleast wipe the value
+        delete question.answer[index];
+        $(inputs[index]).val(null);
+
     }
 
     inputs
@@ -645,9 +641,36 @@ Widgets._removeNewestInput = function(inputs, question) {
         .focus()
 };
 
+Widgets._orderAnswerArray = function(page, footer, question, type) {
+    question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
+    var self = this;
+
+    $(page).find('.text_input').each(function(i, child) { 
+        if (child.value !== "") {
+            question.answer[i] = {
+                response: self._validate(type, child.value, question.logic),
+                is_other: false
+            }
+        }
+    });
+
+    $(footer).find('.other_input').each(function(i, child) { 
+        if (!child.disabled) {
+            // if don't know input field has a response, break 
+            question.answer = [{
+                response: self._validate('text', child.value, question.logic),
+                is_other: true
+            }];
+
+            // there should only be one
+            return false;
+        }
+    });
+}
+
 // Render 'don't know' section if question has with_other logic
 // Display response and alter widget state if first response is other
-Widgets._renderOther = function(page, footer, question) {
+Widgets._renderOther = function(page, footer, type, question) {
 
     var self = this;
     // Render don't know feature 
@@ -665,28 +688,28 @@ Widgets._renderOther = function(page, footer, question) {
         var other_response = question.answer && question.answer[0] && question.answer[0].is_other;
         if (other_response) {
             $('.question__btn__other').find('input').prop('checked', true);
-            this._toggleOther(page, footer, question, ON);
+            this._toggleOther(page, footer, type, question, ON);
         }
     }
 }
 
 // Toggle the 'don't know' section based on passed in state value on given page
 // Alters question.answer array
-Widgets._toggleOther = function(page, footer, question, state) {
+Widgets._toggleOther = function(page, footer, type, question, state) {
     var self = this;
     question.answer = [];
     
     if (state === ON) {
         // Disable regular inputs
-        $(page).find('.text_input').not('.other_input').each(function(i, child) { 
+        $(page).find('.text_input').each(function(i, child) { 
                 $(child).attr('disabled', true);
         });
 
         // Disable adder if its around
         $(page).find('.question__add').attr('disabled', true);
-        
+
+        // Toggle other input
         $(footer).find('.question__other').show();
-        
         $(footer).find('.other_input').each(function(i, child) { 
             // Doesn't matter if response is there or not
             question.answer[0] = {
@@ -695,6 +718,7 @@ Widgets._toggleOther = function(page, footer, question, state) {
             }
         });
 
+        // Bring div up
         footer.addClass('bar-footer-super-extended');
         page.addClass('content-super-shrunk');
 
@@ -708,24 +732,25 @@ Widgets._toggleOther = function(page, footer, question, state) {
 
     } else if (state === OFF) { 
         // Enable regular inputs
-        $(footer).find('.text_input').not('.other_input').each(function(i, child) { 
+        $(page).find('.text_input').each(function(i, child) { 
               $(child).attr('disabled', false);
         });
 
         // Enable adder if its around 
         $(page).find('.question__add').attr('disabled', false);
 
+        // Toggle other inputs
         $(footer).find('.question__other').hide();
-        
-        $(page).find('.text_input').not('.other_input').each(function(i, child) { 
+        $(page).find('.text_input').each(function(i, child) { 
             if (child.value !== "") { 
                 question.answer[i] = {
-                    response: self._validate(question.type_constraint_name, child.value, question.logic),
+                    response: self._validate(type, child.value, question.logic),
                     is_other: false
                 }
             }
         });
         
+        // Hide overlay and shift div
         $('.overlay').hide();
         footer.removeClass('bar-footer-super-extended');
         page.removeClass('content-super-shrunk');
@@ -735,8 +760,6 @@ Widgets._toggleOther = function(page, footer, question, state) {
                 $(child).attr('disabled', true);
         });
     }
-
-    console.log('hey');
 }
 
 // Render +/- buttons on given page
@@ -808,26 +831,26 @@ Widgets._validate = function(type, answer, logic) {
     return val;
 };
 
-Widgets.text = function(question, page) {
-    this._input(question, page, "text");
+Widgets.text = function(question, page, footer) {
+    this._input(question, page, footer, "text");
 };
 
-Widgets.integer = function(question, page) {
-    this._input(question, page, "integer");
+Widgets.integer = function(question, page, footer) {
+    this._input(question, page, footer, "integer");
 };
 
-Widgets.decimal = function(question, page) {
-    this._input(question, page, "decimal");
+Widgets.decimal = function(question, page, footer) {
+    this._input(question, page, footer, "decimal");
 };
 
-Widgets.date = function(question, page) {
+Widgets.date = function(question, page, footer) {
     //XXX: TODO change input thing to be jquery-ey
-    this._input(question, page, "date_XXX"); //XXX: Fix validation
+    this._input(question, page, footer, "date_XXX"); //XXX: Fix validation
 };
 
-Widgets.time = function(question, page) {
+Widgets.time = function(question, page, footer) {
     //XXX: TODO change input thing to be jquery-ey
-    this._input(question, page, "time"); //XXX: Fix validation
+    this._input(question, page, footer, "time"); //XXX: Fix validation
 };
 
 Widgets.note = function() {
@@ -835,7 +858,7 @@ Widgets.note = function() {
 
 // Multiple choice and multiple choice with other are handled here by same func
 // XXX: possibly two widgets (multi select and multi choice)
-Widgets.multiple_choice = function(question, page) {
+Widgets.multiple_choice = function(question, page, footer) {
     var self = this;
 
     // array of choice uuids
@@ -967,9 +990,12 @@ Widgets._getMap = function() {
     return map;
 };
 
-Widgets.location = function(question, page) {
+Widgets.location = function(question, page, footer) {
+    // generic setup
+    this._input(question, page, footer, "location");
+
     var self = this;
-    var response = $(page).find('.text_input').not('.other_input').last().val();
+    var response = $(page).find('.text_input').last().val();
     response = self._validate('location', response, question.logic);
     App.start_loc = response || App.start_loc;
 
@@ -979,12 +1005,9 @@ Widgets.location = function(question, page) {
         updateLocation([map.getCenter().lng, map.getCenter().lat]);
     });
 
-    // generic setup
-    this._input(question, page, "location");
-
     function updateLocation(coords) {
         // Find current length of inputs and update the last one;
-        var questions_len = $(page).find('.text_input').not('.other_input').length;
+        var questions_len = $(page).find('.text_input').length;
 
         // update array val
         question.answer[questions_len - 1] = {
@@ -1035,12 +1058,12 @@ Widgets.location = function(question, page) {
 
     // disable default event
     $(page)
-        .find('.text_input').not('.other_input')
+        .find('.text_input')
         .off('change');
 };
 
 // Similar to location however you cannot just add location, 
-Widgets.facility = function(question, page) {
+Widgets.facility = function(question, page, footer) {
     var ans = question.answer[0]; // Facility questions only ever have one response
     var lat = ans && ans.response.lat || App.start_loc.lat;
     var lng = ans && ans.response.lon || App.start_loc.lon;
