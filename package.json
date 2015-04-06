@@ -30,7 +30,6 @@
   "homepage": "https://github.com/SEL-Columbia/dokomoforms",
   "devDependencies": {
     "coveralls": "^2.11.2",
-    "faux-jax": "^1.7.1",
     "istanbul": "^0.3.11",
     "jsdom": "^4.0.5",
     "jshint": "^2.6.3",
