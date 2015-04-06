@@ -721,11 +721,12 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
         });
 
         // Bring div up
-        footer.addClass('bar-footer-super-extended');
+        //footer.addClass('bar-footer-super-extended');
         page.addClass('content-super-shrunk');
+        footer.animate({height:220},200).addClass('bar-footer-super-extended');
 
         //Add overlay
-        $('.overlay').show();
+        $('.overlay').fadeIn('fast');
 
         // Enable other input
         $(footer).find('.other_input').each(function(i, child) { 
@@ -753,9 +754,10 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
         });
         
         // Hide overlay and shift div
-        $('.overlay').hide();
-        footer.removeClass('bar-footer-super-extended');
+        $('.overlay').fadeOut('fast');
+        //footer.removeClass('bar-footer-super-extended');
         page.removeClass('content-super-shrunk');
+        footer.animate({height:120},200).removeClass('bar-footer-super-extended');
 
         // Disable other input
         $(footer).find('.other_input').each(function(i, child) { 
