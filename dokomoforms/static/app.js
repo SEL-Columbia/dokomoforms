@@ -91,6 +91,11 @@ App.sync = function() {
         );
     });
 
+    // Facilities junk
+    _.map(App.unsynced_facilities, function(facility) {
+        postNewFacility(facility); 
+    });
+
     App.unsynced = [];
     localStorage.setItem("unsynced", 
         JSON.stringify(App.unsynced));
@@ -178,10 +183,6 @@ App.splash = function() {
 };
 
 App.submit = function(survey, done, fail) {
-    _.map(App.unsynced_facilities, function(facility) {
-        postNewFacility(facility); 
-    });
-
     function getCookie(name) {
         var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
         return r ? r[1] : undefined;
