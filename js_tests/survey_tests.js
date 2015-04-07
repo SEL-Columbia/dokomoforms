@@ -8,6 +8,7 @@ L = window.L;
 _ = window._;
 $ = window.$;
 alert = window.alert;
+alert = function(msg) { console.log(msg, 'poop') };
 setInterval = function(hey, you) {  } //console.log('pikachu'); }
 console = window.console;
 Image = window.Image;
