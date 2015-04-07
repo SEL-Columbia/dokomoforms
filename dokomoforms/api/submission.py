@@ -134,7 +134,7 @@ def submit(connection: Connection, data: dict) -> dict:
     c = connection
     survey_id = data['survey_id']
     required = {q.question_id for q in
-                get_required(connection, survey_id)}
+                get_required(c, survey_id)}
 
     with c.begin():
         submission_id = _create_submission(c, survey_id, required, data)
