@@ -697,52 +697,61 @@ class TestSurvey(unittest.TestCase):
         update_json = {'survey_id': survey_id,
                        'survey_title': 'updated survey title',
                        'email': 'test_email'}
-        questions = [{'question_id': inserted_qs[1].question_id,
-                      'question_title': 'api_test 2nd question',
-                      'type_constraint_name': 'multiple_choice',
-                      'question_to_sequence_number': 1,
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {
-                          'required': False,
-                          'allow_other': False,
-                          'allow_dont_know': False,
-                          'max': 'one'
-                      },
-                      'choices': [
-                          {'old_choice': '2', 'new_choice': 'b'},
-                          'a',
-                          '1'
-                      ],
-                      'branches': [
-                          {'choice_number': 1, 'to_question_number': 3}
-                      ]},
-                     {'question_id': inserted_qs[0].question_id,
-                      'question_title': 'updated question title',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {
-                          'required': False,
-                          'allow_other': False,
-                          'allow_dont_know': False
-                      },
-                      'type_constraint_name': 'integer',
-                      'question_to_sequence_number': 1,
-                      'choices': [],
-                      'branches': []},
-                     {'question_title': 'second question',
-                      'type_constraint_name': 'integer',
-                      'sequence_number': None,
-                      'question_to_sequence_number': -1,
-                      'hint': None,
-                      'allow_multiple': False,
-                      'logic': {
-                          'required': False,
-                          'allow_other': False,
-                          'allow_dont_know': False
-                      },
-                      'choices': [],
-                      'branches': []}]
+        questions = [
+            {
+                'question_id': inserted_qs[1].question_id,
+                'question_title': 'api_test 2nd question',
+                'type_constraint_name': 'multiple_choice',
+                'question_to_sequence_number': 1,
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': False,
+                        'allow_dont_know': False,
+                        'max': 'one'
+                    },
+                'choices':
+                    [
+                        {'old_choice': '2', 'new_choice': 'b'},
+                        'a',
+                        '1'
+                    ],
+                'branches':
+                    [{'choice_number': 1, 'to_question_number': 3}]},
+            {
+                'question_id': inserted_qs[0].question_id,
+                'question_title': 'updated question title',
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': False,
+                        'allow_dont_know': False
+                    },
+                'type_constraint_name': 'integer',
+                'question_to_sequence_number': 1,
+                'choices': [],
+                'branches': []
+            },
+            {
+                'question_title': 'second question',
+                'type_constraint_name': 'integer',
+                'sequence_number': None,
+                'question_to_sequence_number': -1,
+                'hint': None,
+                'allow_multiple': False,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': False,
+                        'allow_dont_know': False
+                    },
+                'choices': [],
+                'branches': []
+            }]
         update_json['questions'] = questions
         new_survey = survey_api.update(connection, update_json)
         new_survey_id = new_survey['result']['survey_id']
@@ -881,129 +890,139 @@ class TestSurvey(unittest.TestCase):
 
         submission = {'submitter': 'me',
                       'survey_id': survey_id,
-                      'answers': [{'question_id': inserted_qs[0].question_id,
-                                   'answer': 'text answer',
-                                   'answer_metadata': None,
-                                   'is_type_exception': False},
-                                  {'question_id': inserted_qs[1].question_id,
-                                   'answer': choice_1_id,
-                                   'answer_metadata': None,
-                                   'is_type_exception': False},
-                                  {'question_id': inserted_qs[2].question_id,
-                                   'answer': choice_a_id,
-                                   'answer_metadata': None,
-                                   'is_type_exception': False},
-                                  {'question_id': inserted_qs[3].question_id,
-                                   'answer': 'my fancy other answer',
-                                   'answer_metadata': {
-                                       'type_exception': 'other'
-                                   },
-                                   'is_type_exception': True},
-                                  {'question_id': inserted_qs[3].question_id,
-                                   'answer': other_choice_id,
-                                   'answer_metadata': None,
-                                   'is_type_exception': False},
-                                  {'question_id': inserted_qs[4].question_id,
-                                   'answer': 'my fancier other answer',
-                                   'answer_metadata': {
-                                       'type_exception': 'other'
-                                   },
-                                   'is_type_exception': True},
-                                  {'question_id': inserted_qs[4].question_id,
-                                   'answer': other_choice_2_id,
-                                   'answer_metadata': None,
-                                   'is_type_exception': False},
-                                  {'question_id': inserted_qs[5].question_id,
-                                   'answer': 'my super fancy other answer',
-                                   'answer_metadata': {
-                                       'type_exception': 'other'
-                                   },
-                                   'is_type_exception': True}]}
+                      'answers': [
+                          {'question_id': inserted_qs[0].question_id,
+                           'answer': 'text answer',
+                           'answer_metadata': None,
+                           'is_type_exception': False},
+                          {'question_id': inserted_qs[1].question_id,
+                           'answer': choice_1_id,
+                           'answer_metadata': None,
+                           'is_type_exception': False},
+                          {'question_id': inserted_qs[2].question_id,
+                           'answer': choice_a_id,
+                           'answer_metadata': None,
+                           'is_type_exception': False},
+                          {'question_id': inserted_qs[3].question_id,
+                           'answer': 'my fancy other answer',
+                           'answer_metadata':
+                               {'type_exception': 'other'},
+                           'is_type_exception': True},
+                          {'question_id': inserted_qs[3].question_id,
+                           'answer': other_choice_id,
+                           'answer_metadata': None,
+                           'is_type_exception': False},
+                          {'question_id': inserted_qs[4].question_id,
+                           'answer': 'my fancier other answer',
+                           'answer_metadata': {'type_exception': 'other'},
+                           'is_type_exception': True},
+                          {'question_id': inserted_qs[4].question_id,
+                           'answer': other_choice_2_id,
+                           'answer_metadata': None,
+                           'is_type_exception': False},
+                          {'question_id': inserted_qs[5].question_id,
+                           'answer': 'my super fancy other answer',
+                           'answer_metadata': {'type_exception': 'other'},
+                           'is_type_exception': True}
+                      ]}
 
         submission_api.submit(connection, submission)
 
         update_json = {'survey_id': survey_id,
                        'survey_title': 'updated',
                        'email': 'test_email'}
-        questions = [{'question_id': inserted_qs[0].question_id,
-                      'question_title': 'was text question, '
-                                        'now multiple_choice',
-                      'type_constraint_name': 'multiple_choice',
-                      'question_to_sequence_number': 1,
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {
-                          'required': False,
-                          'allow_other': False,
-                          'allow_dont_know': False
-                      },
-                      'choices': [],
-                      'branches': []},
-                     {'question_id': inserted_qs[1].question_id,
-                      'question_title': 'was multiple choice, now location',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {
-                          'required': False,
-                          'allow_other': False,
-                          'allow_dont_know': False
-                      },
-                      'type_constraint_name': 'location',
-                      'question_to_sequence_number': 1,
-                      'choices': [],
-                      'branches': []},
-                     {'question_id': inserted_qs[2].question_id,
-                      'question_title': 'was multiple choice, now with other',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {
-                          'required': False,
-                          'allow_other': True,
-                          'allow_dont_know': False
-                      },
-                      'type_constraint_name': 'multiple_choice',
-                      'question_to_sequence_number': 1,
-                      'choices': ['a'],
-                      'branches': []},
-                     {'question_id': inserted_qs[3].question_id,
-                      'question_title': 'lost with other',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {
-                          'required': False,
-                          'allow_other': False,
-                          'allow_dont_know': False
-                      },
-                      'type_constraint_name': 'multiple_choice',
-                      'question_to_sequence_number': 1,
-                      'choices': ['use other'],
-                      'branches': []},
-                     {'question_id': inserted_qs[4].question_id,
-                      'question_title': 'lost with other 2',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {
-                          'required': False,
-                          'allow_other': False,
-                          'allow_dont_know': False
-                      },
-                      'type_constraint_name': 'text',
-                      'question_to_sequence_number': 1,
-                      'choices': [],
-                      'branches': []},
-                     {'question_id': inserted_qs[4].question_id,
-                      'question_title': 'lost choices',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {
-                          'required': False,
-                          'allow_other': True,
-                          'allow_dont_know': False
-                      },
-                      'type_constraint_name': 'multiple_choice',
-                      'question_to_sequence_number': -1,
-                      'choices': [],
-                      'branches': []}]
+        questions = [
+            {
+                'question_id': inserted_qs[0].question_id,
+                'question_title': 'was text question, '
+                                  'now multiple_choice',
+                'type_constraint_name': 'multiple_choice',
+                'question_to_sequence_number': 1,
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': False,
+                        'allow_dont_know': False
+                    },
+                'choices': [],
+                'branches': []},
+            {
+                'question_id': inserted_qs[1].question_id,
+                'question_title': 'was multiple choice, now location',
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': False,
+                        'allow_dont_know': False
+                    },
+                'type_constraint_name': 'location',
+                'question_to_sequence_number': 1,
+                'choices': [],
+                'branches': []},
+            {
+                'question_id': inserted_qs[2].question_id,
+                'question_title': 'was multiple choice, now with other',
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': True,
+                        'allow_dont_know': False
+                    },
+                'type_constraint_name': 'multiple_choice',
+                'question_to_sequence_number': 1,
+                'choices': ['a'],
+                'branches': []},
+            {
+                'question_id': inserted_qs[3].question_id,
+                'question_title': 'lost with other',
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': False,
+                        'allow_dont_know': False
+                    },
+                'type_constraint_name': 'multiple_choice',
+                'question_to_sequence_number': 1,
+                'choices': ['use other'],
+                'branches': []},
+            {
+                'question_id': inserted_qs[4].question_id,
+                'question_title': 'lost with other 2',
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': False,
+                        'allow_dont_know': False
+                    },
+                'type_constraint_name': 'text',
+                'question_to_sequence_number': 1,
+                'choices': [],
+                'branches': []},
+            {
+                'question_id': inserted_qs[4].question_id,
+                'question_title': 'lost choices',
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': True,
+                        'allow_dont_know': False
+                    },
+                'type_constraint_name': 'multiple_choice',
+                'question_to_sequence_number': -1,
+                'choices': [],
+                'branches': []}]
         update_json['questions'] = questions
         new_survey = survey_api.update(connection, update_json)['result']
         gsb = get_submissions_by_email
@@ -1076,76 +1095,93 @@ class TestSurvey(unittest.TestCase):
         update_json = {'survey_id': survey_id,
                        'survey_title': 'updated survey title',
                        'email': 'test_email'}
-        questions = [{'question_id': inserted_questions[0].question_id,
-                      'question_title': 'updated question title',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {
-                          'required': False,
-                          'allow_other': False,
-                          'allow_dont_know': False
-                      },
-                      'type_constraint_name': 'multiple_choice',
-                      'question_to_sequence_number': 1,
-                      'choices': ['two', 'one', 'one'],
-                      'branches': []}]
+        questions = [
+            {
+                'question_id': inserted_questions[0].question_id,
+                'question_title': 'updated question title',
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': False,
+                        'allow_dont_know': False
+                    },
+                'type_constraint_name': 'multiple_choice',
+                'question_to_sequence_number': 1,
+                'choices': ['two', 'one', 'one'],
+                'branches': []
+            }
+        ]
         update_json['questions'] = questions
         self.assertRaises(RepeatedChoiceError, survey_api.update, connection,
                           update_json)
 
-        questions = [{'question_id': inserted_questions[0].question_id,
-                      'question_title': 'updated question title',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {
-                          'required': False,
-                          'allow_other': False,
-                          'allow_dont_know': False
-                      },
-                      'type_constraint_name': 'multiple_choice',
-                      'question_to_sequence_number': 1,
-                      'choices': [
-                          {'old_choice': 'three', 'new_choice': 'four'}],
-                      'branches': []}]
+        questions = [
+            {
+                'question_id': inserted_questions[0].question_id,
+                'question_title': 'updated question title',
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': False,
+                        'allow_dont_know': False
+                    },
+                'type_constraint_name': 'multiple_choice',
+                'question_to_sequence_number': 1,
+                'choices': [
+                    {'old_choice': 'three', 'new_choice': 'four'}],
+                'branches': []}
+        ]
 
         update_json['questions'] = questions
         self.assertRaises(QuestionChoiceDoesNotExistError, survey_api.update,
                           connection, update_json)
 
-        questions = [{'question_id': inserted_questions[0].question_id,
-                      'question_title': 'updated question title',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {
-                          'required': False,
-                          'allow_other': False,
-                          'allow_dont_know': False
-                      },
-                      'type_constraint_name': 'multiple_choice',
-                      'question_to_sequence_number': -1,
-                      'choices': [
-                          {'old_choice': 'one', 'new_choice': 'two'}, 'two'],
-                      'branches': []}]
+        questions = [
+            {
+                'question_id': inserted_questions[0].question_id,
+                'question_title': 'updated question title',
+                'allow_multiple': False,
+                'hint': None,
+                'logic': {
+                    'required': False,
+                    'allow_other': False,
+                    'allow_dont_know': False
+                },
+                'type_constraint_name': 'multiple_choice',
+                'question_to_sequence_number': -1,
+                'choices': [
+                    {'old_choice': 'one', 'new_choice': 'two'}, 'two'],
+                'branches': []
+            }
+        ]
 
         update_json['questions'] = questions
         self.assertRaises(RepeatedChoiceError, survey_api.update, connection,
                           update_json)
 
-        questions = [{'question_id': inserted_questions[0].question_id,
-                      'question_title': 'updated question title',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {
-                          'required': False,
-                          'allow_other': False,
-                          'allow_dont_know': False
-                      },
-                      'type_constraint_name': 'multiple_choice',
-                      'question_to_sequence_number': -1,
-                      'choices': [
-                          {'old_choice': 'one', 'new_choice': 'two'},
-                          {'old_choice': 'one', 'new_choice': 'three'}],
-                      'branches': []}]
+        questions = [
+            {
+                'question_id': inserted_questions[0].question_id,
+                'question_title': 'updated question title',
+                'allow_multiple': False,
+                'hint': None,
+                'logic': {
+                    'required': False,
+                    'allow_other': False,
+                    'allow_dont_know': False
+                },
+                'type_constraint_name': 'multiple_choice',
+                'question_to_sequence_number': -1,
+                'choices': [
+                    {'old_choice': 'one', 'new_choice': 'two'},
+                    {'old_choice': 'one', 'new_choice': 'three'}],
+                'branches': []
+            }
+        ]
 
         update_json['questions'] = questions
         self.assertRaises(RepeatedChoiceError, survey_api.update, connection,
@@ -1510,18 +1546,21 @@ class TestAggregation(unittest.TestCase):
         question_id = question.question_id
 
         for i in range(2):
-            input_data = {'survey_id': survey_id,
-                          'submitter': 'test_submitter',
-                          'answers':
-                              [{
-                                   'question_id': question_id,
-                                   'answer': i,
-                                   'answer_metadata': {
-                                       'type_exception': 'dont_know'
-                                   },
-                                   'is_type_exception': False
-                               }]
-                          }
+            input_data = {
+                'survey_id': survey_id,
+                'submitter': 'test_submitter',
+                'answers':
+                    [
+                        {
+                            'question_id': question_id,
+                            'answer': i,
+                            'answer_metadata': {
+                                'type_exception': 'dont_know'
+                            },
+                            'is_type_exception': False
+                        }
+                    ]
+            }
             submission_api.submit(connection, input_data)
 
         self.assertAlmostEqual(
