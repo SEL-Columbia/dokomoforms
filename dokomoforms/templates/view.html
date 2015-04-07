@@ -1,40 +1,30 @@
 {% extends "base.html" %}
 
-{% block stylesheets %}
-<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.5/css/jquery.dataTables.min.css">
-{% end %}
-
 {% block content %}
-    <div class="content">
-        <div>
-            <h4>Welcome {{ current_user }}</h4>
-            <p> Your surveys: </p>
-            <table id="surveys" class="display" width="100%" cellspacing="0">
-                <thead>
-                    <tr>
-                        <th>Survey title</th>
-                        <th>Survey ID</th>
-                        <th>Created on</th>
-                        <th>Number of submissions</th>
-                    </tr>
-                </thead>
+    <div class="content-padded">
+    <h3>Welcome {{ current_user }}</h3>
+    <p> Your surveys: </p>
+    <table id="surveys" class="table-view display" width="100%" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Survey title</th>
+                <th>Survey ID</th>
+                <th>Created on</th>
+                <th>Number of submissions</th>
+            </tr>
+        </thead>
 
-                <tfoot>
-                    <tr>
-                        <th>Survey title</th>
-                        <th>Survey ID</th>
-                        <th>Created on</th>
-                        <th>Number of submissions</th>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-        <a class="btn" href="#" id="logout">Logout</a>
-    </div>
+        <tfoot>
+            <tr>
+                <th>Survey title</th>
+                <th>Survey ID</th>
+                <th>Created on</th>
+                <th>Number of submissions</th>
+            </tr>
+        </tfoot>
+    </table>
 
     <script src="/static/lib.js"></script>
-    <script src="https://login.persona.org/include.js"></script>
-    <script src="/static/persona.js"></script>
     <script src="http://cdn.datatables.net/1.10.5/js/jquery.dataTables.min.js"></script>
     <script>
         $(document).ready(function() {
@@ -48,7 +38,7 @@
                 "columnDefs": [
                     {
                         "render": function (data, type, row) {
-                            return '<a href="/view/' + row[1] + '">' + data + '</a><br />(<a href="/survey/' + row[1] + '">Click here for a shareable link</a>)';
+                            return '<a data-ignore="push" href="/view/' + row[1] + '">' + data + '</a><br />(<a data-ignore="push" href="/survey/' + row[1] + '">Click here for a shareable link</a>)';
                         },
                         "targets": 0
                     },
@@ -78,4 +68,15 @@
             } );
         } );
     </script>
+    </div>
+{% end %}
+
+{% block footer %}
+    <div class="bar bar-standard bar-footer">
+        <div class="bar-padded">
+            <a data-ignore="push" class="btn btn-block" href="#" id="logout">Logout</a>
+        </div>
+    </div>
+    <script src="https://login.persona.org/include.js"></script>
+    <script src="/static/persona.js"></script>
 {% end %}

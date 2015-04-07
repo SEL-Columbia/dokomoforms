@@ -5,7 +5,9 @@ CACHE MANIFEST
 /static/lib.js
 /static/app.js
 
-/static/css/style.css
+/static/css/survey.css
+/static/ratchet-2.0.2/dist/js/ratchet.js
+/static/ratchet-2.0.2/dist/css/ratchet.min.css
 
 /static/img/favicon.png
 /static/img/icons

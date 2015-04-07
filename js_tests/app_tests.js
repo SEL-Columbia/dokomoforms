@@ -12,6 +12,7 @@ setInterval = function(hey, you) {  } //console.log('pikachu'); }
 console = window.console;
 Image = window.Image;
 localStorage = {};
+navigator = window.navigator;
     
 var mah_code = require('../dokomoforms/static/app.js');
 var App = mah_code.App;
