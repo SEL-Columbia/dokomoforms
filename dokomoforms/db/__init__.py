@@ -149,10 +149,13 @@ question_table = Table(
     Column('logic', postgresql.json.JSON,
            CheckConstraint(
                "((logic->>'required')) IS NOT NULL AND "
-               "((logic->>'with_other')) IS NOT NULL",
+               "((logic->>'allow_other')) IS NOT NULL AND "
+               "((logic->>'allow_dont_know')) IS NOT NULL",
                name='minimal_logic'),
            nullable=False,
-           server_default='{"required": false, "with_other": false}'),
+           server_default='{"required": false,'
+                          ' "allow_other": false,'
+                          ' "allow_dont_know": false}'),
     Column('survey_id', postgresql.UUID,
            ForeignKey('survey.survey_id',
                       onupdate='CASCADE',
