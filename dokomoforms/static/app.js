@@ -137,6 +137,7 @@ App.splash = function() {
     var barfoot = $('.bar-footer');
     barfoot.removeClass('bar-footer-extended');
     barfoot.removeClass('bar-footer-super-extended');
+    barfoot.css("height", "");
 
     var barfootHTML = $('#template_footer__splash').html();
     var barfootTemplate = _.template(barfootHTML);
@@ -357,6 +358,7 @@ Survey.prototype.render = function(question) {
 
     barfoot.removeClass('bar-footer-extended');
     barfoot.removeClass('bar-footer-super-extended');
+    barfoot.css("height", "");
 
     // Update content
     var content = $('.content');
