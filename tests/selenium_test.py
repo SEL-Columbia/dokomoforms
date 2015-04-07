@@ -291,8 +291,11 @@ class TypeTest(DriverTest):
                                       'type_constraint_name': tcn,
                                       'allow_multiple': allow_multiple,
                                       'question_to_sequence_number': -1,
-                                      'logic': {'required': False,
-                                                'with_other': False},
+                                      'logic': {
+                                          'required': False,
+                                          'allow_other': False,
+                                          'allow_dont_know': False
+                                      },
                                       'hint': None,
                                       'choices': choices,
                                       'branches': None}]}

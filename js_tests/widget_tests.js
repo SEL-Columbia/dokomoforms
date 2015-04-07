@@ -196,7 +196,7 @@ describe('Widget creation tests', function(done) {
             var question = {
                 question_to_sequence_number: -1,
                 type_constraint_name: "decimal",
-                logic: {with_other: true},
+                logic: {allow_other: true},
                 allow_multiple: true,
                 question_title: "Whiplash was real good dont-know",
                 sequence_number: 1
@@ -236,10 +236,10 @@ describe('Widget creation tests', function(done) {
             var question = {
                 question_to_sequence_number: -1,
                 type_constraint_name: "decimal",
-                logic: {with_other: true},
+                logic: {allow_other: true},
                 allow_multiple: true,
                 question_title: "Whiplash was real good otttherr",
-                answer: [{response: 'good times', is_other: true }, {response: 1111, is_other: false }], //order matters
+                answer: [{response: 'good times', is_type_exception: true }, {response: 1111, is_type_exception: false }], //order matters
                 sequence_number: 1
             };
             
@@ -268,7 +268,7 @@ describe('Widget creation tests', function(done) {
             $('.text_input').not('.other_input')[0].disabled.should.equal(true);
 
             // Response is cleaned up
-            question.answer.should.match([{response: 'good times', is_other: true }]);
+            question.answer.should.match([{response: 'good times', is_type_exception: true }]);
 
             done();
     });
@@ -280,10 +280,10 @@ describe('Widget creation tests', function(done) {
             var question = {
                 question_to_sequence_number: -1,
                 type_constraint_name: "decimal",
-                logic: {with_other: true},
+                logic: {allow_other: true},
                 allow_multiple: true,
                 question_title: "Whiplash was real good otttherr",
-                answer: [{response: 777, is_other: false}, {response: "bad times", is_other: true}], //order matters
+                answer: [{response: 777, is_type_exception: false}, {response: "bad times", is_type_exception: true}], //order matters
                 sequence_number: 1
             };
             
@@ -313,7 +313,7 @@ describe('Widget creation tests', function(done) {
             $('.text_input').not('.other_input').val().should.equal('777');
 
             // Response is cleaned up
-            question.answer.should.match([{response: 777, is_other: false }]);
+            question.answer.should.match([{response: 777, is_type_exception: false }]);
 
             done();
     });
@@ -589,7 +589,7 @@ describe('Widget creation tests', function(done) {
             var question = {
                 question_to_sequence_number: -1,
                 type_constraint_name: "multiple_choice",
-                logic: {with_other: true},
+                logic: {allow_other: true},
                 answer: [{response: "other is selected since choices len = 0"}],
                 choices: [],
                 question_title: "Seriously, I'm gonna go back and check out all the noms+",

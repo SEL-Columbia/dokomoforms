@@ -252,7 +252,7 @@ Survey.prototype.getFirstResponse = function(question) {
         }
     }
 
-    return {'response': null, 'is_other': false};
+    return {'response': null, 'is_type_exception': false};
 };
 
 // Choose next question, deals with branching and back/forth movement
@@ -263,7 +263,7 @@ Survey.prototype.next = function(offset) {
 
     var first_answer = this.getFirstResponse(this.current_question); 
     var first_response = first_answer.response;
-    var first_is_other = first_answer.is_other;
+    var first_is_type_exception = first_answer.is_type_exception;
 
     // Backward at first question
     if (index === self.lowest_sequence_number && offset === PREV) {
@@ -286,7 +286,7 @@ Survey.prototype.next = function(offset) {
         }
 
         // Is the only response and empty is other response?
-        if (first_is_other && !first_response) {
+        if (first_is_type_exception && !first_response) {
             App.message('Please provide a reason before moving on.');
             return;
         }
@@ -392,7 +392,7 @@ Survey.prototype.submit = function() {
             }
 
             var response =  ans.response;
-            var is_other = ans.is_other || false;
+            var is_type_exception = ans.is_type_exception || false;
             var metadata = ans.metadata || null;
 
             if (response == null) { 
@@ -403,7 +403,7 @@ Survey.prototype.submit = function() {
                 question_id: q.question_id,
                 answer: response,
                 answer_metadata: metadata,
-                is_other: is_other
+                is_type_exception: is_type_exception
             });
 
         });
@@ -486,14 +486,14 @@ Widgets._input = function(question, page, type) {
     //Render don't know
     Widgets._renderOther(page, question, self);
 
-    // Clean up answer array, short circuits on is_other responses
+    // Clean up answer array, short circuits on is_type_exception responses
     question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
     $(page).find('input').each(function(i, child) { 
         if ((child.className.indexOf('other_input') > - 1) && !child.disabled) {
             // if don't know input field has a response, break 
             question.answer = [{
                 response: self._validate('text', child.value, question.logic),
-                is_other: true
+                is_type_exception: true
             }];
 
             return false;
@@ -503,7 +503,7 @@ Widgets._input = function(question, page, type) {
             // Ignore other responses if they don't short circut the loop above
             question.answer[i] = {
                 response: self._validate(type, child.value, question.logic),
-                is_other: false
+                is_type_exception: false
             }
         }
     });
@@ -515,7 +515,7 @@ Widgets._input = function(question, page, type) {
             var ans_ind = $(page).find('input').index(this); 
             question.answer[ans_ind] = { 
                 response: self._validate(type, this.value, question.logic),
-                is_other: false
+                is_type_exception: false
             }
 
         });
@@ -551,7 +551,7 @@ Widgets._input = function(question, page, type) {
         .change(function() { //XXX: Change isn't sensitive enough on safari?
             question.answer = [{ 
                 response: self._validate('text', this.value, question.logic),
-                is_other: true
+                is_type_exception: true
             }];
         });
 };
@@ -580,18 +580,18 @@ Widgets._removeNewestInput = function(inputs, question) {
         .focus()
 };
 
-// Render 'don't know' section if question has with_other logic
+// Render 'don't know' section if question has allow_other or allow_dont_know logic
 // Display response and alter widget state if first response is other
 Widgets._renderOther = function(page, question, input) {
     var self = this;
     // Render don't know feature 
-    if (question.logic.with_other) {
+    if (question.logic.allow_other || question.logic.allow_dont_know) {
         var repeatHTML = $('#template_other').html();
         var widgetTemplate = _.template(repeatHTML);
         var compiledHTML = widgetTemplate({question: question});
         $(page).append(compiledHTML);
 
-        var other_response = question.answer && question.answer[0] && question.answer[0].is_other;
+        var other_response = question.answer && question.answer[0] && question.answer[0].is_type_exception;
         if (other_response) {
             // Disable main input
             this._toggleOther(page, question, ON);
@@ -619,7 +619,8 @@ Widgets._toggleOther = function(page, question, state) {
             // Doesn't matter if response is there or not
             question.answer[0] = {
                 response: self._validate('text', child.value, question.logic),
-                is_other: true
+                is_type_exception: true,
+                metadata: {type_exception: "other"}
             }
         });
 
@@ -643,7 +644,7 @@ Widgets._toggleOther = function(page, question, state) {
             if (child.value !== "") { 
                 question.answer[i] = {
                     response: self._validate(question.type_constraint_name, child.value, question.logic),
-                    is_other: false
+                    is_type_exception: false
                 }
             }
         });
@@ -769,7 +770,8 @@ Widgets.multiple_choice = function(question, page) {
         .change(function() {
             question.answer[question.choices.length] = { 
                 response: self._validate("text", this.value, question.logic),
-                is_other: true
+                is_type_exception: true,
+                metadata: {type_exception: "other"}
             }
         });
 
@@ -802,13 +804,13 @@ Widgets.multiple_choice = function(question, page) {
                 // Default, fill in values (other will be overwritten below if selected)
                 question.answer[ind] = {
                     response: opt,
-                    is_other: false
+                    is_type_exception: false
                 }
 
                 if (opt === 'other') {
                     question.answer[ind] = {
                         response: $other.val(), // Preserves prev response
-                        is_other: true
+                        is_type_exception: true
                     }
 
                     $other.show();
@@ -824,7 +826,7 @@ Widgets.multiple_choice = function(question, page) {
 
     // Selection is handled in _template however toggling of view is done here
     if (question.answer[question.choices.length] && 
-            question.answer[question.choices.length].is_other &&
+            question.answer[question.choices.length].is_type_exception &&
                 question.answer[question.choices.length]) {
         $other.show();
     }
@@ -907,7 +909,7 @@ Widgets.location = function(question, page) {
         // update array val
         question.answer[questions_len - 1] = {
             response: {'lon': coords[0], 'lat': coords[1]},
-            is_other: false
+            is_type_exception: false
         }
             
         // update latest lon/lat values
@@ -1080,7 +1082,7 @@ Widgets.facility = function(question, page) {
                 'lon': marker._latlng.lng, 
                 'lat': marker._latlng.lat
             },
-            is_other: false,
+            is_type_exception: false,
             metadata: {
                 'facility_name': marker.name,
                 'facility_sector': marker.sector

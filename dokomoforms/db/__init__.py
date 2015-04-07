@@ -286,7 +286,7 @@ answer_table = Table(
     Column('answer_location', Geometry),
     Column('answer_metadata', postgresql.json.JSON,
            nullable=False, server_default='{}'),
-    Column('is_other', Boolean,
+    Column('is_type_exception', Boolean,
            nullable=False,
            server_default='FALSE'),
     Column('question_id', postgresql.UUID, nullable=False),
@@ -317,10 +317,13 @@ answer_table = Table(
     ),
     CheckConstraint(
         '''
-        (CASE WHEN is_other AND answer_text IS NOT NULL THEN 1 ELSE 0 END)
+        (CASE WHEN is_type_exception AND answer_text IS NOT NULL
+          AND ((answer_metadata->>'type_exception')) IS NOT NULL
+          THEN 1 ELSE 0 END
+        )
         +
         (CASE WHEN (
-          NOT is_other AND
+          NOT is_type_exception AND
             (CASE WHEN type_constraint_name =   'text'
                                            AND   answer_text     IS NOT NULL
              THEN 1 ELSE 0 END) +
