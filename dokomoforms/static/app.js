@@ -273,7 +273,7 @@ Survey.prototype.getFirstResponse = function(question) {
         }
     }
 
-    return {'response': null, 'is_other': false};
+    return {'response': null, 'is_type_exception': false, 'metadata': null};
 };
 
 // Choose next question, deals with branching and back/forth movement
@@ -285,7 +285,8 @@ Survey.prototype.next = function(offset) {
 
     var first_answer = this.getFirstResponse(this.current_question); 
     var first_response = first_answer.response;
-    var first_is_other = first_answer.is_other;
+    var first_is_type_exception = first_answer.is_type_exception;
+    var first_metadata = first_answer.metadata;
 
     // Backward at first question
     if (index === self.lowest_sequence_number && offset === PREV) {
@@ -309,7 +310,7 @@ Survey.prototype.next = function(offset) {
         }
 
         // Is the only response and empty is other response?
-        if (first_is_other && !first_response) {
+        if (first_is_type_exception && !first_response) {
             App.message('Please provide a reason before moving on.', 'message_error');
             return;
         }
@@ -479,8 +480,8 @@ Survey.prototype.submit = function() {
             }
 
             var response =  ans.response;
-            var is_other = ans.is_other || false;
-            var metadata = ans.metadata || null;
+            var is_type_exception = ans.is_type_exception || false;
+            var metadata = ans.metadata || {};
 
             if (response == null) { 
                 return;
@@ -490,7 +491,7 @@ Survey.prototype.submit = function() {
                 question_id: q.question_id,
                 answer: response,
                 answer_metadata: metadata,
-                is_other: is_other
+                is_type_exception: is_type_exception
             });
 
         });
@@ -560,7 +561,7 @@ Widgets._input = function(question, page, footer, type) {
     //Render don't know
     self._renderOther(page, footer, type, question);
 
-    // Clean up answer array, short circuits on is_other responses
+    // Clean up answer array, short circuits on is_type_exception responses
     self._orderAnswerArray(page, footer, question, type);
 
     // Set up input event listner
@@ -570,7 +571,8 @@ Widgets._input = function(question, page, footer, type) {
             var ans_ind = $(page).find('input').index(this); 
             question.answer[ans_ind] = { 
                 response: self._validate(type, this.value, question.logic),
-                is_other: false
+                is_type_exception: false,
+                metadata: {},
             }
             // XXX Should i write the value back after validation?
         });
@@ -606,11 +608,14 @@ Widgets._input = function(question, page, footer, type) {
 
     // Set up other input event listener
     $(footer)
-        .find('.other_input')
+        .find('.dont_know_input')
         .change(function() { //XXX: Change isn't sensitive enough on safari?
             question.answer = [{ 
                 response: self._validate('text', this.value, question.logic),
-                is_other: true
+                is_type_exception: true,
+                metadata: {
+                    'type_exception': 'dont_know',
+                },
             }];
         });
 };
@@ -659,17 +664,23 @@ Widgets._orderAnswerArray = function(page, footer, question, type) {
         if (child.value !== "") {
             question.answer[i] = {
                 response: self._validate(type, child.value, question.logic),
-                is_other: false
+                is_type_exception: false,
+                metadata: {}
             }
         }
     });
 
-    $(footer).find('.other_input').each(function(i, child) { 
+    //
+    $(footer).find('.dont_know_input').each(function(i, child) { 
         if (!child.disabled) {
             // if don't know input field has a response, break 
             question.answer = [{
                 response: self._validate('text', child.value, question.logic),
-                is_other: true
+                is_type_exception: true,
+                metadata: {
+                    'type_exception': 'dont_know',
+                },
+
             }];
 
             // there should only be one
@@ -684,18 +695,18 @@ Widgets._renderOther = function(page, footer, type, question) {
 
     var self = this;
     // Render don't know feature 
-    if (question.logic.with_other) {
+    if (question.logic.allow_dont_know) {
         $('.question__btn__other').show();
         footer.addClass('bar-footer-extended');
         page.addClass('content-shrunk');
 
 
-        var repeatHTML = $('#template_other').html();
+        var repeatHTML = $('#template_dont_know').html();
         var widgetTemplate = _.template(repeatHTML);
         var compiledHTML = widgetTemplate({question: question});
         $(footer).append(compiledHTML);
 
-        var other_response = question.answer && question.answer[0] && question.answer[0].is_other;
+        var other_response = question.answer && question.answer[0] && question.answer[0].is_type_exception && question.answer[0].metadata.type_exception === "dont_know";
         if (other_response) {
             $('.question__btn__other').find('input').prop('checked', true);
             this._toggleOther(page, footer, type, question, ON);
@@ -719,12 +730,15 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
         $(page).find('.question__add').attr('disabled', true);
 
         // Toggle other input
-        $(footer).find('.question__other').show();
-        $(footer).find('.other_input').each(function(i, child) { 
+        $(footer).find('.question__dont_know').show();
+        $(footer).find('.dont_know_input').each(function(i, child) { 
             // Doesn't matter if response is there or not
             question.answer[0] = {
                 response: self._validate('text', child.value, question.logic),
-                is_other: true
+                is_type_exception: true,
+                metadata: {
+                    'type_exception': 'dont_know',
+                },
             }
         });
 
@@ -737,7 +751,7 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
         $('.overlay').fadeIn('fast');
 
         // Enable other input
-        $(footer).find('.other_input').each(function(i, child) { 
+        $(footer).find('.dont_know_input').each(function(i, child) { 
                 $(child).attr('disabled', false);
         });
 
@@ -751,12 +765,13 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
         $(page).find('.question__add').attr('disabled', false);
 
         // Toggle other inputs
-        $(footer).find('.question__other').hide();
+        $(footer).find('.question__dont_know').hide();
         $(page).find('.text_input').each(function(i, child) { 
             if (child.value !== "") { 
                 question.answer[i] = {
                     response: self._validate(type, child.value, question.logic),
-                    is_other: false
+                    is_type_exception: false,
+                    metadata: {},
                 }
             }
         });
@@ -768,7 +783,7 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
         footer.animate({height:120},200).removeClass('bar-footer-super-extended');
 
         // Disable other input
-        $(footer).find('.other_input').each(function(i, child) { 
+        $(footer).find('.dont_know_input').each(function(i, child) { 
                 $(child).attr('disabled', true);
         });
     }
@@ -882,11 +897,14 @@ Widgets.multiple_choice = function(question, page, footer) {
 
     // handle change for text field
     var $other = $(page)
-        .find('.text_input')
+        .find('.other_input')
         .change(function() {
             question.answer[question.choices.length] = { 
                 response: self._validate("text", this.value, question.logic),
-                is_other: true
+                is_type_exception: true,
+                metadata: {
+                    'type_exception': 'other',
+                },
             }
         });
 
@@ -919,13 +937,17 @@ Widgets.multiple_choice = function(question, page, footer) {
                 // Default, fill in values (other will be overwritten below if selected)
                 question.answer[ind] = {
                     response: opt,
-                    is_other: false
+                    is_type_exception: false,
+                    metadata: {}
                 }
 
                 if (opt === 'other') {
                     question.answer[ind] = {
                         response: $other.val(), // Preserves prev response
-                        is_other: true
+                        is_type_exception: true,
+                        metadata: {
+                            'type_exception': 'dont_know',
+                        },
                     }
 
                     $other.show();
@@ -940,9 +962,10 @@ Widgets.multiple_choice = function(question, page, footer) {
         });
 
     // Selection is handled in _template however toggling of view is done here
-    if (question.answer[question.choices.length] && 
-            question.answer[question.choices.length].is_other &&
-                question.answer[question.choices.length]) {
+    var response = question.answer[question.choices.length];
+    if (response 
+            && response.is_type_exception 
+            && response.metadata.type_exception === 'other') {
         $other.show();
     }
 };
@@ -1024,12 +1047,13 @@ Widgets.location = function(question, page, footer) {
         // update array val
         question.answer[questions_len - 1] = {
             response: {'lon': coords[0], 'lat': coords[1]},
-            is_other: false
+            is_type_exception: false,
+            metadata: {},
         }
             
         // update latest lon/lat values
-        var questions_len = $(page).find('.text_input').not('.other_input').length;
-        $(page).find('.text_input').not('.other_input')
+        var questions_len = $(page).find('.text_input').length;
+        $(page).find('.text_input')
             .last().val(coords[1] + " " + coords[0]);
     }
 
@@ -1193,7 +1217,7 @@ Widgets.facility = function(question, page, footer) {
                 'lon': marker._latlng.lng, 
                 'lat': marker._latlng.lat
             },
-            is_other: false,
+            is_type_exception: false,
             metadata: {
                 'facility_name': marker.name,
                 'facility_sector': marker.sector
