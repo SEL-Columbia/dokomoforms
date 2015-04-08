@@ -451,7 +451,7 @@ describe('User dont know tests', function(done) {
 
             $(".other_input").val("poop").trigger("change");
             first_question.answer[0].response.should.match("poop");
-            first_question.answer[0].is_type_exception.should.match(true);
+            first_question.answer[0].is_other.should.match(true);
             done();
 
            
@@ -492,17 +492,17 @@ describe('User dont know tests', function(done) {
 
             $('.text_input').not('.other_input').val('1').trigger('change');
             first_question.answer[0].response.should.equal(1);
-            first_question.answer[0].is_type_exception.should.equal(false);
+            first_question.answer[0].is_other.should.equal(false);
 
             // clicking clears it
             $(".question__btn__other").trigger("click");
             should(first_question.answer[0].response).equal(null);
-            first_question.answer[0].is_type_exception.should.equal(true);
+            first_question.answer[0].is_other.should.equal(true);
 
             // clicking again restores it
             $(".question__btn__other").trigger("click");
             first_question.answer[0].response.should.equal(1);
-            first_question.answer[0].is_type_exception.should.equal(false);
+            first_question.answer[0].is_other.should.equal(false);
             
             done();
            
@@ -521,7 +521,7 @@ describe('User dont know tests', function(done) {
             // change value
             $(".other_input").val("poop").trigger("change");
             first_question.answer[0].response.should.match("poop");
-            first_question.answer[0].is_type_exception.should.match(true);
+            first_question.answer[0].is_other.should.match(true);
 
             $(".page_nav__next").trigger("click");
             first_question.should.not.equal(survey.current_question);
@@ -531,7 +531,7 @@ describe('User dont know tests', function(done) {
             // value still displayed
             $(".other_input").val().should.equal("poop");
             first_question.answer[0].response.should.match("poop");
-            first_question.answer[0].is_type_exception.should.match(true);
+            first_question.answer[0].is_other.should.match(true);
             done();
 
            

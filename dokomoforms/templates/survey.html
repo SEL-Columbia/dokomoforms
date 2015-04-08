@@ -22,7 +22,7 @@
         <div class="question__hint"><%- question.hint || "" %></div>
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null && !ans.is_type_exception) { 
+            if (ans && ans.response !== null && !ans.is_other) { 
                 no_response = false; %>
                 <input class="text_input" type="text" 
                     placeholder="Please provide another response"
@@ -45,7 +45,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null && !ans.is_type_exception) { 
+            if (ans && ans.response !== null && !ans.is_other) { 
                 no_response = false; %>
                 <input class="text_input" type="number"
                     placeholder="Please provide another number"
@@ -103,7 +103,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null && !ans.is_type_exception) { 
+            if (ans && ans.response !== null && !ans.is_other) { 
                 no_response = false; %>
                 <input class="text_input" type="date" 
                        placeholder="Please provide another date"
@@ -126,7 +126,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null && !ans.is_type_exception) { 
+            if (ans && ans.response !== null && !ans.is_other) { 
                 no_response = false; %>
                 <input class="text_input" type="time" 
                     placeholder="Please provide another time"
@@ -150,7 +150,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null && !ans.is_type_exception) { 
+            if (ans && ans.response !== null && !ans.is_other) { 
                 no_response = false; %>
                 <input class="text_input location_input" type="text" 
                     placeholder=""
@@ -196,7 +196,7 @@
         <select class="question__select" 
             <%  if (question.allow_multiple) { %> 
                 multiple 
-                size=<%- question.choices.length + 1 + 1*(question.logic.allow_other || question.logic.allow_dont_know) %>
+                size=<%- question.choices.length + 1 + 1*question.logic.with_other %> 
             <% } %>
         >
 
@@ -211,10 +211,10 @@
                 </option>
             <% }); %>
 
-            <% if (question.logic.allow_other || question.logic.allow_dont_know) { %>
+            <% if (question.logic.with_other) { %>
                 <option 
                     <% var ans = question.answer[question.choices.length];
-                    if (ans && (ans.is_type_exception))  { %>
+                    if (ans && (ans.is_other))  { %>
                         selected
                     <% } %>
                 value="other">
@@ -249,7 +249,7 @@
         <div class="question__btn question__btn__other"><%- question.logic.other_text || "Don't Know" %></div>
         <div class="question__other"
             <% var ans = question.answer && question.answer[0];
-               var is_type_exception = ans && ans.is_type_exception;
+               var is_other = ans && ans.is_other;
             %>
                 style="display: none;"
         >
@@ -257,7 +257,7 @@
                 <input class="text_input other_input" type="text" 
                     placeholder="Response is required."
                     disabled=true
-                    <% if (is_type_exception) { %>
+                    <% if (is_other) { %>
                         value="<%- ans.response %>"
                     <% } %>
                 >
