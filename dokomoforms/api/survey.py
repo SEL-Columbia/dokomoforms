@@ -7,7 +7,7 @@ from sqlalchemy.engine import RowProxy, Connection
 from dokomoforms.api import execute_with_exceptions, json_response
 from dokomoforms.db import delete_record, update_record, survey_table
 from dokomoforms.db.answer import get_answers_for_question, answer_insert, \
-    _get_is_other
+    _get_is_type_exception
 from dokomoforms.db.answer_choice import get_answer_choices_for_choice_id, \
     answer_choice_insert
 from dokomoforms.db.auth_user import get_auth_user_by_email
@@ -184,19 +184,23 @@ def _create_questions(connection: Connection,
                                           existing_q_id).type_constraint_name
                 if new_tcn != old_tcn:
                     continue
+
                 answer_values = question_fields.copy()
                 answer_values['answer_metadata'] = answer.answer_metadata
                 new_submission_id = submission_map[answer.submission_id]
 
-                is_other = _get_is_other(answer)
-                answer_values['is_other'] = is_other
-                if is_other:
+                is_type_exception = _get_is_type_exception(answer)
+                answer_values['is_type_exception'] = is_type_exception
+                if is_type_exception:
                     answer_values['answer'] = answer.answer_text
                 else:
                     answer_values['answer'] = answer['answer_' + new_tcn]
-                with_other = values['logic']['with_other']
 
-                if new_tcn == 'multiple_choice' and not with_other:
+                allow_other = values['logic']['allow_other']
+                allow_dont_know = values['logic']['allow_dont_know']
+                with_type_exception = allow_other or allow_dont_know
+
+                if new_tcn == 'multiple_choice' and not with_type_exception:
                     continue
                 answer_values['submission_id'] = new_submission_id
                 connection.execute(answer_insert(**answer_values))

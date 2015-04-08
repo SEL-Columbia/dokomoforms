@@ -95,23 +95,23 @@ def _create_submission() -> dict:
                       [{'question_id': question_id,
                         'answer': 1,
                         'answer_metadata': None,
-                        'is_other': False},
+                        'is_type_exception': False},
                        {'question_id': second_q_id,
                         'answer': choice_id,
                         'answer_metadata': None,
-                        'is_other': False},
+                        'is_type_exception': False},
                        {'question_id': third_q_id,
                         'answer': 'answer one',
                         'answer_metadata': None,
-                        'is_other': False},
+                        'is_type_exception': False},
                        {'question_id': third_q_id,
                         'answer': 'answer two',
                         'answer_metadata': None,
-                        'is_other': False},
+                        'is_type_exception': False},
                        {'question_id': fourth_q_id,
                         'answer': 3.5,
                         'answer_metadata': None,
-                        'is_other': False}]}
+                        'is_type_exception': False}]}
     return submission_api.submit(connection, input_data)['result']
 
 
@@ -262,23 +262,23 @@ class APITest(AsyncHTTPTestCase):
                           [{'question_id': question_id,
                             'answer': 1,
                             'answer_metadata': None,
-                            'is_other': False},
+                            'is_type_exception': False},
                            {'question_id': second_q_id,
                             'answer': choice_id,
                             'answer_metadata': None,
-                            'is_other': False},
+                            'is_type_exception': False},
                            {'question_id': third_q_id,
                             'answer': 'answer one',
                             'answer_metadata': None,
-                            'is_other': False},
+                            'is_type_exception': False},
                            {'question_id': third_q_id,
                             'answer': 'answer two',
                             'answer_metadata': None,
-                            'is_other': False},
+                            'is_type_exception': False},
                            {'question_id': fourth_q_id,
                             'answer': 3.5,
                             'answer_metadata': None,
-                            'is_other': False}]}
+                            'is_type_exception': False}]}
 
         token_result = user_api.generate_token(connection,
                                                {'email': 'test_email'})
@@ -318,13 +318,13 @@ class APITest(AsyncHTTPTestCase):
                      {'question_id': question_id,
                       'answer': 1,
                       'answer_metadata': None,
-                      'is_other': False}]},
+                      'is_type_exception': False}]},
                 {'submitter': 'me',
                  'answers': [
                      {'question_id': second_q_id,
                       'answer': choice_id,
                       'answer_metadata': None,
-                      'is_other': False}]},
+                      'is_type_exception': False}]},
             ]}
 
         token_result = user_api.generate_token(connection,
@@ -376,7 +376,7 @@ class APITest(AsyncHTTPTestCase):
                      {'question_id': get_questions_no_credentials(
                          connection, survey_id).first().question_id,
                       'answer': 1,
-                      'is_other': False}]}
+                      'is_type_exception': False}]}
             ]
         }
         with mock.patch.object(BatchSubmissionAPIHandler,
@@ -399,7 +399,7 @@ class APITest(AsyncHTTPTestCase):
         answers = [{'question_id': question_id,
                     'answer': 1,
                     'answer_metadata': None,
-                    'is_other': False}]
+                    'is_type_exception': False}]
         answer_json = {
             'survey_id': survey_id,
             'submissions': [
@@ -449,8 +449,11 @@ class APITest(AsyncHTTPTestCase):
                                      'type_constraint_name': 'text',
                                      'hint': '',
                                      'allow_multiple': False,
-                                     'logic': {'required': False,
-                                               'with_other': False},
+                                     'logic': {
+                                         'required': False,
+                                         'allow_other': False,
+                                         'allow_dont_know': False
+                                     },
                                      'question_to_sequence_number': -1,
                                      'choices': None,
                                      'branches': None}]}
@@ -486,7 +489,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': question_id,
                                 'answer': i,
                                 'answer_metadata': None,
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
@@ -531,7 +534,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': question_id,
                                 'answer': str(i),
                                 'answer_metadata': None,
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
@@ -571,7 +574,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': question_id,
                                 'answer': i,
                                 'answer_metadata': None,
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
@@ -600,7 +603,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': question_id,
                                 'answer': i,
                                 'answer_metadata': None,
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
@@ -633,7 +636,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': question_id,
                                 'answer': i,
                                 'answer_metadata': None,
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
@@ -662,7 +665,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': q_id,
                                 'answer': i,
                                 'answer_metadata': None,
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
@@ -692,7 +695,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': q_id,
                                 'answer': i,
                                 'answer_metadata': None,
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
@@ -722,7 +725,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': q_id,
                                 'answer': i,
                                 'answer_metadata': None,
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
@@ -751,7 +754,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': q_id,
                                 'answer': i,
                                 'answer_metadata': None,
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
@@ -780,7 +783,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': q_id,
                                 'answer': i,
                                 'answer_metadata': None,
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
@@ -809,7 +812,7 @@ class APITest(AsyncHTTPTestCase):
                           [{'question_id': q_id,
                             'answer': {'lon': 90, 'lat': 0},
                             'answer_metadata': None,
-                            'is_other': False}]}
+                            'is_type_exception': False}]}
         submission_api.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
@@ -839,7 +842,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': q_id,
                                 'answer': i,
                                 'answer_metadata': None,
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
@@ -871,7 +874,7 @@ class APITest(AsyncHTTPTestCase):
                               [{'question_id': q_id,
                                 'answer': i,
                                 'answer_metadata': None,
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         with mock.patch.object(AggregationHandler, 'get_secure_cookie') as m:
@@ -1066,7 +1069,7 @@ class SurveyTest(AsyncHTTPTestCase):
                         connection, survey_id).first().question_id,
                     'answer': 1,
                     'answer_metadata': None,
-                    'is_other': False
+                    'is_type_exception': False
                 }
             ]
         }
@@ -1116,7 +1119,7 @@ class SurveyTest(AsyncHTTPTestCase):
                         connection, survey_id).first().question_id,
                     'answer': 1,
                     'answer_metadata': None,
-                    'is_other': False
+                    'is_type_exception': False
                 }
             ]
         }
@@ -1136,7 +1139,7 @@ class SurveyTest(AsyncHTTPTestCase):
         answers = [{'question_id': question_id,
                     'answer': 1,
                     'answer_metadata': None,
-                    'is_other': False}]
+                    'is_type_exception': False}]
         answer_json = {'submitter': 'me',
                        'survey_id': survey_id,
                        'answers': answers}
@@ -1211,7 +1214,7 @@ class VisualizationTest(AsyncHTTPTestCase):
                           [{'question_id': q_id,
                             'answer': 1,
                             'answer_metadata': None,
-                            'is_other': False}]}
+                            'is_type_exception': False}]}
         submission_api.submit(connection, input_data)
 
         with mock.patch.object(VisualizationHandler, 'get_secure_cookie') as m:
@@ -1269,7 +1272,7 @@ class VisualizationTest(AsyncHTTPTestCase):
                           [{'question_id': q_id,
                             'answer': {'lon': 0, 'lat': 0},
                             'answer_metadata': None,
-                            'is_other': False}]}
+                            'is_type_exception': False}]}
         submission_api.submit(connection, input_data)
 
         with mock.patch.object(VisualizationHandler, 'get_secure_cookie') as m:
