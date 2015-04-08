@@ -64,7 +64,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null && !ans.is_other) { 
+            if (ans && ans.response !== null && !ans.is_type_exception) { 
                 no_response = false; %>
                 <input class="text_input" type="text" 
                     placeholder="Please provide another response."
@@ -91,7 +91,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null && !ans.is_other) { 
+            if (ans && ans.response !== null && !ans.is_type_exception) { 
                 no_response = false; %>
                 <input class="text_input" type="number"
                     placeholder="Please provide another number."
@@ -157,7 +157,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null && !ans.is_other) { 
+            if (ans && ans.response !== null && !ans.is_type_exception) { 
                 no_response = false; %>
                 <input class="text_input" type="date" 
                        placeholder="Please provide another date."
@@ -184,7 +184,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null && !ans.is_other) { 
+            if (ans && ans.response !== null && !ans.is_type_exception) { 
                 no_response = false; %>
                 <input class="text_input" type="time" 
                     placeholder="Please provide another time."
@@ -218,7 +218,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null && !ans.is_other) { 
+            if (ans && ans.response !== null && !ans.is_type_exception) { 
                 no_response = false; %>
                 <input class="text_input location_input" type="text" 
                     placeholder="Please click 'Capture Location' or drag map."
@@ -272,7 +272,7 @@
             <select class="question__select " 
                 <%  if (question.allow_multiple) { %> 
                     multiple 
-                    size=<%- question.choices.length + 1 + 1*question.logic.with_other %> 
+                    size=<%- question.choices.length + 1 + 1*question.logic.allow_other %> 
                 <% } %>
             >
 
@@ -287,10 +287,10 @@
                     </option>
                 <% }); %>
 
-                <% if (question.logic.with_other) { %>
+                <% if (question.logic.allow_other) { %>
                     <option 
                         <% var ans = question.answer[question.choices.length];
-                        if (ans && (ans.is_other))  { %>
+                        if (ans && (ans.is_type_exception && ans.metadata.type_exception === "other"))  { %>
                             selected
                         <% } %>
                     value="other">
@@ -321,14 +321,14 @@
         </div>
     </script>
 
-    <script id="template_other" type="text/html">
-        <div class="question__other"
+    <script id="template_dont_know" type="text/html">
+        <div class="question__dont_know"
             <% var ans = question.answer && question.answer[0]; //i know the position
-               var is_other = ans && ans.is_other;
+               var is_other = ans && ans.is_type_exception && ans.metadata.type_exception === "dont_know";
             %>
                 style="display: none;"
         >
-            <input class="text_input other_input" type="text" 
+            <input class="text_input dont_know_input" type="text" 
                 placeholder="Enter an excuse for your incompetence."
                 disabled=true
                 <% if (is_other) { %>
