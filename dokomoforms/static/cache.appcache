@@ -1,5 +1,5 @@
 CACHE MANIFEST
-# Version 0.0123456789
+# Version 0.0123456789123
 
 /static/persona.js
 /static/lib.js
@@ -10,7 +10,6 @@ CACHE MANIFEST
 /static/ratchet-2.0.2/dist/css/ratchet.min.css
 
 /static/img/favicon.png
-/static/img/icons
 /static/img/logo.svg
 /static/img/SEL_logo_sm.png
 /static/img/SEL_text_logo_sm.png

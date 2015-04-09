@@ -196,7 +196,7 @@ App.submit = function(survey, done, fail) {
     }
     
     $.ajax({
-        url: '',
+        url: '/api/surveys/'+survey.survey_id+'/submit',
         type: 'POST',
         contentType: 'application/json',
         processData: false,
@@ -212,6 +212,8 @@ App.submit = function(survey, done, fail) {
             fail(survey);
         }
     });
+
+    console.log('survey', '/api/surveys/'+survey.survey_id+'/submit');
 }
 
 function Survey(id, version, questions, metadata, title, created_on, last_updated) {
