@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -8,30 +9,43 @@
     <meta name="mobile-web-app-status-bar-style" content="black">
     <meta name="viewport" content="width=device-width, user-scalable=no,  initial-scale=1, maximum-scale=1">
     <link href='http://fonts.googleapis.com/css?family=Roboto:400,300,500,700,100' rel='stylesheet' type='text/css'>
-
     <title>Dokomoforms</title>
-
-    <link href="/static/ratchet-2.0.2/dist/css/ratchet.min.css" rel="stylesheet">
+    <link href="/static/bootstrap-3.3.4/dist/css/bootstrap.css" rel="stylesheet">
     <!--<script src="/static/ratchet-2.0.2/dist/js/ratchet.js"></script> -->
     <!-- RIP <link href="/static/css/style.css" rel="stylesheet" type="text/css">-->
-    <link href="/static/css/survey.css" rel="stylesheet" type="text/css">
-
+    <link href="/static/css/admin.css" rel="stylesheet" type="text/css">
     <link rel="icon" href="/static/img/favicon.png">
 </head>
 
-<body>
-    <header class="bar bar-nav bar-padded">
-        <a class="icon icon-info pull-right"></a>
-        <h1 class="title"><a data-ignore="push" href="/">Dokomoforms</a></h1>
-    </header>
-
-    <div class="message"></div>
-
-    <div class="content">
-        {% block content %}{% end %}
-    </div>
-
+<body role="document">
+    <nav class="navbar navbar-default navbar-fixed-top light-shadow">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">DokomoForms</a>
+            </div>
+            <div id="navbar" class="navbar-collapse collapse pull-right">
+                <ul class="nav navbar-nav">
+                    {% if current_user %}
+                    <li><a href="#">{{ current_user }}</a></li>
+                    {% else %}
+                    <li><a class="btn btn-block" href="#" id="login">Login or Register</a></li>
+                    {% end %}
+                </ul>
+            </div>
+            <!--/.nav-collapse -->
+        </div>
+    </nav>
+    {% block header %}{% end %}
+    {% block subheader %}{% end %}
+    {% block content %}{% end %}
     {% block footer %} {% end %}
+    <script type="text/javascript" src="/static/bootstrap-3.3.4/dist/js/bootstrap.min.js"></script>
 </body>
 
 </html>

@@ -1,41 +1,47 @@
-{% extends "base.html" %}
-{% block content %}
-    <div class="message"></div>
-        <div class="welcome">
-            {% if current_user %}
-                <div class="welcome_box content-padded">
-                    <h3 class="welcome_title">Welcome: {{ current_user }}</h3>
-                    <p class="welcome_blurb">Dive in, choose an option below.</p>
-                </div>
+{% extends "base.html" %} 
 
-                <div class="welcome_buttons content-padded">
-                    <a data-ignore="push" class="btn btn-block" href="view" id="">View</a>
-                    <a data-ignore="push" class="btn btn-block" href="#" id="">Create</a>
-                    <a data-ignore="push" class="btn btn-block" href="#" id="logout">Logout</a>
-                </div>
-
-            {% else %}
-                <div class="welcome_box content-padded">
-                    <h3 data-ignore="push" class="welcome_title"> Welcome to Dokomoforms</h3>
-                    <p data-ignore="push" class="welcome_blurb"> Simple, offline-capable surveys.</p>
-                    <p data-ignore="push" class="welcome_blurb"> Sign up or login to create and view forms.</p>
-                </div>
-                <div class="welcome_buttons content-padded">
-                    <a data-ignore="push" class="btn btn-block" href="#" id="login">Login or Register</a>
-                </div>
-            {% end %}
-        </div>
-    
-    <script src="/static/lib.js"></script>
-    <script src="https://login.persona.org/include.js"></script>
-    <script src="/static/persona.js"></script>
-    <script src="/static/app.js"></script>
-
-    {% if message %}
-        <script>
-            App.message("{{ message }}");
-        </script>
-    {% end %}
-
+{% block header %}
+<div class="header">
+    <div class="container">
+        <h1>Account Dashboard</h1>
+    </div>
+</div>
 {% end %}
 
+{% block content %}
+<div class="container" role="main">
+    <div class="message"></div>
+    <div class="welcome">
+        {% if current_user %}
+        <div class="welcome_box content-padded">
+            <h3 class="welcome_title">Welcome: {{ current_user }}</h3>
+            <p class="welcome_blurb">Dive in, choose an option below.</p>
+        </div>
+        <div class="welcome_buttons content-padded">
+            <a data-ignore="push" class="btn btn-block" href="view" id="">View</a>
+            <a data-ignore="push" class="btn btn-block" href="#" id="">Create</a>
+            <a data-ignore="push" class="btn btn-block" href="#" id="logout">Logout</a>
+        </div>
+        {% else %}
+        <div class="welcome_box content-padded">
+            <h3 data-ignore="push" class="welcome_title"> Welcome to Dokomoforms</h3>
+            <p data-ignore="push" class="welcome_blurb"> Simple, offline-capable surveys.</p>
+            <p data-ignore="push" class="welcome_blurb"> Sign up or login to create and view forms.</p>
+        </div>
+        <div class="welcome_buttons content-padded">
+            <a data-ignore="push" class="btn btn-block" href="#" id="login">Login or Register</a>
+        </div>
+        {% end %}
+    </div>
+</div>
+<script src="/static/lib.js"></script>
+<script src="https://login.persona.org/include.js"></script>
+<script src="/static/persona.js"></script>
+<script src="/static/app.js"></script>
+{% if message %}
+<script>
+App.message("{{ message }}");
+</script>
+{% end %} 
+
+{% end %}
