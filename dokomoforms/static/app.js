@@ -575,6 +575,11 @@ Widgets._input = function(question, page, footer, type) {
                 metadata: {},
             }
             // XXX Should i write the value back after validation?
+        })
+        .click(function() {
+            $(page).animate({
+                scrollTop: $(this).offset().top
+            }, 500);
         });
 
     // Click the + for new input
