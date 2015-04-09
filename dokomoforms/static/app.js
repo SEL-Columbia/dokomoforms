@@ -39,9 +39,14 @@ App.init = function(survey) {
         );
     }
 
+    // Init if unsynced is undefined
+    if (!localStorage.unsynced) {
+        localStorage.unsynced = {};
+    }
+    
     // Load up any unsynced submissions
     App.unsynced = 
-        JSON.parse(localStorage.unsynced || "[]");
+        JSON.parse(localStorage.unsynced[self.survey.id] || "[]");
 
     // Load up any unsynced facilities
     App.unsynced_facilities = 
@@ -70,8 +75,7 @@ App.sync = function() {
         // Were done!
         App.unsynced = self.failed;
         self.failed = [];
-        localStorage.setItem("unsynced", 
-                JSON.stringify(App.unsynced));
+        localStorage.unsynced[self.survey.id] = JSON.stringify(App.unsynced);
 
         // Reload page to update template values
         App.splash();
@@ -103,8 +107,7 @@ App.sync = function() {
     });
 
     App.unsynced = [];
-    localStorage.setItem("unsynced", 
-        JSON.stringify(App.unsynced));
+    localStorage.unsynced[self.survey.id] = JSON.stringify(App.unsynced);
 };
 
 App.message = function(text, style) {
@@ -460,8 +463,6 @@ Survey.prototype.render = function(question) {
 
 Survey.prototype.submit = function() {
     var self = this;
-    var sync = $('.nav__sync')[0];
-    var save_btn = $('.question__saving')[0]; //TODO sync not guranteed to happen on submit page
     var answers = {};
 
     // Save answers locally 
@@ -527,9 +528,7 @@ Survey.prototype.submit = function() {
 
     // Save Submission data
     App.unsynced.push(data);
-    localStorage.setItem("unsynced", 
-            JSON.stringify(App.unsynced));
-
+    localStorage.unsynced[self.id] = JSON.stringify(App.unsynced);
     App.message('Saved Submission!', 'message_success');
     App.splash();
 
@@ -555,7 +554,6 @@ var Widgets = {
 // All widgets store results in the questions.answer array
 Widgets._input = function(question, page, footer, type) {
     var self = this;
-    var footer = $('.bar-footer');
     
     // Render add/minus input buttons 
     self._renderRepeat(page, question);
@@ -588,9 +586,8 @@ Widgets._input = function(question, page, footer, type) {
     $(page)
         .find('.question__add')
         .click(function() { 
-            var delete_icon =  $(page).find('.question__minus').last();
             var input = $(page).find('.text_input').last();
-            self._addNewInput(page, input, delete_icon,  question);
+            self._addNewInput(page, input, question);
 
         });
 
@@ -601,7 +598,7 @@ Widgets._input = function(question, page, footer, type) {
             var delete_icons = $(page).find('.question__minus');
             var inputs = $(page).find('.text_input');
             var index = delete_icons.index(this);
-            self._removeInput(page, footer, type, inputs, delete_icons, question, index);
+            self._removeInput(page, footer, type, inputs, question, index);
         });
     
     // Click the other button when you don't know answer
@@ -628,28 +625,22 @@ Widgets._input = function(question, page, footer, type) {
 };
 
 // Handle creating multiple inputs for widgets that support it 
-Widgets._addNewInput = function(page, input, delete_icon, question) {
+Widgets._addNewInput = function(page, input, question) {
     if (question.allow_multiple) { //XXX: Technically this btn clickable => allow_multiple 
-        var new_input = input
+        input.parent()
             .clone(true)
+            .insertAfter(input.parent())
+            .find('input')
             .val(null)
-            .insertAfter(delete_icon)
-            .focus();
-
-        delete_icon
-            .clone(true)
-            .val(null)
-            .insertAfter(new_input)
             .focus();
     }
 };
 
-Widgets._removeInput = function(page, footer, type, inputs, delete_icons, question, index) {
+Widgets._removeInput = function(page, footer, type, inputs, question, index) {
     var self = this;
     if (question.allow_multiple && (inputs.length > 1)) { //XXX: Technically this btn clickable => allow_multiple 
         delete question.answer[index];
-        $(inputs[index]).remove();
-        $(delete_icons[index]).remove(); 
+        $(inputs[index]).parent().remove();
         self._orderAnswerArray(page, footer, question, type);
     } else {
         // atleast wipe the value
@@ -953,7 +944,7 @@ Widgets.multiple_choice = function(question, page, footer) {
                         response: $other.val(), // Preserves prev response
                         is_type_exception: true,
                         metadata: {
-                            'type_exception': 'dont_know',
+                            'type_exception': 'other',
                         },
                     }
 
@@ -962,9 +953,9 @@ Widgets.multiple_choice = function(question, page, footer) {
              });
 
             // Toggle off other if deselected on change event 
-            if (svals.indexOf('other') < 0) { 
-                $other.hide();
-            }
+            //if (svals.indexOf('other') < 0) { 
+            //    $other.hide();
+            //}
             
         });
 
@@ -1082,7 +1073,7 @@ Widgets.location = function(question, page, footer) {
                     map.circle.setLatLng([coords[1], coords[0]]);
                     //map.setMaxBounds(map.getBounds().pad(1));
 
-                    updateLocation(coords);
+                    updateLocation(coords); //XXX: DONT MOVE ON
 
                 }, function error() {
                     //If cannot Get location" for some reason,
@@ -1403,12 +1394,13 @@ function getNearbyFacilities(lat, lng, rad, lim, cb) {
             near: lat + "," + lng,
             rad: rad,
             limit: lim,
-            sortDesc: "updatedAt",
+            //sortDesc: "updatedAt",
             fields: "name,uuid,coordinates,properties:sector", //filters results to include just those three fields,
         },
         function(data) {
             localStorage.setItem("facilities", JSON.stringify(data.facilities));
             if (cb) {
+                //XXX REMEMMERNBE
                 App.facilities = data.facilities;
                 cb(data.facilities); //drawFacillities callback probs
             }
@@ -1416,7 +1408,6 @@ function getNearbyFacilities(lat, lng, rad, lim, cb) {
     );
 }
 
-// XXX: Really doesn't need to
 function postNewFacility(facility) {
     var url = "http://staging.revisit.global/api/v0/facilities.json"; 
 

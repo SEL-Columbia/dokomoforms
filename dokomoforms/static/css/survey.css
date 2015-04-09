@@ -34,7 +34,7 @@ input[type] {
     border-radius: 0px;
     
     /* x button space */
-    padding-right: 35px;
+    padding-right: 50px;
 }
 
 input[type]:hover,input[type]:active, input[type]:focus {
@@ -169,17 +169,16 @@ a, .icon {
 }
 
 .question__minus {
-    background-color: #FFF;
-    border: 1px solid #DDD;
-    border-left: 0px solid #DDD;
-    border-right: 0px solid #DDD;
-    padding-top: 13px;
-    padding-bottom: 12px;
-    margin-left: -35px;
-    padding-left: 5px;
-    padding-right: 5px;
-    float: right;
+    border: none;
     cursor: pointer;
+    position: absolute;
+    padding: 12px 15px;
+    top: 1px;
+    right: 0px;
+}
+
+.input_container {
+    position: relative;
 }
 
 .location_input {
