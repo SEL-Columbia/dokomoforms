@@ -37,7 +37,7 @@ input[type] {
     padding-right: 35px;
 }
 
-input[type]:focus {
+input[type]:hover,input[type]:active, input[type]:focus {
     border-color: rgb(84, 216, 90);
     box-shadow: none;
 }
@@ -49,11 +49,11 @@ input[type]:invalid {
 
 input[type=checkbox] {
     /* Double-sized Checkboxes */
-    -ms-transform: scale(2); /* IE */
-    -moz-transform: scale(2); /* FF */
-    -webkit-transform: scale(2); /* Safari and Chrome */
-    -o-transform: scale(2); /* Opera */
-    margin-left: 2px;
+/*    -ms-transform: scale(2); /* IE */
+/*    -moz-transform: scale(2); /* FF */
+/*    -webkit-transform: scale(2); /* Safari and Chrome */
+/*    -o-transform: scale(2); /* Opera */
+    margin-left: 2px; 
     margin-right: 5px;
     margin-top: 8px;
     min-height: 0px;
@@ -288,7 +288,7 @@ header {
     border: 1px solid #FF7700;
 }
 
-.btn-primary:focus {
+.btn-primary:hover, .btn-primary:active, .btn-primary:focus {
     background-color: #FF5511;
     border: 1px solid #FF5511;
 }
@@ -299,7 +299,7 @@ header {
     border: 1px solid #53C6A5;
 }
 
-.btn-positive:focus {
+.btn-positive:active, .btn-positive:hover, .btn-positive:focus {
     background-color: #53B695;
     border: 1px solid #53B695;
 }
