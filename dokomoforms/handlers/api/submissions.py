@@ -45,6 +45,13 @@ class SingleSubmissionAPIHandler(APIHandler):
 class SubmitAPIHandler(APIHandler):
     """The endpoint for submitting to a survey. You don't need to log in."""
 
+    def prepare(self):
+        """
+        This class defines the prepare() method to avoid having to log in.
+
+        """
+        super().prepare()
+
     @catch_bare_integrity_error
     def post(self, survey_id: str):
         data = get_json_request_body(self)
