@@ -8,6 +8,7 @@ L = window.L;
 _ = window._;
 $ = window.$;
 alert = window.alert;
+alert = function(msg) { console.log(msg, 'poop') };
 setInterval = function(hey, you) {  } //console.log('pikachu'); }
 console = window.console;
 Image = window.Image;
@@ -43,8 +44,6 @@ describe('Survey unit and regression tests', function(done) {
     });
 
     afterEach(function(done) {
-        $(".page_nav__next").off('click'); //XXX Find out why events are cached
-        $(".page_nav__prev").off('click');
         $(".message").clearQueue().text("");
         $('.content').empty();
         survey = null;
@@ -594,6 +593,7 @@ describe('Survey unit and regression tests', function(done) {
             ];
 
             survey = new Survey("id", 0, questions, {});
+            App.survey = survey;
             survey.submit();
             App.sync();
             $('.message').text().should.match("Saving failed, No questions answer in Survey!");
@@ -623,12 +623,15 @@ describe('Survey unit and regression tests', function(done) {
             $.mockjax({
                   url: '',
                   status: 200,
+                  contentType: "application/json",
                   onAfterSuccess: function() { 
                     $('.message').text().should.match('Survey submitted!'); 
+                    console.log('ehye');
                     done();
                   },
                   onAfterError: function() { 
                       assert(false, "Failed to catch post correctly"); 
+                      done();
                   },
                   responseText: {
                       status: "success",
@@ -638,8 +641,11 @@ describe('Survey unit and regression tests', function(done) {
 
             survey = new Survey("id", 0, questions, {});
             questions[0].answer = [{response:"hey baby"}];
+            App.survey = survey;
             survey.submit();
+            console.log(App.unsynced.length);
             App.sync();
+
         });
 
 
@@ -688,6 +694,7 @@ describe('Survey unit and regression tests', function(done) {
             
             $.mockjax({
                   url: '',
+                  contentType: "application/json",
                   status: 200,
                   onAfterSuccess: function() { 
                   },
@@ -703,6 +710,8 @@ describe('Survey unit and regression tests', function(done) {
             survey = new Survey("id", 0, questions, {});
             questions[0].answer = [{response:{'id': 1, 'lat':40.01, 'lon':70.01 }}];
             survey.submit();
+            console.log(App.unsynced.length);
+            App.survey = survey;
             App.sync();
         });
 });

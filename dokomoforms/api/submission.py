@@ -8,7 +8,7 @@ from sqlalchemy.sql import Insert
 from dokomoforms.api import execute_with_exceptions, json_response
 from dokomoforms.db import delete_record, submission_table
 from dokomoforms.db.answer import answer_insert, get_answers, get_geo_json, \
-    CannotAnswerMultipleTimesError, _get_is_other
+    CannotAnswerMultipleTimesError, _get_is_type_exception
 from dokomoforms.db.answer_choice import get_answer_choices, \
     answer_choice_insert
 from dokomoforms.db.question import question_select, get_required
@@ -48,8 +48,8 @@ def _insert_answer(connection: Connection,
     value_dict['allow_multiple'] = question.allow_multiple
     # determine whether this is a choice selection
     is_mc = question.type_constraint_name == 'multiple_choice'
-    is_other = value_dict.get('is_other')
-    if is_mc and not is_other:
+    is_type_exception = value_dict.get('is_type_exception')
+    if is_mc and not is_type_exception:
         value_dict['question_choice_id'] = value_dict.pop('answer')
         # Might want to change 'answer_choice_metadata' to 'answer_metadata'...
         answer_metadata = value_dict.pop('answer_metadata')
@@ -134,12 +134,12 @@ def submit(connection: Connection, data: dict) -> dict:
     c = connection
     survey_id = data['survey_id']
     required = {q.question_id for q in
-                get_required(connection, survey_id)}
+                get_required(c, survey_id)}
 
     with c.begin():
         submission_id = _create_submission(c, survey_id, required, data)
 
-    email = get_email_address(connection, survey_id)
+    email = get_email_address(c, survey_id)
     return get_one(c, submission_id, email=email)
 
 
@@ -193,7 +193,7 @@ def _get_fields(connection: Connection, answer: RowProxy) -> dict:
                    'question_title': question.question_title,
                    'sequence_number': question.sequence_number,
                    'type_constraint_name': tcn,
-                   'is_other': _get_is_other(answer)}
+                   'is_type_exception': _get_is_type_exception(answer)}
     try:
         # Get the choice for a multiple choice question
         choice_id = answer.question_choice_id
@@ -207,7 +207,7 @@ def _get_fields(connection: Connection, answer: RowProxy) -> dict:
     except AttributeError:
         # The answer is not a choice
         question = question_select(connection, answer.question_id)
-        if answer.is_other:
+        if answer.is_type_exception:
             tcn = 'text'
         result_dict['answer'] = _jsonify(connection, answer, tcn)
         result_dict['answer_metadata'] = answer.answer_metadata

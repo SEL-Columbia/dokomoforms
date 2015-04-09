@@ -26,7 +26,8 @@ App.init = function(survey) {
 
     self.start_loc = survey.survey_metadata.location || self.start_loc;
     self.facilities = JSON.parse(localStorage.facilities || "[]");
-    self.submitter_name = localStorage.name;
+    self.submitter_name = localStorage.name || "";
+    self.submitter_email = localStorage.email || "";
     
     // Load any facilities
     if (App.facilities.length === 0) {
@@ -38,20 +39,26 @@ App.init = function(survey) {
         );
     }
 
-    // Load up any unsynced facilities
-    App.unsynced_facilities = 
-        JSON.parse(localStorage.unsynced_facilities || "{}");
-
     // Load up any unsynced submissions
     App.unsynced = 
         JSON.parse(localStorage.unsynced || "[]");
 
+    // Load up any unsynced facilities
+    App.unsynced_facilities = 
+        JSON.parse(localStorage.unsynced_facilities || "{}");
+
+    $('.sel')
+        .click(function(e) {
+            e.preventDefault();
+            self.sync();
+        });
+        
     // AppCache updates
-    //window.applicationCache.addEventListener('updateready', function() {
-    //    alert('app updated, reloading...');
-    //    window.location.reload();
-    //});
-    
+    window.applicationCache.addEventListener('updateready', function() {
+        alert('app updated, reloading...');
+        window.location.reload();
+    });
+
     App.splash();
 };
 
@@ -90,20 +97,31 @@ App.sync = function() {
         );
     });
 
+    // Facilities junk
+    _.map(App.unsynced_facilities, function(facility) {
+        postNewFacility(facility); 
+    });
+
     App.unsynced = [];
     localStorage.setItem("unsynced", 
         JSON.stringify(App.unsynced));
 };
 
-App.message = function(text) {
+App.message = function(text, style) {
     // Shows a message to user
     // E.g. "Your survey has been submitted"
-    $('.message')
-        .clearQueue()
+    $('<div></div>')
+        .addClass('message')
+        .addClass(style)
         .text(text)
         .fadeIn('fast')
         .delay(3000)
-        .fadeOut('fast');
+        .fadeOut('fast')
+        .queue(function(next) {
+            $(this).remove();
+            next();
+        }).appendTo('body');
+
 };
 
 App.splash = function() {
@@ -125,6 +143,7 @@ App.splash = function() {
     var barfoot = $('.bar-footer');
     barfoot.removeClass('bar-footer-extended');
     barfoot.removeClass('bar-footer-super-extended');
+    barfoot.css("height", "");
 
     var barfootHTML = $('#template_footer__splash').html();
     var barfootTemplate = _.template(barfootHTML);
@@ -165,23 +184,19 @@ App.splash = function() {
                 // Reload page to update template values
                 App.splash();
             } else {
-                App.message('Please connect to the internet first.');
+                App.message('Please connect to the internet first.', 'message_error');
             }
         });
 };
 
 App.submit = function(survey, done, fail) {
-    _.map(App.unsynced_facilities, function(facility) {
-        postNewFacility(facility); 
-    });
-
     function getCookie(name) {
         var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
         return r ? r[1] : undefined;
     }
     
     $.ajax({
-        url: '',
+        url: '/api/surveys/'+survey.survey_id+'/submit',
         type: 'POST',
         contentType: 'application/json',
         processData: false,
@@ -191,14 +206,14 @@ App.submit = function(survey, done, fail) {
         },
         dataType: 'json',
         success: function() {
-            App.message('Survey submitted!');
             done(survey);
         },
         error: function() {
-            App.message('Submission failed, will try again later.');
             fail(survey);
         }
     });
+
+    console.log('survey', '/api/surveys/'+survey.survey_id+'/submit');
 }
 
 function Survey(id, version, questions, metadata, title, created_on, last_updated) {
@@ -260,7 +275,7 @@ Survey.prototype.getFirstResponse = function(question) {
         }
     }
 
-    return {'response': null, 'is_other': false};
+    return {'response': null, 'is_type_exception': false, 'metadata': null};
 };
 
 // Choose next question, deals with branching and back/forth movement
@@ -272,11 +287,13 @@ Survey.prototype.next = function(offset) {
 
     var first_answer = this.getFirstResponse(this.current_question); 
     var first_response = first_answer.response;
-    var first_is_other = first_answer.is_other;
+    var first_is_type_exception = first_answer.is_type_exception;
+    var first_metadata = first_answer.metadata;
 
     // Backward at first question
     if (index === self.lowest_sequence_number && offset === PREV) {
-        App.splash();
+        //XXX Shouldn't show splash page right 
+        //App.splash();
         return;
     }
 
@@ -290,13 +307,13 @@ Survey.prototype.next = function(offset) {
     if (offset === NEXT) {
         // Are you required?
         if (this.current_question.logic.required && (first_response === null)) {
-            App.message('Survey requires this question to be completed.');
+            App.message('Survey requires this question to be completed.', 'message_error');
             return;
         }
 
         // Is the only response and empty is other response?
-        if (first_is_other && !first_response) {
-            App.message('Please provide a reason before moving on.');
+        if (first_is_type_exception && !first_response) {
+            App.message('Please provide a reason before moving on.', 'message_error');
             return;
         }
 
@@ -350,6 +367,7 @@ Survey.prototype.render = function(question) {
 
     barfoot.removeClass('bar-footer-extended');
     barfoot.removeClass('bar-footer-super-extended');
+    barfoot.css("height", "");
 
     // Update content
     var content = $('.content');
@@ -383,7 +401,7 @@ Survey.prototype.render = function(question) {
             .scrollTop(); //XXX: Ignored in chrome ...
         
         // Attach widget events
-        Widgets[question.type_constraint_name](question, content); //XXX supply footer?
+        Widgets[question.type_constraint_name](question, content, barfoot);
 
     } else {
         // Add submit button
@@ -443,7 +461,7 @@ Survey.prototype.render = function(question) {
 Survey.prototype.submit = function() {
     var self = this;
     var sync = $('.nav__sync')[0];
-    var save_btn = $('.question__saving')[0];
+    var save_btn = $('.question__saving')[0]; //TODO sync not guranteed to happen on submit page
     var answers = {};
 
     // Save answers locally 
@@ -464,8 +482,8 @@ Survey.prototype.submit = function() {
             }
 
             var response =  ans.response;
-            var is_other = ans.is_other || false;
-            var metadata = ans.metadata || null;
+            var is_type_exception = ans.is_type_exception || false;
+            var metadata = ans.metadata || {};
 
             if (response == null) { 
                 return;
@@ -475,7 +493,7 @@ Survey.prototype.submit = function() {
                 question_id: q.question_id,
                 answer: response,
                 answer_metadata: metadata,
-                is_other: is_other
+                is_type_exception: is_type_exception
             });
 
         });
@@ -483,21 +501,18 @@ Survey.prototype.submit = function() {
 
     var data = {
         submitter: App.submitter_name || "anon",
+        submitter_email: App.submitter_email || "anon@anon.org",
         survey_id: self.id,
         answers: survey_answers
     };
 
     //console.log('submission:', data);
-    $(sync).addClass('icon--spin');
-    $(save_btn).addClass('icon--spin');
     
     // Don't post with no replies
     if (JSON.stringify(survey_answers) === '[]') {
       // Not doing instantly to make it seem like App tried reaaall hard
       setTimeout(function() {
-            $(sync).removeClass('icon--spin');
-            $(save_btn).removeClass('icon--spin');
-            App.message('Saving failed, No questions answer in Survey!');
+            App.message('Saving failed, No questions answer in Survey!', 'message_error');
             App.splash();
       }, 1000);
       return;
@@ -515,11 +530,9 @@ Survey.prototype.submit = function() {
     localStorage.setItem("unsynced", 
             JSON.stringify(App.unsynced));
 
-    App.message('Saved Submission!');
+    App.message('Saved Submission!', 'message_success');
     App.splash();
 
-    $(sync).removeClass('icon--spin');
-    $(save_btn).removeClass('icon--spin');
 
 };
 
@@ -540,64 +553,55 @@ var Widgets = {
 //      note
 //
 // All widgets store results in the questions.answer array
-Widgets._input = function(question, page, type) {
+Widgets._input = function(question, page, footer, type) {
     var self = this;
     var footer = $('.bar-footer');
     
     // Render add/minus input buttons 
-    Widgets._renderRepeat(page, question);
+    self._renderRepeat(page, question);
 
     //Render don't know
-    Widgets._renderOther(page, footer, question);
+    self._renderOther(page, footer, type, question);
 
-    // Clean up answer array, short circuits on is_other responses
-    question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
-    $(page).find('input').each(function(i, child) { 
-        if ((child.className.indexOf('other_input') > - 1) && !child.disabled) {
-            // if don't know input field has a response, break 
-            question.answer = [{
-                response: self._validate('text', child.value, question.logic),
-                is_other: true
-            }];
-
-            return false;
-        }
-
-        if ((child.className.indexOf('other_input') === -1) && child.value !== "") {
-            // Ignore other responses if they don't short circut the loop above
-            question.answer[i] = {
-                response: self._validate(type, child.value, question.logic),
-                is_other: false
-            }
-        }
-    });
+    // Clean up answer array, short circuits on is_type_exception responses
+    self._orderAnswerArray(page, footer, question, type);
 
     // Set up input event listner
     $(page)
-        .find('.text_input').not('.other_input')
+        .find('.text_input')
         .change(function() { //XXX: Change isn't sensitive enough on safari?
             var ans_ind = $(page).find('input').index(this); 
             question.answer[ans_ind] = { 
                 response: self._validate(type, this.value, question.logic),
-                is_other: false
+                is_type_exception: false,
+                metadata: {},
             }
-
+            // XXX Should i write the value back after validation?
+        })
+        .click(function() {
+            $(page).animate({
+                scrollTop: $(this).offset().top
+            }, 500);
         });
 
     // Click the + for new input
     $(page)
         .find('.question__add')
         .click(function() { 
-            self._addNewInput(page, $(page).find('input').not('.other_input').last(), question);
+            var delete_icon =  $(page).find('.question__minus').last();
+            var input = $(page).find('.text_input').last();
+            self._addNewInput(page, input, delete_icon,  question);
 
         });
 
-    // Click the - to remove the newest input
+    // Click the - to remove that element
     $(page)
         .find('.question__minus')
         .click(function() { 
-            self._removeNewestInput($(page).find('input').not('.other_input'), question);
-
+            var delete_icons = $(page).find('.question__minus');
+            var inputs = $(page).find('.text_input');
+            var index = delete_icons.index(this);
+            self._removeInput(page, footer, type, inputs, delete_icons, question, index);
         });
     
     // Click the other button when you don't know answer
@@ -605,39 +609,53 @@ Widgets._input = function(question, page, type) {
         .find('.question__btn__other :checkbox')
         .change(function() { 
             var selected = $(this).is(':checked'); 
-            console.log('state', selected);
-            self._toggleOther(page, footer, question, selected);
+            self._toggleOther(page, footer, type, question, selected);
         });
 
 
     // Set up other input event listener
     $(footer)
-        .find('.other_input')
+        .find('.dont_know_input')
         .change(function() { //XXX: Change isn't sensitive enough on safari?
             question.answer = [{ 
                 response: self._validate('text', this.value, question.logic),
-                is_other: true
+                is_type_exception: true,
+                metadata: {
+                    'type_exception': 'dont_know',
+                },
             }];
         });
 };
 
 // Handle creating multiple inputs for widgets that support it 
-Widgets._addNewInput = function(page, input, question) {
+Widgets._addNewInput = function(page, input, delete_icon, question) {
     if (question.allow_multiple) { //XXX: Technically this btn clickable => allow_multiple 
-        input
+        var new_input = input
             .clone(true)
             .val(null)
-            .insertAfter(input)
+            .insertAfter(delete_icon)
+            .focus();
+
+        delete_icon
+            .clone(true)
+            .val(null)
+            .insertAfter(new_input)
             .focus();
     }
 };
 
-Widgets._removeNewestInput = function(inputs, question) {
-    if (question.allow_multiple && (inputs.length > 1)) {
-        delete question.answer[inputs.length - 1];
-        inputs
-            .last()
-            .remove()
+Widgets._removeInput = function(page, footer, type, inputs, delete_icons, question, index) {
+    var self = this;
+    if (question.allow_multiple && (inputs.length > 1)) { //XXX: Technically this btn clickable => allow_multiple 
+        delete question.answer[index];
+        $(inputs[index]).remove();
+        $(delete_icons[index]).remove(); 
+        self._orderAnswerArray(page, footer, question, type);
+    } else {
+        // atleast wipe the value
+        delete question.answer[index];
+        $(inputs[index]).val(null);
+
     }
 
     inputs
@@ -645,98 +663,137 @@ Widgets._removeNewestInput = function(inputs, question) {
         .focus()
 };
 
+Widgets._orderAnswerArray = function(page, footer, question, type) {
+    question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
+    var self = this;
+
+    $(page).find('.text_input').each(function(i, child) { 
+        if (child.value !== "") {
+            question.answer[i] = {
+                response: self._validate(type, child.value, question.logic),
+                is_type_exception: false,
+                metadata: {}
+            }
+        }
+    });
+
+    //
+    $(footer).find('.dont_know_input').each(function(i, child) { 
+        if (!child.disabled) {
+            // if don't know input field has a response, break 
+            question.answer = [{
+                response: self._validate('text', child.value, question.logic),
+                is_type_exception: true,
+                metadata: {
+                    'type_exception': 'dont_know',
+                },
+
+            }];
+
+            // there should only be one
+            return false;
+        }
+    });
+}
+
 // Render 'don't know' section if question has with_other logic
 // Display response and alter widget state if first response is other
-Widgets._renderOther = function(page, footer, question) {
+Widgets._renderOther = function(page, footer, type, question) {
 
     var self = this;
     // Render don't know feature 
-    if (question.logic.with_other) {
+    if (question.logic.allow_dont_know) {
         $('.question__btn__other').show();
         footer.addClass('bar-footer-extended');
         page.addClass('content-shrunk');
 
 
-        var repeatHTML = $('#template_other').html();
+        var repeatHTML = $('#template_dont_know').html();
         var widgetTemplate = _.template(repeatHTML);
         var compiledHTML = widgetTemplate({question: question});
         $(footer).append(compiledHTML);
 
-        var other_response = question.answer && question.answer[0] && question.answer[0].is_other;
+        var other_response = question.answer && question.answer[0] && question.answer[0].is_type_exception && question.answer[0].metadata.type_exception === "dont_know";
         if (other_response) {
             $('.question__btn__other').find('input').prop('checked', true);
-            this._toggleOther(page, footer, question, ON);
+            this._toggleOther(page, footer, type, question, ON);
         }
     }
 }
 
 // Toggle the 'don't know' section based on passed in state value on given page
 // Alters question.answer array
-Widgets._toggleOther = function(page, footer, question, state) {
+Widgets._toggleOther = function(page, footer, type, question, state) {
     var self = this;
     question.answer = [];
     
     if (state === ON) {
         // Disable regular inputs
-        $(page).find('.text_input').not('.other_input').each(function(i, child) { 
+        $(page).find('.text_input').each(function(i, child) { 
                 $(child).attr('disabled', true);
         });
 
         // Disable adder if its around
         $(page).find('.question__add').attr('disabled', true);
-        
-        $(footer).find('.question__other').show();
-        
-        $(footer).find('.other_input').each(function(i, child) { 
+
+        // Toggle other input
+        $(footer).find('.question__dont_know').show();
+        $(footer).find('.dont_know_input').each(function(i, child) { 
             // Doesn't matter if response is there or not
             question.answer[0] = {
                 response: self._validate('text', child.value, question.logic),
-                is_other: true
+                is_type_exception: true,
+                metadata: {
+                    'type_exception': 'dont_know',
+                },
             }
         });
 
-        footer.addClass('bar-footer-super-extended');
+        // Bring div up
+        //footer.addClass('bar-footer-super-extended');
         page.addClass('content-super-shrunk');
+        footer.animate({height:220},200).addClass('bar-footer-super-extended');
 
         //Add overlay
-        $('.overlay').show();
+        $('.overlay').fadeIn('fast');
 
         // Enable other input
-        $(footer).find('.other_input').each(function(i, child) { 
+        $(footer).find('.dont_know_input').each(function(i, child) { 
                 $(child).attr('disabled', false);
         });
 
     } else if (state === OFF) { 
         // Enable regular inputs
-        $(footer).find('.text_input').not('.other_input').each(function(i, child) { 
+        $(page).find('.text_input').each(function(i, child) { 
               $(child).attr('disabled', false);
         });
 
         // Enable adder if its around 
         $(page).find('.question__add').attr('disabled', false);
 
-        $(footer).find('.question__other').hide();
-        
-        $(page).find('.text_input').not('.other_input').each(function(i, child) { 
+        // Toggle other inputs
+        $(footer).find('.question__dont_know').hide();
+        $(page).find('.text_input').each(function(i, child) { 
             if (child.value !== "") { 
                 question.answer[i] = {
-                    response: self._validate(question.type_constraint_name, child.value, question.logic),
-                    is_other: false
+                    response: self._validate(type, child.value, question.logic),
+                    is_type_exception: false,
+                    metadata: {},
                 }
             }
         });
         
-        $('.overlay').hide();
-        footer.removeClass('bar-footer-super-extended');
+        // Hide overlay and shift div
+        $('.overlay').fadeOut('fast');
+        //footer.removeClass('bar-footer-super-extended');
         page.removeClass('content-super-shrunk');
+        footer.animate({height:120},200).removeClass('bar-footer-super-extended');
 
         // Disable other input
-        $(footer).find('.other_input').each(function(i, child) { 
+        $(footer).find('.dont_know_input').each(function(i, child) { 
                 $(child).attr('disabled', true);
         });
     }
-
-    console.log('hey');
 }
 
 // Render +/- buttons on given page
@@ -808,26 +865,26 @@ Widgets._validate = function(type, answer, logic) {
     return val;
 };
 
-Widgets.text = function(question, page) {
-    this._input(question, page, "text");
+Widgets.text = function(question, page, footer) {
+    this._input(question, page, footer, "text");
 };
 
-Widgets.integer = function(question, page) {
-    this._input(question, page, "integer");
+Widgets.integer = function(question, page, footer) {
+    this._input(question, page, footer, "integer");
 };
 
-Widgets.decimal = function(question, page) {
-    this._input(question, page, "decimal");
+Widgets.decimal = function(question, page, footer) {
+    this._input(question, page, footer, "decimal");
 };
 
-Widgets.date = function(question, page) {
+Widgets.date = function(question, page, footer) {
     //XXX: TODO change input thing to be jquery-ey
-    this._input(question, page, "date_XXX"); //XXX: Fix validation
+    this._input(question, page, footer, "date_XXX"); //XXX: Fix validation
 };
 
-Widgets.time = function(question, page) {
+Widgets.time = function(question, page, footer) {
     //XXX: TODO change input thing to be jquery-ey
-    this._input(question, page, "time"); //XXX: Fix validation
+    this._input(question, page, footer, "time"); //XXX: Fix validation
 };
 
 Widgets.note = function() {
@@ -835,7 +892,7 @@ Widgets.note = function() {
 
 // Multiple choice and multiple choice with other are handled here by same func
 // XXX: possibly two widgets (multi select and multi choice)
-Widgets.multiple_choice = function(question, page) {
+Widgets.multiple_choice = function(question, page, footer) {
     var self = this;
 
     // array of choice uuids
@@ -847,11 +904,14 @@ Widgets.multiple_choice = function(question, page) {
 
     // handle change for text field
     var $other = $(page)
-        .find('.text_input')
+        .find('.other_input')
         .change(function() {
             question.answer[question.choices.length] = { 
                 response: self._validate("text", this.value, question.logic),
-                is_other: true
+                is_type_exception: true,
+                metadata: {
+                    'type_exception': 'other',
+                },
             }
         });
 
@@ -884,13 +944,17 @@ Widgets.multiple_choice = function(question, page) {
                 // Default, fill in values (other will be overwritten below if selected)
                 question.answer[ind] = {
                     response: opt,
-                    is_other: false
+                    is_type_exception: false,
+                    metadata: {}
                 }
 
                 if (opt === 'other') {
                     question.answer[ind] = {
                         response: $other.val(), // Preserves prev response
-                        is_other: true
+                        is_type_exception: true,
+                        metadata: {
+                            'type_exception': 'dont_know',
+                        },
                     }
 
                     $other.show();
@@ -905,9 +969,10 @@ Widgets.multiple_choice = function(question, page) {
         });
 
     // Selection is handled in _template however toggling of view is done here
-    if (question.answer[question.choices.length] && 
-            question.answer[question.choices.length].is_other &&
-                question.answer[question.choices.length]) {
+    var response = question.answer[question.choices.length];
+    if (response 
+            && response.is_type_exception 
+            && response.metadata.type_exception === 'other') {
         $other.show();
     }
 };
@@ -967,9 +1032,12 @@ Widgets._getMap = function() {
     return map;
 };
 
-Widgets.location = function(question, page) {
+Widgets.location = function(question, page, footer) {
+    // generic setup
+    this._input(question, page, footer, "location");
+
     var self = this;
-    var response = $(page).find('.text_input').not('.other_input').last().val();
+    var response = $(page).find('.text_input').last().val();
     response = self._validate('location', response, question.logic);
     App.start_loc = response || App.start_loc;
 
@@ -979,35 +1047,29 @@ Widgets.location = function(question, page) {
         updateLocation([map.getCenter().lng, map.getCenter().lat]);
     });
 
-    // generic setup
-    this._input(question, page, "location");
-
     function updateLocation(coords) {
         // Find current length of inputs and update the last one;
-        var questions_len = $(page).find('.text_input').not('.other_input').length;
+        var questions_len = $(page).find('.text_input').length;
 
         // update array val
         question.answer[questions_len - 1] = {
             response: {'lon': coords[0], 'lat': coords[1]},
-            is_other: false
+            is_type_exception: false,
+            metadata: {},
         }
             
         // update latest lon/lat values
-        var questions_len = $(page).find('.text_input').not('.other_input').length;
-        $(page).find('.text_input').not('.other_input')
+        var questions_len = $(page).find('.text_input').length;
+        $(page).find('.text_input')
             .last().val(coords[1] + " " + coords[0]);
     }
 
     $(page)
         .find('.question__find__btn')
         .click(function() {
-            var sync = $('.nav__sync')[0];
-            $(sync).addClass('icon--spin');
-            App.message('Searching ...');
+            App.message('Searching ...', 'message_warning');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
-                    $(sync).removeClass('icon--spin');
-
                     // Server accepts [lon, lat]
                     var coords = [
                         position.coords.longitude, 
@@ -1024,8 +1086,8 @@ Widgets.location = function(question, page) {
 
                 }, function error() {
                     //If cannot Get location" for some reason,
-                    $(sync).removeClass('icon--spin');
-                    App.message('Could not get your location, please make sure your GPS device is active.');
+                    App.message('Could not get your location, please make sure your GPS device is active.',
+                            'message_error');
                 }, {
                     enableHighAccuracy: true,
                     timeout: 20000,
@@ -1035,12 +1097,12 @@ Widgets.location = function(question, page) {
 
     // disable default event
     $(page)
-        .find('.text_input').not('.other_input')
+        .find('.text_input')
         .off('change');
 };
 
 // Similar to location however you cannot just add location, 
-Widgets.facility = function(question, page) {
+Widgets.facility = function(question, page, footer) {
     var ans = question.answer[0]; // Facility questions only ever have one response
     var lat = ans && ans.response.lat || App.start_loc.lat;
     var lng = ans && ans.response.lon || App.start_loc.lon;
@@ -1162,7 +1224,7 @@ Widgets.facility = function(question, page) {
                 'lon': marker._latlng.lng, 
                 'lat': marker._latlng.lat
             },
-            is_other: false,
+            is_type_exception: false,
             metadata: {
                 'facility_name': marker.name,
                 'facility_sector': marker.sector
@@ -1229,9 +1291,7 @@ Widgets.facility = function(question, page) {
     $(page)
         .find('.question__find__btn')
         .click(function() {
-            var sync = $('.nav__sync')[0];
-            $(sync).addClass('icon--spin');
-            App.message('Searching ...');
+            App.message('Searching ...', 'message_warning');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
                     // Server accepts [lon, lat]
@@ -1246,10 +1306,9 @@ Widgets.facility = function(question, page) {
                     // Revisit api call
                     reloadFacilities(coords[1], coords[0]); 
 
-                    $(sync).removeClass('icon--spin');
                 }, function error() {
-                    $(sync).removeClass('icon--spin');
-                    App.message('Could not get your location, please make sure your GPS device is active.');
+                    App.message('Could not get your location, please make sure your GPS device is active.',
+                            'message_error');
                 }, {
                     enableHighAccuracy: true,
                     timeout: 20000,
@@ -1369,7 +1428,7 @@ function postNewFacility(facility) {
         processData: false,
         dataType: 'json',
         success: function() {
-            App.message('Facility Added!');
+            App.message('Facility Added!', 'message_success');
 
             // If posted, we don't an unsynced reference to it anymore
             delete App.unsynced_facilities[facility.uuid];
@@ -1382,7 +1441,7 @@ function postNewFacility(facility) {
         },
 
         error: function() {
-            App.message('Facility submission failed, will try again later.');
+            App.message('Facility submission failed, will try again later.', 'message_error');
         },
         
         complete: function() {
