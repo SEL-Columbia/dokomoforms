@@ -33,16 +33,16 @@ from dokomoforms.handlers.view.submissions import ViewSubmissionsHandler, \
 from dokomoforms.handlers.view.visualize import VisualizationHandler
 from dokomoforms.utils.logger import setup_custom_logger
 from dokomoforms.db.survey import SurveyPrefixDoesNotIdentifyASurveyError, \
-    SurveyPrefixTooShortError, get_survey_id_from_prefix, get_surveys_by_email
+    SurveyPrefixTooShortError, get_survey_id_from_prefix
 from dokomoforms import settings
+
 
 logger = setup_custom_logger('dokomo')
 
 
 class Index(BaseHandler):
     def get(self, msg=""):
-        surveys = get_surveys_by_email(self.db, self.current_user, 10)
-        self.render('index.html', message=msg, surveys=surveys)
+        self.render('index.html', message=msg)
 
     def post(self):
         LogoutHandler.post(self)  # TODO move to js
