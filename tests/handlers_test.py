@@ -292,6 +292,81 @@ class APITest(AsyncHTTPTestCase):
                                                 email='test_email')['result'])
         self.assertEqual(response.code, 201)
 
+    def testPostMissingValue(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        answer_json = {'survey_id': survey_id}
+        response = self.fetch(
+            '/api/surveys/{}/submit'.format(survey_id),
+            method='POST',
+            body=json_encode(answer_json)
+        )
+
+        self.assertEqual(response.code, 422)
+        self.assertIn('missing_field', str(response.error))
+
+    def testPostNotJson(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        response = self.fetch(
+            '/api/surveys/{}/submit'.format(survey_id),
+            method='POST',
+            body='not even close to json'
+        )
+
+        self.assertEqual(response.code, 400)
+        self.assertEqual(str(response.error),
+                         'HTTP 400: {"message": "Problems parsing JSON"}')
+
+    def testPostWrongSurveyID(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        wrong_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title != 'test_title')).first().survey_id
+        answer_json = {
+            'survey_id': wrong_id,
+            'answers': [
+                {
+                    'question_id': get_questions_no_credentials(
+                        connection, survey_id).first().question_id,
+                    'answer': 1,
+                    'answer_metadata': None,
+                    'is_type_exception': False
+                }
+            ]
+        }
+        response = self.fetch(
+            '/api/surveys/{}/submit'.format(survey_id),
+            method='POST',
+            body=json_encode(answer_json)
+        )
+
+        self.assertEqual(response.code, 422)
+        self.assertIn('invalid', str(response.error))
+
+    def testPostWrongQuestionID(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        wrong_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title != 'test_title')).first().survey_id
+        gqnc = get_questions_no_credentials
+        question_id = gqnc(connection, wrong_id).first().question_id
+        answers = [{'question_id': question_id,
+                    'answer': 1,
+                    'answer_metadata': None,
+                    'is_type_exception': False}]
+        answer_json = {'submitter': 'me',
+                       'survey_id': survey_id,
+                       'answers': answers}
+        response = self.fetch(
+            '/api/surveys/{}/submit'.format(survey_id),
+            method='POST',
+            body=json_encode(answer_json)
+        )
+
+        self.assertEqual(response.code, 422)
+        self.assertIn('invalid', str(response.error))
+
     def testBatchSubmission(self):
         survey_id = connection.execute(survey_table.select().where(
             survey_table.c.survey_title == 'test_title')).first().survey_id
@@ -1053,98 +1128,6 @@ class SurveyTest(AsyncHTTPTestCase):
     def testGet404(self):
         response = self.fetch('/survey/{}'.format(str(uuid.uuid4())))
         self.assertEqual(response.code, 404)
-
-    def testPost(self):
-        survey_id = connection.execute(survey_table.select().where(
-            survey_table.c.survey_title == 'test_title')).first().survey_id
-        answer_json = {
-            'submitter': 'me',
-            'survey_id': survey_id,
-            'answers': [
-                {
-                    'question_id': get_questions_no_credentials(
-                        connection, survey_id).first().question_id,
-                    'answer': 1,
-                    'answer_metadata': None,
-                    'is_type_exception': False
-                }
-            ]
-        }
-        response = self.fetch('/survey/{}'.format(survey_id), method='POST',
-                              body=json_encode(answer_json))
-
-        self.assertFalse(response.error)
-        result = to_unicode(response.body)
-        result_submission_id = json_decode(result)['result']['submission_id']
-        condition = submission_table.c.submission_id == result_submission_id
-        self.assertEqual(
-            connection.execute(
-                submission_table.select().where(condition)).rowcount, 1)
-        sub_answers = get_answers(connection, result_submission_id)
-        self.assertEqual(sub_answers.rowcount, 1)
-
-    def testPostNotJson(self):
-        survey_id = connection.execute(survey_table.select().where(
-            survey_table.c.survey_title == 'test_title')).first().survey_id
-        response = self.fetch('/survey/{}'.format(survey_id), method='POST',
-                              body='not even close to json')
-
-        self.assertEqual(response.code, 400)
-        self.assertEqual(str(response.error),
-                         'HTTP 400: {"message": "Problems parsing JSON"}')
-
-    def testPostMissingValue(self):
-        survey_id = connection.execute(survey_table.select().where(
-            survey_table.c.survey_title == 'test_title')).first().survey_id
-        answer_json = {'survey_id': survey_id}
-        response = self.fetch('/survey/{}'.format(survey_id), method='POST',
-                              body=json_encode(answer_json))
-
-        self.assertEqual(response.code, 422)
-        self.assertIn('missing_field', str(response.error))
-
-    def testPostWrongSurveyID(self):
-        survey_id = connection.execute(survey_table.select().where(
-            survey_table.c.survey_title == 'test_title')).first().survey_id
-        wrong_id = connection.execute(survey_table.select().where(
-            survey_table.c.survey_title != 'test_title')).first().survey_id
-        answer_json = {
-            'survey_id': wrong_id,
-            'answers': [
-                {
-                    'question_id': get_questions_no_credentials(
-                        connection, survey_id).first().question_id,
-                    'answer': 1,
-                    'answer_metadata': None,
-                    'is_type_exception': False
-                }
-            ]
-        }
-        response = self.fetch('/survey/{}'.format(survey_id), method='POST',
-                              body=json_encode(answer_json))
-
-        self.assertEqual(response.code, 422)
-        self.assertIn('invalid', str(response.error))
-
-    def testPostWrongQuestionID(self):
-        survey_id = connection.execute(survey_table.select().where(
-            survey_table.c.survey_title == 'test_title')).first().survey_id
-        wrong_id = connection.execute(survey_table.select().where(
-            survey_table.c.survey_title != 'test_title')).first().survey_id
-        gqnc = get_questions_no_credentials
-        question_id = gqnc(connection, wrong_id).first().question_id
-        answers = [{'question_id': question_id,
-                    'answer': 1,
-                    'answer_metadata': None,
-                    'is_type_exception': False}]
-        answer_json = {'submitter': 'me',
-                       'survey_id': survey_id,
-                       'answers': answers}
-        response = self.fetch('/survey/{}'.format(survey_id), method='POST',
-                              body=json_encode(answer_json))
-
-        self.assertEqual(response.code, 422)
-        self.assertIn('invalid', str(response.error))
 
 
 class ViewTest(AsyncHTTPTestCase):
