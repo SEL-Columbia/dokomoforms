@@ -5,7 +5,7 @@ import tornado.web
 import dokomoforms.api.submission as submission_api
 from dokomoforms.db.survey import IncorrectQuestionIdError
 from dokomoforms.handlers.util.base import APIHandler, get_json_request_body, \
-    catch_bare_integrity_error, validation_message
+    catch_bare_integrity_error, validation_message, BaseHandler
 
 
 class SubmissionsAPIHandler(APIHandler):
@@ -50,7 +50,7 @@ class SubmitAPIHandler(APIHandler):
         This class defines the prepare() method to avoid having to log in.
 
         """
-        super().prepare()
+        BaseHandler.prepare(self)
 
     @catch_bare_integrity_error
     def post(self, survey_id: str):
