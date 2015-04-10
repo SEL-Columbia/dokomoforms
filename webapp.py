@@ -66,9 +66,6 @@ class Survey(BaseHandler):
                 SurveyPrefixTooShortError):
             raise tornado.web.HTTPError(404)
 
-    def post(self, uuid):
-        SubmitAPIHandler.post(self, uuid)  # TODO: Hey Abdi kill this
-
 
 class APITokenGenerator(BaseHandler):  # pragma: no cover
     @tornado.web.authenticated
