@@ -582,47 +582,7 @@ Widgets._input = function(question, page, footer, type) {
             }, 500);
         });
 
-    // Click the + for new input
-    $(page)
-        .find('.question__add')
-        .click(function() { 
-            var input = $(page).find('.text_input').last();
-            self._addNewInput(page, input, question);
-
-        });
-
-    // Click the - to remove that element
-    $(page)
-        .find('.question__minus')
-        .click(function() { 
-            var delete_icons = $(page).find('.question__minus');
-            var inputs = $(page).find('.text_input');
-            var index = delete_icons.index(this);
-            self._removeInput(page, footer, type, inputs, question, index);
-        });
     
-    // Click the other button when you don't know answer
-    $(footer)
-        .find('.question__btn__other :checkbox')
-        .change(function() { 
-            var selected = $(this).is(':checked'); 
-            self._toggleOther(page, footer, type, question, selected);
-        });
-
-
-    // Set up other input event listener
-    $(footer)
-        .find('.dont_know_input')
-        .change(function() { //XXX: Change isn't sensitive enough on safari?
-            question.answer = [{ 
-                response: self._validate('text', this.value, question.logic),
-                is_type_exception: true,
-                metadata: {
-                    'type_exception': 'dont_know',
-                },
-            }];
-        });
-
 };
 
 // Handle creating multiple inputs for widgets that support it 
@@ -669,7 +629,6 @@ Widgets._orderAnswerArray = function(page, footer, question, type) {
         }
     });
 
-    //
     $(footer).find('.dont_know_input').each(function(i, child) { 
         if (!child.disabled) {
             // if don't know input field has a response, break 
@@ -691,7 +650,6 @@ Widgets._orderAnswerArray = function(page, footer, question, type) {
 // Render 'don't know' section if question has with_other logic
 // Display response and alter widget state if first response is other
 Widgets._renderOther = function(page, footer, type, question) {
-
     var self = this;
     // Render don't know feature 
     if (question.logic.allow_dont_know) {
@@ -710,7 +668,30 @@ Widgets._renderOther = function(page, footer, type, question) {
             $('.question__btn__other').find('input').prop('checked', true);
             this._toggleOther(page, footer, type, question, ON);
         }
-    }
+
+        // Click the other button when you don't know answer
+        $(footer)
+            .find('.question__btn__other :checkbox')
+            .change(function() { 
+                var selected = $(this).is(':checked'); 
+                self._toggleOther(page, footer, type, question, selected);
+            });
+
+
+        // Set up other input event listener
+        $(footer)
+            .find('.dont_know_input')
+            .change(function() { //XXX: Change isn't sensitive enough on safari?
+                question.answer = [{ 
+                    response: self._validate('text', this.value, question.logic),
+                    is_type_exception: true,
+                    metadata: {
+                        'type_exception': 'dont_know',
+                    },
+                }];
+            });
+
+        }
 }
 
 // Toggle the 'don't know' section based on passed in state value on given page
@@ -804,12 +785,32 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
 
 // Render +/- buttons on given page
 Widgets._renderRepeat = function(page, question) {
+    var self = this;
     // Render add/minus input buttons 
     if (question.allow_multiple) {
         var repeatHTML = $('#template_repeat').html();
         var widgetTemplate = _.template(repeatHTML);
         var compiledHTML = widgetTemplate({question: question});
         $(page).append(compiledHTML)
+
+        // Click the + for new input
+        $(page)
+            .find('.question__add')
+            .click(function() { 
+                var input = $(page).find('.text_input').last();
+                self._addNewInput(page, input, question);
+
+            });
+
+        // Click the - to remove that element
+        $(page)
+            .find('.question__minus')
+            .click(function() { 
+                var delete_icons = $(page).find('.question__minus');
+                var inputs = $(page).find('.text_input');
+                var index = delete_icons.index(this);
+                self._removeInput(page, footer, type, inputs, question, index);
+            });
     }
 }
 
@@ -911,28 +912,6 @@ Widgets.multiple_choice = function(question, page, footer) {
 
     //Render don't know
     self._renderOther(page, footer, 'multiple_choice', question);
-
-    // Click the other button when you don't know answer
-    $(footer)
-        .find('.question__btn__other :checkbox')
-        .change(function() { 
-            var selected = $(this).is(':checked'); 
-            self._toggleOther(page, footer, 'multiple_choice', question, selected);
-        });
-
-
-    // Set up dont_know input event listener
-    $(footer)
-        .find('.dont_know_input')
-        .change(function() { //XXX: Change isn't sensitive enough on safari?
-            question.answer = [{ 
-                response: self._validate('text', this.value, question.logic),
-                is_type_exception: true,
-                metadata: {
-                    'type_exception': 'dont_know',
-                },
-            }];
-        });
 
     // handle change for text field
     var $other = $(page)
