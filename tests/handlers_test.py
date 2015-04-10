@@ -280,14 +280,11 @@ class APITest(AsyncHTTPTestCase):
                             'answer_metadata': None,
                             'is_type_exception': False}]}
 
-        token_result = user_api.generate_token(connection,
-                                               {'email': 'test_email'})
-        token = token_result['result']['token']
-
-        response = self.fetch('/api/surveys/{}/submit'.format(survey_id),
-                              method='POST', body=json_encode(input_data),
-                              headers={'Email': 'test_email',
-                                       'Token': token})
+        response = self.fetch(
+            '/api/surveys/{}/submit'.format(survey_id),
+            method='POST',
+            body=json_encode(input_data)
+        )
         result = json_decode(to_unicode(response.body))['result']
         submission_id = result['submission_id']
         self.assertEqual(result,
