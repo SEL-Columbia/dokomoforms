@@ -622,6 +622,7 @@ Widgets._input = function(question, page, footer, type) {
                 },
             }];
         });
+
 };
 
 // Handle creating multiple inputs for widgets that support it 
@@ -720,9 +721,18 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
     
     if (state === ON) {
         // Disable regular inputs
-        $(page).find('.text_input').each(function(i, child) { 
+        $(page).find('input').each(function(i, child) { 
                 $(child).attr('disabled', true);
         });
+        
+        // If select boxes are around, shut em down
+        $(page).find('select').each(function(i, child) { 
+                $(child).attr('disabled', true);
+        });
+
+        // hide em if he's around
+        $(page).find('.other_input').hide();
+        $(page).find('select').val('null');
 
         // Disable adder if its around
         $(page).find('.question__add').attr('disabled', true);
@@ -755,7 +765,12 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
 
     } else if (state === OFF) { 
         // Enable regular inputs
-        $(page).find('.text_input').each(function(i, child) { 
+        $(page).find('input').each(function(i, child) { 
+              $(child).attr('disabled', false);
+        });
+
+        // Enable select input again
+        $(page).find('select').each(function(i, child) { 
               $(child).attr('disabled', false);
         });
 
@@ -892,6 +907,32 @@ Widgets.multiple_choice = function(question, page, footer) {
         choices[ind] = choice.question_choice_id;
     }); 
     choices[question.choices.length] = "other"; 
+
+
+    //Render don't know
+    self._renderOther(page, footer, 'multiple_choice', question);
+
+    // Click the other button when you don't know answer
+    $(footer)
+        .find('.question__btn__other :checkbox')
+        .change(function() { 
+            var selected = $(this).is(':checked'); 
+            self._toggleOther(page, footer, 'multiple_choice', question, selected);
+        });
+
+
+    // Set up dont_know input event listener
+    $(footer)
+        .find('.dont_know_input')
+        .change(function() { //XXX: Change isn't sensitive enough on safari?
+            question.answer = [{ 
+                response: self._validate('text', this.value, question.logic),
+                is_type_exception: true,
+                metadata: {
+                    'type_exception': 'dont_know',
+                },
+            }];
+        });
 
     // handle change for text field
     var $other = $(page)

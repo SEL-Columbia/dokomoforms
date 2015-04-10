@@ -34,7 +34,7 @@ before_install:
 
 # command to run tests
 script: 
-  - npm test
+  #- npm test
   - nosetests -c .noserc
 
 after_success: coveralls
