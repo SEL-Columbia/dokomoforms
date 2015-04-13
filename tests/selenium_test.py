@@ -142,7 +142,7 @@ class DriverTest(unittest.TestCase):
 
 class SubmissionTest(DriverTest):
     @report_success_status
-    def testSubmitSuccessfully(self):
+    def testSubmitSuccessfully(self):  # flake8: noqa
         # Log in
         self.drv.get(base + '/debug/login/test_email')
         self.drv.get(base + '/view')
@@ -172,14 +172,20 @@ class SubmissionTest(DriverTest):
         if self.browser_name == 'safari':
             self.drv.execute_script("$('input').first().change()")
         next_button().click()
-        self.drv.find_elements_by_tag_name('option')[1].click()
+        if self.browser_name == 'android':
+            self.drv.find_element_by_tag_name('select').click()
+            self.drv.switch_to.window('NATIVE_APP')
+            self.drv.find_elements_by_tag_name('TextView')[-2].click()
+            self.drv.switch_to.window('WEBVIEW_0')
+        else:
+            self.drv.find_elements_by_tag_name('option')[1].click()
         next_button().click()
-        self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('3.3')
+        self.drv.find_element_by_tag_name('input').send_keys('3.3')
         if self.browser_name == 'safari':
             self.drv.execute_script("$('input').change()")
         next_button().click()
         if self.browser_name == 'android':
-            self.drv.find_element_by_xpath(in_xpath + 'input').click()
+            self.drv.find_element_by_tag_name('input').click()
             self.drv.switch_to.window('NATIVE_APP')
             self.drv.find_element_by_id('button1').click()
             self.drv.switch_to.window('WEBVIEW_0')
@@ -191,7 +197,7 @@ class SubmissionTest(DriverTest):
                 self.drv.execute_script("$('input').change()")
         next_button().click()
         if self.browser_name == 'android':
-            self.drv.find_element_by_xpath(in_xpath + 'input').click()
+            self.drv.find_element_by_tag_name('input').click()
             self.drv.switch_to.window('NATIVE_APP')
             self.drv.find_element_by_id('button1').click()
             self.drv.switch_to.window('WEBVIEW_0')
@@ -221,7 +227,13 @@ class SubmissionTest(DriverTest):
         if self.browser_name == 'safari':
             self.drv.execute_script("$('input').change()")
         next_button().click()
-        self.drv.find_elements_by_tag_name('option')[-1].click()
+        if self.browser_name == 'android':
+            self.drv.find_element_by_tag_name('select').click()
+            self.drv.switch_to.window('NATIVE_APP')
+            self.drv.find_elements_by_tag_name('TextView')[-1].click()
+            self.drv.switch_to.window('WEBVIEW_0')
+        else:
+            self.drv.find_elements_by_tag_name('option')[-1].click()
         self.drv.find_element_by_xpath(
             '/html/body/div[1]/input').send_keys('other 8')
         if self.browser_name == 'safari':
