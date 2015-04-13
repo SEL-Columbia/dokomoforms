@@ -1,47 +1,193 @@
 {% extends "base.html" %} 
 
+
 {% block header %}
 <div class="header">
+    {% if current_user %}
     <div class="container">
-        <h1>Account Dashboard</h1>
+        <div class="row">
+            <div class="col-md-6"><h1>Account Dashboard</h1></div>
+            <div class="col-md-6 header-controls"><button class="btn btn-primary btn-sm pull-right"><span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Create New Survey</button></div>
+        </div>
     </div>
+    {% else %}
+    <div class="hero">
+    </div>
+    {% end %}
 </div>
-{% end %}
+{% end %} 
 
 {% block content %}
 <div class="container" role="main">
     <div class="message"></div>
-    <div class="welcome">
-        {% if current_user %}
-        <div class="welcome_box content-padded">
-            <h3 class="welcome_title">Welcome: {{ current_user }}</h3>
-            <p class="welcome_blurb">Dive in, choose an option below.</p>
+    {% if current_user %}
+    <div class="row">
+        <div class="col-md-6">
+            <!-- Recent Submissions -->
+            <h4>Recent Submissions</h4>
+            <div class="recent-submissions">
+                
+            </div>
         </div>
-        <div class="welcome_buttons content-padded">
-            <a data-ignore="push" class="btn btn-block" href="view" id="">View</a>
-            <a data-ignore="push" class="btn btn-block" href="#" id="">Create</a>
-            <a data-ignore="push" class="btn btn-block" href="#" id="logout">Logout</a>
+        <div class="col-md-6">
+            <!-- Activity Graph -->
+            <h4>Activity Graph</h4>
+            <div class="activity-graph">
+                
+            </div>
         </div>
-        {% else %}
-        <div class="welcome_box content-padded">
-            <h3 data-ignore="push" class="welcome_title"> Welcome to Dokomoforms</h3>
-            <p data-ignore="push" class="welcome_blurb"> Simple, offline-capable surveys.</p>
-            <p data-ignore="push" class="welcome_blurb"> Sign up or login to create and view forms.</p>
-        </div>
-        <div class="welcome_buttons content-padded">
-            <a data-ignore="push" class="btn btn-block" href="#" id="login">Login or Register</a>
-        </div>
-        {% end %}
     </div>
+    <div class="row">
+        <div class="col-md-12">
+            <h4>Surveys</h4>
+            <table id="surveys" class="table-view display table table-striped table-bordered" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th># of Submissions</th>
+                        <th>Latest Submission</th>
+                        <th>Activity</th>
+                        <th>Data</th>
+                        <th></th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+    <!-- <div class="welcome_box content-padded">
+        <h3 class="welcome_title">Welcome: {{ current_user }}</h3>
+        <p class="welcome_blurb">Dive in, choose an option below.</p>
+    </div>
+    <div class="welcome_buttons content-padded">
+        <a data-ignore="push" class="btn btn-block" href="view" id="">View</a>
+        <a data-ignore="push" class="btn btn-block" href="#" id="">Create</a>
+        <a data-ignore="push" class="btn btn-block" href="#" id="logout">Logout</a>
+    </div> -->
+    {% else %}
+    <div class="welcome_box content-padded">
+        <h3 data-ignore="push" class="welcome_title"> Welcome to Dokomoforms</h3>
+        <p data-ignore="push" class="welcome_blurb"> Simple, offline-capable surveys.</p>
+        <p data-ignore="push" class="welcome_blurb"> Sign up or login to create and view forms.</p>
+    </div>
+    <div class="welcome_buttons content-padded">
+        <a data-ignore="push" class="btn btn-block" href="#" id="login">Login or Register</a>
+    </div>
+    {% end %}
 </div>
 <script src="/static/lib.js"></script>
+
+<!-- Highcharts -->
+<script src="http://code.highcharts.com/highcharts.js"></script>
+<script type="text/javascript">
+    
+    $(function () { 
+        $('.activity-graph').highcharts({
+            chart: {
+                type: 'line'
+            },
+            title: {
+                text: 'Weekly Submissions'
+            },
+            colors: [
+                '#666'
+            ],
+            xAxis: {
+                categories: ['Mar 12', 'Mar 19', 'Mar 26', 'Apr 2']
+            },
+            yAxis: {
+                title: {
+                    text: '# of submissions'
+                }
+            },
+            series: [{
+                name: 'Submissions',
+                data: [34, 76, 58, 122]
+            }],
+            credits: {
+                enabled: false
+            }
+        });
+    });
+
+</script>
+
+<!-- DataTables -->
+<script src="http://cdn.datatables.net/1.10.5/js/jquery.dataTables.min.js"></script>
+<script src="http://cdn.datatables.net/plug-ins/1.10.6/integration/bootstrap/3/dataTables.bootstrap.js"></script>
+<script>
+$(document).ready(function() {
+    var $surveys = $('#surveys');
+    if ($surveys.length > 0) {
+        $('#surveys').dataTable({
+            language: {
+                search: "Search by survey title:"
+            },
+            "lengthMenu": [
+                [20, 50, 100],
+                [20, 50, 100]
+            ],
+            "pagingType": "full_numbers",
+            "order": [
+                [1, 'desc']
+            ],
+            "columnDefs": [
+                {
+                    "render": function(data, type, row) {
+                        return '<a data-ignore="push" href="/view/' + row[1] + '">' + data + '</a><br />(<a data-ignore="push" href="/survey/' + row[1] + '">Click here for a shareable link</a>)';
+                    },
+                    "targets": 0
+                }, {
+                    "visible": false,
+                    "targets": 1
+                }, {
+                    "render": function(data, type, row) {
+                        var datetime = new Date(data);
+                        return datetime.toDateString() + '<br />' + datetime.toTimeString();
+                    },
+                    "targets": 2
+                }
+            ],
+            "columns": [{
+                "name": "survey_title"
+            }, {
+                "name": "num_submissions"
+            }, {
+                "name": "latest_submission"
+            }, {
+                "name": "activity"
+            }
+            // , {
+            //     "name": "data"
+            // }, {
+            //     "name": "actions"
+            // }
+            ],
+            "processing": true,
+            "serverSide": true,
+            "ajax": {
+                "url": "/api/survey_data_table",
+                "data": function(d) {
+                    return {
+                        "args": JSON.stringify(d)
+                    };
+                }
+            }
+        });
+    }
+});
+</script>
+
+<!-- Persona -->
 <script src="https://login.persona.org/include.js"></script>
 <script src="/static/persona.js"></script>
+
+<!-- Dokomo -->
 <script src="/static/app.js"></script>
+
 {% if message %}
-<script>
-App.message("{{ message }}");
-</script>
+    <script>
+        App.message("{{ message }}");
+    </script>
 {% end %} 
 
 {% end %}

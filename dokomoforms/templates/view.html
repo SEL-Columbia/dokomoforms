@@ -1,7 +1,23 @@
-{% extends "base.html" %}
+{% extends "base.html" %} 
+
+{% block header %}
+<div class="header">
+    {% if current_user %}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6"><h1>Account Dashboard</h1></div>
+            <div class="col-md-6 header-controls"><button class="btn btn-primary btn-sm pull-right"><span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Create New Survey</button></div>
+        </div>
+    </div>
+    {% else %}
+    <div class="hero">
+    </div>
+    {% end %}
+</div>
+{% end %} 
 
 {% block content %}
-    <div class="content-padded">
+<div class="content-padded">
     <h3>Welcome {{ current_user }}</h3>
     <p> Your surveys: </p>
     <table id="surveys" class="table-view display" width="100%" cellspacing="0">
@@ -13,7 +29,6 @@
                 <th>Number of submissions</th>
             </tr>
         </thead>
-
         <tfoot>
             <tr>
                 <th>Survey title</th>
@@ -23,60 +38,66 @@
             </tr>
         </tfoot>
     </table>
-
     <script src="/static/lib.js"></script>
     <script src="http://cdn.datatables.net/1.10.5/js/jquery.dataTables.min.js"></script>
     <script>
-        $(document).ready(function() {
-            $('#surveys').dataTable( {
-                language: {
-                    search: "Search by survey title:"
+    $(document).ready(function() {
+        $('#surveys').dataTable({
+            language: {
+                search: "Search by survey title:"
+            },
+            "lengthMenu": [
+                [20, 50, 100],
+                [20, 50, 100]
+            ],
+            "pagingType": "full_numbers",
+            "order": [
+                [2, 'desc']
+            ],
+            "columnDefs": [{
+                "render": function(data, type, row) {
+                    return '<a data-ignore="push" href="/view/' + row[1] + '">' + data + '</a><br />(<a data-ignore="push" href="/survey/' + row[1] + '">Click here for a shareable link</a>)';
                 },
-                "lengthMenu": [[20, 50, 100], [20, 50, 100]],
-                "pagingType": "full_numbers",
-                "order": [[2, 'desc']],
-                "columnDefs": [
-                    {
-                        "render": function (data, type, row) {
-                            return '<a data-ignore="push" href="/view/' + row[1] + '">' + data + '</a><br />(<a data-ignore="push" href="/survey/' + row[1] + '">Click here for a shareable link</a>)';
-                        },
-                        "targets": 0
-                    },
-                    {"visible": false, "targets": 1},
-                    {
-                        "render": function (data, type, row) {
-                            var datetime = new Date(data);
-                            return datetime.toDateString() + '<br />' + datetime.toTimeString();
-                        },
-                        "targets": 2
-                    }
-                ],
-                "columns": [
-                    {"name": "survey_title"},
-                    {"name": "survey_id"},
-                    {"name": "created_on"},
-                    {"name": "num_submissions"}
-                ],
-                "processing": true,
-                "serverSide": true,
-                "ajax": {
-                    "url": "/api/survey_data_table",
-                    "data": function(d) {
-                        return {"args": JSON.stringify(d)};
-                    }
+                "targets": 0
+            }, {
+                "visible": false,
+                "targets": 1
+            }, {
+                "render": function(data, type, row) {
+                    var datetime = new Date(data);
+                    return datetime.toDateString() + '<br />' + datetime.toTimeString();
+                },
+                "targets": 2
+            }],
+            "columns": [{
+                "name": "survey_title"
+            }, {
+                "name": "survey_id"
+            }, {
+                "name": "created_on"
+            }, {
+                "name": "num_submissions"
+            }],
+            "processing": true,
+            "serverSide": true,
+            "ajax": {
+                "url": "/api/survey_data_table",
+                "data": function(d) {
+                    return {
+                        "args": JSON.stringify(d)
+                    };
                 }
-            } );
-        } );
+            }
+        });
+    });
     </script>
+</div>
+{% end %} {% block footer %}
+<div class="bar bar-standard bar-footer">
+    <div class="bar-padded">
+        <a data-ignore="push" class="btn btn-block" href="#" id="logout">Logout</a>
     </div>
-{% end %}
-
-{% block footer %}
-    <div class="bar bar-standard bar-footer">
-        <div class="bar-padded">
-            <a data-ignore="push" class="btn btn-block" href="#" id="logout">Logout</a>
-        </div>
-    </div>
-    <script src="https://login.persona.org/include.js"></script>
-    <script src="/static/persona.js"></script>
+</div>
+<script src="https://login.persona.org/include.js"></script>
+<script src="/static/persona.js"></script>
 {% end %}
