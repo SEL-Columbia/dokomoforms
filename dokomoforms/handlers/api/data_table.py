@@ -9,7 +9,7 @@ from collections import Iterator
 from sqlalchemy import select, Table, Column
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.elements import BinaryExpression
-from sqlalchemy.sql.functions import count
+from sqlalchemy.sql.functions import count, max as sqlmax
 from tornado.escape import json_encode, json_decode
 
 from dokomoforms.db import auth_user_table, survey_table, submission_table
@@ -110,7 +110,7 @@ def _apply_ordering(query: Select,
     ord = args['order']
     default_sort = '{} {}'.format(default_sort_column_name, default_direction)
     order_by = ', '.join(_get_orderings(args)) if ord else default_sort
-    return query.order_by(order_by)
+    return query.order_by(order_by + ' NULLS LAST')
 
 
 def _apply_limit(query: Select,
@@ -215,6 +215,57 @@ class SubmissionDataTableHandler(APIHandler):
                  submitter,
                  sub_time.isoformat()]
                 for sub_id, submitter, sub_time, _ in result
+            ]
+        }
+        self.write(json_encode(response))
+
+
+class IndexSurveyDataTableHandler(APIHandler):
+    """The endpoint for getting a summary of a user's survey information for
+    a jQuery DataTable."""
+
+    def get(self):
+        args = json_decode(self.get_argument('args'))
+
+        email = self.get_email()
+        table = auth_user_table.join(survey_table).outerjoin(submission_table)
+        num_submissions = count(submission_table.c.submission_id)
+        latest_submission = sqlmax(submission_table.c.submission_time)
+
+        selected = [
+            survey_table.c.survey_title,
+            num_submissions.label('num_submissions'),
+            # survey_table.c.created_on,
+            latest_submission.label('latest_submission'),
+            survey_table.c.survey_id,
+        ]
+
+        query = _base_query(table, email, selected,
+                            grouped=[selected[0], selected[3]]
+                            )
+
+        # Title filter
+        query = _apply_text_filter(query, args, survey_table.c.survey_title)
+
+        # Ordering
+        query = _apply_ordering(query, args, 'latest_submission')
+
+        # Limiting
+        query = _apply_limit(query, args)
+
+        result = self.db.execute(query).fetchall()
+
+        response = {
+            'draw': int(args['draw']),
+            'recordsTotal': get_number_of_surveys(self.db, email),
+            'recordsFiltered': result[0]['filtered'] if result else 0,
+            'data': [
+                [title,
+                 str(num),
+                 # created_on.isoformat(),
+                 '' if not latest_sub else latest_sub.isoformat(),
+                 survey_id]
+                for title, num, latest_sub, survey_id, _ in result
             ]
         }
         self.write(json_encode(response))
