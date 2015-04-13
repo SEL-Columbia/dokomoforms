@@ -45,7 +45,7 @@ from dokomoforms.handlers.api.surveys import SurveysAPIHandler, \
     SingleSurveyAPIHandler
 from dokomoforms.handlers.auth import LoginHandler
 from dokomoforms.handlers.util.base import catch_bare_integrity_error, \
-    user_owns_question
+    user_owns_question, APINoLoginHandler
 from dokomoforms.handlers.view.submissions import ViewSubmissionsHandler, \
     ViewSubmissionHandler
 from dokomoforms.handlers.view.surveys import ViewHandler
@@ -232,140 +232,6 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(webpage_response,
                          submission_api.get_one(connection, submission_id,
                                                 'test_email'))
-
-    def testPostSubmission(self):
-        survey_id = connection.execute(survey_table.select().where(
-            survey_table.c.survey_title == 'test_title')).first().survey_id
-        and_cond = and_(question_table.c.survey_id == survey_id,
-                        question_table.c.type_constraint_name == 'integer')
-        question_id = connection.execute(question_table.select().where(
-            and_cond)).first().question_id
-        second_cond = and_(question_table.c.survey_id == survey_id,
-                           question_table.c.type_constraint_name ==
-                           'multiple_choice')
-        second_q_id = connection.execute(question_table.select().where(
-            second_cond)).first().question_id
-        choice_cond = question_choice_table.c.question_id == second_q_id
-        choice_id = connection.execute(question_choice_table.select().where(
-            choice_cond)).first().question_choice_id
-        third_cond = and_(question_table.c.survey_id == survey_id,
-                          question_table.c.type_constraint_name == 'text')
-        third_q_id = connection.execute(question_table.select().where(
-            third_cond)).first().question_id
-        fourth_cond = and_(question_table.c.survey_id == survey_id,
-                           question_table.c.type_constraint_name == 'decimal')
-        fourth_q_id = connection.execute(question_table.select().where(
-            fourth_cond)).first().question_id
-        input_data = {'survey_id': survey_id,
-                      'submitter': 'testPostSubmissionSubmitter',
-                      'answers':
-                          [{'question_id': question_id,
-                            'answer': 1,
-                            'answer_metadata': None,
-                            'is_type_exception': False},
-                           {'question_id': second_q_id,
-                            'answer': choice_id,
-                            'answer_metadata': None,
-                            'is_type_exception': False},
-                           {'question_id': third_q_id,
-                            'answer': 'answer one',
-                            'answer_metadata': None,
-                            'is_type_exception': False},
-                           {'question_id': third_q_id,
-                            'answer': 'answer two',
-                            'answer_metadata': None,
-                            'is_type_exception': False},
-                           {'question_id': fourth_q_id,
-                            'answer': 3.5,
-                            'answer_metadata': None,
-                            'is_type_exception': False}]}
-
-        response = self.fetch(
-            '/api/surveys/{}/submit'.format(survey_id),
-            method='POST',
-            body=json_encode(input_data)
-        )
-        result = json_decode(to_unicode(response.body))['result']
-        submission_id = result['submission_id']
-        self.assertEqual(result,
-                         submission_api.get_one(connection, submission_id,
-                                                email='test_email')['result'])
-        self.assertEqual(response.code, 201)
-
-    def testPostMissingValue(self):
-        survey_id = connection.execute(survey_table.select().where(
-            survey_table.c.survey_title == 'test_title')).first().survey_id
-        answer_json = {'survey_id': survey_id}
-        response = self.fetch(
-            '/api/surveys/{}/submit'.format(survey_id),
-            method='POST',
-            body=json_encode(answer_json)
-        )
-
-        self.assertEqual(response.code, 422)
-        self.assertIn('missing_field', str(response.error))
-
-    def testPostNotJson(self):
-        survey_id = connection.execute(survey_table.select().where(
-            survey_table.c.survey_title == 'test_title')).first().survey_id
-        response = self.fetch(
-            '/api/surveys/{}/submit'.format(survey_id),
-            method='POST',
-            body='not even close to json'
-        )
-
-        self.assertEqual(response.code, 400)
-        self.assertEqual(str(response.error),
-                         'HTTP 400: {"message": "Problems parsing JSON"}')
-
-    def testPostWrongSurveyID(self):
-        survey_id = connection.execute(survey_table.select().where(
-            survey_table.c.survey_title == 'test_title')).first().survey_id
-        wrong_id = connection.execute(survey_table.select().where(
-            survey_table.c.survey_title != 'test_title')).first().survey_id
-        answer_json = {
-            'survey_id': wrong_id,
-            'answers': [
-                {
-                    'question_id': get_questions_no_credentials(
-                        connection, survey_id).first().question_id,
-                    'answer': 1,
-                    'answer_metadata': None,
-                    'is_type_exception': False
-                }
-            ]
-        }
-        response = self.fetch(
-            '/api/surveys/{}/submit'.format(survey_id),
-            method='POST',
-            body=json_encode(answer_json)
-        )
-
-        self.assertEqual(response.code, 422)
-        self.assertIn('invalid', str(response.error))
-
-    def testPostWrongQuestionID(self):
-        survey_id = connection.execute(survey_table.select().where(
-            survey_table.c.survey_title == 'test_title')).first().survey_id
-        wrong_id = connection.execute(survey_table.select().where(
-            survey_table.c.survey_title != 'test_title')).first().survey_id
-        gqnc = get_questions_no_credentials
-        question_id = gqnc(connection, wrong_id).first().question_id
-        answers = [{'question_id': question_id,
-                    'answer': 1,
-                    'answer_metadata': None,
-                    'is_type_exception': False}]
-        answer_json = {'submitter': 'me',
-                       'survey_id': survey_id,
-                       'answers': answers}
-        response = self.fetch(
-            '/api/surveys/{}/submit'.format(survey_id),
-            method='POST',
-            body=json_encode(answer_json)
-        )
-
-        self.assertEqual(response.code, 422)
-        self.assertIn('invalid', str(response.error))
 
     def testBatchSubmission(self):
         survey_id = connection.execute(survey_table.select().where(
@@ -961,6 +827,257 @@ class APITest(AsyncHTTPTestCase):
                                  api_response['result'][0])
         self.assertSequenceEqual(webpage_response[0]['result'][1],
                                  api_response['result'][1])
+
+
+class APINoLoginTest(AsyncHTTPTestCase):
+    def tearDown(self):
+        connection.execute(submission_table.delete())
+
+    def get_app(self):
+        self.app = Application(pages, **config)
+        return self.app
+
+    def get_new_ioloop(self):
+        return tornado.ioloop.IOLoop.instance()
+
+    def testPostSubmission(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        question_id = connection.execute(question_table.select().where(
+            and_cond)).first().question_id
+        second_cond = and_(question_table.c.survey_id == survey_id,
+                           question_table.c.type_constraint_name ==
+                           'multiple_choice')
+        second_q_id = connection.execute(question_table.select().where(
+            second_cond)).first().question_id
+        choice_cond = question_choice_table.c.question_id == second_q_id
+        choice_id = connection.execute(question_choice_table.select().where(
+            choice_cond)).first().question_choice_id
+        third_cond = and_(question_table.c.survey_id == survey_id,
+                          question_table.c.type_constraint_name == 'text')
+        third_q_id = connection.execute(question_table.select().where(
+            third_cond)).first().question_id
+        fourth_cond = and_(question_table.c.survey_id == survey_id,
+                           question_table.c.type_constraint_name == 'decimal')
+        fourth_q_id = connection.execute(question_table.select().where(
+            fourth_cond)).first().question_id
+        input_data = {'survey_id': survey_id,
+                      'submitter': 'testPostSubmissionSubmitter',
+                      'answers':
+                          [{'question_id': question_id,
+                            'answer': 1,
+                            'answer_metadata': None,
+                            'is_type_exception': False},
+                           {'question_id': second_q_id,
+                            'answer': choice_id,
+                            'answer_metadata': None,
+                            'is_type_exception': False},
+                           {'question_id': third_q_id,
+                            'answer': 'answer one',
+                            'answer_metadata': None,
+                            'is_type_exception': False},
+                           {'question_id': third_q_id,
+                            'answer': 'answer two',
+                            'answer_metadata': None,
+                            'is_type_exception': False},
+                           {'question_id': fourth_q_id,
+                            'answer': 3.5,
+                            'answer_metadata': None,
+                            'is_type_exception': False}]}
+
+        token_result = user_api.generate_token(connection,
+                                               {'email': 'test_email'})
+        token = token_result['result']['token']
+
+        with mock.patch.object(APINoLoginHandler, 'check_xsrf_cookie') as m:
+            m.return_value = None
+            response = self.fetch(
+                '/api/surveys/{}/submit'.format(survey_id),
+                method='POST',
+                body=json_encode(input_data),
+                headers={'Email': 'test_email', 'Token': token})
+        result = json_decode(to_unicode(response.body))['result']
+        submission_id = result['submission_id']
+        self.assertEqual(result,
+                         submission_api.get_one(connection, submission_id,
+                                                email='test_email')['result'])
+        self.assertEqual(response.code, 201)
+
+    def testPostSubmissionNotJson(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+
+        token_result = user_api.generate_token(connection,
+                                               {'email': 'test_email'})
+        token = token_result['result']['token']
+
+        with mock.patch.object(APINoLoginHandler, 'check_xsrf_cookie') as m:
+            m.return_value = None
+            response = self.fetch(
+                '/api/surveys/{}/submit'.format(survey_id),
+                method='POST',
+                body='not even close to json',
+                headers={'Email': 'test_email', 'Token': token}
+            )
+
+        self.assertEqual(response.code, 400)
+        self.assertEqual(str(response.error),
+                         'HTTP 400: {"message": "Problems parsing JSON"}')
+
+    def testPostSubmissionMissingValue(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        answer_json = {'survey_id': survey_id}
+
+        token_result = user_api.generate_token(connection,
+                                               {'email': 'test_email'})
+        token = token_result['result']['token']
+
+        with mock.patch.object(APINoLoginHandler, 'check_xsrf_cookie') as m:
+            m.return_value = None
+            response = self.fetch(
+                '/api/surveys/{}/submit'.format(survey_id),
+                method='POST',
+                body=json_encode(answer_json),
+                headers={'Email': 'test_email', 'Token': token}
+            )
+
+        self.assertEqual(response.code, 422)
+        self.assertIn('missing_field', str(response.error))
+
+    def testPostSubmissionWrongSurveyID(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        wrong_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title != 'test_title')).first().survey_id
+        answer_json = {
+            'survey_id': wrong_id,
+            'answers': [
+                {
+                    'question_id': get_questions_no_credentials(
+                        connection, survey_id).first().question_id,
+                    'answer': 1,
+                    'answer_metadata': None,
+                    'is_type_exception': False
+                }
+            ]
+        }
+
+        token_result = user_api.generate_token(connection,
+                                               {'email': 'test_email'})
+        token = token_result['result']['token']
+
+        with mock.patch.object(APINoLoginHandler, 'check_xsrf_cookie') as m:
+            m.return_value = None
+            response = self.fetch(
+                '/api/surveys/{}/submit'.format(survey_id),
+                method='POST',
+                body=json_encode(answer_json),
+                headers={'Email': 'test_email', 'Token': token}
+            )
+
+        self.assertEqual(response.code, 422)
+        self.assertIn('invalid', str(response.error))
+
+    def testPostSubmissionWrongQuestionID(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        wrong_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title != 'test_title')).first().survey_id
+        gqnc = get_questions_no_credentials
+        question_id = gqnc(connection, wrong_id).first().question_id
+        answers = [{'question_id': question_id,
+                    'answer': 1,
+                    'answer_metadata': None,
+                    'is_type_exception': False}]
+        answer_json = {'submitter': 'me',
+                       'survey_id': survey_id,
+                       'answers': answers}
+
+        token_result = user_api.generate_token(connection,
+                                               {'email': 'test_email'})
+        token = token_result['result']['token']
+
+        with mock.patch.object(APINoLoginHandler, 'check_xsrf_cookie') as m:
+            m.return_value = None
+            response = self.fetch(
+                '/api/surveys/{}/submit'.format(survey_id),
+                method='POST',
+                body=json_encode(answer_json),
+                headers={'Email': 'test_email', 'Token': token}
+            )
+
+        self.assertEqual(response.code, 422)
+        self.assertIn('invalid', str(response.error))
+
+    def testPostSubmissionBadEmail(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        question_id = connection.execute(question_table.select().where(
+            and_cond)).first().question_id
+
+        answer_json = {
+            'survey_id': survey_id,
+            'submitter': 'testPostWithBadEmailSubmitter',
+            'answers':
+                [{'question_id': question_id,
+                  'answer': 1,
+                  'answer_metadata': None,
+                  'is_type_exception': False}]
+        }
+
+        token_result = user_api.generate_token(connection,
+                                               {'email': 'test_email'})
+        token = token_result['result']['token']
+
+        with mock.patch.object(APINoLoginHandler, 'check_xsrf_cookie') as m:
+            m.return_value = None
+            response = self.fetch(
+                '/api/surveys/{}/submit'.format(survey_id),
+                method='POST',
+                body=json_encode(answer_json),
+                headers={'Email': 'a', 'Token': token}
+            )
+
+        self.assertEqual(response.code, 403)
+
+    def testPostSubmissionBadHeaders(self):
+        self.app = Application(pages, **config)
+
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        question_id = connection.execute(question_table.select().where(
+            and_cond)).first().question_id
+
+        answer_json = {
+            'survey_id': survey_id,
+            'submitter': 'testPostWithBadToken',
+            'answers':
+                [{'question_id': question_id,
+                  'answer': 1,
+                  'answer_metadata': None,
+                  'is_type_exception': False}]
+        }
+
+        token_result = user_api.generate_token(connection,
+                                               {'email': 'test_email'})
+        token = token_result['result']['token']
+
+        with mock.patch.object(APINoLoginHandler, 'check_xsrf_cookie') as m:
+            m.return_value = None
+            response = self.fetch(
+                '/api/surveys/{}/submit'.format(survey_id),
+                method='POST',
+                body=json_encode(answer_json)
+            )
+
+        self.assertEqual(response.code, 201)
 
 
 class DebugTest(AsyncHTTPTestCase):
