@@ -47,7 +47,6 @@
                         <th># of Submissions</th>
                         <th>Latest Submission</th>
                         <th>Activity</th>
-                        <th>Data</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -74,6 +73,28 @@
     </div>
     {% end %}
 </div>
+
+<script type="text/template" id="view-data-btn-tpl">
+    <button class="btn btn-default btn-xs" data-id="<%= survey_id %>"><span class="glyphicon glyphicon-stats"></span> View Data</button>
+</script>
+
+<script type="text/template" id="download-data-btn-tpl">
+    <div class="btn-group">
+        <button class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+            <span class="glyphicon glyphicon-cloud-download"></span> Download Data <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-right" role="menu">
+            <li><a href="#" data-id="<%= survey_id %>">CSV (.csv)</a></li>
+            <li><a href="#" data-id="<%= survey_id %>">KML (.kml)</a></li>
+            <li><a href="#" data-id="<%= survey_id %>">JSON (.json)</a></li>
+        </ul>
+    </div>
+</script>
+
+<script type="text/template" id="manage-btn-tpl">
+    <a class="btn btn-secondary btn-xs" href="/view/<%= survey_id %>" data-id="<%= survey_id %>">Manage Survey</a>
+</script>
+
 <script src="/static/lib.js"></script>
 
 <!-- Highcharts -->
@@ -102,6 +123,7 @@
             series: [{
                 name: 'Submissions',
                 data: [34, 76, 58, 122]
+                // data: [[Date('03-12-2015'), 34], [Date('03-19-2015'), 76], [Date('03-26-2015'),58], [Date('04-02-2015'), 122]]
             }],
             credits: {
                 enabled: false
@@ -116,7 +138,11 @@
 <script src="http://cdn.datatables.net/plug-ins/1.10.6/integration/bootstrap/3/dataTables.bootstrap.js"></script>
 <script>
 $(document).ready(function() {
-    var $surveys = $('#surveys');
+    var $surveys = $('#surveys'),
+        view_btn_tpl = _.template($("#view-data-btn-tpl").html()),
+        manage_btn_tpl = _.template($("#manage-btn-tpl").html()),
+        dl_btn_tpl = _.template($("#download-data-btn-tpl").html());
+
     if ($surveys.length > 0) {
         $('#surveys').dataTable({
             language: {
@@ -128,50 +154,87 @@ $(document).ready(function() {
             ],
             "pagingType": "full_numbers",
             "order": [
-                [1, 'desc']
+                [2, 'desc']
             ],
             "columnDefs": [
                 {
+                    "data": 0,
                     "render": function(data, type, row) {
-                        return '<a data-ignore="push" href="/view/' + row[1] + '">' + data + '</a><br />(<a data-ignore="push" href="/survey/' + row[1] + '">Click here for a shareable link</a>)';
+                        console.log(data);
+                        return data;
                     },
                     "targets": 0
-                }, {
-                    "visible": false,
-                    "targets": 1
-                }, {
+                },
+                {
+                    "data": 1,
+                    targets: 1,
+                    width: "14%"
+                },
+                {
+                    "data": 2,
                     "render": function(data, type, row) {
                         var datetime = new Date(data);
-                        return datetime.toDateString() + '<br />' + datetime.toTimeString();
+                        return datetime.toDateString() + ' at ' + datetime.toTimeString();
                     },
                     "targets": 2
                 }
-            ],
-            "columns": [{
-                "name": "survey_title"
-            }, {
-                "name": "num_submissions"
-            }, {
-                "name": "latest_submission"
-            }, {
-                "name": "activity"
-            }
-            // , {
-            //     "name": "data"
-            // }, {
-            //     "name": "actions"
-            // }
-            ],
-            "processing": true,
-            "serverSide": true,
-            "ajax": {
-                "url": "/api/survey_data_table",
-                "data": function(d) {
-                    return {
-                        "args": JSON.stringify(d)
-                    };
+                , {
+                    "data": 3,
+                    "render": function(data, type, row) {
+                        return "...";
+                    },
+                    "targets": 3,
+                    "sortable": false
                 }
-            }
+                , {
+                    "data": 3,
+                    "render": function(data, type, row) {
+                        console.log(data);
+                        var view = view_btn_tpl({survey_id: data}),
+                            dl = dl_btn_tpl({survey_id: data}),
+                            manage = manage_btn_tpl({survey_id: data});
+
+                        return view + "&nbsp;" + dl + "&nbsp;" + manage;
+                    },
+                    "targets": 4,
+                    "width": '300px',
+                    "class": "text-center",
+                    "sortable": false
+                }
+            ],
+            // "columns": [{
+            //     "name": "survey_title",
+            // }, {
+            //     "name": "num_submissions"
+            // }, {
+            //     "name": "latest_submission"
+            // }, {
+            //     "name": "id"
+            // }],
+            "processing": true,
+            "data": [
+                [
+                    "Survey 1",
+                    945,
+                    "2015-04-09T21:14:23.768586+00:00",
+                    "53e4cb8f-350a-4ef3-89cc-beca223013a8"
+                ]
+                , [
+                    "Survey 2",
+                    945,
+                    "2015-04-09T21:14:23.768586+00:00",
+                    "53e4cb8f-350a-4ef3-89cc-beca223013a8"
+                ]
+            ]
+            // "serverSide": true,
+            // "ajax": {
+            //     "url": "/api/survey_data_table",
+            //     "data": function(d) {
+            //         return {
+            //             "args": JSON.stringify(d)
+            //         };
+            //     }
+            // }
         });
     }
 });
