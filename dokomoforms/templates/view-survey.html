@@ -91,19 +91,25 @@
                     </div>
                     <div class="row row-stat">
                         <!-- <div class="col-md-4"></div> -->
-                        <div class="col-md-4">
-                            <a href="/view/data/{{ survey.survey_id }}" class="btn btn-sm btn-secondary"><span class="glyphicon glyphicon-stats"></span>&nbsp;&nbsp; View Data</a>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="btn-group">
-                                <button class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                                    <span class="glyphicon glyphicon-cloud-download"></span>&nbsp;&nbsp; Download Data <span class="caret"></span>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-right" role="menu">
-                                    <li><a href="#">CSV (.csv)</a></li>
-                                    <li><a href="#">KML (.kml)</a></li>
-                                    <li><a href="#">JSON (.json)</a></li>
-                                </ul>
+                        <div class="col-md-12">
+                            <div class="pull-left">
+                                
+                            </div>
+                            
+                            <div class="pull-right">
+                                <a href="/view/data/{{ survey.survey_id }}" class="btn btn-sm btn-secondary"><span class="glyphicon glyphicon-stats"></span>&nbsp;&nbsp; View Data</a>
+                            <!-- </div>
+                            <div class="col-md-4"> -->
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                                        <span class="glyphicon glyphicon-cloud-download"></span>&nbsp;&nbsp; Download Data <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                                        <li><a href="#">CSV (.csv)</a></li>
+                                        <li><a href="#">KML (.kml)</a></li>
+                                        <li><a href="#">JSON (.json)</a></li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -160,7 +166,7 @@
                 var date = moment(result[1], "YYYY-MM-DD").format('MMM D');
 
                 console.log(date);
-                
+
                 data.push(result[0]);
                 cats.push(date);
             });
