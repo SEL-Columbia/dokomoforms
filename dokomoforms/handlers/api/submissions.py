@@ -26,10 +26,19 @@ class SubmissionsAPIHandler(APIHandler):
         body = get_json_request_body(self)
         subs = body.get('submitters', None)
         filters = body.get('filters', None)
-        response = submission_api.get_all(self.db, survey_id,
-                                          email=self.get_email(),
-                                          submitters=subs,
-                                          filters=filters)
+        order_by = body.get('order_by', None)
+        direction = body.get('direction', 'ASC')
+        limit = body.get('limit', None)
+        response = submission_api.get_all(
+            self.db,
+            survey_id,
+            email=self.get_email(),
+            submitters=subs,
+            filters=filters,
+            order_by=order_by,
+            direction=direction,
+            limit=limit
+        )
         self.write(response)
 
 

@@ -100,7 +100,10 @@ def get_submissions_by_email(connection: Connection,
                              survey_id: str,
                              email: str,
                              submitters: Iterator=None,
-                             filters: list=None) -> ResultProxy:
+                             filters: list=None,
+                             order_by: str=None,
+                             direction: str='ASC',
+                             limit: int=None) -> ResultProxy:
     """
     Get submissions to a survey.
 
@@ -109,6 +112,9 @@ def get_submissions_by_email(connection: Connection,
     :param email: the e-mail address of the user
     :param submitters: if supplied, filters results by all given submitters
     :param filters: if supplied, filters results by answers
+    :param order_by: if supplied, the column for the ORDER BY clause
+    :param direction: optional sort direction for order_by (default ASC)
+    :param limit: if supplied, the limit to apply to the number of results
     :return: an iterable of the submission records
     """
 
@@ -120,9 +126,21 @@ def get_submissions_by_email(connection: Connection,
     if filters is not None:
         filtered = set(_get_filtered_ids(connection, filters))
         conds.append(submission_table.c.submission_id.in_(filtered))
+    if order_by is None:
+        order_by = 'submission_time'
     return connection.execute(
-        select([submission_table]).select_from(table).where(
-            and_(*conds)).order_by('submission_time'))
+        select(
+            [submission_table]
+        ).select_from(
+            table
+        ).where(
+            and_(*conds)
+        ).order_by(
+            '{} {}'.format(order_by, direction)
+        ).limit(
+            limit
+        )
+    )
 
 
 def get_number_of_submissions(connection: Connection, survey_id: str) -> int:

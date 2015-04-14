@@ -244,7 +244,10 @@ def get_all(connection: Connection,
             survey_id: str,
             email: str,
             submitters: Iterator=None,
-            filters: list=None) -> dict:
+            filters: list=None,
+            order_by: str=None,
+            direction: str='ASC',
+            limit: int=None) -> dict:
     """
     Create a JSON representation of the submissions to a given survey and
     email.
@@ -254,17 +257,29 @@ def get_all(connection: Connection,
     :param email: the user's e-mail address
     :param submitters: if supplied, filters results by all given submitters
     :param filters: if supplied, filters results by answers
+    :param order_by: if supplied, the column for the ORDER BY clause
+    :param direction: optional sort direction for order_by (default ASC)
+    :param limit: if supplied, the limit to apply to the number of results
     :return: a JSON dict
     """
-    submissions = get_submissions_by_email(connection,
-                                           survey_id,
-                                           email=email,
-                                           submitters=submitters,
-                                           filters=filters)
+    submissions = get_submissions_by_email(
+        connection,
+        survey_id,
+        email=email,
+        submitters=submitters,
+        filters=filters,
+        order_by=order_by,
+        direction=direction,
+        limit=limit
+    )
     # TODO: Check if this is a performance problem
-    result = [get_one(connection,
-                      sub.submission_id,
-                      email=email) for sub in submissions]
+    result = [
+        get_one(
+            connection,
+            sub.submission_id,
+            email=email
+        ) for sub in submissions
+    ]
     return json_response(result)
 
 
