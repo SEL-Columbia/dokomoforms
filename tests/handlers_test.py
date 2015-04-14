@@ -40,7 +40,7 @@ from dokomoforms.handlers.api.data_table import _base_query, \
     _get_orderings, _apply_ordering, _apply_limit, SurveyDataTableHandler, \
     SubmissionDataTableHandler, IndexSurveyDataTableHandler
 from dokomoforms.handlers.api.submissions import SubmissionsAPIHandler, \
-    SingleSubmissionAPIHandler
+    SingleSubmissionAPIHandler, SubmissionActivityAPIHandler
 from dokomoforms.handlers.api.surveys import SurveysAPIHandler, \
     SingleSurveyAPIHandler
 from dokomoforms.handlers.auth import LoginHandler
@@ -219,6 +219,23 @@ class APITest(AsyncHTTPTestCase):
                               headers={'Token': generate_api_token(),
                                        'Email': 'test_email'})
         self.assertEqual(response.code, 403)
+
+    def testGetActivity(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        _create_submission()
+        with mock.patch.object(SubmissionActivityAPIHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch(
+                '/api/surveys/{}/submission_activity'.format(survey_id))
+        self.assertEqual(response.code, 200)
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(
+            webpage_response,
+            submission_api.get_activity(connection, survey_id, 'test_email')
+        )
 
     def testGetSingleSubmission(self):
         submission_id = _create_submission()['submission_id']

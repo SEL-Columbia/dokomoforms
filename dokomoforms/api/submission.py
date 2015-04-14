@@ -315,7 +315,7 @@ def get_activity(connection: Connection,
         )
     ).fetchall()
     return json_response(
-        [[num, sub_time] for num, sub_time in result]
+        [[num, sub_time.isoformat()] for num, sub_time in result]
     )
 
 
