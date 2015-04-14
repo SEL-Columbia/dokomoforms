@@ -145,32 +145,53 @@
 <script src="http://code.highcharts.com/highcharts.js"></script>
 <script type="text/javascript">
     
-    $(function () { 
-        $('.activity-graph').highcharts({
-            chart: {
-                type: 'line'
-            },
-            title: {
-                text: null
-            },
-            colors: [
-                '#666'
-            ],
-            xAxis: {
-                categories: ['Mar 12', 'Mar 19', 'Mar 26', 'Apr 2']
-            },
-            yAxis: {
-                title: {
-                    text: '# of submissions'
-                }
-            },
-            series: [{
-                name: 'Submissions',
-                data: [34, 76, 58, 122]
-            }],
-            credits: {
-                enabled: false
+    $(function () {
+        $.getJSON('/api/surveys/{{ survey.survey_id }}/submission_activity', function(data) {
+
+            var results = data.result,
+                cats = [], 
+                data = [];
+
+            if (!results.length) {
+                return;
             }
+
+            _.each(results, function(result) {
+                var date = moment(result[1], "YYYY-MM-DD").format('MMM D');
+
+                console.log(date);
+                
+                data.push(result[0]);
+                cats.push(date);
+            });
+
+
+            $('.activity-graph').highcharts({
+                chart: {
+                    type: 'line'
+                },
+                title: {
+                    text: null
+                },
+                colors: [
+                    '#666'
+                ],
+                xAxis: {
+                    categories: cats
+                },
+                yAxis: {
+                    title: {
+                        text: '# of submissions'
+                    }
+                },
+                series: [{
+                    name: 'Submissions',
+                    data: data
+                }],
+                credits: {
+                    enabled: false
+                }
+            });
         });
     });
 
