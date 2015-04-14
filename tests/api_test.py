@@ -340,6 +340,7 @@ class TestSubmission(unittest.TestCase):
         times = [
             datetime.now(),
             datetime.now() + timedelta(-15),
+            datetime.now() + timedelta(-15),
             datetime.now() + timedelta(-45)
         ]
 
@@ -353,7 +354,7 @@ class TestSubmission(unittest.TestCase):
             )
             submission_id = submission_exec.inserted_primary_key[0]
             connection.execute(answer_insert(
-                answer=1, question_id=question_id, submission_id=submission_id,
+                answer=5, question_id=question_id, submission_id=submission_id,
                 answer_metadata={},
                 survey_id=survey_id, type_constraint_name=tcn,
                 is_type_exception=False,
@@ -363,6 +364,8 @@ class TestSubmission(unittest.TestCase):
             connection, survey_id, 'test_email'
         )['result']
         self.assertEqual(len(activity), 2)
+        self.assertEqual(activity[0][0], 1)
+        self.assertEqual(activity[1][0], 2)
 
     def testDelete(self):
         survey_id = connection.execute(survey_table.select().where(
