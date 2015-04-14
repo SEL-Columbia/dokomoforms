@@ -38,7 +38,7 @@ from dokomoforms.handlers.api.batch import BatchSubmissionAPIHandler
 from dokomoforms.handlers.api.data_table import _base_query, \
     _apply_text_filter, \
     _get_orderings, _apply_ordering, _apply_limit, SurveyDataTableHandler, \
-    SubmissionDataTableHandler
+    SubmissionDataTableHandler, IndexSurveyDataTableHandler
 from dokomoforms.handlers.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler
 from dokomoforms.handlers.api.surveys import SurveysAPIHandler, \
@@ -1415,6 +1415,29 @@ class DataTableTest(AsyncHTTPTestCase):
         self.assertEqual(webpage_response['recordsTotal'], 1)
         data = webpage_response['data']
         self.assertEqual(data[0][1], 'me')
+
+    def testGetIndexSurveyDataTable(self):
+        args = {
+            'search': {
+                'value': ''
+            },
+            'order': [],
+            'length': 10,
+            'draw': 1
+        }
+        urle = quote_plus(json_encode(args))
+        with mock.patch.object(IndexSurveyDataTableHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/index_survey_data_table?args=' + urle)
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertEqual(webpage_response['recordsFiltered'], 1)
+        self.assertEqual(webpage_response['draw'], 1)
+        self.assertEqual(webpage_response['recordsTotal'], 1)
+        data = webpage_response['data']
+        self.assertEqual(data[0][0], 'test_title')
+        self.assertEqual(data[0][1], '0')
+        self.assertEqual(data[0][2], '')
 
 
 if __name__ == '__main__':

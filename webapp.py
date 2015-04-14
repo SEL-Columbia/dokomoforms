@@ -128,7 +128,7 @@ pages = [
     (r'/api/aggregate/({})/?'.format(UUID_REGEX), AggregationHandler),
 
     (r'/api/index_survey_data_table/?', IndexSurveyDataTableHandler),
-    (r'/api/survey_data_table/?', SurveyDataTableHandler),
+    (r'/api/survey_data_table/?', SurveyDataTableHandler),  # kill later?
     (r'/api/submission_data_table/({})/?'.format(UUID_REGEX),
      SubmissionDataTableHandler),
 

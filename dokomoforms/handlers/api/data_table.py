@@ -4,7 +4,7 @@ https://github.com/DataTables/DataTables/blob
 /e0f2cfd81e61103d88ea215797bdde1bc19a2935/examples/server_side/scripts/ssp
 .class.php
 """
-from collections import Iterator
+from collections import Iterator, Callable
 
 from sqlalchemy import select, Table, Column
 from sqlalchemy.sql import Select
@@ -21,8 +21,6 @@ from dokomoforms.handlers.util.base import APIHandler
 def _base_query(table: Table,
                 email: str,
                 selected: list,
-                *,
-                grouped: list=None,
                 where: BinaryExpression=None) -> Select:
     """
     Return a query for a DataTable without any text filtering, ordering,
@@ -32,13 +30,13 @@ def _base_query(table: Table,
                   with the auth_user table
     :param email: the user's e-mail address
     :param selected: the columns to select from the table
-    :param grouped: the columns in the GROUP BY clause. If not specified,
-                    defaults to the same columns as the selected argument
     :param where: an optional WHERE clause to apply to the query
     :return: the query object
     """
-    if grouped is None:
-        grouped = selected
+    # Selected columns (but not aggregate functions) must also appear in the
+    # GROUP BY clause
+    grouped = (column for column in selected if type(column) is Column)
+
     query = select(
         # The extra column is for the DataTable recordsFiltered attribute.
         # It represents the number of records found before applying a sql LIMIT
@@ -92,7 +90,7 @@ def _get_orderings(args: dict) -> Iterator:
 def _apply_ordering(query: Select,
                     args: dict,
                     default_sort_column_name: str,
-                    default_direction: str='desc') -> Select:
+                    default_direction: str='DESC') -> Select:
     """
     If an ordering has been supplied by the ['order'] parameter from a
     DataTable AJAX request, this adds it to the given query. Otherwise,
@@ -132,140 +130,184 @@ def _apply_limit(query: Select,
     return query
 
 
-class SurveyDataTableHandler(APIHandler):
+class DataTableBaseHandler(APIHandler):
+    """DataTable handlers should inherit from this class to access the
+    _get_records method."""
+
+    def _get_records(self,
+                     *,
+                     table: Table,
+                     email: str,
+                     selected: list,
+                     where: BinaryExpression=None,
+                     text_filter_column: Column,
+                     default_sort_column_name: str,
+                     default_sort_direction: str='DESC',
+                     total_records: int,
+                     data_formatter: Callable) -> str:
+        """
+        For use in responding to a DataTable AJAX request. Uses the 'args'
+        query parameter and the supplied arguments to get the data out of
+        the specified table.
+
+        :param table: the SQLAlchemy table (probably involves a join)
+        :param email: the user's e-mail address
+        :param selected: the columns and SQL functions to select from the table
+        :param where: an optional WHERE clause
+        :param text_filter_column: the SQLAlchemy Column to use for the
+                                   DataTable search box.
+        :param default_sort_column_name: the name of the column to sort by
+                                         if the query did not specify one
+        :param default_sort_direction: the sort direction for
+                                       default_sort_column_name (default DESC)
+        :param total_records: the total number of records that the DataTable
+                              could contain
+        :param data_formatter: a function that looks like
+
+                               def data_formatter(record: tuple) -> list
+                                   return [transform(val) for val in record]
+
+                               which takes a record from the table and
+                               returns the values as strings.
+
+                               For example, if you wanted to select
+                               [survey_title, created_on,
+                               number_of_submissions], the record you would
+                               get might look like ('my survey', {April 14,
+                               2015}, 5), and you would need to return
+                               ['my_survey', '2015/3/14', '5'], by applying
+                               your formatting.
+        :return: the JSON-encoded data
+        """
+        args = json_decode(self.get_argument('args'))
+
+        query = _base_query(
+            table, email, selected, where=where
+        )
+
+        query = _apply_text_filter(query, args, column=text_filter_column)
+
+        query = _apply_ordering(
+            query, args,
+            default_sort_column_name=default_sort_column_name,
+            default_direction=default_sort_direction
+        )
+
+        query = _apply_limit(query, args)
+
+        result = self.db.execute(query).fetchall()
+
+        response = {
+            'draw': int(args['draw']),
+            'recordsTotal': total_records,
+            'recordsFiltered': result[0]['filtered'] if result else 0,
+            'data': [data_formatter(record[:-1]) for record in result]
+        }
+
+        return json_encode(response)
+
+
+class SurveyDataTableHandler(DataTableBaseHandler):
     """The endpoint for getting a user's surveys for use in a jQuery
     DataTable."""
 
     def get(self):
-        args = json_decode(self.get_argument('args'))
-
         email = self.get_email()
-        table = auth_user_table.join(survey_table).outerjoin(submission_table)
-        num_submissions = count(submission_table.c.submission_id)
-        selected = [
-            survey_table.c.survey_title,
-            survey_table.c.survey_id,
-            survey_table.c.created_on,
-            num_submissions.label('num_submissions')
-        ]
 
-        query = _base_query(table, email, selected, grouped=selected[:2])
+        def data_formatter(record: tuple) -> list:
+            title, survey_id, created_on, num = record
+            return [title, survey_id, created_on.isoformat(), str(num)]
 
-        # Title filter
-        query = _apply_text_filter(query, args, survey_table.c.survey_title)
+        # Shorter variable names
+        auth_user = auth_user_table
+        survey = survey_table
+        submission = submission_table
+        submission_id = submission_table.c.submission_id
 
-        # Ordering
-        query = _apply_ordering(query, args, 'created_on')
+        result = self._get_records(
+            table=auth_user.join(survey).outerjoin(submission),
+            email=email,
+            selected=[
+                survey_table.c.survey_title,
+                survey_table.c.survey_id,
+                survey_table.c.created_on,
+                count(submission_id).label('num_submissions')
+            ],
+            text_filter_column=survey_table.c.survey_title,
+            default_sort_column_name='created_on',
+            total_records=get_number_of_surveys(self.db, email),
+            data_formatter=data_formatter
+        )
 
-        # Limiting
-        query = _apply_limit(query, args)
-
-        result = self.db.execute(query).fetchall()
-
-        response = {
-            'draw': int(args['draw']),
-            'recordsTotal': get_number_of_surveys(self.db, email),
-            'recordsFiltered': result[0]['filtered'] if result else 0,
-            'data': [
-                [title,
-                 survey_id,
-                 created_on.isoformat(),
-                 str(num)]
-                for title, survey_id, created_on, num, _ in result
-            ]
-        }
-        self.write(json_encode(response))
+        self.write(result)
 
 
-class SubmissionDataTableHandler(APIHandler):
+class SubmissionDataTableHandler(DataTableBaseHandler):
     """The endpoint for getting submissions to a survey for use in a jQuery
     DataTable."""
 
     def get(self, survey_id):
-        args = json_decode(self.get_argument('args'))
-
         email = self.get_email()
-        table = auth_user_table.join(survey_table).join(submission_table)
-        selected = [
-            submission_table.c.submission_id,
-            submission_table.c.submitter,
-            submission_table.c.submission_time,
-        ]
-        where = submission_table.c.survey_id == survey_id
 
-        query = _base_query(table, email, selected, where=where)
+        def data_formatter(record: tuple) -> list:
+            sub_id, submitter, sub_time = record
+            return sub_id, submitter, sub_time.isoformat()
 
-        # Submitter name filter
-        query = _apply_text_filter(query, args, submission_table.c.submitter)
-
-        # Ordering
-        query = _apply_ordering(query, args, 'submission_time')
-
-        # Limiting
-        query = _apply_limit(query, args)
-
-        result = self.db.execute(query).fetchall()
-
-        response = {
-            'draw': int(args['draw']),
-            'recordsTotal': get_number_of_submissions(self.db, survey_id),
-            'recordsFiltered': result[0]['filtered'] if result else 0,
-            'data': [
-                [sub_id,
-                 submitter,
-                 sub_time.isoformat()]
-                for sub_id, submitter, sub_time, _ in result
-            ]
-        }
-        self.write(json_encode(response))
+        result = self._get_records(
+            table=auth_user_table.join(survey_table).join(submission_table),
+            email=email,
+            selected=[
+                submission_table.c.submission_id,
+                submission_table.c.submitter,
+                submission_table.c.submission_time
+            ],
+            where=submission_table.c.survey_id == survey_id,
+            text_filter_column=submission_table.c.submitter,
+            default_sort_column_name='submission_time',
+            total_records=get_number_of_submissions(self.db, survey_id),
+            data_formatter=data_formatter
+        )
+        self.write(result)
 
 
-class IndexSurveyDataTableHandler(APIHandler):
+class IndexSurveyDataTableHandler(DataTableBaseHandler):
     """The endpoint for getting a summary of a user's survey information for
     a jQuery DataTable."""
 
     def get(self):
-        args = json_decode(self.get_argument('args'))
-
         email = self.get_email()
-        table = auth_user_table.join(survey_table).outerjoin(submission_table)
-        num_submissions = count(submission_table.c.submission_id)
-        latest_submission = sqlmax(submission_table.c.submission_time)
 
-        selected = [
-            survey_table.c.survey_title,
-            num_submissions.label('num_submissions'),
-            # survey_table.c.created_on,
-            latest_submission.label('latest_submission'),
-            survey_table.c.survey_id,
-        ]
-
-        query = _base_query(table, email, selected,
-                            grouped=[selected[0], selected[3]]
-                            )
-
-        # Title filter
-        query = _apply_text_filter(query, args, survey_table.c.survey_title)
-
-        # Ordering
-        query = _apply_ordering(query, args, 'latest_submission')
-
-        # Limiting
-        query = _apply_limit(query, args)
-
-        result = self.db.execute(query).fetchall()
-
-        response = {
-            'draw': int(args['draw']),
-            'recordsTotal': get_number_of_surveys(self.db, email),
-            'recordsFiltered': result[0]['filtered'] if result else 0,
-            'data': [
-                [title,
-                 str(num),
-                 # created_on.isoformat(),
-                 '' if not latest_sub else latest_sub.isoformat(),
-                 survey_id]
-                for title, num, latest_sub, survey_id, _ in result
+        def data_formatter(record: tuple) -> list:
+            title, num, latest_sub, survey_id = record
+            return [
+                title,
+                str(num),
+                # created_on.isoformat(),
+                '' if not latest_sub else latest_sub.isoformat(),
+                survey_id
             ]
-        }
-        self.write(json_encode(response))
+
+        # Shorter variable names
+        auth_user = auth_user_table
+        survey = survey_table
+        submission = submission_table
+        submission_id = submission_table.c.submission_id
+        submission_time = submission_table.c.submission_time
+
+        result = self._get_records(
+            table=auth_user.join(survey).outerjoin(submission),
+            email=email,
+            selected=[
+                survey_table.c.survey_title,
+                count(submission_id).label('num_submissions'),
+                # survey_table.c.created_on,
+                sqlmax(submission_time).label('latest_submission'),
+                survey_table.c.survey_id,
+            ],
+            text_filter_column=survey_table.c.survey_title,
+            default_sort_column_name='latest_submission',
+            total_records=get_number_of_surveys(self.db, email),
+            data_formatter=data_formatter
+        )
+
+        self.write(result)
