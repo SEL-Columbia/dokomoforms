@@ -4,7 +4,8 @@ https://github.com/DataTables/DataTables/blob
 /e0f2cfd81e61103d88ea215797bdde1bc19a2935/examples/server_side/scripts/ssp
 .class.php
 """
-from collections import Iterator, Callable
+from abc import abstractmethod, ABCMeta
+from collections import Iterator
 
 from sqlalchemy import select, Table, Column
 from sqlalchemy.sql import Select
@@ -130,9 +131,29 @@ def _apply_limit(query: Select,
     return query
 
 
-class DataTableBaseHandler(APIHandler):
+class DataTableBaseHandler(APIHandler, metaclass=ABCMeta):
     """DataTable handlers should inherit from this class to access the
     _get_records method."""
+
+    @staticmethod
+    @abstractmethod
+    def _data_formatter(record: tuple) -> list:  # pragma: no cover
+        """
+        _get_records() uses this method to transform values returned from
+        the database into strings for use in a DataTable.
+
+        Generally this method should return something like
+        [transform(val) for val in record]
+
+        For example, if you wanted to select [survey_title, created_on,
+        number_of_submissions], the record you would get might look like
+        ('my survey', {April 14, 2015}, 5), and you would need to return
+        ['my_survey', '2015/3/14', '5'], by applying your formatting.
+
+        :param record: the values returned for one row in the DataTable
+        :return: the same values stringified
+        """
+        pass
 
     def _get_records(self,
                      *,
@@ -143,8 +164,7 @@ class DataTableBaseHandler(APIHandler):
                      text_filter_column: Column,
                      default_sort_column_name: str,
                      default_sort_direction: str='DESC',
-                     total_records: int,
-                     data_formatter: Callable) -> str:
+                     total_records: int) -> str:
         """
         For use in responding to a DataTable AJAX request. Uses the 'args'
         query parameter and the supplied arguments to get the data out of
@@ -162,21 +182,6 @@ class DataTableBaseHandler(APIHandler):
                                        default_sort_column_name (default DESC)
         :param total_records: the total number of records that the DataTable
                               could contain
-        :param data_formatter: a function that looks like
-
-                               def data_formatter(record: tuple) -> list
-                                   return [transform(val) for val in record]
-
-                               which takes a record from the table and
-                               returns the values as strings.
-
-                               For example, if you wanted to select
-                               [survey_title, created_on,
-                               number_of_submissions], the record you would
-                               get might look like ('my survey', {April 14,
-                               2015}, 5), and you would need to return
-                               ['my_survey', '2015/3/14', '5'], by applying
-                               your formatting.
         :return: the JSON-encoded data
         """
         args = json_decode(self.get_argument('args'))
@@ -201,7 +206,7 @@ class DataTableBaseHandler(APIHandler):
             'draw': int(args['draw']),
             'recordsTotal': total_records,
             'recordsFiltered': result[0]['filtered'] if result else 0,
-            'data': [data_formatter(record[:-1]) for record in result]
+            'data': [self._data_formatter(record[:-1]) for record in result]
         }
 
         return json_encode(response)
@@ -211,12 +216,13 @@ class SurveyDataTableHandler(DataTableBaseHandler):
     """The endpoint for getting a user's surveys for use in a jQuery
     DataTable."""
 
+    @staticmethod
+    def _data_formatter(record: tuple) -> list:
+        title, survey_id, created_on, num = record
+        return [title, survey_id, created_on.isoformat(), str(num)]
+
     def get(self):
         email = self.get_email()
-
-        def data_formatter(record: tuple) -> list:
-            title, survey_id, created_on, num = record
-            return [title, survey_id, created_on.isoformat(), str(num)]
 
         # Shorter variable names
         auth_user = auth_user_table
@@ -235,8 +241,7 @@ class SurveyDataTableHandler(DataTableBaseHandler):
             ],
             text_filter_column=survey_table.c.survey_title,
             default_sort_column_name='created_on',
-            total_records=get_number_of_surveys(self.db, email),
-            data_formatter=data_formatter
+            total_records=get_number_of_surveys(self.db, email)
         )
 
         self.write(result)
@@ -246,12 +251,13 @@ class SubmissionDataTableHandler(DataTableBaseHandler):
     """The endpoint for getting submissions to a survey for use in a jQuery
     DataTable."""
 
+    @staticmethod
+    def _data_formatter(record: tuple) -> list:
+        sub_id, submitter, sub_time = record
+        return sub_id, submitter, sub_time.isoformat()
+
     def get(self, survey_id):
         email = self.get_email()
-
-        def data_formatter(record: tuple) -> list:
-            sub_id, submitter, sub_time = record
-            return sub_id, submitter, sub_time.isoformat()
 
         result = self._get_records(
             table=auth_user_table.join(survey_table).join(submission_table),
@@ -264,8 +270,7 @@ class SubmissionDataTableHandler(DataTableBaseHandler):
             where=submission_table.c.survey_id == survey_id,
             text_filter_column=submission_table.c.submitter,
             default_sort_column_name='submission_time',
-            total_records=get_number_of_submissions(self.db, survey_id),
-            data_formatter=data_formatter
+            total_records=get_number_of_submissions(self.db, survey_id)
         )
         self.write(result)
 
@@ -274,18 +279,19 @@ class IndexSurveyDataTableHandler(DataTableBaseHandler):
     """The endpoint for getting a summary of a user's survey information for
     a jQuery DataTable."""
 
+    @staticmethod
+    def _data_formatter(record: tuple) -> list:
+        title, num, latest_sub, survey_id = record
+        return [
+            title,
+            str(num),
+            # created_on.isoformat(),
+            '' if not latest_sub else latest_sub.isoformat(),
+            survey_id
+        ]
+
     def get(self):
         email = self.get_email()
-
-        def data_formatter(record: tuple) -> list:
-            title, num, latest_sub, survey_id = record
-            return [
-                title,
-                str(num),
-                # created_on.isoformat(),
-                '' if not latest_sub else latest_sub.isoformat(),
-                survey_id
-            ]
 
         # Shorter variable names
         auth_user = auth_user_table
@@ -306,8 +312,7 @@ class IndexSurveyDataTableHandler(DataTableBaseHandler):
             ],
             text_filter_column=survey_table.c.survey_title,
             default_sort_column_name='latest_submission',
-            total_records=get_number_of_surveys(self.db, email),
-            data_formatter=data_formatter
+            total_records=get_number_of_surveys(self.db, email)
         )
 
         self.write(result)
