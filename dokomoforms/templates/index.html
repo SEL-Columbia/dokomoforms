@@ -173,8 +173,12 @@ $(document).ready(function() {
                 {
                     "data": 2,
                     "render": function(data, type, row) {
-                        var datetime = new Date(data);
-                        return datetime.toDateString() + ' at ' + datetime.toTimeString();
+                        if (data) {
+                            var datetime = new Date(data);
+                            return datetime.toDateString() + ' at ' + datetime.toTimeString();
+                        } else {
+                            return '';
+                        }
                     },
                     "targets": 2
                 }
@@ -202,39 +206,25 @@ $(document).ready(function() {
                     "sortable": false
                 }
             ],
-            // "columns": [{
-            //     "name": "survey_title",
-            // }, {
-            //     "name": "num_submissions"
-            // }, {
-            //     "name": "latest_submission"
-            // }, {
-            //     "name": "id"
-            // }],
+            "columns": [{
+                 "name": "survey_title"
+            }, {
+                 "name": "num_submissions"
+            }, {
+                 "name": "latest_submission"
+            }, {
+                 "name": "survey_id"
+            }],
             "processing": true,
-            "data": [
-                [
-                    "Survey 1",
-                    945,
-                    "2015-04-09T21:14:23.768586+00:00",
-                    "53e4cb8f-350a-4ef3-89cc-beca223013a8"
-                ]
-                , [
-                    "Survey 2",
-                    945,
-                    "2015-04-09T21:14:23.768586+00:00",
-                    "53e4cb8f-350a-4ef3-89cc-beca223013a8"
-                ]
-            ]
-            // "serverSide": true,
-            // "ajax": {
-            //     "url": "/api/survey_data_table",
-            //     "data": function(d) {
-            //         return {
-            //             "args": JSON.stringify(d)
-            //         };
-            //     }
-            // }
+            "serverSide": true,
+            "ajax": {
+                 "url": "/api/index_survey_data_table",
+                 "data": function(d) {
+                     return {
+                         "args": JSON.stringify(d)
+                     };
+                 }
+            }
         });
     }
 });
