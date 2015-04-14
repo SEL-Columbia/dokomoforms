@@ -9,6 +9,7 @@ body {
 h4 {
 	text-transform: uppercase;
 	font-weight: bold;
+	margin-bottom: 20px;
 }
 
 .light-shadow {
@@ -17,7 +18,7 @@ h4 {
 
 .header {
 	background-color: #78C0A8;
-	margin-bottom: 40px;
+	/*margin-bottom: 40px;*/
 
 	h1 {
 		font-weight: 100;
@@ -33,6 +34,22 @@ h4 {
 	.header-controls {
 		padding-top: 25px;
 	}
+}
+
+.subheader {
+	background-color: @gray-lighter;
+
+	padding-bottom: 30px;
+
+	h3 {
+		font-weight: 900;
+		margin-top: 30px;
+		margin-bottom: 20px;
+	}
+}
+
+.content {
+	margin-top: 40px;
 }
 
 .activity-graph {
@@ -68,3 +85,72 @@ h4 {
 .btn-secondary {
   .button-variant(@btn-secondary-color; @btn-secondary-bg; @btn-secondary-border);
 }
+
+
+ul.survey-questions {
+	margin: 0;
+	padding: 0;
+	position: relative;
+
+	li {
+		list-style: none;
+		border-bottom: solid 1px @gray-light;
+	}
+
+	.question-title-bar {
+		padding: 5px 10px;
+		font-size: 1.5em;
+
+		.question-type {
+			font-size: .5em;
+			text-transform: uppercase;
+			color: @gray-light;
+			margin-left: 40px;
+		}
+	}
+
+	.question-stats {
+		display: none;
+		background-color: @gray-lighter;
+		position: relative;
+		padding: 10px;
+
+		.question-stat {
+			margin-bottom: 20px;
+		}
+	}
+}
+
+ul.survey-responses {
+	margin: 0;
+	padding: 0;
+	position: relative;
+
+	li {
+		list-style: none;
+		margin-bottom: 40px;
+	}
+
+	.response-title-bar {
+		padding: 5px 10px;
+		/*font-size: 1em;*/
+		color: @gray-light;
+		border-bottom: solid 1px @gray-light;
+
+		.question-type {
+			font-size: .8em;
+			text-transform: uppercase;
+			color: @gray-light;
+			margin-left: 40px;
+		}
+	}
+
+	.response-data {
+		padding: 5px 10px;
+		font-size: 1.3em;
+		font-weight: 700;
+	}
+}
+
+
+/* Bootstrap Overrides */

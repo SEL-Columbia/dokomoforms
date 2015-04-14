@@ -18,64 +18,66 @@
 {% end %} 
 
 {% block content %}
-<div class="container" role="main">
-    <div class="message"></div>
-    {% if current_user %}
-    <div class="row">
-        <div class="col-md-6">
-            <!-- Recent Submissions -->
-            <h4>Recent Submissions</h4>
-            <div class="recent-submissions">
-                
+<div class="content">
+    <div class="container" role="main">
+        <div class="message"></div>
+        {% if current_user %}
+        <div class="row">
+            <div class="col-md-6">
+                <!-- Recent Submissions -->
+                <h4>Recent Submissions</h4>
+                <div class="recent-submissions">
+                    
+                </div>
+            </div>
+            <div class="col-md-6">
+                <!-- Activity Graph -->
+                <h4>Activity Graph</h4>
+                <div class="activity-graph">
+                    
+                </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <!-- Activity Graph -->
-            <h4>Activity Graph</h4>
-            <div class="activity-graph">
-                
+        <div class="row">
+            <div class="col-md-12">
+                <h4>Surveys</h4>
+                <table id="surveys" class="table-view display table table-striped table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th># of Submissions</th>
+                            <th>Latest Submission</th>
+                            <th>Activity</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                </table>
             </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-md-12">
-            <h4>Surveys</h4>
-            <table id="surveys" class="table-view display table table-striped table-bordered" width="100%" cellspacing="0">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th># of Submissions</th>
-                        <th>Latest Submission</th>
-                        <th>Activity</th>
-                        <th></th>
-                    </tr>
-                </thead>
-            </table>
+        <!-- <div class="welcome_box content-padded">
+            <h3 class="welcome_title">Welcome: {{ current_user }}</h3>
+            <p class="welcome_blurb">Dive in, choose an option below.</p>
         </div>
+        <div class="welcome_buttons content-padded">
+            <a data-ignore="push" class="btn btn-block" href="view" id="">View</a>
+            <a data-ignore="push" class="btn btn-block" href="#" id="">Create</a>
+            <a data-ignore="push" class="btn btn-block" href="#" id="logout">Logout</a>
+        </div> -->
+        {% else %}
+        <div class="welcome_box content-padded">
+            <h3 data-ignore="push" class="welcome_title"> Welcome to Dokomoforms</h3>
+            <p data-ignore="push" class="welcome_blurb"> Simple, offline-capable surveys.</p>
+            <p data-ignore="push" class="welcome_blurb"> Sign up or login to create and view forms.</p>
+        </div>
+        <div class="welcome_buttons content-padded">
+            <a data-ignore="push" class="btn btn-block" href="#" id="login">Login or Register</a>
+        </div>
+        {% end %}
     </div>
-    <!-- <div class="welcome_box content-padded">
-        <h3 class="welcome_title">Welcome: {{ current_user }}</h3>
-        <p class="welcome_blurb">Dive in, choose an option below.</p>
-    </div>
-    <div class="welcome_buttons content-padded">
-        <a data-ignore="push" class="btn btn-block" href="view" id="">View</a>
-        <a data-ignore="push" class="btn btn-block" href="#" id="">Create</a>
-        <a data-ignore="push" class="btn btn-block" href="#" id="logout">Logout</a>
-    </div> -->
-    {% else %}
-    <div class="welcome_box content-padded">
-        <h3 data-ignore="push" class="welcome_title"> Welcome to Dokomoforms</h3>
-        <p data-ignore="push" class="welcome_blurb"> Simple, offline-capable surveys.</p>
-        <p data-ignore="push" class="welcome_blurb"> Sign up or login to create and view forms.</p>
-    </div>
-    <div class="welcome_buttons content-padded">
-        <a data-ignore="push" class="btn btn-block" href="#" id="login">Login or Register</a>
-    </div>
-    {% end %}
 </div>
 
 <script type="text/template" id="view-data-btn-tpl">
-    <button class="btn btn-default btn-xs" data-id="<%= survey_id %>"><span class="glyphicon glyphicon-stats"></span> View Data</button>
+    <a class="btn btn-default btn-xs" href="/view/data/<%= survey_id %>"><span class="glyphicon glyphicon-stats"></span> View Data</a>
 </script>
 
 <script type="text/template" id="download-data-btn-tpl">
@@ -107,7 +109,7 @@
                 type: 'line'
             },
             title: {
-                text: 'Weekly Submissions'
+                text: null
             },
             colors: [
                 '#666'
@@ -201,7 +203,7 @@ $(document).ready(function() {
                         return view + "&nbsp;" + dl + "&nbsp;" + manage;
                     },
                     "targets": 4,
-                    "width": '300px',
+                    "width": '330px',
                     "class": "text-center",
                     "sortable": false
                 }

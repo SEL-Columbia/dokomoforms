@@ -27,7 +27,7 @@ from dokomoforms.handlers.util.base import BaseHandler, get_json_request_body
 import dokomoforms.handlers.util.ui
 from dokomoforms.handlers.debug import DebugLoginHandler, DebugLogoutHandler, \
     DebugUserCreationHandler
-from dokomoforms.handlers.view.surveys import ViewHandler
+from dokomoforms.handlers.view.surveys import ViewHandler, ViewSurveyHandler, ViewSurveyDataHandler
 from dokomoforms.handlers.view.submissions import ViewSubmissionsHandler, \
     ViewSubmissionHandler
 from dokomoforms.handlers.view.visualize import VisualizationHandler
@@ -109,7 +109,8 @@ pages = [
 
     # View surveys and submissions
     (r'/view/?', ViewHandler),
-    (r'/view/({})/?'.format(UUID_REGEX), ViewSubmissionsHandler),
+    (r'/view/({})/?'.format(UUID_REGEX), ViewSurveyHandler),
+    (r'/view/data/({})/?'.format(UUID_REGEX), ViewSurveyDataHandler),
     (r'/view/submission/({})/?'.format(UUID_REGEX),
      ViewSubmissionHandler),
 

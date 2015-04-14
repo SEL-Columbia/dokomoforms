@@ -5,13 +5,14 @@ body {
 h4 {
   text-transform: uppercase;
   font-weight: bold;
+  margin-bottom: 20px;
 }
 .light-shadow {
   box-shadow: 0px 1px 5px #888888;
 }
 .header {
   background-color: #78C0A8;
-  margin-bottom: 40px;
+  /*margin-bottom: 40px;*/
 }
 .header h1 {
   font-weight: 100;
@@ -25,13 +26,25 @@ h4 {
 .header .header-controls {
   padding-top: 25px;
 }
+.subheader {
+  background-color: #eeeeee;
+  padding-bottom: 30px;
+}
+.subheader h3 {
+  font-weight: 900;
+  margin-top: 30px;
+  margin-bottom: 20px;
+}
+.content {
+  margin-top: 40px;
+}
 .activity-graph {
   width: 100%;
   height: 300px;
 }
 .stat-label {
   font-size: .9em;
-  color: #999999;
+  color: #bfbfbf;
 }
 .stat-value {
   font-weight: bold;
@@ -91,3 +104,58 @@ fieldset[disabled] .btn-secondary.active {
   color: #c8600d;
   background-color: #ffffff;
 }
+ul.survey-questions {
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+ul.survey-questions li {
+  list-style: none;
+  border-bottom: solid 1px #bfbfbf;
+}
+ul.survey-questions .question-title-bar {
+  padding: 5px 10px;
+  font-size: 1.5em;
+}
+ul.survey-questions .question-title-bar .question-type {
+  font-size: .5em;
+  text-transform: uppercase;
+  color: #bfbfbf;
+  margin-left: 40px;
+}
+ul.survey-questions .question-stats {
+  display: none;
+  background-color: #eeeeee;
+  position: relative;
+  padding: 10px;
+}
+ul.survey-questions .question-stats .question-stat {
+  margin-bottom: 20px;
+}
+ul.survey-responses {
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+ul.survey-responses li {
+  list-style: none;
+  margin-bottom: 40px;
+}
+ul.survey-responses .response-title-bar {
+  padding: 5px 10px;
+  /*font-size: 1em;*/
+  color: #bfbfbf;
+  border-bottom: solid 1px #bfbfbf;
+}
+ul.survey-responses .response-title-bar .question-type {
+  font-size: .8em;
+  text-transform: uppercase;
+  color: #bfbfbf;
+  margin-left: 40px;
+}
+ul.survey-responses .response-data {
+  padding: 5px 10px;
+  font-size: 1.3em;
+  font-weight: 700;
+}
+/* Bootstrap Overrides */

@@ -1,4 +1,5 @@
 """Base handler classes and utility functions."""
+import datetime
 from collections.abc import Callable
 import functools
 from pprint import pformat
@@ -54,6 +55,20 @@ class BaseHandler(tornado.web.RequestHandler):
             user = self.get_secure_cookie('user')
         if user:
             return to_unicode(user)
+
+    def get_template_namespace(self):
+        """Template globals"""
+        namespace = super().get_template_namespace()
+        namespace.update({
+            'iso_date_str_to_fmt_str': self.iso_date_str_to_fmt_str
+        })
+        return namespace
+
+    @staticmethod
+    def iso_date_str_to_fmt_str(iso_date_str, fmt_str):
+        date = datetime.datetime.strptime(iso_date_str, '%Y-%m-%dT%H:%M:%S.%f+00:00')
+        date_formatted = date.strftime(fmt_str)
+        return date_formatted
 
 
 class APIHandler(BaseHandler):

@@ -9,7 +9,7 @@
     <meta name="mobile-web-app-status-bar-style" content="black">
     <meta name="viewport" content="width=device-width, user-scalable=no,  initial-scale=1, maximum-scale=1">
     
-    <link href='http://fonts.googleapis.com/css?family=Roboto:400,300,500,700,100' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Roboto:400,300,500,700,100,900' rel='stylesheet' type='text/css'>
     <link href="/static/bootstrap-3.3.4/dist/css/bootstrap.css" rel="stylesheet">
     <link href='/static/css/dataTables.bootstrap.css' rel='stylesheet' type='text/css'>
     <link href="/static/css/admin.css" rel="stylesheet" type="text/css">
@@ -36,8 +36,8 @@
                 <ul class="nav navbar-nav">
                     {% if current_user %}
                     <li><a href="#">{{ current_user }}</a></li>
-                    <li><a href="#"><span class="glyphicon glyphicon-cog"></span></a></li>
-                    <li><a href="#" class="btn btn-default btn-xs">logout</a></li>
+                    <li><a href="#"><span class="glyphicon glyphicon-cog" data-toggle="tooltip" data-placement="bottom" title="Settings"></span></a></li>
+                    <li><a href="#"><span class="glyphicon glyphicon-log-out" data-toggle="tooltip" data-placement="bottom" title="Sign out"></span></a></li>
                     {% else %}
                     <li><a class="btn btn-block" href="#" id="login">Login or Register</a></li>
                     {% end %}
@@ -51,6 +51,13 @@
     {% block content %}{% end %}
     {% block footer %} {% end %}
     <script type="text/javascript" src="/static/bootstrap-3.3.4/dist/js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+        $(function() {
+            $('[data-toggle="tooltip"]').tooltip({
+                container: 'body'
+            });
+        });
+    </script>
 </body>
 
 </html>
