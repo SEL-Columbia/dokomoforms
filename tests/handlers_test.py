@@ -38,9 +38,9 @@ from dokomoforms.handlers.api.batch import BatchSubmissionAPIHandler
 from dokomoforms.handlers.api.data_table import _base_query, \
     _apply_text_filter, \
     _get_orderings, _apply_ordering, _apply_limit, SurveyDataTableHandler, \
-    SubmissionDataTableHandler
+    SubmissionDataTableHandler, IndexSurveyDataTableHandler
 from dokomoforms.handlers.api.submissions import SubmissionsAPIHandler, \
-    SingleSubmissionAPIHandler
+    SingleSubmissionAPIHandler, SubmissionActivityAPIHandler
 from dokomoforms.handlers.api.surveys import SurveysAPIHandler, \
     SingleSurveyAPIHandler
 from dokomoforms.handlers.auth import LoginHandler
@@ -219,6 +219,23 @@ class APITest(AsyncHTTPTestCase):
                               headers={'Token': generate_api_token(),
                                        'Email': 'test_email'})
         self.assertEqual(response.code, 403)
+
+    def testGetActivity(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        _create_submission()
+        with mock.patch.object(SubmissionActivityAPIHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch(
+                '/api/surveys/{}/submission_activity'.format(survey_id))
+        self.assertEqual(response.code, 200)
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(
+            webpage_response,
+            submission_api.get_activity(connection, survey_id, 'test_email')
+        )
 
     def testGetSingleSubmission(self):
         submission_id = _create_submission()['submission_id']
@@ -1415,6 +1432,29 @@ class DataTableTest(AsyncHTTPTestCase):
         self.assertEqual(webpage_response['recordsTotal'], 1)
         data = webpage_response['data']
         self.assertEqual(data[0][1], 'me')
+
+    def testGetIndexSurveyDataTable(self):
+        args = {
+            'search': {
+                'value': ''
+            },
+            'order': [],
+            'length': 10,
+            'draw': 1
+        }
+        urle = quote_plus(json_encode(args))
+        with mock.patch.object(IndexSurveyDataTableHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/index_survey_data_table?args=' + urle)
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertEqual(webpage_response['recordsFiltered'], 1)
+        self.assertEqual(webpage_response['draw'], 1)
+        self.assertEqual(webpage_response['recordsTotal'], 1)
+        data = webpage_response['data']
+        self.assertEqual(data[0][0], 'test_title')
+        self.assertEqual(data[0][1], '0')
+        self.assertEqual(data[0][2], '')
 
 
 if __name__ == '__main__':

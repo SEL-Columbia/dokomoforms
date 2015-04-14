@@ -2,11 +2,14 @@
 from heapq import merge
 from collections import Iterator
 
+from sqlalchemy import Date
 from sqlalchemy.engine import ResultProxy, RowProxy, Connection
-from sqlalchemy.sql import Insert
+from sqlalchemy.sql import Insert, select, cast
+from sqlalchemy.sql.functions import count, current_date
 
 from dokomoforms.api import execute_with_exceptions, json_response
-from dokomoforms.db import delete_record, submission_table
+from dokomoforms.db import delete_record, submission_table, auth_user_table, \
+    survey_table
 from dokomoforms.db.answer import answer_insert, get_answers, get_geo_json, \
     CannotAnswerMultipleTimesError, _get_is_type_exception
 from dokomoforms.db.answer_choice import get_answer_choices, \
@@ -244,7 +247,10 @@ def get_all(connection: Connection,
             survey_id: str,
             email: str,
             submitters: Iterator=None,
-            filters: list=None) -> dict:
+            filters: list=None,
+            order_by: str=None,
+            direction: str='ASC',
+            limit: int=None) -> dict:
     """
     Create a JSON representation of the submissions to a given survey and
     email.
@@ -254,18 +260,63 @@ def get_all(connection: Connection,
     :param email: the user's e-mail address
     :param submitters: if supplied, filters results by all given submitters
     :param filters: if supplied, filters results by answers
+    :param order_by: if supplied, the column for the ORDER BY clause
+    :param direction: optional sort direction for order_by (default ASC)
+    :param limit: if supplied, the limit to apply to the number of results
     :return: a JSON dict
     """
-    submissions = get_submissions_by_email(connection,
-                                           survey_id,
-                                           email=email,
-                                           submitters=submitters,
-                                           filters=filters)
+    submissions = get_submissions_by_email(
+        connection,
+        survey_id,
+        email=email,
+        submitters=submitters,
+        filters=filters,
+        order_by=order_by,
+        direction=direction,
+        limit=limit
+    )
     # TODO: Check if this is a performance problem
-    result = [get_one(connection,
-                      sub.submission_id,
-                      email=email) for sub in submissions]
+    result = [
+        get_one(
+            connection,
+            sub.submission_id,
+            email=email
+        ) for sub in submissions
+    ]
     return json_response(result)
+
+
+def get_activity(connection: Connection,
+                 survey_id: str,
+                 email: str) -> dict:
+    """
+    Get the number of submissions per day for the last 30 days for the given
+    survey.
+
+    :param connection: a SQLAlchemy Connection
+    :param survey_id: the UUID of the survey
+    :param email: the user's e-mail address
+    :return: a JSON dict of the result
+    """
+    submission_date = cast(submission_table.c.submission_time, Date)
+    result = connection.execute(
+        select(
+            [count(), submission_date]
+        ).select_from(
+            submission_table.join(survey_table).join(auth_user_table)
+        ).where(
+            submission_table.c.survey_id == survey_id
+        ).where(
+            submission_date > (current_date() - 30)
+        ).where(
+            auth_user_table.c.email == email
+        ).group_by(
+            submission_date
+        )
+    ).fetchall()
+    return json_response(
+        [[num, sub_time.isoformat()] for num, sub_time in result]
+    )
 
 
 def delete(connection: Connection, submission_id: str):
