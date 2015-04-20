@@ -1,11 +1,14 @@
 """Functions for interacting with surveys."""
 from collections import Iterator
 import datetime
+from sqlalchemy import select
 
 from sqlalchemy.engine import RowProxy, Connection
+from sqlalchemy.sql.functions import count, max as sqlmax, min as sqlmin
 
 from dokomoforms.api import execute_with_exceptions, json_response
-from dokomoforms.db import delete_record, update_record, survey_table
+from dokomoforms.db import delete_record, update_record, survey_table, \
+    submission_table, auth_user_table
 from dokomoforms.db.answer import get_answers_for_question, answer_insert, \
     _get_is_type_exception
 from dokomoforms.db.answer_choice import get_answer_choices_for_choice_id, \
@@ -444,6 +447,43 @@ def get_one(connection: Connection,
     survey = survey_select(connection, survey_id, auth_user_id=auth_user_id,
                            email=email)
     return json_response(_to_json(connection, survey))
+
+
+def get_stats(connection: Connection,
+              survey_id: str,
+              email: str) -> dict:
+    """
+    Get statistics about the specified survey: creation time, number of
+    submissions, time of the earliest submission, and time of the latest
+    submission.
+
+    :param connection: a SQLAlchemy Connection
+    :param survey_id: the UUID of the survey
+    :param email: the e-mail address of the user
+    :return: a JSON representation of the statistics.
+    """
+    result = connection.execute(
+        select([
+            survey_table.c.created_on,
+            count(submission_table.c.submission_id),
+            sqlmin(submission_table.c.submission_time),
+            sqlmax(submission_table.c.submission_time)
+        ]).select_from(
+            auth_user_table.join(survey_table).outerjoin(submission_table)
+        ).where(
+            survey_table.c.survey_id == survey_id
+        ).where(
+            auth_user_table.c.email == email
+        ).group_by(
+            survey_table.c.survey_id
+        )
+    ).first()
+    return json_response({
+        'created_on': result[0].isoformat(),
+        'num_submissions': result[1],
+        'earliest_submission_time': result[2].isoformat(),
+        'latest_submission_time': result[3].isoformat()
+    })
 
 
 def get_all(connection: Connection, email: str) -> dict:
