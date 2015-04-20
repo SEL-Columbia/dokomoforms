@@ -364,8 +364,8 @@ class TestSubmission(unittest.TestCase):
             connection, survey_id, 'test_email'
         )['result']
         self.assertEqual(len(activity), 2)
-        self.assertEqual(activity[0][0], 1)
-        self.assertEqual(activity[1][0], 2)
+        self.assertEqual(activity[0][0], 2)
+        self.assertEqual(activity[1][0], 1)
 
     def testDelete(self):
         survey_id = connection.execute(survey_table.select().where(
