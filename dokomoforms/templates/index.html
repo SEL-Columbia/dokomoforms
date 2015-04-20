@@ -54,23 +54,11 @@
                 </table>
             </div>
         </div>
-        <!-- <div class="welcome_box content-padded">
-            <h3 class="welcome_title">Welcome: {{ current_user }}</h3>
-            <p class="welcome_blurb">Dive in, choose an option below.</p>
-        </div>
-        <div class="welcome_buttons content-padded">
-            <a data-ignore="push" class="btn btn-block" href="view" id="">View</a>
-            <a data-ignore="push" class="btn btn-block" href="#" id="">Create</a>
-            <a data-ignore="push" class="btn btn-block" href="#" id="logout">Logout</a>
-        </div> -->
         {% else %}
         <div class="welcome_box content-padded">
             <h3 data-ignore="push" class="welcome_title"> Welcome to Dokomoforms</h3>
             <p data-ignore="push" class="welcome_blurb"> Simple, offline-capable surveys.</p>
             <p data-ignore="push" class="welcome_blurb"> Sign up or login to create and view forms.</p>
-        </div>
-        <div class="welcome_buttons content-padded">
-            <a data-ignore="push" class="btn btn-block" href="#" id="login">Login or Register</a>
         </div>
         {% end %}
     </div>
