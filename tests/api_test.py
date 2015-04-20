@@ -325,6 +325,48 @@ class TestSubmission(unittest.TestCase):
                                       email='test_email')
         self.assertGreater(len(data), 0)
 
+    def testGetActivity(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = connection.execute(q_where).first()
+        question_id = question.question_id
+        tcn = question.type_constraint_name
+        seq = question.sequence_number
+        mul = question.allow_multiple
+
+        times = [
+            datetime.now(),
+            datetime.now() + timedelta(-15),
+            datetime.now() + timedelta(-15),
+            datetime.now() + timedelta(-45)
+        ]
+
+        for t in times:
+            submission_exec = connection.execute(
+                submission_insert(
+                    submitter='test_submitter',
+                    survey_id=survey_id,
+                    submission_time=t
+                )
+            )
+            submission_id = submission_exec.inserted_primary_key[0]
+            connection.execute(answer_insert(
+                answer=5, question_id=question_id, submission_id=submission_id,
+                answer_metadata={},
+                survey_id=survey_id, type_constraint_name=tcn,
+                is_type_exception=False,
+                sequence_number=seq, allow_multiple=mul))
+
+        activity = submission_api.get_activity(
+            connection, survey_id, 'test_email'
+        )['result']
+        self.assertEqual(len(activity), 2)
+        self.assertEqual(activity[0][0], 1)
+        self.assertEqual(activity[1][0], 2)
+
     def testDelete(self):
         survey_id = connection.execute(survey_table.select().where(
             survey_table.c.survey_title == 'test_title')).first().survey_id

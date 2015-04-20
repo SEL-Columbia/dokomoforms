@@ -9,10 +9,7 @@ class SurveysAPIHandler(APIHandler):
     """The endpoint for getting all of a user's surveys."""
 
     def get(self):
-        """
-        I hope you like parentheses.
-
-        """
+        """I hope you like parentheses."""
         self.write(survey_api.get_all(self.db, self.get_email()))
 
 
@@ -22,6 +19,14 @@ class SingleSurveyAPIHandler(APIHandler):
     def get(self, survey_id: str):
         email = self.get_email()
         self.write(survey_api.get_one(self.db, survey_id, email=email))
+
+
+class SurveyStatsAPIHandler(APIHandler):
+    """The endpoint for getting statistics about a survey."""
+
+    def get(self, survey_id: str):
+        email = self.get_email()
+        self.write(survey_api.get_stats(self.db, survey_id, email=email))
 
 
 class CreateSurveyAPIHandler(APIHandler):

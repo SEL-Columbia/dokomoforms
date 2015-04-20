@@ -17,19 +17,19 @@ from dokomoforms.db import engine
 from dokomoforms.handlers.api.aggregations import AggregationHandler
 from dokomoforms.handlers.api.batch import BatchSubmissionAPIHandler
 from dokomoforms.handlers.api.data_table import SurveyDataTableHandler, \
-    SubmissionDataTableHandler
+    SubmissionDataTableHandler, IndexSurveyDataTableHandler
 from dokomoforms.handlers.auth import LogoutHandler, LoginHandler
 from dokomoforms.handlers.api.submissions import SubmissionsAPIHandler, \
-    SingleSubmissionAPIHandler, SubmitAPIHandler
+    SingleSubmissionAPIHandler, SubmitAPIHandler, SubmissionActivityAPIHandler
 from dokomoforms.handlers.api.surveys import SurveysAPIHandler, \
-    SingleSurveyAPIHandler, CreateSurveyAPIHandler
+    SingleSurveyAPIHandler, CreateSurveyAPIHandler, SurveyStatsAPIHandler
 from dokomoforms.handlers.util.base import BaseHandler, get_json_request_body
 import dokomoforms.handlers.util.ui
 from dokomoforms.handlers.debug import DebugLoginHandler, DebugLogoutHandler, \
     DebugUserCreationHandler
-from dokomoforms.handlers.view.surveys import ViewHandler
-from dokomoforms.handlers.view.submissions import ViewSubmissionsHandler, \
-    ViewSubmissionHandler
+from dokomoforms.handlers.view.surveys import ViewHandler, ViewSurveyHandler, \
+    ViewSurveyDataHandler
+from dokomoforms.handlers.view.submissions import ViewSubmissionHandler
 from dokomoforms.handlers.view.visualize import VisualizationHandler
 from dokomoforms.utils.logger import setup_custom_logger
 from dokomoforms.db.survey import SurveyPrefixDoesNotIdentifyASurveyError, \
@@ -106,7 +106,8 @@ pages = [
 
     # View surveys and submissions
     (r'/view/?', ViewHandler),
-    (r'/view/({})/?'.format(UUID_REGEX), ViewSubmissionsHandler),
+    (r'/view/({})/?'.format(UUID_REGEX), ViewSurveyHandler),
+    (r'/view/data/({})/?'.format(UUID_REGEX), ViewSurveyDataHandler),
     (r'/view/submission/({})/?'.format(UUID_REGEX),
      ViewSubmissionHandler),
 
@@ -124,7 +125,8 @@ pages = [
     # JSON API
     (r'/api/aggregate/({})/?'.format(UUID_REGEX), AggregationHandler),
 
-    (r'/api/survey_data_table/?', SurveyDataTableHandler),
+    (r'/api/index_survey_data_table/?', IndexSurveyDataTableHandler),
+    (r'/api/survey_data_table/?', SurveyDataTableHandler),  # kill later?
     (r'/api/submission_data_table/({})/?'.format(UUID_REGEX),
      SubmissionDataTableHandler),
 
@@ -132,10 +134,14 @@ pages = [
     (r'/api/surveys/create/?', CreateSurveyAPIHandler),
     (r'/api/surveys/({})/?'.format(UUID_REGEX),
      SingleSurveyAPIHandler),
+    (r'/api/surveys/({})/stats/?'.format(UUID_REGEX),
+     SurveyStatsAPIHandler),
     (r'/api/surveys/({})/submit/?'.format(UUID_REGEX),
      SubmitAPIHandler),
     (r'/api/surveys/({})/submissions/?'.format(UUID_REGEX),
      SubmissionsAPIHandler),
+    (r'/api/surveys/({})/submission_activity/?'.format(UUID_REGEX),
+     SubmissionActivityAPIHandler),
 
     (r'/api/submissions/({})/?'.format(UUID_REGEX),
      SingleSubmissionAPIHandler),

@@ -694,14 +694,26 @@ class TestSubmission(unittest.TestCase):
         for i in range(2):
             connection.execute(submission_insert(
                 submitter='test_submitter{}'.format(i), survey_id=survey_id))
+
         submissions = get_submissions_by_email(connection, survey_id,
                                                email='test_email')
         self.assertEqual(submissions.rowcount, 2)
-        submissions = get_submissions_by_email(connection, survey_id,
-                                               email='test_email',
-                                               submitters=[
-                                                   'test_submitter1'])
+
+        submissions = get_submissions_by_email(
+            connection, survey_id,
+            email='test_email',
+            submitters=['test_submitter1']
+        )
         self.assertEqual(submissions.rowcount, 1)
+
+        submissions = get_submissions_by_email(
+            connection, survey_id,
+            email='test_email', order_by='submitter', direction='desc'
+        )
+        self.assertEqual(
+            submissions.first()['submitter'],
+            'test_submitter1'
+        )
 
     def testGetSubmissionsWithFilter(self):
         survey_id = connection.execute(survey_table.select().where(

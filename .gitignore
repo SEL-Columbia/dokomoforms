@@ -14,3 +14,4 @@ test/*.log
 data/
 reports/
 config/deploy/*.rb
+.DS_Store
