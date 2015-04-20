@@ -312,6 +312,8 @@ def get_activity(connection: Connection,
             auth_user_table.c.email == email
         ).group_by(
             submission_date
+        ).order_by(
+            submission_date
         )
     ).fetchall()
     return json_response(
