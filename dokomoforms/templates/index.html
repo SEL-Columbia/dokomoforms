@@ -86,9 +86,9 @@
             <span class="glyphicon glyphicon-cloud-download"></span> Download Data <span class="caret"></span>
         </button>
         <ul class="dropdown-menu dropdown-menu-right" role="menu">
-            <li><a href="#" data-id="<%= survey_id %>">CSV (.csv)</a></li>
-            <li><a href="#" data-id="<%= survey_id %>">KML (.kml)</a></li>
-            <li><a href="#" data-id="<%= survey_id %>">JSON (.json)</a></li>
+            <!-- <li><a href="#">CSV (.csv)</a></li>
+            <li><a href="#">KML (.kml)</a></li> -->
+            <li><a target="_blank" href="/api/surveys/<%= survey_id %>/submissions">JSON (.json)</a></li>
         </ul>
     </div>
 </script>
@@ -104,32 +104,54 @@
 <script type="text/javascript">
     
     $(function () { 
-        $('.activity-graph').highcharts({
-            chart: {
-                type: 'line'
-            },
-            title: {
-                text: null
-            },
-            colors: [
-                '#666'
-            ],
-            xAxis: {
-                categories: ['Mar 12', 'Mar 19', 'Mar 26', 'Apr 2']
-            },
-            yAxis: {
-                title: {
-                    text: '# of submissions'
-                }
-            },
-            series: [{
-                name: 'Submissions',
-                data: [34, 76, 58, 122]
-                // data: [[Date('03-12-2015'), 34], [Date('03-19-2015'), 76], [Date('03-26-2015'),58], [Date('04-02-2015'), 122]]
-            }],
-            credits: {
-                enabled: false
+        $.getJSON('/api/submissions/activity', function(data) {
+
+            var results = data.result,
+                cats = [], 
+                data = [];
+
+            if (!results.length) {
+                return;
             }
+
+            var sorted = _.sortBy(results, function(result) {
+                return result[1];
+            });
+
+            _.each(sorted, function(result) {
+                var date = moment(result[1], "YYYY-MM-DD").format('MMM D');
+                console.log(date);
+                data.push(result[0]);
+                cats.push(date);
+            });
+
+
+            $('.activity-graph').highcharts({
+                chart: {
+                    type: 'line'
+                },
+                title: {
+                    text: null
+                },
+                colors: [
+                    '#666'
+                ],
+                xAxis: {
+                    categories: cats
+                },
+                yAxis: {
+                    title: {
+                        text: '# of submissions'
+                    }
+                },
+                series: [{
+                    name: 'Submissions',
+                    data: data
+                }],
+                credits: {
+                    enabled: false
+                }
+            });
         });
     });
 
@@ -176,8 +198,8 @@ $(document).ready(function() {
                     "data": 2,
                     "render": function(data, type, row) {
                         if (data) {
-                            var datetime = new Date(data);
-                            return datetime.toDateString() + ' at ' + datetime.toTimeString();
+                            var datetime = moment(data);
+                            return datetime.format('MMM D, YYYY');
                         } else {
                             return '';
                         }

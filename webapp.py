@@ -141,7 +141,10 @@ pages = [
      SubmitAPIHandler),
     (r'/api/surveys/({})/submissions/?'.format(UUID_REGEX),
      SubmissionsAPIHandler),
-    (r'/api/surveys/({})/submission_activity/?'.format(UUID_REGEX),
+
+    (r'/api/submissions/activity/({})/?'.format(UUID_REGEX),
+     SubmissionActivityAPIHandler),
+    (r'/api/submissions/activity/?'.format(UUID_REGEX),
      SubmissionActivityAPIHandler),
 
     (r'/api/submissions/({})/?'.format(UUID_REGEX),
