@@ -244,8 +244,8 @@ def get_one(connection: Connection, submission_id: str, email: str) -> dict:
 
 
 def get_all(connection: Connection,
-            survey_id: str,
             email: str,
+            survey_id: str=None,
             submitters: Iterator=None,
             filters: list=None,
             order_by: str=None,
@@ -267,8 +267,8 @@ def get_all(connection: Connection,
     """
     submissions = get_submissions_by_email(
         connection,
-        survey_id,
         email=email,
+        survey_id=survey_id,
         submitters=submitters,
         filters=filters,
         order_by=order_by,

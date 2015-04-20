@@ -17,7 +17,7 @@ class SubmissionsAPIHandler(APIHandler):
 
     def get(self, survey_id: str):
         subs = self._get_subs()
-        response = submission_api.get_all(self.db, survey_id,
+        response = submission_api.get_all(self.db, survey_id=survey_id,
                                           email=self.get_email(),
                                           submitters=subs)
         self.write(response)
