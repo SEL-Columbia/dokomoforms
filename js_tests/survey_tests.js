@@ -32,7 +32,7 @@ describe('Survey unit and regression tests', function(done) {
 
     beforeEach(function(done) {
         $.mockjax.clear();
-        localStorage = {};
+        localStorage = {unsynced: JSON.stringify('{}')};
         localStorage.setItem = function(id, data) {
             localStorage[id] = data;
         }
