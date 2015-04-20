@@ -30,7 +30,7 @@
                                 created on
                             </div>
                             <div class="stat-value stat-created-on">
-                                April 28, 2014
+                                {{ iso_date_str_to_fmt_str(survey_stats['result']['created_on'], "%b %d, %Y") }}
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -38,7 +38,7 @@
                                 first submission
                             </div>
                             <div class="stat-value stat-first-submission">
-                                May 24, 2014
+                                {{ iso_date_str_to_fmt_str(survey_stats['result']['earliest_submission_time'], "%b %d, %Y") }}
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -46,7 +46,7 @@
                                 latest submission
                             </div>
                             <div class="stat-value stat-latest-submission">
-                                April 13, 2015
+                                {{ iso_date_str_to_fmt_str(survey_stats['result']['latest_submission_time'], "%b %d, %Y") }}
                             </div>
                         </div>
                     </div>
@@ -56,7 +56,7 @@
                                 total submissions
                             </div>
                             <div class="stat-value stat-total-submissions">
-                                1,234
+                                {{ format(survey_stats['result']['num_submissions'], ',') }}
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -64,7 +64,7 @@
                                 target submissions
                             </div>
                             <div class="stat-value stat-target-submissions">
-                                5,678
+                                NA
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -72,7 +72,7 @@
                                 percent complete
                             </div>
                             <div class="stat-value stat-percent-complete">
-                                21.7%
+                                NA
                             </div>
                         </div>
                     </div>
@@ -105,9 +105,9 @@
                                         <span class="glyphicon glyphicon-cloud-download"></span>&nbsp;&nbsp; Download Data <span class="caret"></span>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-right" role="menu">
-                                        <li><a href="#">CSV (.csv)</a></li>
-                                        <li><a href="#">KML (.kml)</a></li>
-                                        <li><a href="#">JSON (.json)</a></li>
+                                        <!-- <li><a href="#">CSV (.csv)</a></li>
+                                        <li><a href="#">KML (.kml)</a></li> -->
+                                        <li><a target="_blank" href="/api/surveys/{{ survey.survey_id }}/submissions">JSON (.json)</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -152,7 +152,7 @@
 <script type="text/javascript">
     
     $(function () {
-        $.getJSON('/api/surveys/{{ survey.survey_id }}/submission_activity', function(data) {
+        $.getJSON('/api/submissions/activity/{{ survey.survey_id }}/', function(data) {
 
             var results = data.result,
                 cats = [], 
@@ -224,8 +224,8 @@
                 },
                 {
                     "render": function (data, type, row) {
-                        var datetime = new Date(data);
-                        return datetime.toDateString() + '<br />' + datetime.toTimeString();
+                        var datetime = moment(data);
+                        return datetime.format('MMM D, YYYY [at] HH:mm');
                     },
                     "targets": 2
                 }

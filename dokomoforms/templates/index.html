@@ -7,7 +7,7 @@
     <div class="container">
         <div class="row">
             <div class="col-md-6"><h1>Account Dashboard</h1></div>
-            <div class="col-md-6 header-controls"><button class="btn btn-primary btn-sm pull-right"><span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Create New Survey</button></div>
+            <div class="col-md-6 header-controls"><button class="btn btn-primary btn-sm pull-right" data-toggle="tooltip" data-placement="left" title="Coming Soon!"><span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Create New Survey</button></div>
         </div>
     </div>
     {% else %}
@@ -25,9 +25,41 @@
         <div class="row">
             <div class="col-md-6">
                 <!-- Recent Submissions -->
+                
                 <h4>Recent Submissions</h4>
-                <div class="recent-submissions">
-                    
+                <div class="recent-submissions" role="tabpanel">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li role="presentation" class="active"><a href="#recent-list" aria-controls="recent-list" role="tab" data-toggle="tab">List</a></li>
+                        <li role="presentation"><a href="#recent-map" aria-controls="recent-map" role="tab" data-toggle="tab">Map</a></li>
+                    </ul>
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane active recent-block" id="recent-list">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Submitted On</th>
+                                        <th>Submitted By</th>
+                                        <th>Survey</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for submission in recent_submissions['result'] %}
+                                        <tr>
+                                            <td>{{ iso_date_str_to_fmt_str(submission['result']['submission_time'], "%b %d, %Y at %H:%M") }}</td>
+                                            <td>{{ submission['result']['submitter'] }}</td>
+                                            <td>{{ submission['result']['survey_id'] }}</td>
+                                        </tr>
+                                    {% end %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div role="tabpanel" class="tab-pane recent-block" id="recent-map">
+                            <div id="recent-map-container"></div>
+                            
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="col-md-6">
@@ -74,9 +106,9 @@
             <span class="glyphicon glyphicon-cloud-download"></span> Download Data <span class="caret"></span>
         </button>
         <ul class="dropdown-menu dropdown-menu-right" role="menu">
-            <li><a href="#" data-id="<%= survey_id %>">CSV (.csv)</a></li>
-            <li><a href="#" data-id="<%= survey_id %>">KML (.kml)</a></li>
-            <li><a href="#" data-id="<%= survey_id %>">JSON (.json)</a></li>
+            <li><a target="_blank" href="/api/surveys/<%= survey_id %>/submissions">JSON</a></li>
+            <li><a href="#">CSV (coming soon)</a></li>
+            <li><a href="#">KML (maybe someday)</a></li>
         </ul>
     </div>
 </script>
@@ -92,32 +124,54 @@
 <script type="text/javascript">
     
     $(function () { 
-        $('.activity-graph').highcharts({
-            chart: {
-                type: 'line'
-            },
-            title: {
-                text: null
-            },
-            colors: [
-                '#666'
-            ],
-            xAxis: {
-                categories: ['Mar 12', 'Mar 19', 'Mar 26', 'Apr 2']
-            },
-            yAxis: {
-                title: {
-                    text: '# of submissions'
-                }
-            },
-            series: [{
-                name: 'Submissions',
-                data: [34, 76, 58, 122]
-                // data: [[Date('03-12-2015'), 34], [Date('03-19-2015'), 76], [Date('03-26-2015'),58], [Date('04-02-2015'), 122]]
-            }],
-            credits: {
-                enabled: false
+        $.getJSON('/api/submissions/activity', function(data) {
+
+            var results = data.result,
+                cats = [], 
+                data = [];
+
+            if (!results.length) {
+                return;
             }
+
+            var sorted = _.sortBy(results, function(result) {
+                return result[1];
+            });
+
+            _.each(sorted, function(result) {
+                var date = moment(result[1], "YYYY-MM-DD").format('MMM D');
+                console.log(date);
+                data.push(result[0]);
+                cats.push(date);
+            });
+
+
+            $('.activity-graph').highcharts({
+                chart: {
+                    type: 'line'
+                },
+                title: {
+                    text: null
+                },
+                colors: [
+                    '#666'
+                ],
+                xAxis: {
+                    categories: cats
+                },
+                yAxis: {
+                    title: {
+                        text: '# of submissions'
+                    }
+                },
+                series: [{
+                    name: 'Submissions',
+                    data: data
+                }],
+                credits: {
+                    enabled: false
+                }
+            });
         });
     });
 
@@ -128,6 +182,35 @@
 <script src="http://cdn.datatables.net/plug-ins/1.10.6/integration/bootstrap/3/dataTables.bootstrap.js"></script>
 <script>
 $(document).ready(function() {
+
+
+    
+
+    // Map
+    if ($('#recent-map').length) {
+
+        $(document).on("shown.bs.tab", 'a[href="#recent-map"]', function() {
+            // L.Util.requestAnimFrame(map.invalidateSize,map,!1,map._container);
+            // console.log('test');
+            console.log('recent map');
+            var map = L.map('recent-map-container', {
+                dragging: true,
+                zoom: 14,
+                zoomControl: false,
+                doubleClickZoom: false,
+                attributionControl: false
+            });
+
+            L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
+
+            L.Util.requestAnimFrame(map.invalidateSize,map,!1,map._container);
+        });
+    }
+
+
+
+
+
     var $surveys = $('#surveys'),
         view_btn_tpl = _.template($("#view-data-btn-tpl").html()),
         manage_btn_tpl = _.template($("#manage-btn-tpl").html()),
@@ -164,8 +247,8 @@ $(document).ready(function() {
                     "data": 2,
                     "render": function(data, type, row) {
                         if (data) {
-                            var datetime = new Date(data);
-                            return datetime.toDateString() + ' at ' + datetime.toTimeString();
+                            var datetime = moment(data);
+                            return datetime.format('MMM D, YYYY');
                         } else {
                             return '';
                         }
@@ -217,6 +300,8 @@ $(document).ready(function() {
             }
         });
     }
+
+
 });
 </script>
 

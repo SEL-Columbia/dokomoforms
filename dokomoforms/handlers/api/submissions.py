@@ -17,7 +17,7 @@ class SubmissionsAPIHandler(APIHandler):
 
     def get(self, survey_id: str):
         subs = self._get_subs()
-        response = submission_api.get_all(self.db, survey_id,
+        response = submission_api.get_all(self.db, survey_id=survey_id,
                                           email=self.get_email(),
                                           submitters=subs)
         self.write(response)
@@ -45,10 +45,10 @@ class SubmissionsAPIHandler(APIHandler):
 class SubmissionActivityAPIHandler(APIHandler):
     """The endpoint for getting submission activity to a survey."""
 
-    def get(self, survey_id: str):
+    def get(self, survey_id: str = None):
         # TODO: HTTP 422 if the survey doesn't exist
         response = submission_api.get_activity(
-            self.db, survey_id, self.get_email()
+            self.db, self.get_email(), survey_id
         )
         self.write(response)
 

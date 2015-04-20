@@ -42,7 +42,7 @@
                     submitted on
                 </div>
                 <div class="stat-value stat-created-on">
-                    {{ iso_date_str_to_fmt_str(submission['submission_time'], "%b %d,f %Y") }}
+                    {{ iso_date_str_to_fmt_str(submission['submission_time'], "%b %d, %Y") }}
                 </div>
             </div>
             <!-- <div class="col-md-2">
@@ -79,9 +79,9 @@
 
                                 <div class="response-data">
                                     {% if answer['choice'] %}
-                                        Choice: {{ answer['choice_number'] }}. {{ answer['choice'] }}<br/>
+                                        {{ answer['choice_number'] }}. {{ answer['choice'] }}<br/>
                                     {% else %}
-                                        Answer: {{ answer['answer'] }}<br/>
+                                        {{ answer['answer'] }}<br/>
                                     {% end %}
                                 </div>
                                 

@@ -244,8 +244,8 @@ def get_one(connection: Connection, submission_id: str, email: str) -> dict:
 
 
 def get_all(connection: Connection,
-            survey_id: str,
             email: str,
+            survey_id: str=None,
             submitters: Iterator=None,
             filters: list=None,
             order_by: str=None,
@@ -267,8 +267,8 @@ def get_all(connection: Connection,
     """
     submissions = get_submissions_by_email(
         connection,
-        survey_id,
         email=email,
+        survey_id=survey_id,
         submitters=submitters,
         filters=filters,
         order_by=order_by,
@@ -287,25 +287,22 @@ def get_all(connection: Connection,
 
 
 def get_activity(connection: Connection,
-                 survey_id: str,
-                 email: str) -> dict:
+                 email: str,
+                 survey_id: str = None) -> dict:
     """
     Get the number of submissions per day for the last 30 days for the given
     survey.
 
     :param connection: a SQLAlchemy Connection
-    :param survey_id: the UUID of the survey
     :param email: the user's e-mail address
+    :param survey_id: the UUID of the survey, or None if fetching for all user's surveys
     :return: a JSON dict of the result
     """
     submission_date = cast(submission_table.c.submission_time, Date)
-    result = connection.execute(
-        select(
+    s = select(
             [count(), submission_date]
         ).select_from(
             submission_table.join(survey_table).join(auth_user_table)
-        ).where(
-            submission_table.c.survey_id == survey_id
         ).where(
             submission_date > (current_date() - 30)
         ).where(
@@ -315,7 +312,13 @@ def get_activity(connection: Connection,
         ).order_by(
             submission_date
         )
-    ).fetchall()
+    if survey_id:
+        s.where(
+            submission_table.c.survey_id == survey_id
+        )
+
+    result = connection.execute(s).fetchall()
+
     return json_response(
         [[num, sub_time.isoformat()] for num, sub_time in result]
     )

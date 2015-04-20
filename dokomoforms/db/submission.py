@@ -97,8 +97,8 @@ def _get_filtered_ids(connection: Connection, filters: list) -> Iterator:
 
 
 def get_submissions_by_email(connection: Connection,
-                             survey_id: str,
                              email: str,
+                             survey_id: str=None,
                              submitters: Iterator=None,
                              filters: list=None,
                              order_by: str=None,
@@ -119,8 +119,12 @@ def get_submissions_by_email(connection: Connection,
     """
 
     table = submission_table.join(survey_table).join(auth_user_table)
-    conds = [submission_table.c.survey_id == survey_id,
-             auth_user_table.c.email == email]
+    
+    conds = [auth_user_table.c.email == email]
+    
+    if survey_id:
+        conds.append(submission_table.c.survey_id == survey_id)
+
     if submitters is not None:
         conds.append(submission_table.c.submitter.in_(submitters))
     if filters is not None:
