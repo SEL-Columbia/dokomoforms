@@ -34,7 +34,7 @@ from dokomoforms.handlers.view.submissions import ViewSubmissionHandler
 from dokomoforms.handlers.view.visualize import VisualizationHandler
 from dokomoforms.utils.logger import setup_custom_logger
 from dokomoforms.db.survey import SurveyPrefixDoesNotIdentifyASurveyError, \
-    SurveyPrefixTooShortError, get_survey_id_from_prefix
+    SurveyPrefixTooShortError, get_survey_id_from_prefix, get_surveys_by_email
 from dokomoforms import settings
 
 
@@ -68,6 +68,9 @@ class Survey(BaseHandler):
         except (SurveyPrefixDoesNotIdentifyASurveyError,
                 SurveyPrefixTooShortError):
             raise tornado.web.HTTPError(404)
+
+    def post(self, uuid):
+        SubmitAPIHandler.post(self, uuid)  # TODO: Hey Abdi kill this
 
 
 class APITokenGenerator(BaseHandler):  # pragma: no cover
