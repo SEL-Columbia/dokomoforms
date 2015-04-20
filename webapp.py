@@ -22,19 +22,20 @@ from dokomoforms.handlers.auth import LogoutHandler, LoginHandler
 from dokomoforms.handlers.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler, SubmitAPIHandler, SubmissionActivityAPIHandler
 from dokomoforms.handlers.api.surveys import SurveysAPIHandler, \
-    SingleSurveyAPIHandler, CreateSurveyAPIHandler
+    SingleSurveyAPIHandler, CreateSurveyAPIHandler, SurveyStatsAPIHandler
 from dokomoforms.handlers.util.base import BaseHandler, get_json_request_body
 import dokomoforms.handlers.util.ui
 from dokomoforms.handlers.debug import DebugLoginHandler, DebugLogoutHandler, \
     DebugUserCreationHandler
-from dokomoforms.handlers.view.surveys import ViewHandler, ViewSurveyHandler, ViewSurveyDataHandler
-from dokomoforms.handlers.view.submissions import ViewSubmissionsHandler, \
-    ViewSubmissionHandler
+from dokomoforms.handlers.view.surveys import ViewHandler, ViewSurveyHandler, \
+    ViewSurveyDataHandler
+from dokomoforms.handlers.view.submissions import ViewSubmissionHandler
 from dokomoforms.handlers.view.visualize import VisualizationHandler
 from dokomoforms.utils.logger import setup_custom_logger
 from dokomoforms.db.survey import SurveyPrefixDoesNotIdentifyASurveyError, \
     SurveyPrefixTooShortError, get_survey_id_from_prefix, get_surveys_by_email
 from dokomoforms import settings
+
 
 logger = setup_custom_logger('dokomo')
 
@@ -137,6 +138,8 @@ pages = [
     (r'/api/surveys/create/?', CreateSurveyAPIHandler),
     (r'/api/surveys/({})/?'.format(UUID_REGEX),
      SingleSurveyAPIHandler),
+    (r'/api/surveys/({})/stats/?'.format(UUID_REGEX),
+     SurveyStatsAPIHandler),
     (r'/api/surveys/({})/submit/?'.format(UUID_REGEX),
      SubmitAPIHandler),
     (r'/api/surveys/({})/submissions/?'.format(UUID_REGEX),
