@@ -12,6 +12,7 @@ from sqlalchemy.sql import Select
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlalchemy.sql.functions import count, max as sqlmax
 from tornado.escape import json_encode, json_decode
+from dokomoforms.api import maybe_isoformat
 
 from dokomoforms.db import auth_user_table, survey_table, submission_table
 from dokomoforms.db.submission import get_number_of_submissions
@@ -286,7 +287,7 @@ class IndexSurveyDataTableHandler(DataTableBaseHandler):
             title,
             str(num),
             # created_on.isoformat(),
-            '' if not latest_sub else latest_sub.isoformat(),
+            maybe_isoformat(latest_sub),
             survey_id
         ]
 

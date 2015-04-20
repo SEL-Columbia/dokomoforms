@@ -6,7 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.engine import RowProxy, Connection
 from sqlalchemy.sql.functions import count, max as sqlmax, min as sqlmin
 
-from dokomoforms.api import execute_with_exceptions, json_response
+from dokomoforms.api import execute_with_exceptions, json_response, \
+    maybe_isoformat
 from dokomoforms.db import delete_record, update_record, survey_table, \
     submission_table, auth_user_table
 from dokomoforms.db.answer import get_answers_for_question, answer_insert, \
@@ -481,8 +482,8 @@ def get_stats(connection: Connection,
     return json_response({
         'created_on': result[0].isoformat(),
         'num_submissions': result[1],
-        'earliest_submission_time': result[2].isoformat(),
-        'latest_submission_time': result[3].isoformat()
+        'earliest_submission_time': maybe_isoformat(result[2]),
+        'latest_submission_time': maybe_isoformat(result[3])
     })
 
 

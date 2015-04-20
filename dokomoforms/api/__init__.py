@@ -42,3 +42,14 @@ def json_response(something: object) -> dict:
     :return: {'result': something}
     """
     return {'result': something}
+
+
+def maybe_isoformat(date_or_time) -> str:
+    """
+    Return the date_or_time.isoformat() if date_or_time is not None,
+    else the empty string.
+
+    :param date_or_time: a Python date, time, etc.
+    :return: the ISO 8601 representation (or the empty string)
+    """
+    return '' if date_or_time is None else date_or_time.isoformat()
