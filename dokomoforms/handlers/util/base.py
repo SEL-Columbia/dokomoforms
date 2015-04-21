@@ -66,9 +66,10 @@ class BaseHandler(tornado.web.RequestHandler):
 
     @staticmethod
     def iso_date_str_to_fmt_str(iso_date_str, fmt_str):
-        date = datetime.datetime.strptime(iso_date_str, '%Y-%m-%dT%H:%M:%S.%f+00:00')
-        date_formatted = date.strftime(fmt_str)
-        return date_formatted
+        #date = datetime.datetime.strptime(iso_date_str, '%Y-%m-%dT%H:%M:%S.%f+00:00')
+        #date_formatted = date.strftime(fmt_str)
+        #return date_formatted
+        return ""
 
 
 class APIHandler(BaseHandler):
