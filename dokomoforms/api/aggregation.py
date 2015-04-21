@@ -54,7 +54,8 @@ def _jsonify(connection: Connection,
         geo_json = connection.execute(func.ST_AsGeoJSON(answer)).scalar()
         return json_decode(geo_json)['coordinates']
     elif type_constraint_name in {'date', 'time'}:
-        return answer.isoformat()
+        if (answer): 
+            return answer.isoformat()
     elif type_constraint_name == 'decimal':
         return float(answer)
     elif type_constraint_name == 'multiple_choice':
