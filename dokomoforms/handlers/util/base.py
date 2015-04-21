@@ -1,9 +1,9 @@
 """Base handler classes and utility functions."""
-import datetime
 from collections.abc import Callable
 import functools
 from pprint import pformat
 
+import dateutil.parser
 from sqlalchemy.exc import IntegrityError
 from tornado.escape import to_unicode, json_decode, json_encode
 import tornado.web
@@ -60,16 +60,9 @@ class BaseHandler(tornado.web.RequestHandler):
         """Template globals"""
         namespace = super().get_template_namespace()
         namespace.update({
-            'iso_date_str_to_fmt_str': self.iso_date_str_to_fmt_str
+            'iso_date_str_to_fmt_str': dateutil.parser.parse
         })
         return namespace
-
-    @staticmethod
-    def iso_date_str_to_fmt_str(iso_date_str, fmt_str):
-        #date = datetime.datetime.strptime(iso_date_str, '%Y-%m-%dT%H:%M:%S.%f+00:00')
-        #date_formatted = date.strftime(fmt_str)
-        #return date_formatted
-        return ""
 
 
 class APIHandler(BaseHandler):
