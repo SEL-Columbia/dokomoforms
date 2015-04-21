@@ -44,8 +44,11 @@ logger = setup_custom_logger('dokomo')
 class Index(BaseHandler):
     def get(self, msg=""):
         surveys = get_surveys_by_email(self.db, self.current_user, 10)
-        recent_submissions = submission_api.get_all(self.db, email=self.current_user, limit=5, direction='DESC')
-        self.render('index.html', message=msg, surveys=surveys, recent_submissions=recent_submissions)
+        recent_submissions = submission_api.get_all(self.db,
+                                                    email=self.current_user,
+                                                    limit=5, direction='DESC')
+        self.render('index.html', message=msg, surveys=surveys,
+                    recent_submissions=recent_submissions)
 
     def post(self):
         LogoutHandler.post(self)  # TODO move to js
@@ -68,9 +71,6 @@ class Survey(BaseHandler):
         except (SurveyPrefixDoesNotIdentifyASurveyError,
                 SurveyPrefixTooShortError):
             raise tornado.web.HTTPError(404)
-
-    def post(self, uuid):
-        SubmitAPIHandler.post(self, uuid)  # TODO: Hey Abdi kill this
 
 
 class APITokenGenerator(BaseHandler):  # pragma: no cover
