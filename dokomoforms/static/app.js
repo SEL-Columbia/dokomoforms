@@ -201,6 +201,9 @@ App.submit = function(survey, done, fail) {
         return r ? r[1] : undefined;
     }
     
+    // Update submit time
+    survey.submit_time = new Date().toISOString();
+
     $.ajax({
         url: '/api/surveys/'+survey.survey_id+'/submit',
         type: 'POST',
@@ -219,6 +222,7 @@ App.submit = function(survey, done, fail) {
         }
     });
 
+    console.log('synced submission:', survey);
     console.log('survey', '/api/surveys/'+survey.survey_id+'/submit');
 }
 
@@ -507,10 +511,11 @@ Survey.prototype.submit = function() {
         submitter: App.submitter_name || "anon",
         submitter_email: App.submitter_email || "anon@anon.org",
         survey_id: self.id,
-        answers: survey_answers
+        answers: survey_answers,
+        save_time: new Date().toISOString()
     };
 
-    //console.log('submission:', data);
+    console.log('saved submission:', data);
     
     // Don't post with no replies
     if (JSON.stringify(survey_answers) === '[]') {
