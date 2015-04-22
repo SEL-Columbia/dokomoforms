@@ -60,7 +60,7 @@ class BaseHandler(tornado.web.RequestHandler):
         """Template globals"""
         namespace = super().get_template_namespace()
         namespace.update({
-            'iso_date_str_to_fmt_str': dateutil.parser.parse
+            'iso_date_str_to_fmt_str': lambda date, form: dateutil.parser.parse(date).strftime(form) 
         })
         return namespace
 

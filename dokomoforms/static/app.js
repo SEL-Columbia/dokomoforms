@@ -202,7 +202,7 @@ App.submit = function(survey, done, fail) {
     }
     
     // Update submit time
-    survey.submit_time = new Date().toISOString();
+    survey.submission_time = new Date().toISOString();
 
     $.ajax({
         url: '/api/surveys/'+survey.survey_id+'/submit',
