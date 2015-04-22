@@ -16,23 +16,22 @@ def submission_insert(*,
                       submitter: str,
                       survey_id: str,
                       submission_time: [str, datetime]=None,
-                      field_update_time: [str, datetime]=None) -> Insert:
+                      save_time: [str, datetime]=None) -> Insert:
     """
     Insert a record into the submission table.
 
     :param submitter: name
     :param survey_id: The UUID of the survey.
     :param submission_time: the time of the submission. Default now()
-    :param field_update_time: the time of the update in the field. Default
-                              now()
+    :param save_time: the time of survey completion. Default now()
     :return: The Insert object. Execute this!
     """
     values = {'submitter': submitter,
               'survey_id': survey_id}
     if submission_time is not None:
         values['submission_time'] = submission_time
-    if field_update_time is not None:
-        values['field_update_time'] = field_update_time
+    if save_time is not None:
+        values['save_time'] = save_time
     return submission_table.insert().values(values)
 
 

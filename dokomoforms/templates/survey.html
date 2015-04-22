@@ -79,20 +79,24 @@
             _.each(question.answer, function(ans) {
             if (ans && ans.response !== null && !ans.is_type_exception) { 
                 no_response = false; %>
+                <div class="input_container">
                 <input class="text_input" type="text" 
                     placeholder="Please provide another response."
                     value="<%- ans.response %>"
                 >
                 <span class="icon icon-close question__minus"></span>
+                </div>
             <% } %>
         <% }); %>
 
         <% if (no_response) { %>
-           <input class="text_input x_buffer" type="text"
-               placeholder="Please provide any response."
-               value="<%- question.default || '' %>"
-           >
-           <span class="icon icon-close question__minus"></span>
+            <div class="input_container">
+            <input class="text_input" type="text" 
+                placeholder="Please provide any response."
+                value="<%- question.default || '' %>"
+            >
+            <span class="icon icon-close question__minus"></span>
+            </div>
         <% } %>
     </script>
     
@@ -110,12 +114,6 @@
                 <input class="text_input" type="number"
                     placeholder="Please provide another number."
                     value="<%- ans.response %>"
-                    <% if (question.min != null){ %>
-                        min="<%- question.min %>"
-                    <% } %>
-                    <% if (question.max != null){ %>
-                        max="<%- question.max %>"
-                    <% } %>
                 >
                 <span class="icon icon-close question__minus"></span>
                 </div>
@@ -127,12 +125,6 @@
                 <input class="text_input" type="number"
                     placeholder="Please provide a number."
                     value="<%- question.default || '' %>"
-                    <% if (question.min != null){ %>
-                        min="<%- question.min %>"
-                    <% } %>
-                    <% if (question.max != null){ %>
-                        max="<%- question.max %>"
-                    <% } %>
                 >
             <span class="icon icon-close question__minus"></span>
             </div>

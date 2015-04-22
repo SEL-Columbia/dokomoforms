@@ -91,12 +91,18 @@ def _create_submission(connection: Connection,
     """
     unanswered_required = required_ids.copy()
     submitter = submission_data['submitter']
+
+    submission_time  = submission_data['submission_time']
+    save_time  = submission_data['save_time']
+
     all_answers = submission_data['answers']
     answers = filter(_answer_not_none, all_answers)
 
     submission_values = {
-        'submitter': submitter, 'survey_id': survey_id
+        'submitter': submitter, 'survey_id': survey_id,
+        'submission_time': submission_time, 'save_time': save_time
     }
+
     executable = submission_insert(**submission_values)
     exceptions = [
         ('submission_survey_id_fkey',
@@ -239,6 +245,7 @@ def get_one(connection: Connection, submission_id: str, email: str) -> dict:
                 'survey_id': submission.survey_id,
                 'submitter': submission.submitter,
                 'submission_time': submission.submission_time.isoformat(),
+                'save_time': submission.save_time.isoformat(),
                 'answers': [_get_fields(c, answer) for num, answer in result]}
     return json_response(sub_dict)
 
