@@ -90,7 +90,9 @@ def _create_submission(connection: Connection,
     :raise RequiredQuestionSkippedError: if a "required" question has no answer
     """
     unanswered_required = required_ids.copy()
+
     submitter = submission_data['submitter']
+    submitter_email = submission_data['submitter_email']
 
     submission_time  = submission_data['submission_time']
     save_time  = submission_data['save_time']
@@ -99,7 +101,8 @@ def _create_submission(connection: Connection,
     answers = filter(_answer_not_none, all_answers)
 
     submission_values = {
-        'submitter': submitter, 'survey_id': survey_id,
+        'survey_id': survey_id, 
+        'submitter': submitter, 'submitter_email': submitter_email,
         'submission_time': submission_time, 'save_time': save_time
     }
 
@@ -244,6 +247,7 @@ def get_one(connection: Connection, submission_id: str, email: str) -> dict:
     sub_dict = {'submission_id': submission_id,
                 'survey_id': submission.survey_id,
                 'submitter': submission.submitter,
+                'submitter_email': submission.submitter_email,
                 'submission_time': submission.submission_time.isoformat(),
                 'save_time': submission.save_time.isoformat(),
                 'answers': [_get_fields(c, answer) for num, answer in result]}

@@ -102,6 +102,8 @@ submission_table = Table(
            server_default=func.now()),
     Column('submitter', String,
            nullable=False),
+    Column('submitter_email', String,
+           nullable=False),
     Column('survey_id', postgresql.UUID,
            ForeignKey('survey.survey_id',
                       onupdate='CASCADE',

@@ -13,8 +13,9 @@ from dokomoforms.db import get_column, submission_table, answer_table, \
 
 
 def submission_insert(*,
-                      submitter: str,
                       survey_id: str,
+                      submitter: str,
+                      submitter_email: str,
                       submission_time: [str, datetime]=None,
                       save_time: [str, datetime]=None) -> Insert:
     """
@@ -26,8 +27,12 @@ def submission_insert(*,
     :param save_time: the time of survey completion. Default now()
     :return: The Insert object. Execute this!
     """
-    values = {'submitter': submitter,
-              'survey_id': survey_id}
+    values = {
+              'survey_id': survey_id,
+              'submitter': submitter,
+              'submitter_email': submitter
+    }
+
     if submission_time is not None:
         values['submission_time'] = submission_time
     if save_time is not None:
