@@ -91,6 +91,7 @@ def _create_submission() -> dict:
         fourth_cond)).first().question_id
     input_data = {'survey_id': survey_id,
                   'submitter': 'me',
+                  'submitter_email': 'anon@anon.org',
                   'answers':
                       [{'question_id': question_id,
                         'answer': 1,
@@ -286,12 +287,14 @@ class APITest(AsyncHTTPTestCase):
             'survey_id': survey_id,
             'submissions': [
                 {'submitter': 'me',
+                 'submitter_email': 'anon@anon.org',
                  'answers': [
                      {'question_id': question_id,
                       'answer': 1,
                       'answer_metadata': None,
                       'is_type_exception': False}]},
                 {'submitter': 'me',
+                 'submitter_email': 'anon@anon.org',
                  'answers': [
                      {'question_id': second_q_id,
                       'answer': choice_id,
@@ -344,6 +347,7 @@ class APITest(AsyncHTTPTestCase):
             'survey_id': wrong_id,
             'submissions': [
                 {'submitter': 'me',
+                 'submitter_email': 'anon@anon.org',
                  'answers': [
                      {'question_id': get_questions_no_credentials(
                          connection, survey_id).first().question_id,
@@ -376,6 +380,7 @@ class APITest(AsyncHTTPTestCase):
             'survey_id': survey_id,
             'submissions': [
                 {'submitter': 'me',
+                 'submitter_email': 'anon@anon.org',
                  'answers': answers},
             ]
         }
@@ -457,6 +462,7 @@ class APITest(AsyncHTTPTestCase):
         for i in range(2):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
@@ -502,6 +508,7 @@ class APITest(AsyncHTTPTestCase):
         for i in range(2):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': str(i),
@@ -542,6 +549,7 @@ class APITest(AsyncHTTPTestCase):
         for i in range(2):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
@@ -571,6 +579,7 @@ class APITest(AsyncHTTPTestCase):
         for i in range(2):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
@@ -604,6 +613,7 @@ class APITest(AsyncHTTPTestCase):
         for i in range(2):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
@@ -633,6 +643,7 @@ class APITest(AsyncHTTPTestCase):
         for i in range(2):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -663,6 +674,7 @@ class APITest(AsyncHTTPTestCase):
         for i in range(2):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -693,6 +705,7 @@ class APITest(AsyncHTTPTestCase):
         for i in range(3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -722,6 +735,7 @@ class APITest(AsyncHTTPTestCase):
         for i in range(3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -751,6 +765,7 @@ class APITest(AsyncHTTPTestCase):
         for i in (1, 2, 2, 3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -780,6 +795,7 @@ class APITest(AsyncHTTPTestCase):
 
         input_data = {'survey_id': survey_id,
                       'submitter': 'test_submitter',
+                      'submitter_email': 'anon@anon.org',
                       'answers':
                           [{'question_id': q_id,
                             'answer': {'lon': 90, 'lat': 0},
@@ -810,6 +826,7 @@ class APITest(AsyncHTTPTestCase):
         for i in range(3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -842,6 +859,7 @@ class APITest(AsyncHTTPTestCase):
         for i in [0, 2, 1, 0]:
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -899,6 +917,7 @@ class APINoLoginTest(AsyncHTTPTestCase):
             fourth_cond)).first().question_id
         input_data = {'survey_id': survey_id,
                       'submitter': 'testPostSubmissionSubmitter',
+                      'submitter_email': 'anon@anon.org',
                       'answers':
                           [{'question_id': question_id,
                             'answer': 1,
@@ -1027,6 +1046,7 @@ class APINoLoginTest(AsyncHTTPTestCase):
                     'answer_metadata': None,
                     'is_type_exception': False}]
         answer_json = {'submitter': 'me',
+                       'submitter_email': 'anon@anon.org',
                        'survey_id': survey_id,
                        'answers': answers}
 
@@ -1057,6 +1077,7 @@ class APINoLoginTest(AsyncHTTPTestCase):
         answer_json = {
             'survey_id': survey_id,
             'submitter': 'testPostWithBadEmailSubmitter',
+            'submitter_email': 'anon@anon.org',
             'answers':
                 [{'question_id': question_id,
                   'answer': 1,
@@ -1092,6 +1113,7 @@ class APINoLoginTest(AsyncHTTPTestCase):
         answer_json = {
             'survey_id': survey_id,
             'submitter': 'testPostWithBadToken',
+            'submitter_email': 'anon@anon.org',
             'answers':
                 [{'question_id': question_id,
                   'answer': 1,
@@ -1341,6 +1363,7 @@ class VisualizationTest(AsyncHTTPTestCase):
 
         input_data = {'survey_id': survey_id,
                       'submitter': 'test_submitter',
+                      'submitter_email': 'anon@anon.org',
                       'answers':
                           [{'question_id': q_id,
                             'answer': 1,
@@ -1399,6 +1422,7 @@ class VisualizationTest(AsyncHTTPTestCase):
 
         input_data = {'survey_id': survey_id,
                       'submitter': 'test_submitter',
+                      'submitter_email': 'anon@anon.org',
                       'answers':
                           [{'question_id': q_id,
                             'answer': {'lon': 0, 'lat': 0},

@@ -94,8 +94,8 @@ def _create_submission(connection: Connection,
     submitter = submission_data['submitter']
     submitter_email = submission_data['submitter_email']
 
-    submission_time  = submission_data['submission_time']
-    save_time  = submission_data['save_time']
+    submission_time  = submission_data.get('submission_time', None)
+    save_time  = submission_data.get('save_time', None)
 
     all_answers = submission_data['answers']
     answers = filter(_answer_not_none, all_answers)

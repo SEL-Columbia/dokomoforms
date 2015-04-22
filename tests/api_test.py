@@ -75,6 +75,7 @@ class TestSubmission(unittest.TestCase):
             fourth_cond)).first().question_id
         input_data = {'submitter': 'me',
                       'survey_id': survey_id,
+                      'submitter_email': 'anon@anon.org',
                       'answers':
                           [{'question_id': question_id,
                             'answer': 1,
@@ -121,6 +122,7 @@ class TestSubmission(unittest.TestCase):
         question_id = connection.execute(question_table.select().where(
             and_cond)).first().question_id
         input_data = {'submitter': 'me',
+                      'submitter_email': 'anon@anon.org',
                       'survey_id': survey_id,
                       'answers':
                           [{'question_id': question_id,
@@ -134,6 +136,7 @@ class TestSubmission(unittest.TestCase):
 
         input_data2 = {'survey_id': survey_id,
                        'submitter': 'test_submitter',
+                       'submitter_email': 'anon@anon.org',
                        'answers':
                            [{'question_id': question_id,
                              'answer': 1j,
@@ -151,6 +154,7 @@ class TestSubmission(unittest.TestCase):
             and_cond)).first().question_id
         input_data = {'survey_id': survey_id,
                       'submitter': 'test_submitter',
+                      'submitter_email': 'anon@anon.org',
                       'answers':
                           [{'question_id': question_id,
                             'answer': 'one',
@@ -185,6 +189,7 @@ class TestSubmission(unittest.TestCase):
         survey_id = survey['survey_id']
 
         submission = {'submitter': 'me',
+                      'submitter_email': 'anon@anon.org',
                       'survey_id': survey_id,
                       'answers': []}
         self.assertRaises(submission_api.RequiredQuestionSkippedError,
@@ -193,6 +198,7 @@ class TestSubmission(unittest.TestCase):
         question_id = survey['questions'][0]['question_id']
 
         submission2 = {'submitter': 'me',
+                       'submitter_email': 'anon@anon.org',
                        'survey_id': survey_id,
                        'answers': [{'question_id': question_id,
                                     'answer': None}]}
@@ -206,6 +212,7 @@ class TestSubmission(unittest.TestCase):
 
         ).survey_id
         input_data = {'submitter': 'me',
+                      'submitter_email': 'anon@anon.org',
                       'survey_id': survey_id,
                       'answers': [{'question_id': str(uuid.uuid4()),
                                    'answer': 1}]}
@@ -216,7 +223,7 @@ class TestSubmission(unittest.TestCase):
 
     def testSurveyDoesNotExist(self):
         survey_id = str(uuid.uuid4())
-        input_data = {'submitter': 'me', 'survey_id': survey_id, 'answers': []}
+        input_data = {'submitter': 'me', 'submitter_email': 'anon@anon.org','survey_id': survey_id, 'answers': []}
         self.assertRaises(SurveyDoesNotExistError, submission_api.submit,
                           connection,
                           input_data)
@@ -233,6 +240,7 @@ class TestSubmission(unittest.TestCase):
         time_question_id = connection.execute(question_table.select().where(
             time_cond)).first().question_id
         input_data = {'submitter': 'me',
+                      'submitter_email': 'anon@anon.org',
                       'survey_id': survey_id,
                       'answers':
                           [{'question_id': date_question_id,
@@ -255,6 +263,7 @@ class TestSubmission(unittest.TestCase):
         question_id = connection.execute(question_table.select().where(
             and_cond)).first().question_id
         input_data = {'submitter': 'me',
+                      'submitter_email': 'anon@anon.org',
                       'survey_id': survey_id,
                       'answers':
                           [{'question_id': question_id,
@@ -285,6 +294,7 @@ class TestSubmission(unittest.TestCase):
         mul = question.allow_multiple
         submission_exec = connection.execute(
             submission_insert(submitter='test_submitter',
+                              submitter_email='anon@anon.org',
                               survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         connection.execute(answer_insert(
@@ -313,6 +323,7 @@ class TestSubmission(unittest.TestCase):
         for i in range(2):
             submission_exec = connection.execute(
                 submission_insert(submitter='test_submitter',
+                                  submitter_email='anon@anon.org',
                                   survey_id=survey_id))
             submission_id = submission_exec.inserted_primary_key[0]
             connection.execute(answer_insert(
@@ -348,6 +359,7 @@ class TestSubmission(unittest.TestCase):
             submission_exec = connection.execute(
                 submission_insert(
                     submitter='test_submitter',
+                    submitter_email='anon@anon.org',
                     survey_id=survey_id,
                     submission_time=t
                 )
@@ -371,6 +383,7 @@ class TestSubmission(unittest.TestCase):
         survey_id = connection.execute(survey_table.select().where(
             survey_table.c.survey_title == 'test_title')).first().survey_id
         data = {'submitter': 'me',
+                'submitter_email': 'anon@anon.org',
                 'survey_id': survey_id,
                 'answers': [{'answer': None}]}
         submission_id = submission_api.submit(connection, data)['result'][
@@ -725,6 +738,7 @@ class TestSurvey(unittest.TestCase):
         choice_1_id = choice_1.question_choice_id
 
         submission = {'submitter': 'me',
+                      'submitter_email': 'anon@anon.org',
                       'survey_id': survey_id,
                       'answers': [{'question_id': inserted_qs[0].question_id,
                                    'answer': 5,
@@ -931,6 +945,7 @@ class TestSurvey(unittest.TestCase):
         other_choice_2_id = other_choice_2.question_choice_id
 
         submission = {'submitter': 'me',
+                      'submitter_email': 'anon@anon.org',
                       'survey_id': survey_id,
                       'answers': [
                           {'question_id': inserted_qs[0].question_id,
@@ -1103,6 +1118,7 @@ class TestSurvey(unittest.TestCase):
             connection, survey_id).first().question_id
 
         submission = {'submitter': 'me',
+                      'submitter_email': 'anon@anon.org',
                       'survey_id': survey_id,
                       'answers': [{'question_id': inserted_q_id,
                                    'answer': 'text answer',
@@ -1336,6 +1352,7 @@ class TestAggregation(unittest.TestCase):
         for i in range(2):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
@@ -1402,6 +1419,7 @@ class TestAggregation(unittest.TestCase):
         for i in range(2):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
@@ -1425,6 +1443,7 @@ class TestAggregation(unittest.TestCase):
         for i in range(1, 3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': '1/{}/2015'.format(i),
@@ -1451,6 +1470,7 @@ class TestAggregation(unittest.TestCase):
         for i in range(-4, 4):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
@@ -1478,6 +1498,7 @@ class TestAggregation(unittest.TestCase):
         for i in range(2):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
@@ -1505,6 +1526,7 @@ class TestAggregation(unittest.TestCase):
         for i in range(2):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': str(i),
@@ -1534,6 +1556,7 @@ class TestAggregation(unittest.TestCase):
         for choice in get_choices(connection, question_id):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': choice.question_choice_id,
@@ -1561,6 +1584,7 @@ class TestAggregation(unittest.TestCase):
         for i in range(2):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': {
@@ -1591,6 +1615,7 @@ class TestAggregation(unittest.TestCase):
             input_data = {
                 'survey_id': survey_id,
                 'submitter': 'test_submitter',
+                'submitter_email': 'anon@anon.org',
                 'answers':
                     [
                         {
@@ -1625,6 +1650,7 @@ class TestAggregation(unittest.TestCase):
         for i in range(3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -1652,6 +1678,7 @@ class TestAggregation(unittest.TestCase):
         for i in range(3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -1676,6 +1703,7 @@ class TestAggregation(unittest.TestCase):
         for i in (1, 2, 2, 2, 3, 3, 3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -1706,6 +1734,7 @@ class TestAggregation(unittest.TestCase):
         for i in (1, 2, 2, 2, 3, 3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -1738,6 +1767,7 @@ class TestAggregation(unittest.TestCase):
         for i in (1, 2, 2, 2, 3, 3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': {'lon': i, 'lat': i},
@@ -1770,6 +1800,7 @@ class TestAggregation(unittest.TestCase):
         for i in (1, 2, 2, 2, 3, 3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': {'id': 'woah', 'lon': i, 'lat': i},
@@ -1817,6 +1848,7 @@ class TestAggregation(unittest.TestCase):
         for choice in get_choices(connection, q_id):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': choice.question_choice_id,
@@ -1827,6 +1859,7 @@ class TestAggregation(unittest.TestCase):
                                       q_id).first().question_choice_id
         input_data = {'survey_id': survey_id,
                       'submitter': 'test_submitter',
+                      'submitter_email': 'anon@anon.org',
                       'answers':
                           [{'question_id': q_id,
                             'answer': repeated_choice,
@@ -1851,6 +1884,7 @@ class TestAggregation(unittest.TestCase):
         for i in range(3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -1879,6 +1913,7 @@ class TestAggregation(unittest.TestCase):
         for i in [0, 2, 1, 0]:
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
@@ -1921,12 +1956,14 @@ class TestBatch(unittest.TestCase):
             'survey_id': survey_id,
             'submissions': [
                 {'submitter': 'me',
+                 'submitter_email': 'anon@anon.org',
                  'answers': [
                      {'question_id': question_id,
                       'answer': 1,
                       'answer_metadata': {},
                       'is_type_exception': False}]},
                 {'submitter': 'me',
+                 'submitter_email': 'anon@anon.org',
                  'answers': [
                      {'question_id': second_q_id,
                       'answer': choice_id,

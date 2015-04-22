@@ -26,7 +26,7 @@
                     conducted on
                 </div>
                 <div class="stat-value stat-created-on">
-                    {{ iso_date_str_to_fmt_str(submission['submission_time'], "%b %d, %Y") }}
+                    {{ iso_date_str_to_fmt_str(submission['save_time'], "%b %d, %Yi %H:%M:%S") }}
                 </div>
             </div>
             <div class="col-md-2">
@@ -42,7 +42,7 @@
                     submitted on
                 </div>
                 <div class="stat-value stat-created-on">
-                    {{ iso_date_str_to_fmt_str(submission['submission_time'], "%b %d, %Y") }}
+                    {{ iso_date_str_to_fmt_str(submission['submission_time'], "%b %d, %Y %H:%M:%S") }}
                 </div>
             </div>
             <!-- <div class="col-md-2">
