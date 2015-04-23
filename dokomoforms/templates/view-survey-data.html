@@ -32,26 +32,34 @@
         <div class="row">
             <div class="col-md-2">
                 <div class="stat-label">
-                    total submissions
+                    created on
                 </div>
                 <div class="stat-value stat-created-on">
-                    1,230
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="stat-label">
-                    latest submission
-                </div>
-                <div class="stat-value stat-created-on">
-                    April 3, 2015
+                    {{ iso_date_str_to_fmt_str(survey_stats['result']['created_on'], "%b %d, %Y") }}
                 </div>
             </div>
             <div class="col-md-2">
                 <div class="stat-label">
                     first submission
                 </div>
+                <div class="stat-value stat-first-submission">
+                    {{ iso_date_str_to_fmt_str(survey_stats['result']['earliest_submission_time'], "%b %d, %Y") }}
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="stat-label">
+                    latest submission
+                </div>
+                <div class="stat-value stat-latest-submission">
+                    {{ iso_date_str_to_fmt_str(survey_stats['result']['latest_submission_time'], "%b %d, %Y") }}
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="stat-label">
+                    total submissions
+                </div>
                 <div class="stat-value stat-created-on">
-                    April 28, 2014
+                    {{ format(survey_stats['result']['num_submissions'], ',') }}
                 </div>
             </div>
         </div>
