@@ -10,7 +10,7 @@ from sqlalchemy.sql.functions import GenericFunction, min as sqlmin, \
 from sqlalchemy.sql import func, and_, select
 from tornado.escape import json_decode
 
-from dokomoforms.api import json_response
+from dokomoforms.api import json_response, maybe_isoformat
 from dokomoforms.db import get_column, question_table
 from dokomoforms.db import answer_table, answer_choice_table, \
     submission_table, survey_table
@@ -54,8 +54,7 @@ def _jsonify(connection: Connection,
         geo_json = connection.execute(func.ST_AsGeoJSON(answer)).scalar()
         return json_decode(geo_json)['coordinates']
     elif type_constraint_name in {'date', 'time'}:
-        if (answer): 
-            return answer.isoformat()
+        return maybe_isoformat(answer)
     elif type_constraint_name == 'decimal':
         return float(answer)
     elif type_constraint_name == 'multiple_choice':

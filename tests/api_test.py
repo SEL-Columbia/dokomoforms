@@ -223,7 +223,8 @@ class TestSubmission(unittest.TestCase):
 
     def testSurveyDoesNotExist(self):
         survey_id = str(uuid.uuid4())
-        input_data = {'submitter': 'me', 'submitter_email': 'anon@anon.org','survey_id': survey_id, 'answers': []}
+        input_data = {'submitter': 'me', 'submitter_email': 'anon@anon.org',
+                      'survey_id': survey_id, 'answers': []}
         self.assertRaises(SurveyDoesNotExistError, submission_api.submit,
                           connection,
                           input_data)
@@ -332,8 +333,10 @@ class TestSubmission(unittest.TestCase):
                 survey_id=survey_id, type_constraint_name=tcn,
                 is_type_exception=False,
                 sequence_number=seq, allow_multiple=mul))
-        data = submission_api.get_all(connection, survey_id,
-                                      email='test_email')
+        data = submission_api.get_all(
+            connection, 'test_email',
+            survey_id=survey_id
+        )
         self.assertGreater(len(data), 0)
 
     def testGetActivity(self):
