@@ -23,7 +23,8 @@ from dokomoforms.handlers.auth import LogoutHandler, LoginHandler
 from dokomoforms.handlers.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler, SubmitAPIHandler, SubmissionActivityAPIHandler
 from dokomoforms.handlers.api.surveys import SurveysAPIHandler, \
-    SingleSurveyAPIHandler, CreateSurveyAPIHandler, SurveyStatsAPIHandler
+    SingleSurveyAPIHandler, CreateSurveyAPIHandler, SurveyStatsAPIHandler, \
+    SurveySubmissionsAPIHandler
 from dokomoforms.handlers.util.base import BaseHandler, get_json_request_body
 import dokomoforms.handlers.util.ui
 from dokomoforms.handlers.debug import DebugLoginHandler, DebugLogoutHandler, \
@@ -145,15 +146,16 @@ pages = [
     (r'/api/surveys/({})/submit/?'.format(UUID_REGEX),
      SubmitAPIHandler),
     (r'/api/surveys/({})/submissions/?'.format(UUID_REGEX),
-     SubmissionsAPIHandler),
+     SurveySubmissionsAPIHandler),
 
+    (r'/api/submissions/?'.format(UUID_REGEX),
+     SubmissionsAPIHandler),
+    (r'/api/submissions/({})/?'.format(UUID_REGEX),
+     SingleSubmissionAPIHandler),
     (r'/api/submissions/activity/({})/?'.format(UUID_REGEX),
      SubmissionActivityAPIHandler),
     (r'/api/submissions/activity/?'.format(UUID_REGEX),
      SubmissionActivityAPIHandler),
-
-    (r'/api/submissions/({})/?'.format(UUID_REGEX),
-     SingleSubmissionAPIHandler),
 
     (r'/api/batch/submit/({})/?'.format(UUID_REGEX),
      BatchSubmissionAPIHandler),
