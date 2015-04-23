@@ -687,6 +687,7 @@ describe('Survey unit and regression tests', function(done) {
                       assert(false, "Failed to catch revisit correctly"); 
                       done();
                   },
+                  responseTime: 1,
                   responseText: {
                       status: "success",
                   }
@@ -701,6 +702,7 @@ describe('Survey unit and regression tests', function(done) {
                   onAfterError: function() { 
                       assert(false, "Failed to catch post correctly"); 
                   },
+                  responseTime: 1,
                   responseText: {
                       status: "success",
                   }
