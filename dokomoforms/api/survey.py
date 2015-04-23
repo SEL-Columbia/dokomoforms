@@ -277,11 +277,15 @@ def _copy_submission_entries(connection: Connection,
     :param email: the user's e-mail address
     :return: a tuple containing the old and new submission IDs
     """
-    for sub in get_submissions_by_email(connection, existing_survey_id,
-                                        email=email):
+    submissions = get_submissions_by_email(
+        connection, email,
+        survey_id=existing_survey_id
+    )
+    for sub in submissions:
         values = {'submitter': sub.submitter,
+                  'submitter_email': sub.submitter_email,
                   'submission_time': sub.submission_time,
-                  'field_update_time': sub.field_update_time,
+                  'save_time': sub.save_time,
                   'survey_id': new_survey_id}
         result = connection.execute(submission_insert(**values))
         yield sub.submission_id, result.inserted_primary_key[0]
@@ -319,11 +323,14 @@ def _create_survey(connection: Connection, data: dict) -> str:
     # a map of old submission_id to new submission_id
     submission_map = None
     if is_update:
-        submission_map = {entry[0]: entry[1] for entry in
-                          _copy_submission_entries(connection,
-                                                   data['survey_id'],
-                                                   survey_id,
-                                                   data['email'])}
+        submission_map = {
+            entry[0]: entry[1] for entry in
+            _copy_submission_entries(
+                connection,
+                data['survey_id'],
+                survey_id,
+                data['email'])
+        }
 
     # Now insert questions.  Inserting branches has to come afterward so
     # that the question_id values actually exist in the tables.

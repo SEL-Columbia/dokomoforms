@@ -52,4 +52,7 @@ def maybe_isoformat(date_or_time) -> str:
     :param date_or_time: a Python date, time, etc.
     :return: the ISO 8601 representation (or the empty string)
     """
-    return '' if date_or_time is None else date_or_time.isoformat()
+    if date_or_time is None:
+        return None
+    else:
+        return date_or_time.isoformat()

@@ -16,6 +16,7 @@ var App = {
 
 App.init = function(survey) {
     var self = this;
+    console.log(survey);
     self.survey = new Survey(survey.survey_id, 
             survey.survey_version, 
             survey.questions, 

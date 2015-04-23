@@ -223,7 +223,8 @@ class TestSubmission(unittest.TestCase):
 
     def testSurveyDoesNotExist(self):
         survey_id = str(uuid.uuid4())
-        input_data = {'submitter': 'me', 'submitter_email': 'anon@anon.org','survey_id': survey_id, 'answers': []}
+        input_data = {'submitter': 'me', 'submitter_email': 'anon@anon.org',
+                      'survey_id': survey_id, 'answers': []}
         self.assertRaises(SurveyDoesNotExistError, submission_api.submit,
                           connection,
                           input_data)
@@ -332,8 +333,10 @@ class TestSubmission(unittest.TestCase):
                 survey_id=survey_id, type_constraint_name=tcn,
                 is_type_exception=False,
                 sequence_number=seq, allow_multiple=mul))
-        data = submission_api.get_all(connection, survey_id,
-                                      email='test_email')
+        data = submission_api.get_all(
+            connection, 'test_email',
+            survey_id=survey_id
+        )
         self.assertGreater(len(data), 0)
 
     def testGetActivity(self):
@@ -373,7 +376,7 @@ class TestSubmission(unittest.TestCase):
                 sequence_number=seq, allow_multiple=mul))
 
         activity = submission_api.get_activity(
-            connection, survey_id, 'test_email'
+            connection, 'test_email', survey_id=survey_id
         )['result']
         self.assertEqual(len(activity), 2)
         self.assertEqual(activity[0][0], 2)
@@ -837,8 +840,9 @@ class TestSurvey(unittest.TestCase):
         self.assertEqual(choices[1].choice, 'a')
         self.assertEqual(choices[2].choice, '1')
         self.assertEqual(len(choices), 3)
-        new_submission = get_submissions_by_email(connection, new_survey_id,
-                                                  email='test_email').first()
+        new_submission = get_submissions_by_email(
+            connection, 'test_email', survey_id=new_survey_id
+        ).first()
         integer_answer = get_answers(connection,
                                      new_submission.submission_id).first()
         self.assertEqual(integer_answer.answer_integer, 5)
@@ -1083,12 +1087,15 @@ class TestSurvey(unittest.TestCase):
         update_json['questions'] = questions
         new_survey = survey_api.update(connection, update_json)['result']
         gsb = get_submissions_by_email
-        new_submissions = gsb(connection, new_survey['survey_id'],
-                              email='test_email').fetchall()
+        new_submissions = gsb(
+            connection, 'test_email',
+            survey_id=new_survey['survey_id']
+        ).fetchall()
         self.assertEqual(len(new_submissions), 1)
-        choices = get_answer_choices(connection,
-                                     new_submissions[
-                                         0].submission_id).fetchall()
+        choices = get_answer_choices(
+            connection,
+            new_submissions[0].submission_id
+        ).fetchall()
         self.assertEqual(len(choices), 2)
         answers = get_answers(connection,
                               new_submissions[0].submission_id).fetchall()

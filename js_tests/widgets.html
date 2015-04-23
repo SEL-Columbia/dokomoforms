@@ -7,11 +7,11 @@
     <body>
 
     <header class="bar bar-nav bar-padded"></header>
+    <div id="login"></div>
     <div class="content"></div>
     <div class="overlay" style="display:none;"></div>
     <div class="bar bar-standard bar-footer"></div>
-    <div id="login"></div>
-
+    
     <script id="template_nav" type="text/html">
         <button class="btn btn-link btn-nav pull-left page_nav__prev">
             <span class="icon icon-left-nav"></span>
@@ -66,20 +66,24 @@
             _.each(question.answer, function(ans) {
             if (ans && ans.response !== null && !ans.is_type_exception) { 
                 no_response = false; %>
+                <div class="input_container">
                 <input class="text_input" type="text" 
                     placeholder="Please provide another response."
                     value="<%- ans.response %>"
                 >
                 <span class="icon icon-close question__minus"></span>
+                </div>
             <% } %>
         <% }); %>
 
         <% if (no_response) { %>
-           <input class="text_input x_buffer" type="text"
-               placeholder="Please provide any response."
-               value="<%- question.default || '' %>"
-           >
-           <span class="icon icon-close question__minus"></span>
+            <div class="input_container">
+            <input class="text_input" type="text" 
+                placeholder="Please provide any response."
+                value="<%- question.default || '' %>"
+            >
+            <span class="icon icon-close question__minus"></span>
+            </div>
         <% } %>
     </script>
     
@@ -93,32 +97,24 @@
             _.each(question.answer, function(ans) {
             if (ans && ans.response !== null && !ans.is_type_exception) { 
                 no_response = false; %>
+                <div class="input_container">
                 <input class="text_input" type="number"
                     placeholder="Please provide another number."
                     value="<%- ans.response %>"
-                    <% if (question.min != null){ %>
-                        min="<%- question.min %>"
-                    <% } %>
-                    <% if (question.max != null){ %>
-                        max="<%- question.max %>"
-                    <% } %>
                 >
                 <span class="icon icon-close question__minus"></span>
+                </div>
             <% } %>
         <% }); %>
 
         <% if (no_response) { %>
-            <input class="text_input" type="number"
-                placeholder="Please provide a number."
-                value="<%- question.default || '' %>"
-                <% if (question.min != null){ %>
-                    min="<%- question.min %>"
-                <% } %>
-                <% if (question.max != null){ %>
-                    max="<%- question.max %>"
-                <% } %>
-            >
+            <div class="input_container">
+                <input class="text_input" type="number"
+                    placeholder="Please provide a number."
+                    value="<%- question.default || '' %>"
+                >
             <span class="icon icon-close question__minus"></span>
+            </div>
         <% } %>
     </script>
     
@@ -132,20 +128,24 @@
             _.each(question.answer, function(ans) {
             if (ans && ans.response !== null) { 
                 no_response = false; %>
+                <div class="input_container">
                 <input class="text_input" type="number" step="any"
                     placeholder="Please provide another number (decimal OK)."
                     value="<%- ans.response %>"
                 >
                 <span class="icon icon-close question__minus"></span>
+                </div>
             <% } %>
         <% }); %>
 
         <% if (no_response) { %>
+            <div class="input_container">
             <input class="text_input" type="number" step="any"
                     placeholder="Please provide a number (decimal OK)."
                     value="<%- question.default || '' %>"
             >
             <span class="icon icon-close question__minus"></span>
+            </div>
         <% } %>
     </script>
 
@@ -159,20 +159,24 @@
             _.each(question.answer, function(ans) {
             if (ans && ans.response !== null && !ans.is_type_exception) { 
                 no_response = false; %>
+                <div class="input_container">
                 <input class="text_input" type="date" 
                        placeholder="Please provide another date."
                        value="<%- ans.response %>"
                 >
                 <span class="icon icon-close question__minus"></span>
+                </div>
             <% } %>
         <% }); %>
 
         <% if (no_response) { %>
+            <div class="input_container">
             <input class="text_input" type="date" 
                    placeholder="Please provide a date."
                    value="<%- question.default || '' %>"
             >
             <span class="icon icon-close question__minus"></span>
+            </div>
         <% } %>
     </script>
 
@@ -186,20 +190,24 @@
             _.each(question.answer, function(ans) {
             if (ans && ans.response !== null && !ans.is_type_exception) { 
                 no_response = false; %>
+                <div class="input_container">
                 <input class="text_input" type="time" 
                     placeholder="Please provide another time."
                     value="<%- ans.response %>"
                 >
                 <span class="icon icon-close question__minus"></span>
+                </div>
             <% } %>
         <% }); %>
 
         <% if (no_response) { %>
+            <div class="input_container">
             <input class="text_input" type="time" 
                    placeholder="Please provide a time."
                    value="<%- question.default || '' %>"
             >
             <span class="icon icon-close question__minus"></span>
+            </div>
         <% } %>
     </script>
 
@@ -220,19 +228,23 @@
             _.each(question.answer, function(ans) {
             if (ans && ans.response !== null && !ans.is_type_exception) { 
                 no_response = false; %>
+                <div class="input_container">
                 <input class="text_input location_input" type="text" 
                     placeholder="Please click 'Capture Location' or drag map."
                     value="<%- ans.response.lat + ' ' + ans.response.lon %>"
                 >
                 <span class="icon icon-close question__minus"></span>
+                </div>
             <% } %>
         <% }); %>
 
         <% if (no_response) { %>
+            <div class="input_container">
             <input class="text_input location_input" type="text" 
                    placeholder="Please click 'Capture Location' or drag map."
             >
             <span class="icon icon-close question__minus"></span>
+            </div>
         <% } %>
 
     </script>
@@ -390,7 +402,6 @@
             <% } %>
         </div>
     </script>
-
     </body>
 </html>
 

@@ -2,7 +2,7 @@
 from heapq import merge
 from collections import Iterator
 
-from sqlalchemy import Date
+from sqlalchemy import Date, and_
 from sqlalchemy.engine import ResultProxy, RowProxy, Connection
 from sqlalchemy.sql import Insert, select, cast
 from sqlalchemy.sql.functions import count, current_date
@@ -94,16 +94,18 @@ def _create_submission(connection: Connection,
     submitter = submission_data['submitter']
     submitter_email = submission_data['submitter_email']
 
-    submission_time  = submission_data.get('submission_time', None)
-    save_time  = submission_data.get('save_time', None)
+    submission_time = submission_data.get('submission_time', None)
+    save_time = submission_data.get('save_time', None)
 
     all_answers = submission_data['answers']
     answers = filter(_answer_not_none, all_answers)
 
     submission_values = {
-        'survey_id': survey_id, 
-        'submitter': submitter, 'submitter_email': submitter_email,
-        'submission_time': submission_time, 'save_time': save_time
+        'survey_id': survey_id,
+        'submitter': submitter,
+        'submitter_email': submitter_email,
+        'submission_time': submission_time,
+        'save_time': save_time
     }
 
     executable = submission_insert(**submission_values)
@@ -244,13 +246,15 @@ def get_one(connection: Connection, submission_id: str, email: str) -> dict:
     # The merge is necessary to get the answers in sequence number order.
     result = merge(answers, choices)
     c = connection
-    sub_dict = {'submission_id': submission_id,
-                'survey_id': submission.survey_id,
-                'submitter': submission.submitter,
-                'submitter_email': submission.submitter_email,
-                'submission_time': submission.submission_time.isoformat(),
-                'save_time': submission.save_time.isoformat(),
-                'answers': [_get_fields(c, answer) for num, answer in result]}
+    sub_dict = {
+        'submission_id': submission_id,
+        'survey_id': submission.survey_id,
+        'submitter': submission.submitter,
+        'submitter_email': submission.submitter_email,
+        'submission_time': submission.submission_time.isoformat(),
+        'save_time': submission.save_time.isoformat(),
+        'answers': [_get_fields(c, answer) for num, answer in result]
+    }
     return json_response(sub_dict)
 
 
@@ -299,36 +303,38 @@ def get_all(connection: Connection,
 
 def get_activity(connection: Connection,
                  email: str,
-                 survey_id: str = None) -> dict:
+                 survey_id: str=None) -> dict:
     """
     Get the number of submissions per day for the last 30 days for the given
     survey.
 
     :param connection: a SQLAlchemy Connection
     :param email: the user's e-mail address
-    :param survey_id: the UUID of the survey, or None if fetching for all user's surveys
+    :param survey_id: the UUID of the survey, or None if fetching for all
+                      user's surveys
     :return: a JSON dict of the result
     """
     submission_date = cast(submission_table.c.submission_time, Date)
-    s = select(
+    conditions = [
+        submission_date > (current_date() - 30),
+        auth_user_table.c.email == email
+    ]
+    if survey_id is not None:
+        conditions.append(submission_table.c.survey_id == survey_id)
+
+    result = connection.execute(
+        select(
             [count(), submission_date]
         ).select_from(
             submission_table.join(survey_table).join(auth_user_table)
         ).where(
-            submission_date > (current_date() - 30)
-        ).where(
-            auth_user_table.c.email == email
+            and_(*conditions)
         ).group_by(
             submission_date
         ).order_by(
             submission_date
         )
-    if survey_id:
-        s.where(
-            submission_table.c.survey_id == survey_id
-        )
-
-    result = connection.execute(s).fetchall()
+    ).fetchall()
 
     return json_response(
         [[num, sub_time.isoformat()] for num, sub_time in result]

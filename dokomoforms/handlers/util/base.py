@@ -15,6 +15,20 @@ from dokomoforms import settings
 from dokomoforms.utils.logger import setup_custom_logger
 
 
+def iso_date_str_to_fmt_str(date: str, format_string: str) -> str:
+    """
+    You have to contort yourself to deal with an ISO 8601 string in Python...
+
+    :param date: an ISO 8601 date or time string
+    :param format_string: the desired output format
+    :return: the formatted string
+    """
+    if date is not None:
+        return dateutil.parser.parse(date).strftime(format_string)
+    else:
+        return None
+
+
 class BaseHandler(tornado.web.RequestHandler):
     """Common handler functions here (e.g. user auth, template helpers)"""
 
@@ -60,7 +74,7 @@ class BaseHandler(tornado.web.RequestHandler):
         """Template globals"""
         namespace = super().get_template_namespace()
         namespace.update({
-            'iso_date_str_to_fmt_str': lambda date, form: dateutil.parser.parse(date).strftime(form) 
+            'iso_date_str_to_fmt_str': iso_date_str_to_fmt_str
         })
         return namespace
 

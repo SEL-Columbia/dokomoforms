@@ -150,15 +150,20 @@ class SubmissionTest(DriverTest):
         # Click on the survey
         WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
             (By.XPATH,
-             '/html/body/div[2]/div/div/table/tbody/tr/td[1]/a[1]')))
+             '/html/body/div[2]/div/table/tbody/tr/td[1]/a[1]'))
+        )
         self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/div/table/tbody/tr/td[1]/a[1]'
+            '/html/body/div[2]/div/table/tbody/tr/td[1]/a[1]'
         ).click()
 
         # Click on the shareable link
-        WebDriverWait(self.drv, 4).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[2]/div/a')))
-        self.drv.find_element_by_xpath('/html/body/div[2]/div/a').click()
+        # WebDriverWait(self.drv, 4).until(EC.presence_of_element_located(
+        # (By.XPATH, '/html/body/div[2]/div/a')))
+        # self.drv.find_element_by_xpath('/html/body/div[2]/div/a').click()
+
+        # Look into where the link is later...
+        survey_id = self.drv.current_url.split('/')[-1]
+        self.drv.get(base + '/survey/' + survey_id)
 
         # Fill out the survey
         self.drv.find_element_by_class_name('start_btn').click()
@@ -223,7 +228,8 @@ class SubmissionTest(DriverTest):
         self.drv.find_element_by_class_name('question__find__btn').click()
         next_button().click()
         self.drv.find_element_by_xpath(
-            '/html/body/div[1]/input').send_keys('text 7')
+            '/html/body/div[1]/div[2]/input'
+        ).send_keys('text 7')
         if self.browser_name == 'safari':
             self.drv.execute_script("$('input').change()")
         next_button().click()
@@ -256,33 +262,35 @@ class SubmissionTest(DriverTest):
         self.drv.get(base + '/view')
         WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
             (By.XPATH,
-             '/html/body/div[2]/div/div/table/tbody/tr/td[1]/a')))
+             '/html/body/div[2]/div/table/tbody/tr/td[1]/a[1]'))
+        )
         self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/div/table/tbody/tr/td[1]/a'
+            '/html/body/div[2]/div/table/tbody/tr/td[1]/a[1]'
         ).click()
         WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
             (By.XPATH,
-             '/html/body/div[2]/div/div/table/tbody/tr/td[1]/a')
+             '/html/body/div[2]/div/div[3]/div/div/div['
+             '2]/div/table/tbody/tr/td[1]/a')
         ))
         submission_link = self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/div/table/tbody/tr/td[1]/a')
+            '/html/body/div[2]/div/div[3]/div/div/div['
+            '2]/div/table/tbody/tr/td[1]/a')
         self.drv.execute_script(
             'window.scrollTo(0, {});'.format(submission_link.location['y']))
         submission_link.click()
+
         # Check the submission
-        WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[2]/div/ul/li')))
-        self.assertIn('Answer: 1', self.drv.page_source)
-        self.assertIn('Choice: 1. choice 1', self.drv.page_source)
-        self.assertIn('Answer: 3.3', self.drv.page_source)
-        self.assertIn('<strong>4. date question</strong><br',
+        self.assertIn('data">\n\n1', self.drv.page_source)
+        self.assertIn('1. choice 1', self.drv.page_source)
+        self.assertIn('3.3', self.drv.page_source)
+        self.assertIn('4. date question',
                       self.drv.page_source)
-        self.assertIn('<strong>5. time question</strong><br',
+        self.assertIn('5. time question',
                       self.drv.page_source)
-        self.assertIn('Answer: [-70, 40]', self.drv.page_source)
-        self.assertIn('Answer: text 7', self.drv.page_source)
-        self.assertIn('Answer: other 8', self.drv.page_source)
-        self.assertIn('<strong>10. facility question</strong><br',
+        self.assertIn('[-70, 40]', self.drv.page_source)
+        self.assertIn('text 7', self.drv.page_source)
+        self.assertIn('other 8', self.drv.page_source)
+        self.assertIn('10. facility question',
                       self.drv.page_source)
 
 
@@ -607,11 +615,12 @@ class MultiSelectTest(TypeTest):
 
         # Get the submission page
         self.drv.get(base + '/view/' + survey_id)
+        link_xpath = '/html/body/div[2]/div/div[3]/div/div/div[' \
+                     '2]/div/table/tbody/tr/td[1]/a'
         WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
-            (By.XPATH,
-             '/html/body/div[2]/div/div/table/tbody/tr/td[1]/a')))
-        submission_link = self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/div/table/tbody/tr/td[1]/a')
+            (By.XPATH, link_xpath))
+        )
+        submission_link = self.drv.find_element_by_xpath(link_xpath)
         self.drv.execute_script(
             'window.scrollTo(0, {});'.format(submission_link.location['y']))
         submission_link.click()
@@ -619,7 +628,7 @@ class MultiSelectTest(TypeTest):
         # Test it
         self.assertEqual(
             len(self.drv.find_elements_by_xpath(
-                '/html/body/div[2]/div/ul/li'
+                '/html/body/div[3]/div/div[2]/div/ul/li'
             )),
             2
         )

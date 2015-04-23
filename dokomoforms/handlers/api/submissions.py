@@ -42,8 +42,8 @@ class SubmissionsAPIHandler(APIHandler):
         limit = body.get('limit', None)
         response = submission_api.get_all(
             self.db,
-            survey_id,
-            email=self.get_email(),
+            self.get_email(),
+            survey_id=survey_id,
             submitters=subs,
             filters=filters,
             order_by=order_by,
@@ -56,7 +56,7 @@ class SubmissionsAPIHandler(APIHandler):
 class SubmissionActivityAPIHandler(APIHandler):
     """The endpoint for getting submission activity to a survey."""
 
-    def get(self, survey_id: str = None):
+    def get(self, survey_id: str=None):
         # TODO: HTTP 422 if the survey doesn't exist
         response = submission_api.get_activity(
             self.db, self.get_email(), survey_id
