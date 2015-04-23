@@ -57,9 +57,19 @@ h4 {
 		overflow-y: scroll;
 	}*/
 }
-.recent-block .recent-map {
+.recent-block .submission-row {
+  cursor: pointer;
+}
+.recent-block .submission-row:hover {
+  background-color: #eeeeee;
+}
+.recent-block #recent-map-container {
   width: 100%;
   height: 260px;
+}
+.recent-map {
+  position: relative;
+  top: 5px;
 }
 .activity-graph {
   width: 100%;

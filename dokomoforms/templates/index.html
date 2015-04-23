@@ -46,7 +46,7 @@
                                 </thead>
                                 <tbody>
                                     {% for submission in recent_submissions['result'] %}
-                                        <tr>
+                                        <tr class="submission-row" data-toggle="tooltip" data-placement="left" title="View Submission Details" data-id="{{ submission['result']['submission_id'] }}">
                                             <td>{{ iso_date_str_to_fmt_str(submission['result']['submission_time'], "%b %d, %Y at %H:%M") }}</td>
                                             <td>{{ submission['result']['submitter'] }}</td>
                                             <td>{{ submission['result']['survey_id'] }}</td>
@@ -55,9 +55,8 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div role="tabpanel" class="tab-pane recent-block" id="recent-map">
-                            <div id="recent-map-container" class="recent-map"></div>
-                            
+                        <div role="tabpanel" class="tab-pane recent-block recent-map" id="recent-map">
+                            <div id="recent-map-container"></div>
                         </div>
                     </div>
                 </div>
@@ -185,23 +184,67 @@
 
         
             // Map
-            var limit = 5;
+            var map, 
+                limit = 5;
             $.getJSON('/api/submissions?limit='+limit, function(data) {
-                $(document).on("shown.bs.tab", 'a[href="#recent-map"]', function() {
-                    console.log('show map');
-                    if (!map) {
-                        console.log('init map');
-                        map = L.map('recent-map-container', {
-                            dragging: true,
-                            zoom: 14,
-                            zoomControl: false,
-                            doubleClickZoom: false,
-                            attributionControl: false
-                        });
+                var submissions = data.result;
+                if (submissions.length) {
+                    $(document).on("shown.bs.tab", 'a[href="#recent-map"]', function() {
+                        if (!map) {
+                            map = L.map('recent-map-container', {
+                                dragging: true,
+                                zoom: 14,
+                                zoomControl: false,
+                                doubleClickZoom: false,
+                                attributionControl: false
+                            });
 
-                        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
-                    }
-                });
+                            L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
+
+                            var markers = [];
+                            _.each(submissions, function(submission) {
+                                var submission = submission.result,
+                                    answers = submission.answers,
+                                    location = _.find(answers, function(answer) {
+                                        return answer.type_constraint_name == 'location'
+                                    });
+                                console.log(location);
+                                if (!location || !location.answer) {
+                                    return;
+                                }
+                                location = location.answer;
+                                console.log(location);
+
+                                console.log('location:', location);
+                                // stored lon/lat in revisit, switch around
+                                var marker = new L.marker([location[1], location[0]], {
+                                    riseOnHover: true
+                                });
+                                marker.options.icon = new L.icon({iconUrl: "/static/img/icons/normal_base.png", iconAnchor: [15, 48]});
+                                // marker.bindPopup();
+                                marker.on('click', function() {
+                                    window.location = '/view/submission/'+submission.submission_id;
+                                });
+                                markers.push(marker);
+
+                            });
+                            
+                            if (markers.length) {
+                                var markers_group = new L.featureGroup(markers);
+                                markers_group.addTo(map);
+                                map.fitBounds(markers_group.getBounds());
+                            } else {
+                                console.log('No submissions include location.');
+                            }
+                        }
+                    });
+                }
+            });
+
+            $(document).on('click', '.submission-row', function(e) {
+                var sub_id = $(this).data('id');
+                console.log('sub_id: ', sub_id);
+                window.location = '/view/submission/' + sub_id;
             });
 
 
@@ -238,7 +281,6 @@
                         {
                             "data": 1,
                             targets: 1,
-                            width: "14%"
                         },
                         {
                             "data": 2,
@@ -271,7 +313,7 @@
                                 return view + "&nbsp;" + dl + "&nbsp;" + manage;
                             },
                             "targets": 4,
-                            "width": '330px',
+                            "width": '340px',
                             "class": "text-center",
                             "sortable": false
                         }

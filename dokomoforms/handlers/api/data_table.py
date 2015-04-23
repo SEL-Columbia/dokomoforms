@@ -254,8 +254,8 @@ class SubmissionDataTableHandler(DataTableBaseHandler):
 
     @staticmethod
     def _data_formatter(record: tuple) -> list:
-        sub_id, submitter, sub_time = record
-        return sub_id, submitter, sub_time.isoformat()
+        sub_id, submitter, sub_time, save_time = record
+        return sub_id, submitter, sub_time.isoformat(), save_time.isoformat()
 
     def get(self, survey_id):
         email = self.get_email()
@@ -266,7 +266,8 @@ class SubmissionDataTableHandler(DataTableBaseHandler):
             selected=[
                 submission_table.c.submission_id,
                 submission_table.c.submitter,
-                submission_table.c.submission_time
+                submission_table.c.submission_time,
+                submission_table.c.save_time
             ],
             where=submission_table.c.survey_id == survey_id,
             text_filter_column=submission_table.c.submitter,

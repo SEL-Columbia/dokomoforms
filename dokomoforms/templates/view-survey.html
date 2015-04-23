@@ -138,9 +138,10 @@
                 <table id="submissions" class="display table table-striped table-bordered" width="100%" cellspacing="0">
                     <thead>
                         <tr>
-                            <th>Submission ID</th>
-                            <th>Submitter Name</th>
-                            <th>Submission Time</th>
+                            <th>Conducted By</th>
+                            <th>Conducted On</th>
+                            <th>Submitted On</th>
+                            <th></th>
                         </tr>
                     </thead>
                 </table>
@@ -153,6 +154,12 @@
 
 
 {% block extra_scripts %}
+
+<!-- Templates -->
+<script type="text/template" id="view-submission-btn-tpl">
+    <a class="btn btn-default btn-xs" href="/view/submission/<%= submission_id %>"><span class="glyphicon glyphicon-list-alt"></span> View Submission Details</a>
+</script>
+
 <script type="text/javascript">
     
     $(function () {
@@ -204,6 +211,9 @@
             });
         });
 
+    
+        var view_sub_btn_tpl = _.template($("#view-submission-btn-tpl").html());
+
         $('#submissions').dataTable( {
             language: {
                 search: "Search by submitter name:"
@@ -213,23 +223,38 @@
             "order": [[2, 'desc']],
             "columnDefs": [
                 {
-                    "render": function (data, type, row) {
-                        return '<a data-ignore="push" href="/view/submission/' + data + '">' + data + '</a>';
-                    },
-                    "targets": 0
+                    data: 1,
+                    targets: 0    
                 },
                 {
+                    "data": 3,
                     "render": function (data, type, row) {
                         var datetime = moment(data);
-                        return datetime.format('MMM D, YYYY [at] HH:mm');
+                        return datetime.format('MMM D, YYYY [at] HH:mm:ss');
+                    },
+                    "targets": 1
+                },
+                {
+                    "data": 2,
+                    "render": function (data, type, row) {
+                        var datetime = moment(data);
+                        return datetime.format('MMM D, YYYY [at] HH:mm:ss');
                     },
                     "targets": 2
+                },
+                {
+                    data: 0,
+                    "render": function (data, type, row) {
+                        return view_sub_btn_tpl({submission_id: data});
+                    },
+                    "targets": 3
                 }
             ],
             "columns": [
-                {"name": "submission_id"},
                 {"name": "submitter"},
-                {"name": "submission_time"}
+                {"name": "saved_time"},
+                {"name": "submission_time"},
+                {"name": "submission_id"}
             ],
             "processing": true,
             "serverSide": true,
