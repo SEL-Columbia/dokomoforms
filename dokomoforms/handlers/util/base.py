@@ -23,7 +23,10 @@ def iso_date_str_to_fmt_str(date: str, format_string: str) -> str:
     :param format_string: the desired output format
     :return: the formatted string
     """
-    return dateutil.parser.parse(date).strftime(format_string)
+    if date is not None:
+        return dateutil.parser.parse(date).strftime(format_string)
+    else:
+        return None
 
 
 class BaseHandler(tornado.web.RequestHandler):

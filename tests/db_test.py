@@ -712,20 +712,24 @@ class TestSubmission(unittest.TestCase):
                 submitter='test_submitter{}'.format(i),
                 submitter_email='anon@anon.org', survey_id=survey_id))
 
-        submissions = get_submissions_by_email(connection, survey_id,
-                                               email='test_email')
+        submissions = get_submissions_by_email(
+            connection, 'test_email', survey_id=survey_id
+        )
         self.assertEqual(submissions.rowcount, 2)
 
         submissions = get_submissions_by_email(
-            connection, survey_id,
-            email='test_email',
+            connection,
+            'test_email',
+            survey_id=survey_id,
             submitters=['test_submitter1']
         )
         self.assertEqual(submissions.rowcount, 1)
 
         submissions = get_submissions_by_email(
-            connection, survey_id,
-            email='test_email', order_by='submitter', direction='desc'
+            connection,
+            'test_email',
+            survey_id=survey_id,
+            order_by='submitter', direction='desc'
         )
         self.assertEqual(
             submissions.first()['submitter'],
@@ -759,17 +763,23 @@ class TestSubmission(unittest.TestCase):
                 sequence_number=seq,
                 allow_multiple=mul))
         self.assertEqual(
-            len(get_submissions_by_email(connection, survey_id,
-                                         email='test_email').fetchall()),
+            len(get_submissions_by_email(
+                connection,
+                'test_email',
+                survey_id=survey_id
+            ).fetchall()),
             2)
-        f_result = get_submissions_by_email(connection, survey_id,
-                                            email='test_email',
-                                            filters=[
-                                                {
-                                                    'question_id':
-                                                        question_id,
-                                                    'answer_integer':
-                                                        1}]).fetchall()
+        f_result = get_submissions_by_email(
+            connection,
+            'test_email',
+            survey_id=survey_id,
+            filters=[
+                {
+                    'question_id': question_id,
+                    'answer_integer': 1
+                }
+            ]
+        ).fetchall()
         self.assertEqual(len(f_result), 1)
 
     def testSubmissionInsert(self):

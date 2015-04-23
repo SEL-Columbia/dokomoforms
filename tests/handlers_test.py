@@ -48,7 +48,7 @@ from dokomoforms.handlers.util.base import catch_bare_integrity_error, \
     user_owns_question, APINoLoginHandler
 from dokomoforms.handlers.view.submissions import ViewSubmissionsHandler, \
     ViewSubmissionHandler
-from dokomoforms.handlers.view.surveys import ViewHandler
+from dokomoforms.handlers.view.surveys import ViewHandler, ViewSurveyHandler
 from dokomoforms.handlers.view.visualize import VisualizationHandler
 from webapp import config, pages, Application
 from dokomoforms.db.survey import survey_table
@@ -148,9 +148,14 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(response.code, 200)
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
-        self.assertEqual(webpage_response,
-                         submission_api.get_all(connection, survey_id,
-                                                'test_email'))
+        self.assertEqual(
+            webpage_response,
+            submission_api.get_all(
+                connection,
+                'test_email',
+                survey_id=survey_id
+            )
+        )
 
     def testGetSubmissionsBySubmitter(self):
         survey_id = connection.execute(survey_table.select().where(
@@ -164,10 +169,15 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(response.code, 200)
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
-        self.assertEqual(webpage_response,
-                         submission_api.get_all(connection, survey_id,
-                                                'test_email',
-                                                submitters=['me']))
+        self.assertEqual(
+            webpage_response,
+            submission_api.get_all(
+                connection,
+                'test_email',
+                survey_id=survey_id,
+                submitters=['me']
+            )
+        )
 
     def testGetSubmissionsWithFilter(self):
         survey_id = connection.execute(survey_table.select().where(
@@ -188,10 +198,15 @@ class APITest(AsyncHTTPTestCase):
         self.assertEqual(response.code, 200)
         webpage_response = json_decode(to_unicode(response.body))
         self.assertNotEqual(webpage_response, [])
-        self.assertEqual(webpage_response,
-                         submission_api.get_all(connection, survey_id,
-                                                'test_email',
-                                                filters=filters))
+        self.assertEqual(
+            webpage_response,
+            submission_api.get_all(
+                connection,
+                'test_email',
+                survey_id=survey_id,
+                filters=filters
+            )
+        )
 
     def testGetSubmissionsWithAPIToken(self):
         survey_id = connection.execute(survey_table.select().where(
@@ -202,9 +217,14 @@ class APITest(AsyncHTTPTestCase):
         response = self.fetch('/api/surveys/{}/submissions'.format(survey_id),
                               headers={'Token': token, 'Email': 'test_email'})
         self.assertEqual(response.code, 200)
-        self.assertEqual(json_decode(to_unicode(response.body)),
-                         submission_api.get_all(connection, survey_id,
-                                                'test_email'))
+        self.assertEqual(
+            json_decode(to_unicode(response.body)),
+            submission_api.get_all(
+                connection,
+                'test_email',
+                survey_id=survey_id
+            )
+        )
 
     def testGetSubmissionsWithoutAPIToken(self):
         survey_id = connection.execute(survey_table.select().where(
@@ -1324,11 +1344,10 @@ class ViewTest(AsyncHTTPTestCase):
         survey_id = connection.execute(survey_table.select().where(
             survey_table.c.survey_title == 'test_title')).first().survey_id
         _create_submission()
-        with mock.patch.object(ViewSubmissionsHandler,
-                               'get_secure_cookie') as m:
+        with mock.patch.object(ViewSurveyHandler, 'get_secure_cookie') as m:
             m.return_value = 'test_email'
             response = self.fetch('/view/{}'.format(survey_id))
-        self.assertIn('/view/submission/', to_unicode(response.body))
+        self.assertIn('total-submissions">\n1', to_unicode(response.body))
 
     def testGetSubmission(self):
         submission_id = _create_submission()['submission_id']
@@ -1336,7 +1355,7 @@ class ViewTest(AsyncHTTPTestCase):
                                'get_secure_cookie') as m:
             m.return_value = 'test_email'
             response = self.fetch('/view/submission/{}'.format(submission_id))
-        self.assertIn('Answer: 3.5', to_unicode(response.body))
+        self.assertIn('3.5<br', to_unicode(response.body))
 
 
 class VisualizationTest(AsyncHTTPTestCase):
@@ -1592,7 +1611,7 @@ class DataTableTest(AsyncHTTPTestCase):
         data = webpage_response['data']
         self.assertEqual(data[0][0], 'test_title')
         self.assertEqual(data[0][1], '0')
-        self.assertEqual(data[0][2], '')
+        self.assertIsNone(data[0][2])
 
 
 if __name__ == '__main__':

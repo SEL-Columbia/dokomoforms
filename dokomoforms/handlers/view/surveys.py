@@ -23,7 +23,6 @@ class ViewSurveyHandler(BaseHandler):
     def get(self, survey_id: str):
         stats = aggregation_api.get_question_stats
         survey_stats = get_stats(self.db, survey_id, email=self.current_user)
-        print(survey_stats)
         question_stats = stats(self.db, survey_id, email=self.current_user)
         survey = survey_select(self.db, survey_id, email=self.current_user)
         self.render('view-survey.html', message=None, survey=survey,
