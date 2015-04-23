@@ -28,9 +28,9 @@ def submission_insert(*,
     :return: The Insert object. Execute this!
     """
     values = {
-              'survey_id': survey_id,
-              'submitter': submitter,
-              'submitter_email': submitter
+        'survey_id': survey_id,
+        'submitter': submitter,
+        'submitter_email': submitter_email
     }
 
     if submission_time is not None:
@@ -123,9 +123,9 @@ def get_submissions_by_email(connection: Connection,
     """
 
     table = submission_table.join(survey_table).join(auth_user_table)
-    
+
     conds = [auth_user_table.c.email == email]
-    
+
     if survey_id:
         conds.append(submission_table.c.survey_id == survey_id)
 

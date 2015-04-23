@@ -5,8 +5,8 @@ import tornado.web
 from dokomoforms.handlers.util.base import BaseHandler
 from dokomoforms.api.survey import get_stats
 from dokomoforms.db.survey import survey_select
-import dokomoforms.api.submission as submission_api
 import dokomoforms.api.aggregation as aggregation_api
+
 
 class ViewHandler(BaseHandler):
     """The endpoint for getting all of a user's surveys."""
@@ -14,6 +14,7 @@ class ViewHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self):
         self.render('view.html', message=None)
+
 
 class ViewSurveyHandler(BaseHandler):
     """The endpoint for getting a single survey's administration page."""
@@ -27,6 +28,7 @@ class ViewSurveyHandler(BaseHandler):
         survey = survey_select(self.db, survey_id, email=self.current_user)
         self.render('view-survey.html', message=None, survey=survey,
                     question_stats=question_stats, survey_stats=survey_stats)
+
 
 class ViewSurveyDataHandler(BaseHandler):
     """The endpoint for getting a single survey's data page."""
