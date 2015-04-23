@@ -5,7 +5,16 @@
     <div class="container">
         <div class="row">
             <div class="col-md-6"><h1><a href="/view/{{ survey.survey_id }}">{{ survey.survey_title }}</a></h1></div>
-            <div class="col-md-6 header-controls"><button class="btn btn-primary btn-sm pull-right"><span class="glyphicon glyphicon-menu-hamburger"></span></button></div>
+            <div class="col-md-6 header-controls">
+                <div class="btn-group pull-right">
+                    <button class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" aria-expanded="false"><span class="glyphicon glyphicon-menu-hamburger"></span></button>
+                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                        <li><a href="/">Account Dashboard</a></li>
+                        <li><a href="/view/{{ survey.survey_id }}">Manage Survey</a></li>
+                        <li><a href="/view/data/{{ survey.survey_id }}">View Survey Data</a></li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -101,29 +110,15 @@
 {% end %}
 
 
-{% block footer %}
-<!-- Libs -->
-<script src="/static/lib.js"></script>
+{% block extra_scripts %}
+
 <script type="text/javascript">
     $(function() {
         $(document).on('click', '.btn-question-stats', function(e) {
             console.log('heyo');
             $(this).parent().parent().find('.question-stats').slideToggle();
         });
-    });
-</script>
-<!-- Highcharts -->
-<script src="http://code.highcharts.com/highcharts.js"></script>
-<script type="text/javascript">
 
-
-</script>
-
-<!-- DataTables -->
-<script src="http://cdn.datatables.net/1.10.5/js/jquery.dataTables.min.js"></script>
-<script src="http://cdn.datatables.net/plug-ins/1.10.6/integration/bootstrap/3/dataTables.bootstrap.js"></script>
-<script>
-    $(document).ready(function() {
         $('#submissions').dataTable( {
             language: {
                 search: "Search by submitter name:"
@@ -163,6 +158,4 @@
     } );
 </script>
 
-<script src="https://login.persona.org/include.js"></script>
-<script src="/static/persona.js"></script>
 {% end %}

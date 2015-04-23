@@ -56,7 +56,7 @@
                             </table>
                         </div>
                         <div role="tabpanel" class="tab-pane recent-block" id="recent-map">
-                            <div id="recent-map-container"></div>
+                            <div id="recent-map-container" class="recent-map"></div>
                             
                         </div>
                     </div>
@@ -96,226 +96,219 @@
     </div>
 </div>
 
-<script type="text/template" id="view-data-btn-tpl">
-    <a class="btn btn-default btn-xs" href="/view/data/<%= survey_id %>"><span class="glyphicon glyphicon-stats"></span> View Data</a>
-</script>
-
-<script type="text/template" id="download-data-btn-tpl">
-    <div class="btn-group">
-        <button class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-            <span class="glyphicon glyphicon-cloud-download"></span> Download Data <span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu dropdown-menu-right" role="menu">
-            <li><a target="_blank" href="/api/surveys/<%= survey_id %>/submissions">JSON</a></li>
-            <li><a href="#">CSV (coming soon)</a></li>
-            <li><a href="#">KML (maybe someday)</a></li>
-        </ul>
-    </div>
-</script>
-
-<script type="text/template" id="manage-btn-tpl">
-    <a class="btn btn-secondary btn-xs" href="/view/<%= survey_id %>" data-id="<%= survey_id %>">Manage Survey</a>
-</script>
-
-<script src="/static/lib.js"></script>
-
-<!-- Highcharts -->
-<script src="http://code.highcharts.com/highcharts.js"></script>
-<script type="text/javascript">
-    
-    $(function () { 
-        $.getJSON('/api/submissions/activity', function(data) {
-
-            var results = data.result,
-                cats = [], 
-                data = [];
-
-            if (!results.length) {
-                return;
-            }
-
-            var sorted = _.sortBy(results, function(result) {
-                return result[1];
-            });
-
-            _.each(sorted, function(result) {
-                var date = moment(result[1], "YYYY-MM-DD").format('MMM D');
-                console.log(date);
-                data.push(result[0]);
-                cats.push(date);
-            });
+{% end %}
 
 
-            $('.activity-graph').highcharts({
-                chart: {
-                    type: 'line'
-                },
-                title: {
-                    text: null
-                },
-                colors: [
-                    '#666'
-                ],
-                xAxis: {
-                    categories: cats
-                },
-                yAxis: {
-                    title: {
-                        text: '# of submissions'
-                    }
-                },
-                series: [{
-                    name: 'Submissions',
-                    data: data
-                }],
-                credits: {
-                    enabled: false
+{% block extra_scripts %}
+
+
+    {% if current_user %}
+
+    <!-- Templates -->
+    <script type="text/template" id="view-data-btn-tpl">
+        <a class="btn btn-default btn-xs" href="/view/data/<%= survey_id %>"><span class="glyphicon glyphicon-stats"></span> View Data</a>
+    </script>
+
+    <script type="text/template" id="download-data-btn-tpl">
+        <div class="btn-group">
+            <button class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                <span class="glyphicon glyphicon-cloud-download"></span> Download Data <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                <li><a target="_blank" href="/api/surveys/<%= survey_id %>/submissions">JSON</a></li>
+                <li><a href="#">CSV (coming soon)</a></li>
+                <li><a href="#">KML (maybe someday)</a></li>
+            </ul>
+        </div>
+    </script>
+
+    <script type="text/template" id="manage-btn-tpl">
+        <a class="btn btn-secondary btn-xs" href="/view/<%= survey_id %>" data-id="<%= survey_id %>">Manage Survey</a>
+    </script>
+
+
+
+    <script type="text/javascript">
+        
+        $(function () { 
+            
+            // Activity Graph
+            $.getJSON('/api/submissions/activity', function(data) {
+
+                var results = data.result,
+                    cats = [], 
+                    data = [];
+
+                if (!results.length) {
+                    return;
                 }
-            });
-        });
-    });
 
-</script>
+                var sorted = _.sortBy(results, function(result) {
+                    return result[1];
+                });
 
-<!-- DataTables -->
-<script src="http://cdn.datatables.net/1.10.5/js/jquery.dataTables.min.js"></script>
-<script src="http://cdn.datatables.net/plug-ins/1.10.6/integration/bootstrap/3/dataTables.bootstrap.js"></script>
-<script>
-$(document).ready(function() {
-
-
-    
-
-    // Map
-    if ($('#recent-map').length) {
-
-        $(document).on("shown.bs.tab", 'a[href="#recent-map"]', function() {
-            // L.Util.requestAnimFrame(map.invalidateSize,map,!1,map._container);
-            // console.log('test');
-            console.log('recent map');
-            var map = L.map('recent-map-container', {
-                dragging: true,
-                zoom: 14,
-                zoomControl: false,
-                doubleClickZoom: false,
-                attributionControl: false
-            });
-
-            L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
-
-            L.Util.requestAnimFrame(map.invalidateSize,map,!1,map._container);
-        });
-    }
+                _.each(sorted, function(result) {
+                    var date = moment(result[1], "YYYY-MM-DD").format('MMM D');
+                    console.log(date);
+                    data.push(result[0]);
+                    cats.push(date);
+                });
 
 
-
-
-
-    var $surveys = $('#surveys'),
-        view_btn_tpl = _.template($("#view-data-btn-tpl").html()),
-        manage_btn_tpl = _.template($("#manage-btn-tpl").html()),
-        dl_btn_tpl = _.template($("#download-data-btn-tpl").html());
-
-    if ($surveys.length > 0) {
-        $('#surveys').dataTable({
-            language: {
-                search: "Search by survey title:"
-            },
-            "lengthMenu": [
-                [20, 50, 100],
-                [20, 50, 100]
-            ],
-            "pagingType": "full_numbers",
-            "order": [
-                [2, 'desc']
-            ],
-            "columnDefs": [
-                {
-                    "data": 0,
-                    "render": function(data, type, row) {
-                        console.log(data);
-                        return data;
+                $('.activity-graph').highcharts({
+                    chart: {
+                        type: 'line'
                     },
-                    "targets": 0
-                },
-                {
-                    "data": 1,
-                    targets: 1,
-                    width: "14%"
-                },
-                {
-                    "data": 2,
-                    "render": function(data, type, row) {
-                        if (data) {
-                            var datetime = moment(data);
-                            return datetime.format('MMM D, YYYY');
-                        } else {
-                            return '';
+                    title: {
+                        text: null
+                    },
+                    colors: [
+                        '#666'
+                    ],
+                    xAxis: {
+                        categories: cats
+                    },
+                    yAxis: {
+                        title: {
+                            text: '# of submissions'
                         }
                     },
-                    "targets": 2
-                }
-                , {
-                    "data": 3,
-                    "render": function(data, type, row) {
-                        return "...";
-                    },
-                    "targets": 3,
-                    "sortable": false
-                }
-                , {
-                    "data": 3,
-                    "render": function(data, type, row) {
-                        console.log(data);
-                        var view = view_btn_tpl({survey_id: data}),
-                            dl = dl_btn_tpl({survey_id: data}),
-                            manage = manage_btn_tpl({survey_id: data});
+                    series: [{
+                        name: 'Submissions',
+                        data: data
+                    }],
+                    credits: {
+                        enabled: false
+                    }
+                });
+            });
 
-                        return view + "&nbsp;" + dl + "&nbsp;" + manage;
+        
+            // Map
+            var limit = 5;
+            $.getJSON('/api/submissions?limit='+limit, function(data) {
+                $(document).on("shown.bs.tab", 'a[href="#recent-map"]', function() {
+                    console.log('show map');
+                    if (!map) {
+                        console.log('init map');
+                        map = L.map('recent-map-container', {
+                            dragging: true,
+                            zoom: 14,
+                            zoomControl: false,
+                            doubleClickZoom: false,
+                            attributionControl: false
+                        });
+
+                        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
+                    }
+                });
+            });
+
+
+
+
+            // DataTables
+            var $surveys = $('#surveys'),
+                view_btn_tpl = _.template($("#view-data-btn-tpl").html()),
+                manage_btn_tpl = _.template($("#manage-btn-tpl").html()),
+                dl_btn_tpl = _.template($("#download-data-btn-tpl").html());
+
+            if ($surveys.length > 0) {
+                $('#surveys').dataTable({
+                    language: {
+                        search: "Search by survey title:"
                     },
-                    "targets": 4,
-                    "width": '330px',
-                    "class": "text-center",
-                    "sortable": false
-                }
-            ],
-            "columns": [{
-                 "name": "survey_title"
-            }, {
-                 "name": "num_submissions"
-            }, {
-                 "name": "latest_submission"
-            }, {
-                 "name": "survey_id"
-            }],
-            "processing": true,
-            "serverSide": true,
-            "ajax": {
-                 "url": "/api/index_survey_data_table",
-                 "data": function(d) {
-                     return {
-                         "args": JSON.stringify(d)
-                     };
-                 }
+                    "lengthMenu": [
+                        [20, 50, 100],
+                        [20, 50, 100]
+                    ],
+                    "pagingType": "full_numbers",
+                    "order": [
+                        [2, 'desc']
+                    ],
+                    "columnDefs": [
+                        {
+                            "data": 0,
+                            "render": function(data, type, row) {
+                                console.log(data);
+                                return data;
+                            },
+                            "targets": 0
+                        },
+                        {
+                            "data": 1,
+                            targets: 1,
+                            width: "14%"
+                        },
+                        {
+                            "data": 2,
+                            "render": function(data, type, row) {
+                                if (data) {
+                                    var datetime = moment(data);
+                                    return datetime.format('MMM D, YYYY');
+                                } else {
+                                    return '';
+                                }
+                            },
+                            "targets": 2
+                        }
+                        , {
+                            "data": 3,
+                            "render": function(data, type, row) {
+                                return "...";
+                            },
+                            "targets": 3,
+                            "sortable": false
+                        }
+                        , {
+                            "data": 3,
+                            "render": function(data, type, row) {
+                                console.log(data);
+                                var view = view_btn_tpl({survey_id: data}),
+                                    dl = dl_btn_tpl({survey_id: data}),
+                                    manage = manage_btn_tpl({survey_id: data});
+
+                                return view + "&nbsp;" + dl + "&nbsp;" + manage;
+                            },
+                            "targets": 4,
+                            "width": '330px',
+                            "class": "text-center",
+                            "sortable": false
+                        }
+                    ],
+                    "columns": [{
+                         "name": "survey_title"
+                    }, {
+                         "name": "num_submissions"
+                    }, {
+                         "name": "latest_submission"
+                    }, {
+                         "name": "survey_id"
+                    }],
+                    "processing": true,
+                    "serverSide": true,
+                    "ajax": {
+                         "url": "/api/index_survey_data_table",
+                         "data": function(d) {
+                             return {
+                                 "args": JSON.stringify(d)
+                             };
+                         }
+                    }
+                });
             }
         });
-    }
+    
+    </script>
 
+    {% end %}
 
-});
-</script>
-
-<!-- Persona -->
-<script src="https://login.persona.org/include.js"></script>
-<script src="/static/persona.js"></script>
-
-<!-- Dokomo -->
-<script src="/static/app.js"></script>
-
-{% if message %}
+    {% if message %}
     <script>
         App.message("{{ message }}");
     </script>
-{% end %} 
+    {% end %}
 
 {% end %}
+
+
