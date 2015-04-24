@@ -16,7 +16,6 @@ var App = {
 
 App.init = function(survey) {
     var self = this;
-    console.log(survey);
     self.survey = new Survey(survey.survey_id, 
             survey.survey_version, 
             survey.questions, 
@@ -798,7 +797,6 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
 Widgets._renderRepeat = function(page, question) {
     var self = this;
     // Render add/minus input buttons 
-    console.log(question.type_constraint, question.allow_multiple)
     if (question.allow_multiple) {
         var repeatHTML = $('#template_repeat').html();
         var widgetTemplate = _.template(repeatHTML);
