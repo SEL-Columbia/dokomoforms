@@ -7,6 +7,7 @@ from dokomoforms.db.survey import IncorrectQuestionIdError
 from dokomoforms.handlers.util.base import APIHandler, get_json_request_body, \
     catch_bare_integrity_error, validation_message, APINoLoginHandler
 
+
 class SubmissionsAPIHandler(APIHandler):
     """The endpoint for getting all submissions to all surveys."""
 

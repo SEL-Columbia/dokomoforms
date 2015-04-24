@@ -1,4 +1,5 @@
 """API endpoints dealing with surveys."""
+from tornado.escape import to_unicode
 
 import dokomoforms.api.survey as survey_api
 import dokomoforms.api.submission as submission_api
@@ -65,6 +66,7 @@ class SurveySubmissionsAPIHandler(APIHandler):
             limit=limit
         )
         self.write(response)
+
 
 class SurveyStatsAPIHandler(APIHandler):
     """The endpoint for getting statistics about a survey."""
