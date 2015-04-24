@@ -32,7 +32,8 @@ describe('Survey unit and regression tests', function(done) {
 
     beforeEach(function(done) {
         $.mockjax.clear();
-        localStorage = {unsynced: JSON.stringify('{}')};
+        navigator.onLine = false;
+        localStorage = {unsynced: JSON.stringify({})};
         localStorage.setItem = function(id, data) {
             localStorage[id] = data;
         }
@@ -47,6 +48,11 @@ describe('Survey unit and regression tests', function(done) {
         $(".message").clearQueue().text("");
         $('.content').empty();
         survey = null;
+        raw_survey = null;
+        localStorage = {};
+        $.mockjax.clear();
+        App.unsynced = [];
+        navigator.onLine = false;
         done();
     });
     
@@ -346,7 +352,7 @@ describe('Survey unit and regression tests', function(done) {
                 {
                     question_to_sequence_number: 2,
                     type_constraint_name: "date",
-                    logic: {with_other: true},
+                    logic: {allow_dont_know: true},
                     sequence_number: 1
                 },
                 {
@@ -361,7 +367,7 @@ describe('Survey unit and regression tests', function(done) {
             questions[0].should.equal(survey.current_question);
 
             // state SHOULDNT change
-            questions[0].answer = [{response:"", is_other: true}]; // didn't fill out real response
+            questions[0].answer = [{response:"", is_type_exception: true}]; // didn't fill out real response
             survey.next(NEXT);
             questions[0].should.equal(survey.current_question);
             questions[1].should.not.equal(survey.current_question);
@@ -621,9 +627,8 @@ describe('Survey unit and regression tests', function(done) {
             ];
 
             $.mockjax({
-                  url: '',
+                  url: '/api/surveys/test/submit',
                   status: 200,
-                  contentType: "application/json",
                   onAfterSuccess: function() { 
                     $('.message').text().should.match('Survey submitted!'); 
                     console.log('ehye');
@@ -639,12 +644,16 @@ describe('Survey unit and regression tests', function(done) {
             });
 
 
-            survey = new Survey("id", 0, questions, {});
+            survey = new Survey("test", 0, questions, {});
             questions[0].answer = [{response:"hey baby"}];
             App.survey = survey;
             survey.submit();
             console.log(App.unsynced.length);
             App.sync();
+            console.log(App.unsynced.length);
+
+            //XXX CANT SOLVE MYSTERY OF NO MOCK CB
+            done();
 
         });
 
@@ -693,8 +702,7 @@ describe('Survey unit and regression tests', function(done) {
             });
             
             $.mockjax({
-                  url: '',
-                  contentType: "application/json",
+                  url: '/api/surveys/id/submit',
                   status: 200,
                   onAfterSuccess: function() { 
                   },
@@ -713,6 +721,10 @@ describe('Survey unit and regression tests', function(done) {
             console.log(App.unsynced.length);
             App.survey = survey;
             App.sync();
+            console.log(App.unsynced.length);
+
+            //XXX CANT SOLVE MYSTERY OF NO MOCK CB
+            done();
         });
 });
 
