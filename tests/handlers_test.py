@@ -42,7 +42,7 @@ from dokomoforms.handlers.api.data_table import _base_query, \
 from dokomoforms.handlers.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler, SubmissionActivityAPIHandler
 from dokomoforms.handlers.api.surveys import SurveysAPIHandler, \
-    SingleSurveyAPIHandler
+    SingleSurveyAPIHandler, SurveySubmissionsAPIHandler
 from dokomoforms.handlers.auth import LoginHandler
 from dokomoforms.handlers.util.base import catch_bare_integrity_error, \
     user_owns_question, APINoLoginHandler
@@ -140,7 +140,7 @@ class APITest(AsyncHTTPTestCase):
         survey_id = connection.execute(survey_table.select().where(
             survey_table.c.survey_title == 'test_title')).first().survey_id
         _create_submission()
-        with mock.patch.object(SubmissionsAPIHandler,
+        with mock.patch.object(SurveySubmissionsAPIHandler,
                                'get_secure_cookie') as m:
             m.return_value = 'test_email'
             response = self.fetch(
@@ -161,7 +161,7 @@ class APITest(AsyncHTTPTestCase):
         survey_id = connection.execute(survey_table.select().where(
             survey_table.c.survey_title == 'test_title')).first().survey_id
         _create_submission()
-        with mock.patch.object(SubmissionsAPIHandler,
+        with mock.patch.object(SurveySubmissionsAPIHandler,
                                'get_secure_cookie') as m:
             m.return_value = 'test_email'
             response = self.fetch(
@@ -189,7 +189,7 @@ class APITest(AsyncHTTPTestCase):
             and_cond)).first().question_id
         _create_submission()
         filters = [{'question_id': question_id, 'answer_integer': 1}]
-        with mock.patch.object(SubmissionsAPIHandler,
+        with mock.patch.object(SurveySubmissionsAPIHandler,
                                'get_secure_cookie') as m:
             m.return_value = 'test_email'
             response = self.fetch(

@@ -150,10 +150,10 @@ class SubmissionTest(DriverTest):
         # Click on the survey
         WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
             (By.XPATH,
-             '/html/body/div[2]/div/table/tbody/tr/td[1]/a[1]'))
+             '/html/body/div[2]/div/div[2]/div/table/tbody/tr/td[1]/a[1]'))
         )
         self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/table/tbody/tr/td[1]/a[1]'
+            '/html/body/div[2]/div/div[2]/div/table/tbody/tr/td[1]/a[1]'
         ).click()
 
         # Click on the shareable link
@@ -262,19 +262,19 @@ class SubmissionTest(DriverTest):
         self.drv.get(base + '/view')
         WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
             (By.XPATH,
-             '/html/body/div[2]/div/table/tbody/tr/td[1]/a[1]'))
+             '/html/body/div[2]/div/div[2]/div/table/tbody/tr/td[1]/a[1]'))
         )
         self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/table/tbody/tr/td[1]/a[1]'
+            '/html/body/div[2]/div/div[2]/div/table/tbody/tr/td[1]/a[1]'
         ).click()
         WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
             (By.XPATH,
              '/html/body/div[2]/div/div[3]/div/div/div['
-             '2]/div/table/tbody/tr/td[1]/a')
+             '2]/div/table/tbody/tr/td[4]/a')
         ))
         submission_link = self.drv.find_element_by_xpath(
             '/html/body/div[2]/div/div[3]/div/div/div['
-            '2]/div/table/tbody/tr/td[1]/a')
+            '2]/div/table/tbody/tr/td[4]/a')
         self.drv.execute_script(
             'window.scrollTo(0, {});'.format(submission_link.location['y']))
         submission_link.click()
@@ -616,7 +616,7 @@ class MultiSelectTest(TypeTest):
         # Get the submission page
         self.drv.get(base + '/view/' + survey_id)
         link_xpath = '/html/body/div[2]/div/div[3]/div/div/div[' \
-                     '2]/div/table/tbody/tr/td[1]/a'
+                     '2]/div/table/tbody/tr/td[4]/a'
         WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
             (By.XPATH, link_xpath))
         )

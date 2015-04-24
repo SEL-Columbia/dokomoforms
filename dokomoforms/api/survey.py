@@ -487,7 +487,7 @@ def get_stats(connection: Connection,
         )
     ).first()
     return json_response({
-        'created_on': result[0].isoformat(),
+        'created_on': maybe_isoformat(result[0]),
         'num_submissions': result[1],
         'earliest_submission_time': maybe_isoformat(result[2]),
         'latest_submission_time': maybe_isoformat(result[3])
