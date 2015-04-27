@@ -41,7 +41,7 @@ App.init = function(survey) {
 
     // Init if unsynced is undefined
     if (!localStorage.unsynced) {
-        localStorage.unsynced = JSON.stringify("{}");
+        localStorage.unsynced = JSON.stringify({});
     }
     
     // Load up any unsynced submissions
