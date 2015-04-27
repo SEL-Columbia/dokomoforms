@@ -46,7 +46,8 @@ from dokomoforms.handlers.auth import LoginHandler
 from dokomoforms.handlers.util.base import catch_bare_integrity_error, \
     user_owns_question, APINoLoginHandler, iso_date_str_to_fmt_str
 from dokomoforms.handlers.view.submissions import ViewSubmissionHandler
-from dokomoforms.handlers.view.surveys import ViewHandler, ViewSurveyHandler
+from dokomoforms.handlers.view.surveys import ViewHandler, ViewSurveyHandler, \
+    ViewSurveyDataHandler
 from dokomoforms.handlers.view.visualize import VisualizationHandler
 from webapp import config, pages, Application
 from dokomoforms.db.survey import survey_table
@@ -1454,6 +1455,21 @@ class ViewTest(AsyncHTTPTestCase):
             m.return_value = 'test_email'
             response = self.fetch('/view/submission/{}'.format(submission_id))
         self.assertIn('3.5<br', to_unicode(response.body))
+
+    def testGetSurveyViewData(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        _create_submission()
+        with mock.patch.object(ViewSurveyDataHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/view/data/{}'.format(survey_id))
+        stats = aggregation_api.get_question_stats(
+            connection, survey_id, email='test_email'
+        )
+        response = to_unicode(response.body)
+        for stat in stats['result'][0]['stats']:
+            self.assertIn(str(stat['result']), response)
 
 
 class VisualizationTest(AsyncHTTPTestCase):
