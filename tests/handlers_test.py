@@ -42,7 +42,7 @@ from dokomoforms.handlers.api.data_table import _base_query, \
 from dokomoforms.handlers.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler, SubmissionActivityAPIHandler
 from dokomoforms.handlers.api.surveys import SurveysAPIHandler, \
-    SingleSurveyAPIHandler, SurveySubmissionsAPIHandler
+    SingleSurveyAPIHandler, SurveySubmissionsAPIHandler, SurveyStatsAPIHandler
 from dokomoforms.handlers.auth import LoginHandler
 from dokomoforms.handlers.util.base import catch_bare_integrity_error, \
     user_owns_question, APINoLoginHandler
@@ -962,6 +962,38 @@ class APITest(AsyncHTTPTestCase):
                                  api_response['result'][0])
         self.assertSequenceEqual(webpage_response[0]['result'][1],
                                  api_response['result'][1])
+
+    def testGetStats(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = connection.execute(q_where).first()
+        question_id = question.question_id
+
+        for i in range(2):
+            input_data = {'survey_id': survey_id,
+                          'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
+                          'answers':
+                              [{'question_id': question_id,
+                                'answer': i,
+                                'answer_metadata': None,
+                                'is_type_exception': False}]}
+            submission_api.submit(connection, input_data)
+
+        with mock.patch.object(SurveyStatsAPIHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/surveys/{}/stats'.format(survey_id))
+        self.assertEqual(response.code, 200)
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        result = survey_api.get_stats(
+            connection, survey_id, email='test_email'
+        )
+        self.assertEqual(webpage_response, result)
 
 
 class APINoLoginTest(AsyncHTTPTestCase):
