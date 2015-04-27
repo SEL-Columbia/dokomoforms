@@ -3,10 +3,9 @@ Tests for the dokomo webapp
 
 """
 from datetime import datetime
-
 import unittest
 from unittest import mock
-from urllib.parse import urlencode, quote_plus
+from urllib.parse import quote_plus
 import uuid
 
 from sqlalchemy import and_
@@ -27,7 +26,6 @@ import dokomoforms.api.survey as survey_api
 import dokomoforms.api.user as user_api
 from dokomoforms.db import engine
 from dokomoforms import db
-from dokomoforms.db.answer import get_answers
 from dokomoforms.db.auth_user import generate_api_token, auth_user_table, \
     get_auth_user_by_email
 from dokomoforms.db.question import get_questions_no_credentials, \
@@ -47,8 +45,7 @@ from dokomoforms.handlers.api.surveys import SurveysAPIHandler, \
 from dokomoforms.handlers.auth import LoginHandler
 from dokomoforms.handlers.util.base import catch_bare_integrity_error, \
     user_owns_question, APINoLoginHandler, iso_date_str_to_fmt_str
-from dokomoforms.handlers.view.submissions import ViewSubmissionsHandler, \
-    ViewSubmissionHandler
+from dokomoforms.handlers.view.submissions import ViewSubmissionHandler
 from dokomoforms.handlers.view.surveys import ViewHandler, ViewSurveyHandler
 from dokomoforms.handlers.view.visualize import VisualizationHandler
 from webapp import config, pages, Application
