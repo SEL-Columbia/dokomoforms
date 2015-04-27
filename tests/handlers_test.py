@@ -241,9 +241,72 @@ class APITest(AsyncHTTPTestCase):
                                        'Email': 'test_email'})
         self.assertEqual(response.code, 403)
 
-    def testGetActivityAllSurveys(self):
+    def testGetSubmissionsGeneral(self):
+        _create_submission()
+        with mock.patch.object(SubmissionsAPIHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/submissions')
+        self.assertEqual(response.code, 200)
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(
+            webpage_response,
+            submission_api.get_all(
+                connection,
+                'test_email'
+            )
+        )
+
+    def testGetSubmissionsGeneralWithFilter(self):
         survey_id = connection.execute(survey_table.select().where(
             survey_table.c.survey_title == 'test_title')).first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+
+        question_id = connection.execute(question_table.select().where(
+            and_cond)).first().question_id
+        _create_submission()
+        filters = [{'question_id': question_id, 'answer_integer': 1}]
+        with mock.patch.object(SubmissionsAPIHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch(
+                '/api/submissions?survey_id={}'.format(survey_id),
+                method='POST',
+                body=json_encode({'filters': filters}))
+        self.assertEqual(response.code, 200)
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(
+            webpage_response,
+            submission_api.get_all(
+                connection,
+                'test_email',
+                survey_id=survey_id,
+                filters=filters
+            )
+        )
+
+    def testGetSubmissionsGeneralBySubmitter(self):
+        _create_submission()
+        with mock.patch.object(SubmissionsAPIHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/submissions?submitter=me')
+        self.assertEqual(response.code, 200)
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(
+            webpage_response,
+            submission_api.get_all(
+                connection,
+                'test_email',
+                submitters=['me']
+            )
+        )
+
+    def testGetActivityAllSurveys(self):
         _create_submission()
         with mock.patch.object(SubmissionActivityAPIHandler,
                                'get_secure_cookie') as m:
