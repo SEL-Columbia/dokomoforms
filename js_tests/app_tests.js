@@ -12,6 +12,7 @@ setInterval = function(hey, you) {  } //console.log('pikachu'); }
 console = window.console;
 Image = window.Image;
 localStorage = {};
+navigator = window.navigator;
     
 var mah_code = require('../dokomoforms/static/app.js');
 var App = mah_code.App;
@@ -20,6 +21,10 @@ var Widgets = mah_code.Widgets;
 
 // Creating the app and loading up survey questions
 describe('App initalization Tests', function(done) {
+    var survey_id = "ce76f2ec-0340-498a-9d31-75eedc9d5916";
+    var integer_id = "c84962e3-5525-4503-9414-c6d92db43770";
+    var text_id = "a45ffa59-1132-4a46-b3be-35644c13bb80";
+    var location_id = "d5c1e438-fa57-41f7-bc4a-da69f6b96ba2";
 
     before(function(done) {
         done();
@@ -83,14 +88,12 @@ describe('App initalization Tests', function(done) {
     it('should load previous submission values',
             //XXX:maybe it shouldn't?
         function(done) {
-            answers = {
-                "22a915d2-19cd-4de3-8225-aaecc7a90c1b":[{response: 123},{response:null},{response:123123}, null],
-                "6a4036b4-881b-4838-8cf6-4948cb113077":[{response:{'lon':-73.965, 'lat': 40.80}}],
-                "0c8a62fa-7859-424e-acfd-2b5c80e6a36d":[null,null,{response:"ewrwrwr"}],
-
-            }
+            answers = {}
+            answers[integer_id] = [{response: 123},{response:null},{response:123123}, null],
+            answers[location_id] = [{response:{'lon':-73.965, 'lat': 40.80}}],
+            answers[text_id] = [null,null,{response:"ewrwrwr"}],
             
-            localStorage["fc76fe08-9a6c-43cf-b30f-4b9b4ee97af2"] = 
+            localStorage[survey_id] = 
                JSON.stringify(answers); 
             
             App.init(raw_survey);
@@ -108,7 +111,7 @@ describe('App initalization Tests', function(done) {
             response = App.survey.questions[0].answer[1].response;
             response.should.match(123123); // Confirm response moved to second place
 
-            response = App.survey.questions[2].answer[0].response.lon;
+            response = App.survey.questions[5].answer[0].response.lon;
             response.should.match(-73.965);
 
             response = App.survey.questions[6].answer[0].response;

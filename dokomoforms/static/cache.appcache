@@ -1,13 +1,36 @@
 CACHE MANIFEST
-# Version 0.001234
+<<<<<<< HEAD
 
-/
+# Version 0.0123456789123456789
+
 /static/persona.js
 /static/lib.js
 /static/app.js
-/static/css
-/static/css/style.css
-/static/img
+
+/static/css/survey.css
+/static/ratchet-2.0.2/dist/css/ratchet.min.css
+# /static/ratchet-2.0.2/dist/js/ratchet.js
+# /static/ratchet-2.0.2/dist/fonts/ratchicons.woff
+# /static/ratchet-2.0.2/dist/fonts/ratchicons.tff
+# /static/ratchet-2.0.2/dist/fonts/ratchicons.eot
+# /static/ratchet-2.0.2/dist/fonts/ratchicons.svg
+
+/static/img/favicon.png
+/static/img/logo.svg
+/static/img/SEL_logo_sm.png
+/static/img/SEL_text_logo_sm.png
+
+/static/img/icons/added-point.png
+/static/img/icons/normal_base.png
+/static/img/icons/normal_education.png
+/static/img/icons/normal_health.png
+/static/img/icons/normal_water.png
+/static/img/icons/selected-point.png
+/static/img/icons/unsynced_base.png
+/static/img/icons/unsynced_education.png
+/static/img/icons/unsynced_health.png
+/static/img/icons/unsynced_water.png
 
 NETWORK:
 *
+

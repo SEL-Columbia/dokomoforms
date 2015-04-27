@@ -2,13 +2,16 @@
 from heapq import merge
 from collections import Iterator
 
+from sqlalchemy import Date, and_
 from sqlalchemy.engine import ResultProxy, RowProxy, Connection
-from sqlalchemy.sql import Insert
+from sqlalchemy.sql import Insert, select, cast
+from sqlalchemy.sql.functions import count, current_date
 
 from dokomoforms.api import execute_with_exceptions, json_response
-from dokomoforms.db import delete_record, submission_table
+from dokomoforms.db import delete_record, submission_table, auth_user_table, \
+    survey_table
 from dokomoforms.db.answer import answer_insert, get_answers, get_geo_json, \
-    CannotAnswerMultipleTimesError, _get_is_other
+    CannotAnswerMultipleTimesError, _get_is_type_exception
 from dokomoforms.db.answer_choice import get_answer_choices, \
     answer_choice_insert
 from dokomoforms.db.question import question_select, get_required
@@ -48,8 +51,8 @@ def _insert_answer(connection: Connection,
     value_dict['allow_multiple'] = question.allow_multiple
     # determine whether this is a choice selection
     is_mc = question.type_constraint_name == 'multiple_choice'
-    is_other = value_dict.get('is_other')
-    if is_mc and not is_other:
+    is_type_exception = value_dict.get('is_type_exception')
+    if is_mc and not is_type_exception:
         value_dict['question_choice_id'] = value_dict.pop('answer')
         # Might want to change 'answer_choice_metadata' to 'answer_metadata'...
         answer_metadata = value_dict.pop('answer_metadata')
@@ -87,13 +90,24 @@ def _create_submission(connection: Connection,
     :raise RequiredQuestionSkippedError: if a "required" question has no answer
     """
     unanswered_required = required_ids.copy()
+
     submitter = submission_data['submitter']
+    submitter_email = submission_data['submitter_email']
+
+    submission_time = submission_data.get('submission_time', None)
+    save_time = submission_data.get('save_time', None)
+
     all_answers = submission_data['answers']
     answers = filter(_answer_not_none, all_answers)
 
     submission_values = {
-        'submitter': submitter, 'survey_id': survey_id
+        'survey_id': survey_id,
+        'submitter': submitter,
+        'submitter_email': submitter_email,
+        'submission_time': submission_time,
+        'save_time': save_time
     }
+
     executable = submission_insert(**submission_values)
     exceptions = [
         ('submission_survey_id_fkey',
@@ -134,12 +148,12 @@ def submit(connection: Connection, data: dict) -> dict:
     c = connection
     survey_id = data['survey_id']
     required = {q.question_id for q in
-                get_required(connection, survey_id)}
+                get_required(c, survey_id)}
 
     with c.begin():
         submission_id = _create_submission(c, survey_id, required, data)
 
-    email = get_email_address(connection, survey_id)
+    email = get_email_address(c, survey_id)
     return get_one(c, submission_id, email=email)
 
 
@@ -193,7 +207,7 @@ def _get_fields(connection: Connection, answer: RowProxy) -> dict:
                    'question_title': question.question_title,
                    'sequence_number': question.sequence_number,
                    'type_constraint_name': tcn,
-                   'is_other': _get_is_other(answer)}
+                   'is_type_exception': _get_is_type_exception(answer)}
     try:
         # Get the choice for a multiple choice question
         choice_id = answer.question_choice_id
@@ -207,7 +221,7 @@ def _get_fields(connection: Connection, answer: RowProxy) -> dict:
     except AttributeError:
         # The answer is not a choice
         question = question_select(connection, answer.question_id)
-        if answer.is_other:
+        if answer.is_type_exception:
             tcn = 'text'
         result_dict['answer'] = _jsonify(connection, answer, tcn)
         result_dict['answer_metadata'] = answer.answer_metadata
@@ -232,19 +246,26 @@ def get_one(connection: Connection, submission_id: str, email: str) -> dict:
     # The merge is necessary to get the answers in sequence number order.
     result = merge(answers, choices)
     c = connection
-    sub_dict = {'submission_id': submission_id,
-                'survey_id': submission.survey_id,
-                'submitter': submission.submitter,
-                'submission_time': submission.submission_time.isoformat(),
-                'answers': [_get_fields(c, answer) for num, answer in result]}
+    sub_dict = {
+        'submission_id': submission_id,
+        'survey_id': submission.survey_id,
+        'submitter': submission.submitter,
+        'submitter_email': submission.submitter_email,
+        'submission_time': submission.submission_time.isoformat(),
+        'save_time': submission.save_time.isoformat(),
+        'answers': [_get_fields(c, answer) for num, answer in result]
+    }
     return json_response(sub_dict)
 
 
 def get_all(connection: Connection,
-            survey_id: str,
             email: str,
+            survey_id: str=None,
             submitters: Iterator=None,
-            filters: list=None) -> dict:
+            filters: list=None,
+            order_by: str=None,
+            direction: str='ASC',
+            limit: int=None) -> dict:
     """
     Create a JSON representation of the submissions to a given survey and
     email.
@@ -254,18 +275,70 @@ def get_all(connection: Connection,
     :param email: the user's e-mail address
     :param submitters: if supplied, filters results by all given submitters
     :param filters: if supplied, filters results by answers
+    :param order_by: if supplied, the column for the ORDER BY clause
+    :param direction: optional sort direction for order_by (default ASC)
+    :param limit: if supplied, the limit to apply to the number of results
     :return: a JSON dict
     """
-    submissions = get_submissions_by_email(connection,
-                                           survey_id,
-                                           email=email,
-                                           submitters=submitters,
-                                           filters=filters)
+    submissions = get_submissions_by_email(
+        connection,
+        email=email,
+        survey_id=survey_id,
+        submitters=submitters,
+        filters=filters,
+        order_by=order_by,
+        direction=direction,
+        limit=limit
+    )
     # TODO: Check if this is a performance problem
-    result = [get_one(connection,
-                      sub.submission_id,
-                      email=email) for sub in submissions]
+    result = [
+        get_one(
+            connection,
+            sub.submission_id,
+            email=email
+        ) for sub in submissions
+    ]
     return json_response(result)
+
+
+def get_activity(connection: Connection,
+                 email: str,
+                 survey_id: str=None) -> dict:
+    """
+    Get the number of submissions per day for the last 30 days for the given
+    survey.
+
+    :param connection: a SQLAlchemy Connection
+    :param email: the user's e-mail address
+    :param survey_id: the UUID of the survey, or None if fetching for all
+                      user's surveys
+    :return: a JSON dict of the result
+    """
+    submission_date = cast(submission_table.c.submission_time, Date)
+    conditions = [
+        submission_date > (current_date() - 30),
+        auth_user_table.c.email == email
+    ]
+    if survey_id is not None:
+        conditions.append(submission_table.c.survey_id == survey_id)
+
+    result = connection.execute(
+        select(
+            [count(), submission_date]
+        ).select_from(
+            submission_table.join(survey_table).join(auth_user_table)
+        ).where(
+            and_(*conditions)
+        ).group_by(
+            submission_date
+        ).order_by(
+            submission_date
+        )
+    ).fetchall()
+
+    return json_response(
+        [[num, sub_time.isoformat()] for num, sub_time in result]
+    )
 
 
 def delete(connection: Connection, submission_id: str):

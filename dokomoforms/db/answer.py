@@ -33,16 +33,16 @@ def _sanitize_answer(answer, type_constraint_name: str) -> str:
 
 
 # TODO: Create an abstraction over answer and answer_choice
-def _get_is_other(answer: RowProxy) -> bool:
+def _get_is_type_exception(answer: RowProxy) -> bool:
     """
-    Return whether this answer object contains an "other" answer (text for a
-    non-text question).
+    Return whether this answer object contains an "other"/"don't know"
+    answer (text for a non-text question).
 
     :param answer: a record in the answer or answer_choice table
     :return: whether this is an "other" answer
     """
     try:
-        return answer.is_other
+        return answer.is_type_exception
     except AttributeError:
         return False
 
@@ -53,7 +53,7 @@ def answer_insert(*,
                   question_id: str,
                   submission_id: str,
                   type_constraint_name: str,
-                  is_other: bool,
+                  is_type_exception: bool,
                   sequence_number: int,
                   allow_multiple: bool,
                   survey_id: str) -> Insert:
@@ -72,7 +72,9 @@ def answer_insert(*,
     :param question_id: The UUID of the question.
     :param submission_id: The UUID of the submission.
     :param type_constraint_name: the type constraint
-    :param is_other: whether this is an 'other' submission
+    :param is_type_exception: whether this is an exceptional answer ("don't
+                              know", "other", etc)
+    :param is_dont_know: whether this is a "don't know" submission
     :param sequence_number: the sequence number
     :param allow_multiple: whether there can be multiple answers
     :param survey_id: The UUID of the survey.
@@ -84,14 +86,14 @@ def answer_insert(*,
 
     values = {'question_id': question_id,
               'answer_metadata': answer_metadata,
-              'is_other': is_other,
+              'is_type_exception': is_type_exception,
               'submission_id': submission_id,
               'type_constraint_name': tcn,
               'sequence_number': sequence_number,
               'allow_multiple': allow_multiple,
               'survey_id': survey_id}
 
-    if is_other:
+    if is_type_exception:
         values['answer_text'] = answer
     else:
         if type_constraint_name == 'facility':

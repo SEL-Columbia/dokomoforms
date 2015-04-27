@@ -1,80 +1,91 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
+
 <head>
-    <title>Dokomo Forms</title>
+    <meta charset="utf-8">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="viewport" content="width=device-width, user-scalable=no">
+    <meta name="mobile-web-app-status-bar-style" content="black">
+    <meta name="viewport" content="width=device-width, user-scalable=no,  initial-scale=1, maximum-scale=1">
+    
+    <link href='http://fonts.googleapis.com/css?family=Roboto:400,300,500,700,100,900' rel='stylesheet' type='text/css'>
+    <link href="/static/bootstrap-3.3.4/dist/css/bootstrap.css" rel="stylesheet">
+    <link href='/static/css/dataTables.bootstrap.css' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <link href="/static/css/admin.css" rel="stylesheet" type="text/css">
     <link rel="icon" href="/static/img/favicon.png">
-    <link href="/static/css/style.css" rel="stylesheet" type="text/css">
-    {% block stylesheets %}{% end %}
+    
+    <title>Dokomoforms</title>
+    <!--<script src="/static/ratchet-2.0.2/dist/js/ratchet.js"></script> -->
+    <!-- RIP <link href="/static/css/style.css" rel="stylesheet" type="text/css">-->
 </head>
 
-<body>
-    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
-        <symbol id="icon-sync" viewBox="0 0 512 512">
-            <path d="m392 237c6 41-7 84-39 115-47 47-119 52-173 17l38-36-138-19 19 134 42-40c76 55 183 50 251-18 40-39 58-91 56-142z m-233-77c47-46 119-52 173-17l-38 36 138 19-19-134-42 40c-76-55-183-50-251 18-40 39-58 91-56 142l56 11c-6-41 7-84 39-115z"/>
-        </symbol>
-        <symbol id="icon-chevron-left" viewBox="0 0 512 512">
-            <path d="m303 449l-186-186c-7-7-10-15-10-25c0-11 3-19 10-26l186-186c7-7 16-11 26-11c10 0 19 4 26 11l22 21c7 7 10 16 10 26c0 10-3 19-10 26l-139 139l139 138c7 8 10 16 10 26c0 10-3 19-10 26l-22 21c-7 7-16 11-26 11c-10 0-19-4-26-11z"/>
-        </symbol>
-        <symbol id="icon-chevron-right" viewBox="0 0 512 512">
-            <path d="m405 238c0 10-3 18-10 26l-186 186c-7 7-16 10-26 10c-10 0-19-3-26-10l-22-22c-7-7-10-16-10-26c0-10 3-18 10-25l139-139l-139-139c-7-7-10-16-10-26c0-10 3-19 10-26l22-21c7-7 16-11 26-11c10 0 19 4 26 11l186 186c7 7 10 16 10 26z"/>
-        </symbol>
-        <symbol id="icon-save-disk" viewBox="0 0 512 512">
-            <path d="m146 439l220 0l0-110l-220 0z m256 0l37 0l0-256c0-3-1-6-3-11c-2-5-4-8-6-10l-80-80c-2-2-5-4-10-6c-4-2-8-3-11-3l0 119c0 8-3 14-8 19c-5 6-12 8-19 8l-165 0c-7 0-14-2-19-8c-6-5-8-11-8-19l0-119l-37 0l0 366l37 0l0-119c0-8 2-14 8-19c5-6 12-8 19-8l238 0c7 0 14 2 19 8c6 5 8 11 8 19z m-109-265l0-92c0-2-1-4-3-6c-2-2-4-3-7-3l-54 0c-3 0-5 1-7 3c-2 2-3 4-3 6l0 92c0 2 1 4 3 6c2 2 4 3 7 3l54 0c3 0 5-1 7-3c2-2 3-4 3-6z m182 9l0 265c0 8-2 14-8 19c-5 6-11 8-19 8l-384 0c-8 0-14-2-19-8c-6-5-8-11-8-19l0-384c0-8 2-14 8-19c5-6 11-8 19-8l265 0c8 0 16 1 25 5c9 4 17 9 22 14l80 80c5 5 10 13 14 22c4 9 5 17 5 25z"/>
-        </symbol>
-        <symbol id="icon-add" viewBox="0 0 48 48" xml:space="preserve">
-            <path d="M42.939,19.742H28.505V5.319c0-2.283-1.842-4.134-4.125-4.134s-4.124,1.851-4.124,4.135v14.432l-14.442,0 c-2.283,0-4.139,1.851-4.138,4.135c-0.001,1.141,0.46,2.186,1.207,2.934c0.748,0.749,1.78,1.222,2.92,1.222h14.453v14.411 c0,1.142,0.453,2.176,1.201,2.923c0.748,0.748,1.777,1.211,2.919,1.211c2.282,0,4.129-1.851,4.129-4.134V28.042h14.434 c2.283,0,4.134-1.867,4.133-4.15C47.072,21.61,45.221,19.742,42.939,19.742z"/>
-        </symbol>
-
-	    <symbol id="icon-minus" viewBox="0 0 384 384" xml:space="preserve">
-		    <path d="M349,227H35c-20,0-35-15-35-35s15-35,35-35h314c20,0,35,15,35,35S369,227,349,227z"/>
-        </symbol>
-
-        <symbol id="logo" viewBox="0 0 100 100">
-            <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
-                <g id="Rectangle-5-+-Multicolor_1_" sketch:type="MSLayerGroup">
-                    <rect id="Rectangle-5" sketch:type="MSShapeGroup" x="0" y="0" width="100" height="100"></rect>
-                    <g id="Multicolor_1_" transform="translate(6.000000, 0.000000)" sketch:type="MSShapeGroup">
-                        <path d="M0,9.375 C0,4.196875 4.22085714,0 9.42857143,0 L78.5714286,0 C83.7791429,0 88,4.196875 88,9.375 L88,90.625 C88,95.803125 83.7791429,100 78.5714286,100 L9.42857143,100 C4.22085714,100 0,95.803125 0,90.625 L0,9.375 L0,9.375 Z" id="Shape" fill="#84462D"></path>
-                        <path d="M9.42857143,18.75 C9.42857143,17.0234375 10.835,15.625 12.5714286,15.625 L75.4285714,15.625 C77.165,15.625 78.5714286,17.0234375 78.5714286,18.75 L78.5714286,84.375 C78.5714286,87.8265625 75.757,90.625 72.2857143,90.625 L15.7142857,90.625 C12.243,90.625 9.42857143,87.8265625 9.42857143,84.375 L9.42857143,18.75 L9.42857143,18.75 Z" id="Shape" fill="#CFD3D4"></path>
-                        <path d="M75.4285714,15.625 C77.165,15.625 78.5714286,17.0234375 78.5714286,18.75 L78.5714286,82.8125 C78.5714286,84.5390625 77.165,85.9375 75.4285714,85.9375 L12.5714286,85.9375 C10.8428571,85.9375 9.42857143,84.53125 9.42857143,82.8125 L9.42857143,18.75 C9.42857143,17.0234375 10.835,15.625 12.5714286,15.625 L75.4285714,15.625 L75.4285714,15.625 Z" id="Shape" fill="#FFFFFF"></path>
-                        <path d="M53.4285714,9.375 C53.4285714,4.196875 49.2077143,0 44,0 C38.7922857,0 34.5714286,4.196875 34.5714286,9.375 L28.2857143,9.375 C26.5492857,9.375 25.1428571,10.7734375 25.1428571,12.5 L25.1428571,20.3125 C25.1428571,22.0390625 26.5492857,23.4375 28.2857143,23.4375 L59.7142857,23.4375 C61.4507143,23.4375 62.8571429,22.0390625 62.8571429,20.3125 L62.8571429,12.5 C62.8571429,10.7734375 61.4507143,9.375 59.7142857,9.375 L53.4285714,9.375 L53.4285714,9.375 Z" id="Shape" fill="#FACB1B"></path>
-                        <rect id="Rectangle-path" fill="#E2E4E5" x="18.8571429" y="34.375" width="50.2857143" height="3.125"></rect>
-                        <rect id="Rectangle-path" fill="#E2E4E5" x="18.8571429" y="43.75" width="50.2857143" height="3.125"></rect>
-                        <rect id="Rectangle-path" fill="#E2E4E5" x="18.8571429" y="53.125" width="50.2857143" height="3.125"></rect>
-                        <rect id="Rectangle-path" fill="#E2E4E5" x="18.8571429" y="62.5" width="31.4285714" height="3.125"></rect>
-                        <path d="M59.7142857,9.375 L53.4285714,9.375 C53.4285714,4.196875 49.2077143,0 44,0 C38.7922857,0 34.5714286,4.196875 34.5714286,9.375 L28.2857143,9.375 C26.5508571,9.375 25.1428571,10.775 25.1428571,12.5 L25.1428571,15.625 L62.8571429,15.625 L62.8571429,12.5 C62.8571429,10.775 61.4507143,9.375 59.7142857,9.375 L59.7142857,9.375 Z" id="Shape" fill="#FBE158"></path>
-                    </g>
-                </g>
-            </g>
-        </symbol>
-    </svg>
-
-    <div class="nav">
-        <div class="nav__title">
-            <svg class="icon nav__title__icon">
-                <use xlink:href="#logo"></use>
-            </svg>
-            {% try %} {{survey_title}} {% except NameError %} Dokomoforms {% end %}
-            {% try %}
-                {% if survey_version is not None %}
-                <div class="nav__title__version">
-                    edition: {{survey_version}}
-                </div>
-                {% end %}
-            {% except NameError %}
-            {% end %}
+<body role="document">
+    <nav class="navbar navbar-default navbar-fixed-top light-shadow">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="/">DokomoForms</a>
+            </div>
+            <div id="navbar" class="navbar-collapse collapse pull-right">
+                <ul class="nav navbar-nav">
+                    {% if current_user %}
+                    <li><a href="#">{{ current_user }}</a></li>
+                    <li><a href="#"><span class="glyphicon glyphicon-cog" data-toggle="tooltip" data-placement="bottom" title="Settings (Coming Soon?)"></span></a></li>
+                    <li><a href="#"><span class="glyphicon glyphicon-log-out" data-toggle="tooltip" data-placement="bottom" title="Sign out" id="logout"></span></a></li>
+                    {% else %}
+                    <li><a class="btn btn-block" href="#" id="login">Login or Register</a></li>
+                    {% end %}
+                </ul>
+            </div>
+            <!--/.nav-collapse -->
         </div>
-        <a class="sel" href="http://sel.columbia.edu">
-            <img src="/static/img/SEL_logo_sm.png" class="nav__sync"/>
-        </a>
-    </div>
+    </nav>
+    {% block header %}{% end %}
+    {% block subheader %}{% end %}
+    {% block content %}{% end %}
+    {% block footer %} {% end %}
 
-    <div class="wrapper">
-        {% block content %}{% end %}
-    </div>
+    <!-- Jquery for everything -->
+    <script src="/static/jquery-2.1.3.min.js"></script>
+    <!-- Lodash (underscore) for everything else -->
+    <script type="text/javascript" src="/static/lodash.min.js"></script>
+    <!-- Leaflet for maps -->
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+    <!-- Highcharts -->
+    <script src="http://code.highcharts.com/highcharts.js"></script>
+    <!-- Moment.js for datetime handling -->
+    <script type="text/javascript" src="http://momentjs.com/downloads/moment.min.js"></script>
+    <!-- Bootstrap for UI components -->
+    <script type="text/javascript" src="/static/bootstrap-3.3.4/dist/js/bootstrap.min.js"></script>
+    <!-- DataTables for... data... tables... -->
+    <script src="http://cdn.datatables.net/1.10.5/js/jquery.dataTables.min.js"></script>
+    <script src="http://cdn.datatables.net/plug-ins/1.10.6/integration/bootstrap/3/dataTables.bootstrap.js"></script>
+
+
+    <script type="text/javascript">
+        // enable tooltips
+        $(function() {
+            $('[data-toggle="tooltip"]').tooltip({
+                container: 'body'
+            });
+        });
+    </script>
+
+    <!-- Persona for login stuff -->
+    <script src="https://login.persona.org/include.js"></script>
+    <script src="/static/persona.js"></script>
+
+    <!-- Extra page-specfic scripts should go in this block. -->
+    {% block extra_scripts %} {% end %}
+
+
 </body>
 
 </html>

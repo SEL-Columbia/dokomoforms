@@ -1,28 +1,111 @@
 {% extends "base.html" %}
+
+{% block header %}
+<div class="header">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6"><h1><a href="/view/{{ survey.survey_id }}">{{ survey.survey_title }}</a></h1></div>
+            <div class="col-md-6 header-controls">
+                <div class="btn-group pull-right">
+                    <button class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" aria-expanded="false"><span class="glyphicon glyphicon-menu-hamburger"></span></button>
+                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                        <li><a href="/">Account Dashboard</a></li>
+                        <li><a href="/view/{{ survey.survey_id }}">Manage Survey</a></li>
+                        <li><a href="/view/data/{{ survey.survey_id }}">View Survey Data</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% end %}
+
+
+{% block subheader %}
+<div class="subheader">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h3>Submission Detail</h3>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-2">
+                <div class="stat-label">
+                    conducted by
+                </div>
+                <div class="stat-value stat-created-on">
+                    {{ submission['submitter'] }}
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="stat-label">
+                    conducted on
+                </div>
+                <div class="stat-value stat-created-on">
+                    {{ iso_date_str_to_fmt_str(submission['save_time'], "%b %d, %Y at %H:%M:%S") }}
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="stat-label">
+                    submitted on
+                </div>
+                <div class="stat-value stat-created-on">
+                    {{ iso_date_str_to_fmt_str(submission['submission_time'], "%b %d, %Y at %H:%M:%S") }}
+                </div>
+            </div>
+            <!-- <div class="col-md-2">
+                <div class="stat-label">
+                    survey
+                </div>
+                <div class="stat-value stat-created-on">
+                    {{ survey.survey_title }}
+                </div>
+            </div> -->
+        </div>
+    </div>
+</div>
+{% end %}
+
+
 {% block content %}
     <div class="content">
-        <div>
-            <h4>Welcome {{ current_user }}</h4>
-            <p> Submission {{ submission['submission_id'] }} by {{ submission['submitter'] }} at {{ submission['submission_time'] }} to survey {{ survey.survey_title }}: </p>
-            <ul>
-                {% for answer in submission['answers'] %}
-                    <li>
-                        <strong>{{ answer['sequence_number'] }}. {{ answer['question_title'] }}</strong><br/>
-                        Type: {{ answer['type_constraint_name'] }}<br/>
-                        {% if answer['choice'] %}
-                            Choice: {{ answer['choice_number'] }}. {{ answer['choice'] }}<br/>
-                        {% else %}
-                            Answer: {{ answer['answer'] }}<br/>
+        <div class="container" role="main">
+            
+            <div class="message">
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <ul class="survey-responses">
+                        {% for answer in submission['answers'] %}
+                            <li>
+                            
+                                <div class="response-title-bar">
+                                    {{ answer['sequence_number'] }}. {{ answer['question_title'] }}
+                                    <span class="question-type pull-right">{{ answer['type_constraint_name'] }}</span>
+                                </div>
+
+                                <div class="response-data">
+                                    {% if answer['choice'] %}
+                                        {{ answer['choice_number'] }}. {{ answer['choice'] }}<br/>
+                                    {% else %}
+                                        {{ answer['answer'] }}<br/>
+                                    {% end %}
+                                </div>
+                                
+                            </li>
                         {% end %}
-                    </li>
-                {% end %}
-            </ul>
+                    </ul>
+                </div>
+            </div>
         </div>
-        <a class="btn" href="#" id="logout">Logout</a>
     </div>
+{% end %}
 
 
-    <script src="/static/lib.js"></script>
-    <script src="https://login.persona.org/include.js"></script>
-    <script src="/static/persona.js"></script>
+
+{% block extra_scripts %}
+
+    
 {% end %}

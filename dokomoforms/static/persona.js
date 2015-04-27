@@ -58,6 +58,7 @@ function getCookie(name) {
         navigator.id.request();
     });
     $('#logout').click(function(){
+        console.log("HEREERER\n");
         navigator.id.logout();
     });
 })();

@@ -13,26 +13,30 @@ from dokomoforms.db import get_column, submission_table, answer_table, \
 
 
 def submission_insert(*,
-                      submitter: str,
                       survey_id: str,
+                      submitter: str,
+                      submitter_email: str,
                       submission_time: [str, datetime]=None,
-                      field_update_time: [str, datetime]=None) -> Insert:
+                      save_time: [str, datetime]=None) -> Insert:
     """
     Insert a record into the submission table.
 
     :param submitter: name
     :param survey_id: The UUID of the survey.
     :param submission_time: the time of the submission. Default now()
-    :param field_update_time: the time of the update in the field. Default
-                              now()
+    :param save_time: the time of survey completion. Default now()
     :return: The Insert object. Execute this!
     """
-    values = {'submitter': submitter,
-              'survey_id': survey_id}
+    values = {
+        'survey_id': survey_id,
+        'submitter': submitter,
+        'submitter_email': submitter_email
+    }
+
     if submission_time is not None:
         values['submission_time'] = submission_time
-    if field_update_time is not None:
-        values['field_update_time'] = field_update_time
+    if save_time is not None:
+        values['save_time'] = save_time
     return submission_table.insert().values(values)
 
 
@@ -97,10 +101,13 @@ def _get_filtered_ids(connection: Connection, filters: list) -> Iterator:
 
 
 def get_submissions_by_email(connection: Connection,
-                             survey_id: str,
                              email: str,
+                             survey_id: str=None,
                              submitters: Iterator=None,
-                             filters: list=None) -> ResultProxy:
+                             filters: list=None,
+                             order_by: str=None,
+                             direction: str='ASC',
+                             limit: int=None) -> ResultProxy:
     """
     Get submissions to a survey.
 
@@ -109,20 +116,39 @@ def get_submissions_by_email(connection: Connection,
     :param email: the e-mail address of the user
     :param submitters: if supplied, filters results by all given submitters
     :param filters: if supplied, filters results by answers
+    :param order_by: if supplied, the column for the ORDER BY clause
+    :param direction: optional sort direction for order_by (default ASC)
+    :param limit: if supplied, the limit to apply to the number of results
     :return: an iterable of the submission records
     """
 
     table = submission_table.join(survey_table).join(auth_user_table)
-    conds = [submission_table.c.survey_id == survey_id,
-             auth_user_table.c.email == email]
+
+    conds = [auth_user_table.c.email == email]
+
+    if survey_id:
+        conds.append(submission_table.c.survey_id == survey_id)
+
     if submitters is not None:
         conds.append(submission_table.c.submitter.in_(submitters))
     if filters is not None:
         filtered = set(_get_filtered_ids(connection, filters))
         conds.append(submission_table.c.submission_id.in_(filtered))
+    if order_by is None:
+        order_by = 'submission_time'
     return connection.execute(
-        select([submission_table]).select_from(table).where(
-            and_(*conds)).order_by('submission_time'))
+        select(
+            [submission_table]
+        ).select_from(
+            table
+        ).where(
+            and_(*conds)
+        ).order_by(
+            '{} {}'.format(order_by, direction)
+        ).limit(
+            limit
+        )
+    )
 
 
 def get_number_of_submissions(connection: Connection, survey_id: str) -> int:

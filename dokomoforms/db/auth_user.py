@@ -3,8 +3,8 @@
 from datetime import datetime, timedelta
 from time import localtime
 import uuid
-from sqlalchemy import select
 
+from sqlalchemy import select
 from sqlalchemy.sql.dml import Insert, Update
 from sqlalchemy.engine import RowProxy, Connection
 from passlib.hash import bcrypt_sha256

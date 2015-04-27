@@ -1,13 +1,17 @@
 """Functions for interacting with surveys."""
 from collections import Iterator
 import datetime
+from sqlalchemy import select
 
 from sqlalchemy.engine import RowProxy, Connection
+from sqlalchemy.sql.functions import count, max as sqlmax, min as sqlmin
 
-from dokomoforms.api import execute_with_exceptions, json_response
-from dokomoforms.db import delete_record, update_record, survey_table
+from dokomoforms.api import execute_with_exceptions, json_response, \
+    maybe_isoformat
+from dokomoforms.db import delete_record, update_record, survey_table, \
+    submission_table, auth_user_table
 from dokomoforms.db.answer import get_answers_for_question, answer_insert, \
-    _get_is_other
+    _get_is_type_exception
 from dokomoforms.db.answer_choice import get_answer_choices_for_choice_id, \
     answer_choice_insert
 from dokomoforms.db.auth_user import get_auth_user_by_email
@@ -184,19 +188,23 @@ def _create_questions(connection: Connection,
                                           existing_q_id).type_constraint_name
                 if new_tcn != old_tcn:
                     continue
+
                 answer_values = question_fields.copy()
                 answer_values['answer_metadata'] = answer.answer_metadata
                 new_submission_id = submission_map[answer.submission_id]
 
-                is_other = _get_is_other(answer)
-                answer_values['is_other'] = is_other
-                if is_other:
+                is_type_exception = _get_is_type_exception(answer)
+                answer_values['is_type_exception'] = is_type_exception
+                if is_type_exception:
                     answer_values['answer'] = answer.answer_text
                 else:
                     answer_values['answer'] = answer['answer_' + new_tcn]
-                with_other = values['logic']['with_other']
 
-                if new_tcn == 'multiple_choice' and not with_other:
+                allow_other = values['logic']['allow_other']
+                allow_dont_know = values['logic']['allow_dont_know']
+                with_type_exception = allow_other or allow_dont_know
+
+                if new_tcn == 'multiple_choice' and not with_type_exception:
                     continue
                 answer_values['submission_id'] = new_submission_id
                 connection.execute(answer_insert(**answer_values))
@@ -269,11 +277,15 @@ def _copy_submission_entries(connection: Connection,
     :param email: the user's e-mail address
     :return: a tuple containing the old and new submission IDs
     """
-    for sub in get_submissions_by_email(connection, existing_survey_id,
-                                        email=email):
+    submissions = get_submissions_by_email(
+        connection, email,
+        survey_id=existing_survey_id
+    )
+    for sub in submissions:
         values = {'submitter': sub.submitter,
+                  'submitter_email': sub.submitter_email,
                   'submission_time': sub.submission_time,
-                  'field_update_time': sub.field_update_time,
+                  'save_time': sub.save_time,
                   'survey_id': new_survey_id}
         result = connection.execute(submission_insert(**values))
         yield sub.submission_id, result.inserted_primary_key[0]
@@ -311,11 +323,14 @@ def _create_survey(connection: Connection, data: dict) -> str:
     # a map of old submission_id to new submission_id
     submission_map = None
     if is_update:
-        submission_map = {entry[0]: entry[1] for entry in
-                          _copy_submission_entries(connection,
-                                                   data['survey_id'],
-                                                   survey_id,
-                                                   data['email'])}
+        submission_map = {
+            entry[0]: entry[1] for entry in
+            _copy_submission_entries(
+                connection,
+                data['survey_id'],
+                survey_id,
+                data['email'])
+        }
 
     # Now insert questions.  Inserting branches has to come afterward so
     # that the question_id values actually exist in the tables.
@@ -440,6 +455,43 @@ def get_one(connection: Connection,
     survey = survey_select(connection, survey_id, auth_user_id=auth_user_id,
                            email=email)
     return json_response(_to_json(connection, survey))
+
+
+def get_stats(connection: Connection,
+              survey_id: str,
+              email: str) -> dict:
+    """
+    Get statistics about the specified survey: creation time, number of
+    submissions, time of the earliest submission, and time of the latest
+    submission.
+
+    :param connection: a SQLAlchemy Connection
+    :param survey_id: the UUID of the survey
+    :param email: the e-mail address of the user
+    :return: a JSON representation of the statistics.
+    """
+    result = connection.execute(
+        select([
+            survey_table.c.created_on,
+            count(submission_table.c.submission_id),
+            sqlmin(submission_table.c.submission_time),
+            sqlmax(submission_table.c.submission_time)
+        ]).select_from(
+            auth_user_table.join(survey_table).outerjoin(submission_table)
+        ).where(
+            survey_table.c.survey_id == survey_id
+        ).where(
+            auth_user_table.c.email == email
+        ).group_by(
+            survey_table.c.survey_id
+        )
+    ).first()
+    return json_response({
+        'created_on': maybe_isoformat(result[0]),
+        'num_submissions': result[1],
+        'earliest_submission_time': maybe_isoformat(result[2]),
+        'latest_submission_time': maybe_isoformat(result[3])
+    })
 
 
 def get_all(connection: Connection, email: str) -> dict:
