@@ -75,27 +75,28 @@ class TestSubmission(unittest.TestCase):
             fourth_cond)).first().question_id
         input_data = {'submitter': 'me',
                       'survey_id': survey_id,
+                      'submitter_email': 'anon@anon.org',
                       'answers':
                           [{'question_id': question_id,
                             'answer': 1,
                             'answer_metadata': {'key': 'value'},
-                            'is_other': False},
+                            'is_type_exception': False},
                            {'question_id': second_q_id,
                             'answer': choice_id,
                             'answer_metadata': None,
-                            'is_other': False},
+                            'is_type_exception': False},
                            {'question_id': third_q_id,
                             'answer': 'answer one',
                             'answer_metadata': None,
-                            'is_other': False},
+                            'is_type_exception': False},
                            {'question_id': third_q_id,
                             'answer': 'answer two',
                             'answer_metadata': None,
-                            'is_other': False},
+                            'is_type_exception': False},
                            {'question_id': fourth_q_id,
                             'answer': 3.5,
                             'answer_metadata': None,
-                            'is_other': False}]}
+                            'is_type_exception': False}]}
         response = submission_api.submit(connection, input_data)['result']
         submission_id = response['submission_id']
         condition = submission_table.c.submission_id == submission_id
@@ -121,12 +122,13 @@ class TestSubmission(unittest.TestCase):
         question_id = connection.execute(question_table.select().where(
             and_cond)).first().question_id
         input_data = {'submitter': 'me',
+                      'submitter_email': 'anon@anon.org',
                       'survey_id': survey_id,
                       'answers':
                           [{'question_id': question_id,
                             'answer': 'one',
                             'answer_metadata': None,
-                            'is_other': False}]}
+                            'is_type_exception': False}]}
         self.assertRaises(DataError, submission_api.submit, connection,
                           input_data)
         self.assertEqual(
@@ -134,11 +136,12 @@ class TestSubmission(unittest.TestCase):
 
         input_data2 = {'survey_id': survey_id,
                        'submitter': 'test_submitter',
+                       'submitter_email': 'anon@anon.org',
                        'answers':
                            [{'question_id': question_id,
                              'answer': 1j,
                              'answer_metadata': None,
-                             'is_other': False}]}
+                             'is_type_exception': False}]}
         self.assertRaises(ProgrammingError, submission_api.submit, connection,
                           input_data2)
 
@@ -151,14 +154,18 @@ class TestSubmission(unittest.TestCase):
             and_cond)).first().question_id
         input_data = {'survey_id': survey_id,
                       'submitter': 'test_submitter',
+                      'submitter_email': 'anon@anon.org',
                       'answers':
                           [{'question_id': question_id,
                             'answer': 'one',
-                            'answer_metadata': None,
-                            'is_other': True}]}
+                            'answer_metadata': {'type_exception': 'dont_know'},
+                            'is_type_exception': True}]}
         result = submission_api.submit(connection, input_data)['result']
         self.assertEqual(result['answers'][0]['answer'], 'one')
-        self.assertEqual(result['answers'][0]['is_other'], True)
+        self.assertEqual(
+            result['answers'][0]['answer_metadata']['type_exception'],
+            'dont_know'
+        )
 
     def testSkippedQuestion(self):
         questions = [{'question_title': 'required question',
@@ -167,7 +174,11 @@ class TestSubmission(unittest.TestCase):
                       'question_to_sequence_number': -1,
                       'hint': None,
                       'allow_multiple': False,
-                      'logic': {'required': True, 'with_other': False},
+                      'logic': {
+                          'required': True,
+                          'allow_dont_know': False,
+                          'allow_other': True
+                      },
                       'choices': None,
                       'branches': None}]
         data = {'survey_title': 'survey with required question',
@@ -178,6 +189,7 @@ class TestSubmission(unittest.TestCase):
         survey_id = survey['survey_id']
 
         submission = {'submitter': 'me',
+                      'submitter_email': 'anon@anon.org',
                       'survey_id': survey_id,
                       'answers': []}
         self.assertRaises(submission_api.RequiredQuestionSkippedError,
@@ -186,6 +198,7 @@ class TestSubmission(unittest.TestCase):
         question_id = survey['questions'][0]['question_id']
 
         submission2 = {'submitter': 'me',
+                       'submitter_email': 'anon@anon.org',
                        'survey_id': survey_id,
                        'answers': [{'question_id': question_id,
                                     'answer': None}]}
@@ -199,6 +212,7 @@ class TestSubmission(unittest.TestCase):
 
         ).survey_id
         input_data = {'submitter': 'me',
+                      'submitter_email': 'anon@anon.org',
                       'survey_id': survey_id,
                       'answers': [{'question_id': str(uuid.uuid4()),
                                    'answer': 1}]}
@@ -209,7 +223,8 @@ class TestSubmission(unittest.TestCase):
 
     def testSurveyDoesNotExist(self):
         survey_id = str(uuid.uuid4())
-        input_data = {'submitter': 'me', 'survey_id': survey_id, 'answers': []}
+        input_data = {'submitter': 'me', 'submitter_email': 'anon@anon.org',
+                      'survey_id': survey_id, 'answers': []}
         self.assertRaises(SurveyDoesNotExistError, submission_api.submit,
                           connection,
                           input_data)
@@ -226,16 +241,17 @@ class TestSubmission(unittest.TestCase):
         time_question_id = connection.execute(question_table.select().where(
             time_cond)).first().question_id
         input_data = {'submitter': 'me',
+                      'submitter_email': 'anon@anon.org',
                       'survey_id': survey_id,
                       'answers':
                           [{'question_id': date_question_id,
                             'answer': '2014-10-27',
                             'answer_metadata': {},
-                            'is_other': False},
+                            'is_type_exception': False},
                            {'question_id': time_question_id,
                             'answer': '11:26-04:00',
                             'answer_metadata': {},
-                            'is_other': False}]}  # UTC-04:00
+                            'is_type_exception': False}]}  # UTC-04:00
         response = submission_api.submit(connection, input_data)['result']
         self.assertEqual(response['answers'][0]['answer'], '2014-10-27')
         self.assertEqual(response['answers'][1]['answer'], '11:26:00-04:00')
@@ -248,16 +264,17 @@ class TestSubmission(unittest.TestCase):
         question_id = connection.execute(question_table.select().where(
             and_cond)).first().question_id
         input_data = {'submitter': 'me',
+                      'submitter_email': 'anon@anon.org',
                       'survey_id': survey_id,
                       'answers':
                           [{'question_id': question_id,
                             'answer': 1,
                             'answer_metadata': None,
-                            'is_other': False},
+                            'is_type_exception': False},
                            {'question_id': question_id,
                             'answer': 2,
                             'answer_metadata': None,
-                            'is_other': False}]}
+                            'is_type_exception': False}]}
         self.assertRaises(CannotAnswerMultipleTimesError,
                           submission_api.submit,
                           connection,
@@ -278,13 +295,15 @@ class TestSubmission(unittest.TestCase):
         mul = question.allow_multiple
         submission_exec = connection.execute(
             submission_insert(submitter='test_submitter',
+                              submitter_email='anon@anon.org',
                               survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         connection.execute(answer_insert(
             answer={'lon': 90, 'lat': 0}, question_id=question_id,
             answer_metadata={},
             submission_id=submission_id, survey_id=survey_id,
-            type_constraint_name=tcn, is_other=False, sequence_number=seq,
+            type_constraint_name=tcn, is_type_exception=False,
+            sequence_number=seq,
             allow_multiple=mul))
         data = submission_api.get_one(connection, submission_id,
                                       email='test_email')['result']
@@ -305,21 +324,69 @@ class TestSubmission(unittest.TestCase):
         for i in range(2):
             submission_exec = connection.execute(
                 submission_insert(submitter='test_submitter',
+                                  submitter_email='anon@anon.org',
                                   survey_id=survey_id))
             submission_id = submission_exec.inserted_primary_key[0]
             connection.execute(answer_insert(
                 answer=i, question_id=question_id, submission_id=submission_id,
                 answer_metadata={},
-                survey_id=survey_id, type_constraint_name=tcn, is_other=False,
+                survey_id=survey_id, type_constraint_name=tcn,
+                is_type_exception=False,
                 sequence_number=seq, allow_multiple=mul))
-        data = submission_api.get_all(connection, survey_id,
-                                      email='test_email')
+        data = submission_api.get_all(
+            connection, 'test_email',
+            survey_id=survey_id
+        )
         self.assertGreater(len(data), 0)
+
+    def testGetActivity(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = connection.execute(q_where).first()
+        question_id = question.question_id
+        tcn = question.type_constraint_name
+        seq = question.sequence_number
+        mul = question.allow_multiple
+
+        times = [
+            datetime.now(),
+            datetime.now() + timedelta(-15),
+            datetime.now() + timedelta(-15),
+            datetime.now() + timedelta(-45)
+        ]
+
+        for t in times:
+            submission_exec = connection.execute(
+                submission_insert(
+                    submitter='test_submitter',
+                    submitter_email='anon@anon.org',
+                    survey_id=survey_id,
+                    submission_time=t
+                )
+            )
+            submission_id = submission_exec.inserted_primary_key[0]
+            connection.execute(answer_insert(
+                answer=5, question_id=question_id, submission_id=submission_id,
+                answer_metadata={},
+                survey_id=survey_id, type_constraint_name=tcn,
+                is_type_exception=False,
+                sequence_number=seq, allow_multiple=mul))
+
+        activity = submission_api.get_activity(
+            connection, 'test_email', survey_id=survey_id
+        )['result']
+        self.assertEqual(len(activity), 2)
+        self.assertEqual(activity[0][0], 2)
+        self.assertEqual(activity[1][0], 1)
 
     def testDelete(self):
         survey_id = connection.execute(survey_table.select().where(
             survey_table.c.survey_title == 'test_title')).first().survey_id
         data = {'submitter': 'me',
+                'submitter_email': 'anon@anon.org',
                 'survey_id': survey_id,
                 'answers': [{'answer': None}]}
         submission_id = submission_api.submit(connection, data)['result'][
@@ -380,7 +447,11 @@ class TestSurvey(unittest.TestCase):
                       'question_to_sequence_number': 1,
                       'hint': None,
                       'allow_multiple': False,
-                      'logic': {'required': False, 'with_other': False},
+                      'logic': {
+                          'required': False,
+                          'allow_dont_know': False,
+                          'allow_other': False,
+                      },
                       'choices': ['choice 1', 'choice 2'],
                       'branches': [{'choice_number': 0,
                                     'to_question_number': 2}]},
@@ -391,7 +462,8 @@ class TestSurvey(unittest.TestCase):
                       'hint': None,
                       'allow_multiple': False,
                       'logic': {'required': False,
-                                'with_other': False,
+                                'allow_dont_know': False,
+                                'allow_other': False,
                                 'min': 3},
                       'choices': None,
                       'branches': None}]
@@ -404,8 +476,15 @@ class TestSurvey(unittest.TestCase):
         self.assertEqual(connection.execute(
             survey_table.select().where(condition)).rowcount, 1)
         questions = list(get_questions_no_credentials(connection, survey_id))
-        self.assertEqual(questions[1].logic,
-                         {'required': False, 'with_other': False, 'min': 3})
+        self.assertEqual(
+            questions[1].logic,
+            {
+                'required': False,
+                'allow_dont_know': False,
+                'allow_other': False,
+                'min': 3
+            }
+        )
         self.assertEqual(
             get_choices(connection, questions[0].question_id).first().choice,
             'choice 1')
@@ -435,8 +514,11 @@ class TestSurvey(unittest.TestCase):
                       'question_to_sequence_number': 1,
                       'hint': None,
                       'allow_multiple': False,
-                      'logic': {'required': False,
-                                'with_other': False},
+                      'logic': {
+                          'required': False,
+                          'allow_other': False,
+                          'allow_dont_know': False
+                      },
                       'choices': None,
                       'branches': None}]
         data = {'survey_title': 'api_test survey',
@@ -459,8 +541,11 @@ class TestSurvey(unittest.TestCase):
                                      'question_to_sequence_number': -1,
                                      'hint': None,
                                      'allow_multiple': False,
-                                     'logic': {'required': False,
-                                               'with_other': False},
+                                     'logic': {
+                                         'required': False,
+                                         'allow_dont_know': False,
+                                         'allow_other': False
+                                     },
                                      'choices': None,
                                      'branches': None}],
                       'email': 'test_email'}
@@ -477,8 +562,11 @@ class TestSurvey(unittest.TestCase):
                                           'question_to_sequence_number': -1,
                                           'hint': None,
                                           'allow_multiple': False,
-                                          'logic': {'required': False,
-                                                    'with_other': False},
+                                          'logic': {
+                                              'required': False,
+                                              'allow_dont_know': False,
+                                              'allow_other': False
+                                          },
                                           'choices': None,
                                           'branches': None}
                                      ],
@@ -490,8 +578,11 @@ class TestSurvey(unittest.TestCase):
                             'question_to_sequence_number': -1,
                             'hint': None,
                             'allow_multiple': False,
-                            'logic': {'required': False,
-                                      'with_other': False},
+                            'logic': {
+                                'required': False,
+                                'allow_dont_know': False,
+                                'allow_other': False
+                            },
                             'choices': None,
                             'branches': None}]
 
@@ -516,8 +607,11 @@ class TestSurvey(unittest.TestCase):
                                      'question_to_sequence_number': 1,
                                      'hint': None,
                                      'allow_multiple': False,
-                                     'logic': {'required': False,
-                                               'with_other': False},
+                                     'logic': {
+                                         'required': False,
+                                         'allow_other': False,
+                                         'allow_dont_know': False
+                                     },
                                      'choices': ['a', 'a']}]}
         self.assertRaises(RepeatedChoiceError, survey_api.create, connection,
                           input_data)
@@ -532,8 +626,11 @@ class TestSurvey(unittest.TestCase):
                                      'question_to_sequence_number': 1,
                                      'hint': None,
                                      'allow_multiple': False,
-                                     'logic': {'required': False,
-                                               'with_other': False},
+                                     'logic': {
+                                         'required': False,
+                                         'allow_other': False,
+                                         'allow_dont_know': False
+                                     },
                                      'choices': ['a', 'b'],
                                      'branches': [{'choice_number': 0,
                                                    'to_question_number': 2},
@@ -545,8 +642,11 @@ class TestSurvey(unittest.TestCase):
                                      'question_to_sequence_number': 1,
                                      'hint': None,
                                      'allow_multiple': False,
-                                     'logic': {'required': False,
-                                               'with_other': False},
+                                     'logic': {
+                                         'required': False,
+                                         'allow_dont_know': False,
+                                         'allow_other': False
+                                     },
                                      'choices': None,
                                      'branches': None},
                                     {'question_title': 'choice error',
@@ -555,8 +655,11 @@ class TestSurvey(unittest.TestCase):
                                      'question_to_sequence_number': -1,
                                      'hint': None,
                                      'allow_multiple': False,
-                                     'logic': {'required': False,
-                                               'with_other': False},
+                                     'logic': {
+                                         'required': False,
+                                         'allow_other': False,
+                                         'allow_dont_know': False
+                                     },
                                      'choices': None,
                                      'branches': None}]}
         self.assertRaises(MultipleBranchError, survey_api.create, connection,
@@ -572,8 +675,11 @@ class TestSurvey(unittest.TestCase):
                                      'question_to_sequence_number': 1,
                                      'hint': None,
                                      'allow_multiple': False,
-                                     'logic': {'required': False,
-                                               'with_other': False}}]}
+                                     'logic': {
+                                         'required': False,
+                                         'allow_other': False,
+                                         'allow_dont_know': False
+                                     }}]}
         self.assertRaises(TypeConstraintDoesNotExistError, survey_api.create,
                           connection,
                           input_data)
@@ -588,7 +694,11 @@ class TestSurvey(unittest.TestCase):
                       'question_to_sequence_number': 1,
                       'hint': None,
                       'allow_multiple': False,
-                      'logic': {'required': False, 'with_other': False},
+                      'logic': {
+                          'required': False,
+                          'allow_other': False,
+                          'allow_dont_know': False
+                      },
                       'choices': [],
                       'branches': []},
                      {'question_title': 'api_test 2nd question',
@@ -597,17 +707,26 @@ class TestSurvey(unittest.TestCase):
                       'question_to_sequence_number': 1,
                       'hint': None,
                       'allow_multiple': False,
-                      'logic': {'required': False, 'with_other': False},
+                      'logic': {
+                          'required': False,
+                          'allow_other': False,
+                          'allow_dont_know': False
+                      },
                       'choices': ['1', '2', '3'],
                       'branches': [
-                          {'choice_number': 0, 'to_question_number': 3}]},
+                          {'choice_number': 0, 'to_question_number': 3}
+                      ]},
                      {'question_title': 'api_test 3rd question',
                       'type_constraint_name': 'text',
                       'sequence_number': None,
                       'question_to_sequence_number': -1,
                       'hint': None,
                       'allow_multiple': False,
-                      'logic': {'required': False, 'with_other': False},
+                      'logic': {
+                          'required': False,
+                          'allow_other': False,
+                          'allow_dont_know': False
+                      },
                       'choices': [],
                       'branches': []}]
         data = {'survey_title': 'api_test survey',
@@ -622,52 +741,76 @@ class TestSurvey(unittest.TestCase):
         choice_1_id = choice_1.question_choice_id
 
         submission = {'submitter': 'me',
+                      'submitter_email': 'anon@anon.org',
                       'survey_id': survey_id,
                       'answers': [{'question_id': inserted_qs[0].question_id,
                                    'answer': 5,
                                    'answer_metadata': None,
-                                   'is_other': False},
+                                   'is_type_exception': False},
                                   {'question_id': inserted_qs[1].question_id,
                                    'answer': choice_1_id,
                                    'answer_metadata': None,
-                                   'is_other': False}]}
+                                   'is_type_exception': False}]}
         submission_api.submit(connection, submission)
 
         update_json = {'survey_id': survey_id,
                        'survey_title': 'updated survey title',
                        'email': 'test_email'}
-        questions = [{'question_id': inserted_qs[1].question_id,
-                      'question_title': 'api_test 2nd question',
-                      'type_constraint_name': 'multiple_choice',
-                      'question_to_sequence_number': 1,
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {'required': False,
-                                'with_other': False,
-                                'max': 'one'},
-                      'choices': [{'old_choice': '2', 'new_choice': 'b'},
-                                  'a',
-                                  '1'],
-                      'branches': [
-                          {'choice_number': 1, 'to_question_number': 3}]},
-                     {'question_id': inserted_qs[0].question_id,
-                      'question_title': 'updated question title',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {'required': False, 'with_other': False},
-                      'type_constraint_name': 'integer',
-                      'question_to_sequence_number': 1,
-                      'choices': [],
-                      'branches': []},
-                     {'question_title': 'second question',
-                      'type_constraint_name': 'integer',
-                      'sequence_number': None,
-                      'question_to_sequence_number': -1,
-                      'hint': None,
-                      'allow_multiple': False,
-                      'logic': {'required': False, 'with_other': False},
-                      'choices': [],
-                      'branches': []}]
+        questions = [
+            {
+                'question_id': inserted_qs[1].question_id,
+                'question_title': 'api_test 2nd question',
+                'type_constraint_name': 'multiple_choice',
+                'question_to_sequence_number': 1,
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': False,
+                        'allow_dont_know': False,
+                        'max': 'one'
+                    },
+                'choices':
+                    [
+                        {'old_choice': '2', 'new_choice': 'b'},
+                        'a',
+                        '1'
+                    ],
+                'branches':
+                    [{'choice_number': 1, 'to_question_number': 3}]},
+            {
+                'question_id': inserted_qs[0].question_id,
+                'question_title': 'updated question title',
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': False,
+                        'allow_dont_know': False
+                    },
+                'type_constraint_name': 'integer',
+                'question_to_sequence_number': 1,
+                'choices': [],
+                'branches': []
+            },
+            {
+                'question_title': 'second question',
+                'type_constraint_name': 'integer',
+                'sequence_number': None,
+                'question_to_sequence_number': -1,
+                'hint': None,
+                'allow_multiple': False,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': False,
+                        'allow_dont_know': False
+                    },
+                'choices': [],
+                'branches': []
+            }]
         update_json['questions'] = questions
         new_survey = survey_api.update(connection, update_json)
         new_survey_id = new_survey['result']['survey_id']
@@ -679,10 +822,15 @@ class TestSurvey(unittest.TestCase):
         self.assertEqual(branch.to_question_id, upd_questions[2].question_id)
         self.assertEqual(upd_questions[0].question_title,
                          'api_test 2nd question')
-        self.assertEqual(upd_questions[0].logic,
-                         {'required': False,
-                          'with_other': False,
-                          'max': 'one'})
+        self.assertEqual(
+            upd_questions[0].logic,
+            {
+                'required': False,
+                'allow_other': False,
+                'allow_dont_know': False,
+                'max': 'one'
+            }
+        )
         self.assertEqual(upd_survey.survey_title, 'updated survey title')
         self.assertEqual(upd_questions[1].question_title,
                          'updated question title')
@@ -692,8 +840,9 @@ class TestSurvey(unittest.TestCase):
         self.assertEqual(choices[1].choice, 'a')
         self.assertEqual(choices[2].choice, '1')
         self.assertEqual(len(choices), 3)
-        new_submission = get_submissions_by_email(connection, new_survey_id,
-                                                  email='test_email').first()
+        new_submission = get_submissions_by_email(
+            connection, 'test_email', survey_id=new_survey_id
+        ).first()
         integer_answer = get_answers(connection,
                                      new_submission.submission_id).first()
         self.assertEqual(integer_answer.answer_integer, 5)
@@ -709,7 +858,11 @@ class TestSurvey(unittest.TestCase):
                       'question_to_sequence_number': 2,
                       'hint': None,
                       'allow_multiple': False,
-                      'logic': {'required': False, 'with_other': False},
+                      'logic': {
+                          'required': False,
+                          'allow_other': False,
+                          'allow_dont_know': False
+                      },
                       'choices': [],
                       'branches': []},
                      {'question_title': 'was multiple choice',
@@ -718,7 +871,11 @@ class TestSurvey(unittest.TestCase):
                       'question_to_sequence_number': 3,
                       'hint': None,
                       'allow_multiple': False,
-                      'logic': {'required': False, 'with_other': False},
+                      'logic': {
+                          'required': False,
+                          'allow_other': False,
+                          'allow_dont_know': False
+                      },
                       'choices': ['1', '2', '3'],
                       'branches': []},
                      {'question_title': 'was multiple choice 2',
@@ -727,7 +884,11 @@ class TestSurvey(unittest.TestCase):
                       'question_to_sequence_number': 4,
                       'hint': None,
                       'allow_multiple': False,
-                      'logic': {'required': False, 'with_other': False},
+                      'logic': {
+                          'required': False,
+                          'allow_other': False,
+                          'allow_dont_know': False
+                      },
                       'choices': ['a', 'b', 'c'],
                       'branches': []},
                      {'question_title': 'was with other',
@@ -736,7 +897,11 @@ class TestSurvey(unittest.TestCase):
                       'question_to_sequence_number': 5,
                       'hint': None,
                       'allow_multiple': True,
-                      'logic': {'required': False, 'with_other': True},
+                      'logic': {
+                          'required': False,
+                          'allow_other': True,
+                          'allow_dont_know': False
+                      },
                       'choices': ['use other'],
                       'branches': []},
                      {'question_title': 'was with other 2',
@@ -745,7 +910,11 @@ class TestSurvey(unittest.TestCase):
                       'question_to_sequence_number': 6,
                       'hint': None,
                       'allow_multiple': True,
-                      'logic': {'required': False, 'with_other': True},
+                      'logic': {
+                          'required': False,
+                          'allow_other': True,
+                          'allow_dont_know': False
+                      },
                       'choices': ['use other 2'],
                       'branches': []},
                      {'question_title': 'was with other, lose choices',
@@ -754,7 +923,11 @@ class TestSurvey(unittest.TestCase):
                       'question_to_sequence_number': -1,
                       'hint': None,
                       'allow_multiple': True,
-                      'logic': {'required': False, 'with_other': True},
+                      'logic': {
+                          'required': False,
+                          'allow_other': True,
+                          'allow_dont_know': False
+                      },
                       'choices': ['use other 3'],
                       'branches': []}]
         data = {'survey_title': 'to_be_updated',
@@ -776,109 +949,153 @@ class TestSurvey(unittest.TestCase):
         other_choice_2_id = other_choice_2.question_choice_id
 
         submission = {'submitter': 'me',
+                      'submitter_email': 'anon@anon.org',
                       'survey_id': survey_id,
-                      'answers': [{'question_id': inserted_qs[0].question_id,
-                                   'answer': 'text answer',
-                                   'answer_metadata': None,
-                                   'is_other': False},
-                                  {'question_id': inserted_qs[1].question_id,
-                                   'answer': choice_1_id,
-                                   'answer_metadata': None,
-                                   'is_other': False},
-                                  {'question_id': inserted_qs[2].question_id,
-                                   'answer': choice_a_id,
-                                   'answer_metadata': None,
-                                   'is_other': False},
-                                  {'question_id': inserted_qs[3].question_id,
-                                   'answer': 'my fancy other answer',
-                                   'answer_metadata': None,
-                                   'is_other': True},
-                                  {'question_id': inserted_qs[3].question_id,
-                                   'answer': other_choice_id,
-                                   'answer_metadata': None,
-                                   'is_other': False},
-                                  {'question_id': inserted_qs[4].question_id,
-                                   'answer': 'my fancier other answer',
-                                   'answer_metadata': None,
-                                   'is_other': True},
-                                  {'question_id': inserted_qs[4].question_id,
-                                   'answer': other_choice_2_id,
-                                   'answer_metadata': None,
-                                   'is_other': False},
-                                  {'question_id': inserted_qs[5].question_id,
-                                   'answer': 'my super fancy other answer',
-                                   'answer_metadata': None,
-                                   'is_other': True}]}
+                      'answers': [
+                          {'question_id': inserted_qs[0].question_id,
+                           'answer': 'text answer',
+                           'answer_metadata': None,
+                           'is_type_exception': False},
+                          {'question_id': inserted_qs[1].question_id,
+                           'answer': choice_1_id,
+                           'answer_metadata': None,
+                           'is_type_exception': False},
+                          {'question_id': inserted_qs[2].question_id,
+                           'answer': choice_a_id,
+                           'answer_metadata': None,
+                           'is_type_exception': False},
+                          {'question_id': inserted_qs[3].question_id,
+                           'answer': 'my fancy other answer',
+                           'answer_metadata':
+                               {'type_exception': 'other'},
+                           'is_type_exception': True},
+                          {'question_id': inserted_qs[3].question_id,
+                           'answer': other_choice_id,
+                           'answer_metadata': None,
+                           'is_type_exception': False},
+                          {'question_id': inserted_qs[4].question_id,
+                           'answer': 'my fancier other answer',
+                           'answer_metadata': {'type_exception': 'other'},
+                           'is_type_exception': True},
+                          {'question_id': inserted_qs[4].question_id,
+                           'answer': other_choice_2_id,
+                           'answer_metadata': None,
+                           'is_type_exception': False},
+                          {'question_id': inserted_qs[5].question_id,
+                           'answer': 'my super fancy other answer',
+                           'answer_metadata': {'type_exception': 'other'},
+                           'is_type_exception': True}
+                      ]}
 
         submission_api.submit(connection, submission)
 
         update_json = {'survey_id': survey_id,
                        'survey_title': 'updated',
                        'email': 'test_email'}
-        questions = [{'question_id': inserted_qs[0].question_id,
-                      'question_title': 'was text question, '
-                                        'now multiple_choice',
-                      'type_constraint_name': 'multiple_choice',
-                      'question_to_sequence_number': 1,
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {'required': False, 'with_other': False},
-                      'choices': [],
-                      'branches': []},
-                     {'question_id': inserted_qs[1].question_id,
-                      'question_title': 'was multiple choice, now location',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {'required': False, 'with_other': False},
-                      'type_constraint_name': 'location',
-                      'question_to_sequence_number': 1,
-                      'choices': [],
-                      'branches': []},
-                     {'question_id': inserted_qs[2].question_id,
-                      'question_title': 'was multiple choice, now with other',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {'required': False, 'with_other': True},
-                      'type_constraint_name': 'multiple_choice',
-                      'question_to_sequence_number': 1,
-                      'choices': ['a'],
-                      'branches': []},
-                     {'question_id': inserted_qs[3].question_id,
-                      'question_title': 'lost with other',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {'required': False, 'with_other': False},
-                      'type_constraint_name': 'multiple_choice',
-                      'question_to_sequence_number': 1,
-                      'choices': ['use other'],
-                      'branches': []},
-                     {'question_id': inserted_qs[4].question_id,
-                      'question_title': 'lost with other 2',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {'required': False, 'with_other': False},
-                      'type_constraint_name': 'text',
-                      'question_to_sequence_number': 1,
-                      'choices': [],
-                      'branches': []},
-                     {'question_id': inserted_qs[4].question_id,
-                      'question_title': 'lost choices',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {'required': False, 'with_other': True},
-                      'type_constraint_name': 'multiple_choice',
-                      'question_to_sequence_number': -1,
-                      'choices': [],
-                      'branches': []}]
+        questions = [
+            {
+                'question_id': inserted_qs[0].question_id,
+                'question_title': 'was text question, '
+                                  'now multiple_choice',
+                'type_constraint_name': 'multiple_choice',
+                'question_to_sequence_number': 1,
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': False,
+                        'allow_dont_know': False
+                    },
+                'choices': [],
+                'branches': []},
+            {
+                'question_id': inserted_qs[1].question_id,
+                'question_title': 'was multiple choice, now location',
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': False,
+                        'allow_dont_know': False
+                    },
+                'type_constraint_name': 'location',
+                'question_to_sequence_number': 1,
+                'choices': [],
+                'branches': []},
+            {
+                'question_id': inserted_qs[2].question_id,
+                'question_title': 'was multiple choice, now with other',
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': True,
+                        'allow_dont_know': False
+                    },
+                'type_constraint_name': 'multiple_choice',
+                'question_to_sequence_number': 1,
+                'choices': ['a'],
+                'branches': []},
+            {
+                'question_id': inserted_qs[3].question_id,
+                'question_title': 'lost with other',
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': False,
+                        'allow_dont_know': False
+                    },
+                'type_constraint_name': 'multiple_choice',
+                'question_to_sequence_number': 1,
+                'choices': ['use other'],
+                'branches': []},
+            {
+                'question_id': inserted_qs[4].question_id,
+                'question_title': 'lost with other 2',
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': False,
+                        'allow_dont_know': False
+                    },
+                'type_constraint_name': 'text',
+                'question_to_sequence_number': 1,
+                'choices': [],
+                'branches': []},
+            {
+                'question_id': inserted_qs[4].question_id,
+                'question_title': 'lost choices',
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': True,
+                        'allow_dont_know': False
+                    },
+                'type_constraint_name': 'multiple_choice',
+                'question_to_sequence_number': -1,
+                'choices': [],
+                'branches': []}]
         update_json['questions'] = questions
         new_survey = survey_api.update(connection, update_json)['result']
         gsb = get_submissions_by_email
-        new_submissions = gsb(connection, new_survey['survey_id'],
-                              email='test_email').fetchall()
+        new_submissions = gsb(
+            connection, 'test_email',
+            survey_id=new_survey['survey_id']
+        ).fetchall()
         self.assertEqual(len(new_submissions), 1)
-        choices = get_answer_choices(connection,
-                                     new_submissions[
-                                         0].submission_id).fetchall()
+        choices = get_answer_choices(
+            connection,
+            new_submissions[0].submission_id
+        ).fetchall()
         self.assertEqual(len(choices), 2)
         answers = get_answers(connection,
                               new_submissions[0].submission_id).fetchall()
@@ -891,7 +1108,11 @@ class TestSurvey(unittest.TestCase):
                       'question_to_sequence_number': -1,
                       'hint': None,
                       'allow_multiple': False,
-                      'logic': {'required': False, 'with_other': True},
+                      'logic': {
+                          'required': False,
+                          'allow_other': True,
+                          'allow_dont_know': False
+                      },
                       'choices': ['use other'],
                       'branches': []}]
         data = {'survey_title': 'to_be_updated',
@@ -904,11 +1125,12 @@ class TestSurvey(unittest.TestCase):
             connection, survey_id).first().question_id
 
         submission = {'submitter': 'me',
+                      'submitter_email': 'anon@anon.org',
                       'survey_id': survey_id,
                       'answers': [{'question_id': inserted_q_id,
                                    'answer': 'text answer',
                                    'answer_metadata': None,
-                                   'is_other': False}]}
+                                   'is_type_exception': False}]}
 
         self.assertRaises(StatementError, submission_api.submit, connection,
                           submission)
@@ -920,7 +1142,11 @@ class TestSurvey(unittest.TestCase):
                       'question_to_sequence_number': -1,
                       'hint': None,
                       'allow_multiple': False,
-                      'logic': {'required': False, 'with_other': False},
+                      'logic': {
+                          'required': False,
+                          'allow_other': False,
+                          'allow_dont_know': False
+                      },
                       'choices': ['one', 'two'],
                       'branches': []}]
         data = {'survey_title': 'bad update survey',
@@ -934,60 +1160,93 @@ class TestSurvey(unittest.TestCase):
         update_json = {'survey_id': survey_id,
                        'survey_title': 'updated survey title',
                        'email': 'test_email'}
-        questions = [{'question_id': inserted_questions[0].question_id,
-                      'question_title': 'updated question title',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {'required': False, 'with_other': False},
-                      'type_constraint_name': 'multiple_choice',
-                      'question_to_sequence_number': 1,
-                      'choices': ['two', 'one', 'one'],
-                      'branches': []}]
+        questions = [
+            {
+                'question_id': inserted_questions[0].question_id,
+                'question_title': 'updated question title',
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': False,
+                        'allow_dont_know': False
+                    },
+                'type_constraint_name': 'multiple_choice',
+                'question_to_sequence_number': 1,
+                'choices': ['two', 'one', 'one'],
+                'branches': []
+            }
+        ]
         update_json['questions'] = questions
         self.assertRaises(RepeatedChoiceError, survey_api.update, connection,
                           update_json)
 
-        questions = [{'question_id': inserted_questions[0].question_id,
-                      'question_title': 'updated question title',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {'required': False, 'with_other': False},
-                      'type_constraint_name': 'multiple_choice',
-                      'question_to_sequence_number': 1,
-                      'choices': [
-                          {'old_choice': 'three', 'new_choice': 'four'}],
-                      'branches': []}]
+        questions = [
+            {
+                'question_id': inserted_questions[0].question_id,
+                'question_title': 'updated question title',
+                'allow_multiple': False,
+                'hint': None,
+                'logic':
+                    {
+                        'required': False,
+                        'allow_other': False,
+                        'allow_dont_know': False
+                    },
+                'type_constraint_name': 'multiple_choice',
+                'question_to_sequence_number': 1,
+                'choices': [
+                    {'old_choice': 'three', 'new_choice': 'four'}],
+                'branches': []}
+        ]
 
         update_json['questions'] = questions
         self.assertRaises(QuestionChoiceDoesNotExistError, survey_api.update,
                           connection, update_json)
 
-        questions = [{'question_id': inserted_questions[0].question_id,
-                      'question_title': 'updated question title',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {'required': False, 'with_other': False},
-                      'type_constraint_name': 'multiple_choice',
-                      'question_to_sequence_number': -1,
-                      'choices': [
-                          {'old_choice': 'one', 'new_choice': 'two'}, 'two'],
-                      'branches': []}]
+        questions = [
+            {
+                'question_id': inserted_questions[0].question_id,
+                'question_title': 'updated question title',
+                'allow_multiple': False,
+                'hint': None,
+                'logic': {
+                    'required': False,
+                    'allow_other': False,
+                    'allow_dont_know': False
+                },
+                'type_constraint_name': 'multiple_choice',
+                'question_to_sequence_number': -1,
+                'choices': [
+                    {'old_choice': 'one', 'new_choice': 'two'}, 'two'],
+                'branches': []
+            }
+        ]
 
         update_json['questions'] = questions
         self.assertRaises(RepeatedChoiceError, survey_api.update, connection,
                           update_json)
 
-        questions = [{'question_id': inserted_questions[0].question_id,
-                      'question_title': 'updated question title',
-                      'allow_multiple': False,
-                      'hint': None,
-                      'logic': {'required': False, 'with_other': False},
-                      'type_constraint_name': 'multiple_choice',
-                      'question_to_sequence_number': -1,
-                      'choices': [
-                          {'old_choice': 'one', 'new_choice': 'two'},
-                          {'old_choice': 'one', 'new_choice': 'three'}],
-                      'branches': []}]
+        questions = [
+            {
+                'question_id': inserted_questions[0].question_id,
+                'question_title': 'updated question title',
+                'allow_multiple': False,
+                'hint': None,
+                'logic': {
+                    'required': False,
+                    'allow_other': False,
+                    'allow_dont_know': False
+                },
+                'type_constraint_name': 'multiple_choice',
+                'question_to_sequence_number': -1,
+                'choices': [
+                    {'old_choice': 'one', 'new_choice': 'two'},
+                    {'old_choice': 'one', 'new_choice': 'three'}],
+                'branches': []
+            }
+        ]
 
         update_json['questions'] = questions
         self.assertRaises(RepeatedChoiceError, survey_api.update, connection,
@@ -1001,8 +1260,11 @@ class TestSurvey(unittest.TestCase):
                                'question_to_sequence_number': -1,
                                'hint': None,
                                'allow_multiple': False,
-                               'logic': {'required': False,
-                                         'with_other': False},
+                               'logic': {
+                                   'required': False,
+                                   'allow_dont_know': False,
+                                   'allow_other': False,
+                               },
                                'choices': None,
                                'branches': None}],
                 'email': 'test_email'}
@@ -1097,11 +1359,12 @@ class TestAggregation(unittest.TestCase):
         for i in range(2):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
                                 'answer_metadata': {},
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         expected = {'result': 0, 'query': 'min'}
@@ -1163,11 +1426,12 @@ class TestAggregation(unittest.TestCase):
         for i in range(2):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
                                 'answer_metadata': {},
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         self.assertEqual(
@@ -1186,11 +1450,12 @@ class TestAggregation(unittest.TestCase):
         for i in range(1, 3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': '1/{}/2015'.format(i),
                                 'answer_metadata': {},
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         self.assertEqual(
@@ -1212,11 +1477,12 @@ class TestAggregation(unittest.TestCase):
         for i in range(-4, 4):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
                                 'answer_metadata': None,
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         self.assertEqual(
@@ -1239,11 +1505,12 @@ class TestAggregation(unittest.TestCase):
         for i in range(2):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': i,
                                 'answer_metadata': {},
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         self.assertEqual(
@@ -1266,11 +1533,14 @@ class TestAggregation(unittest.TestCase):
         for i in range(2):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': str(i),
-                                'answer_metadata': {},
-                                'is_other': True}]}
+                                'answer_metadata': {
+                                    'type_exception': 'dont_know'
+                                },
+                                'is_type_exception': True}]}
             submission_api.submit(connection, input_data)
 
         self.assertEqual(
@@ -1293,11 +1563,12 @@ class TestAggregation(unittest.TestCase):
         for choice in get_choices(connection, question_id):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': choice.question_choice_id,
                                 'answer_metadata': {},
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         self.assertEqual(
@@ -1320,6 +1591,7 @@ class TestAggregation(unittest.TestCase):
         for i in range(2):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': question_id,
                                 'answer': {
@@ -1330,7 +1602,7 @@ class TestAggregation(unittest.TestCase):
                                 'answer_metadata': {
                                     'facility_name': 'bleh_name',
                                     'facility_sector': 'bleh type'},
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         self.assertEqual(
@@ -1347,13 +1619,22 @@ class TestAggregation(unittest.TestCase):
         question_id = question.question_id
 
         for i in range(2):
-            input_data = {'survey_id': survey_id,
-                          'submitter': 'test_submitter',
-                          'answers':
-                              [{'question_id': question_id,
-                                'answer': i,
-                                'answer_metadata': {},
-                                'is_other': False}]}
+            input_data = {
+                'survey_id': survey_id,
+                'submitter': 'test_submitter',
+                'submitter_email': 'anon@anon.org',
+                'answers':
+                    [
+                        {
+                            'question_id': question_id,
+                            'answer': i,
+                            'answer_metadata': {
+                                'type_exception': 'dont_know'
+                            },
+                            'is_type_exception': False
+                        }
+                    ]
+            }
             submission_api.submit(connection, input_data)
 
         self.assertAlmostEqual(
@@ -1376,11 +1657,12 @@ class TestAggregation(unittest.TestCase):
         for i in range(3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
                                 'answer_metadata': {},
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         expected_value = sqrt(sum((i - 1) ** 2 for i in range(3)) / 3)
@@ -1403,11 +1685,12 @@ class TestAggregation(unittest.TestCase):
         for i in range(3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
                                 'answer_metadata': None,
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         self.assertAlmostEqual(
@@ -1427,11 +1710,12 @@ class TestAggregation(unittest.TestCase):
         for i in (1, 2, 2, 2, 3, 3, 3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
                                 'answer_metadata': None,
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         self.assertListEqual(
@@ -1457,11 +1741,12 @@ class TestAggregation(unittest.TestCase):
         for i in (1, 2, 2, 2, 3, 3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
                                 'answer_metadata': None,
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         self.assertEqual(
@@ -1489,11 +1774,12 @@ class TestAggregation(unittest.TestCase):
         for i in (1, 2, 2, 2, 3, 3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': {'lon': i, 'lat': i},
                                 'answer_metadata': {},
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         self.assertEqual(
@@ -1521,13 +1807,14 @@ class TestAggregation(unittest.TestCase):
         for i in (1, 2, 2, 2, 3, 3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': {'id': 'woah', 'lon': i, 'lat': i},
                                 'answer_metadata': {
                                     'facility_name': 'name',
                                     'facility_sector': 'type'},
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         self.assertEqual(
@@ -1568,21 +1855,23 @@ class TestAggregation(unittest.TestCase):
         for choice in get_choices(connection, q_id):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': choice.question_choice_id,
                                 'answer_metadata': {},
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
         repeated_choice = get_choices(connection,
                                       q_id).first().question_choice_id
         input_data = {'survey_id': survey_id,
                       'submitter': 'test_submitter',
+                      'submitter_email': 'anon@anon.org',
                       'answers':
                           [{'question_id': q_id,
                             'answer': repeated_choice,
                             'answer_metadata': {},
-                            'is_other': False}]}
+                            'is_type_exception': False}]}
         submission_api.submit(connection, input_data)
 
         self.assertEqual(
@@ -1602,11 +1891,12 @@ class TestAggregation(unittest.TestCase):
         for i in range(3):
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
                                 'answer_metadata': None,
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         res = aggregation_api.time_series(
@@ -1630,11 +1920,12 @@ class TestAggregation(unittest.TestCase):
         for i in [0, 2, 1, 0]:
             input_data = {'survey_id': survey_id,
                           'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
                           'answers':
                               [{'question_id': q_id,
                                 'answer': i,
                                 'answer_metadata': {},
-                                'is_other': False}]}
+                                'is_type_exception': False}]}
             submission_api.submit(connection, input_data)
 
         res = aggregation_api.bar_graph(connection, q_id, email='test_email')
@@ -1672,17 +1963,19 @@ class TestBatch(unittest.TestCase):
             'survey_id': survey_id,
             'submissions': [
                 {'submitter': 'me',
+                 'submitter_email': 'anon@anon.org',
                  'answers': [
                      {'question_id': question_id,
                       'answer': 1,
                       'answer_metadata': {},
-                      'is_other': False}]},
+                      'is_type_exception': False}]},
                 {'submitter': 'me',
+                 'submitter_email': 'anon@anon.org',
                  'answers': [
                      {'question_id': second_q_id,
                       'answer': choice_id,
                       'answer_metadata': {},
-                      'is_other': False}]},
+                      'is_type_exception': False}]},
             ]}
         response = batch_api.submit(connection, input_data)['result']
         self.assertEqual(len(response), 2)

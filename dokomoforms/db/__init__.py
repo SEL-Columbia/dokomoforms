@@ -102,14 +102,16 @@ submission_table = Table(
            server_default=func.now()),
     Column('submitter', String,
            nullable=False),
+    Column('submitter_email', String,
+           nullable=False),
     Column('survey_id', postgresql.UUID,
            ForeignKey('survey.survey_id',
                       onupdate='CASCADE',
                       ondelete='CASCADE'),
            nullable=False),
-    Column('field_update_time', DateTime(timezone=True),
+    Column('save_time', DateTime(timezone=True),
            nullable=False,
-           server_default=func.now()),
+           server_default=func.now()),  # Doesn't need but can't hurt
     Column('submission_last_update_time', DateTime(timezone=True),
            nullable=False,
            server_default=func.now(),
@@ -149,10 +151,13 @@ question_table = Table(
     Column('logic', postgresql.json.JSON,
            CheckConstraint(
                "((logic->>'required')) IS NOT NULL AND "
-               "((logic->>'with_other')) IS NOT NULL",
+               "((logic->>'allow_other')) IS NOT NULL AND "
+               "((logic->>'allow_dont_know')) IS NOT NULL",
                name='minimal_logic'),
            nullable=False,
-           server_default='{"required": false, "with_other": false}'),
+           server_default='{"required": false,'
+                          ' "allow_other": false,'
+                          ' "allow_dont_know": false}'),
     Column('survey_id', postgresql.UUID,
            ForeignKey('survey.survey_id',
                       onupdate='CASCADE',
@@ -283,7 +288,7 @@ answer_table = Table(
     Column('answer_location', Geometry),
     Column('answer_metadata', postgresql.json.JSON,
            nullable=False, server_default='{}'),
-    Column('is_other', Boolean,
+    Column('is_type_exception', Boolean,
            nullable=False,
            server_default='FALSE'),
     Column('question_id', postgresql.UUID, nullable=False),
@@ -314,10 +319,13 @@ answer_table = Table(
     ),
     CheckConstraint(
         '''
-        (CASE WHEN is_other AND answer_text IS NOT NULL THEN 1 ELSE 0 END)
+        (CASE WHEN is_type_exception AND answer_text IS NOT NULL
+          AND ((answer_metadata->>'type_exception')) IS NOT NULL
+          THEN 1 ELSE 0 END
+        )
         +
         (CASE WHEN (
-          NOT is_other AND
+          NOT is_type_exception AND
             (CASE WHEN type_constraint_name =   'text'
                                            AND   answer_text     IS NOT NULL
              THEN 1 ELSE 0 END) +

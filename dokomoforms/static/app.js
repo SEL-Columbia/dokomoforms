@@ -1,7 +1,7 @@
 var NEXT = 1;
 var PREV = -1;
-var ON = 1;
-var OFF = 0;
+var ON = true;
+var OFF = false;
 var NUM_FAC = 256;
 var FAC_RAD = 2; //in KM
 
@@ -26,7 +26,8 @@ App.init = function(survey) {
 
     self.start_loc = survey.survey_metadata.location || self.start_loc;
     self.facilities = JSON.parse(localStorage.facilities || "[]");
-    self.submitter_name = localStorage.name;
+    self.submitter_name = localStorage.name || "";
+    self.submitter_email = localStorage.email || "";
     
     // Load any facilities
     if (App.facilities.length === 0) {
@@ -38,25 +39,31 @@ App.init = function(survey) {
         );
     }
 
+    // Init if unsynced is undefined
+    if (!localStorage.unsynced) {
+        localStorage.unsynced = JSON.stringify("{}");
+    }
+    
+    // Load up any unsynced submissions
+    App.unsynced = JSON.parse(localStorage.unsynced)[self.survey.id] || []; 
+
     // Load up any unsynced facilities
     App.unsynced_facilities = 
         JSON.parse(localStorage.unsynced_facilities || "{}");
 
-    // Load up any unsynced submissions
-    App.unsynced = 
-        JSON.parse(localStorage.unsynced || "[]");
-
+    $('.sel')
+        .click(function(e) {
+            e.preventDefault();
+            self.sync();
+        });
+        
     // AppCache updates
-    //window.applicationCache.addEventListener('updateready', function() {
-    //    alert('app updated, reloading...');
-    //    window.location.reload();
-    //});
-    
-    App.splash(App.survey.title, 
-                App.survey.created_on, 
-                App.survey.last_updated, 
-                App.survey.author, 
-                App.survey.org);
+    window.applicationCache.addEventListener('updateready', function() {
+        alert('app updated, reloading...');
+        window.location.reload();
+    });
+
+    App.splash();
 };
 
 App.sync = function() {
@@ -67,15 +74,12 @@ App.sync = function() {
         // Were done!
         App.unsynced = self.failed;
         self.failed = [];
-        localStorage.setItem("unsynced", 
-                JSON.stringify(App.unsynced));
+        var unsynced = JSON.parse(localStorage.unsynced); 
+        unsynced[self.survey.id] = App.unsynced;
+        localStorage.unsynced = JSON.stringify(unsynced);
 
         // Reload page to update template values
-        App.splash(App.survey.title, 
-                    App.survey.created_on, 
-                    App.survey.last_updated, 
-                    App.survey.author, 
-                    App.survey.org);
+        App.splash();
     };
     _.each(App.unsynced, function(survey, idx) {
         App.submit(survey, 
@@ -98,74 +102,110 @@ App.sync = function() {
         );
     });
 
+    // Facilities junk
+    _.map(App.unsynced_facilities, function(facility) {
+        postNewFacility(facility); 
+    });
+
     App.unsynced = [];
-    localStorage.setItem("unsynced", 
-        JSON.stringify(App.unsynced));
+    var unsynced = JSON.parse(localStorage.unsynced); 
+    unsynced[self.survey.id] = App.unsynced;
+    localStorage.unsynced = JSON.stringify(unsynced);
 };
 
-App.message = function(text) {
+App.message = function(text, style) {
     // Shows a message to user
     // E.g. "Your survey has been submitted"
-    $('.message')
-        .clearQueue()
+    $('<div></div>')
+        .addClass('message')
+        .addClass(style)
         .text(text)
         .fadeIn('fast')
         .delay(3000)
-        .fadeOut('fast');
+        .fadeOut('fast')
+        .queue(function(next) {
+            $(this).remove();
+            next();
+        }).appendTo('body');
+
 };
 
-App.splash = function(title, created_on, last_updated, author, org) {
+App.splash = function() {
     var self = this;
-    var content = $('.content');
-    var splashHTML = $('#template_splash').html();
-    var splashTemplate = _.template(splashHTML);
-    var compiledHTML = splashTemplate({
-        'title': title,
-        'created_on': created_on,
-        'last_updated': last_updated,
-        'author': author,
-        'org': org,
-        'unsynced': App.unsynced,
-        'unsynced_facilities': App.unsynced_facilities
+    var survey = self.survey;
+    $('.overlay').hide(); // Always remove overlay after moving
+
+    // Update page nav bar
+    var barnav  = $('.bar-nav');
+    var barnavHTML = $('#template_nav__splash').html();
+    var barnavTemplate = _.template(barnavHTML);
+    var compiledHTML = barnavTemplate({
+        'org': survey.org,
+    });
+    
+    barnav.empty()
+        .html(compiledHTML);
+
+    var barfoot = $('.bar-footer');
+    barfoot.removeClass('bar-footer-extended');
+    barfoot.removeClass('bar-footer-super-extended');
+    barfoot.css("height", "");
+
+    var barfootHTML = $('#template_footer__splash').html();
+    var barfootTemplate = _.template(barfootHTML);
+    compiledHTML = barfootTemplate({
     });
 
-    $('.page_nav').hide();
-
-    content.empty()
-        .data('index', 0)
+    barfoot.empty()
         .html(compiledHTML)
         .find('.start_btn')
         .one('click', function() {
             // Render first question
-            $('.page_nav').show();
             App.survey.render(App.survey.first_question);
         });
 
-    content
+
+    // Set up content
+    var content = $('.content');
+    content.removeClass('content-shrunk');
+    content.removeClass('content-super-shrunk');
+
+    var splashHTML = $('#template_splash').html();
+    var splashTemplate = _.template(splashHTML);
+    compiledHTML = splashTemplate({
+        'survey': survey,
+        'online': navigator.onLine,
+        'name': App.submitter_name,
+        'unsynced': App.unsynced,
+        'unsynced_facilities': App.unsynced_facilities
+    });
+
+    content.empty()
+        .data('index', 0)
+        .html(compiledHTML)
         .find('.sync_btn')
         .one('click', function() {
             if (navigator.onLine) {
                 App.sync();
                 // Reload page to update template values
-                App.splash(title, created_on, last_updated, author, org);
+                App.splash();
             } else {
-                App.message('Please connect to the internet first.');
+                App.message('Please connect to the internet first.', 'message_error');
             }
         });
 };
 
 App.submit = function(survey, done, fail) {
-    _.map(App.unsynced_facilities, function(facility) {
-        postNewFacility(facility); 
-    });
-
     function getCookie(name) {
         var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
         return r ? r[1] : undefined;
     }
     
+    // Update submit time
+    survey.submission_time = new Date().toISOString();
+
     $.ajax({
-        url: '',
+        url: '/api/surveys/'+survey.survey_id+'/submit',
         type: 'POST',
         contentType: 'application/json',
         processData: false,
@@ -175,14 +215,15 @@ App.submit = function(survey, done, fail) {
         },
         dataType: 'json',
         success: function() {
-            App.message('Survey submitted!');
             done(survey);
         },
         error: function() {
-            App.message('Submission failed, will try again later.');
             fail(survey);
         }
     });
+
+    console.log('synced submission:', survey);
+    console.log('survey', '/api/surveys/'+survey.survey_id+'/submit');
 }
 
 function Survey(id, version, questions, metadata, title, created_on, last_updated) {
@@ -220,14 +261,6 @@ function Survey(id, version, questions, metadata, title, created_on, last_update
         curr_q = curr_q.next;
     } while (curr_q);
     
-    //console/g.log(questions);
-
-    // Page navigation
-    $('.page_nav__prev, .page_nav__next').click(function() {
-        var offset = $(this).hasClass('page_nav__prev') ? PREV : NEXT;
-        self.next(offset);
-    });
-    
 }
 
 // Search by sequence number instead of array pos
@@ -252,22 +285,25 @@ Survey.prototype.getFirstResponse = function(question) {
         }
     }
 
-    return {'response': null, 'is_other': false};
+    return {'response': null, 'is_type_exception': false, 'metadata': null};
 };
 
 // Choose next question, deals with branching and back/forth movement
 Survey.prototype.next = function(offset) {
     var self = this;
+
     var next_question = offset === PREV ? this.current_question.prev : this.current_question.next;
     var index = $('.content').data('index');
 
     var first_answer = this.getFirstResponse(this.current_question); 
     var first_response = first_answer.response;
-    var first_is_other = first_answer.is_other;
+    var first_is_type_exception = first_answer.is_type_exception;
+    var first_metadata = first_answer.metadata;
 
     // Backward at first question
     if (index === self.lowest_sequence_number && offset === PREV) {
-        App.splash(self.title, self.created_on, self.last_updated, self.author, self.org);
+        //XXX Shouldn't show splash page right 
+        //App.splash();
         return;
     }
 
@@ -281,13 +317,13 @@ Survey.prototype.next = function(offset) {
     if (offset === NEXT) {
         // Are you required?
         if (this.current_question.logic.required && (first_response === null)) {
-            App.message('Survey requires this question to be completed.');
+            App.message('Survey requires this question to be completed.', 'message_error');
             return;
         }
 
         // Is the only response and empty is other response?
-        if (first_is_other && !first_response) {
-            App.message('Please provide a reason before moving on.');
+        if (first_is_type_exception && !first_response) {
+            App.message('Please provide a reason before moving on.', 'message_error');
             return;
         }
 
@@ -312,13 +348,7 @@ Survey.prototype.next = function(offset) {
 // Render template for given question
 Survey.prototype.render = function(question) {
     var self = this;
-    var content = $('.content');
-    
-    var widgetHTML;
-    var widgetTemplate;
-    var compiledHTML;
-    
-    var index = question ? question.sequence_number : this.questions.length + 1;
+    $('.overlay').hide(); // Always remove overlay after moving
 
     // Clear any interval events
     if (Widgets.interval) {
@@ -326,7 +356,46 @@ Survey.prototype.render = function(question) {
         Widgets.interval = null;
     }
 
+    var index = question ? question.sequence_number : this.questions.length + 1;
+
+    // Update navs
+    var barnav  = $('.bar-nav');
+    var barnavHTML = $('#template_nav').html();
+    var barnavTemplate = _.template(barnavHTML);
+    var compiledHTML = barnavTemplate({
+        'index': index,
+        'total': this.questions.length + 1,
+    });
+
+    barnav.empty()
+        .html(compiledHTML);
+
+    // Update footer
+    var barfoot = $('.bar-footer');
+    var barfootHTML;
+    var barfootTemplate;
+
+    barfoot.removeClass('bar-footer-extended');
+    barfoot.removeClass('bar-footer-super-extended');
+    barfoot.css("height", "");
+
+    // Update content
+    var content = $('.content');
+    var widgetHTML;
+    var widgetTemplate;
+    
     if (question) {
+
+        // Add the next button
+        barfootHTML = $('#template_footer').html();
+        barfootTemplate = _.template(barfootHTML);
+        compiledHTML = barfootTemplate({
+            'other_text': question.logic.other_text
+        });
+
+        barfoot.empty()
+            .html(compiledHTML);
+
         // Show widget
         widgetHTML = $('#widget_' + question.type_constraint_name).html();
         widgetTemplate = _.template(widgetHTML);
@@ -334,44 +403,73 @@ Survey.prototype.render = function(question) {
         self.current_question = question;
 
         // Render question
+        content.removeClass('content-shrunk');
+        content.removeClass('content-super-shrunk');
         content.empty()
             .data('index', index)
             .html(compiledHTML)
             .scrollTop(); //XXX: Ignored in chrome ...
         
         // Attach widget events
-        Widgets[question.type_constraint_name](question, content);
+        Widgets[question.type_constraint_name](question, content, barfoot);
 
     } else {
-        // Show submit page
-        widgetHTML = $('#template_submit').html();
-        widgetTemplate = _.template(widgetHTML);
-        compiledHTML = widgetTemplate({name: App.submitter_name});
+        // Add submit button
+        barfootHTML = $('#template_footer__submit').html();
+        barfootTemplate = _.template(barfootHTML);
+        compiledHTML = barfootTemplate({
+        });
 
-        content.empty()
-            .data('index', index)
+        barfoot.empty()
             .html(compiledHTML)
-            .find('.question__btn')
+            .find('.submit_btn')
                 .one('click', function() {
                     self.submit();
                 });
-        content
+
+        // Show submit page
+        widgetHTML = $('#template_submit').html();
+        widgetTemplate = _.template(widgetHTML);
+        compiledHTML = widgetTemplate({
+                'name': App.submitter_name,
+                'email': App.submitter_email
+        });
+
+        // Render submit page
+        content.removeClass('content-shrunk');
+        content.removeClass('content-super-shrunk');
+        content.empty()
+            .data('index', index)
+            .html(compiledHTML)
             .find('.name_input')
             .keyup(function() {
                 App.submitter_name = this.value;
                 localStorage.name = App.submitter_name;
+            });
+
+        content
+            .find('.email_input')
+            .keyup(function() {
+                App.submitter_email = this.value;
+                localStorage.email = App.submitter_email;
             });
     }
     
     // Update nav
     $('.page_nav__progress')
         .text((index) + ' / ' + (this.questions.length + 1));
+    
+    // Page navigation
+    $('.page_nav__prev, .page_nav__next').click(function() {
+        var offset = $(this).hasClass('page_nav__prev') ? PREV : NEXT;
+        self.next(offset);
+    });
+    
+
 };
 
 Survey.prototype.submit = function() {
     var self = this;
-    var sync = $('.nav__sync')[0];
-    var save_btn = $('.question__saving')[0];
     var answers = {};
 
     // Save answers locally 
@@ -392,8 +490,8 @@ Survey.prototype.submit = function() {
             }
 
             var response =  ans.response;
-            var is_other = ans.is_other || false;
-            var metadata = ans.metadata || null;
+            var is_type_exception = ans.is_type_exception || false;
+            var metadata = ans.metadata || {};
 
             if (response == null) { 
                 return;
@@ -403,7 +501,7 @@ Survey.prototype.submit = function() {
                 question_id: q.question_id,
                 answer: response,
                 answer_metadata: metadata,
-                is_other: is_other
+                is_type_exception: is_type_exception
             });
 
         });
@@ -411,26 +509,20 @@ Survey.prototype.submit = function() {
 
     var data = {
         submitter: App.submitter_name || "anon",
+        submitter_email: App.submitter_email || "anon@anon.org",
         survey_id: self.id,
-        answers: survey_answers
+        answers: survey_answers,
+        save_time: new Date().toISOString()
     };
 
-    //console.log('submission:', data);
-    $(sync).addClass('icon--spin');
-    $(save_btn).addClass('icon--spin');
+    console.log('saved submission:', data);
     
     // Don't post with no replies
     if (JSON.stringify(survey_answers) === '[]') {
       // Not doing instantly to make it seem like App tried reaaall hard
       setTimeout(function() {
-            $(sync).removeClass('icon--spin');
-            $(save_btn).removeClass('icon--spin');
-            App.message('Saving failed, No questions answer in Survey!');
-            App.splash(App.survey.title, 
-                        App.survey.created_on, 
-                        App.survey.last_updated, 
-                        App.survey.author, 
-                        App.survey.org);
+            App.message('Saving failed, No questions answer in Survey!', 'message_error');
+            App.splash();
       }, 1000);
       return;
     } 
@@ -444,18 +536,12 @@ Survey.prototype.submit = function() {
 
     // Save Submission data
     App.unsynced.push(data);
-    localStorage.setItem("unsynced", 
-            JSON.stringify(App.unsynced));
+    var unsynced = JSON.parse(localStorage.unsynced); 
+    unsynced[self.id] = App.unsynced;
+    localStorage.unsynced = JSON.stringify(unsynced);
+    App.message('Saved Submission!', 'message_success');
+    App.splash();
 
-    App.message('Saved Submission!');
-    App.splash(App.survey.title, 
-                App.survey.created_on, 
-                App.survey.last_updated, 
-                App.survey.author, 
-                App.survey.org);
-
-    $(sync).removeClass('icon--spin');
-    $(save_btn).removeClass('icon--spin');
 
 };
 
@@ -476,103 +562,62 @@ var Widgets = {
 //      note
 //
 // All widgets store results in the questions.answer array
-Widgets._input = function(question, page, type) {
+Widgets._input = function(question, page, footer, type) {
     var self = this;
-    self.dontknow_state = OFF;
     
     // Render add/minus input buttons 
-    Widgets._renderRepeat(page, question);
+    self._renderRepeat(page, question);
 
     //Render don't know
-    Widgets._renderOther(page, question, self);
+    self._renderOther(page, footer, type, question);
 
-    // Clean up answer array, short circuits on is_other responses
-    question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
-    $(page).find('input').each(function(i, child) { 
-        if ((child.className.indexOf('other_input') > - 1) && !child.disabled) {
-            // if don't know input field has a response, break 
-            question.answer = [{
-                response: self._validate('text', child.value, question.logic),
-                is_other: true
-            }];
-
-            return false;
-        }
-
-        if ((child.className.indexOf('other_input') === -1) && child.value !== "") {
-            // Ignore other responses if they don't short circut the loop above
-            question.answer[i] = {
-                response: self._validate(type, child.value, question.logic),
-                is_other: false
-            }
-        }
-    });
+    // Clean up answer array, short circuits on is_type_exception responses
+    self._orderAnswerArray(page, footer, question, type);
 
     // Set up input event listner
     $(page)
-        .find('.text_input').not('.other_input')
+        .find('.text_input')
         .change(function() { //XXX: Change isn't sensitive enough on safari?
             var ans_ind = $(page).find('input').index(this); 
             question.answer[ans_ind] = { 
                 response: self._validate(type, this.value, question.logic),
-                is_other: false
+                is_type_exception: false,
+                metadata: {},
             }
-
+            // XXX Should i write the value back after validation?
+        })
+        .click(function() {
+            $(page).animate({
+                scrollTop: $(this).offset().top
+            }, 500);
         });
 
-    // Click the + for new input
-    $(page)
-        .find('.question__add')
-        .click(function() { 
-            self._addNewInput(page, $(page).find('input').not('.other_input').last(), question);
-
-        });
-
-    // Click the - to remove the newest input
-    $(page)
-        .find('.question__minus')
-        .click(function() { 
-            self._removeNewestInput($(page).find('input').not('.other_input'), question);
-
-        });
     
-    // Click the other button when you don't know answer
-    $(page)
-        .find('.question__btn__other')
-        .click(function() { 
-            self.dontknow_state = (self.dontknow_state + 1) % 2 // toggle btwn 1 and 0
-            self._toggleOther(page, question, self.dontknow_state);
-        });
-
-
-    // Set up other input event listener
-    $(page)
-        .find('.other_input')
-        .change(function() { //XXX: Change isn't sensitive enough on safari?
-            question.answer = [{ 
-                response: self._validate('text', this.value, question.logic),
-                is_other: true
-            }];
-        });
 };
 
 // Handle creating multiple inputs for widgets that support it 
 Widgets._addNewInput = function(page, input, question) {
     if (question.allow_multiple) { //XXX: Technically this btn clickable => allow_multiple 
-        input
+        input.parent()
             .clone(true)
+            .insertAfter(input.parent())
+            .find('input')
             .val(null)
-            .insertAfter(input)
             .focus();
     }
 };
 
-Widgets._removeNewestInput = function(inputs, question) {
-    if (question.allow_multiple && (inputs.length > 1)) {
-        delete question.answer[inputs.length - 1];
-        inputs
-            .last()
-            .remove()
+Widgets._removeInput = function(page, footer, type, inputs, question, index) {
+    var self = this;
+    if (question.allow_multiple && (inputs.length > 1)) { //XXX: Technically this btn clickable => allow_multiple 
+        delete question.answer[index];
+        $(inputs[index]).parent().remove();
+        self._orderAnswerArray(page, footer, question, type);
+    } else {
+        // atleast wipe the value
+        delete question.answer[index];
+        $(inputs[index]).val(null);
+
     }
 
     inputs
@@ -580,91 +625,202 @@ Widgets._removeNewestInput = function(inputs, question) {
         .focus()
 };
 
+Widgets._orderAnswerArray = function(page, footer, question, type) {
+    question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
+    var self = this;
+
+    $(page).find('.text_input').each(function(i, child) { 
+        if (child.value !== "") {
+            question.answer[i] = {
+                response: self._validate(type, child.value, question.logic),
+                is_type_exception: false,
+                metadata: {}
+            }
+        }
+    });
+
+    $(footer).find('.dont_know_input').each(function(i, child) { 
+        if (!child.disabled) {
+            // if don't know input field has a response, break 
+            question.answer = [{
+                response: self._validate('text', child.value, question.logic),
+                is_type_exception: true,
+                metadata: {
+                    'type_exception': 'dont_know',
+                },
+
+            }];
+
+            // there should only be one
+            return false;
+        }
+    });
+}
+
 // Render 'don't know' section if question has with_other logic
 // Display response and alter widget state if first response is other
-Widgets._renderOther = function(page, question, input) {
+Widgets._renderOther = function(page, footer, type, question) {
     var self = this;
     // Render don't know feature 
-    if (question.logic.with_other) {
-        var repeatHTML = $('#template_other').html();
+    if (question.logic.allow_dont_know) {
+        $('.question__btn__other').show();
+        footer.addClass('bar-footer-extended');
+        page.addClass('content-shrunk');
+
+
+        var repeatHTML = $('#template_dont_know').html();
         var widgetTemplate = _.template(repeatHTML);
         var compiledHTML = widgetTemplate({question: question});
-        $(page).append(compiledHTML);
+        $(footer).append(compiledHTML);
 
-        var other_response = question.answer && question.answer[0] && question.answer[0].is_other;
+        var other_response = question.answer && question.answer[0] && question.answer[0].is_type_exception && question.answer[0].metadata.type_exception === "dont_know";
         if (other_response) {
-            // Disable main input
-            this._toggleOther(page, question, ON);
-            input.state = ON;
+            $('.question__btn__other').find('input').prop('checked', true);
+            this._toggleOther(page, footer, type, question, ON);
         }
-    }
+
+        // Click the other button when you don't know answer
+        $(footer)
+            .find('.question__btn__other :checkbox')
+            .change(function() { 
+                var selected = $(this).is(':checked'); 
+                self._toggleOther(page, footer, type, question, selected);
+            });
+
+
+        // Set up other input event listener
+        $(footer)
+            .find('.dont_know_input')
+            .change(function() { //XXX: Change isn't sensitive enough on safari?
+                question.answer = [{ 
+                    response: self._validate('text', this.value, question.logic),
+                    is_type_exception: true,
+                    metadata: {
+                        'type_exception': 'dont_know',
+                    },
+                }];
+            });
+
+        }
 }
 
 // Toggle the 'don't know' section based on passed in state value on given page
 // Alters question.answer array
-Widgets._toggleOther = function(page, question, state) {
+Widgets._toggleOther = function(page, footer, type, question, state) {
     var self = this;
     question.answer = [];
     
-    if (state == ON) {
-
+    if (state === ON) {
         // Disable regular inputs
-        $(page).find('.text_input').not('.other_input').each(function(i, child) { 
+        $(page).find('input').each(function(i, child) { 
                 $(child).attr('disabled', true);
         });
         
-        $(page).find('.question__other').show();
-        
-        $(page).find('.other_input').each(function(i, child) { 
+        // If select boxes are around, shut em down
+        $(page).find('select').each(function(i, child) { 
+                $(child).attr('disabled', true);
+        });
+
+        // hide em if he's around
+        $(page).find('.other_input').hide();
+        $(page).find('select').val('null');
+
+        // Disable adder if its around
+        $(page).find('.question__add').attr('disabled', true);
+
+        // Toggle other input
+        $(footer).find('.question__dont_know').show();
+        $(footer).find('.dont_know_input').each(function(i, child) { 
             // Doesn't matter if response is there or not
             question.answer[0] = {
                 response: self._validate('text', child.value, question.logic),
-                is_other: true
+                is_type_exception: true,
+                metadata: {
+                    'type_exception': 'dont_know',
+                },
             }
         });
 
+        // Bring div up
+        //footer.addClass('bar-footer-super-extended');
+        page.addClass('content-super-shrunk');
+        footer.animate({height:220},200).addClass('bar-footer-super-extended');
+
+        //Add overlay
+        $('.overlay').fadeIn('fast');
+
         // Enable other input
-        $(page).find('.other_input').each(function(i, child) { 
+        $(footer).find('.dont_know_input').each(function(i, child) { 
                 $(child).attr('disabled', false);
         });
 
-        $('.question__btn__other').first().addClass('question__btn__active');
-
     } else if (state === OFF) { 
-    
         // Enable regular inputs
-        $(page).find('.text_input').not('.other_input').each(function(i, child) { 
+        $(page).find('input').each(function(i, child) { 
               $(child).attr('disabled', false);
         });
-        
-        $(page).find('.question__other').hide();
-        
-        $(page).find('.text_input').not('.other_input').each(function(i, child) { 
+
+        // Enable select input again
+        $(page).find('select').each(function(i, child) { 
+              $(child).attr('disabled', false);
+        });
+
+        // Enable adder if its around 
+        $(page).find('.question__add').attr('disabled', false);
+
+        // Toggle other inputs
+        $(footer).find('.question__dont_know').hide();
+        $(page).find('.text_input').each(function(i, child) { 
             if (child.value !== "") { 
                 question.answer[i] = {
-                    response: self._validate(question.type_constraint_name, child.value, question.logic),
-                    is_other: false
+                    response: self._validate(type, child.value, question.logic),
+                    is_type_exception: false,
+                    metadata: {},
                 }
             }
         });
         
+        // Hide overlay and shift div
+        $('.overlay').fadeOut('fast');
+        //footer.removeClass('bar-footer-super-extended');
+        page.removeClass('content-super-shrunk');
+        footer.animate({height:120},200).removeClass('bar-footer-super-extended');
+
         // Disable other input
-        $(page).find('.other_input').each(function(i, child) { 
+        $(footer).find('.dont_know_input').each(function(i, child) { 
                 $(child).attr('disabled', true);
         });
-
-        $('.question__btn__other').first().removeClass('question__btn__active');
     }
 }
 
 // Render +/- buttons on given page
 Widgets._renderRepeat = function(page, question) {
+    var self = this;
     // Render add/minus input buttons 
     if (question.allow_multiple) {
         var repeatHTML = $('#template_repeat').html();
         var widgetTemplate = _.template(repeatHTML);
         var compiledHTML = widgetTemplate({question: question});
         $(page).append(compiledHTML)
+
+        // Click the + for new input
+        $(page)
+            .find('.question__add')
+            .click(function() { 
+                var input = $(page).find('.text_input').last();
+                self._addNewInput(page, input, question);
+
+            });
+
+        // Click the - to remove that element
+        $(page)
+            .find('.question__minus')
+            .click(function() { 
+                var delete_icons = $(page).find('.question__minus');
+                var inputs = $(page).find('.text_input');
+                var index = delete_icons.index(this);
+                self._removeInput(page, footer, type, inputs, question, index);
+            });
     }
 }
 
@@ -726,26 +882,26 @@ Widgets._validate = function(type, answer, logic) {
     return val;
 };
 
-Widgets.text = function(question, page) {
-    this._input(question, page, "text");
+Widgets.text = function(question, page, footer) {
+    this._input(question, page, footer, "text");
 };
 
-Widgets.integer = function(question, page) {
-    this._input(question, page, "integer");
+Widgets.integer = function(question, page, footer) {
+    this._input(question, page, footer, "integer");
 };
 
-Widgets.decimal = function(question, page) {
-    this._input(question, page, "decimal");
+Widgets.decimal = function(question, page, footer) {
+    this._input(question, page, footer, "decimal");
 };
 
-Widgets.date = function(question, page) {
+Widgets.date = function(question, page, footer) {
     //XXX: TODO change input thing to be jquery-ey
-    this._input(question, page, "date_XXX"); //XXX: Fix validation
+    this._input(question, page, footer, "date_XXX"); //XXX: Fix validation
 };
 
-Widgets.time = function(question, page) {
+Widgets.time = function(question, page, footer) {
     //XXX: TODO change input thing to be jquery-ey
-    this._input(question, page, "time"); //XXX: Fix validation
+    this._input(question, page, footer, "time"); //XXX: Fix validation
 };
 
 Widgets.note = function() {
@@ -753,7 +909,7 @@ Widgets.note = function() {
 
 // Multiple choice and multiple choice with other are handled here by same func
 // XXX: possibly two widgets (multi select and multi choice)
-Widgets.multiple_choice = function(question, page) {
+Widgets.multiple_choice = function(question, page, footer) {
     var self = this;
 
     // array of choice uuids
@@ -763,13 +919,20 @@ Widgets.multiple_choice = function(question, page) {
     }); 
     choices[question.choices.length] = "other"; 
 
+
+    //Render don't know
+    self._renderOther(page, footer, 'multiple_choice', question);
+
     // handle change for text field
     var $other = $(page)
-        .find('.text_input')
+        .find('.other_input')
         .change(function() {
             question.answer[question.choices.length] = { 
                 response: self._validate("text", this.value, question.logic),
-                is_other: true
+                is_type_exception: true,
+                metadata: {
+                    'type_exception': 'other',
+                },
             }
         });
 
@@ -802,13 +965,17 @@ Widgets.multiple_choice = function(question, page) {
                 // Default, fill in values (other will be overwritten below if selected)
                 question.answer[ind] = {
                     response: opt,
-                    is_other: false
+                    is_type_exception: false,
+                    metadata: {}
                 }
 
                 if (opt === 'other') {
                     question.answer[ind] = {
                         response: $other.val(), // Preserves prev response
-                        is_other: true
+                        is_type_exception: true,
+                        metadata: {
+                            'type_exception': 'other',
+                        },
                     }
 
                     $other.show();
@@ -816,16 +983,17 @@ Widgets.multiple_choice = function(question, page) {
              });
 
             // Toggle off other if deselected on change event 
-            if (svals.indexOf('other') < 0) { 
-                $other.hide();
-            }
+            //if (svals.indexOf('other') < 0) { 
+            //    $other.hide();
+            //}
             
         });
 
     // Selection is handled in _template however toggling of view is done here
-    if (question.answer[question.choices.length] && 
-            question.answer[question.choices.length].is_other &&
-                question.answer[question.choices.length]) {
+    var response = question.answer[question.choices.length];
+    if (response 
+            && response.is_type_exception 
+            && response.metadata.type_exception === 'other') {
         $other.show();
     }
 };
@@ -885,9 +1053,12 @@ Widgets._getMap = function() {
     return map;
 };
 
-Widgets.location = function(question, page) {
+Widgets.location = function(question, page, footer) {
+    // generic setup
+    this._input(question, page, footer, "location");
+
     var self = this;
-    var response = $(page).find('.text_input').not('.other_input').last().val();
+    var response = $(page).find('.text_input').last().val();
     response = self._validate('location', response, question.logic);
     App.start_loc = response || App.start_loc;
 
@@ -897,35 +1068,29 @@ Widgets.location = function(question, page) {
         updateLocation([map.getCenter().lng, map.getCenter().lat]);
     });
 
-    // generic setup
-    this._input(question, page, "location");
-
     function updateLocation(coords) {
         // Find current length of inputs and update the last one;
-        var questions_len = $(page).find('.text_input').not('.other_input').length;
+        var questions_len = $(page).find('.text_input').length;
 
         // update array val
         question.answer[questions_len - 1] = {
             response: {'lon': coords[0], 'lat': coords[1]},
-            is_other: false
+            is_type_exception: false,
+            metadata: {},
         }
             
         // update latest lon/lat values
-        var questions_len = $(page).find('.text_input').not('.other_input').length;
-        $(page).find('.text_input').not('.other_input')
+        var questions_len = $(page).find('.text_input').length;
+        $(page).find('.text_input')
             .last().val(coords[1] + " " + coords[0]);
     }
 
     $(page)
         .find('.question__find__btn')
         .click(function() {
-            var sync = $('.nav__sync')[0];
-            $(sync).addClass('icon--spin');
-            App.message('Searching ...');
+            App.message('Searching ...', 'message_warning');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
-                    $(sync).removeClass('icon--spin');
-
                     // Server accepts [lon, lat]
                     var coords = [
                         position.coords.longitude, 
@@ -938,12 +1103,12 @@ Widgets.location = function(question, page) {
                     map.circle.setLatLng([coords[1], coords[0]]);
                     //map.setMaxBounds(map.getBounds().pad(1));
 
-                    updateLocation(coords);
+                    updateLocation(coords); //XXX: DONT MOVE ON
 
                 }, function error() {
                     //If cannot Get location" for some reason,
-                    $(sync).removeClass('icon--spin');
-                    App.message('Could not get your location, please make sure your GPS device is active.');
+                    App.message('Could not get your location, please make sure your GPS device is active.',
+                            'message_error');
                 }, {
                     enableHighAccuracy: true,
                     timeout: 20000,
@@ -953,12 +1118,12 @@ Widgets.location = function(question, page) {
 
     // disable default event
     $(page)
-        .find('.text_input').not('.other_input')
+        .find('.text_input')
         .off('change');
 };
 
 // Similar to location however you cannot just add location, 
-Widgets.facility = function(question, page) {
+Widgets.facility = function(question, page, footer) {
     var ans = question.answer[0]; // Facility questions only ever have one response
     var lat = ans && ans.response.lat || App.start_loc.lat;
     var lng = ans && ans.response.lon || App.start_loc.lon;
@@ -1080,7 +1245,7 @@ Widgets.facility = function(question, page) {
                 'lon': marker._latlng.lng, 
                 'lat': marker._latlng.lat
             },
-            is_other: false,
+            is_type_exception: false,
             metadata: {
                 'facility_name': marker.name,
                 'facility_sector': marker.sector
@@ -1147,9 +1312,7 @@ Widgets.facility = function(question, page) {
     $(page)
         .find('.question__find__btn')
         .click(function() {
-            var sync = $('.nav__sync')[0];
-            $(sync).addClass('icon--spin');
-            App.message('Searching ...');
+            App.message('Searching ...', 'message_warning');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
                     // Server accepts [lon, lat]
@@ -1164,10 +1327,9 @@ Widgets.facility = function(question, page) {
                     // Revisit api call
                     reloadFacilities(coords[1], coords[0]); 
 
-                    $(sync).removeClass('icon--spin');
                 }, function error() {
-                    $(sync).removeClass('icon--spin');
-                    App.message('Could not get your location, please make sure your GPS device is active.');
+                    App.message('Could not get your location, please make sure your GPS device is active.',
+                            'message_error');
                 }, {
                     enableHighAccuracy: true,
                     timeout: 20000,
@@ -1262,12 +1424,13 @@ function getNearbyFacilities(lat, lng, rad, lim, cb) {
             near: lat + "," + lng,
             rad: rad,
             limit: lim,
-            sortDesc: "updatedAt",
+            //sortDesc: "updatedAt",
             fields: "name,uuid,coordinates,properties:sector", //filters results to include just those three fields,
         },
         function(data) {
             localStorage.setItem("facilities", JSON.stringify(data.facilities));
             if (cb) {
+                //XXX REMEMMERNBE
                 App.facilities = data.facilities;
                 cb(data.facilities); //drawFacillities callback probs
             }
@@ -1275,7 +1438,6 @@ function getNearbyFacilities(lat, lng, rad, lim, cb) {
     );
 }
 
-// XXX: Really doesn't need to
 function postNewFacility(facility) {
     var url = "http://staging.revisit.global/api/v0/facilities.json"; 
 
@@ -1287,7 +1449,7 @@ function postNewFacility(facility) {
         processData: false,
         dataType: 'json',
         success: function() {
-            App.message('Facility Added!');
+            App.message('Facility Added!', 'message_success');
 
             // If posted, we don't an unsynced reference to it anymore
             delete App.unsynced_facilities[facility.uuid];
@@ -1300,7 +1462,7 @@ function postNewFacility(facility) {
         },
 
         error: function() {
-            App.message('Facility submission failed, will try again later.');
+            App.message('Facility submission failed, will try again later.', 'message_error');
         },
         
         complete: function() {

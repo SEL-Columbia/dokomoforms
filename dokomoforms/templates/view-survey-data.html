@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block header %}
+<div class="header">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6"><h1><a href="/view/{{ survey.survey_id }}">{{ survey.survey_title }}</a></h1></div>
+            <div class="col-md-6 header-controls">
+                <div class="btn-group pull-right">
+                    <button class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" aria-expanded="false"><span class="glyphicon glyphicon-menu-hamburger"></span></button>
+                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                        <li><a href="/">Account Dashboard</a></li>
+                        <li><a href="/view/{{ survey.survey_id }}">Manage Survey</a></li>
+                        <li><a href="/view/data/{{ survey.survey_id }}">View Survey Data</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% end %}
+
+
+{% block subheader %}
+<div class="subheader">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h3>Survey Data</h3>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-2">
+                <div class="stat-label">
+                    created on
+                </div>
+                <div class="stat-value stat-created-on">
+                    {{ iso_date_str_to_fmt_str(survey_stats['result']['created_on'], "%b %d, %Y") }}
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="stat-label">
+                    first submission
+                </div>
+                <div class="stat-value stat-first-submission">
+                    {{ iso_date_str_to_fmt_str(survey_stats['result']['earliest_submission_time'], "%b %d, %Y") }}
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="stat-label">
+                    latest submission
+                </div>
+                <div class="stat-value stat-latest-submission">
+                    {{ iso_date_str_to_fmt_str(survey_stats['result']['latest_submission_time'], "%b %d, %Y") }}
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="stat-label">
+                    total submissions
+                </div>
+                <div class="stat-value stat-created-on">
+                    {{ format(survey_stats['result']['num_submissions'], ',') }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% end %}
+
+
+
+{% block content %}
+<div class="content">
+    <div class="container" role="main">
+        
+        <div class="message">
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <!-- <h4>Survey Questions</h4> -->
+                <ul class="survey-questions">
+                    {% for stats in question_stats['result'] %}
+                        <li>
+                        
+                            <div class="question-title-bar">
+                                <!-- {{ stats['question'].keys() }} -->
+                                {{ stats['question'].sequence_number }}. {{ stats['question'].question_title }} 
+                                <span class="question-type">{{ stats['question'].type_constraint_name }}</span>
+                                <button class="btn btn-default btn-sm pull-right btn-question-stats"><span class="glyphicon glyphicon-stats"></span></button>
+                            </div>
+
+                            <div class="question-stats">
+                                <div class="row">
+                                    {% for stat in stats['stats'] %}
+                                        <div class="col-md-3 question-stat">
+                                            <div class="stat-label">
+                                                {{ stat['query'] }}
+                                            </div>
+                                            <div class="stat-value stat-created-on">
+                                                {{ stat['result'] }}
+                                            </div>
+                                        </div>
+                                    {% end %}
+                                </div>
+                            </div>
+                            
+                            <!--<p>{{ stats['question'].sequence_number }}. {{ stats['question'].question_title }} - {{ stats['question'].question_id }}</p>-->
+                            <!-- <p><a href="/visualize/{{ stats['question'].question_id }}">{{ stats['question'].sequence_number }}. {{ stats['question'].question_title }}</a></p> -->
+                            
+                        </li>
+                    {% end %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% end %}
+
+
+{% block extra_scripts %}
+
+<script type="text/javascript">
+    $(function() {
+        $(document).on('click', '.btn-question-stats', function(e) {
+            console.log('heyo');
+            $(this).parent().parent().find('.question-stats').slideToggle();
+        });
+
+        $('#submissions').dataTable( {
+            language: {
+                search: "Search by submitter name:"
+            },
+            "lengthMenu": [[20, 50, 100], [20, 50, 100]],
+            "pagingType": "full_numbers",
+            "order": [[2, 'desc']],
+            "columnDefs": [
+                {
+                    "render": function (data, type, row) {
+                        return '<a data-ignore="push" href="/view/submission/' + data + '">' + data + '</a>';
+                    },
+                    "targets": 0
+                },
+                {
+                    "render": function (data, type, row) {
+                        var datetime = new Date(data);
+                        return datetime.toDateString() + '<br />' + datetime.toTimeString();
+                    },
+                    "targets": 2
+                }
+            ],
+            "columns": [
+                {"name": "submission_id"},
+                {"name": "submitter"},
+                {"name": "submission_time"}
+            ],
+            "processing": true,
+            "serverSide": true,
+            "ajax": {
+                "url": "/api/submission_data_table/{{ survey.survey_id }}",
+                "data": function(d) {
+                    return {"args": JSON.stringify(d)};
+                }
+            }
+        } );
+    } );
+</script>
+
+{% end %}

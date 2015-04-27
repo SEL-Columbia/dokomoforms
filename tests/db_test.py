@@ -63,6 +63,7 @@ class TestAnswer(unittest.TestCase):
         mul = question.allow_multiple
         submission_exec = connection.execute(
             submission_insert(submitter='test_submitter',
+                              submitter_email='anon@anon.org',
                               survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = connection.execute(answer_insert(
@@ -71,7 +72,7 @@ class TestAnswer(unittest.TestCase):
             submission_id=submission_id,
             survey_id=survey_id,
             type_constraint_name=tcn,
-            is_other=False,
+            is_type_exception=False,
             sequence_number=seq,
             allow_multiple=mul))
         answer_id = answer_exec.inserted_primary_key[0]
@@ -89,6 +90,7 @@ class TestAnswer(unittest.TestCase):
         mul = question.allow_multiple
         submission_exec = connection.execute(
             submission_insert(submitter='test_submitter',
+                              submitter_email='anon@anon.org',
                               survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = connection.execute(answer_insert(
@@ -97,7 +99,7 @@ class TestAnswer(unittest.TestCase):
             submission_id=submission_id,
             survey_id=survey_id,
             type_constraint_name=tcn,
-            is_other=False,
+            is_type_exception=False,
             sequence_number=seq,
             allow_multiple=mul))
         answer_id = answer_exec.inserted_primary_key[0]
@@ -115,15 +117,16 @@ class TestAnswer(unittest.TestCase):
         mul = question.allow_multiple
         submission_exec = connection.execute(
             submission_insert(submitter='test_submitter',
+                              submitter_email='anon@anon.org',
                               survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = connection.execute(answer_insert(
             answer='one', question_id=question_id,
-            answer_metadata={},
+            answer_metadata={'type_exception': 'dont_know'},
             submission_id=submission_id,
             survey_id=survey_id,
             type_constraint_name=tcn,
-            is_other=True,
+            is_type_exception=True,
             sequence_number=seq,
             allow_multiple=mul))
         answer_id = answer_exec.inserted_primary_key[0]
@@ -140,7 +143,8 @@ class TestAnswer(unittest.TestCase):
         seq = question.sequence_number
         mul = question.allow_multiple
         submission_exec = connection.execute(submission_insert(
-            submitter='test_submitter', survey_id=survey_id))
+            submitter='test_submitter', submitter_email='anon@anon.org',
+            survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = connection.execute(answer_insert(
             answer={'lon': 90, 'lat': 0},
@@ -149,7 +153,7 @@ class TestAnswer(unittest.TestCase):
             submission_id=submission_id,
             survey_id=survey_id,
             type_constraint_name=tcn,
-            is_other=False,
+            is_type_exception=False,
             sequence_number=seq,
             allow_multiple=mul))
         answer_id = answer_exec.inserted_primary_key[0]
@@ -161,7 +165,9 @@ class TestAnswer(unittest.TestCase):
         self.assertEqual(location, [90, 0])
 
         submission_2_exec = connection.execute(
-            submission_insert(submitter='test_submitter', survey_id=survey_id))
+            submission_insert(submitter='test_submitter',
+                              submitter_email='anon@anon.org',
+                              survey_id=survey_id))
         submission_2_id = submission_2_exec.inserted_primary_key[0]
         answer_2_exec = connection.execute(answer_insert(
             answer=None, question_id=question_id,
@@ -169,7 +175,7 @@ class TestAnswer(unittest.TestCase):
             submission_id=submission_2_id,
             survey_id=survey_id,
             type_constraint_name=tcn,
-            is_other=False,
+            is_type_exception=False,
             sequence_number=seq,
             allow_multiple=mul))
         answer_2_id = answer_2_exec.inserted_primary_key[0]
@@ -192,6 +198,7 @@ class TestAnswer(unittest.TestCase):
         mul = question.allow_multiple
         submission_exec = connection.execute(
             submission_insert(submitter='test_submitter',
+                              submitter_email='anon@anon.org',
                               survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         answer_exec = connection.execute(answer_insert(
@@ -202,7 +209,7 @@ class TestAnswer(unittest.TestCase):
             submission_id=submission_id,
             survey_id=survey_id,
             type_constraint_name=tcn,
-            is_other=False,
+            is_type_exception=False,
             sequence_number=seq,
             allow_multiple=mul))
         answer_id = answer_exec.inserted_primary_key[0]
@@ -227,6 +234,7 @@ class TestAnswer(unittest.TestCase):
         mul = question.allow_multiple
         submission_exec = connection.execute(
             submission_insert(submitter='test_submitter',
+                              submitter_email='anon@anon.org',
                               survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         connection.execute(answer_insert(answer=1, question_id=question_id,
@@ -234,7 +242,7 @@ class TestAnswer(unittest.TestCase):
                                          submission_id=submission_id,
                                          survey_id=survey_id,
                                          type_constraint_name=tcn,
-                                         is_other=False,
+                                         is_type_exception=False,
                                          sequence_number=seq,
                                          allow_multiple=mul))
         self.assertEqual(get_answers(connection, submission_id).rowcount, 1)
@@ -251,6 +259,7 @@ class TestAnswer(unittest.TestCase):
         mul = question.allow_multiple
         submission_exec = connection.execute(
             submission_insert(submitter='test_submitter',
+                              submitter_email='anon@anon.org',
                               survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         connection.execute(answer_insert(answer=1, question_id=question_id,
@@ -258,7 +267,7 @@ class TestAnswer(unittest.TestCase):
                                          submission_id=submission_id,
                                          survey_id=survey_id,
                                          type_constraint_name=tcn,
-                                         is_other=False,
+                                         is_type_exception=False,
                                          sequence_number=seq,
                                          allow_multiple=mul))
         self.assertEqual(
@@ -280,7 +289,8 @@ class TestAnswerChoice(unittest.TestCase):
         seq = question.sequence_number
         mul = question.allow_multiple
         submission_exec = connection.execute(submission_insert(
-            submitter='test_submitter', survey_id=survey_id))
+            submitter='test_submitter', submitter_email='anon@anon.org',
+            survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         choices = get_choices(connection, question_id)
         the_choice = choices.first()
@@ -305,7 +315,8 @@ class TestAnswerChoice(unittest.TestCase):
         seq = question.sequence_number
         mul = question.allow_multiple
         submission_exec = connection.execute(submission_insert(
-            submitter='test_submitter', survey_id=survey_id))
+            submitter='test_submitter', submitter_email='anon@anon.org',
+            survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         choices = get_choices(connection, question_id)
         the_choice = choices.first()
@@ -330,7 +341,8 @@ class TestAnswerChoice(unittest.TestCase):
         seq = question.sequence_number
         mul = question.allow_multiple
         submission_exec = connection.execute(submission_insert(
-            submitter='test_submitter', survey_id=survey_id))
+            submitter='test_submitter', submitter_email='anon@anon.org',
+            survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         choices = get_choices(connection, question_id)
         the_choice = choices.first()
@@ -355,7 +367,9 @@ class TestAnswerChoice(unittest.TestCase):
         seq = question.sequence_number
         mul = question.allow_multiple
         submission_exec = connection.execute(
-            submission_insert(submitter='test_submitter', survey_id=survey_id))
+            submission_insert(submitter='test_submitter',
+                              submitter_email='anon@anon.org',
+                              survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         choices = get_choices(connection, question_id)
         the_choice = choices.first()
@@ -509,8 +523,11 @@ class TestQuestion(unittest.TestCase):
         sequence_number = get_free_sequence_number(connection,
                                                    survey_id)
         stmt = question_insert(hint=None, allow_multiple=None,
-                               logic={'required': False,
-                                      'with_other': False},
+                               logic={
+                                   'required': False,
+                                   'allow_other': False,
+                                   'allow_dont_know': False
+                               },
                                sequence_number=sequence_number,
                                question_title='test insert',
                                type_constraint_name='text',
@@ -567,9 +584,9 @@ class TestQuestionBranch(unittest.TestCase):
         to_question = get_questions_no_credentials(
             connection, survey_id).fetchall()[-1]
         q_where = question_table.select().where(
-            cast(cast(question_table.c.logic['with_other'], Text),
+            cast(cast(question_table.c.logic['allow_other'], Text),
                  Boolean))
-        from_question = connection.execute(q_where).fetchall()[1]
+        from_question = connection.execute(q_where).fetchall()[0]
         choice = get_choices(
             connection, from_question.question_id).fetchall()[0]
         from_tcn = from_question.type_constraint_name
@@ -629,8 +646,11 @@ class TestQuestionChoice(unittest.TestCase):
             )).first().survey_id
         seq_number = get_free_sequence_number(connection, survey_id)
         stmt = question_insert(hint=None, allow_multiple=None,
-                               logic={'required': False,
-                                      'with_other': False},
+                               logic={
+                                   'required': False,
+                                   'allow_other': False,
+                                   'allow_dont_know': False
+                               },
                                sequence_number=seq_number,
                                question_title='test choice',
                                type_constraint_name='multiple_choice',
@@ -659,7 +679,9 @@ class TestSubmission(unittest.TestCase):
         survey_id = connection.execute(survey_table.select().where(
             survey_table.c.survey_title == 'test_title')).first().survey_id
         submission_exec = connection.execute(
-            submission_insert(submitter='test_submitter', survey_id=survey_id))
+            submission_insert(submitter='test_submitter',
+                              submitter_email='anon@anon.org',
+                              survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         submission = submission_select(connection, submission_id,
                                        email='test_email')
@@ -687,15 +709,32 @@ class TestSubmission(unittest.TestCase):
             survey_table.c.survey_title == 'test_title')).first().survey_id
         for i in range(2):
             connection.execute(submission_insert(
-                submitter='test_submitter{}'.format(i), survey_id=survey_id))
-        submissions = get_submissions_by_email(connection, survey_id,
-                                               email='test_email')
+                submitter='test_submitter{}'.format(i),
+                submitter_email='anon@anon.org', survey_id=survey_id))
+
+        submissions = get_submissions_by_email(
+            connection, 'test_email', survey_id=survey_id
+        )
         self.assertEqual(submissions.rowcount, 2)
-        submissions = get_submissions_by_email(connection, survey_id,
-                                               email='test_email',
-                                               submitters=[
-                                                   'test_submitter1'])
+
+        submissions = get_submissions_by_email(
+            connection,
+            'test_email',
+            survey_id=survey_id,
+            submitters=['test_submitter1']
+        )
         self.assertEqual(submissions.rowcount, 1)
+
+        submissions = get_submissions_by_email(
+            connection,
+            'test_email',
+            survey_id=survey_id,
+            order_by='submitter', direction='desc'
+        )
+        self.assertEqual(
+            submissions.first()['submitter'],
+            'test_submitter1'
+        )
 
     def testGetSubmissionsWithFilter(self):
         survey_id = connection.execute(survey_table.select().where(
@@ -710,32 +749,45 @@ class TestSubmission(unittest.TestCase):
         for i in range(2):
             submission_exec = connection.execute(submission_insert(
                 submitter='test_submitter',
+                submitter_email='anon@anon.org',
                 survey_id=survey_id))
             submission_id = submission_exec.inserted_primary_key[0]
             connection.execute(answer_insert(
-                answer=i, question_id=question_id, submission_id=submission_id,
+                answer=i,
+                question_id=question_id,
+                submission_id=submission_id,
                 answer_metadata={},
-                survey_id=survey_id, type_constraint_name=tcn, is_other=False,
-                sequence_number=seq, allow_multiple=mul))
+                survey_id=survey_id,
+                type_constraint_name=tcn,
+                is_type_exception=False,
+                sequence_number=seq,
+                allow_multiple=mul))
         self.assertEqual(
-            len(get_submissions_by_email(connection, survey_id,
-                                         email='test_email').fetchall()),
+            len(get_submissions_by_email(
+                connection,
+                'test_email',
+                survey_id=survey_id
+            ).fetchall()),
             2)
-        f_result = get_submissions_by_email(connection, survey_id,
-                                            email='test_email',
-                                            filters=[
-                                                {
-                                                    'question_id':
-                                                        question_id,
-                                                    'answer_integer':
-                                                        1}]).fetchall()
+        f_result = get_submissions_by_email(
+            connection,
+            'test_email',
+            survey_id=survey_id,
+            filters=[
+                {
+                    'question_id': question_id,
+                    'answer_integer': 1
+                }
+            ]
+        ).fetchall()
         self.assertEqual(len(f_result), 1)
 
     def testSubmissionInsert(self):
         survey_id = connection.execute(survey_table.select().where(
             survey_table.c.survey_title == 'test_title')).first().survey_id
         submission_exec = connection.execute(submission_insert(
-            submitter='test_submitter', survey_id=survey_id))
+            submitter='test_submitter', submitter_email='anon@anon.org',
+            survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         sub_exec = connection.execute(submission_table.select().where(
             submission_table.c.submission_id ==
@@ -748,7 +800,8 @@ class TestSubmission(unittest.TestCase):
             survey_table.c.survey_title == 'test_title')).first().survey_id
         time = '2015-02-17 04:44:00'
         submission_exec = connection.execute(submission_insert(
-            submitter='test_submitter', survey_id=survey_id,
+            submitter='test_submitter', submitter_email='anon@anon.org',
+            survey_id=survey_id,
             submission_time=time))
         submission_id = submission_exec.inserted_primary_key[0]
         sub_exec = connection.execute(submission_table.select().where(
@@ -757,13 +810,14 @@ class TestSubmission(unittest.TestCase):
         submission = sub_exec.first()
         self.assertEqual(submission_id, submission.submission_id)
 
-    def testSubmissionInsertWithFieldUpdateTime(self):
+    def testSubmissionInsertWithSaveTime(self):
         survey_id = connection.execute(survey_table.select().where(
             survey_table.c.survey_title == 'test_title')).first().survey_id
         time = '2015-02-17 04:44:00'
         submission_exec = connection.execute(submission_insert(
-            submitter='test_submitter', survey_id=survey_id,
-            field_update_time=time))
+            submitter='test_submitter', submitter_email='anon@anon.org',
+            survey_id=survey_id,
+            save_time=time))
         submission_id = submission_exec.inserted_primary_key[0]
         sub_exec = connection.execute(
             submission_table.select().where(
@@ -775,7 +829,9 @@ class TestSubmission(unittest.TestCase):
         survey_id = connection.execute(survey_table.select().where(
             survey_table.c.survey_title == 'test_title')).first().survey_id
         submission_exec = connection.execute(
-            submission_insert(submitter='test_submitter', survey_id=survey_id))
+            submission_insert(submitter='test_submitter',
+                              submitter_email='anon@anon.org',
+                              survey_id=survey_id))
         submission_id = submission_exec.inserted_primary_key[0]
         connection.execute(submission_table.select().where(
             submission_table.c.submission_id ==

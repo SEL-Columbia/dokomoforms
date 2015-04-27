@@ -56,8 +56,8 @@ postgres=# \q
 # Running the tests
 
 1. `$ pip-python3 install nose coverage selenium`
-2. `$ nosetests -c .noserc`
-  * **Note:** Selenium tests involve browser windows popping up. If this causes issues on your machine or you'd just prefer for that not to happen, install [Xvfb](http://en.wikipedia.org/wiki/Xvfb) and use this command instead: `xvfb-run nosetests -c .noserc`
+2. `$ nosetests -c tox.ini`
+  * **Note:** Selenium tests involve browser windows popping up. If this causes issues on your machine or you'd just prefer for that not to happen, install [Xvfb](http://en.wikipedia.org/wiki/Xvfb) and use this command instead: `xvfb-run nosetests -c tox.ini`
 
 ## Running Selenium tests on Sauce Labs
 

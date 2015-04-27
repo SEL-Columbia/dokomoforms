@@ -3,6 +3,7 @@ from collections.abc import Callable
 import functools
 from pprint import pformat
 
+import dateutil.parser
 from sqlalchemy.exc import IntegrityError
 from tornado.escape import to_unicode, json_decode, json_encode
 import tornado.web
@@ -12,6 +13,20 @@ from dokomoforms.db.question import question_select
 from dokomoforms.db.survey import get_email_address
 from dokomoforms import settings
 from dokomoforms.utils.logger import setup_custom_logger
+
+
+def iso_date_str_to_fmt_str(date: str, format_string: str) -> str:
+    """
+    You have to contort yourself to deal with an ISO 8601 string in Python...
+
+    :param date: an ISO 8601 date or time string
+    :param format_string: the desired output format
+    :return: the formatted string
+    """
+    if date is not None:
+        return dateutil.parser.parse(date).strftime(format_string)
+    else:
+        return None
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -55,9 +70,17 @@ class BaseHandler(tornado.web.RequestHandler):
         if user:
             return to_unicode(user)
 
+    def get_template_namespace(self):
+        """Template globals"""
+        namespace = super().get_template_namespace()
+        namespace.update({
+            'iso_date_str_to_fmt_str': iso_date_str_to_fmt_str
+        })
+        return namespace
+
 
 class APIHandler(BaseHandler):
-    """Handler for API endpoints."""
+    """Handler for authenticated API endpoints."""
 
     def get_email(self) -> str:
         """
@@ -92,6 +115,38 @@ class APIHandler(BaseHandler):
             email = self.request.headers.get('Email', None)
             if (token is None) or (email is None):
                 raise tornado.web.HTTPError(403)
+            if not verify_api_token(self.db, token=token, email=email):
+                raise tornado.web.HTTPError(403)
+
+
+class APINoLoginHandler(BaseHandler):
+    """
+    Handler for API endpoints that do not depend on a specific user (e.g.,
+    survey submission). As such, the get_email() method has not been defined.
+    """
+
+    def check_xsrf_cookie(self):  # pragma: no cover
+        """
+        Only check the xsrf cookie if this doesn't appear to be an API
+        request.
+        """
+        headers = self.request.headers
+        if 'Token' not in headers or 'Email' not in headers:
+            super().check_xsrf_cookie()
+
+    def prepare(self):
+        """
+        If a request has not been made through the browser (so there is no
+        XSRF cookie supplied), check that a valid user is using the API (
+        even though the actual user account used does not matter).
+
+        :raise tornado.web.HTTPError: 403, if the check fails
+        """
+        super().prepare()
+        headers = self.request.headers
+        if 'Token' in headers and 'Email' in headers:
+            token = headers['Token']
+            email = headers['Email']
             if not verify_api_token(self.db, token=token, email=email):
                 raise tornado.web.HTTPError(403)
 

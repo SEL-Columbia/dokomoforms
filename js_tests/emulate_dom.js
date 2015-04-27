@@ -9,7 +9,11 @@ module.exports = (function(url) {
             },
             url: url || "http://localhost" //XXX Cross domain error otherwise
         });
+    
     window = document._global;
+    window.applicationCache = { 
+        addEventListener : function() {}
+    };
 
     script = document.createElement('script');
     script.text = fs.readFileSync("dokomoforms/static/lib.js", "utf-8");
