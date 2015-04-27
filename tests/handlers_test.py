@@ -2,10 +2,10 @@
 Tests for the dokomo webapp
 
 """
-
+from datetime import datetime
 import unittest
 from unittest import mock
-from urllib.parse import urlencode, quote_plus
+from urllib.parse import quote_plus
 import uuid
 
 from sqlalchemy import and_
@@ -26,7 +26,6 @@ import dokomoforms.api.survey as survey_api
 import dokomoforms.api.user as user_api
 from dokomoforms.db import engine
 from dokomoforms import db
-from dokomoforms.db.answer import get_answers
 from dokomoforms.db.auth_user import generate_api_token, auth_user_table, \
     get_auth_user_by_email
 from dokomoforms.db.question import get_questions_no_credentials, \
@@ -42,13 +41,13 @@ from dokomoforms.handlers.api.data_table import _base_query, \
 from dokomoforms.handlers.api.submissions import SubmissionsAPIHandler, \
     SingleSubmissionAPIHandler, SubmissionActivityAPIHandler
 from dokomoforms.handlers.api.surveys import SurveysAPIHandler, \
-    SingleSurveyAPIHandler
+    SingleSurveyAPIHandler, SurveySubmissionsAPIHandler, SurveyStatsAPIHandler
 from dokomoforms.handlers.auth import LoginHandler
 from dokomoforms.handlers.util.base import catch_bare_integrity_error, \
-    user_owns_question, APINoLoginHandler
-from dokomoforms.handlers.view.submissions import ViewSubmissionsHandler, \
-    ViewSubmissionHandler
-from dokomoforms.handlers.view.surveys import ViewHandler, ViewSurveyHandler
+    user_owns_question, APINoLoginHandler, iso_date_str_to_fmt_str
+from dokomoforms.handlers.view.submissions import ViewSubmissionHandler
+from dokomoforms.handlers.view.surveys import ViewHandler, ViewSurveyHandler, \
+    ViewSurveyDataHandler
 from dokomoforms.handlers.view.visualize import VisualizationHandler
 from webapp import config, pages, Application
 from dokomoforms.db.survey import survey_table
@@ -140,7 +139,7 @@ class APITest(AsyncHTTPTestCase):
         survey_id = connection.execute(survey_table.select().where(
             survey_table.c.survey_title == 'test_title')).first().survey_id
         _create_submission()
-        with mock.patch.object(SubmissionsAPIHandler,
+        with mock.patch.object(SurveySubmissionsAPIHandler,
                                'get_secure_cookie') as m:
             m.return_value = 'test_email'
             response = self.fetch(
@@ -161,7 +160,7 @@ class APITest(AsyncHTTPTestCase):
         survey_id = connection.execute(survey_table.select().where(
             survey_table.c.survey_title == 'test_title')).first().survey_id
         _create_submission()
-        with mock.patch.object(SubmissionsAPIHandler,
+        with mock.patch.object(SurveySubmissionsAPIHandler,
                                'get_secure_cookie') as m:
             m.return_value = 'test_email'
             response = self.fetch(
@@ -189,7 +188,7 @@ class APITest(AsyncHTTPTestCase):
             and_cond)).first().question_id
         _create_submission()
         filters = [{'question_id': question_id, 'answer_integer': 1}]
-        with mock.patch.object(SubmissionsAPIHandler,
+        with mock.patch.object(SurveySubmissionsAPIHandler,
                                'get_secure_cookie') as m:
             m.return_value = 'test_email'
             response = self.fetch(
@@ -241,9 +240,72 @@ class APITest(AsyncHTTPTestCase):
                                        'Email': 'test_email'})
         self.assertEqual(response.code, 403)
 
-    def testGetActivityAllSurveys(self):
+    def testGetSubmissionsGeneral(self):
+        _create_submission()
+        with mock.patch.object(SubmissionsAPIHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/submissions')
+        self.assertEqual(response.code, 200)
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(
+            webpage_response,
+            submission_api.get_all(
+                connection,
+                'test_email'
+            )
+        )
+
+    def testGetSubmissionsGeneralWithFilter(self):
         survey_id = connection.execute(survey_table.select().where(
             survey_table.c.survey_title == 'test_title')).first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+
+        question_id = connection.execute(question_table.select().where(
+            and_cond)).first().question_id
+        _create_submission()
+        filters = [{'question_id': question_id, 'answer_integer': 1}]
+        with mock.patch.object(SubmissionsAPIHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch(
+                '/api/submissions?survey_id={}'.format(survey_id),
+                method='POST',
+                body=json_encode({'filters': filters}))
+        self.assertEqual(response.code, 200)
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(
+            webpage_response,
+            submission_api.get_all(
+                connection,
+                'test_email',
+                survey_id=survey_id,
+                filters=filters
+            )
+        )
+
+    def testGetSubmissionsGeneralBySubmitter(self):
+        _create_submission()
+        with mock.patch.object(SubmissionsAPIHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/submissions?submitter=me')
+        self.assertEqual(response.code, 200)
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        self.assertEqual(
+            webpage_response,
+            submission_api.get_all(
+                connection,
+                'test_email',
+                submitters=['me']
+            )
+        )
+
+    def testGetActivityAllSurveys(self):
         _create_submission()
         with mock.patch.object(SubmissionActivityAPIHandler,
                                'get_secure_cookie') as m:
@@ -900,6 +962,38 @@ class APITest(AsyncHTTPTestCase):
         self.assertSequenceEqual(webpage_response[0]['result'][1],
                                  api_response['result'][1])
 
+    def testGetStats(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        and_cond = and_(question_table.c.survey_id == survey_id,
+                        question_table.c.type_constraint_name == 'integer')
+        q_where = question_table.select().where(and_cond)
+        question = connection.execute(q_where).first()
+        question_id = question.question_id
+
+        for i in range(2):
+            input_data = {'survey_id': survey_id,
+                          'submitter': 'test_submitter',
+                          'submitter_email': 'anon@anon.org',
+                          'answers':
+                              [{'question_id': question_id,
+                                'answer': i,
+                                'answer_metadata': None,
+                                'is_type_exception': False}]}
+            submission_api.submit(connection, input_data)
+
+        with mock.patch.object(SurveyStatsAPIHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/api/surveys/{}/stats'.format(survey_id))
+        self.assertEqual(response.code, 200)
+        webpage_response = json_decode(to_unicode(response.body))
+        self.assertNotEqual(webpage_response, [])
+        result = survey_api.get_stats(
+            connection, survey_id, email='test_email'
+        )
+        self.assertEqual(webpage_response, result)
+
 
 class APINoLoginTest(AsyncHTTPTestCase):
     def tearDown(self):
@@ -1242,6 +1336,11 @@ class BaseHandlerTest(AsyncHTTPTestCase):
         self.assertRaises(tornado.web.HTTPError, wrapped, UserDummy(),
                           unauthorized.question_id)
 
+    def testIsoDateStrToFmtStr(self):
+        self.assertIsNone(iso_date_str_to_fmt_str(None, ''), None)
+        result = iso_date_str_to_fmt_str(datetime.today().isoformat(), '%Y')
+        self.assertEqual(int(result), datetime.today().year)
+
 
 class AuthTest(AsyncHTTPTestCase):
     def get_app(self):
@@ -1356,6 +1455,21 @@ class ViewTest(AsyncHTTPTestCase):
             m.return_value = 'test_email'
             response = self.fetch('/view/submission/{}'.format(submission_id))
         self.assertIn('3.5<br', to_unicode(response.body))
+
+    def testGetSurveyViewData(self):
+        survey_id = connection.execute(survey_table.select().where(
+            survey_table.c.survey_title == 'test_title')).first().survey_id
+        _create_submission()
+        with mock.patch.object(ViewSurveyDataHandler,
+                               'get_secure_cookie') as m:
+            m.return_value = 'test_email'
+            response = self.fetch('/view/data/{}'.format(survey_id))
+        stats = aggregation_api.get_question_stats(
+            connection, survey_id, email='test_email'
+        )
+        response = to_unicode(response.body)
+        for stat in stats['result'][0]['stats']:
+            self.assertIn(str(stat['result']), response)
 
 
 class VisualizationTest(AsyncHTTPTestCase):

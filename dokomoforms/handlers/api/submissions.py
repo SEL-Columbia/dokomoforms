@@ -7,6 +7,7 @@ from dokomoforms.db.survey import IncorrectQuestionIdError
 from dokomoforms.handlers.util.base import APIHandler, get_json_request_body, \
     catch_bare_integrity_error, validation_message, APINoLoginHandler
 
+
 class SubmissionsAPIHandler(APIHandler):
     """The endpoint for getting all submissions to all surveys."""
 
@@ -33,7 +34,8 @@ class SubmissionsAPIHandler(APIHandler):
         )
         self.write(response)
 
-    def post(self, survey_id: str):
+    def post(self):
+        survey_id = self.get_argument('survey_id')
         body = get_json_request_body(self)
         subs = body.get('submitters', None)
         filters = body.get('filters', None)
