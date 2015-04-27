@@ -76,7 +76,7 @@ App.sync = function() {
         self.failed = [];
         var unsynced = JSON.parse(localStorage.unsynced); 
         unsynced[self.survey.id] = App.unsynced;
-        localStorage.unsynced = JSON.stringify(unsynced);
+        localStorage['unsynced'] = JSON.stringify(unsynced);
 
         // Reload page to update template values
         App.splash();
@@ -110,7 +110,8 @@ App.sync = function() {
     App.unsynced = [];
     var unsynced = JSON.parse(localStorage.unsynced); 
     unsynced[self.survey.id] = App.unsynced;
-    localStorage.unsynced = JSON.stringify(unsynced);
+    localStorage['unsynced'] = JSON.stringify(unsynced);
+    console.log('localStorage', localStorage.unsynced);
 };
 
 App.message = function(text, style) {
@@ -537,8 +538,12 @@ Survey.prototype.submit = function() {
     // Save Submission data
     App.unsynced.push(data);
     var unsynced = JSON.parse(localStorage.unsynced); 
+    console.log(unsynced);
     unsynced[self.id] = App.unsynced;
-    localStorage.unsynced = JSON.stringify(unsynced);
+    console.log(unsynced);
+    localStorage['unsynced'] = JSON.stringify(unsynced);
+    console.log('localStorage', localStorage.unsynced);
+
     App.message('Saved Submission!', 'message_success');
     App.splash();
 
