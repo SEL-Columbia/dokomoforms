@@ -2,6 +2,7 @@
 Tests for the dokomo webapp
 
 """
+from datetime import datetime
 
 import unittest
 from unittest import mock
@@ -45,7 +46,7 @@ from dokomoforms.handlers.api.surveys import SurveysAPIHandler, \
     SingleSurveyAPIHandler, SurveySubmissionsAPIHandler, SurveyStatsAPIHandler
 from dokomoforms.handlers.auth import LoginHandler
 from dokomoforms.handlers.util.base import catch_bare_integrity_error, \
-    user_owns_question, APINoLoginHandler
+    user_owns_question, APINoLoginHandler, iso_date_str_to_fmt_str
 from dokomoforms.handlers.view.submissions import ViewSubmissionsHandler, \
     ViewSubmissionHandler
 from dokomoforms.handlers.view.surveys import ViewHandler, ViewSurveyHandler
@@ -1336,6 +1337,11 @@ class BaseHandlerTest(AsyncHTTPTestCase):
 
         self.assertRaises(tornado.web.HTTPError, wrapped, UserDummy(),
                           unauthorized.question_id)
+
+    def testIsoDateStrToFmtStr(self):
+        self.assertIsNone(iso_date_str_to_fmt_str(None, ''), None)
+        result = iso_date_str_to_fmt_str(datetime.today().isoformat(), '%Y')
+        self.assertEqual(int(result), datetime.today().year)
 
 
 class AuthTest(AsyncHTTPTestCase):
