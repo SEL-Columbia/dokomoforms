@@ -34,7 +34,8 @@ class SubmissionsAPIHandler(APIHandler):
         )
         self.write(response)
 
-    def post(self, survey_id: str):
+    def post(self):
+        survey_id = self.get_argument('survey_id')
         body = get_json_request_body(self)
         subs = body.get('submitters', None)
         filters = body.get('filters', None)
