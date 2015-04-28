@@ -1191,16 +1191,19 @@ Widgets.facility = function(question, page, footer) {
         // SYNCED FACILITIES
         facilities = facilities || [];
         facilities.sort(function(facilityA, facilityB) {
-            var sqlengthA = ((facilityA.coords[0] - App.start_loc.lon) * (facilityA.coords[0] - App.start_loc.lon))
-                + ((facilityA.coords[1] - App.start_loc.lat) * (facilityA.coords[1] - App.start_loc.lat));
+            var sqlengthA = ((facilityA.coordinates[0] - App.start_loc.lon) * (facilityA.coordinates[0] - App.start_loc.lon))
+                + ((facilityA.coordinates[1] - App.start_loc.lat) * (facilityA.coordinates[1] - App.start_loc.lat));
             
-            var sqlengthB = ((facilityB.coords[0] - App.start_loc.lon) * (facilityB.coords[0] - App.start_loc.lon))
-                + ((facilityA.coords[1] - App.start_loc.lat) * (facilityA.coords[1] - App.start_loc.lat));
+            var sqlengthB = ((facilityB.coordinates[0] - App.start_loc.lon) * (facilityB.coordinates[0] - App.start_loc.lon))
+                + ((facilityA.coordinates[1] - App.start_loc.lat) * (facilityA.coordinates[1] - App.start_loc.lat));
 
             return (sqlengthA - sqlengthB); 
         });
 
         console.log(facilities);
+        console.log(App.start_loc);
+        console.log(facilities[0].coordinates);
+        console.log(facilities[3].coordinates);
     } 
 
     /* Handle events */
@@ -1214,6 +1217,8 @@ Widgets.facility = function(question, page, footer) {
                 function success(position) {
                     // Server accepts [lon, lat]
                     var coords = [position.coords.longitude, position.coords.latitude];
+                    App.start_loc.lat = coords[1];
+                    App.start_loc.lon = coords[0];
 
                     // Revisit api call
                     reloadFacilities(coords[1], coords[0]); 
