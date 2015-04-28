@@ -5,6 +5,32 @@ var OFF = false;
 var NUM_FAC = 256;
 var FAC_RAD = 2; //in KM
 
+console.log('heyo');
+var appCache = window.applicationCache;
+switch (appCache.status) {
+    case appCache.UNCACHED: // UNCACHED == 0
+        console.log('UNCACHED');
+        break;
+    case appCache.IDLE: // IDLE == 1
+        console.log('IDLE');
+        break;
+    case appCache.CHECKING: // CHECKING == 2
+        console.log('CHECKING');
+        break;
+    case appCache.DOWNLOADING: // DOWNLOADING == 3
+        console.log('DOWNLOADING');
+        break;
+    case appCache.UPDATEREADY:  // UPDATEREADY == 4
+        console.log('UPDATEREADY');
+        break;
+    case appCache.OBSOLETE: // OBSOLETE == 5
+        console.log('OBSOLETE');
+        break;
+    default:
+        console.log('UKNOWN CACHE STATUS');
+        break;
+};
+
 var App = {
     unsynced: [], // unsynced surveys
     facilities: [], // revisit facilities
