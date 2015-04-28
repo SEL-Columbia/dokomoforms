@@ -1161,25 +1161,9 @@ Widgets.facility = function(question, page, footer) {
 
     App.start_loc = {'lat': lat, 'lon': lng};
 
-    /* Buld inital state */
-    var map = this._getMap(); 
-    map.on('drag', function() {
-        map.circle.setLatLng(map.getCenter());
-    });
+    //$(page).find('.facility__name').attr('disabled', true);
+    //$(page).find('.facility__type').attr('disabled', true);
 
-    $(page).find('.facility__name').attr('disabled', true);
-    $(page).find('.facility__type').attr('disabled', true);
-
-    // Know which marker is currently "up" 
-    var touchedMarker = null;
-    // Added facility  
-    var addedMarker = null;
-    // Add markers here so clearing them isn't such a huge pain
-    var facilities_group = new L.featureGroup();
-    var new_facilities_group = new L.featureGroup();
-
-    facilities_group.addTo(map);
-    new_facilities_group.addTo(map);
 
     // Revisit API Call calls facilitiesCallback
     reloadFacilities(App.start_loc.lat, App.start_loc.lon);
@@ -1205,137 +1189,19 @@ Widgets.facility = function(question, page, footer) {
         var selected = ans && ans.response.id || null;
 
         // SYNCED FACILITIES
-        facilities_group.clearLayers(); // Clears synced facilities only
         facilities = facilities || [];
-        for (var i = 0; i < facilities.length; i++) {
-            var facility = facilities[i];
-
-            //if ((facility.coordinates[1] < top_y && facility.coordinates[1] > bot_y)
-            //&& (facility.coordinates[0] < top_x && facility.coordinates[0] > bot_x)) {
-                var marker = drawPoint(facility.coordinates[1], 
-                            facility.coordinates[0], 
-                            facility.name, 
-                            facility.properties.sector,
-                            facility.uuid,
-                            onFacilityClick);
-
-                // If selected uuid was from Revisit, paint it white
-                if (selected === marker.uuid) {
-                    selectFacility(marker);
-                }
-
-                facilities_group.addLayer(marker);
-            //}
-        }
-
-        // UNSYNCED FACILITIES
-        new_facilities_group.clearLayers(); // Clears synced facilities only
-        _.map(App.unsynced_facilities, function(facility) {
-            //console/g.log("new facility added", facility.name);
-            var marker = drawNewPoint(facility.coordinates[1], 
-                        facility.coordinates[0], 
-                        facility.name, 
-                        facility.properties.sector,
-                        facility.uuid,
-                        onFacilityClick, onFacilityDrag); 
+        facilities.sort(function(facilityA, facilityB) {
+            var sqlengthA = ((facilityA.coords[0] - App.start_loc.lon) * (facilityA.coords[0] - App.start_loc.lon))
+                + ((facilityA.coords[1] - App.start_loc.lat) * (facilityA.coords[1] - App.start_loc.lat));
             
-            if (selected === marker.uuid) {
-                selectFacility(marker);
-                $(page).find('.facility__btn').html("Remove New Site");
-                //console/g.log("new match", selected);
-            } 
+            var sqlengthB = ((facilityB.coords[0] - App.start_loc.lon) * (facilityB.coords[0] - App.start_loc.lon))
+                + ((facilityA.coords[1] - App.start_loc.lat) * (facilityA.coords[1] - App.start_loc.lat));
 
-            // They added a facility in this question before
-            if (question._new_facility === marker.uuid) {
-                addedMarker = marker;
-                $(page).find('.facility__btn').text("Remove New Site");
-            }
-            
-            new_facilities_group.addLayer(marker);
+            return (sqlengthA - sqlengthB); 
         });
 
+        console.log(facilities);
     } 
-
-    function selectFacility(marker) {
-        marker.setZIndexOffset(666); // above 250 so it can't be hidden by hovering over neighbour
-        $(page).find('.facility__name').attr('disabled', true);
-        $(page).find('.facility__type').attr('disabled', true);
-
-        marker.setIcon(icon_selected);
-        if (marker.is_new) { 
-            marker.setIcon(icon_added);
-            addedMarker = marker;
-            $(page).find('.facility__name').attr('disabled', false);
-            $(page).find('.facility__type').attr('disabled', false);
-        }
-
-        touchedMarker = marker;
-        question.answer[0] = {
-            response: {
-                'id': marker.uuid, 
-                'lon': marker._latlng.lng, 
-                'lat': marker._latlng.lat
-            },
-            is_type_exception: false,
-            metadata: {
-                'facility_name': marker.name,
-                'facility_sector': marker.sector
-            } 
-        }
-
-        $(page).find('.facility__name').val(marker.name);
-        $(page).find('.facility__type').val(marker.sector);
-    }
-
-    function deselectFacility() {
-        if (touchedMarker) {
-            touchedMarker.setIcon(getIcon(touchedMarker.sector, touchedMarker.is_new));
-            touchedMarker.setZIndexOffset(0);
-        }
-
-        question.answer = [];
-        $(page).find('.facility__name').val("");
-        $(page).find('.facility__type').val("other");
-        touchedMarker = null;
-    }
-
-    function onFacilityClick(e) {
-        // Update marker so it looks selected
-        var marker = e.target;
-        deselectFacility();
-        selectFacility(marker);
-    }
-
-    function onFacilityDrag(e) {
-        var marker = e.target;
-        deselectFacility();
-        selectFacility(marker);
-        App.unsynced_facilities[marker.uuid].coordinates = [
-            marker._latlng.lng, 
-            marker._latlng.lat
-        ];
-    }
-
-    // function to wrap up the new facility code
-    function addFacility(lat, lng, uuid) {
-        deselectFacility();
-
-        //XXX: Add Popup with bits of info
-        var addedMarker = drawNewPoint(lat, lng, 
-                "New Facility", "other", uuid, 
-                onFacilityClick, onFacilityDrag); 
-        
-        // We added em before 
-        if (App.unsynced_facilities[uuid]) {
-            addedMarker.sector = App.unsynced_facilities[uuid].properties.sector;
-            addedMarker.name = App.unsynced_facilities[uuid].name;
-        }
-
-        selectFacility(addedMarker);
-        addedMarker.addTo(new_facilities_group);
-
-        return addedMarker;
-    }
 
     /* Handle events */
 
@@ -1348,12 +1214,6 @@ Widgets.facility = function(question, page, footer) {
                 function success(position) {
                     // Server accepts [lon, lat]
                     var coords = [position.coords.longitude, position.coords.latitude];
-
-                    // Update map position and set indicator position again
-                    //map.setMaxBounds(null);
-                    map.setView([coords[1], coords[0]]);
-                    map.circle.setLatLng([coords[1], coords[0]]);
-                    //map.setMaxBounds(map.getBounds().pad(1));
 
                     // Revisit api call
                     reloadFacilities(coords[1], coords[0]); 
@@ -1377,26 +1237,10 @@ Widgets.facility = function(question, page, footer) {
             if (addedMarker && addedMarker.uuid === question._new_facility) {
                 // Get rid of all traces of it
                 delete App.unsynced_facilities[addedMarker.uuid];
-                new_facilities_group.removeLayer(addedMarker);
-
-                if (addedMarker === touchedMarker) { 
-                    deselectFacility();
-                }
-
-                $(page).find('.facility__btn').text("Add New Site");
-                $(page).find('.facility__name').attr('disabled', true);
-                $(page).find('.facility__type').attr('disabled', true);
-
-                addedMarker = null;
-                question._new_facility = null;
                 return;
             }
 
             // Adding new facility
-            var lat = map.getCenter().lat;
-            var lng = map.getCenter().lng;
-            var uuid = objectID(); //XXX: TODO replace this shit with new uuid
-
             // Record this new facility for Revisit submission
             App.unsynced_facilities[uuid] = {
                 'name': 'New Facility', 'uuid': uuid, 
@@ -1409,7 +1253,6 @@ Widgets.facility = function(question, page, footer) {
             $(page).find('.facility__btn').html("Remove New Site");
             $(page).find('.facility__name').attr('disabled', false);
             $(page).find('.facility__type').attr('disabled', false);
-            question._new_facility = uuid; // state to prevent multiple facilities
 
         });
 
@@ -1417,30 +1260,12 @@ Widgets.facility = function(question, page, footer) {
     $(page)
         .find('.facility__name')
         .keyup(function() {
-            //console/g.log(this.value);
-            if (addedMarker && addedMarker === touchedMarker) {
-                // Update facility info
-                App.unsynced_facilities[addedMarker.uuid].name = this.value;
-                addedMarker.name = this.value;
-            } else if (touchedMarker) {
-                // Prevent updates for now
-                selectFacility(touchedMarker);
-            }
         });
 
     // Change type
     $(page)
         .find('.facility__type')
         .change(function() {
-            //console/g.log(this.value);
-            if (addedMarker && addedMarker === touchedMarker) {
-                // Update facility info
-                App.unsynced_facilities[addedMarker.uuid].properties.sector = this.value;
-                addedMarker.sector = this.value;
-            } else if (touchedMarker) {
-                // Prevent updates for now
-                selectFacility(touchedMarker);
-            }
         });
 };
 
