@@ -342,9 +342,18 @@ Survey.prototype.next = function(offset) {
     // Normal forward
     if (offset === NEXT) {
         // Is it a valid response?
+        bad_answers = [];
         this.current_question.answer.forEach(function(resp) {
-            console.log('response', resp);
+            if (resp.failed_validation)
+                bad_answers.push(resp);
         });
+
+        if (bad_answers.length) {
+            App.message(bad_answers.length 
+            + ' response(s) found not valid for question type: ' 
+            + self.current_question.type_constraint_name, 'message_error');
+            return;
+        }
 
         // Are you required?
         if (this.current_question.logic.required && (first_response === null)) {
@@ -614,7 +623,7 @@ Widgets._input = function(question, page, footer, type) {
         .find('.text_input')
         .keyup(function() { //XXX: Change isn't sensitive enough on safari?
             var ans_ind = $(page).find('input').index(this); 
-            console.log('value recieved', ans_ind, this.value);
+            console.log('value recieved', ans_ind, this.value, typeof this.value);
             question.answer[ans_ind] = { 
                 response: self._validate(type, this.value, question.logic),
                 is_type_exception: false,
