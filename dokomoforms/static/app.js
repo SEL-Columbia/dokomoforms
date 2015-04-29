@@ -1161,10 +1161,6 @@ Widgets.facility = function(question, page, footer) {
 
     App.start_loc = {'lat': lat, 'lon': lng};
 
-    //$(page).find('.facility__name').attr('disabled', true);
-    //$(page).find('.facility__type').attr('disabled', true);
-
-
     // Revisit API Call calls facilitiesCallback
     reloadFacilities(App.start_loc.lat, App.start_loc.lon);
 
@@ -1202,8 +1198,6 @@ Widgets.facility = function(question, page, footer) {
 
         console.log(facilities);
         console.log(App.start_loc);
-        console.log(facilities[0].coordinates);
-        console.log(facilities[3].coordinates);
     } 
 
     /* Handle events */
@@ -1336,80 +1330,6 @@ function postNewFacility(facility) {
 
         }
     });
-}
-
-var icon_edu = new L.icon({iconUrl: "/static/img/icons/normal_education.png",iconAnchor: [13, 31]});
-var icon_health = new L.icon({iconUrl: "/static/img/icons/normal_health.png", iconAnchor: [13, 31]});
-var icon_water = new L.icon({iconUrl: "/static/img/icons/normal_water.png", iconAnchor: [13, 31]});
-
-var icon_new_edu = new L.icon({iconUrl: "/static/img/icons/unsynced_education.png",iconAnchor: [13, 31]});
-var icon_new_health = new L.icon({iconUrl: "/static/img/icons/unsynced_health.png", iconAnchor: [13, 31]});
-var icon_new_water = new L.icon({iconUrl: "/static/img/icons/unsynced_water.png", iconAnchor: [13, 31]});
-
-var icon_base = new L.icon({iconUrl: "/static/img/icons/normal_base.png", iconAnchor: [13, 31]});
-var icon_new_base = new L.icon({iconUrl: "/static/img/icons/unsynced_base.png", iconAnchor: [13, 31]});
-var icon_selected = new L.icon({iconUrl: "/static/img/icons/selected-point.png", iconAnchor: [16.2, 48]});
-var icon_added = new L.icon({iconUrl: "/static/img/icons/added-point.png", iconAnchor: [16.2, 48]});
-
-var icon_types = {
-    "education" : icon_edu,
-    "new_education" : icon_new_edu,
-    "water" : icon_water,
-    "new_water" : icon_new_water,
-    "health" : icon_health,
-    "new_health" : icon_new_health,
-    "base" : icon_base,
-    "new_base" : icon_new_base,
-};
-
-function getIcon(sector, isNew) {
-    var base = "base";
-    if (isNew) {
-        sector = "new_" + sector;
-        base = "new_" + base;
-    }
-    return icon_types[sector] || icon_types[base];
-}
-
-function drawPoint(lat, lng, name, type, uuid, clickEvent) {
-    var marker = new L.marker([lat, lng], {
-        title: name,
-        alt: name,
-        clickable: true,
-        riseOnHover: true
-    });
-
-    marker.uuid = uuid; // store the uuid so we can read it back in the event handler
-    marker.sector = type;
-    marker.name = name;
-    marker.is_new = false;
-
-    marker.options.icon = getIcon(type, marker.is_new);
-
-    marker.on('click', clickEvent);
-    return marker;
-    
-}
-
-function drawNewPoint(lat, lng, name, type, uuid, clickEvent, dragEvent) {
-    var marker = new L.marker([lat, lng], {
-        title: name,
-        alt: name,
-        clickable: true,
-        draggable: true, //XXX This right here is why i gotta seperate draws
-        riseOnHover: true
-    });
-
-    marker.uuid = uuid; // store the uuid so we can read it back in the event handler
-    marker.sector = type;
-    marker.name = name;
-    marker.is_new = true;
-
-    marker.options.icon = getIcon(type, marker.is_new);
-
-    marker.on('click', clickEvent);
-    marker.on('dragend', dragEvent);
-    return marker;
 }
 
 // Def not legit but hey
