@@ -134,7 +134,7 @@ describe('User next/prev tests', function(done) {
 
             first_question.should.equal(survey.current_question);
 
-            $("input").not('.dont_know_input').val("1").trigger("change");
+            $("input").not('.dont_know_input').val("1").trigger("keyup");
             first_question.answer[0].response.should.equal(1);
 
             $(".page_nav__next").trigger("click");
@@ -296,7 +296,7 @@ describe('User multiple choice tests', function(done) {
             mc_question.should.equal(survey.current_question);
 
             $('.question__select').val("other").change();
-            $('.other_input').val("poop").change();
+            $('.other_input').val("poop").trigger('keyup');
 
             mc_question.answer[choices.length].response.should.match("poop");
 
@@ -332,12 +332,12 @@ describe('User multiple choice tests', function(done) {
             mc_question.should.equal(survey.current_question);
 
             $('.question__select').val("other").change();
-            $('.other_input').val("").change(); // No value ==> you didn't fill out other
+            $('.other_input').val("").trigger('keyup'); // No value ==> you didn't fill out other
 
             $(".page_nav__next").trigger("click");
             mc_question.should.equal(survey.current_question); // cant move until answer is filled
 
-            $('.other_input').val("poop").change(); // No value ==> you didn't fill out other
+            $('.other_input').val("poop").trigger('keyup'); // No value ==> you didn't fill out other
             $(".page_nav__next").trigger("click");
             mc_question.should.not.equal(survey.current_question); // now things are good
 
@@ -451,7 +451,7 @@ describe('User dont know tests', function(done) {
 
             $(".question__btn__other input").click().trigger("change");
 
-            $(".dont_know_input").val("poop").trigger("change");
+            $(".dont_know_input").val("poop").trigger("keyup");
             first_question.answer[0].response.should.match("poop");
             first_question.answer[0].is_type_exception.should.match(true);
             done();
@@ -469,7 +469,7 @@ describe('User dont know tests', function(done) {
 
             $(".question__btn__other input").click().trigger("change");
 
-            $(".dont_know_input").val("poop").trigger("change");
+            $(".dont_know_input").val("poop").trigger("keyup");
             first_question.answer.length.should.equal(1);
 
             $(".question__btn__other input").click().trigger("change");
@@ -492,7 +492,7 @@ describe('User dont know tests', function(done) {
             var first_question = questions[0];
             first_question.should.equal(survey.current_question);
 
-            $('.content').find('.text_input').val('1').trigger('change');
+            $('.content').find('.text_input').val('1').trigger('keyup');
             first_question.answer[0].response.should.equal(1);
             first_question.answer[0].is_type_exception.should.equal(false);
 
@@ -521,7 +521,7 @@ describe('User dont know tests', function(done) {
             $(".question__btn__other input").trigger("click");
 
             // change value
-            $(".dont_know_input").val("poop").trigger("change");
+            $(".dont_know_input").val("poop").trigger("keyup");
             first_question.answer[0].response.should.match("poop");
             first_question.answer[0].is_type_exception.should.match(true);
 
@@ -608,7 +608,7 @@ describe('User add/delete  tests', function(done) {
 
             first_question.should.equal(survey.current_question);
             $('.content').find('.text_input').length.should.match(1);
-            $('.content').find('.text_input').val('123').change();
+            $('.content').find('.text_input').val('123').trigger('keyup');
             first_question.answer[0].response.should.match(123);
             $('.question__minus').click();
             $('.content').find('.text_input').length.should.match(1);
