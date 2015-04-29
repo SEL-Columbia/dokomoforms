@@ -5,7 +5,6 @@ var OFF = false;
 var NUM_FAC = 256;
 var FAC_RAD = 2; //in KM
 
-console.log('heyo');
 var appCache = window.applicationCache;
 switch (appCache.status) {
     case appCache.UNCACHED: // UNCACHED == 0
@@ -597,7 +596,7 @@ Widgets._input = function(question, page, footer, type) {
     var self = this;
     
     // Render add/minus input buttons 
-    self._renderRepeat(page, question);
+    self._renderRepeat(page, footer, type, question);
 
     //Render don't know
     self._renderOther(page, footer, type, question);
@@ -825,7 +824,7 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
 }
 
 // Render +/- buttons on given page
-Widgets._renderRepeat = function(page, question) {
+Widgets._renderRepeat = function(page, footer, type, question) {
     var self = this;
     // Render add/minus input buttons 
     if (question.allow_multiple) {

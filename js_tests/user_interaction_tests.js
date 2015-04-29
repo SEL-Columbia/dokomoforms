@@ -470,7 +470,6 @@ describe('User dont know tests', function(done) {
             $(".question__btn__other input").click().trigger("change");
 
             $(".dont_know_input").val("poop").trigger("change");
-            console.log(first_question.answer);
             first_question.answer.length.should.equal(1);
 
             $(".question__btn__other input").click().trigger("change");
@@ -539,5 +538,84 @@ describe('User dont know tests', function(done) {
 
            
         });
+});
+
+
+describe('User add/delete  tests', function(done) {
+
+    before(function(done) {
+        done();
+    });
+
+    beforeEach(function(done) {
+        $(".page_nav__next").off(); //XXX Find out why events are cached
+        $(".page_nav__prev").off();
+        raw_survey = require('./fixtures/survey.json');
+        App.init(raw_survey)
+        $('.start_btn').click(); // Start the survey;
+        done();
+    });
+
+    afterEach(function(done) {
+        raw_survey = null;
+        localStorage = {};
+        done();
+    });
+
+    it('should add a new input', function(done) {
+            var survey = App.survey;
+            var questions = survey.questions;
+
+            var first_question = questions[0]; // This question allows multiple
+
+            survey.render(first_question);
+
+            first_question.should.equal(survey.current_question);
+            $('.content').find('.text_input').length.should.match(1);
+            $('.question__add').click();
+            $('.content').find('.text_input').length.should.match(2);
+            done();
+
+           
+    });
+
+    it('should remove a new input', function(done) {
+            var survey = App.survey;
+            var questions = survey.questions;
+
+            var first_question = questions[0]; // This question allows multiple
+
+            survey.render(first_question);
+
+            first_question.should.equal(survey.current_question);
+            $('.content').find('.text_input').length.should.match(1);
+            $('.question__add').click();
+            $('.content').find('.text_input').length.should.match(2);
+            $('.question__minus').click();
+            $('.content').find('.text_input').length.should.match(1);
+            done();
+
+           
+    });
+
+    it('should remove a first inputs value', function(done) {
+            var survey = App.survey;
+            var questions = survey.questions;
+
+            var first_question = questions[0]; // This question allows multiple
+
+            survey.render(first_question);
+
+            first_question.should.equal(survey.current_question);
+            $('.content').find('.text_input').length.should.match(1);
+            $('.content').find('.text_input').val('123').change();
+            first_question.answer[0].response.should.match(123);
+            $('.question__minus').click();
+            $('.content').find('.text_input').length.should.match(1);
+            should(first_question.answer[0]).not.be.ok;
+            done();
+
+           
+    });
 });
 
