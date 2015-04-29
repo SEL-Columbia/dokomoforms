@@ -30,9 +30,8 @@
 
         <div class="row">
             <div class="col-md-6">
-                <!-- Recent Submissions -->
                 <h4>Survey Info</h4>
-                <div class="recent-submissions">
+                <div class="survey-info">
                     <div class="row row-stat">
                         <div class="col-md-4">
                             <div class="stat-label">
@@ -133,18 +132,38 @@
             </div>
         </div>
         <div class="row">
+
+
             <div class="col-md-12">
                 <h4>Submissions</h4>
-                <table id="submissions" class="display table table-striped table-bordered" width="100%" cellspacing="0">
-                    <thead>
-                        <tr>
-                            <th>Conducted By</th>
-                            <th>Conducted On</th>
-                            <th>Submitted On</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                </table>
+
+                <div class="submissions" role="tabpanel">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li role="presentation" class="active"><a href="#submissions-list" aria-controls="submissions-list" role="tab" data-toggle="tab">List</a></li>
+                        <li role="presentation"><a href="#submissions-map" aria-controls="submissions-map" role="tab" data-toggle="tab">Map</a></li>
+                    </ul>
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane active tab-pane-submissions-list" id="submissions-list">
+                            <table id="submissions" class="display table table-striped table-bordered table-submissions" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Conducted By</th>
+                                        <th>Conducted On</th>
+                                        <th>Submitted On</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                        <div role="tabpanel" class="tab-pane submissions-block submissions-map" id="submissions-map">
+                            <div id="submissions-map-container"></div>
+                        </div>
+                    </div>
+                </div>
+
+                
             </div>
         </div>
         
@@ -163,6 +182,70 @@
 <script type="text/javascript">
     
     $(function () {
+
+        // Map
+        var map;
+
+        function createMap() {
+            if (!map) {
+                map = L.map('submissions-map-container', {
+                    dragging: true,
+                    zoom: 14,
+                    zoomControl: false,
+                    doubleClickZoom: false,
+                    attributionControl: false
+                });
+
+                L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
+            }
+        }
+
+        function drawMapData(submissions) {
+            if (!map) return;
+
+            var markers = [];
+
+            _.each(submissions, function(submission) {
+
+                var submission = submission.result,
+                    answers = submission.answers,
+                    location = _.find(answers, function(answer) {
+                        return answer.type_constraint_name == 'location'
+                    });
+                console.log(location);
+                if (!location || !location.answer) {
+                    return;
+                }
+                location = location.answer;
+                console.log(location);
+
+                console.log('location:', location);
+                // stored lon/lat in revisit, switch around
+                var marker = new L.marker([location[1], location[0]], {
+                    riseOnHover: true
+                });
+                marker.options.icon = new L.icon({iconUrl: "/static/img/icons/normal_base.png", iconAnchor: [15, 48]});
+                // marker.bindPopup();
+                marker.on('click', function() {
+                    window.location = '/view/submission/'+submission.submission_id;
+                });
+                markers.push(marker);
+
+            });
+            
+            if (markers.length) {
+                var markers_group = new L.featureGroup(markers);
+                markers_group.addTo(map);
+                map.fitBounds(markers_group.getBounds());
+            } else {
+                // TODO: do something user-facing.
+                console.log('No submissions include location.');
+            }
+        }
+
+        
+
+
         $.getJSON('/api/submissions/activity/{{ survey.survey_id }}/', function(data) {
 
             var results = data.result,
@@ -218,7 +301,7 @@
             language: {
                 search: "Search by submitter name:"
             },
-            "lengthMenu": [[20, 50, 100], [20, 50, 100]],
+            "lengthMenu": [[5, 20, 50], [5, 20, 50]],
             "pagingType": "full_numbers",
             "order": [[2, 'desc']],
             "columnDefs": [
@@ -252,7 +335,7 @@
             ],
             "columns": [
                 {"name": "submitter"},
-                {"name": "saved_time"},
+                {"name": "save_time"},
                 {"name": "submission_time"},
                 {"name": "submission_id"}
             ],
@@ -261,10 +344,19 @@
             "ajax": {
                 "url": "/api/submission_data_table/{{ survey.survey_id }}",
                 "data": function(d) {
-                    return {"args": JSON.stringify(d)};
+                    console.log(d);
+                    var data = {"args": JSON.stringify(d)};
+                    console.log('data! ', data);
+                    return data;
                 }
             }
-        } );
+        }).on('xhr.dt', function ( e, settings, json ) {
+            console.log('data returned: ', json);
+            // for ( var i=0, ien=json.aaData.length ; i<ien ; i++ ) {
+            //     json.aaData[i].sum = json.aaData[i].one + json.aaData[i].two;
+            // }
+            // Note no return - manipulate the data directly in the JSON object.
+        });
     } );
 </script>
 {% end %}
