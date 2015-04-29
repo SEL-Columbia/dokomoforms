@@ -11,6 +11,9 @@ from dokomoforms.db import metadata
 
 from dokomoforms.settings import CONNECTION_STRING
 
+from psycopg2 import connect
+import os.environ
+
 
 killall = 'killall.sql'
 extensions = ['uuid.sql', 'postgis.sql']
@@ -19,6 +22,16 @@ fixtures = ['type_constraint_fixture.sql']
 schema_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                           'schema')
 
+def create_db():
+    with connect(database='postgres', 
+                 user='postgres', 
+                 password='password',
+                 host=os.environ['DB_PORT_5432_TCP_ADDR'],
+                 port=os.environ['DB_PORT_5432_TCP_PORT']) as conn:
+        #auto commit in order to create db
+        conn.set_isolation_level(0)
+        cur = conn.cursor()
+        cur.execute('CREATE DATABASE doko')
 
 def init_db(engine):
     """Create all the tables and insert the fixtures."""
@@ -53,6 +66,9 @@ if __name__ == '__main__':
     parser.add_argument('CONNECTION_STRING', nargs='?', help=connhelp)
 
     args = parser.parse_args()
+
+    # create database doko
+    create_db()
 
     # Create the engine using the user-given connection string, if provided
     args_conn = args.CONNECTION_STRING

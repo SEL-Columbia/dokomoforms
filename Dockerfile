@@ -5,4 +5,5 @@ RUN pip install -r requirements.txt
 ADD . /dokomo
 COPY docker_settings.py /dokomo/dokomoforms/local_settings.py
 EXPOSE 8888
-CMD python webapp.py
+CMD python manage_db.py --create
+ENTRYPOINT python webapp.py
