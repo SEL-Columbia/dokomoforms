@@ -5,7 +5,6 @@ var OFF = false;
 var NUM_FAC = 256;
 var FAC_RAD = 2; //in KM
 
-console.log('heyo');
 var appCache = window.applicationCache;
 switch (appCache.status) {
     case appCache.UNCACHED: // UNCACHED == 0
@@ -342,6 +341,20 @@ Survey.prototype.next = function(offset) {
     
     // Normal forward
     if (offset === NEXT) {
+        // Is it a valid response?
+        bad_answers = [];
+        this.current_question.answer.forEach(function(resp) {
+            if (resp.failed_validation)
+                bad_answers.push(resp);
+        });
+
+        if (bad_answers.length) {
+            App.message(bad_answers.length 
+            + ' response(s) found not valid for question type: ' 
+            + self.current_question.type_constraint_name, 'message_error');
+            return;
+        }
+
         // Are you required?
         if (this.current_question.logic.required && (first_response === null)) {
             App.message('Survey requires this question to be completed.', 'message_error');
@@ -597,7 +610,7 @@ Widgets._input = function(question, page, footer, type) {
     var self = this;
     
     // Render add/minus input buttons 
-    self._renderRepeat(page, question);
+    self._renderRepeat(page, footer, type, question);
 
     //Render don't know
     self._renderOther(page, footer, type, question);
@@ -608,11 +621,13 @@ Widgets._input = function(question, page, footer, type) {
     // Set up input event listner
     $(page)
         .find('.text_input')
-        .change(function() { //XXX: Change isn't sensitive enough on safari?
+        .keyup(function() { //XXX: Change isn't sensitive enough on safari?
             var ans_ind = $(page).find('input').index(this); 
+            console.log('value recieved', ans_ind, this.value, typeof this.value);
             question.answer[ans_ind] = { 
                 response: self._validate(type, this.value, question.logic),
                 is_type_exception: false,
+                failed_validation: !Boolean(self._validate(type, this.value, question.logic)),
                 metadata: {},
             }
             // XXX Should i write the value back after validation?
@@ -665,6 +680,7 @@ Widgets._orderAnswerArray = function(page, footer, question, type) {
             question.answer[i] = {
                 response: self._validate(type, child.value, question.logic),
                 is_type_exception: false,
+                failed_validation: !Boolean(self._validate(type, this.value, question.logic)),
                 metadata: {}
             }
         }
@@ -676,6 +692,7 @@ Widgets._orderAnswerArray = function(page, footer, question, type) {
             question.answer = [{
                 response: self._validate('text', child.value, question.logic),
                 is_type_exception: true,
+                failed_validation: !Boolean(self._validate('text', this.value, question.logic)),
                 metadata: {
                     'type_exception': 'dont_know',
                 },
@@ -722,10 +739,11 @@ Widgets._renderOther = function(page, footer, type, question) {
         // Set up other input event listener
         $(footer)
             .find('.dont_know_input')
-            .change(function() { //XXX: Change isn't sensitive enough on safari?
+            .keyup(function() { //XXX: Change isn't sensitive enough on safari?
                 question.answer = [{ 
                     response: self._validate('text', this.value, question.logic),
                     is_type_exception: true,
+                    failed_validation: !Boolean(self._validate('text', this.value, question.logic)),
                     metadata: {
                         'type_exception': 'dont_know',
                     },
@@ -766,6 +784,7 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
             question.answer[0] = {
                 response: self._validate('text', child.value, question.logic),
                 is_type_exception: true,
+                failed_validation: !Boolean(self._validate('text', this.value, question.logic)),
                 metadata: {
                     'type_exception': 'dont_know',
                 },
@@ -773,8 +792,8 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
         });
 
         // Bring div up
-        //footer.addClass('bar-footer-super-extended');
         page.addClass('content-super-shrunk');
+        //footer.addClass('bar-footer-super-extended');
         footer.animate({height:220},200).addClass('bar-footer-super-extended');
 
         //Add overlay
@@ -805,6 +824,7 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
             if (child.value !== "") { 
                 question.answer[i] = {
                     response: self._validate(type, child.value, question.logic),
+                    failed_validation: !Boolean(self._validate(type, this.value, question.logic)),
                     is_type_exception: false,
                     metadata: {},
                 }
@@ -813,8 +833,8 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
         
         // Hide overlay and shift div
         $('.overlay').fadeOut('fast');
-        //footer.removeClass('bar-footer-super-extended');
         page.removeClass('content-super-shrunk');
+        //footer.removeClass('bar-footer-super-extended');
         footer.animate({height:120},200).removeClass('bar-footer-super-extended');
 
         // Disable other input
@@ -825,7 +845,7 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
 }
 
 // Render +/- buttons on given page
-Widgets._renderRepeat = function(page, question) {
+Widgets._renderRepeat = function(page, footer, type, question) {
     var self = this;
     // Render add/minus input buttons 
     if (question.allow_multiple) {
@@ -957,9 +977,10 @@ Widgets.multiple_choice = function(question, page, footer) {
     // handle change for text field
     var $other = $(page)
         .find('.other_input')
-        .change(function() {
+        .keyup(function() {
             question.answer[question.choices.length] = { 
                 response: self._validate("text", this.value, question.logic),
+                failed_validation: !Boolean(self._validate('text', this.value, question.logic)),
                 is_type_exception: true,
                 metadata: {
                     'type_exception': 'other',
@@ -1150,7 +1171,7 @@ Widgets.location = function(question, page, footer) {
     // disable default event
     $(page)
         .find('.text_input')
-        .off('change');
+        .off('keyup');
 };
 
 // Similar to location however you cannot just add location, 
