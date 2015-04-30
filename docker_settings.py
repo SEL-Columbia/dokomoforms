@@ -1,7 +1,17 @@
 import os
-
 env = os.environ
-pg2_string = 'postgresql+psycopg2://postgres:password@{}:{}/doko'
+
+DB_USER = 'postgres'
+DB_PASSWORD = 'password'
+DB_HOST = env['DB_PORT_5432_TCP_ADDR']
+DB_PORT = env['DB_PORT_5432_TCP_PORT']
+DB_NAME = 'doko'
+
+pg2_string = 'postgresql+psycopg2://{}:{}@{}:{}/{}'
 CONNECTION_STRING = pg2_string.format(
-    env['DB_PORT_5432_TCP_ADDR'], env['DB_PORT_5432_TCP_PORT']
+        DB_USER,
+        DB_PASSWORD,
+        DB_HOST,
+        DB_PORT,
+        DB_NAME
 )
