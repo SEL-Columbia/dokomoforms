@@ -7,6 +7,7 @@ running the server software.
 """
 
 from logging import DEBUG, INFO, WARNING, ERROR, CRITICAL
+import os
 
 
 #
@@ -25,8 +26,8 @@ LOG_LEVEL = ERROR  # for testing, use DEBUG in a local_settings.py file instead
 
 DB_USER = 'postgres'
 DB_PASSWORD = 'password'
-DB_HOST = 'localhost'
-DB_PORT = '5432'
+DB_HOST = os.environ.get('DB_PORT_5432_TCP_ADDR','localhost')
+DB_PORT = os.environ.get('DB_PORT_5432_TCP_PORT', '5432')
 DB_NAME = 'doko'
 
 pg2_string = 'postgresql+psycopg2://{}:{}@{}:{}/{}'
