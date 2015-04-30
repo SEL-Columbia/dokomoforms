@@ -19,19 +19,22 @@ killall = 'killall.sql'
 extensions = ['uuid.sql', 'postgis.sql']
 fixtures = ['type_constraint_fixture.sql']
 
-schema_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                          'schema')
+schema_dir = os.path.join(os.path.dirname(
+    os.path.realpath(__file__)
+), 'schema')
+
 
 def create_db():
-    with connect(database='postgres', 
-                 user='postgres', 
+    with connect(database='postgres',
+                 user='postgres',
                  password='password',
                  host=os.environ['DB_PORT_5432_TCP_ADDR'],
                  port=os.environ['DB_PORT_5432_TCP_PORT']) as conn:
-        #auto commit in order to create db
+        # auto commit in order to create db
         conn.set_isolation_level(0)
         cur = conn.cursor()
         cur.execute('CREATE DATABASE doko')
+
 
 def init_db(engine):
     """Create all the tables and insert the fixtures."""
