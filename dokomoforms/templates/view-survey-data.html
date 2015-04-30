@@ -87,20 +87,30 @@
                                 <!-- {{ stats['question'].keys() }} -->
                                 {{ stats['question'].sequence_number }}. {{ stats['question'].question_title }} 
                                 <span class="question-type">{{ stats['question'].type_constraint_name }}</span>
-                                <button class="btn btn-default btn-sm pull-right btn-question-stats"><span class="glyphicon glyphicon-stats"></span></button>
+                                <button class="btn btn-default btn-sm pull-right btn-question-stats {% if stats['question'].type_constraint_name == "location" %} btn-question-location {% end %}" rel="location-map-{{ stats['question'].question_id }}">
+                                    <span class="glyphicon glyphicon-stats"></span>
+                                </button>
                             </div>
 
                             <div class="question-stats">
                                 <div class="row">
-                                    {% for stat in stats['stats'] %}
-                                        <div class="col-md-3 question-stat">
-                                            <div class="stat-label">
-                                                {{ stat['query'] }}
-                                            </div>
-                                            <div class="stat-value stat-created-on">
-                                                {{ stat['result'] }}
-                                            </div>
+                                    {% if stats['question'].type_constraint_name == "location" %}
+                                        <!-- This is a location question, show the map -->
+                                        <div class="col-md-12">
+                                            <div class="location-map" id="location-map-{{ stats['question'].question_id }}"></div>
                                         </div>
+                                        
+                                    {% else %}
+                                        {% for stat in stats['stats'] %}
+                                            <div class="col-md-3 question-stat">
+                                                <div class="stat-label">
+                                                    {{ stat['query'] }}
+                                                </div>
+                                                <div class="stat-value stat-created-on">
+                                                    {{ stat['result'] }}
+                                                </div>
+                                            </div>
+                                        {% end %}
                                     {% end %}
                                 </div>
                             </div>
@@ -122,9 +132,15 @@
 
 <script type="text/javascript">
     $(function() {
+
         $(document).on('click', '.btn-question-stats', function(e) {
             console.log('heyo');
-            $(this).parent().parent().find('.question-stats').slideToggle();
+            $el = $(this);
+            $el.parent().parent().find('.question-stats').slideToggle();
+            if ($el.hasClass('btn-question-location')) {
+                var id = $el.attr('rel');
+                drawMap(id, map_data[id]);
+            }
         });
 
         $('#submissions').dataTable( {
@@ -163,6 +179,70 @@
                 }
             }
         } );
+
+
+        var maps = {},
+            map_data = {};
+
+        {% for question in location_questions %}
+            map_data['location-map-{{ question["question_id"] }}'] = {% raw question["map_data"] %};
+        {% end %}
+
+        function drawMap(element_id, map_data) {
+
+            var map = L.map(element_id, {
+                dragging: true,
+                zoom: 14,
+                // zoomControl: false,
+                // doubleClickZoom: false,
+                attributionControl: false
+            });
+
+            maps[element_id] = map;
+
+            markers = [];
+
+            L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
+
+            var markers = [];
+            _.each(map_data, function(location) {
+                var lng = parseFloat(location[0]),
+                    lat = parseFloat(location[1]),
+                    answers = JSON.parse(location[2]).answers,
+                    submission_text;
+                // stored lon/lat in revisit, switch around
+                var marker = new L.marker([lat, lng], {
+                    riseOnHover: true
+                });
+                marker.options.icon = new L.icon({iconUrl: "/static/img/icons/normal_base.png", iconAnchor: [15, 48]});
+                
+                submission_text = "<ul>";
+                _.each(answers, function(ans) {
+                    var metadata = "";
+                    if (ans.answer_metadata) {
+                        metadata += "<br />" + JSON.stringify(ans.answer_metadata);
+                    }
+                    submission_text += "<li><strong>" + ans.sequence_number + ". " + ans.question_title + "</strong><br />" + ans.answer + metadata + "</li>";
+                });
+                
+                submission_text += "</ul";
+
+                marker.bindPopup(submission_text);
+                markers.push(marker);
+
+            });
+            
+            if (markers.length) {
+                var markers_group = new L.featureGroup(markers);
+                markers_group.addTo(map);
+                map.fitBounds(markers_group.getBounds(), {
+                    padding: [40, 40]
+                });
+            } else {
+                console.log('No submissions include location.');
+            }
+        }
+
     } );
 </script>
 

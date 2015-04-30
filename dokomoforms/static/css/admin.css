@@ -199,6 +199,10 @@ ul.survey-responses .response-data {
   height: 400px;
   width: 100%;
 }
+/* View Data */
+.location-map {
+  height: 300px;
+}
 /* Bootstrap Overrides */
 .nav-tabs > li a {
   padding: 2px 10px;
