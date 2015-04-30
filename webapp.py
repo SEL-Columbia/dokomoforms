@@ -37,6 +37,7 @@ from dokomoforms.utils.logger import setup_custom_logger
 from dokomoforms.db.survey import SurveyPrefixDoesNotIdentifyASurveyError, \
     SurveyPrefixTooShortError, get_survey_id_from_prefix, get_surveys_by_email
 from dokomoforms import settings
+from manage_db import check_and_create_db
 
 
 logger = setup_custom_logger('dokomo')
@@ -181,6 +182,7 @@ class Application(tornado.web.Application):  # pragma: no cover
 
 
 if __name__ == '__main__':  # pragma: no cover
+    check_and_create_db()
     http_server = tornado.httpserver.HTTPServer(Application())
     http_server.listen(settings.WEBAPP_PORT, '0.0.0.0')
 
