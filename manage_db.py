@@ -92,9 +92,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # create database doko
-    create_db()
-
     # Create the engine using the user-given connection string, if provided
     args_conn = args.CONNECTION_STRING
     conn = args_conn if args_conn is not None else CONNECTION_STRING
