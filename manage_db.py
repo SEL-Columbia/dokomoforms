@@ -9,7 +9,8 @@ import os.path
 from sqlalchemy import create_engine
 from dokomoforms.db import metadata
 
-from dokomoforms.settings import CONNECTION_STRING
+from dokomoforms.settings import CONNECTION_STRING, \
+        DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
 
 from psycopg2 import connect
 import os
@@ -24,16 +25,18 @@ schema_dir = os.path.join(os.path.dirname(
 ), 'schema')
 
 
-def create_db():
+def create_db(dbname=DB_NAME, user=DB_USER, 
+        password=DB_PASSWORD, host=DB_HOST, port=DB_PORT):
     with connect(database='postgres',
                  user='postgres',
-                 password='password',
-                 host=os.environ['DB_PORT_5432_TCP_ADDR'],
-                 port=os.environ['DB_PORT_5432_TCP_PORT']) as conn:
+                 password=password,
+                 host=host,
+                 port=port) as conn:
         # auto commit in order to create db
         conn.set_isolation_level(0)
         cur = conn.cursor()
-        cur.execute('CREATE DATABASE doko')
+        cur.execute('CREATE DATABASE %s' % dbname)
+        conn.set_isolation_level(1)
 
 
 def init_db(engine):
@@ -55,6 +58,26 @@ def kill_db(engine):
         with open(os.path.join(schema_dir, killall)) as sqlfile:
             connection.execute(sqlfile.read())
 
+def check_and_create_db(dbname=DB_NAME, user=DB_USER, 
+        password=DB_PASSWORD, host=DB_HOST, port=DB_PORT):
+    """Check if db and the structures exists, if it does, then
+       do nothing, else
+       create db and create structures."""
+    db_created = False
+    try:
+        conn = connect(database=dbname,
+                 user=user,
+                 password=password,
+                 host=host,
+                 port=port)
+        conn.close()
+        return
+    except Exception:
+        print('Creating database and populate tables')
+        create_db()
+        eng = create_engine(CONNECTION_STRING, convert_unicode=True)
+        init_db(eng)
+        return
 
 if __name__ == '__main__':
     parser = ArgumentParser(description='Create or kill the database.')
