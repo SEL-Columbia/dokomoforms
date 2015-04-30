@@ -12,7 +12,7 @@ from dokomoforms.db import metadata
 from dokomoforms.settings import CONNECTION_STRING
 
 from psycopg2 import connect
-import os.environ
+import os
 
 
 killall = 'killall.sql'

@@ -6,5 +6,5 @@ webapp:
         - "8888:8888"
 db:
     image: "mdillon/postgis:9.4"
-    #environment:
-        #POSTGRES_PASSWORD: 'passowrd'
+    environment:
+        POSTGRES_PASSWORD: 'password'
