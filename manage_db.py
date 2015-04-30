@@ -25,8 +25,8 @@ schema_dir = os.path.join(os.path.dirname(
 ), 'schema')
 
 
-def create_db(dbname=DB_NAME, user=DB_USER, 
-        password=DB_PASSWORD, host=DB_HOST, port=DB_PORT):
+def create_db(dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD,
+              host=DB_HOST, port=DB_PORT):
     with connect(database='postgres',
                  user='postgres',
                  password=password,
@@ -58,18 +58,16 @@ def kill_db(engine):
         with open(os.path.join(schema_dir, killall)) as sqlfile:
             connection.execute(sqlfile.read())
 
-def check_and_create_db(dbname=DB_NAME, user=DB_USER, 
-        password=DB_PASSWORD, host=DB_HOST, port=DB_PORT):
+
+def check_and_create_db(dbname=DB_NAME, user=DB_USER,
+                        password=DB_PASSWORD, host=DB_HOST, port=DB_PORT):
     """Check if db and the structures exists, if it does, then
        do nothing, else
        create db and create structures."""
     db_created = False
     try:
-        conn = connect(database=dbname,
-                 user=user,
-                 password=password,
-                 host=host,
-                 port=port)
+        conn = connect(database=dbname, user=user, password=password,
+                       host=host, port=port)
         conn.close()
         return
     except Exception:
@@ -78,6 +76,7 @@ def check_and_create_db(dbname=DB_NAME, user=DB_USER,
         eng = create_engine(CONNECTION_STRING, convert_unicode=True)
         init_db(eng)
         return
+
 
 if __name__ == '__main__':
     parser = ArgumentParser(description='Create or kill the database.')
