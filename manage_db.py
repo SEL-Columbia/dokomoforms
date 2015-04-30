@@ -9,8 +9,9 @@ import os.path
 from sqlalchemy import create_engine
 from dokomoforms.db import metadata
 
-from dokomoforms.settings import CONNECTION_STRING, \
-        DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+from dokomoforms.settings import (CONNECTION_STRING, DB_USER, DB_PASSWORD,
+                                  DB_HOST, DB_PORT, DB_NAME
+                                  )
 
 from psycopg2 import connect
 import os
@@ -64,7 +65,6 @@ def check_and_create_db(dbname=DB_NAME, user=DB_USER,
     """Check if db and the structures exists, if it does, then
        do nothing, else
        create db and create structures."""
-    db_created = False
     try:
         conn = connect(database=dbname, user=user, password=password,
                        host=host, port=port)
