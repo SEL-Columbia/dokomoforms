@@ -56,7 +56,7 @@ describe('User offline submits tests', function(done) {
         done();
     });
 
-    it('should fail to sync survey when offline', 
+    it('should fail to show sync survey button when offline', 
         function(done) {
             navigator.onLine = false;
             App.unsynced.length.should.match(3);
@@ -81,9 +81,8 @@ describe('User offline submits tests', function(done) {
             var survey = App.survey;
             var questions = survey.questions;
 
-            $('.sync_btn').click(); // Sync the survey;
+            $('.sync_btn').length.should.match(0); // Sync the survey;
 
-            $('.message').text().should.match('Please connect to the internet first.'); 
             App.unsynced.length.should.match(3);
             done();
     });
@@ -92,10 +91,11 @@ describe('User offline submits tests', function(done) {
         function(done) {
             var self = this;
             navigator.onLine = true;
+            App.splash();
             self.counter = 3;
             App.unsynced.length.should.match(3);
             $.mockjax({
-                  url: '',
+                  url: '/api/surveys/f5a35e4f-c5dc-4fb8-a768-ed6d92df2b1a/submit',
                   status: 500,
                   onAfterSuccess: function() { 
                     assert(false, "Post snuck through"); 
@@ -114,6 +114,7 @@ describe('User offline submits tests', function(done) {
 
             var survey = App.survey;
             var questions = survey.questions;
+            console.log($('.sync_btn').length);
             $('.sync_btn').click(); // Sync the survey;
     });
 });

@@ -7,7 +7,7 @@ from dokomoforms.db import answer_choice_table
 
 
 def answer_choice_insert(*,
-                         is_other: bool=None,
+                         is_type_exception: bool=None,
                          question_choice_id: str,
                          answer_choice_metadata: dict,
                          question_id: str,
@@ -21,7 +21,7 @@ def answer_choice_insert(*,
     associated with a question, a question choice, and a submission. Make
     sure to use a transaction!
 
-    :param is_other: may be passed in for convenience, but is unused
+    :param is_type_exception: may be passed in for convenience, but is unused
     :param question_choice_id: The answer value. References the
                                question_choice table.
     :param answer_choice_metadata: metadata associated with the answer

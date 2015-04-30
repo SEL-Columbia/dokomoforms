@@ -35,7 +35,7 @@ before_install:
 # command to run tests
 script: 
   - npm test
-  - nosetests -c .noserc
+  - nosetests -c tox.ini
 
 after_success: coveralls
 

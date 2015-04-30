@@ -44,6 +44,7 @@ describe('Persona login tests', function(done) {
         function(done) {
             $.mockjax({
                   url: "",
+                  status: 200,
                   onAfterSuccess: function() { 
                   },
                   onAfterError: function() { 

@@ -10,7 +10,7 @@ from sqlalchemy.sql.functions import GenericFunction, min as sqlmin, \
 from sqlalchemy.sql import func, and_, select
 from tornado.escape import json_decode
 
-from dokomoforms.api import json_response
+from dokomoforms.api import json_response, maybe_isoformat
 from dokomoforms.db import get_column, question_table
 from dokomoforms.db import answer_table, answer_choice_table, \
     submission_table, survey_table
@@ -54,7 +54,7 @@ def _jsonify(connection: Connection,
         geo_json = connection.execute(func.ST_AsGeoJSON(answer)).scalar()
         return json_decode(geo_json)['coordinates']
     elif type_constraint_name in {'date', 'time'}:
-        return answer.isoformat()
+        return maybe_isoformat(answer)
     elif type_constraint_name == 'decimal':
         return float(answer)
     elif type_constraint_name == 'multiple_choice':
@@ -147,7 +147,7 @@ def _scalar(connection: Connection,
             *,
             auth_user_id: str=None,
             email: str=None,
-            is_other: bool=False,
+            is_type_exception: bool=False,
             allowable_types: set={'integer', 'decimal'}) -> Real:
     """
     Get a scalar SQL-y value (max, mean, etc) across all submissions to a
@@ -158,7 +158,8 @@ def _scalar(connection: Connection,
     :param sql_function: the SQL function to execute
     :param auth_user_id: the UUID of the user
     :param email: the e-mail address of the user
-    :param is_other: whether to look at the "other" responses
+    :param is_type_exception: whether to look at the "other"/"don't
+                              know"/etc responses
     :return: the result of the SQL function
     :raise InvalidTypeForAggregationError: if the type constraint name is bad
     """
@@ -169,7 +170,7 @@ def _scalar(connection: Connection,
     conds = [question_table.c.question_id == question_id,
              survey_table.c.auth_user_id == user_id]
 
-    if is_other:
+    if is_type_exception:
         original_table = answer_table
         column_name = 'answer_text'
     else:
@@ -180,8 +181,8 @@ def _scalar(connection: Connection,
         question_table,
         original_table.c.question_id == question_table.c.question_id
     ).join(survey_table)
-    if is_other:
-        conds.append(original_table.c.is_other)
+    if is_type_exception:
+        conds.append(original_table.c.is_type_exception)
 
     column = get_column(original_table, column_name)
 
@@ -290,7 +291,7 @@ def count(connection: Connection,
                       email=email, allowable_types=types)
     other = _scalar(connection, question_id, sqlcount,
                     auth_user_id=auth_user_id,
-                    email=email, is_other=True, allowable_types=types)
+                    email=email, is_type_exception=True, allowable_types=types)
     response = json_response(regular + other)
     response['query'] = 'count'
     return response
