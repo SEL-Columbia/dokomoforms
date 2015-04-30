@@ -35,7 +35,6 @@ var App = {
     facilities: [], // revisit facilities
     unsynced_facilities: {}, // new facilities
     start_loc: {'lat': 40.8138912, 'lon': -73.9624327}, // defaults to nyc, updated constantly
-    tile_url: 'http://{s}.tiles.mapbox.com/v3/examples.map-20v6611k/{z}/{x}/{y}.png',
     submitter_name: ''
 };
 
@@ -1050,61 +1049,6 @@ Widgets.multiple_choice = function(question, page, footer) {
     }
 };
 
-Widgets._getMap = function() {
-
-    var map = L.map('map', {
-            center: [App.start_loc.lat, App.start_loc.lon],
-            dragging: true,
-            maxZoom: 18,
-            minZoom: 11,
-            zoom: 14,
-            zoomControl: false,
-            doubleClickZoom: false,
-            attributionControl: false
-        });
-    
-    var tile_layer =  new L.tileLayer(App.tile_url, {
-        maxZoom: 18,
-        useCache: true
-    });
-
-    tile_layer.on('tilecachehit',function(ev){
-        //console.log('Cache hit: ', ev.url);
-    });
-
-    tile_layer.on('tilecachemiss',function(ev){
-        //console.log('Cache miss: ', ev.url);
-    });
-
-    // Blinking location indicator
-    var circle = L.circle(App.start_loc, 5, {
-            color: 'red',
-            fillColor: '#f00',
-            fillOpacity: 0.5,
-            zIndexOffset: 777,
-    })
-        .addTo(map);
-
-    map.circle = circle;
-
-    ///TODO: Replace this with CSSSSSSSssss
-    var counter = 0;
-    function updateColour() {
-        var fillcol = Number((counter % 16)).toString(16);
-        var col = Number((counter++ % 13)).toString(16);
-        circle.setStyle({
-            fillColor : "#f" + fillcol + fillcol,
-            color : "#f" + col + col,
-        });
-    }
-
-    // Save the interval id, clear it every time a page is rendered
-    Widgets.interval = window.setInterval(updateColour, 50); // XXX: could be CSS
-    
-    map.addLayer(tile_layer);
-    return map;
-};
-
 Widgets.location = function(question, page, footer) {
     // generic setup
     this._input(question, page, footer, "location");
@@ -1113,12 +1057,6 @@ Widgets.location = function(question, page, footer) {
     var response = $(page).find('.text_input').last().val();
     response = self._validate('location', response, question.logic);
     App.start_loc = response || App.start_loc;
-
-    var map = this._getMap(); 
-    map.on('drag', function() {
-        map.circle.setLatLng(map.getCenter());
-        updateLocation([map.getCenter().lng, map.getCenter().lat]);
-    });
 
     function updateLocation(coords) {
         // Find current length of inputs and update the last one;
@@ -1149,18 +1087,11 @@ Widgets.location = function(question, page, footer) {
                         position.coords.latitude
                     ];
 
-                    // Set map view and update indicator position
-                    //map.setMaxBounds(null);
-                    map.setView([coords[1], coords[0]]);
-                    map.circle.setLatLng([coords[1], coords[0]]);
-                    //map.setMaxBounds(map.getBounds().pad(1));
-
                     updateLocation(coords); //XXX: DONT MOVE ON
 
                 }, function error() {
                     //If cannot Get location" for some reason,
-                    App.message('Could not get your location, please make sure your GPS device is active.',
-                            'message_error');
+                    App.message('Could not get your location, please make sure your GPS device is active.', 'message_error');
                 }, {
                     enableHighAccuracy: true,
                     timeout: 20000,
@@ -1176,14 +1107,10 @@ Widgets.location = function(question, page, footer) {
 
 // Similar to location however you cannot just add location, 
 Widgets.facility = function(question, page, footer) {
-    var ans = question.answer[0]; // Facility questions only ever have one response
-    var lat = ans && ans.response.lat || App.start_loc.lat;
-    var lng = ans && ans.response.lon || App.start_loc.lon;
-
-    App.start_loc = {'lat': lat, 'lon': lng};
+    var topFacilities = {};
 
     // Revisit API Call calls facilitiesCallback
-    reloadFacilities(App.start_loc.lat, App.start_loc.lon);
+    drawFacilities(App.facilities);
 
     /* Helper functions for updates  */
     function reloadFacilities(lat, lon) {
@@ -1205,21 +1132,83 @@ Widgets.facility = function(question, page, footer) {
         var ans = question.answer[0];
         var selected = ans && ans.response.id || null;
 
+        // http://www.movable-type.co.uk/scripts/latlong.html
+        function latLonLength(coordinates) {
+            var R = 6371000; // metres
+            var e = App.start_loc.lat*Math.PI/180;
+            var f = coordinates[1]*Math.PI/180;
+            var g = (coordinates[1]-App.start_loc.lat)*Math.PI/180;
+            var h = (coordinates[0]-App.start_loc.lon)*Math.PI/180;
+
+            var a = Math.sin(g/2) * Math.sin(g/2) +
+                    Math.cos(e) * Math.cos(f) *
+                    Math.sin(h/2) * Math.sin(h/2);
+
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+            return R * c;
+        }
+
         // SYNCED FACILITIES
         facilities = facilities || [];
         facilities.sort(function(facilityA, facilityB) {
-            var sqlengthA = ((facilityA.coordinates[0] - App.start_loc.lon) * (facilityA.coordinates[0] - App.start_loc.lon))
-                + ((facilityA.coordinates[1] - App.start_loc.lat) * (facilityA.coordinates[1] - App.start_loc.lat));
-            
-            var sqlengthB = ((facilityB.coordinates[0] - App.start_loc.lon) * (facilityB.coordinates[0] - App.start_loc.lon))
-                + ((facilityA.coordinates[1] - App.start_loc.lat) * (facilityA.coordinates[1] - App.start_loc.lat));
+            var lengthA = latLonLength(facilityA.coordinates);
+            var lengthB = latLonLength(facilityB.coordinates);
 
-            return (sqlengthA - sqlengthB); 
+            return (lengthA - lengthB); 
         });
 
-        console.log(facilities);
-        console.log(App.start_loc);
+        $(".question__radios").empty();
+        for(var i=0; i < Math.min(10, facilities.length); i++) {
+            var uuid = facilities[i].uuid;
+            topFacilities[uuid] = facilities[i];
+            var name = facilities[i]["name"];
+            var sector = facilities[i]["properties"]["sector"];
+            var distance = latLonLength(facilities[i].coordinates).toFixed(2) + "m";
+            var $div = addNewButton(uuid, name, sector, distance, ".question__radios");
+            if (question.answer[0] && question.answer[0].response.id === uuid) {
+                    $div.find('input[type=radio]').prop('checked', true);
+            }
+        }
     } 
+
+
+    function addNewButton(value, name, sector, distance, region) {
+        var div_html = "<div class='question__radio'>"
+            + "<input type='radio' name='facility' value='"+ value +"'/>"
+            + "<span class='question__radio__span'>"+ name +"</span>"
+            + "<br/><span class='question__radio__span__meta'>"+ sector +"</span>"
+            + "<span class='question__radio__span__meta'><em>"+ distance +"</em></span>"
+            + "</div>";
+
+        var $div = $(div_html);
+        $div
+            .click(function() {
+                var rbutton = $(this).find('input[type=radio]');
+                var uuid = rbutton.val();
+                console.log(uuid);
+
+                if (question.answer[0] && question.answer[0].response.id === uuid) {
+                    rbutton.prop('checked', false);
+                    question.answer = [];
+                    return;
+                }
+
+                var coords = topFacilities[uuid].coordinates; // Should always exist
+                var name = topFacilities[uuid].name;
+                var sector = topFacilities[uuid]['properties'].sector;
+                question.answer = [{ 
+                    response: {'id': uuid, 'lat': coords[1], 'lon': coords[0] },
+                    metadata: {'name': name, 'sector': sector }
+                }];
+
+                rbutton.prop('checked', true);
+
+            });
+
+        $(region).append($div);
+        return $div;
+    }
 
     /* Handle events */
 
@@ -1253,14 +1242,6 @@ Widgets.facility = function(question, page, footer) {
     $(page)
         .find('.facility__btn')
         .click(function() {
-            // You added on before
-            if (addedMarker && addedMarker.uuid === question._new_facility) {
-                // Get rid of all traces of it
-                delete App.unsynced_facilities[addedMarker.uuid];
-                return;
-            }
-
-            // Adding new facility
             // Record this new facility for Revisit submission
             App.unsynced_facilities[uuid] = {
                 'name': 'New Facility', 'uuid': uuid, 
@@ -1268,24 +1249,6 @@ Widgets.facility = function(question, page, footer) {
                 'coordinates' : [lng, lat]
             };
 
-            // Get and place marker
-            addedMarker = addFacility(lat, lng, uuid);
-            $(page).find('.facility__btn').html("Remove New Site");
-            $(page).find('.facility__name').attr('disabled', false);
-            $(page).find('.facility__type').attr('disabled', false);
-
-        });
-
-    // Change name
-    $(page)
-        .find('.facility__name')
-        .keyup(function() {
-        });
-
-    // Change type
-    $(page)
-        .find('.facility__type')
-        .change(function() {
         });
 };
 

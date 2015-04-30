@@ -235,15 +235,13 @@
             </button>
         </div>
 
-        <div id="map" class="question__map"></div>
-
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
             if (ans && ans.response !== null && !ans.is_type_exception) { 
                 no_response = false; %>
                 <div class="input_container">
                 <input class="text_input location_input" type="text" 
-                    placeholder="Please click 'Capture Location' or drag map."
+                    placeholder="Please click 'Capture Location'."
                     value="<%- ans.response.lat + ' ' + ans.response.lon %>"
                 >
                 <span class="icon icon-close question__minus"></span>
@@ -254,7 +252,7 @@
         <% if (no_response) { %>
             <div class="input_container">
             <input class="text_input location_input" type="text" 
-                   placeholder="Please click 'Capture Location' or drag map."
+                   placeholder="Please click 'Capture Location'."
             >
             <span class="icon icon-close question__minus"></span>
             </div>
@@ -264,27 +262,33 @@
 
     <script id="widget_facility" type="text/html">
         <div class="content-padded">
-        <h3 class="question__title "><%- question.question_title %></h3>
-        <p class="question__hint "><%- question.hint || "" %></p>
+            <h3 class="question__title "><%- question.question_title %></h3>
+            <p class="question__hint "><%- question.hint || "" %></p>
 
-        <button class="btn question__find__btn ">
-            <span class="icon icon-star"></span>
-            Capture Location
-        </button>
+            <button class="btn question__find__btn ">
+                <span class="icon icon-star"></span>
+                Capture Location
+            </button>
+
+            <div class="segmented-control question__toggle">
+                <a class="control-item active" href="#list">
+                    List
+                </a>
+                <!--
+                <a class="control-item" href="#map">
+                    Map
+                </a>
+                -->
+            </div>
+
         </div>
+
+        <div id="list" class='control-content active question__radios'></div>
+        <!-- <div id="map" class='control-content question__map'></div> -->
 
         <div class="content-padded">
-            <button class="btn facility__btn ">Add New Site</button>
+            <button class="btn facility__btn">add new facility</button>
         </div>
-
-        <input class="text_input facility__name" type="text"/>
-        <select class="question__select facility__type ">
-            <option value="other">Other</option>
-            <option value="water">Water</option>
-            <option value="health">Health</option>
-            <option value="education">Education</option>
-        </select>
-
     </script>
 
     <script id="widget_multiple_choice" type="text/html">

@@ -5,8 +5,6 @@
 /* General styles
 =================================================*/
 html {
-    font-family: 'Roboto', sans-serif !important;
-    font-weight: 300;
 }
 
 h1 {
@@ -14,6 +12,8 @@ h1 {
 }
 
 body {
+    font-family: 'Roboto', sans-serif !important;
+    font-weight: 300;
     background-color: rgb(250, 250, 250);
 }
 
@@ -23,6 +23,7 @@ h3 {
 }
 
 input[type] {
+    font-family: 'Roboto', sans-serif !important;
     border: 1px solid #DDD;
     border-left: 0px solid #DDD;
     border-right: 0px solid #DDD;
@@ -57,6 +58,12 @@ input[type=checkbox] {
     margin-right: 5px;
     margin-top: 8px;
     min-height: 0px;
+}
+
+input[type=radio] {
+    min-height: 0px;
+    padding: 0px;
+    margin: 0px;
 }
 
 input[type=number]::-webkit-outer-spin-button,
@@ -100,6 +107,7 @@ select {
 
     border: 1px solid #DDD;
     padding: 14px 15px;
+    font-family: 'Roboto', sans-serif !important;
     font-size: 14px;
     min-height: 50px;
     outline: none;
@@ -196,7 +204,7 @@ a, .icon {
     position: absolute;
     top: 0;
     left: 0;
-    zIndex: 100;
+    z-index: 100;
 }
 
 .message {
@@ -224,6 +232,31 @@ a, .icon {
 
 .message_success {
     background: rgba(0, 255, 0, 0.95);
+}
+
+.question__radio {
+    border: 1px solid #DDD;
+    padding: 15px 20px;
+    text-align: left;
+    min-height: 50px;
+    background-color: white;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.question__radio__span {
+    padding-left: 15px;
+    font-weight: 500;
+}
+
+.question__radio__span__meta {
+    padding-left: 30px;
+    color: #777;
+}
+
+.question__toggle {
+    margin: 10px 0px;
+    width: 80px;
 }
 
 /* Rachet style changes
@@ -274,17 +307,19 @@ header {
 }
 
 .btn {
+    font-family: 'Roboto', sans-serif !important;
     font-weight: 300;
 }
 
 .bar .btn {
-    font-weight: 300;
+    font-weight: 700;
 }
 
 .btn-primary {
     box-shadow: 0px 4px 0px #FF5511;
     background-color: #FF7700;
     border: 1px solid #FF7700;
+    font-weight: 700;
 }
 
 .btn-primary:hover, .btn-primary:active, .btn-primary:focus {
