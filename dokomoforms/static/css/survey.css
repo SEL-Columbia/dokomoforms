@@ -60,11 +60,50 @@ input[type=checkbox] {
     min-height: 0px;
 }
 
-input[type=radio] {
+input[type=radio]:not(old) {
+    width     : 2em;
+    margin    : 0;
+    padding   : 0;
+    font-size : 1em;
+    opacity   : 0;
     min-height: 0px;
-    padding: 0px;
-    margin: 0px;
 }
+
+
+input[type=radio]:not(old) + label {
+    display      : inline-block;
+    margin-left  : -2em;
+    line-height  : 1.5em;
+    margin-top: 10px;
+}
+
+
+input[type=radio]:not(old) + label > span {
+    display          : inline-block;
+    width            : 2em;
+    height           : 2em;
+    border           : 0.15em solid #AAA;
+    border-radius    : 1em;
+    background       : #FFF;
+    vertical-align   : bottom;
+    margin-right: 20px;
+}
+
+input[type=radio]:not(old):checked + label > span > span {
+    display          : block;
+    width            : 1em;
+    height           : 1em;
+    border           : 0px solid;
+    border-radius    : 1em;
+    background       : #000;
+    margin-top: 5.25px;
+    margin-left: 5px;
+}
+
+input[type=radio]:not(old):checked + label > span {
+    border: 0.15em solid #000;
+}
+
 
 input[type=number]::-webkit-outer-spin-button,
 input[type=number]::-webkit-inner-spin-button {
@@ -236,22 +275,36 @@ a, .icon {
 
 .question__radio {
     border: 1px solid #DDD;
-    padding: 15px 20px;
+    padding: 0px 0px 14px 20px;
     text-align: left;
     min-height: 50px;
     background-color: white;
     font-size: 14px;
-    cursor: pointer;
+    cursor: pointer !important;
 }
 
-.question__radio__span {
-    padding-left: 15px;
+.question__radio__selected {
+    border: 1px solid #777;
+    background-color: #DDD;
+}
+
+.question__radio label {
     font-weight: 500;
+    cursor: pointer !important;
+}
+
+.question__radio__span__btn {
+    float: left;
+    margin-top: 4px;
+    cursor: pointer !important;
 }
 
 .question__radio__span__meta {
-    padding-left: 30px;
+    padding-left: 49px;
+    margin-top: -12px;
+    float: left;
     color: #777;
+    cursor: pointer !important;
 }
 
 .question__toggle {

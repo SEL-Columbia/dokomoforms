@@ -5,31 +5,6 @@ var OFF = false;
 var NUM_FAC = 256;
 var FAC_RAD = 2; //in KM
 
-var appCache = window.applicationCache;
-switch (appCache.status) {
-    case appCache.UNCACHED: // UNCACHED == 0
-        console.log('UNCACHED');
-        break;
-    case appCache.IDLE: // IDLE == 1
-        console.log('IDLE');
-        break;
-    case appCache.CHECKING: // CHECKING == 2
-        console.log('CHECKING');
-        break;
-    case appCache.DOWNLOADING: // DOWNLOADING == 3
-        console.log('DOWNLOADING');
-        break;
-    case appCache.UPDATEREADY:  // UPDATEREADY == 4
-        console.log('UPDATEREADY');
-        break;
-    case appCache.OBSOLETE: // OBSOLETE == 5
-        console.log('OBSOLETE');
-        break;
-    default:
-        console.log('UKNOWN CACHE STATUS');
-        break;
-};
-
 var App = {
     unsynced: [], // unsynced surveys
     facilities: [], // revisit facilities
@@ -1168,6 +1143,7 @@ Widgets.facility = function(question, page, footer) {
             var $div = addNewButton(uuid, name, sector, distance, ".question__radios");
             if (question.answer[0] && question.answer[0].response.id === uuid) {
                     $div.find('input[type=radio]').prop('checked', true);
+                    //$div.addClass('question__radio__selected');
             }
         }
     } 
@@ -1175,42 +1151,53 @@ Widgets.facility = function(question, page, footer) {
 
     function addNewButton(value, name, sector, distance, region) {
         var div_html = "<div class='question__radio'>"
-            + "<input type='radio' name='facility' value='"+ value +"'/>"
-            + "<span class='question__radio__span'>"+ name +"</span>"
+            + "<input type='radio' id='"+ value + "' name='facility' value='"+ value +"'/>"
+            + "<label for='" + value + "'>"
+            + "<span class='question__radio__span__btn'><span></span></span>"
+            + name + "</label>"
             + "<br/><span class='question__radio__span__meta'>"+ sector +"</span>"
             + "<span class='question__radio__span__meta'><em>"+ distance +"</em></span>"
             + "</div>";
 
-        var $div = $(div_html);
-        $div
-            .click(function() {
-                var rbutton = $(this).find('input[type=radio]');
-                var uuid = rbutton.val();
-                console.log(uuid);
-
-                if (question.answer[0] && question.answer[0].response.id === uuid) {
-                    rbutton.prop('checked', false);
-                    question.answer = [];
-                    return;
-                }
-
-                var coords = topFacilities[uuid].coordinates; // Should always exist
-                var name = topFacilities[uuid].name;
-                var sector = topFacilities[uuid]['properties'].sector;
-                question.answer = [{ 
-                    response: {'id': uuid, 'lat': coords[1], 'lon': coords[0] },
-                    metadata: {'name': name, 'sector': sector }
-                }];
-
-                rbutton.prop('checked', true);
-
-            });
-
+        $div = $(div_html);
         $(region).append($div);
         return $div;
     }
 
     /* Handle events */
+
+    // Radios 
+    $(page)
+        .find('.question__radios')
+        .delegate('.question__radio', 'click', function(e) {
+            //e.stopImmediatePropagation();
+            //e.stopPropagation();
+            e.preventDefault();
+            var rbutton = $(this).find('input[type=radio]').first();
+            var uuid = rbutton.val();
+            console.log(uuid);
+
+            var rbutton = rbutton;
+            if (question.answer[0] && question.answer[0].response.id === uuid) {
+                rbutton.prop('checked', false);
+                //$(this).removeClass('question__radio__selected');
+                question.answer = [];
+                return;
+            }
+
+            var coords = topFacilities[uuid].coordinates; // Should always exist
+            var name = topFacilities[uuid].name;
+            var sector = topFacilities[uuid]['properties'].sector;
+            question.answer = [{ 
+                response: {'id': uuid, 'lat': coords[1], 'lon': coords[0] },
+                metadata: {'name': name, 'sector': sector }
+            }];
+
+            
+            //$(this).addClass('question__radio__selected');
+            rbutton.prop('checked', true);
+
+        });
 
     // Find me
     $(page)
