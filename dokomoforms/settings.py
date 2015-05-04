@@ -25,7 +25,7 @@ LOG_LEVEL = ERROR  # for testing, use DEBUG in a local_settings.py file instead
 # Database
 
 DB_USER = 'postgres'
-DB_PASSWORD = 'password'
+DB_PASSWORD = os.environ.get('DB_ENV_POSTGRES_PASSWORD', 'password')
 DB_HOST = os.environ.get('DB_PORT_5432_TCP_ADDR','localhost')
 DB_PORT = os.environ.get('DB_PORT_5432_TCP_PORT', '5432')
 DB_NAME = 'doko'
