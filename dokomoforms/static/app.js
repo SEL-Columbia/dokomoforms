@@ -37,6 +37,10 @@ App.init = function(survey) {
     // Load up any unsynced submissions
     App.unsynced = JSON.parse(localStorage.unsynced)[self.survey.id] || []; 
 
+    // Load up any unsynced facilities
+    App.unsynced_facilities = 
+        JSON.parse(localStorage.unsynced_facilities || "{}");
+
     // Load any facilities
     App.facilities = JSON.parse(localStorage.facilities || "{}");
     if (JSON.stringify(App.facilities) === "{}" && navigator.onLine) {
@@ -47,10 +51,6 @@ App.init = function(survey) {
             null// what to do with facilities 
         );
     }
-
-    // Load up any unsynced facilities
-    App.unsynced_facilities = 
-        JSON.parse(localStorage.unsynced_facilities || "{}");
 
     $('.sel')
         .click(function(e) {
@@ -112,7 +112,6 @@ App.sync = function() {
     var unsynced = JSON.parse(localStorage.unsynced); 
     unsynced[self.survey.id] = App.unsynced;
     localStorage['unsynced'] = JSON.stringify(unsynced);
-    console.log('localStorage', localStorage.unsynced);
 };
 
 App.message = function(text, style) {
@@ -530,9 +529,22 @@ Survey.prototype.submit = function() {
             var response =  ans.response;
             var is_type_exception = ans.is_type_exception || false;
             var metadata = ans.metadata || {};
+            var is_new_facility = metadata.is_new; //XXX: Should I remove this is new marking?
 
             if (response == null) { 
                 return;
+            }
+
+            if (is_new_facility) {
+                // Record this new facility for Revisit s)ubmission
+                App.unsynced_facilities[response.id] = {
+                    'name': metadata.name, 'uuid': response.id, 
+                    'properties' : {'sector': metadata.sector},
+                    'coordinates' : [response.lon, response.lat]
+                };
+
+                // Store it in facilities as well
+                App.facilities[response.id] = App.unsynced_facilities[response.id];
             }
 
             survey_answers.push({
@@ -578,11 +590,8 @@ Survey.prototype.submit = function() {
     // Save Submission data
     App.unsynced.push(data);
     var unsynced = JSON.parse(localStorage.unsynced); 
-    console.log(unsynced);
     unsynced[self.id] = App.unsynced;
-    console.log(unsynced);
     localStorage['unsynced'] = JSON.stringify(unsynced);
-    console.log('localStorage', localStorage.unsynced);
 
     App.message('Saved Submission!', 'message_success');
     App.splash();
@@ -624,7 +633,6 @@ Widgets._input = function(question, page, footer, type) {
         .find('.text_input')
         .keyup(function() { //XXX: Change isn't sensitive enough on safari?
             var ans_ind = $(page).find('input').index(this); 
-            console.log('value recieved', ans_ind, this.value, typeof this.value);
             question.answer[ans_ind] = { 
                 response: self._validate(type, this.value, question.logic),
                 is_type_exception: false,
@@ -1227,7 +1235,6 @@ Widgets.facility = function(question, page, footer) {
             e.preventDefault();
             var rbutton = $(this).find('input[type=radio]').first();
             var uuid = rbutton.val();
-            console.log(uuid);
 
             var rbutton = rbutton;
             if (question.answer[0] && question.answer[0].response.id === uuid) {
@@ -1290,7 +1297,6 @@ Widgets.facility = function(question, page, footer) {
         .click(function() {
             if (question.answer[0] && question.answer[0].metadata.is_new) {
                 $('.facility__btn').text("add facility");
-                console.log(question.answer[0]);
                 question.answer = [];
                 $('.question__add__facility').hide();
                 //$('.question__map').show();
@@ -1316,7 +1322,8 @@ Widgets.facility = function(question, page, footer) {
 
                 question.answer = [{ 
                     response: {'id': uuid, 'lat': lat, 'lon': lon },
-                    metadata: {'name': name, 'sector': sector, 'is_new': true }
+                    metadata: {'name': name, 'sector': sector, 'is_new': true },
+                    failed_validation: Boolean(!name || !sector)  
                 }];
 
                 $('.facility_uuid_input').val(uuid);
@@ -1325,15 +1332,9 @@ Widgets.facility = function(question, page, footer) {
                 $('.facility_sector_input').val(sector);
 
                 captureCallback = updateLocation;
-                console.log(question.answer[0]);
             }
 
-            // Record this new facility for Revisit s)ubmission
-            //App.unsynced_facilities[uuid] = {
-            //    'name': 'New Facility', 'uuid': uuid, 
-            //    'properties' : {'sector': 'other'},
-            //    'coordinates' : [lng, lat]
-            //};
+            console.log(question.answer[0]);
 
         });
 
@@ -1342,14 +1343,19 @@ Widgets.facility = function(question, page, footer) {
         .find('.facility_name_input')
         .keyup(function() {
             question.answer[0].metadata.name = this.value;
+            var name = this.value;
+            var sector = question.answer[0].metadata.sector;
+            question.answer[0].failed_validation = Boolean(!name || !sector);
         });
 
     // Sector input 
     $(page)
         .find('.facility_sector_input')
         .change(function() {
-            console.log("Sector", this.value);
             question.answer[0].metadata.sector = this.value;
+            var sector = this.value;
+            var name = question.answer[0].metadata.name;
+            question.answer[0].failed_validation = Boolean(!name || !sector);
         });
 
     // Location callback 
@@ -1380,6 +1386,11 @@ function getNearbyFacilities(lat, lng, rad, lim, cb) {
             data.facilities.forEach(function(facility) {
                 facilities[facility.uuid] = facility;
             });
+            // Add in our unsynced ones as well
+            Object.keys(App.unsynced_facilities).forEach(function(uuid) {
+                facilities[uuid] = App.unsynced_facilities[uuid];
+            });
+
             App.facilities = facilities;
             localStorage.setItem("facilities", JSON.stringify(facilities));
             if (cb) {
@@ -1401,10 +1412,8 @@ function postNewFacility(facility) {
         dataType: 'json',
         success: function() {
             App.message('Facility Added!', 'message_success');
-
             // If posted, we don't an unsynced reference to it anymore
             delete App.unsynced_facilities[facility.uuid];
-            App.facilities[facility.uuid] = facility;
         },
         
         headers: {
@@ -1417,7 +1426,6 @@ function postNewFacility(facility) {
         },
         
         complete: function() {
-            // Add it into facilities array so it can be selected later
             localStorage.setItem("facilities", 
                     JSON.stringify(App.facilities));
 
