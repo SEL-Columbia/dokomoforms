@@ -1076,6 +1076,7 @@ Widgets.location = function(question, page, footer) {
             .last().val(coords.lat + " " + coords.lon);
     }
 
+    // Find me
     $(page)
         .find('.question__find__btn')
         .click(function() {
@@ -1101,7 +1102,7 @@ Widgets.location = function(question, page, footer) {
                 });
         });
 
-    // disable default event
+    // Disable default event
     $(page)
         .find('.text_input')
         .off('keyup');
@@ -1109,14 +1110,28 @@ Widgets.location = function(question, page, footer) {
 
 // Similar to location however you cannot just add location, 
 Widgets.facility = function(question, page, footer) {
+    // Hide add button by default
+    $('.facility__btn').hide();
+
+    // Default operation on caputre Location 
+    var captureCallback = reloadFacilities;
+    if (question.answer[0] && question.answer[0].metadata.is_new) {
+        captureCallback = updateLocation;
+        //$('.question__map').hide();
+        $('.facility__btn').show();
+        $('.question__radios').hide();
+        $('.question__add__facility').show();
+        $('.facility__btn').text("remove facility");
+    }
+
     // Revisit API Call calls facilitiesCallback
     drawFacilities(App.facilities);
 
     /* Helper functions for updates  */
-    function reloadFacilities(lat, lon) {
+    function reloadFacilities(loc) {
         if (navigator.onLine) {
             // Refresh if possible
-            getNearbyFacilities(lat, lon, 
+            getNearbyFacilities(loc.lat, loc.lon, 
                     FAC_RAD, // Radius in km 
                     NUM_FAC, // limit
                     drawFacilities // what to do with facilities
@@ -1133,6 +1148,7 @@ Widgets.facility = function(question, page, footer) {
         var loc = App.location;
         if (Object.keys(loc).length == 0) {
             console.log("No location found\n");
+            $('.facility__btn').hide();
             return;
         }
 
@@ -1169,6 +1185,7 @@ Widgets.facility = function(question, page, footer) {
             return (lengthA - lengthB); 
         });
 
+        $('.facility__btn').show();
         $(".question__radios").empty();
         for(var i=0; i < Math.min(10, facilities.length); i++) {
             var uuid = facilities[i].uuid;
@@ -1251,7 +1268,10 @@ Widgets.facility = function(question, page, footer) {
                     App.location = loc;
 
                     // Revisit api call
-                    reloadFacilities(loc.lat, loc.lon); 
+                    captureCallback(loc); 
+        
+                    // Make sure button is visible now
+                    $('.facility__btn').show();
 
                 }, function error() {
                     App.message('Could not get your location, please make sure your GPS device is active.',
@@ -1268,17 +1288,47 @@ Widgets.facility = function(question, page, footer) {
     $(page)
         .find('.facility__btn')
         .click(function() {
-
-            if (!(question.answer[0] && question.answer[0].response.metadata.is_unsynced)) {
-                $('.question__map').empty();
-                $('.question__radios').empty();
-                $('.question__add__facility').show();
-            } else {
+            if (question.answer[0] && question.answer[0].metadata.is_new) {
+                $('.facility__btn').text("add facility");
+                console.log(question.answer[0]);
+                question.answer = [];
                 $('.question__add__facility').hide();
-                drawFacilities(App.facilities);
-            }
-            // Record this new facility for Revisit s)ubmission
+                //$('.question__map').show();
+                $('.question__radios').show();
+                captureCallback = reloadFacilities;
+            } else {
+                $('.facility__btn').text("remove facility");
+                if (question.answer[0] && question.answer[0].response.id) {
+                    var rbutton = $('.question__radios').find("input[value='"+ question.answer[0].response.id +"']");
+                    rbutton.prop('checked', false);
+                    //$(this).removeClass('question__radio__selected');
+                }
 
+                //$('.question__map').hide();
+                $('.question__radios').hide();
+                $('.question__add__facility').show();
+
+                var uuid = $('.facility_uuid_input').val() || objectID();
+                var lat = $('.facility_location_input').val().split(" ")[0] || App.location.lat;
+                var lon = $('.facility_location_input').val().split(" ")[1] || App.location.lon;
+                var name = $('.facility_name_input').val();
+                var sector = $('.facility_sector_input').val();
+
+                question.answer = [{ 
+                    response: {'id': uuid, 'lat': lat, 'lon': lon },
+                    metadata: {'name': name, 'sector': sector, 'is_new': true }
+                }];
+
+                $('.facility_uuid_input').val(uuid);
+                $('.facility_location_input').val(lat + " " + lon);
+                $('.facility_name_input').val(name);
+                $('.facility_sector_input').val(sector);
+
+                captureCallback = updateLocation;
+                console.log(question.answer[0]);
+            }
+
+            // Record this new facility for Revisit s)ubmission
             //App.unsynced_facilities[uuid] = {
             //    'name': 'New Facility', 'uuid': uuid, 
             //    'properties' : {'sector': 'other'},
@@ -1286,6 +1336,29 @@ Widgets.facility = function(question, page, footer) {
             //};
 
         });
+
+    // Name input
+    $(page)
+        .find('.facility_name_input')
+        .keyup(function() {
+            question.answer[0].metadata.name = this.value;
+        });
+
+    // Sector input 
+    $(page)
+        .find('.facility_sector_input')
+        .change(function() {
+            console.log("Sector", this.value);
+            question.answer[0].metadata.sector = this.value;
+        });
+
+    // Location callback 
+    function updateLocation(loc) {
+       $('.facility_location_input').val(loc.lat + " " + loc.lon);
+       question.answer[0].response.lat = loc.lat;
+       question.answer[0].response.lon = loc.lon;
+    }
+
 };
 
 

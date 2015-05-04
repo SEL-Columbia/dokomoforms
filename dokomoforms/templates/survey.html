@@ -270,23 +270,70 @@
                 Capture Location
             </button>
 
-            <div class="segmented-control question__toggle">
-                <a class="control-item active" href="#list">
-                    List
-                </a>
-                <!--
-                <a class="control-item" href="#map">
-                    Map
-                </a>
-                -->
-            </div>
-
         </div>
 
-        <div id="list" class='control-content active question__radios'></div>
-        <!-- <div id="map" class='control-content question__map'></div> -->
+        <div class="segmented-control content-padded question__toggle">
+            <a class="control-item active" href="#list">
+                List
+            </a>
+            <a class="control-item" href="#map">
+                Map
+            </a>
+        </div>
 
-        <div class='question__add__facility' style='display: none'></div>
+        <span id="list" class='control-content active question__radios'></span>
+        <span id="map" class='control-content question__map'>
+            <img src='/static/img/map.png' alt="map.png" class='content-padded'></img>
+        </span>
+
+        <div class='question__add__facility' style='display: none'>
+            <% 
+                var ans = question.answer[0] && question.answer[0].metadata.is_new && question.answer[0]; 
+                var name = ans && ans.metadata.name || '';
+                var sector = ans && ans.metadata.sector || '';
+                var location = ans && ans.response.lat + " " + ans.response.lon || '';
+                var uuid = ans && ans.response.id || ''; 
+            %>
+            <input class="text_input facility_uuid_input" type="text" 
+                style="display:none;"
+                placeholder="Facility UUID"
+                value="<%- uuid %>"
+            />
+            <input class="text_input facility_name_input" type="text" 
+                placeholder="Facility Name"
+                value="<%- name %>"
+            />
+            <input class="text_input facility_location_input" type="text" 
+                placeholder="Facility Location"
+                value="<%- location %>"
+            />
+
+            <div class="content-padded">
+                <select class="question__select facility_sector_input">
+                    <option value="">Please choose a Sector</option>
+                    <option 
+                        <% if (sector === 'water') { %> selected <% } %>
+                        value="water">
+                        Water
+                    </option>
+                    <option 
+                        <% if (sector === 'energy') { %> selected <% } %>
+                        value="energy">
+                        Energy
+                    </option>
+                    <option 
+                        <% if (sector === 'education') { %> selected <% } %>
+                        value="education">
+                        Education
+                    </option>
+                    <option 
+                        <% if (sector === 'other') { %> selected <% } %>
+                        value="other">
+                        Other
+                    </option>
+                </select>
+            </div>
+        </div>
 
         <div class="content-padded">
             <button class="btn facility__btn">add new facility</button>
