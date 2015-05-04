@@ -9,7 +9,7 @@ var App = {
     unsynced: [], // unsynced surveys
     facilities: [], // revisit facilities
     unsynced_facilities: {}, // new facilities
-    start_loc: {'lat': 40.8138912, 'lon': -73.9624327}, // defaults to nyc, updated constantly
+    location: {},
     submitter_name: ''
 };
 
@@ -23,28 +23,30 @@ App.init = function(survey) {
             survey.created_on,
             survey.last_updated);
 
-    self.start_loc = survey.survey_metadata.location || self.start_loc;
+    var start_loc = survey.survey_metadata.location 
+        || {'lat': 40.8138912, 'lon': -73.9624327}; // defaults to nyc
+
     self.facilities = JSON.parse(localStorage.facilities || "[]");
     self.submitter_name = localStorage.name || "";
     self.submitter_email = localStorage.email || "";
     
+    // Init if unsynced is undefined
+    if (!localStorage.unsynced) {
+        localStorage.unsynced = JSON.stringify({});
+    }
+    // Load up any unsynced submissions
+    App.unsynced = JSON.parse(localStorage.unsynced)[self.survey.id] || []; 
+
     // Load any facilities
-    if (App.facilities.length === 0) {
+    App.facilities = JSON.parse(localStorage.facilities || "{}");
+    if (JSON.stringify(App.facilities) === "{}" && navigator.onLine) {
         // See if you can get some new facilities
-        getNearbyFacilities(App.start_loc.lat, App.start_loc.lon, 
+        getNearbyFacilities(start_loc.lat, start_loc.lon, 
             FAC_RAD, // Radius in km 
             NUM_FAC, // limit
             null// what to do with facilities 
         );
     }
-
-    // Init if unsynced is undefined
-    if (!localStorage.unsynced) {
-        localStorage.unsynced = JSON.stringify({});
-    }
-    
-    // Load up any unsynced submissions
-    App.unsynced = JSON.parse(localStorage.unsynced)[self.survey.id] || []; 
 
     // Load up any unsynced facilities
     App.unsynced_facilities = 
@@ -247,6 +249,8 @@ function Survey(id, version, questions, metadata, title, created_on, last_update
         question.next = self.getQuestion(question.question_to_sequence_number);
     });
 
+    App.location = answers['location'] || {};
+
     // Know where to start, and number
     self.current_question = self.questions[0];
     self.lowest_sequence_number = self.current_question.sequence_number;
@@ -318,7 +322,7 @@ Survey.prototype.next = function(offset) {
         // Is it a valid response?
         bad_answers = [];
         this.current_question.answer.forEach(function(resp) {
-            if (resp.failed_validation)
+            if (resp && resp.failed_validation)
                 bad_answers.push(resp);
         });
 
@@ -356,6 +360,7 @@ Survey.prototype.next = function(offset) {
         }
     }
 
+    self.saveState();
     self.render(next_question);
 };
 
@@ -413,7 +418,7 @@ Survey.prototype.render = function(question) {
         // Show widget
         widgetHTML = $('#widget_' + question.type_constraint_name).html();
         widgetTemplate = _.template(widgetHTML);
-        compiledHTML = widgetTemplate({question: question, start_loc: App.start_loc});
+        compiledHTML = widgetTemplate({question: question});
         self.current_question = question;
 
         // Render question
@@ -482,7 +487,7 @@ Survey.prototype.render = function(question) {
 
 };
 
-Survey.prototype.submit = function() {
+Survey.prototype.saveState = function() {
     var self = this;
     var answers = {};
 
@@ -490,8 +495,27 @@ Survey.prototype.submit = function() {
     _.each(self.questions, function(question) {
         answers[question.question_id] = question.answer;
     });
+    answers['location'] = App.location;
 
+    // Save answers in storage
     localStorage[self.id] = JSON.stringify(answers);
+}
+
+Survey.prototype.clearState = function() {
+    var self = this;
+
+    // Clear answers locally 
+    _.each(self.questions, function(question) {
+        question.answer = [];
+    });
+    App.location = {};
+
+    // Clear answers in storage
+    localStorage[self.id] = JSON.stringify({});
+}
+
+Survey.prototype.submit = function() {
+    var self = this;
 
     // Prepare POST request
     var survey_answers = [];
@@ -547,6 +571,9 @@ Survey.prototype.submit = function() {
 
     localStorage.setItem("unsynced_facilities", 
             JSON.stringify(App.unsynced_facilities));
+    
+    // Clear State
+    self.clearState();
 
     // Save Submission data
     App.unsynced.push(data);
@@ -1031,7 +1058,6 @@ Widgets.location = function(question, page, footer) {
     var self = this;
     var response = $(page).find('.text_input').last().val();
     response = self._validate('location', response, question.logic);
-    App.start_loc = response || App.start_loc;
 
     function updateLocation(coords) {
         // Find current length of inputs and update the last one;
@@ -1039,7 +1065,7 @@ Widgets.location = function(question, page, footer) {
 
         // update array val
         question.answer[questions_len - 1] = {
-            response: {'lon': coords[0], 'lat': coords[1]},
+            response: {'lon': coords.lon, 'lat': coords.lat},
             is_type_exception: false,
             metadata: {},
         }
@@ -1047,7 +1073,7 @@ Widgets.location = function(question, page, footer) {
         // update latest lon/lat values
         var questions_len = $(page).find('.text_input').length;
         $(page).find('.text_input')
-            .last().val(coords[1] + " " + coords[0]);
+            .last().val(coords.lat + " " + coords.lon);
     }
 
     $(page)
@@ -1057,12 +1083,13 @@ Widgets.location = function(question, page, footer) {
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
                     // Server accepts [lon, lat]
-                    var coords = [
-                        position.coords.longitude, 
-                        position.coords.latitude
-                    ];
+                    var loc = {
+                        'lat': position.coords.latitude,
+                        'lon': position.coords.longitude, 
+                    }
 
-                    updateLocation(coords); //XXX: DONT MOVE ON
+                    App.location = loc;
+                    updateLocation(loc); //XXX: DONT MOVE ON
 
                 }, function error() {
                     //If cannot Get location" for some reason,
@@ -1082,8 +1109,6 @@ Widgets.location = function(question, page, footer) {
 
 // Similar to location however you cannot just add location, 
 Widgets.facility = function(question, page, footer) {
-    var topFacilities = {};
-
     // Revisit API Call calls facilitiesCallback
     drawFacilities(App.facilities);
 
@@ -1103,17 +1128,31 @@ Widgets.facility = function(question, page, footer) {
     }
 
     // handles calling drawPoint gets called once per getNearby call 
-    function drawFacilities(facilities) {
+    function drawFacilities(facilities_dict) {
+
+        var loc = App.location;
+        if (Object.keys(loc).length == 0) {
+            console.log("No location found\n");
+            return;
+        }
+
+        var facilities = [];
+        Object.keys(facilities_dict).forEach(function(uuid) {
+           facilities.push(facilities_dict[uuid]);
+        });
+
+        console.log(facilities);
+
         var ans = question.answer[0];
         var selected = ans && ans.response.id || null;
 
         // http://www.movable-type.co.uk/scripts/latlong.html
-        function latLonLength(coordinates) {
+        function latLonLength(coordinates, loc) {
             var R = 6371000; // metres
-            var e = App.start_loc.lat*Math.PI/180;
-            var f = coordinates[1]*Math.PI/180;
-            var g = (coordinates[1]-App.start_loc.lat)*Math.PI/180;
-            var h = (coordinates[0]-App.start_loc.lon)*Math.PI/180;
+            var e = loc.lat * Math.PI/180;
+            var f = coordinates[1] * Math.PI/180;
+            var g = (coordinates[1] - loc.lat) * Math.PI/180;
+            var h = (coordinates[0] - loc.lon) * Math.PI/180;
 
             var a = Math.sin(g/2) * Math.sin(g/2) +
                     Math.cos(e) * Math.cos(f) *
@@ -1124,22 +1163,18 @@ Widgets.facility = function(question, page, footer) {
             return R * c;
         }
 
-        // SYNCED FACILITIES
-        facilities = facilities || [];
         facilities.sort(function(facilityA, facilityB) {
-            var lengthA = latLonLength(facilityA.coordinates);
-            var lengthB = latLonLength(facilityB.coordinates);
-
+            var lengthA = latLonLength(facilityA.coordinates, loc);
+            var lengthB = latLonLength(facilityB.coordinates, loc);
             return (lengthA - lengthB); 
         });
 
         $(".question__radios").empty();
         for(var i=0; i < Math.min(10, facilities.length); i++) {
             var uuid = facilities[i].uuid;
-            topFacilities[uuid] = facilities[i];
             var name = facilities[i]["name"];
             var sector = facilities[i]["properties"]["sector"];
-            var distance = latLonLength(facilities[i].coordinates).toFixed(2) + "m";
+            var distance = latLonLength(facilities[i].coordinates, loc).toFixed(2) + "m";
             var $div = addNewButton(uuid, name, sector, distance, ".question__radios");
             if (question.answer[0] && question.answer[0].response.id === uuid) {
                     $div.find('input[type=radio]').prop('checked', true);
@@ -1185,9 +1220,9 @@ Widgets.facility = function(question, page, footer) {
                 return;
             }
 
-            var coords = topFacilities[uuid].coordinates; // Should always exist
-            var name = topFacilities[uuid].name;
-            var sector = topFacilities[uuid]['properties'].sector;
+            var coords = App.facilities[uuid].coordinates; // Should always exist
+            var name = App.facilities[uuid].name;
+            var sector = App.facilities[uuid]['properties'].sector;
             question.answer = [{ 
                 response: {'id': uuid, 'lat': coords[1], 'lon': coords[0] },
                 metadata: {'name': name, 'sector': sector }
@@ -1207,12 +1242,16 @@ Widgets.facility = function(question, page, footer) {
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
                     // Server accepts [lon, lat]
-                    var coords = [position.coords.longitude, position.coords.latitude];
-                    App.start_loc.lat = coords[1];
-                    App.start_loc.lon = coords[0];
+                    var loc = {
+                        'lat': position.coords.latitude,
+                        'lon': position.coords.longitude, 
+                    }
+
+                    // Remember response
+                    App.location = loc;
 
                     // Revisit api call
-                    reloadFacilities(coords[1], coords[0]); 
+                    reloadFacilities(loc.lat, loc.lon); 
 
                 }, function error() {
                     App.message('Could not get your location, please make sure your GPS device is active.',
@@ -1229,12 +1268,22 @@ Widgets.facility = function(question, page, footer) {
     $(page)
         .find('.facility__btn')
         .click(function() {
-            // Record this new facility for Revisit submission
-            App.unsynced_facilities[uuid] = {
-                'name': 'New Facility', 'uuid': uuid, 
-                'properties' : {'sector': 'other'},
-                'coordinates' : [lng, lat]
-            };
+
+            if (!(question.answer[0] && question.answer[0].response.metadata.is_unsynced)) {
+                $('.question__map').empty();
+                $('.question__radios').empty();
+                $('.question__add__facility').show();
+            } else {
+                $('.question__add__facility').hide();
+                drawFacilities(App.facilities);
+            }
+            // Record this new facility for Revisit s)ubmission
+
+            //App.unsynced_facilities[uuid] = {
+            //    'name': 'New Facility', 'uuid': uuid, 
+            //    'properties' : {'sector': 'other'},
+            //    'coordinates' : [lng, lat]
+            //};
 
         });
 };
@@ -1254,11 +1303,14 @@ function getNearbyFacilities(lat, lng, rad, lim, cb) {
             fields: "name,uuid,coordinates,properties:sector", //filters results to include just those three fields,
         },
         function(data) {
-            localStorage.setItem("facilities", JSON.stringify(data.facilities));
+            facilities = {};
+            data.facilities.forEach(function(facility) {
+                facilities[facility.uuid] = facility;
+            });
+            App.facilities = facilities;
+            localStorage.setItem("facilities", JSON.stringify(facilities));
             if (cb) {
-                //XXX REMEMMERNBE
-                App.facilities = data.facilities;
-                cb(data.facilities); //drawFacillities callback probs
+                cb(facilities); //drawFacillities callback probs
             }
         }
     );
@@ -1279,7 +1331,7 @@ function postNewFacility(facility) {
 
             // If posted, we don't an unsynced reference to it anymore
             delete App.unsynced_facilities[facility.uuid];
-            App.facilities.push(facility);
+            App.facilities[facility.uuid] = facility;
         },
         
         headers: {
