@@ -1448,3 +1448,5 @@ var exports = exports || {} //XXX: Just to silence console;
 exports.App = App;
 exports.Survey = Survey;
 exports.Widgets = Widgets; 
+exports.getNearbyFacilities = getNearbyFacilities;
+exports.postNewFacility = postNewFacility;
