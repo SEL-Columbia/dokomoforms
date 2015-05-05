@@ -9,9 +9,8 @@ import os.path
 from sqlalchemy import create_engine
 from dokomoforms.db import metadata
 
-from dokomoforms.settings import (CONNECTION_STRING, DB_USER, DB_PASSWORD,
-                                  DB_HOST, DB_PORT, DB_NAME
-                                  )
+from dokomoforms.settings import CONNECTION_STRING, DB_USER, DB_PASSWORD, \
+    DB_HOST, DB_PORT, DB_NAME
 
 from psycopg2 import connect
 import os
