@@ -802,11 +802,13 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
 
         // Bring div up
         page.addClass('content-super-shrunk');
-        //footer.addClass('bar-footer-super-extended');
-        footer.animate({height:220},200).addClass('bar-footer-super-extended');
 
         //Add overlay
         $('.overlay').fadeIn('fast');
+
+        //footer.addClass('bar-footer-super-extended');
+        footer.animate({height:220},200).addClass('bar-footer-super-extended');
+
 
         // Enable other input
         $(footer).find('.dont_know_input').each(function(i, child) { 
@@ -843,6 +845,7 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
         // Hide overlay and shift div
         $('.overlay').fadeOut('fast');
         page.removeClass('content-super-shrunk');
+
         //footer.removeClass('bar-footer-super-extended');
         footer.animate({height:120},200).removeClass('bar-footer-super-extended');
 
