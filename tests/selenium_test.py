@@ -247,10 +247,18 @@ class SubmissionTest(DriverTest):
         next_button().click()
         next_button().click()  # note question
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[1]/input')))
+            (By.CLASS_NAME, 'question__radio__span__btn')))
         self.drv.find_element_by_class_name('facility__btn').click()
         self.drv.find_element_by_xpath(
-            '/html/body/div[1]/input').send_keys('new_test_facility')
+            '/html/body/div[1]/div[2]/input[2]'
+        ).send_keys('new_test_facility')
+        if self.browser_name == 'android':
+            self.drv.find_element_by_tag_name('select').click()
+            self.drv.switch_to.window('NATIVE_APP')
+            self.drv.find_elements_by_tag_name('TextView')[-4].click()
+            self.drv.switch_to.window('WEBVIEW_0')
+        else:
+            self.drv.find_elements_by_tag_name('option')[1].click()
         next_button().click()
 
         self.drv.find_elements_by_tag_name('input')[0].send_keys(
