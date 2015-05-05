@@ -46,7 +46,6 @@ describe('App initalization Tests', function(done) {
     it('should init app and survey juust fine', 
         function(done) {
             App.init(raw_survey);
-            raw_survey.survey_metadata.location.should.match(App.start_loc);
             should(App.survey).be.ok;
 
             var survey = App.survey;

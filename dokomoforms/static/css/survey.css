@@ -5,8 +5,6 @@
 /* General styles
 =================================================*/
 html {
-    font-family: 'Roboto', sans-serif !important;
-    font-weight: 300;
 }
 
 h1 {
@@ -14,6 +12,8 @@ h1 {
 }
 
 body {
+    font-family: 'Roboto', sans-serif !important;
+    font-weight: 300;
     background-color: rgb(250, 250, 250);
 }
 
@@ -23,6 +23,7 @@ h3 {
 }
 
 input[type] {
+    font-family: 'Roboto', sans-serif !important;
     border: 1px solid #DDD;
     border-left: 0px solid #DDD;
     border-right: 0px solid #DDD;
@@ -58,6 +59,51 @@ input[type=checkbox] {
     margin-top: 8px;
     min-height: 0px;
 }
+
+input[type=radio]:not(old) {
+    width     : 2em;
+    margin    : 0;
+    padding   : 0;
+    font-size : 1em;
+    opacity   : 0;
+    min-height: 0px;
+}
+
+
+input[type=radio]:not(old) + label {
+    display      : inline-block;
+    margin-left  : -2em;
+    line-height  : 1.5em;
+    margin-top: 10px;
+}
+
+
+input[type=radio]:not(old) + label > span {
+    display          : inline-block;
+    width            : 2em;
+    height           : 2em;
+    border           : 0.15em solid #AAA;
+    border-radius    : 1em;
+    background       : #FFF;
+    vertical-align   : bottom;
+    margin-right: 20px;
+}
+
+input[type=radio]:not(old):checked + label > span > span {
+    display          : block;
+    width            : 1em;
+    height           : 1em;
+    border           : 0px solid;
+    border-radius    : 1em;
+    background       : #000;
+    margin-top: 5.25px;
+    margin-left: 5px;
+}
+
+input[type=radio]:not(old):checked + label > span {
+    border: 0.15em solid #000;
+}
+
 
 input[type=number]::-webkit-outer-spin-button,
 input[type=number]::-webkit-inner-spin-button {
@@ -100,6 +146,7 @@ select {
 
     border: 1px solid #DDD;
     padding: 14px 15px;
+    font-family: 'Roboto', sans-serif !important;
     font-size: 14px;
     min-height: 50px;
     outline: none;
@@ -196,7 +243,6 @@ a, .icon {
     position: absolute;
     top: 0;
     left: 0;
-    zIndex: 100;
 }
 
 .message {
@@ -224,6 +270,45 @@ a, .icon {
 
 .message_success {
     background: rgba(0, 255, 0, 0.95);
+}
+
+.question__radio {
+    border: 1px solid #DDD;
+    padding: 0px 0px 14px 20px;
+    text-align: left;
+    min-height: 50px;
+    background-color: white;
+    font-size: 14px;
+    cursor: pointer !important;
+}
+
+.question__radio__selected {
+    border: 1px solid #777;
+    background-color: #DDD;
+}
+
+.question__radio label {
+    font-weight: 500;
+    cursor: pointer !important;
+}
+
+.question__radio__span__btn {
+    float: left;
+    margin-top: 4px;
+    cursor: pointer !important;
+}
+
+.question__radio__span__meta {
+    padding-left: 49px;
+    margin-top: -12px;
+    float: left;
+    color: #777;
+    cursor: pointer !important;
+}
+
+.question__toggle {
+    margin: 10px 0px;
+    width: 80px;
 }
 
 /* Rachet style changes
@@ -274,17 +359,19 @@ header {
 }
 
 .btn {
+    font-family: 'Roboto', sans-serif !important;
     font-weight: 300;
 }
 
 .bar .btn {
-    font-weight: 300;
+    font-weight: 700;
 }
 
 .btn-primary {
     box-shadow: 0px 4px 0px #FF5511;
     background-color: #FF7700;
     border: 1px solid #FF7700;
+    font-weight: 700;
 }
 
 .btn-primary:hover, .btn-primary:active, .btn-primary:focus {

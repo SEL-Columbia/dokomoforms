@@ -34,9 +34,9 @@ module.exports = (function(url) {
     //jsdom.getVirtualConsole(window).sendTo(console);
 
     // leaflet monkeypatches thanks to jieter on github
-    window.L.Map.prototype.getSize = function () {
-        return L.point(1024, 1024);
-    };
+    //window.L.Map.prototype.getSize = function () {
+    //    return L.point(1024, 1024);
+    //};
 
     document._ce = document.createElement;
     document.createElement = function(elem) {
