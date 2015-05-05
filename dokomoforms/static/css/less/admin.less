@@ -140,11 +140,22 @@ ul.survey-questions {
 		padding: 5px 10px;
 		font-size: 1.5em;
 
+		&:hover {
+			background-color: @gray-lighter;
+			cursor: pointer;
+		}
+
+		&.open {
+			background-color: @brand-secondary;
+		}
+
 		.question-type {
 			font-size: .5em;
 			text-transform: uppercase;
 			color: @gray-light;
-			margin-left: 40px;
+			position: relative;
+			top: 10px;
+			// margin-left: 40px;
 		}
 	}
 

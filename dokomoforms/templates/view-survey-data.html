@@ -83,13 +83,11 @@
                     {% for stats in question_stats['result'] %}
                         <li>
                         
-                            <div class="question-title-bar">
-                                <!-- {{ stats['question'].keys() }} -->
+                            <div class="question-title-bar {% if stats['question'].type_constraint_name == "location" %} question-location {% end %}" 
+                            {% if stats['question'].type_constraint_name == "location" %} rel="location-map-{{ stats['question'].question_id }}" {% end %}>
+                                
                                 {{ stats['question'].sequence_number }}. {{ stats['question'].question_title }} 
-                                <span class="question-type">{{ stats['question'].type_constraint_name }}</span>
-                                <button class="btn btn-default btn-sm pull-right btn-question-stats {% if stats['question'].type_constraint_name == "location" %} btn-question-location {% end %}" rel="location-map-{{ stats['question'].question_id }}">
-                                    <span class="glyphicon glyphicon-stats"></span>
-                                </button>
+                                <span class="question-type pull-right">{{ stats['question'].type_constraint_name }}</span>
                             </div>
 
                             <div class="question-stats">
@@ -99,7 +97,7 @@
                                         <div class="col-md-12">
                                             <div class="location-map" id="location-map-{{ stats['question'].question_id }}"></div>
                                         </div>
-                                        
+
                                     {% else %}
                                         {% for stat in stats['stats'] %}
                                             <div class="col-md-3 question-stat">
@@ -133,12 +131,17 @@
 <script type="text/javascript">
     $(function() {
 
-        $(document).on('click', '.btn-question-stats', function(e) {
-            console.log('heyo');
+        $(document).on('click', '.question-title-bar', function(e) {
             $el = $(this);
-            $el.parent().parent().find('.question-stats').slideToggle();
-            if ($el.hasClass('btn-question-location')) {
+            if ($el.hasClass('open')) {
+                $el.removeClass('open');
+            } else {
+                $el.addClass('open');
+            }
+            $el.siblings('.question-stats').slideToggle();
+            if ($el.hasClass('question-location')) {
                 var id = $el.attr('rel');
+                console.log(id);
                 drawMap(id, map_data[id]);
             }
         });
@@ -219,7 +222,7 @@
                 submission_text = "<ul>";
                 _.each(answers, function(ans) {
                     var metadata = "";
-                    if (ans.answer_metadata) {
+                    if (ans.answer_metadata && !_.isEmpty(ans.answer_metadata)) {
                         metadata += "<br />" + JSON.stringify(ans.answer_metadata);
                     }
                     submission_text += "<li><strong>" + ans.sequence_number + ". " + ans.question_title + "</strong><br />" + ans.answer + metadata + "</li>";
