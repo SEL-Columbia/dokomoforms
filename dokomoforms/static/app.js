@@ -1132,7 +1132,7 @@ Widgets.facility = function(question, page, footer) {
         $('.facility__btn').show();
         $('.question__radios').hide();
         $('.question__add__facility').show();
-        $('.facility__btn').text("remove facility");
+        $('.facility__btn').text("cancel");
     }
 
     // Revisit API Call calls facilitiesCallback
@@ -1233,8 +1233,8 @@ Widgets.facility = function(question, page, footer) {
     $(page)
         .find('.question__radios')
         .delegate('.question__radio', 'click', function(e) {
-            //e.stopImmediatePropagation();
-            //e.stopPropagation();
+            e.stopImmediatePropagation();
+            e.stopPropagation();
             e.preventDefault();
             var rbutton = $(this).find('input[type=radio]').first();
             var uuid = rbutton.val();
@@ -1299,14 +1299,14 @@ Widgets.facility = function(question, page, footer) {
         .find('.facility__btn')
         .click(function() {
             if (question.answer[0] && question.answer[0].metadata.is_new) {
-                $('.facility__btn').text("add facility");
+                $('.facility__btn').text("add new facility");
                 question.answer = [];
                 $('.question__add__facility').hide();
                 //$('.question__map').show();
                 $('.question__radios').show();
                 captureCallback = reloadFacilities;
             } else {
-                $('.facility__btn').text("remove facility");
+                $('.facility__btn').text("cancel");
                 if (question.answer[0] && question.answer[0].response.id) {
                     var rbutton = $('.question__radios').find("input[value='"+ question.answer[0].response.id +"']");
                     rbutton.prop('checked', false);
@@ -1414,7 +1414,7 @@ function postNewFacility(facility) {
         processData: false,
         dataType: 'json',
         success: function() {
-            App.message('Facility Added!', 'message_success');
+            //App.message('Facility Added!', 'message_success');
             // If posted, we don't an unsynced reference to it anymore
             delete App.unsynced_facilities[facility.uuid];
         },
@@ -1425,7 +1425,7 @@ function postNewFacility(facility) {
         },
 
         error: function() {
-            App.message('Facility submission failed, will try again later.', 'message_error');
+            //App.message('Facility submission failed, will try again later.', 'message_error');
         },
         
         complete: function() {
