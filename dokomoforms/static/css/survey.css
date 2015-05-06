@@ -246,18 +246,6 @@ a, .icon {
 }
 
 .message {
-    display: none;
-    position: absolute;
-    left: 20%;
-    width: 60%;
-    padding: 12px;
-    box-sizing: border-box;
-    border-radius: 7px;
-    text-align: center;
-    font-size: 18px;
-    z-index: 99;
-    margin-top: 30px;
-    color: #FFF;
 }
 
 .message_main {
