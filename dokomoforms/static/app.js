@@ -117,17 +117,18 @@ App.sync = function() {
 App.message = function(text, style) {
     // Shows a message to user
     // E.g. "Your survey has been submitted"
+    $('.message_btn')[0].click();
+    $('.modal_content').empty();
+    $('.modal_header').empty();
+    $('<a class="icon icon-close pull-right"' 
+        + 'href="#message"></a>' 
+        + '<h1 class="title">Message</h1>')
+        .appendTo('.modal_header');
     $('<div></div>')
-        .addClass('message')
+        .addClass('content-padded')
         .addClass(style)
         .text(text)
-        .fadeIn('fast')
-        .delay(3000)
-        .fadeOut('fast')
-        .queue(function(next) {
-            $(this).remove();
-            next();
-        }).appendTo('body');
+        .appendTo('.modal_content');
 
 };
 

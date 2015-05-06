@@ -2,26 +2,35 @@
 <html manifest="/static/cache.appcache">
 <head>
     <meta charset="utf-8">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-status-bar-style" content="black">
-    <meta name="viewport" content="width=device-width, user-scalable=no,  initial-scale=1, maximum-scale=1">
-    <link href='http://fonts.googleapis.com/css?family=Roboto:400,300,500,700,100' rel='stylesheet' type='text/css'>
-
     <title>{% raw survey_title %} - Dokomoforms</title>
 
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-status-bar-style" content="black">
+
     <link href="/static/ratchet-2.0.2/dist/css/ratchet.min.css" rel="stylesheet">
-    <!-- <script src="/static/ratchet-2.0.2/dist/js/ratchet.js"></script> -->
-    <!-- RIP <link href="/static/css/style.css" rel="stylesheet" type="text/css">-->
     <link href="/static/css/survey.css" rel="stylesheet" type="text/css">
 
+    <link href='http://fonts.googleapis.com/css?family=Roboto:400,300,500,700,100' rel='stylesheet' type='text/css'>
     <link rel="icon" href="/static/img/favicon.png">
 </head>
 <body>
 
     <header class="bar bar-nav bar-padded"></header>
+
+    <!-- Alert stuff -->
+    <a href="#message" class='message_btn' style='display:none'></a>
+    <div id="message" class="modal">
+        <header class="bar bar-nav modal_header">
+         </header>
+        <div class="content modal_content"></div>
+    </div>
     <div class="content"></div>
+
     <div class="overlay" style="display:none;"></div>
     <div class="bar bar-standard bar-footer"></div>
     
@@ -472,6 +481,8 @@
         </div>
     </script>
 
+    <!--<script src="/static/ratchet-2.0.2/dist/js/ratchet.js"></script>-->
+    <script src="/static/ratchet-2.0.2/js/modals.js"></script>
     <script src="/static/lib.js"></script>
     <script src="/static/app.js"></script>
     <script>
