@@ -121,23 +121,26 @@ App.message = function(text, style) {
     $('.modal_content').empty();
     
 
-    var content = $('<a href="#message"></a>');
-
-        $('<div></div>')
-        .addClass('content-padded')
+    var message =  $('<div></div>')
         .addClass('message_main')
         .addClass('message')
+        .addClass('content-padded')
         .addClass(style)
         .text(text)
-        .appendTo(content);
 
-     $('<p></p>')
-        .addClass('content-padded')
+     var okay =  $('<div></div>')
+        .addClass('content-padded');
+
+     $('<a href="#message"></a>')
+        .addClass('btn')
+        .addClass('btn-block')
+        .addClass('btn-netural')
         .addClass('message_sub')
-        .text('click anywhere to continue.')
-        .appendTo(content);
+        .text('OK')
+        .appendTo(okay);
 
-    content.appendTo('.modal_content');
+    message.appendTo('.modal_content');
+    okay.appendTo('.modal_content');
 
 };
 
@@ -338,19 +341,19 @@ Survey.prototype.next = function(offset) {
         if (bad_answers.length) {
             App.message(bad_answers.length 
             + ' response(s) found not valid for question type: ' 
-            + self.current_question.type_constraint_name, 'message-box-warning');
+            + self.current_question.type_constraint_name, 'message-box-error');
             return;
         }
 
         // Are you required?
         if (this.current_question.logic.required && (first_response === null)) {
-            App.message('Survey requires this question to be completed.', 'message-box-warning');
+            App.message('Survey requires this question to be completed.', 'message-box-error');
             return;
         }
 
         // Is the only response and empty is other response?
         if (first_is_type_exception && !first_response) {
-            App.message('Please provide a reason before moving on.', 'message-box-warning');
+            App.message('Please provide a reason before moving on.', 'message-box-error');
             return;
         }
 

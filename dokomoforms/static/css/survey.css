@@ -193,6 +193,15 @@ a, .icon {
     margin-top: 40px;
 }
 
+.message-box-error {
+    padding: 18px;
+    overflow: hidden;
+    background-color: rgba(250, 80, 84, 1.0);
+    border-radius: 6px;
+    margin: 20px 0px;
+    margin-top: 40px;
+}
+
 .align-left {
     text-align: left;
     margin-left: 5px;
@@ -249,11 +258,17 @@ a, .icon {
 }
 
 .message_main {
-    height: 80%;
+    height: 70%;
+    text-align: center;
+    padding: 20px;
+    font-weight: 300;
+    font-size: 22px;
+    padding-top: 40px;
 }
 
 .message_sub {
-    text-align: center;
+    text-align: center !important;
+    font-weight: 500;
 } 
 
 .modal_content {
@@ -376,6 +391,23 @@ header {
 .btn-positive:active, .btn-positive:hover, .btn-positive:focus {
     background-color: #53B695;
     border: 1px solid #53B695;
+}
+
+.btn-netural {
+    box-shadow: 0px 4px 0px #939393;
+    background-color: #BDBDBD;
+    border: 1px solid #BDBDBD;
+    font-family: 'Roboto', sans-serif !important;
+    font-weight: 500;
+    color: #FFF;
+}
+
+.btn-netural:active, .btn-netural:hover, .btn-netural:focus {
+    background-color: #939393;
+    border: 1px solid #939393;
+    font-family: 'Roboto', sans-serif !important;
+    font-weight: 500;
+    color: #FFF;
 }
 
 .content-padded {
