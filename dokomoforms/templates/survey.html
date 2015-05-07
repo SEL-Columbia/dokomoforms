@@ -2,26 +2,33 @@
 <html manifest="/static/cache.appcache">
 <head>
     <meta charset="utf-8">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-status-bar-style" content="black">
-    <meta name="viewport" content="width=device-width, user-scalable=no,  initial-scale=1, maximum-scale=1">
-    <link href='http://fonts.googleapis.com/css?family=Roboto:400,300,500,700,100' rel='stylesheet' type='text/css'>
-
     <title>{% raw survey_title %} - Dokomoforms</title>
 
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-status-bar-style" content="black">
+
     <link href="/static/ratchet-2.0.2/dist/css/ratchet.min.css" rel="stylesheet">
-    <!-- <script src="/static/ratchet-2.0.2/dist/js/ratchet.js"></script> -->
-    <!-- RIP <link href="/static/css/style.css" rel="stylesheet" type="text/css">-->
     <link href="/static/css/survey.css" rel="stylesheet" type="text/css">
 
+    <link href='http://fonts.googleapis.com/css?family=Roboto:400,300,500,700,100' rel='stylesheet' type='text/css'>
     <link rel="icon" href="/static/img/favicon.png">
 </head>
 <body>
 
     <header class="bar bar-nav bar-padded"></header>
+
+    <!-- Alert stuff -->
+    <a href="#message" class='message_btn' style='display:none'></a>
+    <div id="message" class="modal">
+        <div class="modal_content content-padded"></div>
+    </div>
     <div class="content"></div>
+
     <div class="overlay" style="display:none;"></div>
     <div class="bar bar-standard bar-footer"></div>
     
@@ -231,11 +238,9 @@
 
             <button class="btn question__find__btn ">
                 <span class="icon icon-star"></span>
-                Capture Location
+                 find my location
             </button>
         </div>
-
-        <div id="map" class="question__map"></div>
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
@@ -243,7 +248,7 @@
                 no_response = false; %>
                 <div class="input_container">
                 <input class="text_input location_input" type="text" 
-                    placeholder="Please click 'Capture Location' or drag map."
+                    placeholder="Please click 'find my location'."
                     value="<%- ans.response.lat + ' ' + ans.response.lon %>"
                 >
                 <span class="icon icon-close question__minus"></span>
@@ -254,7 +259,7 @@
         <% if (no_response) { %>
             <div class="input_container">
             <input class="text_input location_input" type="text" 
-                   placeholder="Please click 'Capture Location' or drag map."
+                   placeholder="Please click 'find my location'."
             >
             <span class="icon icon-close question__minus"></span>
             </div>
@@ -264,29 +269,87 @@
 
     <script id="widget_facility" type="text/html">
         <div class="content-padded">
-        <h3 class="question__title "><%- question.question_title %></h3>
-        <p class="question__hint "><%- question.hint || "" %></p>
+            <h3 class="question__title "><%- question.question_title %></h3>
+            <p class="question__hint "><%- question.hint || "" %></p>
 
-        <button class="btn question__find__btn ">
-            <span class="icon icon-star"></span>
-            Capture Location
-        </button>
+            <button class="btn question__find__btn ">
+                <span class="icon icon-star"></span>
+                find my location and show nearby facilities
+            </button>
+
         </div>
 
-        <div id="map" class="question__map"></div>
+        <!--
+        <div class="segmented-control content-padded question__toggle">
+            <a class="control-item active" href="#list">
+                List
+            </a>
+            <a class="control-item" href="#map">
+                Map
+            </a>
+        </div>
+        -->
+
+        <span id="list" class='control-content active question__radios'></span>
+
+        <!--
+        <span id="map" class='control-content question__map'>
+            <img src='/static/img/map.png' alt="map.png" class='content-padded'></img>
+        </span>
+        -->
+
+        <div class='question__add__facility' style='display: none'>
+            <% 
+                var ans = question.answer[0] && question.answer[0].metadata.is_new && question.answer[0]; 
+                var name = ans && ans.metadata.name || '';
+                var sector = ans && ans.metadata.sector || '';
+                var location = ans && ans.response.lat + " " + ans.response.lon || '';
+                var uuid = ans && ans.response.id || ''; 
+            %>
+            <input class="text_input facility_uuid_input" type="text" 
+                style="display:none;"
+                placeholder="Facility UUID"
+                value="<%- uuid %>"
+            />
+            <input class="text_input facility_name_input" type="text" 
+                placeholder="Facility Name"
+                value="<%- name %>"
+            />
+            <input class="text_input facility_location_input" type="text" 
+                placeholder="Facility Location"
+                value="<%- location %>"
+            />
+
+            <div class="content-padded">
+                <select class="question__select facility_sector_input">
+                    <option value="">Please choose a Sector</option>
+                    <option 
+                        <% if (sector === 'water') { %> selected <% } %>
+                        value="water">
+                        Water
+                    </option>
+                    <option 
+                        <% if (sector === 'energy') { %> selected <% } %>
+                        value="energy">
+                        Energy
+                    </option>
+                    <option 
+                        <% if (sector === 'education') { %> selected <% } %>
+                        value="education">
+                        Education
+                    </option>
+                    <option 
+                        <% if (sector === 'other') { %> selected <% } %>
+                        value="other">
+                        Other
+                    </option>
+                </select>
+            </div>
+        </div>
 
         <div class="content-padded">
-            <button class="btn facility__btn ">Add New Site</button>
+            <button class="btn facility__btn">add new facility</button>
         </div>
-
-        <input class="text_input facility__name" type="text"/>
-        <select class="question__select facility__type ">
-            <option value="other">Other</option>
-            <option value="water">Water</option>
-            <option value="health">Health</option>
-            <option value="education">Education</option>
-        </select>
-
     </script>
 
     <script id="widget_multiple_choice" type="text/html">
@@ -416,6 +479,8 @@
         </div>
     </script>
 
+    <!--<script src="/static/ratchet-2.0.2/dist/js/ratchet.js"></script>-->
+    <script src="/static/ratchet-2.0.2/js/modals.js"></script>
     <script src="/static/lib.js"></script>
     <script src="/static/app.js"></script>
     <script>

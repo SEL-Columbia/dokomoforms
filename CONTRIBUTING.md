@@ -16,7 +16,7 @@ If you wish to make a code contribution to Dokomo Forms, please follow the steps
 
 Take a look at GitHub's guide to contributing to Open Source projects for reference: https://guides.github.com/activities/contributing-to-open-source/
 
-1. Opening or commenting on an issue.
+1. Open or comment on an issue.
 
   * If an issue exists for your bug or feature, write a comment explaining that you would like to help fix it.
 

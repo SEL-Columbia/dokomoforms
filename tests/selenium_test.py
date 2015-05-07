@@ -168,10 +168,10 @@ class SubmissionTest(DriverTest):
         # Fill out the survey
         self.drv.find_element_by_class_name('start_btn').click()
         WebDriverWait(self.drv, 4).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[1]/div[2]/input')))
+            (By.XPATH, '/html/body/div[2]/div[2]/input')))
         next_class = 'page_nav__next'
         next_button = lambda: self.drv.find_element_by_class_name(next_class)
-        in_xpath = '/html/body/div[1]/div[2]/'
+        in_xpath = '/html/body/div[2]/div[2]/'
 
         self.drv.find_elements_by_tag_name('input')[0].send_keys('1')
         if self.browser_name == 'safari':
@@ -227,9 +227,7 @@ class SubmissionTest(DriverTest):
         )
         self.drv.find_element_by_class_name('question__find__btn').click()
         next_button().click()
-        self.drv.find_element_by_xpath(
-            '/html/body/div[1]/div[2]/input'
-        ).send_keys('text 7')
+        self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('text 7')
         if self.browser_name == 'safari':
             self.drv.execute_script("$('input').change()")
         next_button().click()
@@ -241,16 +239,24 @@ class SubmissionTest(DriverTest):
         else:
             self.drv.find_elements_by_tag_name('option')[-1].click()
         self.drv.find_element_by_xpath(
-            '/html/body/div[1]/input').send_keys('other 8')
+            '/html/body/div[2]/input').send_keys('other 8')
         if self.browser_name == 'safari':
             self.drv.execute_script("$('input').change()")
         next_button().click()
         next_button().click()  # note question
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[1]/input')))
+            (By.CLASS_NAME, 'question__radio__span__btn')))
         self.drv.find_element_by_class_name('facility__btn').click()
         self.drv.find_element_by_xpath(
-            '/html/body/div[1]/input').send_keys('new_test_facility')
+            '/html/body/div[2]/div[2]/input[2]'
+        ).send_keys('new_test_facility')
+        if self.browser_name == 'android':
+            self.drv.find_element_by_tag_name('select').click()
+            self.drv.switch_to.window('NATIVE_APP')
+            self.drv.find_elements_by_tag_name('TextView')[-4].click()
+            self.drv.switch_to.window('WEBVIEW_0')
+        else:
+            self.drv.find_elements_by_tag_name('option')[1].click()
         next_button().click()
 
         self.drv.find_elements_by_tag_name('input')[0].send_keys(

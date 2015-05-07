@@ -5,37 +5,11 @@ var OFF = false;
 var NUM_FAC = 256;
 var FAC_RAD = 2; //in KM
 
-var appCache = window.applicationCache;
-switch (appCache.status) {
-    case appCache.UNCACHED: // UNCACHED == 0
-        console.log('UNCACHED');
-        break;
-    case appCache.IDLE: // IDLE == 1
-        console.log('IDLE');
-        break;
-    case appCache.CHECKING: // CHECKING == 2
-        console.log('CHECKING');
-        break;
-    case appCache.DOWNLOADING: // DOWNLOADING == 3
-        console.log('DOWNLOADING');
-        break;
-    case appCache.UPDATEREADY:  // UPDATEREADY == 4
-        console.log('UPDATEREADY');
-        break;
-    case appCache.OBSOLETE: // OBSOLETE == 5
-        console.log('OBSOLETE');
-        break;
-    default:
-        console.log('UKNOWN CACHE STATUS');
-        break;
-};
-
 var App = {
     unsynced: [], // unsynced surveys
     facilities: [], // revisit facilities
     unsynced_facilities: {}, // new facilities
-    start_loc: {'lat': 40.8138912, 'lon': -73.9624327}, // defaults to nyc, updated constantly
-    tile_url: 'http://{s}.tiles.mapbox.com/v3/examples.map-20v6611k/{z}/{x}/{y}.png',
+    location: {},
     submitter_name: ''
 };
 
@@ -49,32 +23,34 @@ App.init = function(survey) {
             survey.created_on,
             survey.last_updated);
 
-    self.start_loc = survey.survey_metadata.location || self.start_loc;
+    var start_loc = survey.survey_metadata.location 
+        || {'lat': 40.8138912, 'lon': -73.9624327}; // defaults to nyc
+
     self.facilities = JSON.parse(localStorage.facilities || "[]");
     self.submitter_name = localStorage.name || "";
     self.submitter_email = localStorage.email || "";
     
-    // Load any facilities
-    if (App.facilities.length === 0) {
-        // See if you can get some new facilities
-        getNearbyFacilities(App.start_loc.lat, App.start_loc.lon, 
-            FAC_RAD, // Radius in km 
-            NUM_FAC, // limit
-            null// what to do with facilities 
-        );
-    }
-
     // Init if unsynced is undefined
     if (!localStorage.unsynced) {
         localStorage.unsynced = JSON.stringify({});
     }
-    
     // Load up any unsynced submissions
     App.unsynced = JSON.parse(localStorage.unsynced)[self.survey.id] || []; 
 
     // Load up any unsynced facilities
     App.unsynced_facilities = 
         JSON.parse(localStorage.unsynced_facilities || "{}");
+
+    // Load any facilities
+    App.facilities = JSON.parse(localStorage.facilities || "{}");
+    if (JSON.stringify(App.facilities) === "{}" && navigator.onLine) {
+        // See if you can get some new facilities
+        getNearbyFacilities(start_loc.lat, start_loc.lon, 
+            FAC_RAD, // Radius in km 
+            NUM_FAC, // limit
+            null// what to do with facilities 
+        );
+    }
 
     $('.sel')
         .click(function(e) {
@@ -136,23 +112,32 @@ App.sync = function() {
     var unsynced = JSON.parse(localStorage.unsynced); 
     unsynced[self.survey.id] = App.unsynced;
     localStorage['unsynced'] = JSON.stringify(unsynced);
-    console.log('localStorage', localStorage.unsynced);
 };
 
 App.message = function(text, style) {
     // Shows a message to user
     // E.g. "Your survey has been submitted"
-    $('<div></div>')
+    $('.message_btn')[0].click();
+    $('.modal_content').empty();
+    
+
+    var content = $('<a href="#message"></a>');
+
+        $('<div></div>')
+        .addClass('content-padded')
+        .addClass('message_main')
         .addClass('message')
         .addClass(style)
         .text(text)
-        .fadeIn('fast')
-        .delay(3000)
-        .fadeOut('fast')
-        .queue(function(next) {
-            $(this).remove();
-            next();
-        }).appendTo('body');
+        .appendTo(content);
+
+     $('<p></p>')
+        .addClass('content-padded')
+        .addClass('message_sub')
+        .text('click anywhere to continue.')
+        .appendTo(content);
+
+    content.appendTo('.modal_content');
 
 };
 
@@ -216,7 +201,7 @@ App.splash = function() {
                 // Reload page to update template values
                 App.splash();
             } else {
-                App.message('Please connect to the internet first.', 'message_error');
+                App.message('Please connect to the internet first.', 'message-box-warning');
             }
         });
 };
@@ -272,6 +257,8 @@ function Survey(id, version, questions, metadata, title, created_on, last_update
         // Set next pointers
         question.next = self.getQuestion(question.question_to_sequence_number);
     });
+
+    App.location = answers['location'] || {};
 
     // Know where to start, and number
     self.current_question = self.questions[0];
@@ -344,26 +331,26 @@ Survey.prototype.next = function(offset) {
         // Is it a valid response?
         bad_answers = [];
         this.current_question.answer.forEach(function(resp) {
-            if (resp.failed_validation)
+            if (resp && resp.failed_validation)
                 bad_answers.push(resp);
         });
 
         if (bad_answers.length) {
             App.message(bad_answers.length 
             + ' response(s) found not valid for question type: ' 
-            + self.current_question.type_constraint_name, 'message_error');
+            + self.current_question.type_constraint_name, 'message-box-warning');
             return;
         }
 
         // Are you required?
         if (this.current_question.logic.required && (first_response === null)) {
-            App.message('Survey requires this question to be completed.', 'message_error');
+            App.message('Survey requires this question to be completed.', 'message-box-warning');
             return;
         }
 
         // Is the only response and empty is other response?
         if (first_is_type_exception && !first_response) {
-            App.message('Please provide a reason before moving on.', 'message_error');
+            App.message('Please provide a reason before moving on.', 'message-box-warning');
             return;
         }
 
@@ -382,6 +369,7 @@ Survey.prototype.next = function(offset) {
         }
     }
 
+    self.saveState();
     self.render(next_question);
 };
 
@@ -439,7 +427,7 @@ Survey.prototype.render = function(question) {
         // Show widget
         widgetHTML = $('#widget_' + question.type_constraint_name).html();
         widgetTemplate = _.template(widgetHTML);
-        compiledHTML = widgetTemplate({question: question, start_loc: App.start_loc});
+        compiledHTML = widgetTemplate({question: question});
         self.current_question = question;
 
         // Render question
@@ -508,7 +496,7 @@ Survey.prototype.render = function(question) {
 
 };
 
-Survey.prototype.submit = function() {
+Survey.prototype.saveState = function() {
     var self = this;
     var answers = {};
 
@@ -516,8 +504,27 @@ Survey.prototype.submit = function() {
     _.each(self.questions, function(question) {
         answers[question.question_id] = question.answer;
     });
+    answers['location'] = App.location;
 
+    // Save answers in storage
     localStorage[self.id] = JSON.stringify(answers);
+}
+
+Survey.prototype.clearState = function() {
+    var self = this;
+
+    // Clear answers locally 
+    _.each(self.questions, function(question) {
+        question.answer = [];
+    });
+    App.location = {};
+
+    // Clear answers in storage
+    localStorage[self.id] = JSON.stringify({});
+}
+
+Survey.prototype.submit = function() {
+    var self = this;
 
     // Prepare POST request
     var survey_answers = [];
@@ -532,9 +539,22 @@ Survey.prototype.submit = function() {
             var response =  ans.response;
             var is_type_exception = ans.is_type_exception || false;
             var metadata = ans.metadata || {};
+            var is_new_facility = metadata.is_new; //XXX: Should I remove this is new marking?
 
             if (response == null) { 
                 return;
+            }
+
+            if (is_new_facility) {
+                // Record this new facility for Revisit s)ubmission
+                App.unsynced_facilities[response.id] = {
+                    'name': metadata.name, 'uuid': response.id, 
+                    'properties' : {'sector': metadata.sector},
+                    'coordinates' : [response.lon, response.lat]
+                };
+
+                // Store it in facilities as well
+                App.facilities[response.id] = App.unsynced_facilities[response.id];
             }
 
             survey_answers.push({
@@ -561,7 +581,7 @@ Survey.prototype.submit = function() {
     if (JSON.stringify(survey_answers) === '[]') {
       // Not doing instantly to make it seem like App tried reaaall hard
       setTimeout(function() {
-            App.message('Saving failed, No questions answer in Survey!', 'message_error');
+            App.message('Saving failed, No questions answer in Survey!', 'message-box-warning');
             App.splash();
       }, 1000);
       return;
@@ -573,17 +593,17 @@ Survey.prototype.submit = function() {
 
     localStorage.setItem("unsynced_facilities", 
             JSON.stringify(App.unsynced_facilities));
+    
+    // Clear State
+    self.clearState();
 
     // Save Submission data
     App.unsynced.push(data);
     var unsynced = JSON.parse(localStorage.unsynced); 
-    console.log(unsynced);
     unsynced[self.id] = App.unsynced;
-    console.log(unsynced);
     localStorage['unsynced'] = JSON.stringify(unsynced);
-    console.log('localStorage', localStorage.unsynced);
 
-    App.message('Saved Submission!', 'message_success');
+    App.message('Saved Submission!', 'message-box-primary');
     App.splash();
 
 
@@ -623,7 +643,6 @@ Widgets._input = function(question, page, footer, type) {
         .find('.text_input')
         .keyup(function() { //XXX: Change isn't sensitive enough on safari?
             var ans_ind = $(page).find('input').index(this); 
-            console.log('value recieved', ans_ind, this.value, typeof this.value);
             question.answer[ans_ind] = { 
                 response: self._validate(type, this.value, question.logic),
                 is_type_exception: false,
@@ -793,11 +812,13 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
 
         // Bring div up
         page.addClass('content-super-shrunk');
-        //footer.addClass('bar-footer-super-extended');
-        footer.animate({height:220},200).addClass('bar-footer-super-extended');
 
         //Add overlay
         $('.overlay').fadeIn('fast');
+
+        //footer.addClass('bar-footer-super-extended');
+        footer.animate({height:220},200).addClass('bar-footer-super-extended');
+
 
         // Enable other input
         $(footer).find('.dont_know_input').each(function(i, child) { 
@@ -834,6 +855,7 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
         // Hide overlay and shift div
         $('.overlay').fadeOut('fast');
         page.removeClass('content-super-shrunk');
+
         //footer.removeClass('bar-footer-super-extended');
         footer.animate({height:120},200).removeClass('bar-footer-super-extended');
 
@@ -1050,61 +1072,6 @@ Widgets.multiple_choice = function(question, page, footer) {
     }
 };
 
-Widgets._getMap = function() {
-
-    var map = L.map('map', {
-            center: [App.start_loc.lat, App.start_loc.lon],
-            dragging: true,
-            maxZoom: 18,
-            minZoom: 11,
-            zoom: 14,
-            zoomControl: false,
-            doubleClickZoom: false,
-            attributionControl: false
-        });
-    
-    var tile_layer =  new L.tileLayer(App.tile_url, {
-        maxZoom: 18,
-        useCache: true
-    });
-
-    tile_layer.on('tilecachehit',function(ev){
-        //console.log('Cache hit: ', ev.url);
-    });
-
-    tile_layer.on('tilecachemiss',function(ev){
-        //console.log('Cache miss: ', ev.url);
-    });
-
-    // Blinking location indicator
-    var circle = L.circle(App.start_loc, 5, {
-            color: 'red',
-            fillColor: '#f00',
-            fillOpacity: 0.5,
-            zIndexOffset: 777,
-    })
-        .addTo(map);
-
-    map.circle = circle;
-
-    ///TODO: Replace this with CSSSSSSSssss
-    var counter = 0;
-    function updateColour() {
-        var fillcol = Number((counter % 16)).toString(16);
-        var col = Number((counter++ % 13)).toString(16);
-        circle.setStyle({
-            fillColor : "#f" + fillcol + fillcol,
-            color : "#f" + col + col,
-        });
-    }
-
-    // Save the interval id, clear it every time a page is rendered
-    Widgets.interval = window.setInterval(updateColour, 50); // XXX: could be CSS
-    
-    map.addLayer(tile_layer);
-    return map;
-};
-
 Widgets.location = function(question, page, footer) {
     // generic setup
     this._input(question, page, footer, "location");
@@ -1112,13 +1079,6 @@ Widgets.location = function(question, page, footer) {
     var self = this;
     var response = $(page).find('.text_input').last().val();
     response = self._validate('location', response, question.logic);
-    App.start_loc = response || App.start_loc;
-
-    var map = this._getMap(); 
-    map.on('drag', function() {
-        map.circle.setLatLng(map.getCenter());
-        updateLocation([map.getCenter().lng, map.getCenter().lat]);
-    });
 
     function updateLocation(coords) {
         // Find current length of inputs and update the last one;
@@ -1126,7 +1086,7 @@ Widgets.location = function(question, page, footer) {
 
         // update array val
         question.answer[questions_len - 1] = {
-            response: {'lon': coords[0], 'lat': coords[1]},
+            response: {'lon': coords.lon, 'lat': coords.lat},
             is_type_exception: false,
             metadata: {},
         }
@@ -1134,33 +1094,28 @@ Widgets.location = function(question, page, footer) {
         // update latest lon/lat values
         var questions_len = $(page).find('.text_input').length;
         $(page).find('.text_input')
-            .last().val(coords[1] + " " + coords[0]);
+            .last().val(coords.lat + " " + coords.lon);
     }
 
+    // Find me
     $(page)
         .find('.question__find__btn')
         .click(function() {
-            App.message('Searching ...', 'message_warning');
+            //App.message('Searching ...', 'message-box-primary');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
                     // Server accepts [lon, lat]
-                    var coords = [
-                        position.coords.longitude, 
-                        position.coords.latitude
-                    ];
+                    var loc = {
+                        'lat': position.coords.latitude,
+                        'lon': position.coords.longitude, 
+                    }
 
-                    // Set map view and update indicator position
-                    //map.setMaxBounds(null);
-                    map.setView([coords[1], coords[0]]);
-                    map.circle.setLatLng([coords[1], coords[0]]);
-                    //map.setMaxBounds(map.getBounds().pad(1));
-
-                    updateLocation(coords); //XXX: DONT MOVE ON
+                    App.location = loc;
+                    updateLocation(loc); //XXX: DONT MOVE ON
 
                 }, function error() {
                     //If cannot Get location" for some reason,
-                    App.message('Could not get your location, please make sure your GPS device is active.',
-                            'message_error');
+                    App.message('Could not get your location, please make sure your GPS device is active.', 'message-box-warning');
                 }, {
                     enableHighAccuracy: true,
                     timeout: 20000,
@@ -1168,7 +1123,7 @@ Widgets.location = function(question, page, footer) {
                 });
         });
 
-    // disable default event
+    // Disable default event
     $(page)
         .find('.text_input')
         .off('keyup');
@@ -1176,40 +1131,28 @@ Widgets.location = function(question, page, footer) {
 
 // Similar to location however you cannot just add location, 
 Widgets.facility = function(question, page, footer) {
-    var ans = question.answer[0]; // Facility questions only ever have one response
-    var lat = ans && ans.response.lat || App.start_loc.lat;
-    var lng = ans && ans.response.lon || App.start_loc.lon;
+    // Hide add button by default
+    $('.facility__btn').hide();
 
-    App.start_loc = {'lat': lat, 'lon': lng};
-
-    /* Buld inital state */
-    var map = this._getMap(); 
-    map.on('drag', function() {
-        map.circle.setLatLng(map.getCenter());
-    });
-
-    $(page).find('.facility__name').attr('disabled', true);
-    $(page).find('.facility__type').attr('disabled', true);
-
-    // Know which marker is currently "up" 
-    var touchedMarker = null;
-    // Added facility  
-    var addedMarker = null;
-    // Add markers here so clearing them isn't such a huge pain
-    var facilities_group = new L.featureGroup();
-    var new_facilities_group = new L.featureGroup();
-
-    facilities_group.addTo(map);
-    new_facilities_group.addTo(map);
+    // Default operation on caputre Location 
+    var captureCallback = reloadFacilities;
+    if (question.answer[0] && question.answer[0].metadata.is_new) {
+        captureCallback = updateLocation;
+        //$('.question__map').hide();
+        $('.facility__btn').show();
+        $('.question__radios').hide();
+        $('.question__add__facility').show();
+        $('.facility__btn').text("cancel");
+    }
 
     // Revisit API Call calls facilitiesCallback
-    reloadFacilities(App.start_loc.lat, App.start_loc.lon);
+    drawFacilities(App.facilities);
 
     /* Helper functions for updates  */
-    function reloadFacilities(lat, lon) {
+    function reloadFacilities(loc) {
         if (navigator.onLine) {
             // Refresh if possible
-            getNearbyFacilities(lat, lon, 
+            getNearbyFacilities(loc.lat, loc.lon, 
                     FAC_RAD, // Radius in km 
                     NUM_FAC, // limit
                     drawFacilities // what to do with facilities
@@ -1221,167 +1164,138 @@ Widgets.facility = function(question, page, footer) {
     }
 
     // handles calling drawPoint gets called once per getNearby call 
-    function drawFacilities(facilities) {
+    function drawFacilities(facilities_dict) {
+
+        var loc = App.location;
+        if (Object.keys(loc).length == 0) {
+            console.log("No location found\n");
+            $('.facility__btn').hide();
+            return;
+        }
+
+        var facilities = [];
+        Object.keys(facilities_dict).forEach(function(uuid) {
+           facilities.push(facilities_dict[uuid]);
+        });
+
+        console.log(facilities);
+
         var ans = question.answer[0];
         var selected = ans && ans.response.id || null;
 
-        // SYNCED FACILITIES
-        facilities_group.clearLayers(); // Clears synced facilities only
-        facilities = facilities || [];
-        for (var i = 0; i < facilities.length; i++) {
-            var facility = facilities[i];
+        // http://www.movable-type.co.uk/scripts/latlong.html
+        function latLonLength(coordinates, loc) {
+            var R = 6371000; // metres
+            var e = loc.lat * Math.PI/180;
+            var f = coordinates[1] * Math.PI/180;
+            var g = (coordinates[1] - loc.lat) * Math.PI/180;
+            var h = (coordinates[0] - loc.lon) * Math.PI/180;
 
-            //if ((facility.coordinates[1] < top_y && facility.coordinates[1] > bot_y)
-            //&& (facility.coordinates[0] < top_x && facility.coordinates[0] > bot_x)) {
-                var marker = drawPoint(facility.coordinates[1], 
-                            facility.coordinates[0], 
-                            facility.name, 
-                            facility.properties.sector,
-                            facility.uuid,
-                            onFacilityClick);
+            var a = Math.sin(g/2) * Math.sin(g/2) +
+                    Math.cos(e) * Math.cos(f) *
+                    Math.sin(h/2) * Math.sin(h/2);
 
-                // If selected uuid was from Revisit, paint it white
-                if (selected === marker.uuid) {
-                    selectFacility(marker);
-                }
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
-                facilities_group.addLayer(marker);
-            //}
+            return R * c;
         }
 
-        // UNSYNCED FACILITIES
-        new_facilities_group.clearLayers(); // Clears synced facilities only
-        _.map(App.unsynced_facilities, function(facility) {
-            //console/g.log("new facility added", facility.name);
-            var marker = drawNewPoint(facility.coordinates[1], 
-                        facility.coordinates[0], 
-                        facility.name, 
-                        facility.properties.sector,
-                        facility.uuid,
-                        onFacilityClick, onFacilityDrag); 
-            
-            if (selected === marker.uuid) {
-                selectFacility(marker);
-                $(page).find('.facility__btn').html("Remove New Site");
-                //console/g.log("new match", selected);
-            } 
-
-            // They added a facility in this question before
-            if (question._new_facility === marker.uuid) {
-                addedMarker = marker;
-                $(page).find('.facility__btn').text("Remove New Site");
-            }
-            
-            new_facilities_group.addLayer(marker);
+        facilities.sort(function(facilityA, facilityB) {
+            var lengthA = latLonLength(facilityA.coordinates, loc);
+            var lengthB = latLonLength(facilityB.coordinates, loc);
+            return (lengthA - lengthB); 
         });
 
+        $('.facility__btn').show();
+        $(".question__radios").empty();
+        for(var i=0; i < Math.min(10, facilities.length); i++) {
+            var uuid = facilities[i].uuid;
+            var name = facilities[i]["name"];
+            var sector = facilities[i]["properties"]["sector"];
+            var distance = latLonLength(facilities[i].coordinates, loc).toFixed(2) + "m";
+            var $div = addNewButton(uuid, name, sector, distance, ".question__radios");
+            if (question.answer[0] && question.answer[0].response.id === uuid) {
+                    $div.find('input[type=radio]').prop('checked', true);
+                    //$div.addClass('question__radio__selected');
+            }
+        }
     } 
 
-    function selectFacility(marker) {
-        marker.setZIndexOffset(666); // above 250 so it can't be hidden by hovering over neighbour
-        $(page).find('.facility__name').attr('disabled', true);
-        $(page).find('.facility__type').attr('disabled', true);
 
-        marker.setIcon(icon_selected);
-        if (marker.is_new) { 
-            marker.setIcon(icon_added);
-            addedMarker = marker;
-            $(page).find('.facility__name').attr('disabled', false);
-            $(page).find('.facility__type').attr('disabled', false);
-        }
+    function addNewButton(value, name, sector, distance, region) {
+        var div_html = "<div class='question__radio'>"
+            + "<input type='radio' id='"+ value + "' name='facility' value='"+ value +"'/>"
+            + "<label for='" + value + "'>"
+            + "<span class='question__radio__span__btn'><span></span></span>"
+            + name + "</label>"
+            + "<br/><span class='question__radio__span__meta'>"+ sector +"</span>"
+            + "<span class='question__radio__span__meta'><em>"+ distance +"</em></span>"
+            + "</div>";
 
-        touchedMarker = marker;
-        question.answer[0] = {
-            response: {
-                'id': marker.uuid, 
-                'lon': marker._latlng.lng, 
-                'lat': marker._latlng.lat
-            },
-            is_type_exception: false,
-            metadata: {
-                'facility_name': marker.name,
-                'facility_sector': marker.sector
-            } 
-        }
-
-        $(page).find('.facility__name').val(marker.name);
-        $(page).find('.facility__type').val(marker.sector);
-    }
-
-    function deselectFacility() {
-        if (touchedMarker) {
-            touchedMarker.setIcon(getIcon(touchedMarker.sector, touchedMarker.is_new));
-            touchedMarker.setZIndexOffset(0);
-        }
-
-        question.answer = [];
-        $(page).find('.facility__name').val("");
-        $(page).find('.facility__type').val("other");
-        touchedMarker = null;
-    }
-
-    function onFacilityClick(e) {
-        // Update marker so it looks selected
-        var marker = e.target;
-        deselectFacility();
-        selectFacility(marker);
-    }
-
-    function onFacilityDrag(e) {
-        var marker = e.target;
-        deselectFacility();
-        selectFacility(marker);
-        App.unsynced_facilities[marker.uuid].coordinates = [
-            marker._latlng.lng, 
-            marker._latlng.lat
-        ];
-    }
-
-    // function to wrap up the new facility code
-    function addFacility(lat, lng, uuid) {
-        deselectFacility();
-
-        //XXX: Add Popup with bits of info
-        var addedMarker = drawNewPoint(lat, lng, 
-                "New Facility", "other", uuid, 
-                onFacilityClick, onFacilityDrag); 
-        
-        // We added em before 
-        if (App.unsynced_facilities[uuid]) {
-            addedMarker.sector = App.unsynced_facilities[uuid].properties.sector;
-            addedMarker.name = App.unsynced_facilities[uuid].name;
-        }
-
-        selectFacility(addedMarker);
-        addedMarker.addTo(new_facilities_group);
-
-        return addedMarker;
+        $div = $(div_html);
+        $(region).append($div);
+        return $div;
     }
 
     /* Handle events */
+
+    // Radios 
+    $(page)
+        .find('.question__radios')
+        .delegate('.question__radio', 'click', function(e) {
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+            e.preventDefault();
+            var rbutton = $(this).find('input[type=radio]').first();
+            var uuid = rbutton.val();
+
+            var rbutton = rbutton;
+            if (question.answer[0] && question.answer[0].response.id === uuid) {
+                rbutton.prop('checked', false);
+                //$(this).removeClass('question__radio__selected');
+                question.answer = [];
+                return;
+            }
+
+            var coords = App.facilities[uuid].coordinates; // Should always exist
+            var name = App.facilities[uuid].name;
+            var sector = App.facilities[uuid]['properties'].sector;
+            question.answer = [{ 
+                response: {'id': uuid, 'lat': coords[1], 'lon': coords[0] },
+                metadata: {'name': name, 'sector': sector }
+            }];
+
+            
+            //$(this).addClass('question__radio__selected');
+            rbutton.prop('checked', true);
+
+        });
 
     // Find me
     $(page)
         .find('.question__find__btn')
         .click(function() {
-            App.message('Searching ...', 'message_warning');
+            //App.message('Searching ...', 'message-box-primary');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
                     // Server accepts [lon, lat]
-                    var coords = [position.coords.longitude, position.coords.latitude];
+                    var loc = {
+                        'lat': position.coords.latitude,
+                        'lon': position.coords.longitude, 
+                    }
 
-                    // Update map position and set indicator position again
-                    //map.setMaxBounds(null);
-                    map.setView([coords[1], coords[0]]);
-                    map.circle.setLatLng([coords[1], coords[0]]);
-                    //map.setMaxBounds(map.getBounds().pad(1));
+                    // Remember response
+                    App.location = loc;
 
                     // Revisit api call
-                    reloadFacilities(coords[1], coords[0]); 
+                    captureCallback(loc); 
+        
+                    // Make sure button is visible now
+                    $('.facility__btn').show();
 
                 }, function error() {
                     App.message('Could not get your location, please make sure your GPS device is active.',
-                            'message_error');
+                            'message-box-warning');
                 }, {
                     enableHighAccuracy: true,
                     timeout: 20000,
@@ -1394,75 +1308,76 @@ Widgets.facility = function(question, page, footer) {
     $(page)
         .find('.facility__btn')
         .click(function() {
-            // You added on before
-            if (addedMarker && addedMarker.uuid === question._new_facility) {
-                // Get rid of all traces of it
-                delete App.unsynced_facilities[addedMarker.uuid];
-                new_facilities_group.removeLayer(addedMarker);
-
-                if (addedMarker === touchedMarker) { 
-                    deselectFacility();
+            if (question.answer[0] && question.answer[0].metadata.is_new) {
+                $('.facility__btn').text("add new facility");
+                question.answer = [];
+                $('.question__add__facility').hide();
+                //$('.question__map').show();
+                $('.question__radios').show();
+                captureCallback = reloadFacilities;
+            } else {
+                $('.facility__btn').text("cancel");
+                if (question.answer[0] && question.answer[0].response.id) {
+                    var rbutton = $('.question__radios').find("input[value='"+ question.answer[0].response.id +"']");
+                    rbutton.prop('checked', false);
+                    //$(this).removeClass('question__radio__selected');
                 }
 
-                $(page).find('.facility__btn').text("Add New Site");
-                $(page).find('.facility__name').attr('disabled', true);
-                $(page).find('.facility__type').attr('disabled', true);
+                //$('.question__map').hide();
+                $('.question__radios').hide();
+                $('.question__add__facility').show();
 
-                addedMarker = null;
-                question._new_facility = null;
-                return;
+                var uuid = $('.facility_uuid_input').val() || objectID();
+                var lat = $('.facility_location_input').val().split(" ")[0] || App.location.lat;
+                var lon = $('.facility_location_input').val().split(" ")[1] || App.location.lon;
+                var name = $('.facility_name_input').val();
+                var sector = $('.facility_sector_input').val();
+
+                question.answer = [{ 
+                    response: {'id': uuid, 'lat': lat, 'lon': lon },
+                    metadata: {'name': name, 'sector': sector, 'is_new': true },
+                    failed_validation: Boolean(!name || !sector)  
+                }];
+
+                $('.facility_uuid_input').val(uuid);
+                $('.facility_location_input').val(lat + " " + lon);
+                $('.facility_name_input').val(name);
+                $('.facility_sector_input').val(sector);
+
+                captureCallback = updateLocation;
             }
 
-            // Adding new facility
-            var lat = map.getCenter().lat;
-            var lng = map.getCenter().lng;
-            var uuid = objectID(); //XXX: TODO replace this shit with new uuid
-
-            // Record this new facility for Revisit submission
-            App.unsynced_facilities[uuid] = {
-                'name': 'New Facility', 'uuid': uuid, 
-                'properties' : {'sector': 'other'},
-                'coordinates' : [lng, lat]
-            };
-
-            // Get and place marker
-            addedMarker = addFacility(lat, lng, uuid);
-            $(page).find('.facility__btn').html("Remove New Site");
-            $(page).find('.facility__name').attr('disabled', false);
-            $(page).find('.facility__type').attr('disabled', false);
-            question._new_facility = uuid; // state to prevent multiple facilities
+            console.log(question.answer[0]);
 
         });
 
-    // Change name
+    // Name input
     $(page)
-        .find('.facility__name')
+        .find('.facility_name_input')
         .keyup(function() {
-            //console/g.log(this.value);
-            if (addedMarker && addedMarker === touchedMarker) {
-                // Update facility info
-                App.unsynced_facilities[addedMarker.uuid].name = this.value;
-                addedMarker.name = this.value;
-            } else if (touchedMarker) {
-                // Prevent updates for now
-                selectFacility(touchedMarker);
-            }
+            question.answer[0].metadata.name = this.value;
+            var name = this.value;
+            var sector = question.answer[0].metadata.sector;
+            question.answer[0].failed_validation = Boolean(!name || !sector);
         });
 
-    // Change type
+    // Sector input 
     $(page)
-        .find('.facility__type')
+        .find('.facility_sector_input')
         .change(function() {
-            //console/g.log(this.value);
-            if (addedMarker && addedMarker === touchedMarker) {
-                // Update facility info
-                App.unsynced_facilities[addedMarker.uuid].properties.sector = this.value;
-                addedMarker.sector = this.value;
-            } else if (touchedMarker) {
-                // Prevent updates for now
-                selectFacility(touchedMarker);
-            }
+            question.answer[0].metadata.sector = this.value;
+            var sector = this.value;
+            var name = question.answer[0].metadata.name;
+            question.answer[0].failed_validation = Boolean(!name || !sector);
         });
+
+    // Location callback 
+    function updateLocation(loc) {
+       $('.facility_location_input').val(loc.lat + " " + loc.lon);
+       question.answer[0].response.lat = loc.lat;
+       question.answer[0].response.lon = loc.lon;
+    }
+
 };
 
 
@@ -1480,11 +1395,19 @@ function getNearbyFacilities(lat, lng, rad, lim, cb) {
             fields: "name,uuid,coordinates,properties:sector", //filters results to include just those three fields,
         },
         function(data) {
-            localStorage.setItem("facilities", JSON.stringify(data.facilities));
+            facilities = {};
+            data.facilities.forEach(function(facility) {
+                facilities[facility.uuid] = facility;
+            });
+            // Add in our unsynced ones as well
+            Object.keys(App.unsynced_facilities).forEach(function(uuid) {
+                facilities[uuid] = App.unsynced_facilities[uuid];
+            });
+
+            App.facilities = facilities;
+            localStorage.setItem("facilities", JSON.stringify(facilities));
             if (cb) {
-                //XXX REMEMMERNBE
-                App.facilities = data.facilities;
-                cb(data.facilities); //drawFacillities callback probs
+                cb(facilities); //drawFacillities callback probs
             }
         }
     );
@@ -1501,11 +1424,9 @@ function postNewFacility(facility) {
         processData: false,
         dataType: 'json',
         success: function() {
-            App.message('Facility Added!', 'message_success');
-
+            //App.message('Facility Added!', 'message-box-primary');
             // If posted, we don't an unsynced reference to it anymore
             delete App.unsynced_facilities[facility.uuid];
-            App.facilities.push(facility);
         },
         
         headers: {
@@ -1514,11 +1435,10 @@ function postNewFacility(facility) {
         },
 
         error: function() {
-            App.message('Facility submission failed, will try again later.', 'message_error');
+            //App.message('Facility submission failed, will try again later.', 'message-box-warning');
         },
         
         complete: function() {
-            // Add it into facilities array so it can be selected later
             localStorage.setItem("facilities", 
                     JSON.stringify(App.facilities));
 
@@ -1527,80 +1447,6 @@ function postNewFacility(facility) {
 
         }
     });
-}
-
-var icon_edu = new L.icon({iconUrl: "/static/img/icons/normal_education.png",iconAnchor: [13, 31]});
-var icon_health = new L.icon({iconUrl: "/static/img/icons/normal_health.png", iconAnchor: [13, 31]});
-var icon_water = new L.icon({iconUrl: "/static/img/icons/normal_water.png", iconAnchor: [13, 31]});
-
-var icon_new_edu = new L.icon({iconUrl: "/static/img/icons/unsynced_education.png",iconAnchor: [13, 31]});
-var icon_new_health = new L.icon({iconUrl: "/static/img/icons/unsynced_health.png", iconAnchor: [13, 31]});
-var icon_new_water = new L.icon({iconUrl: "/static/img/icons/unsynced_water.png", iconAnchor: [13, 31]});
-
-var icon_base = new L.icon({iconUrl: "/static/img/icons/normal_base.png", iconAnchor: [13, 31]});
-var icon_new_base = new L.icon({iconUrl: "/static/img/icons/unsynced_base.png", iconAnchor: [13, 31]});
-var icon_selected = new L.icon({iconUrl: "/static/img/icons/selected-point.png", iconAnchor: [16.2, 48]});
-var icon_added = new L.icon({iconUrl: "/static/img/icons/added-point.png", iconAnchor: [16.2, 48]});
-
-var icon_types = {
-    "education" : icon_edu,
-    "new_education" : icon_new_edu,
-    "water" : icon_water,
-    "new_water" : icon_new_water,
-    "health" : icon_health,
-    "new_health" : icon_new_health,
-    "base" : icon_base,
-    "new_base" : icon_new_base,
-};
-
-function getIcon(sector, isNew) {
-    var base = "base";
-    if (isNew) {
-        sector = "new_" + sector;
-        base = "new_" + base;
-    }
-    return icon_types[sector] || icon_types[base];
-}
-
-function drawPoint(lat, lng, name, type, uuid, clickEvent) {
-    var marker = new L.marker([lat, lng], {
-        title: name,
-        alt: name,
-        clickable: true,
-        riseOnHover: true
-    });
-
-    marker.uuid = uuid; // store the uuid so we can read it back in the event handler
-    marker.sector = type;
-    marker.name = name;
-    marker.is_new = false;
-
-    marker.options.icon = getIcon(type, marker.is_new);
-
-    marker.on('click', clickEvent);
-    return marker;
-    
-}
-
-function drawNewPoint(lat, lng, name, type, uuid, clickEvent, dragEvent) {
-    var marker = new L.marker([lat, lng], {
-        title: name,
-        alt: name,
-        clickable: true,
-        draggable: true, //XXX This right here is why i gotta seperate draws
-        riseOnHover: true
-    });
-
-    marker.uuid = uuid; // store the uuid so we can read it back in the event handler
-    marker.sector = type;
-    marker.name = name;
-    marker.is_new = true;
-
-    marker.options.icon = getIcon(type, marker.is_new);
-
-    marker.on('click', clickEvent);
-    marker.on('dragend', dragEvent);
-    return marker;
 }
 
 // Def not legit but hey
@@ -1615,3 +1461,5 @@ var exports = exports || {} //XXX: Just to silence console;
 exports.App = App;
 exports.Survey = Survey;
 exports.Widgets = Widgets; 
+exports.getNearbyFacilities = getNearbyFacilities;
+exports.postNewFacility = postNewFacility;

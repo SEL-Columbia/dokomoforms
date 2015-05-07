@@ -791,5 +791,78 @@ describe('Survey unit and regression tests', function(done) {
             //XXX CANT SOLVE MYSTERY OF NO MOCK CB
             done();
         });
+
+    it('saveState: should save question response state',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_id: '1',
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "text",
+                    logic: {required: true},
+                    sequence_number: 1
+                },
+                {
+                    question_id: '2',
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    logic: {},
+                    sequence_number: 2
+                },
+            ];
+
+            var state = JSON.parse(localStorage["id"] || '{}');
+            Object.keys(state).length.should.equal(0); // Should be empty to begin with
+            survey = new Survey("id", 0, questions, {});
+            questions[0].should.equal(survey.current_question);
+
+            questions[0].answer = [{response: Widgets._validate("text", "yo")}];
+            survey.saveState();
+            
+            var state = JSON.parse(localStorage["id"] || '{}');
+            Object.keys(state).length.should.not.equal(0); // Should be filled
+            state['1'][0].should.be.ok;
+            state['1'][0].response.should.match("yo");
+
+            done();
+
+        });
+
+    it('clearState: should clear question response state',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_id: '1',
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "text",
+                    logic: {required: true},
+                    sequence_number: 1
+                },
+                {
+                    question_id: '2',
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    logic: {},
+                    sequence_number: 2
+                },
+            ];
+
+            survey = new Survey("id", 0, questions, {});
+
+            questions[0].answer = [{response: Widgets._validate("text", "yo")}];
+            survey.saveState();
+            var state = JSON.parse(localStorage["id"] || '{}');
+            Object.keys(state).length.should.not.equal(0); // Should be filled
+
+            survey.clearState();
+            var state = JSON.parse(localStorage["id"] || '{}');
+            Object.keys(state).length.should.equal(0); // Should be empty
+            questions[0].answer.length.should.equal(0); // Should be cleared
+            done();
+    });
 });
 
