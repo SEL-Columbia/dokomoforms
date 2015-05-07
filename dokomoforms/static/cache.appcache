@@ -1,5 +1,5 @@
 CACHE MANIFEST
-# Version 0.012345678901234567890
+# Version 0.012345678901234567
 
 /static/persona.js
 /static/lib.js
@@ -7,8 +7,9 @@ CACHE MANIFEST
 
 /static/css/survey.css
 /static/ratchet-2.0.2/dist/css/ratchet.min.css
-# /static/ratchet-2.0.2/dist/js/ratchet.js
-# /static/ratchet-2.0.2/dist/fonts/ratchicons.woff
+#/static/ratchet-2.0.2/dist/js/ratchet.js
+/static/ratchet-2.0.2/js/modals.js
+#/static/ratchet-2.0.2/dist/fonts/ratchicons.woff
 # /static/ratchet-2.0.2/dist/fonts/ratchicons.tff
 # /static/ratchet-2.0.2/dist/fonts/ratchicons.eot
 # /static/ratchet-2.0.2/dist/fonts/ratchicons.svg
