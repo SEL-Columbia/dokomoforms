@@ -4,6 +4,9 @@
 *.pyc
 *.log
 local_config.py
+_build
+_static
+_templates
 .idea/
 .coverage
 cover/
