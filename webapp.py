@@ -11,7 +11,10 @@ import tornado.web
 import tornado.httpserver
 from tornado.web import url
 from tornado.options import define, options
-from dokomoforms.handlers.index import IndexHandler
+from dokomoforms.handlers import IndexHandler
+from dokomoforms.models import Base
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 define('port', help='run on the given port', type=int)
 define('cookie_secret', help='string used to create session cookies')
@@ -43,11 +46,24 @@ class Application(tornado.web.Application):
             'debug': options.debug,
         }
         super().__init__(handlers, **settings)
-        self.db = None  # TODO: SQLAlchemy
+        # TODO: configurable?
+        self.engine = create_engine(
+            'postgresql+psycopg2://{}:{}@{}/{}'.format(
+                options.db_user,
+                options.db_password,
+                options.db_host,
+                options.db_database,
+            ),
+            convert_unicode=True,
+            pool_size=0,
+            max_overflow=-1,
+        )
+        Session = sessionmaker(bind=self.engine)
+        self.session = Session()
         self.maybe_create_tables()
 
     def maybe_create_tables(self):
-        pass
+        Base.metadata.create_all(self.engine)
 
 
 def main():
