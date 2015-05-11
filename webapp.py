@@ -13,14 +13,14 @@ from tornado.web import url
 from tornado.options import define, options
 from dokomoforms.handlers.index import IndexHandler
 
-define('port', default=8888, help='run on the given port', type=int)
+define('port', help='run on the given port', type=int)
 define('cookie_secret', help='string used to create session cookies')
 define('debug', default=False, help='whether to enable debug mode', type=bool)
 
 # TODO: move these?
-define('db_host', default='localhost:5432', help='database host')
-define('db_database', default='doko', help='database name')
-define('db_user', default='postgres', help='database user')
+define('db_host', help='database host')
+define('db_database', help='database name')
+define('db_user', help='database user')
 define('db_password', help='database password')
 
 _pwd = os.path.dirname(__file__)
@@ -58,7 +58,7 @@ def main():
         # ssl_options={
         #     'certfile': '/path/to/cert',
         #     'keyfile': '/path/to/key',
-        # }
+        # },
     )
     logging.info(
         '{}Dokomo Forms: {}{}starting server on port {}{}'.format(
