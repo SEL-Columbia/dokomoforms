@@ -12,7 +12,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
 class IndexHandler(BaseHandler):
     def get(self):
-        """Documentation"""
+        """Documentation... This isn't a real endpoint"""
         self.session.add(Question(name='aaa'))
         self.session.commit()
         self.write(', '.join(q.name for q in self.session.query(Question)))
