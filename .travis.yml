@@ -1,0 +1,30 @@
+language: python
+python:
+  - "3.3"
+  - "3.4"
+cache:
+  pip: true
+sudo: false
+addons:
+  postgresql: "9.4"
+
+before_script:
+  - pip install -r requirements.txt
+  - pip install -r requirements-testing.txt
+  - pip install coveralls flake8
+  - python3 -m flake8 .
+  # other things...
+  - python3 webapp.py --debug=True &
+
+before_install:
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+
+script:
+  - nosetests -c tox.ini
+
+after_success: coveralls
+
+notifications:
+  email:
+    on_failure: change
