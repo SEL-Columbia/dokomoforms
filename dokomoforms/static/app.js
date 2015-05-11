@@ -69,36 +69,27 @@ App.init = function(survey) {
 
 App.sync = function() {
     var self = this;
-    self.countdown = App.unsynced.length; //JS is single threaded, no race condition on counter
-    self.failed = [];
-    var restore = function() {
-        // Were done!
-        App.unsynced = self.failed;
-        self.failed = [];
-        var unsynced = JSON.parse(localStorage.unsynced); 
-        unsynced[self.survey.id] = App.unsynced;
-        localStorage['unsynced'] = JSON.stringify(unsynced);
-
-        // Reload page to update template values
-        App.splash();
-    };
+    self.countdown = App.unsynced.length; //JS is single threaded no race condition counter
     _.each(App.unsynced, function(survey, idx) {
         App.submit(survey, 
             function(survey) { 
-                //console.log('done');
+                console.log('done');
+                App.unsynced.splice(idx, 1);
+                var unsynced = JSON.parse(localStorage.unsynced); 
+                unsynced[self.survey.id] = App.unsynced;
+                localStorage['unsynced'] = JSON.stringify(unsynced);
                 --self.countdown; 
                 
                 if (self.countdown === 0) 
-                    restore();
+                    App.splash();
             },
 
             function(survey) { 
-                //console.log('fail');
+                console.log('fail');
                 --self.countdown; 
-                App.failed.push(survey);
 
                 if (self.countdown === 0) 
-                    restore();
+                    App.splash();
             } 
         );
     });
@@ -107,11 +98,6 @@ App.sync = function() {
     _.map(App.unsynced_facilities, function(facility) {
         postNewFacility(facility); 
     });
-
-    App.unsynced = [];
-    var unsynced = JSON.parse(localStorage.unsynced); 
-    unsynced[self.survey.id] = App.unsynced;
-    localStorage['unsynced'] = JSON.stringify(unsynced);
 };
 
 App.message = function(text, style) {
