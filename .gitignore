@@ -3,7 +3,7 @@
 *.sqlite
 *.pyc
 *.log
-local_settings.py
+local_config.py
 .idea/
 .coverage
 cover/
