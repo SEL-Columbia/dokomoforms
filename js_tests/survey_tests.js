@@ -294,12 +294,10 @@ describe('Survey unit and regression tests', function(done) {
             questions[1].should.not.equal(survey.current_question);
             
             // state SHOULDNT change
-            //questions[0].answer = ["date"];
-            //survey.next(NEXT);
-            //questions[0].should.equal(survey.current_question);
-            //questions[1].should.not.equal(survey.current_question);
-            //XXX VALIDATION FOR TIME NOT DONE;
-
+            questions[0].answer = ["date"];
+            survey.next(NEXT);
+            questions[0].should.equal(survey.current_question);
+            questions[1].should.not.equal(survey.current_question);
 
             done();
 

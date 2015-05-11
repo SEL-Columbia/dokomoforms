@@ -918,12 +918,13 @@ Widgets._validate = function(type, answer, logic) {
             }
             break;
         case "date":
-            //XXX: Doesn't work with chrome date picker
-            val = Date.parse(answer);
-            if (isNaN(val)) {
+            var resp = new Date(answer);
+            var day = ("0" + resp.getDate()).slice(-2);
+            var month = ("0" + (resp.getMonth() + 1)).slice(-2);
+            var year = resp.getFullYear();
+            val = year+"-"+(month)+"-"+(day);
+            if(isNaN(year) || isNaN(month) || isNaN(day))  {
                 val = null;
-            } else {
-                val = (new Date(val)).toISOString();
             }
             break;
         case "time":
@@ -972,7 +973,7 @@ Widgets.decimal = function(question, page, footer) {
 
 Widgets.date = function(question, page, footer) {
     //XXX: TODO change input thing to be jquery-ey
-    this._input(question, page, footer, "date_XXX"); //XXX: Fix validation
+    this._input(question, page, footer, "date"); //XXX: Fix validation
 };
 
 Widgets.time = function(question, page, footer) {
