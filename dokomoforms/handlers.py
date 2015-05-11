@@ -13,4 +13,5 @@ class BaseHandler(tornado.web.RequestHandler):
 class IndexHandler(BaseHandler):
     def get(self):
         self.session.add(Question(name='aaa'))
-        self.write(self.session.query(Question).all())
+        self.session.commit()
+        self.write(', '.join(q.name for q in self.session.query(Question)))
