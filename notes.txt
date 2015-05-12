@@ -1,0 +1,16 @@
+1. Encryption
+  - Column-level encryption doesn't work for our needs at all...
+  - Filesystem-level encryption looks best.
+2. Behavior-driven/baby's first test-drive development
+  - Want the application to conform to some behavior? Write a test stub!
+  - E.g. want administrative information to be inaccesible to a regular user?
+    - Here's a test stub...
+
+    /tests/user_test.py:
+
+    import unittest
+
+
+    class TestUser(unittest.TestCase):
+        def testRegularUserCannotSeeAdminInfo(self):
+            assert False
