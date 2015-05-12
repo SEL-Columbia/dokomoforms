@@ -60,9 +60,6 @@ class Application(tornado.web.Application):
         )
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
-        self.maybe_create_tables()
-
-    def maybe_create_tables(self):
         Base.metadata.create_all(self.engine)
 
 
