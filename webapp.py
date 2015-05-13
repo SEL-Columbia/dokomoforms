@@ -11,7 +11,7 @@ import tornado.web
 import tornado.httpserver
 from tornado.web import url
 from tornado.options import define, options
-from dokomoforms.handlers import IndexHandler
+import dokomoforms.handlers as handlers
 from dokomoforms.models import Base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -34,18 +34,22 @@ end_color = '\033[0m'
 
 class Application(tornado.web.Application):
     def __init__(self):
-        handlers = [
-            url(r'/', IndexHandler, name='index'),
+        urls = [
+            # Administrative
+            url(r'/', handlers.Index, name='index'),
+            url(r'/user/login/?', handlers.Login, name='login'),
+            url(r'/user/logout/?', handlers.Logout, name='logout'),
         ]
         settings = {
-            'template_path': os.path.join(_pwd, 'templates'),
-            'static_path': os.path.join(_pwd, 'static'),
+            'template_path': os.path.join(_pwd, 'dokomoforms/templates'),
+            'static_path': os.path.join(_pwd, 'dokomoforms/static'),
+            'default_handler_class': handlers.NotFound,
             'xsrf_cookies': True,
             'cookie_secret': options.cookie_secret,
             'login_url': '/',
             'debug': options.debug,
         }
-        super().__init__(handlers, **settings)
+        super().__init__(urls, **settings)
         # TODO: configurable?
         self.engine = create_engine(
             'postgresql+psycopg2://{}:{}@{}/{}'.format(

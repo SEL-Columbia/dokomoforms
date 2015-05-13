@@ -28,4 +28,4 @@ class Email(Base):
     user_id = sa.Column(pg.UUID, sa.ForeignKey('auth_user.id'))
     last_update_time = util.last_update_time()
 
-    user = relationship('User', backref=backref('email', order_by=id))
+    user = relationship('User', backref=backref('emails', order_by=id))
