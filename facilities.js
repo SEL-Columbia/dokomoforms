@@ -309,5 +309,37 @@ facilityTree.prototype.getLeaves = function() {
 
 console.log("Loaded");
 var tree = new facilityTree(90, -180, 0, 0, 50, 0);
-
 window.tree;
+
+// Testing out how sorting will work.
+// Intend to sort nodes data on retrival and merge into one big old list;
+var center = {lat: 40.80690, lng:-73.96536}
+window.center;
+
+function dist(coordinates, center) {
+   var lat = coordinates[1];
+   var lng = coordinates[0];
+   var clat = center.lat;
+   var clng = center.lng;
+
+   var self = this;
+   var R = 6371000;
+   var e = clat * Math.PI/180;
+   var f = lat * Math.PI/180;
+   var g = (lat - clat) * Math.PI/180;
+   var h = (lng - clng) * Math.PI/180;
+
+   var a = Math.sin(g/2) * Math.sin(g/2) +
+           Math.cos(e) * Math.cos(f) *
+           Math.sin(h/2) * Math.sin(h/2);
+
+   var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+   return R * c;
+}
+
+function sorter(facilityA, facilityB) {
+    var lengthA = dist(facilityA.coordinates, center);
+    var lengthB = dist(facilityB.coordinates, center);
+    return (lengthA - lengthB); 
+};
+
