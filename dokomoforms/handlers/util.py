@@ -20,3 +20,10 @@ class BaseHandler(tornado.web.RequestHandler):
         if user:
             return to_unicode(user)
         return None
+
+    # def write_error(self, status_code, **kwargs):
+    #     if status_code == 422 and 'exc_info' in kwargs:
+    #         assert False, kwargs['exc_info'][0].args
+    #         self.write(kwargs)
+    #     else:
+    #         super().write_error(status_code, **kwargs)

@@ -50,7 +50,10 @@ class Login(BaseHandler):
         except NoResultFound:
             raise tornado.web.HTTPError(
                 422,
-                reason="TODO: figure out an error to write here"
+                reason=(
+                    'There is no account associated with the '
+                    'e-mail address ' + data['email']
+                ),
             )
 
 

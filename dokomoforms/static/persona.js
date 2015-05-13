@@ -25,8 +25,8 @@ function getCookie(name) {
                   location.href = decodeURIComponent(window.location.search.substring(6));
                 },
                 error: function(xhr, status, err) {
+                  localStorage['login_error'] = err;
                   navigator.id.logout();
-                  alert("Login failure: " + err);
                 }
               });
             }
@@ -46,7 +46,12 @@ function getCookie(name) {
           },
           success: function(res, status, xhr) {
               localStorage.removeItem('email');
-              location.href = '/';
+              if (localStorage['login_error']) {
+                $('#msg').append('Login failure: ' + localStorage['login_error']);
+                localStorage.removeItem('login_error');
+              } else {
+                location.href = '/';
+              }
           },
           error: function(xhr, status, err) { alert("Logout failure: " + err); }
         });
