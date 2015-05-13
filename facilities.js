@@ -116,6 +116,18 @@ var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
         return (lat < self.nlat && lat >= self.slat && lng > self.wlng && lng <= self.elng);
     }
 
+    facilityNode.prototype.crossesBound = function(nlat, wlng, slat, elng) {
+        var self = this;
+
+        if ((nlat < self.slat) || (slat > self.nlat))
+            return false;
+        
+        if ((wlng > self.elng) || (elng < self.wlng))
+           return false;
+        
+        return true;
+    }
+
     facilityNode.prototype.distance = function(lat, lng) {
         var self = this;
         var R = 6371000; // metres
@@ -138,8 +150,58 @@ var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
     this.root = new facilityNode(nlat, wlng, slat, elng); 
 }
 
-//XXX: Check nearby latlngs as well, use n
-facilityTree.prototype._getNNNodes = function(lat, lng, n, node) {
+facilityTree.prototype._getNNode = function(lat, lng, node) {
+    var self = this;
+
+    // Maybe I'm a leaf?
+    if (node.hasData) { 
+        return node;
+    }
+
+    if (node.count > 0) {
+        // NW
+        if (node.nw && node.nw.within(lat, lng)) {
+            var cnode = self._getNNode(lat, lng, node.nw);
+            if (cnode) 
+                return cnode;
+        }
+
+        // NE
+        if (node.ne && node.ne.within(lat, lng)) {
+            var cnode = self._getNNode(lat, lng, node.ne);
+            if (cnode) 
+                return cnode;
+        }
+
+        // SW
+        if (node.sw && node.sw.within(lat, lng)) {
+            var cnode = self._getNNode(lat, lng, node.sw);
+            if (cnode) 
+                return cnode;
+        }
+
+        // SE
+        if (node.se && node.se.within(lat, lng)) {
+            var cnode = self._getNNode(lat, lng, node.se);
+            if (cnode) 
+                return cnode;
+        }
+    }
+}
+
+facilityTree.prototype.getNNode = function(lat, lng) {
+    var self = this;
+
+    if (!self.root.within(lat, lng))
+        return null;
+
+    var node = self._getNNode(lat, lng, self.root);
+    console.log('node: ', node.center.lat, node.center.lng, "distance from center", node.distance(lat,lng));
+
+    return node;
+}
+
+facilityTree.prototype._getRNodes = function(nlat, wlng, slat, elng, node) {
     var self = this;
 
     // Maybe I'm a leaf?
@@ -150,54 +212,59 @@ facilityTree.prototype._getNNNodes = function(lat, lng, n, node) {
     var nodes = [];
     if (node.count > 0) {
         // NW
-        if (node.nw && node.nw.within(lat, lng)) {
-            nodes = nodes.concat(self._getNNNodes(lat, lng, n, node.nw));
-            if (nodes.length >= n)  {
-                return nodes;
-            }
+        if (node.nw && node.nw.crossesBound(nlat, wlng, slat, elng)) {
+            nodes = nodes.concat(self._getRNodes(nlat, wlng, slat, elng, node.nw));
         }
 
         // NE
-        if (node.ne && node.ne.within(lat, lng)) {
-            nodes = nodes.concat(self._getNNNodes(lat, lng, n, node.ne));
-            if (nodes.length >= n) {
-                return nodes;
-            }
+        if (node.ne && node.ne.crossesBound(nlat, wlng, slat, elng)) {
+            nodes = nodes.concat(self._getRNodes(nlat, wlng, slat, elng, node.ne));
         }
 
         // SW
-        if (node.sw && node.sw.within(lat, lng)) {
-            nodes = nodes.concat(self._getNNNodes(lat, lng, n, node.sw));
-            if (nodes.length >= n) {
-                return nodes;
-            }
+        if (node.sw && node.sw.crossesBound(nlat, wlng, slat, elng)) {
+            nodes = nodes.concat(self._getRNodes(nlat, wlng, slat, elng, node.sw));
         }
 
         // SE
-        if (node.se && node.se.within(lat, lng)) {
-            nodes = nodes.concat(self._getNNNodes(lat, lng, n, node.se));
-            if (nodes.length >= n) {
-                return nodes;
-            }
+        if (node.se && node.se.crossesBound(nlat, wlng, slat, elng)) {
+            nodes = nodes.concat(self._getRNodes(nlat, wlng, slat, elng, node.se));
         }
     }
 
     return nodes;
 }
 
-facilityTree.prototype.getNNNodes = function(lat, lng, n) {
+facilityTree.prototype.getRNodesBox = function(nlat, wlng, slat, elng) {
     var self = this;
-    var n = n || 1;
 
-    if (!self.root.within(lat, lng))
+    if (!self.root.crossesBound(nlat, wlng, slat, elng))
         return null;
 
-    var nodes = self._getNNNodes(lat, lng, n, self.root);
-    nodes.forEach(function(node, idx) {
-        console.log('node:', idx, "distance from center", node.distance(lat,lng));
-    });
-
+    var nodes = self._getRNodes(nlat, wlng, slat, elng, self.root);
     return nodes;
+}
+
+facilityTree.prototype.getRNodesRad = function(lat, lng, r) {
+    var self = this;
+
+    var R = 6378137;
+    var dlat = r/R;
+    var dlng = r/(R*Math.cos(Math.PI*lat/180));
+    
+    nlat = lat + dlat * 180/Math.PI;
+    wlng = lng - dlng * 180/Math.PI;
+    slat = lat - dlat * 180/Math.PI;
+    elng = lng + dlng * 180/Math.PI;
+
+    console.log(nlat, wlng, slat, elng);
+
+    if (!self.root.crossesBound(nlat, wlng, slat, elng))
+        return null;
+
+    var nodes = self._getRNodes(nlat, wlng, slat, elng, self.root);
+    return nodes;
+     
 }
 
 facilityTree.prototype.print = function() {
@@ -208,11 +275,10 @@ facilityTree.prototype._getLeaves = function(node) {
     var self = this;
 
     // Check if this is a leaf
-    if (node.hasData) 
+    if (!node.nw && !node.ne && !node.sw && !node.se) 
         return [node];
 
     // Otherwise check all children
-   
     var nodes = [];
     if (node.count > 0) {
         // NW
@@ -231,7 +297,6 @@ facilityTree.prototype._getLeaves = function(node) {
         if (node.se) 
             nodes = nodes.concat(self._getLeaves(node.se));
     }
-
 
     return nodes;
 }
