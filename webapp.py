@@ -7,6 +7,7 @@ Execute this file to start the Tornado server and wsgi container.
 import logging
 import os.path
 import tornado.ioloop
+import tornado.locale
 import tornado.web
 import tornado.httpserver
 from tornado.web import url
@@ -17,6 +18,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 define('port', help='run on the given port', type=int)
+define('locale', default='en', help='the internationalization (i18n) locale')
 define('cookie_secret', help='string used to create session cookies')
 define('debug', default=False, help='whether to enable debug mode', type=bool)
 
@@ -30,6 +32,8 @@ _pwd = os.path.dirname(__file__)
 header_color = '\033[1m'
 msg_color = '\033[92m'
 end_color = '\033[0m'
+
+_ = tornado.locale.get(options.locale).translate
 
 
 class Application(tornado.web.Application):
@@ -77,10 +81,13 @@ def main():
         #     'keyfile': '/path/to/key',
         # },
     )
+    tornado.locale.load_gettext_translations(
+        os.path.join(_pwd, 'locale'), 'messages'
+    )
     logging.info(
-        '{}Dokomo Forms: {}{}starting server on port {}{}'.format(
+        _('{}Dokomo Forms: {}{}starting server on port {}{}'.format(
             header_color, end_color, msg_color, options.port, end_color
-        )
+        ))
     )
     http_server.listen(options.port)
     tornado.ioloop.IOLoop.current().start()
