@@ -63,10 +63,10 @@ var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
     
         // Revisit ajax req
         $.ajax({
-            url: "http://staging.revisit.global/api/v0/facilities.json",
+            url: "http://localhost:3000/api/v0/facilities.json",
             data: {
                 within: self.nlat + "," + self.wlng + "," + self.slat + "," + self.elng,
-                limit: 'off',
+                limit: '1',
                 fields: "poop", //SILIENCE
             },
             success: function(data) {
@@ -82,12 +82,14 @@ var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
     facilityNode.prototype.setFacilities = function(facilities) {
         var data = JSON.stringify(facilities);
         this.uncompressedSize = data.length * 2; // Each Character is 16bits in JS.
-        localStorage.setItem(this.nlat+""+this.wlng+""+this.slat+""+this.elng, data);
+        var compressed = LZString.compressToUTF16(data);
+        this.compressedSize = compressed.length * 2;
+        localStorage.setItem(this.nlat+""+this.wlng+""+this.slat+""+this.elng, compressed);
     };
     
     facilityNode.prototype.getFacilities = function() {
         // Get around the pass by reference js bs 
-        return JSON.parse(localStorage[this.nlat+""+this.wlng+""+this.slat+""+this.elng]);
+        return JSON.parse(LZString.decompressFromUTF16(localStorage[this.nlat+""+this.wlng+""+this.slat+""+this.elng]));
     };
 
     facilityNode.prototype.getData = function() {
@@ -95,7 +97,7 @@ var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
     
         // Revisit ajax req
         $.ajax({
-            url: "http://staging.revisit.global/api/v0/facilities.json",
+            url: "http://localhost:3000/api/v0/facilities.json",
             data: {
                 within: self.nlat + "," + self.wlng + "," + self.slat + "," + self.elng,
                 limit: 'off',
@@ -398,12 +400,26 @@ facilityTree.prototype.getUncompressedSize = function() {
     }, 0);
 };
 
-console.log("Loaded");
-var tree = new facilityTree(90, -180, 0, 0, 50, 0);
+facilityTree.prototype.getCount = function() {
+    var self = this;
+    var leaves = self._getLeaves(self.root);;
+    return leaves.reduce(function(sum, node) {
+        return node.count + sum;
+    }, 0);
+};
+
+console.log("Initilizing ... (wait for requests to stop");
+//var tree = new facilityTree(90, -180, 0, 0, 50, 0);
+var tree = new facilityTree(85, -180, -85, 180, 2500, 0.000001);
 window.tree;
 
-// Testing out how sorting will work.
-// Intend to sort nodes data on retrival and merge into one big old list;
-var mid = {lat: 40.80690, lng:-73.96536}
-window.mid;
+
+var nyc = {lat: 40.80690, lng:-73.96536}
+window.nyc;
+
+//tree.getCompressedSize() / 1048576
+//tree.getNNearestFacilities(7.353078, 5.118915, 500, 10)
+//tree.getNNearestFacilities(40.80690, -73.96536, 500, 10)
+//tree.getCompressedSize()/tree.getUncompressedSize()
+//tree.getRNodesRad(40.80690, -73.96536, 500)
 
