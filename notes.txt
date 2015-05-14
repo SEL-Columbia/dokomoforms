@@ -16,3 +16,22 @@
             assert False
 3. TODO: Figure out clean way to deal with setting up the DB for SQLAlchemy
    (extensions, etc).
+4. HTTPS/SSL
+  - As per convo with Chris Tan, just tell nginx to proxy 443 traffic to 8888.
+5. Internationalization (I18n)
+  - Looks like the process has to go something like this:
+    1. In templates write translatable strings as {{ _('Whatever') }}
+    2. Run xgettext --language=Python -d dokomoforms file1.py file2.html etc
+      - I don't see any way to get xgettext to find the files automatically...?
+        It's a pain in the butt.
+      - By default the resulting dokomoforms.po file has CHARSET=CHARSET, which
+        is wrong... You need to change it to UTF-8. Not sure how to get it to
+        do that automatically.
+    3. If a .po translation file exists, run
+      msgmerge old.po mydomain.po > new.po
+    4. Run
+      msgfmt dokomoforms.po -o locale/{lang}/LC_MESSAGES/dokomoforms.mo
+      - Create the directories if they don't exist.
+  - Having done all that, if, say, you have generated
+    locale/es/LC_MESSAGES/dokomoforms.mo (Spanish), then someone visiting the
+    site with the browser language set to Spanish will get that translation.
