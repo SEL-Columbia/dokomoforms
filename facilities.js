@@ -2,6 +2,7 @@ var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
 
     var facilityNode = function(nlat, wlng, slat, elng) {
         
+        // Bounding Box
         this.nlat = nlat;
         this.wlng = wlng;
         this.slat = slat;
@@ -17,8 +18,10 @@ var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
         this.sw = null;
         this.se = null;
     
-        //XXX TEMP DATA WILL BE STORATED IN LOCALSTORAGE
+        // Stats
         this.hasData = false;
+        this.uncompressedSize = 0;
+        this.compressedSize = 0;
     
         // Begin callback chain for initialization
         if (this.latSep > distThresh || this.lngSep > distThresh)
@@ -26,7 +29,7 @@ var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
         else
             this.getData();
     };
-    
+
     facilityNode.prototype.print = function(indent) {
         var indent = indent || "";
         var shift = "--";
@@ -75,6 +78,18 @@ var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
         });
     }
     
+    //TODO: Fill out with compression and localstorage stuff
+    facilityNode.prototype.setFacilities = function(facilities) {
+        var data = JSON.stringify(facilities);
+        this.uncompressedSize = data.length * 2; // Each Character is 16bits in JS.
+        localStorage.setItem(this.nlat+""+this.wlng+""+this.slat+""+this.elng, data);
+    };
+    
+    facilityNode.prototype.getFacilities = function() {
+        // Get around the pass by reference js bs 
+        return JSON.parse(localStorage[this.nlat+""+this.wlng+""+this.slat+""+this.elng]);
+    };
+
     facilityNode.prototype.getData = function() {
         var self = this;;
     
@@ -89,7 +104,7 @@ var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
             success: function(data) {
                 self.count = data.total;
                 if (self.count > 0) {
-                    self.data = data.facilities;
+                    self.setFacilities(data.facilities);
                     self.hasData = true;
                 }
                 console.log("Done");
@@ -257,14 +272,75 @@ facilityTree.prototype.getRNodesRad = function(lat, lng, r) {
     slat = lat - dlat * 180/Math.PI;
     elng = lng + dlng * 180/Math.PI;
 
-    console.log(nlat, wlng, slat, elng);
-
     if (!self.root.crossesBound(nlat, wlng, slat, elng))
         return null;
 
     var nodes = self._getRNodes(nlat, wlng, slat, elng, self.root);
     return nodes;
      
+}
+
+facilityTree.prototype.getNNearestFacilities = function(lat, lng, r, n) {
+    var self = this;
+
+    // Calculates meter distance between facilities and center of node
+    function dist(coordinates, clat, clng) {
+       var lat = coordinates[1];
+       var lng = coordinates[0];
+    
+       var R = 6371000;
+       var e = clat * Math.PI/180;
+       var f = lat * Math.PI/180;
+       var g = (lat - clat) * Math.PI/180;
+       var h = (lng - clng) * Math.PI/180;
+    
+       var a = Math.sin(g/2) * Math.sin(g/2) +
+               Math.cos(e) * Math.cos(f) *
+               Math.sin(h/2) * Math.sin(h/2);
+    
+       var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+       return R * c;
+    }
+
+    // Sort X Nodes Data
+    var nodes = self.getRNodesRad(lat, lng, r);
+    var nodeFacilities = [];
+    nodes.forEach(function(node, idx) {
+        var facilities = node.getFacilities();
+        facilities.sort(function (facilityA, facilityB) {
+            var lengthA = dist(facilityA.coordinates, lat, lng);
+            var lengthB = dist(facilityB.coordinates, lat, lng);
+            return (lengthA - lengthB); 
+        });
+        nodeFacilities.push(facilities);
+    });
+
+    //Merge X Nodes Sorted Data
+    var facilities = [];
+    while(n > 0 && nodeFacilities.length > 0) {
+        nodeFacilities = nodeFacilities.filter(function(facilities) {
+            return facilities.length;
+        });
+
+        var tops = [];
+        nodeFacilities.forEach(function(facilities, idx) {
+            tops.push({'fac': facilities[0], 'idx': idx});
+        }); 
+
+        tops.sort(function (nodeA, nodeB) {
+            var lengthA = dist(nodeA.fac.coordinates, lat, lng);
+            var lengthB = dist(nodeB.fac.coordinates, lat, lng);
+            return (lengthA - lengthB); 
+        });
+
+        //XXX: Should terminate early if this is the case instead 
+        if (tops.length > 0) 
+            facilities.push(nodeFacilities[tops[0].idx].shift());
+
+        n--;
+    }
+
+    return facilities;
 }
 
 facilityTree.prototype.print = function() {
@@ -303,9 +379,24 @@ facilityTree.prototype._getLeaves = function(node) {
 
 facilityTree.prototype.getLeaves = function() {
     var self = this;
-    var leaves = self._getLeaves(self.root);;
-    return leaves;
+    return self._getLeaves(self.root);;
 }
+
+facilityTree.prototype.getCompressedSize = function() {
+    var self = this;
+    var leaves = self._getLeaves(self.root);;
+    return leaves.reduce(function(sum, node) {
+        return node.compressedSize + sum;
+    }, 0);
+};
+
+facilityTree.prototype.getUncompressedSize = function() {
+    var self = this;
+    var leaves = self._getLeaves(self.root);;
+    return leaves.reduce(function(sum, node) {
+        return node.uncompressedSize + sum;
+    }, 0);
+};
 
 console.log("Loaded");
 var tree = new facilityTree(90, -180, 0, 0, 50, 0);
@@ -313,33 +404,6 @@ window.tree;
 
 // Testing out how sorting will work.
 // Intend to sort nodes data on retrival and merge into one big old list;
-var center = {lat: 40.80690, lng:-73.96536}
-window.center;
-
-function dist(coordinates, center) {
-   var lat = coordinates[1];
-   var lng = coordinates[0];
-   var clat = center.lat;
-   var clng = center.lng;
-
-   var self = this;
-   var R = 6371000;
-   var e = clat * Math.PI/180;
-   var f = lat * Math.PI/180;
-   var g = (lat - clat) * Math.PI/180;
-   var h = (lng - clng) * Math.PI/180;
-
-   var a = Math.sin(g/2) * Math.sin(g/2) +
-           Math.cos(e) * Math.cos(f) *
-           Math.sin(h/2) * Math.sin(h/2);
-
-   var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-   return R * c;
-}
-
-function sorter(facilityA, facilityB) {
-    var lengthA = dist(facilityA.coordinates, center);
-    var lengthB = dist(facilityB.coordinates, center);
-    return (lengthA - lengthB); 
-};
+var mid = {lat: 40.80690, lng:-73.96536}
+window.mid;
 
