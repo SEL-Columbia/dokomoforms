@@ -33,8 +33,6 @@ header_color = '\033[1m'
 msg_color = '\033[92m'
 end_color = '\033[0m'
 
-_ = tornado.locale.get(options.locale).translate
-
 
 class Application(tornado.web.Application):
     def __init__(self):
@@ -74,20 +72,14 @@ class Application(tornado.web.Application):
 def main():
     tornado.options.parse_config_file(os.path.join(_pwd, 'config.py'))
     tornado.options.parse_command_line()
-    http_server = tornado.httpserver.HTTPServer(
-        Application(),
-        # ssl_options={
-        #     'certfile': '/path/to/cert',
-        #     'keyfile': '/path/to/key',
-        # },
-    )
+    http_server = tornado.httpserver.HTTPServer(Application())
     tornado.locale.load_gettext_translations(
-        os.path.join(_pwd, 'locale'), 'messages'
+        os.path.join(_pwd, 'locale'), 'dokomoforms'
     )
     logging.info(
-        _('{}Dokomo Forms: {}{}starting server on port {}{}'.format(
+        '{}Dokomo Forms: {}{}starting server on port {}{}'.format(
             header_color, end_color, msg_color, options.port, end_color
-        ))
+        )
     )
     http_server.listen(options.port)
     tornado.ioloop.IOLoop.current().start()
