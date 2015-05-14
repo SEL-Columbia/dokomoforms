@@ -28,7 +28,7 @@
         is wrong... You need to change it to UTF-8. Not sure how to get it to
         do that automatically.
     3. If a .po translation file exists, run
-      msgmerge old.po mydomain.po > new.po
+      msgmerge old.po dokomoforms.po > new.po
     4. Run
       msgfmt dokomoforms.po -o locale/{lang}/LC_MESSAGES/dokomoforms.mo
       - Create the directories if they don't exist.
