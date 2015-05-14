@@ -35,7 +35,7 @@ def main():
                         'question_title': 'Which kind of school is this?',
                         'hint': None,
                         'logic': {
-                            'required': False,
+                            'required': True,
                             'allow_dont_know': False,
                             'allow_other': True,
                         },
@@ -56,6 +56,108 @@ def main():
                         },
                         'type_constraint_name': 'decimal',
                         'sequence_number': 3,
+                        'allow_multiple': False,
+                        'question_to_sequence_number': 4,
+                        'choices': None,
+                        'branches': None,
+                    },
+                    {
+                        'question_title': "What's the current date?",
+                        'hint': None,
+                        'logic': {
+                            'required': False,
+                            'allow_dont_know': False,
+                            'allow_other': False,
+                        },
+                        'type_constraint_name': 'date',
+                        'sequence_number': 4,
+                        'allow_multiple': False,
+                        'question_to_sequence_number': 5,
+                        'choices': None,
+                        'branches': None,
+                    },
+                    {
+                        'question_title': "What's the current time?",
+                        'hint': None,
+                        'logic': {
+                            'required': False,
+                            'allow_dont_know': False,
+                            'allow_other': False,
+                        },
+                        'type_constraint_name': 'time',
+                        'sequence_number': 5,
+                        'allow_multiple': False,
+                        'question_to_sequence_number': 6,
+                        'choices': None,
+                        'branches': None,
+                    },
+                    {
+                        'question_title': "What is your current location?",
+                        'hint': None,
+                        'logic': {
+                            'required': False,
+                            'allow_dont_know': False,
+                            'allow_other': False,
+                        },
+                        'type_constraint_name': 'location',
+                        'sequence_number': 6,
+                        'allow_multiple': False,
+                        'question_to_sequence_number': 7,
+                        'choices': None,
+                        'branches': None,
+                    },
+                    {
+                        'question_title': (
+                            "Write a brief essay about your feelings toward "
+                            "this school"
+                        ),
+                        'hint': 'Very brief',
+                        'logic': {
+                            'required': False,
+                            'allow_dont_know': True,
+                            'allow_other': False,
+                        },
+                        'type_constraint_name': 'text',
+                        'sequence_number': 7,
+                        'allow_multiple': False,
+                        'question_to_sequence_number': 8,
+                        'choices': None,
+                        'branches': None,
+                    },
+                    {
+                        'question_title': (
+                            "Please note that you are almost done with the "
+                            "survey."
+                        ),
+                        'hint': None,
+                        'logic': {
+                            'required': False,
+                            'allow_dont_know': False,
+                            'allow_other': False,
+                        },
+                        'type_constraint_name': 'note',
+                        'sequence_number': 8,
+                        'allow_multiple': False,
+                        'question_to_sequence_number': 9,
+                        'choices': None,
+                        'branches': None,
+                    },
+                    {
+                        'question_title': (
+                            "Please select this school from the list of "
+                            "facilities."
+                        ),
+                        'hint': (
+                            "If this school is not in the list, please add an "
+                            "entry."
+                        ),
+                        'logic': {
+                            'required': False,
+                            'allow_dont_know': False,
+                            'allow_other': False,
+                        },
+                        'type_constraint_name': 'facility',
+                        'sequence_number': 9,
                         'allow_multiple': False,
                         'question_to_sequence_number': -1,
                         'choices': None,
