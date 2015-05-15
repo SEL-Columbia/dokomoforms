@@ -67,7 +67,7 @@ var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
             data: {
                 within: self.nlat + "," + self.wlng + "," + self.slat + "," + self.elng,
                 limit: '1',
-                fields: "poop", //SILIENCE
+                fields: "name", //SILIENCE
             },
             success: function(data) {
                 self.count = data.total;
