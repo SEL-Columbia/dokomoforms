@@ -13,6 +13,7 @@ before_script:
   - pip install -r requirements-testing.txt
   - pip install coveralls flake8
   - python3 -m flake8 .
+  - psql -c 'create database doko;' -U postgres
   # other things...
   - python3 webapp.py --cookie_secret=c --debug=True &
 
