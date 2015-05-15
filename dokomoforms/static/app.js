@@ -635,7 +635,7 @@ Widgets._input = function(question, page, footer, type) {
             question.answer[ans_ind] = { 
                 response: self._validate(type, this.value, question.logic),
                 is_type_exception: false,
-                failed_validation: !Boolean(self._validate(type, this.value, question.logic)),
+                failed_validation: Boolean(null === self._validate(type, this.value, question.logic)),
                 metadata: {},
             }
             // XXX Should i write the value back after validation?
@@ -688,7 +688,7 @@ Widgets._orderAnswerArray = function(page, footer, question, type) {
             question.answer[i] = {
                 response: self._validate(type, child.value, question.logic),
                 is_type_exception: false,
-                failed_validation: !Boolean(self._validate(type, this.value, question.logic)),
+                failed_validation: Boolean(null == self._validate(type, this.value, question.logic)),
                 metadata: {}
             }
         }
@@ -700,7 +700,7 @@ Widgets._orderAnswerArray = function(page, footer, question, type) {
             question.answer = [{
                 response: self._validate('text', child.value, question.logic),
                 is_type_exception: true,
-                failed_validation: !Boolean(self._validate('text', this.value, question.logic)),
+                failed_validation: Boolean(null === self._validate('text', this.value, question.logic)),
                 metadata: {
                     'type_exception': 'dont_know',
                 },
@@ -751,7 +751,7 @@ Widgets._renderOther = function(page, footer, type, question) {
                 question.answer = [{ 
                     response: self._validate('text', this.value, question.logic),
                     is_type_exception: true,
-                    failed_validation: !Boolean(self._validate('text', this.value, question.logic)),
+                    failed_validation: Boolean(null === self._validate('text', this.value, question.logic)),
                     metadata: {
                         'type_exception': 'dont_know',
                     },
@@ -792,7 +792,7 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
             question.answer[0] = {
                 response: self._validate('text', child.value, question.logic),
                 is_type_exception: true,
-                failed_validation: !Boolean(self._validate('text', this.value, question.logic)),
+                failed_validation: Boolean(null === self._validate('text', this.value, question.logic)),
                 metadata: {
                     'type_exception': 'dont_know',
                 },
@@ -834,7 +834,7 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
             if (child.value !== "") { 
                 question.answer[i] = {
                     response: self._validate(type, child.value, question.logic),
-                    failed_validation: !Boolean(self._validate(type, this.value, question.logic)),
+                    failed_validation: Boolean(null === self._validate(type, this.value, question.logic)),
                     is_type_exception: false,
                     metadata: {},
                 }
@@ -992,7 +992,7 @@ Widgets.multiple_choice = function(question, page, footer) {
         .keyup(function() {
             question.answer[question.choices.length] = { 
                 response: self._validate("text", this.value, question.logic),
-                failed_validation: !Boolean(self._validate('text', this.value, question.logic)),
+                failed_validation: Boolean(null === self._validate('text', this.value, question.logic)),
                 is_type_exception: true,
                 metadata: {
                     'type_exception': 'other',
