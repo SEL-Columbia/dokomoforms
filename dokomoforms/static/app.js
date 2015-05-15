@@ -100,19 +100,25 @@ App.sync = function() {
     });
 };
 
-App.message = function(text, style) {
+App.message = function(text, title, style) {
     // Shows a message to user
     // E.g. "Your survey has been submitted"
     $('.message_btn')[0].click();
     $('.modal_content').empty();
     
+    $('.modal_header').empty()
+        .addClass(style)
+        .text(title)
 
     var message =  $('<div></div>')
         .addClass('message_main')
         .addClass('message')
         .addClass('content-padded')
-        .addClass(style)
         .text(text)
+
+
+     var okay_box = $('<div></div>')
+        .addClass('msg_btn_content');
 
      var okay =  $('<div></div>')
         .addClass('content-padded');
@@ -124,9 +130,11 @@ App.message = function(text, style) {
         .addClass('message_sub')
         .text('OK')
         .appendTo(okay);
+    
+    okay.appendTo(okay_box);
 
     message.appendTo('.modal_content');
-    okay.appendTo('.modal_content');
+    okay_box.appendTo('.modal_content');
 
 };
 
@@ -190,7 +198,7 @@ App.splash = function() {
                 // Reload page to update template values
                 App.splash();
             } else {
-                App.message('Please connect to the internet first.', 'message-box-warning');
+                App.message('Please connect to the internet first.', 'Connection Error', 'message-warning');
             }
         });
 };
@@ -327,19 +335,19 @@ Survey.prototype.next = function(offset) {
         if (bad_answers.length) {
             App.message(bad_answers.length 
             + ' response(s) found not valid for question type: ' 
-            + self.current_question.type_constraint_name, 'message-box-error');
+            + self.current_question.type_constraint_name, 'Survey Response Error', 'message-error');
             return;
         }
 
         // Are you required?
         if (this.current_question.logic.required && (first_response === null)) {
-            App.message('Survey requires this question to be completed.', 'message-box-error');
+            App.message('Survey requires this question to be completed.','Survey Required Response',  'message-error');
             return;
         }
 
         // Is the only response and empty is other response?
         if (first_is_type_exception && !first_response) {
-            App.message('Please provide a reason before moving on.', 'message-box-error');
+            App.message('Please provide a reason before moving on.', 'Survey Missing Reason', 'message-error');
             return;
         }
 
@@ -570,7 +578,7 @@ Survey.prototype.submit = function() {
     if (JSON.stringify(survey_answers) === '[]') {
       // Not doing instantly to make it seem like App tried reaaall hard
       setTimeout(function() {
-            App.message('Saving failed, No questions answer in Survey!', 'message-box-warning');
+            App.message('Saving failed, No questions answer in Survey!', 'Survey Empty Submission', 'message-warning');
             App.splash();
       }, 1000);
       return;
@@ -592,7 +600,7 @@ Survey.prototype.submit = function() {
     unsynced[self.id] = App.unsynced;
     localStorage['unsynced'] = JSON.stringify(unsynced);
 
-    App.message('Saved Submission!', 'message-box-primary');
+    App.message('Please remember to sync submissions when connected to the internet.', 'Survey Saved', 'message-primary');
     App.splash();
 
 
@@ -1091,7 +1099,7 @@ Widgets.location = function(question, page, footer) {
     $(page)
         .find('.question__find__btn')
         .click(function() {
-            //App.message('Searching ...', 'message-box-primary');
+            //App.message('Searching ...', 'message-primary');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
                     // Server accepts [lon, lat]
@@ -1105,7 +1113,7 @@ Widgets.location = function(question, page, footer) {
 
                 }, function error() {
                     //If cannot Get location" for some reason,
-                    App.message('Could not get your location, please make sure your GPS device is active.', 'message-box-warning');
+                    App.message('Could not get your location, please make sure your GPS device is active.', 'Survey GPS Error', 'message-warning');
                 }, {
                     enableHighAccuracy: true,
                     timeout: 20000,
@@ -1265,7 +1273,7 @@ Widgets.facility = function(question, page, footer) {
     $(page)
         .find('.question__find__btn')
         .click(function() {
-            //App.message('Searching ...', 'message-box-primary');
+            //App.message('Searching ...', 'message-primary');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
                     // Server accepts [lon, lat]
@@ -1284,8 +1292,8 @@ Widgets.facility = function(question, page, footer) {
                     $('.facility__btn').show();
 
                 }, function error() {
-                    App.message('Could not get your location, please make sure your GPS device is active.',
-                            'message-box-warning');
+                    App.message('Could not get your location, please make sure your GPS device is active.', 'Survey GPS Error',
+                            'message-warning');
                 }, {
                     enableHighAccuracy: true,
                     timeout: 20000,
@@ -1414,7 +1422,7 @@ function postNewFacility(facility) {
         processData: false,
         dataType: 'json',
         success: function() {
-            //App.message('Facility Added!', 'message-box-primary');
+            //App.message('Facility Added!', 'message-primary');
             // If posted, we don't an unsynced reference to it anymore
             delete App.unsynced_facilities[facility.uuid];
         },
@@ -1425,7 +1433,7 @@ function postNewFacility(facility) {
         },
 
         error: function() {
-            //App.message('Facility submission failed, will try again later.', 'message-box-warning');
+            //App.message('Facility submission failed, will try again later.', 'message-warning');
         },
         
         complete: function() {
