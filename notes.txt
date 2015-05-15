@@ -18,15 +18,15 @@
    (extensions, etc).
 4. HTTPS/SSL
   - As per convo with Chris Tan, just tell nginx to proxy 443 traffic to 8888.
-5. Internationalization (I18n)
+5. Internationalization (I18n) of the application
   - Looks like the process has to go something like this:
     1. In templates write translatable strings as {{ _('Whatever') }}
     2. Run xgettext --language=Python -d dokomoforms file1.py file2.html etc
       - I don't see any way to get xgettext to find the files automatically...?
         It's a pain in the butt.
       - By default the resulting dokomoforms.po file has CHARSET=CHARSET, which
-        is wrong... You need to change it to UTF-8. Not sure how to get it to
-        do that automatically.
+        is wrong... You need to change it to UTF-8. You can do this manually or
+        run msginit --no-translator --input=xx.po --locale=en_US.UTF-8
     3. If a .po translation file exists, run
       msgmerge old.po dokomoforms.po > new.po
     4. Run
@@ -35,3 +35,16 @@
   - Having done all that, if, say, you have generated
     locale/es/LC_MESSAGES/dokomoforms.mo (Spanish), then someone visiting the
     site with the browser language set to Spanish will get that translation.
+  - Maybe we want to do this in the JS instead?:
+    http://stackoverflow.com/a/3084798/1475412
+6. Internationalization of the surveys
+  - Firstly do we even want this?
+  - How best to store the different translations, keep them up-to-date, etc?
+  - Two scenarios I can see:
+    1. Send all the translations in the HTML and have a locale switcher
+       <select> (user can select language while offline).
+    2. Only send the requested translation based on browser settings. (User is
+       stuck with one translation).
+7. Should we develop the JS code under "use strict"; ?
+8. while(1); in JSON responses?
+  - http://stackoverflow.com/a/2669766/1475412
