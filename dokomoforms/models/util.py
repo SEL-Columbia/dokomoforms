@@ -2,10 +2,21 @@
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects import postgresql as pg
-from sqlalchemy import Column, DateTime
+from sqlalchemy import Column, DateTime, event, DDL
 from sqlalchemy.sql import func
 
-Base = declarative_base()
+
+class Base(object):
+    __table_args__ = {'schema': 'doko'}
+
+
+Base = declarative_base(cls=Base)
+# TODO: Is this the right way to do this?
+event.listen(
+    Base.metadata,
+    'before_create',
+    DDL('CREATE SCHEMA IF NOT EXISTS doko'),
+)
 
 
 def pk():

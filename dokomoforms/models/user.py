@@ -11,7 +11,7 @@ class User(Base):
     __tablename__ = 'auth_user'
 
     id = util.pk()
-    is_active = sa.Column(sa.Boolean, nullable=False, server_default='False')
+    is_active = sa.Column(sa.Boolean, nullable=False, server_default='True')
     name = sa.Column(sa.String, nullable=False)
     token = sa.Column(pg.BYTEA)
     token_expiration = sa.Column(
@@ -25,7 +25,7 @@ class Email(Base):
 
     id = util.pk()
     address = sa.Column(sa.String, nullable=False, unique=True)
-    user_id = sa.Column(pg.UUID, sa.ForeignKey('auth_user.id'))
+    user_id = sa.Column(pg.UUID, sa.ForeignKey('doko.auth_user.id'))
     last_update_time = util.last_update_time()
 
     user = relationship('User', backref=backref('emails', order_by=id))

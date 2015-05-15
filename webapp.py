@@ -18,7 +18,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 define('port', help='run on the given port', type=int)
-define('locale', default='en', help='the internationalization (i18n) locale')
 define('cookie_secret', help='string used to create session cookies')
 define('debug', default=False, help='whether to enable debug mode', type=bool)
 

@@ -7,6 +7,7 @@ If you want to use different values, set them as command line arguments:
 or place them in a file called local_config.py (which is in the .gitignore
 file).
 """
+
 port = 8888
 db_host = 'localhost:5432'
 db_database = 'doko'
