@@ -1,30 +1,22 @@
 """Useful reusable functions for models."""
 
+from tornado.options import options
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects import postgresql as pg
-from sqlalchemy import Column, DateTime, event, DDL
+from sqlalchemy import MetaData, Column, DateTime
 from sqlalchemy.sql import func
 
 
-class Base(object):
-    __table_args__ = {'schema': 'doko'}
+metadata = MetaData(schema=options.schema)
+Base = declarative_base(metadata=metadata)
 
 
-Base = declarative_base(cls=Base)
-# TODO: Is this the right way to do this?
-event.listen(
-    Base.metadata,
-    'before_create',
-    DDL('CREATE SCHEMA IF NOT EXISTS doko'),
-)
+def uuid_generate_v4():
+    return getattr(func, '{}.uuid_generate_v4'.format(options.schema))()
 
 
 def pk():
-    return Column(
-        pg.UUID,
-        primary_key=True,
-        server_default=func.uuid_generate_v4(),
-    )
+    return Column(pg.UUID, primary_key=True, server_default=uuid_generate_v4())
 
 
 def last_update_time():

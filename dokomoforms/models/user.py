@@ -25,7 +25,7 @@ class Email(Base):
 
     id = util.pk()
     address = sa.Column(sa.String, nullable=False, unique=True)
-    user_id = sa.Column(pg.UUID, sa.ForeignKey('doko.auth_user.id'))
+    user_id = sa.Column(pg.UUID, sa.ForeignKey('auth_user.id'))
     last_update_time = util.last_update_time()
 
     user = relationship('User', backref=backref('emails', order_by=id))

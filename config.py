@@ -9,12 +9,20 @@ file).
 """
 
 port = 8888
+schema = 'doko'
 db_host = 'localhost:5432'
 db_database = 'doko'
 db_user = 'postgres'
 db_password = 'whatever your password is'
 
-cookie_secret = 'big secret'
+# TODO: Read the cookie secret from a file?
+# You need to set cookie_secret in local_config.py or on the command line.
+# A good way to generate this secret is to run the command
+# $ head -c 24 /dev/urandom
+#
+# This is just an example:
+#
+# cookie_secret = BIGSECRET
 
 try:
     from local_config import *
