@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 """
-Execute this file to start the Tornado server and wsgi container.
+Execute this script to start the Tornado server and wsgi container. It will
+ensure that the proper tables and extensions exist in the specified schema.
 """
 
 import logging
