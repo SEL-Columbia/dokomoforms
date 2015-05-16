@@ -81,7 +81,7 @@ class Application(tornado.web.Application):
             DDL(
                 'CREATE SCHEMA IF NOT EXISTS {schema};'
                 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'
-                ' WITH SCHEMA {schema};'.format(schema=options.schema)
+                ' WITH SCHEMA pg_catalog;'.format(schema=options.schema)
             )
         )
         Base.metadata.create_all(self.engine)

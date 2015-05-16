@@ -11,12 +11,12 @@ metadata = MetaData(schema=options.schema)
 Base = declarative_base(metadata=metadata)
 
 
-def uuid_generate_v4():
-    return getattr(func, '{}.uuid_generate_v4'.format(options.schema))()
-
-
 def pk():
-    return Column(pg.UUID, primary_key=True, server_default=uuid_generate_v4())
+    return Column(
+        pg.UUID,
+        primary_key=True,
+        server_default=func.uuid_generate_v4()
+    )
 
 
 def last_update_time():
