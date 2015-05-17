@@ -3,7 +3,8 @@ python:
   - "3.3"
   - "3.4"
 cache:
-  pip: true
+  directories:
+    - $HOME/.cache/pip
 addons:
   postgresql: "9.4"
 
