@@ -20,7 +20,7 @@ before_install:
   - sh -e /etc/init.d/xvfb start
 
 script:
-    - tox -e cover
+  - tox -e cover
 
 after_success: coveralls
 
