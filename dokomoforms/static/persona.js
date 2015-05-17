@@ -47,7 +47,8 @@ function getCookie(name) {
           success: function(res, status, xhr) {
               localStorage.removeItem('email');
               if (localStorage['login_error']) {
-                $('#msg').append('Login failure: ' + localStorage['login_error']);
+                $('#msg').empty();
+                $('#msg').text('Login failure: ' + localStorage['login_error']);
                 localStorage.removeItem('login_error');
               } else {
                 location.href = '/';

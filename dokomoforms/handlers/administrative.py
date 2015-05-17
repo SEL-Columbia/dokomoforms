@@ -9,7 +9,6 @@ from dokomoforms.handlers.util import BaseHandler
 
 class Index(BaseHandler):
     def get(self):
-        """Documentation... This isn't a real endpoint"""
         self.render('administrative/index.html')
 
 

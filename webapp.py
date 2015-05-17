@@ -12,7 +12,7 @@ import tornado.locale
 import tornado.web
 import tornado.httpserver
 from tornado.web import url
-from dokomoforms.options import options, parse_options
+from dokomoforms.options import options
 import dokomoforms.handlers as handlers
 from dokomoforms.models import Base, create_engine
 from sqlalchemy import DDL
@@ -55,7 +55,6 @@ class Application(tornado.web.Application):
 
 
 def main():
-    parse_options()
     if options.cookie_secret is None:  # TODO: move into a function
         print('You must set cookie_secret in local_config.py!')
         return
