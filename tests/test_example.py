@@ -1,6 +1,5 @@
 from tests.util import setUpModule, tearDownModule  # NOQA
 import unittest
-import dokomoforms.models
 from dokomoforms.models import Base
 
 
