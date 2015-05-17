@@ -17,7 +17,7 @@ sa.event.listen(
         'CREATE SCHEMA IF NOT EXISTS {};'
         'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'
         ' WITH SCHEMA pg_catalog;'.format(options.schema)
-    )
+    ),
 )
 
 
@@ -39,7 +39,7 @@ def pk():
     return sa.Column(
         pg.UUID,
         primary_key=True,
-        server_default=func.uuid_generate_v4()
+        server_default=func.uuid_generate_v4(),
     )
 
 
@@ -48,5 +48,5 @@ def last_update_time():
         sa.DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
-        onupdate=func.now()
+        onupdate=func.now(),
     )
