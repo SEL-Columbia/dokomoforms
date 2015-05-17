@@ -25,6 +25,6 @@ db_password = 'whatever your password is'
 # cookie_secret = BIGSECRET
 
 try:
-    from local_config import *
+    from local_config import *  # NOQA
 except ImportError:
     pass

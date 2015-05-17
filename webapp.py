@@ -12,27 +12,12 @@ import tornado.locale
 import tornado.web
 import tornado.httpserver
 from tornado.web import url
-from tornado.options import define, options
-from sqlalchemy import create_engine, event, DDL
+from dokomoforms.options import options, parse_options
+import dokomoforms.handlers as handlers
+from dokomoforms.models import Base, create_engine
+from sqlalchemy import DDL
 from sqlalchemy.orm import sessionmaker
 
-# Application options
-define('port', help='run on the given port', type=int)
-define('cookie_secret', help='string used to create session cookies')
-define('debug', default=False, help='whether to enable debug mode', type=bool)
-
-# Database options
-define('schema', help='database schema name')
-define('db_host', help='database host')
-define('db_database', help='database name')
-define('db_user', help='database user')
-define('db_password', help='database password')
-define(
-    'kill',
-    default=False,
-    help='whether to drop the existing schema before starting',
-    type=bool,
-)
 
 _pwd = os.path.dirname(__file__)
 header_color = '\033[1m'
@@ -41,7 +26,7 @@ end_color = '\033[0m'
 
 
 class Application(tornado.web.Application):
-    def __init__(self, *, handlers, Base, kill):
+    def __init__(self):
         urls = [
             # Administrative
             url(r'/', handlers.Index, name='index'),
@@ -59,40 +44,18 @@ class Application(tornado.web.Application):
         }
         super().__init__(urls, **settings)
         # TODO: configurable?
-        self.engine = create_engine(
-            'postgresql+psycopg2://{}:{}@{}/{}'.format(
-                options.db_user,
-                options.db_password,
-                options.db_host,
-                options.db_database,
-            ),
-            convert_unicode=True,
-            pool_size=0,
-            max_overflow=-1,
-        )
-        if kill:
+        self.engine = create_engine()
+        if options.kill:
             self.engine.execute(
                 DDL('DROP SCHEMA IF EXISTS {} CASCADE'.format(options.schema))
             )
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
-        event.listen(
-            Base.metadata,
-            'before_create',
-            DDL(
-                'CREATE SCHEMA IF NOT EXISTS {schema};'
-                'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'
-                ' WITH SCHEMA pg_catalog;'.format(schema=options.schema)
-            )
-        )
         Base.metadata.create_all(self.engine)
 
 
 def main():
-    tornado.options.parse_config_file(os.path.join(_pwd, 'config.py'))
-    tornado.options.parse_command_line()
-    import dokomoforms.handlers as handlers
-    from dokomoforms.models import Base
+    parse_options()
     if options.cookie_secret is None:  # TODO: move into a function
         print('You must set cookie_secret in local_config.py!')
         return
@@ -104,13 +67,7 @@ def main():
         if not answer.lower().startswith('y'):
             print('Not dropping the schema. Exiting.')
             return
-    http_server = tornado.httpserver.HTTPServer(
-        Application(
-            handlers=handlers,
-            Base=Base,
-            kill=options.kill,
-        )
-    )
+    http_server = tornado.httpserver.HTTPServer(Application())
     tornado.locale.load_gettext_translations(
         os.path.join(_pwd, 'locale'), 'dokomoforms'
     )

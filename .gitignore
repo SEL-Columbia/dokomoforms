@@ -4,9 +4,9 @@
 *.pyc
 *.log
 local_config.py
-.idea/
 .coverage
-cover/
+.idea/
+.tox/
 .python-version
 node_modules/
 test/*.log
