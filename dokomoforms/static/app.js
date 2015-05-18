@@ -70,6 +70,15 @@ App.init = function(survey) {
 App.sync = function() {
     var self = this;
     self.countdown = App.unsynced.length; //JS is single threaded no race condition counter
+    self.count = App.unsynced.length; //JS is single threaded no race condition counter
+    var endSync = function() {
+        App.splash();
+        if (!App.unsynced.length) {
+            App.message('All ' + self.count + ' surveys synced succesfully.', 'Survey Synced', 'message-success');
+        } else {
+            App.message(App.unsynced.length + ' survey(s) failed to sync succesfully. Please try again later.', 'Survey Sync Failed', 'message-error');
+        }
+    };
     _.each(App.unsynced, function(survey) {
         App.submit(survey, 
             function(survey) { 
@@ -82,16 +91,18 @@ App.sync = function() {
                 localStorage['unsynced'] = JSON.stringify(unsynced);
                 --self.countdown; 
                 
-                if (self.countdown === 0) 
-                    App.splash();
+                if (self.countdown === 0) {  
+                    endSync();
+                }
             },
 
             function(survey) { 
                 console.log('fail');
                 --self.countdown; 
 
-                if (self.countdown === 0) 
-                    App.splash();
+                if (self.countdown === 0) {
+                    endSync();
+                }
             } 
         );
     });
@@ -113,6 +124,7 @@ App.message = function(text, title, style) {
         .removeClass('message-primary')
         .removeClass('message-error')
         .removeClass('message-warning')
+        .removeClass('message-success')
         .addClass(style)
         .text(title);
 
@@ -328,8 +340,7 @@ Survey.prototype.next = function(offset) {
 
     // Backward at first question
     if (index === self.lowest_sequence_number && offset === PREV) {
-        //XXX Shouldn't show splash page right 
-        //App.splash();
+        App.splash();
         return;
     }
 

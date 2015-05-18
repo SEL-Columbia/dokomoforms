@@ -179,6 +179,15 @@ a, .icon {
     cursor: pointer;
 }
 
+.message-box-success {
+    padding: 18px;
+    overflow: hidden;
+    background-color: #DCF9EF;
+    border-radius: 6px;
+    margin: 20px 0px;
+    margin-top: 40px;
+}
+
 .message-box-primary {
     padding: 18px;
     overflow: hidden;
@@ -206,6 +215,9 @@ a, .icon {
     margin-top: 40px;
 }
 
+.message-success {
+    background-color: #DCF9EF !important;
+}
 .message-primary {
     background-color: #E3F0FE !important;
 }
