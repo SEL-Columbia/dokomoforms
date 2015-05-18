@@ -10,6 +10,7 @@ htmlcov/
 .idea/
 .tox/
 .python-version
+locale/dokomoforms.po
 node_modules/
 test/*.log
 .vagrant
