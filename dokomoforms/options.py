@@ -9,6 +9,9 @@ arg = None
 define('port', help='run on the given port', type=int)
 define('cookie_secret', help='string used to create session cookies')
 define('debug', default=False, help='whether to enable debug mode', type=bool)
+define(
+    'https', help='whether the application accepts https traffic', type=bool
+)
 
 # Database options
 define('schema', help='database schema name')

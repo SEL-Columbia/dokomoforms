@@ -9,6 +9,7 @@ import tornado.httpclient
 
 from sqlalchemy.orm.exc import NoResultFound
 
+from dokomoforms.options import options
 from dokomoforms.handlers.util import BaseHandler
 from dokomoforms.models import User, Email
 
@@ -38,21 +39,26 @@ class Login(BaseHandler):
             user = self.session.query(User.id, User.name).join(Email).filter(
                 Email.address == data['email']
             ).one()
+            cookie_options = {
+                'expires_days': None,
+                'httponly': True,
+            }
+            if options.https:
+                cookie_options['secure'] = True
             self.set_secure_cookie(
                 'user',
                 json_encode({'user_id': user.id, 'user_name': user.name}),
-                expires_days=None,
-                # secure=True,
-                httponly=True,
+                **cookie_options
             )
             self.write({'email': data['email']})
             self.finish()
         except NoResultFound:
+            _ = self.locale.translate
             raise tornado.web.HTTPError(
                 422,
-                reason=(
-                    'There is no account associated with the '
-                    'e-mail address ' + data['email']
+                reason=_(
+                    'There is no account associated with the e-mail'
+                    ' address {}'.format(data['email'])
                 ),
             )
 

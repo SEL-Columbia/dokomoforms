@@ -20,7 +20,7 @@ before_script:
   - psql -c 'create database doko;' -U postgres
   - head -c 24 /dev/urandom > cookie_secret
   # other things...
-  #- python3 webapp.py --cookie_secret=c --debug=True &
+  #- python3 webapp.py --cookie_secret=c --debug=True --https=False &
 
 script:
   - tox -e cover
