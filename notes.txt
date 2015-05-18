@@ -27,7 +27,7 @@
       It looks at all the *.py and *.html files for _() strings.
     2. Add translations to locale/{locale}/LC_MESSAGES/dokomoforms.po where
       there are empty strings (or modify existing translations).
-    3. Run $ locale/compile_translations {locale}
+    3. Run $ locale/compile_translations.sh {locale}
       This will create-or-update locale/{locale}/LC_MESSAGES/dokomoforms.mo
   - Having done all that, if, say, you have generated
     locale/es/LC_MESSAGES/dokomoforms.mo (Spanish), then someone visiting the
