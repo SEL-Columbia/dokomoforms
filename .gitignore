@@ -5,6 +5,7 @@
 *.log
 local_config.py
 .coverage
+htmlcov/
 .idea/
 .tox/
 .python-version
