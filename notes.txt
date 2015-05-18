@@ -47,4 +47,5 @@
   - http://stackoverflow.com/a/2669766/1475412
 9. Think about what happens to e-mails when account is deleted/inactive.
 10. readthedocs
-  https://github.com/rtfd/readthedocs.org/issues/1263
+  - tox sphinx
+  - https://github.com/rtfd/readthedocs.org/issues/1263
