@@ -12,6 +12,7 @@ define('debug', default=False, help='whether to enable debug mode', type=bool)
 define(
     'https', help='whether the application accepts https traffic', type=bool
 )
+define('organization', help='the name of your organization')
 
 # Database options
 define('schema', help='database schema name')

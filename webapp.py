@@ -104,7 +104,7 @@ def main():
     )
     logging.info(
         '{dokomo}{starting}'.format(
-            dokomo=bold('Dokomo Forms: '),
+            dokomo=bold('Dokomo Forms for {}: '.format(options.organization)),
             starting=colorize(
                 'starting server on port {}'.format(options.port)
             ),

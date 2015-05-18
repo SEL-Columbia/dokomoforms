@@ -14,6 +14,7 @@ db_host = 'localhost:5432'
 db_database = 'doko'
 db_user = 'postgres'
 db_password = 'whatever your password is'
+organization = 'unconfigured organization'
 
 https = True
 
