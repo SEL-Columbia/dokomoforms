@@ -31,7 +31,6 @@
 
   window.addEventListener('touchend', function (event) {
     var modal = getModal(event);
-    console.log('touch');
     if (modal) {
       if (modal && modal.classList.contains('modal')) {
         modal.classList.toggle('active');
@@ -42,7 +41,6 @@
 
   window.addEventListener('click', function (event) {
     var modal = getModal(event);
-    console.log('click');
     if (modal) {
       if (modal && modal.classList.contains('modal')) {
         modal.classList.toggle('active');

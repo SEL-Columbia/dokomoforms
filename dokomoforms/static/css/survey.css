@@ -175,6 +175,9 @@ a, .icon {
     padding-left: 20px;
     cursor: pointer;
 }
+.question__btn__other label {
+    cursor: pointer;
+}
 
 .message-box-primary {
     padding: 18px;
@@ -212,7 +215,7 @@ a, .icon {
 }
 
 .message-error {
-    background-color: #FCEBB6 !important;
+    background-color: #F2DEDE !important;
 }
 
 .align-left {
@@ -271,20 +274,20 @@ a, .icon {
 }
 
 .message_main {
-    height: 70%;
+    height: 100%;
     font-weight: 300;
     font-size: 14px;
-    padding-top: 60px;
-    color: #9B9B9B;
+    padding-top: 40px;
+    color: #4A4A4A;
 }
-
-.message_sub {
-    font-weight: 500;
-} 
 
 .message_btn_content {
     border-top: 1px solid #DDD;
-    padding: 4px 0px;
+    padding-top: 8px;
+    position: fixed;
+    bottom: 0px;
+    right: 0px;
+    left: 0px;
 }
 
 .modal_content {
@@ -300,6 +303,7 @@ a, .icon {
     position: fixed;
     left: 0;
     z-index: 10;
+    padding-left: 20px;
     height: 44px;
     background-color: #fff;
     border-bottom: 1px solid #ddd;
@@ -308,7 +312,7 @@ a, .icon {
     font-weight: 500;
     line-height: 44px;
     color: #000;
-    text-align: center;
+    text-align: left;
     white-space: nowrap;
 }
 
@@ -405,6 +409,11 @@ header {
 
 .bar .btn {
     font-weight: 700;
+}
+
+.btn-text  {
+    font-weight: 700 !important;
+    color: #FFF;
 }
 
 .btn-primary {

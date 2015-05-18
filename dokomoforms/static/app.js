@@ -70,10 +70,12 @@ App.init = function(survey) {
 App.sync = function() {
     var self = this;
     self.countdown = App.unsynced.length; //JS is single threaded no race condition counter
-    _.each(App.unsynced, function(survey, idx) {
+    _.each(App.unsynced, function(survey) {
         App.submit(survey, 
             function(survey) { 
                 console.log('done');
+                // Has to be there
+                var idx = App.unsynced.indexOf(survey);
                 App.unsynced.splice(idx, 1);
                 var unsynced = JSON.parse(localStorage.unsynced); 
                 unsynced[self.survey.id] = App.unsynced;
@@ -107,32 +109,46 @@ App.message = function(text, title, style) {
     $('.modal_content').empty();
     
     $('.modal_header').empty()
+        //XXX Look into doing this in a more clean way
+        .removeClass('message-primary')
+        .removeClass('message-error')
+        .removeClass('message-warning')
         .addClass(style)
-        .text(title)
+        .text(title);
 
+
+    // Message text region
     var message =  $('<div></div>')
         .addClass('message_main')
         .addClass('message')
         .addClass('content-padded')
-        .text(text)
+        .text(text);
 
 
-     var okay_box = $('<div></div>')
-        .addClass('msg_btn_content');
+    // Btn box with border
+    var okay_box = $('<div></div>')
+        .addClass('message_btn_content')
 
-     var okay =  $('<div></div>')
-        .addClass('content-padded');
+    var okay =  $('<div></div>')
+        .addClass('bar-padded');
 
-     $('<a href="#message"></a>')
+     var btn = $('<a href="#message"></a>')
         .addClass('btn')
         .addClass('btn-block')
         .addClass('btn-netural')
-        .addClass('message_sub')
-        .text('OK')
+        .addClass('btn-text')
+        .addClass('pull-left')
+        .text('Ok')
         .appendTo(okay);
+
+     $('<span></span>')
+         .addClass('icon')
+         .addClass('btn-text')
+         .addClass('icon-check')
+         .addClass('pull-right')
+         .appendTo(btn);
     
     okay.appendTo(okay_box);
-
     message.appendTo('.modal_content');
     okay_box.appendTo('.modal_content');
 
@@ -1135,6 +1151,7 @@ Widgets.facility = function(question, page, footer) {
     // Default operation on caputre Location 
     var captureCallback = reloadFacilities;
     if (question.answer[0] && question.answer[0].metadata.is_new) {
+        console.log('new facility chosen');
         captureCallback = updateLocation;
         //$('.question__map').hide();
         $('.facility__btn').show();
