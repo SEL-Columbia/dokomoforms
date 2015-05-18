@@ -4,6 +4,7 @@
 *.pyc
 *.log
 local_config.py
+cookie_secret
 .coverage
 htmlcov/
 .idea/

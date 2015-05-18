@@ -35,6 +35,20 @@ def colorize(text):
     return begin_green + text + end_modify
 
 
+def get_cookie_secret():
+    try:
+        return open(os.path.join(_pwd, 'cookie_secret'), 'rb').read()
+    except IOError:
+        print(textwrap.fill(
+            '{error} no secret key found for creating secure user session'
+            ' cookies. Create it by running the following command:'.format(
+                error=bold('Error:')
+            )
+        ))
+        print('head -c 24 /dev/urandom > cookie_secret')
+        sys.exit(1)
+
+
 class Application(tornado.web.Application):
     def __init__(self):
         urls = [
@@ -48,7 +62,7 @@ class Application(tornado.web.Application):
             'static_path': os.path.join(_pwd, 'dokomoforms/static'),
             'default_handler_class': handlers.NotFound,
             'xsrf_cookies': True,
-            'cookie_secret': options.cookie_secret,
+            'cookie_secret': get_cookie_secret(),
             'login_url': '/',
             'debug': options.debug,
         }
@@ -82,9 +96,6 @@ def ensure_that_user_wants_to_drop_schema():
 
 
 def main():
-    if options.cookie_secret is None:  # TODO: move into a function
-        print('You must set cookie_secret in local_config.py!')
-        return
     if options.kill:
         ensure_that_user_wants_to_drop_schema()
     http_server = tornado.httpserver.HTTPServer(Application())
