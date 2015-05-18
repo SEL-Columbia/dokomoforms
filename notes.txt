@@ -14,7 +14,7 @@
     class TestUser(unittest.TestCase):
         def testRegularUserCannotSeeAdminInfo(self):
             assert False
-3. TODO: Figure out clean way to deal with setting up the DB for SQLAlchemy
+3. DONE: Figure out clean way to deal with setting up the DB for SQLAlchemy
    (extensions, etc).
 4. HTTPS/SSL
   - As per convo with Chris Tan, just tell nginx to proxy 443 traffic to 8888.
