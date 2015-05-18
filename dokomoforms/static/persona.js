@@ -1,9 +1,11 @@
 function getCookie(name) {
-   if (!name) { return null; }
+    "use strict";
+    if (!name) { return null; }
     return decodeURIComponent(document.cookie.replace(new RegExp("(?:(?:^|.*;)\\s*" + encodeURIComponent(name).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*([^;]*).*$)|^.*$"), "$1")) || null; 
 }
 
 (function () {
+    "use strict";
     navigator.id.watch({
       loggedInUser: localStorage['email'] || null,
       onlogin: function(assertion) {
