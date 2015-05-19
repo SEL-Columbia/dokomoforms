@@ -1,13 +1,15 @@
-"""User models"""
+"""User models."""
 
-from dokomoforms.models import util, Base
 from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 import sqlalchemy as sa
 
+from dokomoforms.models import util, Base
+
 
 class User(Base):
+    """Models a user. A user has at least one e-mail address."""
     __tablename__ = 'auth_user'
 
     id = util.pk()
@@ -21,6 +23,7 @@ class User(Base):
 
 
 class Email(Base):
+    """Models an e-mail address."""
     __tablename__ = 'email'
 
     id = util.pk()

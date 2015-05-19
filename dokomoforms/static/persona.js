@@ -1,7 +1,8 @@
 function getCookie(name) {
     "use strict";
+    // Apparently this is what you have to do to get a cookie in Javascript...
     if (!name) { return null; }
-    return decodeURIComponent(document.cookie.replace(new RegExp("(?:(?:^|.*;)\\s*" + encodeURIComponent(name).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*([^;]*).*$)|^.*$"), "$1")) || null; 
+    return decodeURIComponent(document.cookie.replace(new RegExp("(?:(?:^|.*;)\\s*" + encodeURIComponent(name).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*([^;]*).*$)|^.*$"), "$1")) || null;
 }
 
 (function () {
@@ -11,6 +12,8 @@ function getCookie(name) {
       onlogin: function(assertion) {
         $.ajax({
           type: 'GET',
+          // GETting the same page onlogin prevents an issue when the user has
+          // multiple tabs open and logs in.
           url: '',
           success: function (res, status, xhr) {
             var user = localStorage['email'] || null;
@@ -42,13 +45,14 @@ function getCookie(name) {
         // (That's a literal JavaScript null. Not false, 0, or undefined. null.)
         $.ajax({
           type: 'POST',
-          url: '/user/logout', // This is a URL on your website.
+          url: '/user/logout',
           headers: {
             "X-XSRFToken": getCookie("_xsrf")
           },
           success: function(res, status, xhr) {
               localStorage.removeItem('email');
               if (localStorage['login_error']) {
+                // TODO: clean this up
                 $('#msg').empty();
                 $('#msg').text('Login failure: ' + localStorage['login_error']);
                 localStorage.removeItem('login_error');
@@ -61,7 +65,7 @@ function getCookie(name) {
       }
 
     });
-    
+
     $('#login').click(function(){
         navigator.id.request();
     });

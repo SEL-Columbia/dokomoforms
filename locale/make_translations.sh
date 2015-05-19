@@ -10,7 +10,7 @@ domain="dokomoforms"
 locale_dir="locale/${locale}/LC_MESSAGES"
 po_template_file="locale/${domain}.po"
 po_file="${locale_dir}/${domain}.po"
-# create folders if not exists
+# create folder if it does not exist
 mkdir -p $locale_dir
 # create .po template file
 find dokomoforms/ -iname "*.html" -o -iname "*.py" | xargs \

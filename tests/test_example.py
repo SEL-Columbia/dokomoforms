@@ -1,6 +1,8 @@
-from tests.util import setUpModule, tearDownModule  # NOQA
+from tests.util import setUpModule, tearDownModule
 import unittest
 from dokomoforms.models import Base
+
+utils = (setUpModule, tearDownModule)
 
 
 class TestOne(unittest.TestCase):

@@ -1,9 +1,19 @@
+"""
+All the application options are defined here.
+
+If you need to inject options at runtime (for testing, etc...):
+
+    from dokomoforms.options import set_arg
+
+    set_arg(name1=value1, name2=value2, ...)
+"""
 import os.path
+
 import tornado.options
 from tornado.options import define, options
 
 __all__ = ['options']
-arg = None
+_arg = None
 
 # Application options
 define('port', help='run on the given port', type=int)
@@ -28,13 +38,37 @@ define(
 )
 
 
-def set_arg(new_arg):
-    global arg
-    arg = new_arg
+def inject_options(**kwargs):
+    """
+    dokomoforms.options.parse_options reads from sys.argv if
+    dokomoforms.options._arg is None. Calling
+    dokomoforms.options.inject_options(name1='value1', name2='value2', ...) at
+    the top of a file injects the given options instead.
+
+    :param kwargs: name='value' arguments like the ones that would be passed
+                   to webapp.py as --name=value or set in local_config.py as
+                   name = 'value'
+    """
+    global _arg
+    # The first element doesn't get read by tornado.options.parse_command_line,
+    # so we might as well set it to None
+    new_arg = [None]
+    new_arg.extend(
+        '--{name}={value}'.format(name=k, value=kwargs[k]) for k in kwargs
+    )
+    _arg = new_arg
 
 
 def parse_options():
+    """
+    Tells Tornado to read from the config.py file (which in turn reads from
+    the local_config.py file), then from options specified by
+    dokomoforms.options._arg (sys.argv if _arg is None, or the list of
+    options in _arg otherwise).
+
+    See dokomoforms.options.inject_options
+    """
     tornado.options.parse_config_file(
         os.path.join(os.path.dirname(__file__), '..', 'config.py')
     )
-    tornado.options.parse_command_line(arg)
+    tornado.options.parse_command_line(_arg)

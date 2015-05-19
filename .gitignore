@@ -1,8 +1,6 @@
 *~
 *.swp
-*.sqlite
 *.pyc
-*.log
 local_config.py
 cookie_secret
 .coverage
@@ -12,9 +10,3 @@ htmlcov/
 .python-version
 locale/dokomoforms.po
 node_modules/
-test/*.log
-.vagrant
-data/
-reports/
-config/deploy/*.rb
-.DS_Store
