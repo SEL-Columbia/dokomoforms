@@ -69,9 +69,11 @@ App.init = function(survey) {
 
 App.sync = function() {
     var self = this;
+    $('.submit_modal')[0].click(); // Pop Up Submitting Modal
     self.countdown = App.unsynced.length; //JS is single threaded no race condition counter
     self.count = App.unsynced.length; //JS is single threaded no race condition counter
     var endSync = function() {
+        $('.submit_modal')[0].click(); // Remove submitting modal;
         App.splash();
         if (!App.unsynced.length) {
             App.message('All ' + self.count + ' surveys synced succesfully.', 'Survey Synced', 'message-success');
@@ -593,8 +595,7 @@ Survey.prototype.submit = function() {
     var unsynced = JSON.parse(localStorage.unsynced); 
     unsynced[self.id] = App.unsynced;
     localStorage['unsynced'] = JSON.stringify(unsynced);
-
-    App.message('Please remember to sync submissions when connected to the internet.', 'Survey Saved', 'message-primary');
+    //App.message('Please remember to sync submissions when connected to the internet.', 'Survey Saved', 'message-primary');
     App.splash();
 
 

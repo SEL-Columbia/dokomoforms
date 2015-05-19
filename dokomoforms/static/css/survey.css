@@ -282,6 +282,20 @@ a, .icon {
     left: 0;
 }
 
+.submitting_content {
+    position: fixed;
+    top: 35%;
+    text-align: left;
+}
+
+.submitting_title {
+    display: inline-block;
+}
+
+.submitting_sync {
+    display: inline-block;
+}
+
 .message {
 }
 
