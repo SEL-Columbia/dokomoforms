@@ -87,7 +87,7 @@ describe('User next/prev tests', function(done) {
             done();
         });
 
-    it('should NOT move from question 0 to homepage when prev is clicked ', 
+    it('should move from question 0 to homepage when prev is clicked ', 
         function(done) {
             var survey = App.survey;
             var questions = survey.questions;
@@ -99,7 +99,7 @@ describe('User next/prev tests', function(done) {
 
             $(".page_nav__prev").trigger("click");
             first_question.should.equal(survey.current_question);
-            $(".question__title").html().trim().should.equal(survey.current_question.question_title); //XXX homepage
+            $("h3").html().trim().should.equal(survey.title); //XXX homepage
 
             done();
         });
