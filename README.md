@@ -73,3 +73,62 @@ In order to make it easier to test across devices and browsers, you can run the 
   SAUCE_ACCESS_KEY = 'access key'
   DEFAULT_BROWSER = 'firefox::Linux'
   ```
+4. `$ nosetests tests.selenium_test`
+
+# Local Dev Environment via Vagrant
+
+A [Vagrant](http://vagrantup.com) configuration is provided in order to get the application up and running quickly for local development. Vagrant creates a virtual machine, installs all of the necessary dependencies, and prepares the database to run Dokomo. **At present you must have [Virtualbox](https://www.virtualbox.org/) installed, as it is used as the virtual machine provider by Vagrant.**
+
+1. Make sure you have Virtualbox and Vagrant installed.
+2. After cloning the repo, `cd` into the root directory and run `vagrant up`.
+3. The first time it's run, vagrant will download the appropriate virtual machine image and provision it -- this process may take several minutes depending on your network connection and cpu.
+4. Once it's complete, you can ssh into the virtual machine by running `vagrant ssh`.
+5. The root directory of the application on your host machine is shared with the virtual machine's '/vagrant' directory. So once you've ssh'd in, you can navigate to `/vagrant` and start the application: `python webapp.py`
+
+# Using Docker for Local Dev Environment and Deployment
+
+[Docker](https://en.wikipedia.org/wiki/Docker_(software)) is a container management software that aims at component separation and deployment automation. Please reference to [Docker API](https://docs.docker.com/) for a fuller introduction.
+
+## Using Docker Manually (docker knowledge required)
+
+There is a `Dockerfile` in the root directory to build the docker image of the dokomoforms webapp component building on top a python3 image. To build the webapp image, simply run 
+
+> docker build . -t selcolumbia/dokomoforms
+
+However, dokomoforms as a service needs other component such as the database. We have referenced `mdillon/postgis` as the image. Since our use of postgresql has an postgis dependency. You may also substitute `mdillon/postgis` with any images that has functional postgis in it. A manual way to run dokomoforms as service would involve in starting the `postgis` container and linking it to the dokomoforms image we have just built, such as:
+
+> docker run -d -p 8888:8888 --link postgis:db selcolumbia/dokomoforms
+
+## Using Docker for Local Development
+
+`docker-compose` is the program that automates docker container building, runnning and linking as described above. It uses `docker-compose.yml` which is provided in the root directory.
+
+To start service locally, simply do:
+
+> docker-compose up
+
+After docker pulling all the necessary images, building and linking (about 3~5 minutes for the first build), point towards [http://localhost:8888](http://localhost:8888) and start using dokomoforms
+
+## Using Docker  for Automatic Deployment
+
+`docker-machine` is the docker program that automates deployment process. It provides automation process with many vps providers such as amazon web service, rackspace and digital ocean. 
+
+Here we are usging digital ocean as example.
+
+1. obtain a token from digital ocean. Click on "Generate New Token" from the API page as indicated below.
+
+![doapi](http://i.imgur.com/0SrmqX7.jpg)
+
+2. create a droplet with the token you have just acquired
+
+> docker-machine create -d digitalocean --digitalocean-access-token YOUR_ACCESS_TOKEN dokomoforms
+
+3. make your local doocker aware of this new machine
+
+> eval $(docker-machine env dokomoforms)
+
+4. run `docker-compose` with the new environment
+
+> docker-compose up -d
+
+Congratulations, you have just deployed your dokomoforms instance.

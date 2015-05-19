@@ -35,8 +35,8 @@
             </button>
         </div>
         <div class="question__btn__other" style="display: none;">
-            <input type="checkbox" name='dont-know' value='selected'/>
-            <%- other_text || "I don't know the answer" %>
+            <input type="checkbox" id="dont-know" name='dont-know' value='selected'/>
+            <label for="dont-know"><%- other_text || "I don't know the answer" %></label>
         </div>
     </script>
     
@@ -433,7 +433,7 @@
 
     <script id="template_splash" type="text/html">
         <div class="content-padded">
-            <h3 class=""> <%- survey.title %> Survey</h3>
+            <h3 class=""> <%- survey.title %></h3>
             <p class="">version <%- survey.version %> | last updated <%- survey.last_updated %></p>
 
             <% if (unsynced.length > 0 && online) { %>
