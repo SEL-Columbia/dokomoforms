@@ -23,7 +23,7 @@ Dokomo Forms is a self-hosted data collection and analysis platform, and is the 
 
 4. Focus on questions rather than surveys. (TODO)
 
-5. You can specify configuration options in `local_config.py` or as command line flags to [webapp.py](webapp.py)
+5. You can specify configuration options in `local_config.py` or as command line flags to [webapp.py](webapp.py). The available options are defined in [dokomoforms/options.py](dokomoforms/options.py)
 
 6. [webapp.py](webapp.py) now sets up the tables for you (no more `manage_db.py`). If you want `$ manage_db.py -d`, run
 
