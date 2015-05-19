@@ -75,16 +75,6 @@ In order to make it easier to test across devices and browsers, you can run the 
   ```
 4. `$ nosetests tests.selenium_test`
 
-# Local Dev Environment via Vagrant
-
-A [Vagrant](http://vagrantup.com) configuration is provided in order to get the application up and running quickly for local development. Vagrant creates a virtual machine, installs all of the necessary dependencies, and prepares the database to run Dokomo. **At present you must have [Virtualbox](https://www.virtualbox.org/) installed, as it is used as the virtual machine provider by Vagrant.**
-
-1. Make sure you have Virtualbox and Vagrant installed.
-2. After cloning the repo, `cd` into the root directory and run `vagrant up`.
-3. The first time it's run, vagrant will download the appropriate virtual machine image and provision it -- this process may take several minutes depending on your network connection and cpu.
-4. Once it's complete, you can ssh into the virtual machine by running `vagrant ssh`.
-5. The root directory of the application on your host machine is shared with the virtual machine's '/vagrant' directory. So once you've ssh'd in, you can navigate to `/vagrant` and start the application: `python webapp.py`
-
 # Using Docker for Local Dev Environment and Deployment
 
 [Docker](https://en.wikipedia.org/wiki/Docker_(software)) is a container management software that aims at component separation and deployment automation. Please refer to [the Docker API](https://docs.docker.com/) for a fuller introduction.
