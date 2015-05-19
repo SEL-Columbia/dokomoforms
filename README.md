@@ -87,48 +87,48 @@ A [Vagrant](http://vagrantup.com) configuration is provided in order to get the 
 
 # Using Docker for Local Dev Environment and Deployment
 
-[Docker](https://en.wikipedia.org/wiki/Docker_(software)) is a container management software that aims at component separation and deployment automation. Please reference to [Docker API](https://docs.docker.com/) for a fuller introduction.
+[Docker](https://en.wikipedia.org/wiki/Docker_(software)) is a container management software that aims at component separation and deployment automation. Please refer to [the Docker API](https://docs.docker.com/) for a fuller introduction.
 
-## Using Docker Manually (docker knowledge required)
+## Using Docker Manually (Docker knowledge required)
 
-There is a `Dockerfile` in the root directory to build the docker image of the dokomoforms webapp component building on top a python3 image. To build the webapp image, simply run 
+There is a [Dockerfile](Dockerfile) in the root directory to build the Docker image of the Dokomo Forms webapp component building on top a Python 3 image. To build the webapp image, run 
 
-> docker build . -t selcolumbia/dokomoforms
+> $ docker build . -t selcolumbia/dokomoforms
 
-However, dokomoforms as a service needs other component such as the database. We have referenced `mdillon/postgis` as the image. Since our use of postgresql has an postgis dependency. You may also substitute `mdillon/postgis` with any images that has functional postgis in it. A manual way to run dokomoforms as service would involve in starting the `postgis` container and linking it to the dokomoforms image we have just built, such as:
+However, Dokomo Forms as a service needs other components such as the database in order to work. We have referenced `mdillon/postgis` as the image, since we are using PostgreSQL with the PostGIS extension. You may also substitute `mdillon/postgis` with any image includes PostGIS. A manual way to run Dokomo Forms as a service would involve starting the `postgis` container and linking it to the Dokomo Forms image we have just built, such as:
 
-> docker run -d -p 8888:8888 --link postgis:db selcolumbia/dokomoforms
+> $ docker run -d -p 8888:8888 --link postgis:db selcolumbia/dokomoforms
 
 ## Using Docker for Local Development
 
-`docker-compose` is the program that automates docker container building, runnning and linking as described above. It uses `docker-compose.yml` which is provided in the root directory.
+`docker-compose` is the program that automates Docker container building, running, and linking as described above. It uses the [docker-compose.yml](docker-compose.yml) file which is provided in the root directory.
 
-To start service locally, simply do:
+To start the service locally, run:
 
-> docker-compose up
+> $ docker-compose up
 
-After docker pulling all the necessary images, building and linking (about 3~5 minutes for the first build), point towards [http://localhost:8888](http://localhost:8888) and start using dokomoforms
+Docker will download the necessary images, then build and link them. This step takes 3-5 minutes for the first build. Once the command has finished, you can visit [http://localhost:8888](http://localhost:8888) and start using Dokomo Forms.
 
-## Using Docker  for Automatic Deployment
+## Using Docker for Automated Deployment
 
-`docker-machine` is the docker program that automates deployment process. It provides automation process with many vps providers such as amazon web service, rackspace and digital ocean. 
+`docker-machine` is the program that automates the deployment process. It can hook into many VPS providers such as [AWS](http://aws.amazon.com/), [Rackspace](http://www.rackspace.com/) and [DigitalOcean](https://www.digitalocean.com/). 
 
-Here we are usging digital ocean as example.
+Here is an example using DigitalOcean:
 
-1. obtain a token from digital ocean. Click on "Generate New Token" from the API page as indicated below.
+1. Obtain a token from DigitalOcean. Click on "Generate New Token" from the API page as indicated below.
 
-![doapi](http://i.imgur.com/0SrmqX7.jpg)
+  ![doapi](http://i.imgur.com/0SrmqX7.jpg)
 
-2. create a droplet with the token you have just acquired
+2. Create a droplet with the token you have just acquired
 
-> docker-machine create -d digitalocean --digitalocean-access-token YOUR_ACCESS_TOKEN dokomoforms
+  > $ docker-machine create -d digitalocean --digitalocean-access-token YOUR_ACCESS_TOKEN dokomoforms
 
-3. make your local doocker aware of this new machine
+3. Make your local Docker environment aware of this new machine
 
-> eval $(docker-machine env dokomoforms)
+  > $ eval $(docker-machine env dokomoforms)
 
-4. run `docker-compose` with the new environment
+4. Run `docker-compose` with the new environment
 
-> docker-compose up -d
+  > $ docker-compose up -d
 
-Congratulations, you have just deployed your dokomoforms instance.
+Now you have an instance of Dokomo Forms running on your DigitalOcean droplet!
