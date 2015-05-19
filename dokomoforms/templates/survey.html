@@ -22,14 +22,34 @@
 
     <header class="bar bar-nav bar-padded"></header>
 
-    <!-- Alert stuff -->
-    <a href="#message" class='message_btn' style='display:none'></a>
+    <!-- Alert stuff (hidden button to start it all)-->
+    <a href="#message" class='message_btn' style='display:none'></a> 
     <div id="message" class="modal">
-        <div class="modal_header"> Hey </div>
-        <div class="modal_content"></div>
+        <div class='modal_header'></div>
+        <div class='message message_main content-padded'></div>
+        <div class='message_btn_content'>
+            <div class='bar-padded'>
+                <a href="#message" class='modal_btn btn btn-block btn-netural btn-text'>
+                    <span class='btn-text pull-left'>Ok</span>
+                    <span class='icon btn-text icon-check pull-right'></span>
+                </a>
+            </div>
+        </div>
     </div>
-    <div class="content"></div>
 
+    <a href="#submitting" class='submit_modal' style='display:none'></a> 
+    <div id="submitting" class="modal">
+        <div class="submitting_content content-padded">
+            <h1 class="submitting_title" >Submitting Surveys</h1>
+            <span class="icon icon-share submitting_sync"></span>
+            <p>
+                Please be patient. This process depends on your connection
+                speed and the number of surveys to be submitted.
+            </p>
+        </div>
+    </div>
+
+    <div class="content"></div>
     <div class="overlay" style="display:none;"></div>
     <div class="bar bar-standard bar-footer"></div>
     

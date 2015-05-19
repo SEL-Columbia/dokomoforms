@@ -69,9 +69,11 @@ App.init = function(survey) {
 
 App.sync = function() {
     var self = this;
+    $('.submit_modal')[0].click(); // Pop Up Submitting Modal
     self.countdown = App.unsynced.length; //JS is single threaded no race condition counter
     self.count = App.unsynced.length; //JS is single threaded no race condition counter
     var endSync = function() {
+        $('.submit_modal')[0].click(); // Remove submitting modal;
         App.splash();
         if (!App.unsynced.length) {
             App.message('All ' + self.count + ' surveys synced succesfully.', 'Survey Synced', 'message-success');
@@ -117,7 +119,6 @@ App.message = function(text, title, style) {
     // Shows a message to user
     // E.g. "Your survey has been submitted"
     $('.message_btn')[0].click();
-    $('.modal_content').empty();
     
     $('.modal_header').empty()
         //XXX Look into doing this in a more clean way
@@ -130,40 +131,8 @@ App.message = function(text, title, style) {
 
 
     // Message text region
-    var message =  $('<div></div>')
-        .addClass('message_main')
-        .addClass('message')
-        .addClass('content-padded')
+    $('.message')
         .text(text);
-
-
-    // Btn box with border
-    var okay_box = $('<div></div>')
-        .addClass('message_btn_content')
-
-    var okay =  $('<div></div>')
-        .addClass('bar-padded');
-
-     var btn = $('<a href="#message"></a>')
-        .addClass('btn')
-        .addClass('btn-block')
-        .addClass('btn-netural')
-        .addClass('btn-text')
-        .addClass('pull-left')
-        .text('Ok')
-        .appendTo(okay);
-
-     $('<span></span>')
-         .addClass('icon')
-         .addClass('btn-text')
-         .addClass('icon-check')
-         .addClass('pull-right')
-         .appendTo(btn);
-    
-    okay.appendTo(okay_box);
-    message.appendTo('.modal_content');
-    okay_box.appendTo('.modal_content');
-
 };
 
 App.splash = function() {
@@ -605,7 +574,7 @@ Survey.prototype.submit = function() {
     if (JSON.stringify(survey_answers) === '[]') {
       // Not doing instantly to make it seem like App tried reaaall hard
       setTimeout(function() {
-            App.message('Saving failed, No questions answer in Survey!', 'Survey Empty Submission', 'message-warning');
+            App.message('Saving failed, No questions answered in Survey!', 'Survey Empty Submission', 'message-warning');
             App.splash();
       }, 1000);
       return;
@@ -626,8 +595,7 @@ Survey.prototype.submit = function() {
     var unsynced = JSON.parse(localStorage.unsynced); 
     unsynced[self.id] = App.unsynced;
     localStorage['unsynced'] = JSON.stringify(unsynced);
-
-    App.message('Please remember to sync submissions when connected to the internet.', 'Survey Saved', 'message-primary');
+    //App.message('Please remember to sync submissions when connected to the internet.', 'Survey Saved', 'message-primary');
     App.splash();
 
 
