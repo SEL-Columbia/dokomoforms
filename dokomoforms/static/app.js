@@ -129,7 +129,7 @@ App.message = function(text, title, style) {
 
 
     // Message text region
-    $('.message_main')
+    $('.message')
         .text(text);
 };
 
@@ -572,7 +572,7 @@ Survey.prototype.submit = function() {
     if (JSON.stringify(survey_answers) === '[]') {
       // Not doing instantly to make it seem like App tried reaaall hard
       setTimeout(function() {
-            App.message('Saving failed, No questions answer in Survey!', 'Survey Empty Submission', 'message-warning');
+            App.message('Saving failed, No questions answered in Survey!', 'Survey Empty Submission', 'message-warning');
             App.splash();
       }, 1000);
       return;
