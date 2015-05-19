@@ -117,7 +117,6 @@ App.message = function(text, title, style) {
     // Shows a message to user
     // E.g. "Your survey has been submitted"
     $('.message_btn')[0].click();
-    $('.modal_content').empty();
     
     $('.modal_header').empty()
         //XXX Look into doing this in a more clean way
@@ -130,40 +129,8 @@ App.message = function(text, title, style) {
 
 
     // Message text region
-    var message =  $('<div></div>')
-        .addClass('message_main')
-        .addClass('message')
-        .addClass('content-padded')
+    $('.message_main')
         .text(text);
-
-
-    // Btn box with border
-    var okay_box = $('<div></div>')
-        .addClass('message_btn_content')
-
-    var okay =  $('<div></div>')
-        .addClass('bar-padded');
-
-     var btn = $('<a href="#message"></a>')
-        .addClass('btn')
-        .addClass('btn-block')
-        .addClass('btn-netural')
-        .addClass('btn-text')
-        .addClass('pull-left')
-        .text('Ok')
-        .appendTo(okay);
-
-     $('<span></span>')
-         .addClass('icon')
-         .addClass('btn-text')
-         .addClass('icon-check')
-         .addClass('pull-right')
-         .appendTo(btn);
-    
-    okay.appendTo(okay_box);
-    message.appendTo('.modal_content');
-    okay_box.appendTo('.modal_content');
-
 };
 
 App.splash = function() {

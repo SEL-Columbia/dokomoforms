@@ -300,11 +300,8 @@ a, .icon {
     bottom: 0px;
     right: 0px;
     left: 0px;
+    height: 80px;
 }
-
-.modal_content {
-    height: 100%;
-} 
 
 .modal_header {
     box-shadow: 0px 2px 2px #aaa;
@@ -326,6 +323,10 @@ a, .icon {
     color: #000;
     text-align: left;
     white-space: nowrap;
+}
+
+.modal_btn {
+    height: 61.6px;
 }
 
 .question__radio {
