@@ -69,36 +69,40 @@ App.init = function(survey) {
 
 App.sync = function() {
     var self = this;
-    self.countdown = App.unsynced.length; //JS is single threaded, no race condition on counter
-    self.failed = [];
-    var restore = function() {
-        // Were done!
-        App.unsynced = self.failed;
-        self.failed = [];
-        var unsynced = JSON.parse(localStorage.unsynced); 
-        unsynced[self.survey.id] = App.unsynced;
-        localStorage['unsynced'] = JSON.stringify(unsynced);
-
-        // Reload page to update template values
+    self.countdown = App.unsynced.length; //JS is single threaded no race condition counter
+    self.count = App.unsynced.length; //JS is single threaded no race condition counter
+    var endSync = function() {
         App.splash();
+        if (!App.unsynced.length) {
+            App.message('All ' + self.count + ' surveys synced succesfully.', 'Survey Synced', 'message-success');
+        } else {
+            App.message(App.unsynced.length + ' survey(s) failed to sync succesfully. Please try again later.', 'Survey Sync Failed', 'message-error');
+        }
     };
-    _.each(App.unsynced, function(survey, idx) {
+    _.each(App.unsynced, function(survey) {
         App.submit(survey, 
             function(survey) { 
-                //console.log('done');
+                console.log('done');
+                // Has to be there
+                var idx = App.unsynced.indexOf(survey);
+                App.unsynced.splice(idx, 1);
+                var unsynced = JSON.parse(localStorage.unsynced); 
+                unsynced[self.survey.id] = App.unsynced;
+                localStorage['unsynced'] = JSON.stringify(unsynced);
                 --self.countdown; 
                 
-                if (self.countdown === 0) 
-                    restore();
+                if (self.countdown === 0) {  
+                    endSync();
+                }
             },
 
             function(survey) { 
-                //console.log('fail');
+                console.log('fail');
                 --self.countdown; 
-                App.failed.push(survey);
 
-                if (self.countdown === 0) 
-                    restore();
+                if (self.countdown === 0) {
+                    endSync();
+                }
             } 
         );
     });
@@ -107,37 +111,58 @@ App.sync = function() {
     _.map(App.unsynced_facilities, function(facility) {
         postNewFacility(facility); 
     });
-
-    App.unsynced = [];
-    var unsynced = JSON.parse(localStorage.unsynced); 
-    unsynced[self.survey.id] = App.unsynced;
-    localStorage['unsynced'] = JSON.stringify(unsynced);
 };
 
-App.message = function(text, style) {
+App.message = function(text, title, style) {
     // Shows a message to user
     // E.g. "Your survey has been submitted"
     $('.message_btn')[0].click();
     $('.modal_content').empty();
     
+    $('.modal_header').empty()
+        //XXX Look into doing this in a more clean way
+        .removeClass('message-primary')
+        .removeClass('message-error')
+        .removeClass('message-warning')
+        .removeClass('message-success')
+        .addClass(style)
+        .text(title);
 
-    var content = $('<a href="#message"></a>');
 
-        $('<div></div>')
-        .addClass('content-padded')
+    // Message text region
+    var message =  $('<div></div>')
         .addClass('message_main')
         .addClass('message')
-        .addClass(style)
-        .text(text)
-        .appendTo(content);
-
-     $('<p></p>')
         .addClass('content-padded')
-        .addClass('message_sub')
-        .text('click anywhere to continue.')
-        .appendTo(content);
+        .text(text);
 
-    content.appendTo('.modal_content');
+
+    // Btn box with border
+    var okay_box = $('<div></div>')
+        .addClass('message_btn_content')
+
+    var okay =  $('<div></div>')
+        .addClass('bar-padded');
+
+     var btn = $('<a href="#message"></a>')
+        .addClass('btn')
+        .addClass('btn-block')
+        .addClass('btn-netural')
+        .addClass('btn-text')
+        .addClass('pull-left')
+        .text('Ok')
+        .appendTo(okay);
+
+     $('<span></span>')
+         .addClass('icon')
+         .addClass('btn-text')
+         .addClass('icon-check')
+         .addClass('pull-right')
+         .appendTo(btn);
+    
+    okay.appendTo(okay_box);
+    message.appendTo('.modal_content');
+    okay_box.appendTo('.modal_content');
 
 };
 
@@ -201,7 +226,7 @@ App.splash = function() {
                 // Reload page to update template values
                 App.splash();
             } else {
-                App.message('Please connect to the internet first.', 'message-box-warning');
+                App.message('Please connect to the internet first.', 'Connection Error', 'message-warning');
             }
         });
 };
@@ -315,8 +340,7 @@ Survey.prototype.next = function(offset) {
 
     // Backward at first question
     if (index === self.lowest_sequence_number && offset === PREV) {
-        //XXX Shouldn't show splash page right 
-        //App.splash();
+        App.splash();
         return;
     }
 
@@ -338,19 +362,19 @@ Survey.prototype.next = function(offset) {
         if (bad_answers.length) {
             App.message(bad_answers.length 
             + ' response(s) found not valid for question type: ' 
-            + self.current_question.type_constraint_name, 'message-box-warning');
+            + self.current_question.type_constraint_name, 'Survey Response Error', 'message-error');
             return;
         }
 
         // Are you required?
         if (this.current_question.logic.required && (first_response === null)) {
-            App.message('Survey requires this question to be completed.', 'message-box-warning');
+            App.message('Survey requires this question to be completed.','Survey Required Response',  'message-error');
             return;
         }
 
         // Is the only response and empty is other response?
         if (first_is_type_exception && !first_response) {
-            App.message('Please provide a reason before moving on.', 'message-box-warning');
+            App.message('Please provide a reason before moving on.', 'Survey Missing Reason', 'message-error');
             return;
         }
 
@@ -581,7 +605,7 @@ Survey.prototype.submit = function() {
     if (JSON.stringify(survey_answers) === '[]') {
       // Not doing instantly to make it seem like App tried reaaall hard
       setTimeout(function() {
-            App.message('Saving failed, No questions answer in Survey!', 'message-box-warning');
+            App.message('Saving failed, No questions answer in Survey!', 'Survey Empty Submission', 'message-warning');
             App.splash();
       }, 1000);
       return;
@@ -603,7 +627,7 @@ Survey.prototype.submit = function() {
     unsynced[self.id] = App.unsynced;
     localStorage['unsynced'] = JSON.stringify(unsynced);
 
-    App.message('Saved Submission!', 'message-box-primary');
+    App.message('Please remember to sync submissions when connected to the internet.', 'Survey Saved', 'message-primary');
     App.splash();
 
 
@@ -646,7 +670,7 @@ Widgets._input = function(question, page, footer, type) {
             question.answer[ans_ind] = { 
                 response: self._validate(type, this.value, question.logic),
                 is_type_exception: false,
-                failed_validation: !Boolean(self._validate(type, this.value, question.logic)),
+                failed_validation: Boolean(null === self._validate(type, this.value, question.logic)),
                 metadata: {},
             }
             // XXX Should i write the value back after validation?
@@ -699,7 +723,7 @@ Widgets._orderAnswerArray = function(page, footer, question, type) {
             question.answer[i] = {
                 response: self._validate(type, child.value, question.logic),
                 is_type_exception: false,
-                failed_validation: !Boolean(self._validate(type, this.value, question.logic)),
+                failed_validation: Boolean(null == self._validate(type, this.value, question.logic)),
                 metadata: {}
             }
         }
@@ -711,7 +735,7 @@ Widgets._orderAnswerArray = function(page, footer, question, type) {
             question.answer = [{
                 response: self._validate('text', child.value, question.logic),
                 is_type_exception: true,
-                failed_validation: !Boolean(self._validate('text', this.value, question.logic)),
+                failed_validation: Boolean(null === self._validate('text', this.value, question.logic)),
                 metadata: {
                     'type_exception': 'dont_know',
                 },
@@ -762,7 +786,7 @@ Widgets._renderOther = function(page, footer, type, question) {
                 question.answer = [{ 
                     response: self._validate('text', this.value, question.logic),
                     is_type_exception: true,
-                    failed_validation: !Boolean(self._validate('text', this.value, question.logic)),
+                    failed_validation: Boolean(null === self._validate('text', this.value, question.logic)),
                     metadata: {
                         'type_exception': 'dont_know',
                     },
@@ -803,7 +827,7 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
             question.answer[0] = {
                 response: self._validate('text', child.value, question.logic),
                 is_type_exception: true,
-                failed_validation: !Boolean(self._validate('text', this.value, question.logic)),
+                failed_validation: Boolean(null === self._validate('text', this.value, question.logic)),
                 metadata: {
                     'type_exception': 'dont_know',
                 },
@@ -845,7 +869,7 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
             if (child.value !== "") { 
                 question.answer[i] = {
                     response: self._validate(type, child.value, question.logic),
-                    failed_validation: !Boolean(self._validate(type, this.value, question.logic)),
+                    failed_validation: Boolean(null === self._validate(type, this.value, question.logic)),
                     is_type_exception: false,
                     metadata: {},
                 }
@@ -915,12 +939,13 @@ Widgets._validate = function(type, answer, logic) {
             }
             break;
         case "date":
-            //XXX: Doesn't work with chrome date picker
-            val = Date.parse(answer);
-            if (isNaN(val)) {
+            var resp = new Date(answer);
+            var day = ("0" + resp.getDate()).slice(-2);
+            var month = ("0" + (resp.getMonth() + 1)).slice(-2);
+            var year = resp.getFullYear();
+            val = year+"-"+(month)+"-"+(day);
+            if(isNaN(year) || isNaN(month) || isNaN(day))  {
                 val = null;
-            } else {
-                val = (new Date(val)).toISOString();
             }
             break;
         case "time":
@@ -969,7 +994,7 @@ Widgets.decimal = function(question, page, footer) {
 
 Widgets.date = function(question, page, footer) {
     //XXX: TODO change input thing to be jquery-ey
-    this._input(question, page, footer, "date_XXX"); //XXX: Fix validation
+    this._input(question, page, footer, "date"); //XXX: Fix validation
 };
 
 Widgets.time = function(question, page, footer) {
@@ -1002,7 +1027,7 @@ Widgets.multiple_choice = function(question, page, footer) {
         .keyup(function() {
             question.answer[question.choices.length] = { 
                 response: self._validate("text", this.value, question.logic),
-                failed_validation: !Boolean(self._validate('text', this.value, question.logic)),
+                failed_validation: Boolean(null === self._validate('text', this.value, question.logic)),
                 is_type_exception: true,
                 metadata: {
                     'type_exception': 'other',
@@ -1101,7 +1126,7 @@ Widgets.location = function(question, page, footer) {
     $(page)
         .find('.question__find__btn')
         .click(function() {
-            //App.message('Searching ...', 'message-box-primary');
+            //App.message('Searching ...', 'message-primary');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
                     // Server accepts [lon, lat]
@@ -1115,7 +1140,7 @@ Widgets.location = function(question, page, footer) {
 
                 }, function error() {
                     //If cannot Get location" for some reason,
-                    App.message('Could not get your location, please make sure your GPS device is active.', 'message-box-warning');
+                    App.message('Could not get your location, please make sure your GPS device is active.', 'Survey GPS Error', 'message-warning');
                 }, {
                     enableHighAccuracy: true,
                     timeout: 20000,
@@ -1137,6 +1162,7 @@ Widgets.facility = function(question, page, footer) {
     // Default operation on caputre Location 
     var captureCallback = reloadFacilities;
     if (question.answer[0] && question.answer[0].metadata.is_new) {
+        console.log('new facility chosen');
         captureCallback = updateLocation;
         //$('.question__map').hide();
         $('.facility__btn').show();
@@ -1275,7 +1301,7 @@ Widgets.facility = function(question, page, footer) {
     $(page)
         .find('.question__find__btn')
         .click(function() {
-            //App.message('Searching ...', 'message-box-primary');
+            //App.message('Searching ...', 'message-primary');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
                     // Server accepts [lon, lat]
@@ -1294,8 +1320,8 @@ Widgets.facility = function(question, page, footer) {
                     $('.facility__btn').show();
 
                 }, function error() {
-                    App.message('Could not get your location, please make sure your GPS device is active.',
-                            'message-box-warning');
+                    App.message('Could not get your location, please make sure your GPS device is active.', 'Survey GPS Error',
+                            'message-warning');
                 }, {
                     enableHighAccuracy: true,
                     timeout: 20000,
@@ -1424,7 +1450,7 @@ function postNewFacility(facility) {
         processData: false,
         dataType: 'json',
         success: function() {
-            //App.message('Facility Added!', 'message-box-primary');
+            //App.message('Facility Added!', 'message-primary');
             // If posted, we don't an unsynced reference to it anymore
             delete App.unsynced_facilities[facility.uuid];
         },
@@ -1435,7 +1461,7 @@ function postNewFacility(facility) {
         },
 
         error: function() {
-            //App.message('Facility submission failed, will try again later.', 'message-box-warning');
+            //App.message('Facility submission failed, will try again later.', 'message-warning');
         },
         
         complete: function() {
