@@ -18,9 +18,10 @@ from sqlalchemy import DDL
 from sqlalchemy.orm import sessionmaker
 
 from tornado.web import url
+import tornado.httpserver
 import tornado.web
 
-from dokomoforms import options
+from dokomoforms.options import options
 import dokomoforms.handlers as handlers
 from dokomoforms.models import create_engine, Base
 
