@@ -695,7 +695,7 @@ describe('Survey unit and regression tests', function(done) {
             App.survey = survey;
             survey.submit();
             App.sync();
-            $('.message').text().should.match("Saving failed, No questions answer in Survey!");
+            $('.message').text().should.match("Saving failed, No questions answered in Survey!");
             done();
 
         });
