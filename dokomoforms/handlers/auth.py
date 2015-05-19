@@ -95,6 +95,7 @@ class Login(BaseHandler):
 class Logout(BaseHandler):
     def post(self):
         """
-        Delete the "user" cookie.
+        Delete the "user" cookie. Note that this can't be done in JavaScript
+        because the user cookie is httponly.
         """
         self.clear_cookie('user')
