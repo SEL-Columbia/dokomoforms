@@ -52,18 +52,47 @@ App.init = function(survey) {
         );
     }
 
-    $('.sel')
-        .click(function(e) {
-            e.preventDefault();
-            self.sync();
-        });
-        
     // AppCache updates
     window.applicationCache.addEventListener('updateready', function() {
         alert('app updated, reloading...');
         window.location.reload();
     });
 
+    $('header')
+        .on('click', '.menu', function(e) {
+            $('header').toggleClass('title-extended');
+            $('.title_menu').toggle();
+        });
+
+    $('header')
+        .on('click', '.menu_clear', function(e) {
+            $('header').toggleClass('title-extended');
+            $('.title_menu').toggle();
+
+            localStorage.clear();
+            App.splash();
+            App.message('All survey data erased.', 'Surveys Nuked', 'message-warning');
+        });
+
+    $('header')
+        .on('click', '.menu_restart', function(e) {
+            $('header').toggleClass('title-extended');
+            $('.title_menu').toggle();
+
+            App.survey.clearState();
+            App.splash();
+            App.message('Active survey has been cleared.', 'Survey Reset', 'message-warning');
+        });
+
+    $('header')
+        .on('click', '.menu_save', function(e) {
+            $('header').toggleClass('title-extended');
+            $('.title_menu').toggle();
+
+            App.survey.saveState();
+            App.message('Active survey has been saved.', 'Survey Saved', 'message-success');
+        });
+        
     App.splash();
 };
 
@@ -136,6 +165,8 @@ App.message = function(text, title, style) {
 };
 
 App.splash = function() {
+    $('header').removeClass('title-extended');
+    $('.title_menu').hide();
     var self = this;
     var survey = self.survey;
     $('.overlay').hide(); // Always remove overlay after moving
@@ -368,6 +399,9 @@ Survey.prototype.next = function(offset) {
 
 // Render template for given question
 Survey.prototype.render = function(question) {
+    $('header').removeClass('title-extended');
+    $('.title_menu').hide();
+
     var self = this;
     $('.overlay').hide(); // Always remove overlay after moving
 
