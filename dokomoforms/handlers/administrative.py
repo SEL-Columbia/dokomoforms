@@ -9,7 +9,7 @@ from dokomoforms.handlers.util import BaseHandler
 
 class Index(BaseHandler):
     def get(self):
-        self.render('administrative/index.html')
+        self.render('administrative_index.html')
 
 
 class NotFound(BaseHandler):
@@ -25,4 +25,4 @@ class NotFound(BaseHandler):
 
     def write_error(self, *args, **kwargs):
         """Serve the custom 404 page."""
-        self.render('administrative/404.html')
+        self.render('administrative_404.html')
