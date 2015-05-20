@@ -3,9 +3,9 @@ All the application options are defined here.
 
 If you need to inject options at runtime (for testing, etc...):
 
-    from dokomoforms.options import set_arg
+    from dokomoforms.options import parse_options
 
-    set_arg(name1=value1, name2=value2, ...)
+    parse_options(name1=value1, name2=value2, ...)
 """
 import os.path
 
