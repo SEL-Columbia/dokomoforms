@@ -441,6 +441,7 @@ header {
     font-weight: 700;
     width: 100%;
     cursor: pointer;
+    user-select:none;
 }
 
 .title_menu_option {
