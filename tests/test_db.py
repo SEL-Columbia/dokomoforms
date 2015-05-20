@@ -1,3 +1,4 @@
+"""Database interaction tests"""
 from tests.util import setUpModule, tearDownModule
 import unittest
 from dokomoforms.models import Base
@@ -5,6 +6,6 @@ from dokomoforms.models import Base
 utils = (setUpModule, tearDownModule)
 
 
-class TestOne(unittest.TestCase):
-    def test_one(self):
+class TestSchema(unittest.TestCase):
+    def test_schema_set_properly(self):
         self.assertEqual(Base.metadata.schema, 'doko_test')
