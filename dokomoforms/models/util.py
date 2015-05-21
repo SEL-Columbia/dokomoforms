@@ -55,17 +55,34 @@ def create_engine() -> sqlalchemy.engine.Engine:
     )
 
 
-def pk() -> sa.Column:
+def pk(foreign_key_column_name: str=None) -> sa.Column:
     """
-    Returns a standard primary key of type UUID for use in models.
+    Returns a standard primary key of type UUID for use in models. If the
+    optional foreign_key_column_name is supplied, the primary key will
+    reference the given column.
 
+    :param foreign_key_column_name: the column name of the referenced foreign
+                                    key (should be 'table_name.column_name')
     :return: a SQLAlchemy Column for a UUID primary key.
     """
-    return sa.Column(
-        pg.UUID,
-        primary_key=True,
-        server_default=func.uuid_generate_v4(),
-    )
+    args = [pg.UUID]
+    if foreign_key_column_name is not None:
+        args.append(fk(foreign_key_column_name))
+    kwargs = {
+        'primary_key': True,
+        'server_default': func.uuid_generate_v4(),
+    }
+    return sa.Column(*args, **kwargs)
+
+
+def fk(column_name: str) -> sa.Column:
+    """
+    Returns a foreign key of type UUID for use in models.
+
+    :param column_name: the name of the referenced column
+    :return: a SQLAlchemy Column for a UUID primary key.
+    """
+    return sa.ForeignKey(column_name, onupdate='CASCADE', ondelete='CASCADE')
 
 
 def last_update_time() -> sa.Column:
