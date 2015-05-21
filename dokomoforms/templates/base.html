@@ -16,29 +16,44 @@
     <link href="/static/css/admin.css" rel="stylesheet" type="text/css">
     <link rel="icon" href="/static/img/favicon.png">
     
-    <title>Dokomoforms</title>
+    <title>DokomoData</title>
     <!--<script src="/static/ratchet-2.0.2/dist/js/ratchet.js"></script> -->
     <!-- RIP <link href="/static/css/style.css" rel="stylesheet" type="text/css">-->
 </head>
 
 <body role="document">
     <nav class="navbar navbar-default navbar-fixed-top light-shadow">
-        <div class="container">
+        <div class="navbar-container">
             <div class="navbar-header">
-                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a class="navbar-brand" href="/">DokomoForms</a>
+                <a class="navbar-brand" href="/">Dokomo<strong>Data</strong></a>
+            </div>
+            <div class="navbar-main-menu">
+                <ul class="nav navbar-nav">
+                    {% if current_user %}
+                        <li><a href="/">Account Overview</a></li>
+                        <li>
+                            <a href="#" class="dropdown-toggle" type="button" id="SurveysDropdown" data-toggle="dropdown" aria-expanded="true">Surveys <span class="caret"></span></a>
+                            <ul class="dropdown-menu" role="menu" aria-labelledby="SurveysDropdown">
+                                {% for survey in surveys_for_menu %}
+                                    <li role="presentation"><a role="menuitem" tabindex="-1" href="/view/{{ survey['survey_id'] }}">{{ survey['survey_title'] }}</a></li>
+                                {% end %}
+                            </ul>
+                        </li>
+                    {% end %}
+                </ul>
             </div>
             <div id="navbar" class="navbar-collapse collapse pull-right">
                 <ul class="nav navbar-nav">
                     {% if current_user %}
-                    <li><a href="#">{{ current_user }}</a></li>
-                    <li><a href="#"><span class="glyphicon glyphicon-cog" data-toggle="tooltip" data-placement="bottom" title="Settings (Coming Soon?)"></span></a></li>
-                    <li><a href="#"><span class="glyphicon glyphicon-log-out" data-toggle="tooltip" data-placement="bottom" title="Sign out" id="logout"></span></a></li>
+                    <li>
+                        <a href="#" class="dropdown-toggle" type="button" id="UserDropdown" data-toggle="dropdown" aria-expanded="true">{{ current_user }} <span class="caret"></span></a>
+                        <ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="UserDropdown">
+                            <li role="presentation"><a role="menuitem" tabindex="-1" href="#"><span class="glyphicon glyphicon-cog"></span> Settings</a></li>
+                            <li role="presentation"><a role="menuitem" tabindex="-1"href="#"><span class="glyphicon glyphicon-log-out" id="logout"></span> Log Out</a></li>
+                        </ul>
+                    </li>
+
+                    
                     {% else %}
                     <li><a class="btn btn-block" href="#" id="login">Login or Register</a></li>
                     {% end %}

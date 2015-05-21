@@ -2,13 +2,14 @@ body {
   padding-top: 50px;
   padding-bottom: 30px;
 }
-h4 {
-  text-transform: uppercase;
-  font-weight: 900;
-  margin-bottom: 20px;
+.navbar {
+  font-weight: 300;
 }
-.light-shadow {
-  box-shadow: 0px 1px 5px #888888;
+.navbar-main-menu span.glyphicon-menu-down {
+  position: relative;
+  top: -2px;
+  margin-left: 3px;
+  font-size: .5em;
 }
 .header {
   background-color: #78C0A8;
@@ -25,6 +26,17 @@ h4 {
 }
 .header .header-controls {
   padding-top: 25px;
+}
+.header-account-overview {
+  background-color: #9F4F0F;
+}
+h4 {
+  text-transform: uppercase;
+  font-weight: 900;
+  margin-bottom: 20px;
+}
+.light-shadow {
+  box-shadow: 0px 1px 5px #888888;
 }
 .subheader {
   background-color: #eeeeee;
