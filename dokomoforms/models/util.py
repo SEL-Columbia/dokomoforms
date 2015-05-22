@@ -49,7 +49,6 @@ def create_engine() -> sqlalchemy.engine.Engine:
             options.db_host,
             options.db_database,
         ),
-        convert_unicode=True,
         pool_size=0,
         max_overflow=-1,
     )
