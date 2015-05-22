@@ -114,7 +114,7 @@ class Application(tornado.web.Application):
                 DDL('DROP SCHEMA IF EXISTS {} CASCADE'.format(options.schema))
             )
         Base.metadata.create_all(self.engine)
-        self.session = sessionmaker(bind=self.engine)()
+        self.session = sessionmaker(bind=self.engine, autocommit=True)()
 
 
 def main():
