@@ -6,8 +6,8 @@ certainly make use of the dokomoforms.models.util.pk and
 dokomoforms.models.util.last_update_time
 
 The SQLAlchemy documentation suggests setting those columns in the base
-class but it makes it less explicit which columns exist when looking at the
-models' definitions.
+class or using class mixins, but it makes it less explicit which columns exist
+when looking at the models' definitions.
 """
 from dokomoforms.options import options, parse_options
 
