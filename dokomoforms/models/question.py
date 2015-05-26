@@ -36,22 +36,22 @@ class Question(Base):
     last_update_time = util.last_update_time()
 
     def _asdict(self) -> OrderedDict:
-        if self.choices is None:
-            choices = tuple()
-        else:
-            choices = ('choices', [ch.choice_text for ch in self.choices])
-        return OrderedDict(
-            (
-                ('id', self.id),
-                ('title', self.title),
-                ('hint', self.hint),
-            ) + choices + (
-                ('allow_multiple', self.allow_multiple),
-                ('type_constraint', self.type_constraint),
-                ('logic', self.logic),
-                ('last_update_time', self.last_update_time),
+        contents = [
+            ('id', self.id),
+            ('title', self.title),
+            ('hint', self.hint),
+        ]
+        if self.type_constraint == 'multiple_choice':
+            contents.append(
+                ('choices', [ch.choice_text for ch in self.choices])
             )
-        )
+        contents.extend([
+            ('allow_multiple', self.allow_multiple),
+            ('type_constraint', self.type_constraint),
+            ('logic', self.logic),
+            ('last_update_time', self.last_update_time),
+        ])
+        return OrderedDict(contents)
 
 
 class Choice(Base):
