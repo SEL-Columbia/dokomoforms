@@ -1,5 +1,7 @@
 """User models."""
 
+from collections import OrderedDict
+
 from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
@@ -21,6 +23,16 @@ class User(Base):
     )
     last_update_time = util.last_update_time()
 
+    def _asdict(self) -> OrderedDict:
+        return OrderedDict((
+            ('id', self.id),
+            ('is_active', self.is_active),
+            ('name', self.name),
+            ('emails', [email.address for email in self.emails]),
+            ('token_expiration', self.token_expiration),
+            ('last_update_time', self.last_update_time),
+        ))
+
 
 class Email(Base):
     """Models an e-mail address."""
@@ -32,3 +44,11 @@ class Email(Base):
     last_update_time = util.last_update_time()
 
     user = relationship('User', backref=backref('emails', order_by=address))
+
+    def _asdict(self) -> OrderedDict:
+        return OrderedDict((
+            ('id', self.id),
+            ('address', self.address),
+            ('user', self.user.name),
+            ('last_update_time', self.last_update_time),
+        ))

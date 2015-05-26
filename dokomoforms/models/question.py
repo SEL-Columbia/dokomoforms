@@ -1,5 +1,7 @@
 """Question models."""
 
+from collections import OrderedDict
+
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import relationship, backref
@@ -33,6 +35,24 @@ class Question(Base):
     logic = sa.Column(pg.json.JSON, nullable=False, server_default='{}')
     last_update_time = util.last_update_time()
 
+    def _asdict(self) -> OrderedDict:
+        if self.choices is None:
+            choices = tuple()
+        else:
+            choices = ('choices', [ch.choice_text for ch in self.choices])
+        return OrderedDict(
+            (
+                ('id', self.id),
+                ('title', self.title),
+                ('hint', self.hint),
+            ) + choices + (
+                ('allow_multiple', self.allow_multiple),
+                ('type_constraint', self.type_constraint),
+                ('logic', self.logic),
+                ('last_update_time', self.last_update_time),
+            )
+        )
+
 
 class Choice(Base):
     """Models a choice for a type_constraint == multiple_choice question."""
@@ -65,3 +85,12 @@ class Choice(Base):
             'question_id', 'choice_text', name='unique_choice_text'
         ),
     )
+
+    def _asdict(self) -> OrderedDict:
+        return OrderedDict((
+            ('id', self.id),
+            ('choice_text', self.choice_text),
+            ('choice_number', self.choice_number),
+            ('question', self.question.title),
+            ('last_update_time', self.last_update_time),
+        ))
