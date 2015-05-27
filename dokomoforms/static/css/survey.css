@@ -429,6 +429,10 @@ header {
     font-family: 'Roboto', sans-serif !important;
 }
 
+.menu {
+    cursor: pointer;
+}
+
 .title-extended {
     height: 176px;
 }
@@ -456,6 +460,7 @@ header {
 .btn {
     font-family: 'Roboto', sans-serif !important;
     font-weight: 300;
+    user-select:none;
 }
 
 .bar .btn {
