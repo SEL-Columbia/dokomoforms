@@ -1,6 +1,11 @@
 from dokomoforms.models.util import Base, create_engine, ModelJSONEncoder
 from dokomoforms.models.user import User, Email
-from dokomoforms.models.question import Question, Choice
+from dokomoforms.models.survey import (
+    SurveyNode, Question,
+    Note,
+    TextQuestion,
+    Choice,
+)
 
 __all__ = [
     'create_engine',
@@ -8,6 +13,9 @@ __all__ = [
     'ModelJSONEncoder',
     'User',
     'Email',
+    'SurveyNode',
     'Question',
+    'Note',
+    'TextQuestion',
     'Choice',
 ]
