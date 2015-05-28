@@ -49,3 +49,5 @@
 10. readthedocs
   - tox sphinx
   - https://github.com/rtfd/readthedocs.org/issues/1263
+11. It looks like the various answer types might go in different tables for ORM
+    purposes... I should write a SQL view to abstract that detail away.
