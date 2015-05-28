@@ -98,6 +98,9 @@ class TextQuestion(Question):
 
     __mapper_args__ = {'polymorphic_identity': 'text'}
 
+#    def _asdict(self) -> OrderedDict:
+#        return super()._default_asdict()
+
 
 class MultipleChoiceQuestion(Question):
     __tablename__ = 'question_multiple_choice'
