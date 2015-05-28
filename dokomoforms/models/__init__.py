@@ -3,7 +3,7 @@ from dokomoforms.models.user import User, Email
 from dokomoforms.models.survey import (
     SurveyNode, Question,
     Note,
-    TextQuestion,
+    TextQuestion, MultipleChoiceQuestion,
     Choice,
 )
 
@@ -15,6 +15,7 @@ __all__ = [
     'Email',
     'SurveyNode',
     'Question',
+    'MultipleChoiceQuestion',
     'Note',
     'TextQuestion',
     'Choice',
