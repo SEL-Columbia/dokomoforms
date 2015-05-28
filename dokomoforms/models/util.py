@@ -139,6 +139,9 @@ def create_engine() -> sqlalchemy.engine.Engine:
 
     :return: a SQLAlchemy engine
     """
+    # This causes duplicate log messages, but I can't figure out how to get
+    # the same level of logging otherwise...
+    echo = 'debug' if options.debug else False
     return sa.create_engine(
         'postgresql+psycopg2://{}:{}@{}/{}'.format(
             options.db_user,
@@ -148,6 +151,7 @@ def create_engine() -> sqlalchemy.engine.Engine:
         ),
         pool_size=0,
         max_overflow=-1,
+        echo=echo,
     )
 
 
