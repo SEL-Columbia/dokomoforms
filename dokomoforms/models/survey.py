@@ -22,7 +22,7 @@ class SurveyNode(Base):
 
     id = util.pk()
     title = sa.Column(
-        sa.String,
+        pg.TEXT,
         sa.CheckConstraint("title != ''", name='non_empty_title'),
         nullable=False,
     )
@@ -74,7 +74,7 @@ class Question(SurveyNode):
     __tablename__ = 'question'
     id = util.pk('survey_node.id')
 
-    hint = sa.Column(sa.String, nullable=False, server_default='')
+    hint = sa.Column(pg.TEXT, nullable=False, server_default='')
     allow_multiple = sa.Column(
         sa.Boolean, nullable=False, server_default='False'
     )
@@ -126,7 +126,7 @@ class Choice(Base):
     __tablename__ = 'choice'
 
     id = util.pk()
-    choice_text = sa.Column(sa.String, nullable=False)
+    choice_text = sa.Column(pg.TEXT, nullable=False)
     choice_number = sa.Column(sa.Integer, nullable=False)
     question_id = sa.Column(
         pg.UUID, util.fk('question_multiple_choice.id'), nullable=False

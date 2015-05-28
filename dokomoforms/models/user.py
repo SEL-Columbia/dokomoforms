@@ -16,7 +16,7 @@ class User(Base):
 
     id = util.pk()
     is_active = sa.Column(sa.Boolean, nullable=False, server_default='True')
-    name = sa.Column(sa.String, nullable=False)
+    name = sa.Column(pg.TEXT, nullable=False)
     token = sa.Column(pg.BYTEA)
     token_expiration = sa.Column(
         sa.DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -39,7 +39,7 @@ class Email(Base):
     __tablename__ = 'email'
 
     id = util.pk()
-    address = sa.Column(sa.String, nullable=False, unique=True)
+    address = sa.Column(pg.TEXT, nullable=False, unique=True)
     user_id = sa.Column(pg.UUID, util.fk('auth_user.id'), nullable=False)
     last_update_time = util.last_update_time()
 

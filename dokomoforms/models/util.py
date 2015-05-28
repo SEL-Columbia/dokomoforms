@@ -51,12 +51,12 @@ class Base(declarative_base(metadata=metadata, metaclass=_Meta)):
             class User(Base):
                 __tablename__ = 'auth_user'
                 id = util.pk()
-                name = sqlalchemy.Column(String)
+                name = sqlalchemy.Column(TEXT)
 
             class Email(Base):
                 __tablename__ = 'email'
                 id = util.pk()
-                address = sqlalchemy.Column(String)
+                address = sqlalchemy.Column(TEXT)
                 user = relationship('User', backref=backref('emails'))
 
         In this scenario, User.emails is a list of Email models and Email.user
