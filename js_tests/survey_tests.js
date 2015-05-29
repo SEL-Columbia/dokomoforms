@@ -190,6 +190,38 @@ describe('Survey unit and regression tests', function(done) {
             done();
 
         });
+
+    it('next: should accept falsy response 0',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "integer",
+                    logic: {required: true},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    logic: {},
+                    sequence_number: 2
+                },
+            ];
+
+            survey = new Survey("id", 0, questions, {});
+            questions[0].should.equal(survey.current_question);
+
+            // state SHOULD change
+            questions[0].answer = [{response:0}];
+            survey.next(NEXT);
+            questions[0].should.not.equal(survey.current_question);
+            questions[1].should.equal(survey.current_question);
+
+            done();
+
+        });
     
     it('next: should enforce required correctly for falsy response ""',
         function(done) {
@@ -663,7 +695,7 @@ describe('Survey unit and regression tests', function(done) {
             App.survey = survey;
             survey.submit();
             App.sync();
-            $('.message').text().should.match("Saving failed, No questions answer in Survey!");
+            $('.message').text().should.match("Saving failed, No questions answered in Survey!");
             done();
 
         });

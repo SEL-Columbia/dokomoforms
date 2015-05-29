@@ -22,13 +22,34 @@
 
     <header class="bar bar-nav bar-padded"></header>
 
-    <!-- Alert stuff -->
-    <a href="#message" class='message_btn' style='display:none'></a>
+    <!-- Alert stuff (hidden button to start it all)-->
+    <a href="#message" class='message_btn' style='display:none'></a> 
     <div id="message" class="modal">
-        <div class="modal_content"></div>
+        <div class='modal_header'></div>
+        <div class='message message_main content-padded'></div>
+        <div class='message_btn_content'>
+            <div class='bar-padded'>
+                <a href="#message" class='modal_btn btn btn-block btn-netural btn-text'>
+                    <span class='btn-text pull-left'>Ok</span>
+                    <span class='icon btn-text icon-check pull-right'></span>
+                </a>
+            </div>
+        </div>
     </div>
-    <div class="content"></div>
 
+    <a href="#submitting" class='submit_modal' style='display:none'></a> 
+    <div id="submitting" class="modal">
+        <div class="submitting_content content-padded">
+            <h1 class="submitting_title" >Submitting Surveys</h1>
+            <span class="icon icon-share submitting_sync"></span>
+            <p>
+                Please be patient. This process depends on your connection
+                speed and the number of surveys to be submitted.
+            </p>
+        </div>
+    </div>
+
+    <div class="content"></div>
     <div class="overlay" style="display:none;"></div>
     <div class="bar bar-standard bar-footer"></div>
     
@@ -37,8 +58,14 @@
             <span class="icon icon-left-nav"></span>
             <span class="">Previous</span>
         </button>
-        <a class="icon icon-info pull-right"></a>
+        <a class="icon icon-bars pull-right menu"></a>
         <h1 class="title"><%- index + " / " + total %></h1>
+        <div class="title_menu" style="display:none">
+            <div class="title_menu_option menu_restart">Cancel survey</div>
+            <div class="title_menu_option menu_save">Save current state and exit</div>
+            <div class="title_menu_option menu_clear">Clear all saved surveys</div>
+        </div>
+    </script>
     </script>
 
     <script id="template_footer" type="text/html">
@@ -55,7 +82,12 @@
     
     <script id="template_nav__splash" type="text/html">
         <h1 class="title align-left"><%- org || 'Dokomoforms' %></h1>
-        <a class="icon icon-info pull-right"></a>
+        <a class="icon icon-bars pull-right menu"></a>
+        <div class="title_menu" style="display:none">
+            <div class="title_menu_option menu_restart">Cancel survey</div>
+            <div class="title_menu_option menu_save">Save current state and exit</div>
+            <div class="title_menu_option menu_clear">Clear all saved surveys</div>
+        </div>
     </script>
 
     <script id="template_footer__splash" type="text/html">
@@ -470,7 +502,7 @@
                 </div>
             <% } else { %>
                 <div class="message-box-primary"> 
-                    <span> Hi, <strong><%- name %></strong> and welcome to the <%- survey.title %> Survey.</span>
+                    <span> Hi, <strong><%- name %></strong> and welcome to <%- survey.title %>.</span>
                     <br>
                     <br>
                     <span> If you have any questions regarding this survey, please contact the survey administrator.</span>  
