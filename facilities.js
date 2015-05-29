@@ -1,33 +1,51 @@
+window.l = [];
 var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
+    // Ajax request made below node definition
+    var self = this;
+    this.nlat = nlat;
+    this.wlng = wlng;
+    this.slat = slat;
+    this.elng = elng;
+    this.countThresh = countThresh;
+    this.distThresh = distThresh;
 
-    var facilityNode = function(nlat, wlng, slat, elng) {
+    var facilityNode = function(obj) {
         
         // Bounding Box
-        this.nlat = nlat;
-        this.wlng = wlng;
-        this.slat = slat;
-        this.elng = elng;
-        this.count = 0;// revisit query
-        this.center = {lat: (slat + nlat)/2.0, lng: (elng + wlng)/2.0};
+        this.nlat = obj.nlat;
+        this.wlng = obj.wlng;
+        this.slat = obj.slat;
+        this.elng = obj.elng;
+        this.count = obj.count;// revisit query
+        this.center = obj.center;
         this.latSep = Math.abs(this.center.lat - nlat);
         this.lngSep = Math.abs(this.center.lng - wlng);
+
+        // Stats
+        this.uncompressedSize = obj.uncompressedSize || 0;
+        this.compressedSize = obj.compressedSize || 0;
+        this.level = obj.level;
+
+        if (!window.l[this.level]) 
+            console.log("level:", this.level);
+
+        // Data
+        this.hasData = obj.data ? true : false; 
+        if (this.hasData)
+            this.setFacilities(obj.data);
     
         // Children
-        this.nw = null;
-        this.ne = null;
-        this.sw = null;
-        this.se = null;
+        if (obj.children) {
+            if (obj.children.length > 0)
+                this.nw = new facilityNode(obj.children[0]);
+            if (obj.children.length > 1)
+                this.ne = new facilityNode(obj.children[1]);
+            if (obj.children.length > 2)
+                this.sw = new facilityNode(obj.children[2]);
+            if (obj.children.length > 3)
+                this.se = new facilityNode(obj.children[3]);
+        }
     
-        // Stats
-        this.hasData = false;
-        this.uncompressedSize = 0;
-        this.compressedSize = 0;
-    
-        // Begin callback chain for initialization
-        if (this.latSep > distThresh || this.lngSep > distThresh)
-            this.getCountAndBuild();
-        else
-            this.getData();
     };
 
     facilityNode.prototype.print = function(indent) {
@@ -58,75 +76,13 @@ var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
         console.log(indent + "__");
     };
     
-    facilityNode.prototype.getCountAndBuild = function() {
-        var self = this;;
-    
-        // Revisit ajax req
-        $.ajax({
-            url: "http://localhost:3000/api/v0/facilities.json",
-            data: {
-                within: self.nlat + "," + self.wlng + "," + self.slat + "," + self.elng,
-                limit: '1',
-                fields: "name", //SILIENCE
-            },
-            success: function(data) {
-                self.count = data.total;
-                self.buildChildren();
-            },
-            error: function(data) {
-            },
-        });
-    }
-    
-    //TODO: Fill out with compression and localstorage stuff
     facilityNode.prototype.setFacilities = function(facilities) {
-        var data = JSON.stringify(facilities);
-        this.uncompressedSize = data.length * 2; // Each Character is 16bits in JS.
-        var compressed = LZString.compressToUTF16(data);
-        this.compressedSize = compressed.length * 2;
-        localStorage.setItem(this.nlat+""+this.wlng+""+this.slat+""+this.elng, compressed);
+        localStorage.setItem(this.nlat+""+this.wlng+""+this.slat+""+this.elng, facilities);
     };
     
     facilityNode.prototype.getFacilities = function() {
-        // Get around the pass by reference js bs 
         return JSON.parse(LZString.decompressFromUTF16(localStorage[this.nlat+""+this.wlng+""+this.slat+""+this.elng]));
     };
-
-    facilityNode.prototype.getData = function() {
-        var self = this;;
-    
-        // Revisit ajax req
-        $.ajax({
-            url: "http://localhost:3000/api/v0/facilities.json",
-            data: {
-                within: self.nlat + "," + self.wlng + "," + self.slat + "," + self.elng,
-                limit: 'off',
-                fields: "name,uuid,coordinates,properties:sector", 
-            },
-            success: function(data) {
-                self.count = data.total;
-                if (self.count > 0) {
-                    self.setFacilities(data.facilities);
-                    self.hasData = true;
-                }
-                console.log("Done");
-            },
-            error: function(data) {
-            },
-        });
-    }
-    
-    facilityNode.prototype.buildChildren = function() {
-        var self = this;
-        if (self.count > countThresh) {
-            self.nw = new facilityNode(self.nlat, self.wlng, self.center.lat, self.center.lng);
-            self.ne = new facilityNode(self.nlat, self.center.lng, self.center.lat, self.elng);
-            self.sw = new facilityNode(self.center.lat, self.wlng, self.slat, self.center.lng);
-            self.se = new facilityNode(self.center.lat, self.center.lng, self.slat, self.elng);
-        } else {
-            self.getData();
-        } 
-    }
 
     facilityNode.prototype.within = function(lat, lng) {
         var self = this;
@@ -162,9 +118,26 @@ var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
         return R * c;
     }
 
-    this.countThresh = countThresh;
-    this.distThresh = distThresh;
-    this.root = new facilityNode(nlat, wlng, slat, elng); 
+    // Revisit ajax req
+    $.ajax({
+        url: "http://localhost:3000/api/v0/facilities.json",
+        data: {
+            within: self.nlat + "," + self.wlng + "," + self.slat + "," + self.elng,
+            compress: 'anything can be here',
+            threshold: self.countThresh,
+            seperation: self.distThresh,
+            //fields: "name,uuid,coordinates,properties:sector", 
+        },
+        success: function(data) {
+            console.log("Recieved Data traversing");
+            self.total = data.total;
+            self.root = new facilityNode(data.facilities[0]); 
+        },
+        error: function(data) {
+            console.log("Done");
+        },
+    });
+
 }
 
 facilityTree.prototype._getNNode = function(lat, lng, node) {
@@ -381,7 +354,7 @@ facilityTree.prototype._getLeaves = function(node) {
 
 facilityTree.prototype.getLeaves = function() {
     var self = this;
-    return self._getLeaves(self.root);;
+    return self._getLeaves(self.root);
 }
 
 facilityTree.prototype.getCompressedSize = function() {
@@ -394,7 +367,7 @@ facilityTree.prototype.getCompressedSize = function() {
 
 facilityTree.prototype.getUncompressedSize = function() {
     var self = this;
-    var leaves = self._getLeaves(self.root);;
+    var leaves = self._getLeaves(self.root);
     return leaves.reduce(function(sum, node) {
         return node.uncompressedSize + sum;
     }, 0);
@@ -402,15 +375,23 @@ facilityTree.prototype.getUncompressedSize = function() {
 
 facilityTree.prototype.getCount = function() {
     var self = this;
-    var leaves = self._getLeaves(self.root);;
+    var leaves = self._getLeaves(self.root);
     return leaves.reduce(function(sum, node) {
         return node.count + sum;
     }, 0);
 };
 
-console.log("Initilizing ... (wait for requests to stop");
+
+// Helper get localStorage size
+window.ls = function() {
+    return Object.keys(localStorage).reduce(function(sum, key) {
+        return localStorage[key].length * 2 + sum
+    }, 0);
+}
+
+console.log("Initilizing ... (wait for request to complete");
 //var tree = new facilityTree(90, -180, 0, 0, 50, 0);
-var tree = new facilityTree(85, -180, -85, 180, 2500, 0.000001);
+var tree = new facilityTree(85, -180, -85, 180, 5000, 0.000001);
 window.tree;
 
 
