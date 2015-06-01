@@ -1,22 +1,21 @@
 from dokomoforms.models.util import Base, create_engine, ModelJSONEncoder
 from dokomoforms.models.user import User, Email
 from dokomoforms.models.survey import (
-    SurveyNode, Question,
+    SurveyNode, Question, construct_survey_node,
     Note,
-    TextQuestion, MultipleChoiceQuestion,
+    TextQuestion, IntegerQuestion, DecimalQuestion, DateQuestion,
+    TimeQuestion, LocationQuestion, FacilityQuestion,
+    MultipleChoiceQuestion,
     Choice,
 )
 
 __all__ = [
-    'create_engine',
-    'Base',
-    'ModelJSONEncoder',
-    'User',
-    'Email',
-    'SurveyNode',
-    'Question',
-    'MultipleChoiceQuestion',
+    'Base', 'create_engine', 'ModelJSONEncoder',
+    'User', 'Email',
+    'SurveyNode', 'Question', 'construct_survey_node',
     'Note',
-    'TextQuestion',
+    'TextQuestion', 'IntegerQuestion', 'DecimalQuestion', 'DateQuestion',
+    'TimeQuestion', 'LocationQuestion', 'FacilityQuestion',
+    'MultipleChoiceQuestion',
     'Choice',
 ]

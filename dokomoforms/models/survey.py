@@ -7,6 +7,7 @@ from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import relationship, backref
 
 from dokomoforms.models import util, Base
+from dokomoforms.exc import NoSuchSurveyNodeTypeError
 
 
 class SurveyNode(Base):
@@ -40,7 +41,6 @@ class SurveyNode(Base):
 
     __mapper_args__ = {
         'polymorphic_on': type_constraint,
-        # 'with_polymorphic': '*',
     }
 
 
@@ -79,7 +79,7 @@ class Question(SurveyNode):
         sa.Boolean, nullable=False, server_default='False'
     )
 
-    def _asdict(self) -> OrderedDict:
+    def _default_asdict(self) -> OrderedDict:
         return OrderedDict((
             ('id', self.id),
             ('title', self.title),
@@ -98,8 +98,74 @@ class TextQuestion(Question):
 
     __mapper_args__ = {'polymorphic_identity': 'text'}
 
-#    def _asdict(self) -> OrderedDict:
-#        return super()._default_asdict()
+    def _asdict(self) -> OrderedDict:
+        return super()._default_asdict()
+
+
+class IntegerQuestion(Question):
+    __tablename__ = 'question_integer'
+
+    id = util.pk('survey_node.id', 'question.id')
+
+    __mapper_args__ = {'polymorphic_identity': 'integer'}
+
+    def _asdict(self) -> OrderedDict:
+        return super()._default_asdict()
+
+
+class DecimalQuestion(Question):
+    __tablename__ = 'question_decimal'
+
+    id = util.pk('survey_node.id', 'question.id')
+
+    __mapper_args__ = {'polymorphic_identity': 'decimal'}
+
+    def _asdict(self) -> OrderedDict:
+        return super()._default_asdict()
+
+
+class DateQuestion(Question):
+    __tablename__ = 'question_date'
+
+    id = util.pk('survey_node.id', 'question.id')
+
+    __mapper_args__ = {'polymorphic_identity': 'date'}
+
+    def _asdict(self) -> OrderedDict:
+        return super()._default_asdict()
+
+
+class TimeQuestion(Question):
+    __tablename__ = 'question_time'
+
+    id = util.pk('survey_node.id', 'question.id')
+
+    __mapper_args__ = {'polymorphic_identity': 'time'}
+
+    def _asdict(self) -> OrderedDict:
+        return super()._default_asdict()
+
+
+class LocationQuestion(Question):
+    __tablename__ = 'question_location'
+
+    id = util.pk('survey_node.id', 'question.id')
+
+    __mapper_args__ = {'polymorphic_identity': 'location'}
+
+    def _asdict(self) -> OrderedDict:
+        return super()._default_asdict()
+
+
+class FacilityQuestion(Question):
+    __tablename__ = 'question_facility'
+
+    id = util.pk('survey_node.id', 'question.id')
+
+    __mapper_args__ = {'polymorphic_identity': 'facility'}
+
+    def _asdict(self) -> OrderedDict:
+        return super()._default_asdict()
 
 
 class MultipleChoiceQuestion(Question):
@@ -158,3 +224,38 @@ class Choice(Base):
             ('question', self.question.title),
             ('last_update_time', self.last_update_time),
         ))
+
+
+SURVEY_NODE_TYPES = {
+    'text': TextQuestion,
+    'integer': IntegerQuestion,
+    'decimal': DecimalQuestion,
+    'date': DateQuestion,
+    'time': TimeQuestion,
+    'location': LocationQuestion,
+    'facility': FacilityQuestion,
+    'multiple_choice': MultipleChoiceQuestion,
+    'note': Note,
+}
+
+
+def construct_survey_node(*, type_constraint: str, **kwargs) -> SurveyNode:
+    """
+    Returns a subclass of dokomoforms.models.survey.SurveyNode determined by
+    the type_constraint parameter. This utility function makes it easy to
+    create an instance of a SurveyNode or Question subclass based on external
+    input.
+
+    See http://stackoverflow.com/q/30518484/1475412
+
+    :param type_constraint: the type constraint of the node. Must be one of the
+                            keys of
+                            dokomoforms.models.survey.SURVEY_NODE_TYPES
+    :param kwargs: the keyword arguments to pass to the constructor
+    :returns: an instance of one of the SurveyNode subtypes
+    :raises: dokomoforms.exc.NoSuchSurveyNodeTypeError
+    """
+    try:
+        return SURVEY_NODE_TYPES[type_constraint](**kwargs)
+    except KeyError:
+        raise NoSuchSurveyNodeTypeError(type_constraint)
