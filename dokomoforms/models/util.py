@@ -178,6 +178,8 @@ def fk(column_name: str) -> sa.Column:
     """
     Returns a foreign key of type UUID for use in models.
 
+    The relationship CASCADEs on UPDATE and DELETE.
+
     :param column_name: the name of the referenced column
     :return: a SQLAlchemy Column for a UUID primary key.
     """
