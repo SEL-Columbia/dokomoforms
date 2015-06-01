@@ -116,7 +116,7 @@ class TestChoice(unittest.TestCase):
     def tearDown(self):
         session = make_session()
         with session.begin():
-            session.query(models.Question).delete()
+            session.query(models.SurveyNode).delete()
 
     def test_automatic_numbering(self):
         session = make_session()

@@ -22,6 +22,13 @@ class SurveyNode(Base):
 
     To create the specific kind of SurveyNode you want, use
     dokomoforms.models.survey.construct_survey_node.
+
+    If you want to delete a SurveyNode subclass, make sure you issue the
+    delete relative to SurveyNode, or else you will have stray SurveyNodes
+    kicking around. This is due to the nature of the foreign key constraint
+    linking subclasses to SurveyNode. In other words...
+    BAD:  session.query(Question).filter_by(id=<some_question_id>).delete()
+    GOOD: session.query(SurveyNode).filter_by(id=<some_question_id>).delete()
     """
     __tablename__ = 'survey_node'
 
@@ -71,6 +78,13 @@ class Question(SurveyNode):
     A question has a type constraint associated with it (integer, date,
     text...). Only a dokomoforms.models.survey.MultipleChoiceQuestion has a
     list of dokomoforms.models.survey.Choice instances.
+
+    If you want to delete a SurveyNode subclass, make sure you issue the
+    delete relative to SurveyNode, or else you will have stray SurveyNodes
+    kicking around. This is due to the nature of the foreign key constraint
+    linking subclasses to SurveyNode. In other words...
+    BAD:  session.query(Question).filter_by(id=<some_question_id>).delete()
+    GOOD: session.query(SurveyNode).filter_by(id=<some_question_id>).delete()
     """
     __tablename__ = 'question'
     id = util.pk('survey_node.id')
