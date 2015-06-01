@@ -18,6 +18,9 @@ class SurveyNode(Base):
 
     You can use this class for querying, e.g.
         session.query(SurveyNode).filter_by(title='Some Title')
+
+    To create the specific kind of SurveyNode you want, use
+    dokomoforms.models.survey.construct_survey_node.
     """
     __tablename__ = 'survey_node'
 
@@ -67,9 +70,6 @@ class Question(SurveyNode):
     A question has a type constraint associated with it (integer, date,
     text...). Only a dokomoforms.models.survey.MultipleChoiceQuestion has a
     list of dokomoforms.models.survey.Choice instances.
-
-    Do not instantiate this class. Instead, instantiate one of the menagerie
-    of models which inherit from Question.
     """
     __tablename__ = 'question'
     id = util.pk('survey_node.id')
