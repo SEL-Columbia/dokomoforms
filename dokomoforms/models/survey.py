@@ -4,7 +4,8 @@ from collections import OrderedDict
 
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as pg
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship
+from sqlalchemy.ext.orderinglist import ordering_list
 
 from dokomoforms.models import util, Base
 from dokomoforms.exc import NoSuchSurveyNodeTypeError
@@ -172,6 +173,12 @@ class MultipleChoiceQuestion(Question):
     __tablename__ = 'question_multiple_choice'
 
     id = util.pk('survey_node.id', 'question.id')
+    choices = relationship(
+        'Choice',
+        order_by='Choice.choice_number',
+        collection_class=ordering_list('choice_number'),
+        backref='question',
+    )
 
     __mapper_args__ = {'polymorphic_identity': 'multiple_choice'}
 
@@ -201,11 +208,6 @@ class Choice(Base):
         pg.UUID, util.fk('question_multiple_choice.id'), nullable=False
     )
     last_update_time = util.last_update_time()
-
-    question = relationship(
-        'MultipleChoiceQuestion',
-        backref=backref('choices', order_by=choice_number),
-    )
 
     __table_args__ = (
         sa.UniqueConstraint(
