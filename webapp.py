@@ -79,6 +79,10 @@ def ensure_that_user_wants_to_drop_schema():
         schema_check = input('Enter the exact name of the schema to drop: ')
         if schema_check == options.schema:
             return
+        else:
+            print('{} does not match the schema {}'.format(
+                schema_check, options.schema
+            ))
     print('Not dropping the schema. Exiting...')
     sys.exit()
 
