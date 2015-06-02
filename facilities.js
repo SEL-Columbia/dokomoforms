@@ -84,6 +84,9 @@ var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
         return JSON.parse(LZString.decompressFromUTF16(localStorage[this.nlat+""+this.wlng+""+this.slat+""+this.elng]));
     };
 
+    facilityNode.prototype.getFacilitiesC = function() {
+        return (LZString.decompressFromUTF16(localStorage[this.nlat+""+this.wlng+""+this.slat+""+this.elng]));
+    };
     facilityNode.prototype.within = function(lat, lng) {
         var self = this;
         return (lat < self.nlat && lat >= self.slat && lng > self.wlng && lng <= self.elng);
@@ -391,7 +394,7 @@ window.ls = function() {
 
 console.log("Initilizing ... (wait for request to complete");
 //var tree = new facilityTree(90, -180, 0, 0, 50, 0);
-var tree = new facilityTree(85, -180, -85, 180, 5000, 0.000001);
+var tree = new facilityTree(85, -180, -85, 180, 2500, 0.000001);
 window.tree;
 
 
