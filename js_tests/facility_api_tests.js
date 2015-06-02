@@ -14,7 +14,7 @@ Image = window.Image;
 navigator = window.navigator;
 localStorage = {};
 
-var mah_code = require('../dokomoforms/static/app.js');
+var mah_code = require('../dokomoforms/static/bundle.js');
 var getNearbyFacilities = mah_code.getNearbyFacilities
 var App = {};
 //var Widgets = mah_code.Widgets;

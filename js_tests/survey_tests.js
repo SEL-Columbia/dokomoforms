@@ -17,7 +17,7 @@ localStorage = {};
 setTimeout = function(cb, time) { cb(); };
 btoa = function(str) { return ''; }; // w.e we don't need to post anyway
 
-var mah_code = require('../dokomoforms/static/app.js');
+var mah_code = require('../dokomoforms/static/bundle.js');
 var App = mah_code.App;
 var Survey = mah_code.Survey;
 var Widgets = mah_code.Widgets;

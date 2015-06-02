@@ -1,5 +1,4 @@
 //TODO:Remove refernce to App
-
 function getNearbyFacilities(lat, lng, rad, lim, cb) {
     var url = "http://staging.revisit.global/api/v0/facilities.json"; 
 

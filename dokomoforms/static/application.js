@@ -5,8 +5,8 @@ var FAC_RAD = 2; //in KM
 
 var getNearbyFacilities = require('./facilities.js').getNearbyFacilities;
 var postNewFacility = require('./facilities.js').postNewFacility;
-var Widgets = require('./widgets.js');
-var Survey = require('./survey.js');
+var Widgets = require('./widgets.js').Widgets;
+var Survey = require('./survey.js').Survey;
 
 var App = {
     unsynced: [], // unsynced surveys
@@ -265,4 +265,14 @@ App.submit = function(survey, done, fail) {
     console.log('survey', '/api/surveys/'+survey.survey_id+'/submit');
 }
 
+// For requiring
+exports = exports || {};
 exports.App = App;
+exports.Survey = Survey;
+exports.Widgets = Widgets; 
+exports.getNearbyFacilities = getNearbyFacilities; 
+exports.postNewFacility = postNewFacility;
+
+//For window
+window = window || {};
+window.App = App;
