@@ -5,4 +5,8 @@ bundle.js: application.js widgets.js survey.js facilities.js
 clean:
 	rm bundle.js
 
+build:
+	browserify application.js -o bundle.js
+	sed -i "s/^# Version.*/# Version `date +%s`/" cache.appcache
+
 all: bundle.js
