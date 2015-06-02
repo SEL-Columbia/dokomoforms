@@ -1,8 +1,7 @@
 """Model tests"""
-import unittest
 import json
 
-from tests.util import setUpModule, tearDownModule
+from tests.util import DokoTest
 
 from sqlalchemy import func
 from sqlalchemy.orm import sessionmaker
@@ -10,17 +9,10 @@ from sqlalchemy.orm import sessionmaker
 import dokomoforms.models as models
 import dokomoforms.exc as exc
 
-utils = (setUpModule, tearDownModule)
-
 make_session = sessionmaker(bind=models.create_engine(), autocommit=True)
 
 
-class TestUser(unittest.TestCase):
-    def tearDown(self):
-        session = make_session()
-        with session.begin():
-            session.query(models.User).delete()
-
+class TestUser(DokoTest):
     def test_to_json(self):
         session = make_session()
         with session.begin():
@@ -58,12 +50,7 @@ class TestUser(unittest.TestCase):
         )
 
 
-class TestSurveyNode(unittest.TestCase):
-    def tearDown(self):
-        session = make_session()
-        with session.begin():
-            session.query(models.SurveyNode).delete()
-
+class TestSurveyNode(DokoTest):
     def test_non_instantiable(self):
         self.assertRaises(TypeError, models.SurveyNode)
 
@@ -107,17 +94,12 @@ class TestSurveyNode(unittest.TestCase):
         )
 
 
-class TestQuestion(unittest.TestCase):
+class TestQuestion(DokoTest):
     def test_non_instantiable(self):
         self.assertRaises(TypeError, models.Question)
 
 
-class TestChoice(unittest.TestCase):
-    def tearDown(self):
-        session = make_session()
-        with session.begin():
-            session.query(models.SurveyNode).delete()
-
+class TestChoice(DokoTest):
     def test_automatic_numbering(self):
         session = make_session()
         with session.begin():

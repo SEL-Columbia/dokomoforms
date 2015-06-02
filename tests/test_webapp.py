@@ -1,11 +1,7 @@
 """Webapp script tests"""
 import unittest
 
-from tests.util import setUpModule, tearDownModule
-
 import webapp
-
-utils = (setUpModule, tearDownModule)
 
 
 class TestFunctions(unittest.TestCase):
