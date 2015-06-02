@@ -13,9 +13,9 @@ Image = window.Image;
 navigator = window.navigator;
 localStorage = {};
 
-var mah_code = require('../dokomoforms/static/bundle.js');
-var Widgets = mah_code.Widgets;
-var App = mah_code.App;
+var mah_code = require('../dokomoforms/static/application.js');
+Widgets = mah_code.Widgets;
+App = mah_code.App;
 
 
 // Location and Facility Question rendering

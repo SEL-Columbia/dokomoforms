@@ -1,6 +1,9 @@
 var NEXT = 1;
 var PREV = -1;
 
+var Widgets = require('./widgets.js').Widgets;
+
+//XXX TODO: remove reference to Widgets
 function Survey(id, version, questions, metadata, title, created_on, last_updated) {
     var self = this;
     this.id = id;
@@ -66,7 +69,7 @@ Survey.prototype.getFirstResponse = function(question) {
 };
 
 // Choose next question, deals with branching and back/forth movement
-Survey.prototype.next = function(offset, Widgets) {
+Survey.prototype.next = function(offset) {
     var self = this;
 
     var next_question = offset === PREV ? this.current_question.prev : this.current_question.next;
@@ -133,11 +136,11 @@ Survey.prototype.next = function(offset, Widgets) {
     }
 
     self.saveState();
-    self.render(next_question, Widgets);
+    self.render(next_question);
 };
 
 // Render template for given question
-Survey.prototype.render = function(question, Widgets) {
+Survey.prototype.render = function(question) {
     $('header').removeClass('title-extended');
     $('.title_menu').hide();
 
@@ -256,7 +259,7 @@ Survey.prototype.render = function(question, Widgets) {
     // Page navigation
     $('.page_nav__prev, .page_nav__next').click(function() {
         var offset = $(this).hasClass('page_nav__prev') ? PREV : NEXT;
-        self.next(offset, Widgets);
+        self.next(offset);
     });
     
 

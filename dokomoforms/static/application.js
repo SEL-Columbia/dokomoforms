@@ -200,7 +200,7 @@ App.splash = function() {
         .find('.start_btn')
         .one('click', function() {
             // Render first question
-            App.survey.render(App.survey.first_question, Widgets);
+            App.survey.render(App.survey.first_question);
         });
 
 

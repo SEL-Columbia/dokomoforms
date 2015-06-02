@@ -14,10 +14,10 @@ Image = window.Image;
 navigator = window.navigator;
 localStorage = {};
 
-var mah_code = require('../dokomoforms/static/bundle.js');
-var App = mah_code.App;
-var Survey = mah_code.Survey;
-var Widgets = mah_code.Widgets;
+var mah_code = require('../dokomoforms/static/application.js');
+App = mah_code.App;
+Survey = mah_code.Survey;
+Widgets = mah_code.Widgets;
 
 
 // User interaction, "trigger" tests

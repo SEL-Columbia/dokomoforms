@@ -14,10 +14,10 @@ Image = window.Image;
 localStorage = {};
 navigator = window.navigator;
     
-var mah_code = require('../dokomoforms/static/bundle.js');
-var App = mah_code.App;
-var Survey = mah_code.Survey;
-var Widgets = mah_code.Widgets;
+var mah_code = require('../dokomoforms/static/application.js');
+App = mah_code.App;
+Survey = mah_code.Survey;
+Widgets = mah_code.Widgets;
 
 // Creating the app and loading up survey questions
 describe('App initalization Tests', function(done) {
