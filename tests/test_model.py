@@ -43,7 +43,7 @@ class TestUser(DokoTest):
             1
         )
         with session.begin():
-            session.query(models.User).delete()
+            session.delete(session.query(models.User).one())
         self.assertEqual(
             session.query(func.count(models.Email.id)).scalar(),
             0
@@ -131,7 +131,7 @@ class TestChoice(DokoTest):
             1
         )
         with session.begin():
-            session.query(models.MultipleChoiceQuestion).delete()
+            session.delete(session.query(models.MultipleChoiceQuestion).one())
         self.assertEqual(
             session.query(func.count(models.Choice.id)).scalar(),
             0
