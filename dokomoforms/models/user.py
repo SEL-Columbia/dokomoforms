@@ -25,11 +25,18 @@ class User(Base):
         passive_updates=True,
         passive_deletes=True,
     )
-    token = sa.Column(pg.BYTEA)
-    token_expiration = sa.Column(
-        sa.DateTime(timezone=True), nullable=False, server_default=func.now()
+    role = sa.Column(
+        sa.Enum(
+            'enumerator', 'creator', name='user_roles', inherit_schema=True
+        ),
+        nullable=False,
     )
     last_update_time = util.last_update_time()
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'enumerator',
+        'polymorphic_on': role,
+    }
 
     def _asdict(self) -> OrderedDict:
         return OrderedDict((
@@ -37,6 +44,41 @@ class User(Base):
             ('is_active', self.is_active),
             ('name', self.name),
             ('emails', [email.address for email in self.emails]),
+            ('role', self.role),
+            ('last_update_time', self.last_update_time),
+        ))
+
+
+class SurveyCreator(User):
+    """
+    Regular users can answer surveys, but only SurveyCreator instances can
+    create surveys.
+    """
+    __tablename__ = 'survey_creator'
+
+    id = util.pk('auth_user.id')
+    surveys = relationship(
+        'Survey',
+        order_by='Survey.created_on',
+        backref='creator',
+        cascade='all, delete-orphan',
+        passive_updates=True,
+        passive_deletes=True,
+    )
+    token = sa.Column(pg.BYTEA)
+    token_expiration = sa.Column(
+        sa.DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __mapper_args__ = {'polymorphic_identity': 'creator'}
+
+    def _asdict(self) -> OrderedDict:
+        return OrderedDict((
+            ('id', self.id),
+            ('is_active', self.is_active),
+            ('name', self.name),
+            ('emails', [email.address for email in self.emails]),
+            ('role', self.role),
             ('token_expiration', self.token_expiration),
             ('last_update_time', self.last_update_time),
         ))

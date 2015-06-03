@@ -28,7 +28,7 @@ class SurveyNode(Base):
     id = util.pk()
     title = sa.Column(
         pg.TEXT,
-        sa.CheckConstraint("title != ''", name='non_empty_title'),
+        sa.CheckConstraint("title != ''", name='non_empty_survey_node_title'),
         nullable=False,
     )
     type_constraint = sa.Column(

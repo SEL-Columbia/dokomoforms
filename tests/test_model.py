@@ -27,7 +27,7 @@ class TestUser(DokoTest):
                 'is_active': True,
                 'name': 'a',
                 'emails': ['b'],
-                'token_expiration': user.token_expiration.isoformat(),
+                'role': 'enumerator',
                 'last_update_time': user.last_update_time.isoformat(),
             }
         )
