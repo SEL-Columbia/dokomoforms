@@ -52,12 +52,18 @@ class Base(declarative_base(metadata=metadata, metaclass=_Meta)):
                 __tablename__ = 'auth_user'
                 id = util.pk()
                 name = sqlalchemy.Column(TEXT)
+                emails = relationship(
+                    'Email',
+                    backref='user',
+                    cascade='all, delete-orphan',
+                    passive_updates=True,
+                    passive_deletes=True,
+                )
 
             class Email(Base):
                 __tablename__ = 'email'
                 id = util.pk()
                 address = sqlalchemy.Column(TEXT)
-                user = relationship('User', backref=backref('emails'))
 
         In this scenario, User.emails is a list of Email models and Email.user
         is a User model. So User._asdict should return something like
@@ -132,16 +138,21 @@ class ModelJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-def create_engine() -> sqlalchemy.engine.Engine:
+def create_engine(echo: bool=None) -> sqlalchemy.engine.Engine:
     """
     Returns a sqlalchemy.engine.Engine configured with the options set in
     dokomoforms.options.options
 
+    :param echo: whether to print to the command line all of the SQL generated
+                 by SQLAlchemy. Defaults to None, which defers to the
+                 options.debug setting. Setting this parameter to True or False
+                 (or 'debug') overrides the echo setting of options.debug.
     :return: a SQLAlchemy engine
     """
-    # This causes duplicate log messages, but I can't figure out how to get
-    # the same level of logging otherwise...
-    echo = 'debug' if options.debug else False
+    if echo is None:
+        # This causes duplicate log messages, but I can't figure out how to get
+        # the same level of logging otherwise...
+        echo = 'debug' if options.debug else False
     return sa.create_engine(
         'postgresql+psycopg2://{}:{}@{}/{}'.format(
             options.db_user,

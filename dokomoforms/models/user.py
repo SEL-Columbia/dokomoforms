@@ -3,7 +3,7 @@
 from collections import OrderedDict
 
 from sqlalchemy.dialects import postgresql as pg
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import sqlalchemy as sa
 
@@ -17,6 +17,14 @@ class User(Base):
     id = util.pk()
     is_active = sa.Column(sa.Boolean, nullable=False, server_default='True')
     name = sa.Column(pg.TEXT, nullable=False)
+    emails = relationship(
+        'Email',
+        order_by='Email.address',
+        backref='user',
+        cascade='all, delete-orphan',
+        passive_updates=True,
+        passive_deletes=True,
+    )
     token = sa.Column(pg.BYTEA)
     token_expiration = sa.Column(
         sa.DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -42,8 +50,6 @@ class Email(Base):
     address = sa.Column(pg.TEXT, nullable=False, unique=True)
     user_id = sa.Column(pg.UUID, util.fk('auth_user.id'), nullable=False)
     last_update_time = util.last_update_time()
-
-    user = relationship('User', backref=backref('emails', order_by=address))
 
     def _asdict(self) -> OrderedDict:
         return OrderedDict((

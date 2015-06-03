@@ -178,6 +178,9 @@ class MultipleChoiceQuestion(Question):
         order_by='Choice.choice_number',
         collection_class=ordering_list('choice_number'),
         backref='question',
+        cascade='all, delete-orphan',
+        passive_updates=True,
+        passive_deletes=True,
     )
 
     __mapper_args__ = {'polymorphic_identity': 'multiple_choice'}
