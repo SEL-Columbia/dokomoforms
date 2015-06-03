@@ -14,11 +14,8 @@ Image = window.Image;
 navigator = window.navigator;
 localStorage = {};
 
-var mah_code = require('../dokomoforms/static/application.js');
-getNearbyFacilities = mah_code.getNearbyFacilities
+getNearbyFacilities = require('../dokomoforms/static/facilities.js').getNearbyFacilities;
 App = {};
-//var Widgets = mah_code.Widgets;
-
 
 // User interaction, "trigger" tests when submitting offline
 describe('Get nearby facilities', function(done) {

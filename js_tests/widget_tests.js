@@ -13,10 +13,8 @@ Image = window.Image;
 navigator = window.navigator;
 localStorage = {};
 
-var mah_code = require('../dokomoforms/static/application.js');
-Widgets = mah_code.Widgets;
-App = mah_code.App;
-
+App = require('../dokomoforms/static/application.js').App;
+Widgets = require('../dokomoforms/static/widgets.js').Widgets;
 
 // Location and Facility Question rendering
 describe('Widget creation tests', function(done) {

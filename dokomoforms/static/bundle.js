@@ -1518,10 +1518,6 @@ App.submit = function(survey, done, fail) {
 // For requiring
 exports = exports || {};
 exports.App = App;
-exports.Survey = Survey;
-exports.Widgets = Widgets; 
-exports.getNearbyFacilities = getNearbyFacilities; 
-exports.postNewFacility = postNewFacility;
 
 //For window
 window = window || {};

@@ -14,10 +14,9 @@ Image = window.Image;
 navigator = window.navigator;
 localStorage = {};
 
-var mah_code = require('../dokomoforms/static/application.js');
-App = mah_code.App;
-Survey = mah_code.Survey;
-Widgets = mah_code.Widgets;
+App = require('../dokomoforms/static/application.js').App;
+Survey = require('../dokomoforms/static/survey.js').Survey;
+Widgets = require('../dokomoforms/static/widgets.js').Widgets;
 
 
 // User interaction, "trigger" tests when submitting offline
