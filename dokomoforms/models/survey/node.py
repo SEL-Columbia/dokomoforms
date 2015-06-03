@@ -1,4 +1,4 @@
-"""Survey models."""
+"""Survey node models."""
 
 from collections import OrderedDict
 

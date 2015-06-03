@@ -1,7 +1,7 @@
 """Model tests"""
 import json
 
-from tests.util import DokoTest
+from tests.util import DokoTest, engine
 
 from sqlalchemy import func
 from sqlalchemy.orm import sessionmaker
@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 import dokomoforms.models as models
 import dokomoforms.exc as exc
 
-make_session = sessionmaker(bind=models.create_engine(), autocommit=True)
+make_session = sessionmaker(bind=engine, autocommit=True)
 
 
 class TestUser(DokoTest):

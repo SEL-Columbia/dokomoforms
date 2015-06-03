@@ -1,6 +1,6 @@
 from dokomoforms.models.util import Base, create_engine, ModelJSONEncoder
 from dokomoforms.models.user import User, Email
-from dokomoforms.models.survey import (
+from dokomoforms.models.survey.node import (
     SurveyNode, Question, construct_survey_node,
     Note,
     TextQuestion, IntegerQuestion, DecimalQuestion, DateQuestion,
