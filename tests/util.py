@@ -11,7 +11,7 @@ inject_options(schema='doko_test')
 from sqlalchemy import DDL
 from dokomoforms.models import create_engine, Base
 
-engine = create_engine()
+engine = create_engine(echo=False)
 
 
 class DokoTest(unittest.TestCase):

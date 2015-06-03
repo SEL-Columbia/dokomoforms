@@ -89,6 +89,10 @@ class TestSurveyNode(DokoTest):
             9,
         )
         self.assertEqual(
+            session.query(func.count(models.Note.id)).scalar(),
+            1,
+        )
+        self.assertEqual(
             session.query(func.count(models.Question.id)).scalar(),
             8,
         )
