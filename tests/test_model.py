@@ -50,29 +50,29 @@ class TestUser(DokoTest):
         )
 
 
-class TestSurveyNode(DokoTest):
+class TestNode(DokoTest):
     def test_non_instantiable(self):
-        self.assertRaises(TypeError, models.SurveyNode)
+        self.assertRaises(TypeError, models.Node)
 
-    def test_construct_survey_node(self):
+    def test_construct_node(self):
         session = make_session()
         with session.begin():
-            session.add(models.construct_survey_node(
+            session.add(models.construct_node(
                 type_constraint='text',
                 title='test'
             ))
-        sn = session.query(models.SurveyNode).one()
+        sn = session.query(models.Node).one()
         self.assertEqual(sn.title, 'test')
         question = session.query(models.Question).one()
         self.assertEqual(question.title, 'test')
 
-    def test_construct_survey_node_wrong_type(self):
+    def test_construct_node_wrong_type(self):
         self.assertRaises(
-            exc.NoSuchSurveyNodeTypeError,
-            models.construct_survey_node, type_constraint='wrong'
+            exc.NoSuchNodeTypeError,
+            models.construct_node, type_constraint='wrong'
         )
 
-    def test_construct_survey_node_all_types(self):
+    def test_construct_node_all_types(self):
         types = [
             'text', 'integer', 'decimal', 'date', 'time', 'location',
             'facility', 'multiple_choice', 'note'
@@ -80,12 +80,12 @@ class TestSurveyNode(DokoTest):
         session = make_session()
         with session.begin():
             for node_type in types:
-                session.add(models.construct_survey_node(
+                session.add(models.construct_node(
                     type_constraint=node_type,
                     title='test_' + node_type,
                 ))
         self.assertEqual(
-            session.query(func.count(models.SurveyNode.id)).scalar(),
+            session.query(func.count(models.Node.id)).scalar(),
             9,
         )
         self.assertEqual(
@@ -107,7 +107,7 @@ class TestChoice(DokoTest):
     def test_automatic_numbering(self):
         session = make_session()
         with session.begin():
-            q = models.construct_survey_node(
+            q = models.construct_node(
                 title='test_automatic_numbering',
                 type_constraint='multiple_choice',
             )
@@ -124,7 +124,7 @@ class TestChoice(DokoTest):
     def test_question_delete_cascades_to_choices(self):
         session = make_session()
         with session.begin():
-            q = models.construct_survey_node(
+            q = models.construct_node(
                 title='test_question_delete_cascades_to_choices',
                 type_constraint='multiple_choice',
             )
@@ -144,7 +144,7 @@ class TestChoice(DokoTest):
     def test_wrong_question_type(self):
         session = make_session()
         with session.begin():
-            q = models.construct_survey_node(
+            q = models.construct_node(
                 title='test_wrong_question_type',
                 type_constraint='text',
             )

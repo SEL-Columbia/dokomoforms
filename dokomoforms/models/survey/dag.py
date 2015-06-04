@@ -10,27 +10,42 @@ from sqlalchemy.orm import relationship
 from dokomoforms.models import util, Base
 
 
-class SurveyToNodeAssociation(Base):
-    """
-    This association object connects Survey instances to SurveyNode instances
-    in a many-to-many relationship.
-    """
-    __tablename__ = 'survey_to_survey_node_association'
+class SurveyNode(Base):
+    __tablename__ = 'survey_node'
 
-    survey_id = util.pk('survey.id')
-    survey_node_id = util.pk('survey_node.id')
-    node = relationship('SurveyNode')
+    id = util.pk()
+    survey_id = sa.Column(pg.UUID, util.fk('survey.id'))
+    node_id = sa.Column(pg.UUID, util.fk('node.id'), nullable=False)
+    node = relationship('Node')
+    required = sa.Column(sa.Boolean, nullable=False, server_default='False')
+    allow_dont_know = sa.Column(
+        sa.Boolean, nullable=False, server_default='False'
+    )
+    logic = sa.Column(pg.json.JSON, nullable=False, server_default='{}')
+    bucket = sa.Column(pg.TEXT, nullable=False, server_default='')
+    parent_branch_id = sa.Column(pg.UUID, util.fk('survey_node.id'))
+    nodes = relationship('SurveyNode')
+
+    __table_args__ = (
+        sa.CheckConstraint(
+            '(survey_id IS NOT NULL) OR (parent_branch_id IS NOT NULL)',
+            name='either_root_or_branch'
+        ),
+    )
 
     def _asdict(self) -> OrderedDict:
-        return OrderedDict((
-            ('survey_id', self.survey_id),
-            ('survey_node', self.node),
-        ))
+        result = self.node._asdict()
+        result['logic'].update(self.logic)
+        result['required'] = self.required
+        result['allow_dont_know'] = self.required
+        result['bucket'] = self.bucket
+        result['nodes'] = self.nodes
+        return result
 
 
 class Survey(Base):
     """
-    A survey is a collection of pointers to nodes.
+    A survey is a collection of pointers to SurveyNodes.
     """
     __tablename__ = 'survey'
 
@@ -55,11 +70,11 @@ class Survey(Base):
         sa.DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     last_update_time = util.last_update_time()
-    nodes = relationship('SurveyToNodeAssociation')
+    nodes = relationship('SurveyNode')
 
     __table_args__ = (
         sa.UniqueConstraint(
-            'title', 'creator_id', name='unique survey name per user'
+            'title', 'creator_id', name='unique_survey_name_per_user'
         ),
     )
 

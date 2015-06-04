@@ -79,6 +79,12 @@ class SurveyCreator(User):
             ('name', self.name),
             ('emails', [email.address for email in self.emails]),
             ('role', self.role),
+            (
+                'surveys',
+                OrderedDict(
+                    (survey.title, survey.id) for survey in self.surveys
+                ),
+            ),
             ('token_expiration', self.token_expiration),
             ('last_update_time', self.last_update_time),
         ))

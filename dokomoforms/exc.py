@@ -9,9 +9,9 @@ class DokomoError(Exception):
     """The base class for all exceptions used in Dokomo Forms."""
 
 
-class NoSuchSurveyNodeTypeError(DokomoError):
+class NoSuchNodeTypeError(DokomoError):
     """
-    Raised when dokomoforms.models.survey.construct_survey_node is called with
+    Raised when dokomoforms.models.survey.construct_node is called with
     an invalid type_constraint.
 
     The valid type_constraints are the keys of

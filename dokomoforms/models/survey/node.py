@@ -8,27 +8,26 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.ext.orderinglist import ordering_list
 
 from dokomoforms.models import util, Base
-from dokomoforms.exc import NoSuchSurveyNodeTypeError
+from dokomoforms.exc import NoSuchNodeTypeError
 
 
-class SurveyNode(Base):
+class Node(Base):
     """
-    A survey node is its own entity. A survey is a collection of pointers to
-    nodes. A survey node can be a dokomoforms.models.survey.Note or a
-    dokomoforms.models.survey.Question.
+    A node is its own entity. A node can be a dokomoforms.models.survey.Note or
+    a dokomoforms.models.survey.Question.
 
     You can use this class for querying, e.g.
-        session.query(SurveyNode).filter_by(title='Some Title')
+        session.query(Node).filter_by(title='Some Title')
 
-    To create the specific kind of SurveyNode you want, use
-    dokomoforms.models.survey.construct_survey_node.
+    To create the specific kind of Node you want, use
+    dokomoforms.models.survey.node.construct_node.
     """
-    __tablename__ = 'survey_node'
+    __tablename__ = 'node'
 
     id = util.pk()
     title = sa.Column(
         pg.TEXT,
-        sa.CheckConstraint("title != ''", name='non_empty_survey_node_title'),
+        sa.CheckConstraint("title != ''", name='non_empty_node_title'),
         nullable=False,
     )
     type_constraint = sa.Column(
@@ -48,11 +47,11 @@ class SurveyNode(Base):
     }
 
 
-class Note(SurveyNode):
+class Note(Node):
     """Notes provide information interspersed with survey questions."""
     __tablename__ = 'note'
 
-    id = util.pk('survey_node.id')
+    id = util.pk('node.id')
 
     __mapper_args__ = {'polymorphic_identity': 'note'}
 
@@ -66,17 +65,20 @@ class Note(SurveyNode):
         ))
 
 
-class Question(SurveyNode):
+class Question(Node):
     """
     A question has a type constraint associated with it (integer, date,
     text...). Only a dokomoforms.models.survey.MultipleChoiceQuestion has a
     list of dokomoforms.models.survey.Choice instances.
     """
     __tablename__ = 'question'
-    id = util.pk('survey_node.id')
+    id = util.pk('node.id')
 
     hint = sa.Column(pg.TEXT, nullable=False, server_default='')
     allow_multiple = sa.Column(
+        sa.Boolean, nullable=False, server_default='False'
+    )
+    allow_other = sa.Column(
         sa.Boolean, nullable=False, server_default='False'
     )
 
@@ -86,6 +88,7 @@ class Question(SurveyNode):
             ('title', self.title),
             ('hint', self.hint),
             ('allow_multiple', self.allow_multiple),
+            ('allow_other', self.allow_multiple),
             ('type_constraint', self.type_constraint),
             ('logic', self.logic),
             ('last_update_time', self.last_update_time),
@@ -95,7 +98,7 @@ class Question(SurveyNode):
 class TextQuestion(Question):
     __tablename__ = 'question_text'
 
-    id = util.pk('survey_node.id', 'question.id')
+    id = util.pk('node.id', 'question.id')
 
     __mapper_args__ = {'polymorphic_identity': 'text'}
 
@@ -106,7 +109,7 @@ class TextQuestion(Question):
 class IntegerQuestion(Question):
     __tablename__ = 'question_integer'
 
-    id = util.pk('survey_node.id', 'question.id')
+    id = util.pk('node.id', 'question.id')
 
     __mapper_args__ = {'polymorphic_identity': 'integer'}
 
@@ -117,7 +120,7 @@ class IntegerQuestion(Question):
 class DecimalQuestion(Question):
     __tablename__ = 'question_decimal'
 
-    id = util.pk('survey_node.id', 'question.id')
+    id = util.pk('node.id', 'question.id')
 
     __mapper_args__ = {'polymorphic_identity': 'decimal'}
 
@@ -128,7 +131,7 @@ class DecimalQuestion(Question):
 class DateQuestion(Question):
     __tablename__ = 'question_date'
 
-    id = util.pk('survey_node.id', 'question.id')
+    id = util.pk('node.id', 'question.id')
 
     __mapper_args__ = {'polymorphic_identity': 'date'}
 
@@ -139,7 +142,7 @@ class DateQuestion(Question):
 class TimeQuestion(Question):
     __tablename__ = 'question_time'
 
-    id = util.pk('survey_node.id', 'question.id')
+    id = util.pk('node.id', 'question.id')
 
     __mapper_args__ = {'polymorphic_identity': 'time'}
 
@@ -150,7 +153,7 @@ class TimeQuestion(Question):
 class LocationQuestion(Question):
     __tablename__ = 'question_location'
 
-    id = util.pk('survey_node.id', 'question.id')
+    id = util.pk('node.id', 'question.id')
 
     __mapper_args__ = {'polymorphic_identity': 'location'}
 
@@ -161,7 +164,7 @@ class LocationQuestion(Question):
 class FacilityQuestion(Question):
     __tablename__ = 'question_facility'
 
-    id = util.pk('survey_node.id', 'question.id')
+    id = util.pk('node.id', 'question.id')
 
     __mapper_args__ = {'polymorphic_identity': 'facility'}
 
@@ -172,7 +175,7 @@ class FacilityQuestion(Question):
 class MultipleChoiceQuestion(Question):
     __tablename__ = 'question_multiple_choice'
 
-    id = util.pk('survey_node.id', 'question.id')
+    id = util.pk('node.id', 'question.id')
     choices = relationship(
         'Choice',
         order_by='Choice.choice_number',
@@ -192,6 +195,7 @@ class MultipleChoiceQuestion(Question):
             ('hint', self.hint),
             ('choices', [choice.choice_text for choice in self.choices]),
             ('allow_multiple', self.allow_multiple),
+            ('allow_other', self.allow_other),
             ('type_constraint', self.type_constraint),
             ('logic', self.logic),
             ('last_update_time', self.last_update_time),
@@ -244,11 +248,11 @@ SURVEY_NODE_TYPES = {
 }
 
 
-def construct_survey_node(*, type_constraint: str, **kwargs) -> SurveyNode:
+def construct_node(*, type_constraint: str, **kwargs) -> Node:
     """
-    Returns a subclass of dokomoforms.models.survey.SurveyNode determined by
+    Returns a subclass of dokomoforms.models.survey.Node determined by
     the type_constraint parameter. This utility function makes it easy to
-    create an instance of a SurveyNode or Question subclass based on external
+    create an instance of a Node or Question subclass based on external
     input.
 
     See http://stackoverflow.com/q/30518484/1475412
@@ -257,10 +261,10 @@ def construct_survey_node(*, type_constraint: str, **kwargs) -> SurveyNode:
                             keys of
                             dokomoforms.models.survey.SURVEY_NODE_TYPES
     :param kwargs: the keyword arguments to pass to the constructor
-    :returns: an instance of one of the SurveyNode subtypes
-    :raises: dokomoforms.exc.NoSuchSurveyNodeTypeError
+    :returns: an instance of one of the Node subtypes
+    :raises: dokomoforms.exc.NoSuchNodeTypeError
     """
     try:
         return SURVEY_NODE_TYPES[type_constraint](**kwargs)
     except KeyError:
-        raise NoSuchSurveyNodeTypeError(type_constraint)
+        raise NoSuchNodeTypeError(type_constraint)

@@ -51,3 +51,6 @@
   - https://github.com/rtfd/readthedocs.org/issues/1263
 11. It looks like the various answer types might go in different tables for ORM
     purposes... I should write a SQL view to abstract that detail away.
+12. When creating a survey, the creator should be forced to run through the
+    survey as a preview, and "submit" to create. This prevents graphs without
+    a terminal node, for instance.
