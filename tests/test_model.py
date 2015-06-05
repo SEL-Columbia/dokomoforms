@@ -73,20 +73,16 @@ class TestNode(DokoTest):
         )
 
     def test_construct_node_all_types(self):
-        types = [
-            'text', 'integer', 'decimal', 'date', 'time', 'location',
-            'facility', 'multiple_choice', 'note'
-        ]
         session = make_session()
         with session.begin():
-            for node_type in types:
+            for node_type in models.NODE_TYPES:
                 session.add(models.construct_node(
                     type_constraint=node_type,
                     title='test_' + node_type,
                 ))
         self.assertEqual(
             session.query(func.count(models.Node.id)).scalar(),
-            9,
+            10,
         )
         self.assertEqual(
             session.query(func.count(models.Note.id)).scalar(),
@@ -94,7 +90,7 @@ class TestNode(DokoTest):
         )
         self.assertEqual(
             session.query(func.count(models.Question.id)).scalar(),
-            8,
+            9,
         )
 
 

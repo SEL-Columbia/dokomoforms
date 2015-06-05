@@ -80,7 +80,7 @@ def ensure_that_user_wants_to_drop_schema():
         if schema_check == options.schema:
             return
         else:
-            print('{} does not match the schema {}'.format(
+            print('"{}" does not match the schema "{}"'.format(
                 schema_check, options.schema
             ))
     print('Not dropping the schema. Exiting...')

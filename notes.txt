@@ -54,3 +54,6 @@
 12. When creating a survey, the creator should be forced to run through the
     survey as a preview, and "submit" to create. This prevents graphs without
     a terminal node, for instance.
+13. Consider adding range questions like
+    What is the valid age range? (10-20)
+    How long does this process take?

@@ -1,4 +1,4 @@
-"""Survey node models."""
+"""A Node is either a note or a question and is independent of a Survey."""
 
 from collections import OrderedDict
 
@@ -32,7 +32,7 @@ class Node(Base):
     )
     type_constraint = sa.Column(
         sa.Enum(
-            'text', 'integer', 'decimal', 'date', 'time', 'location',
+            'text', 'photo', 'integer', 'decimal', 'date', 'time', 'location',
             'facility', 'multiple_choice', 'note',
             name='type_constraint_name',
             inherit_schema=True,
@@ -42,9 +42,7 @@ class Node(Base):
     logic = sa.Column(pg.json.JSON, nullable=False, server_default='{}')
     last_update_time = util.last_update_time()
 
-    __mapper_args__ = {
-        'polymorphic_on': type_constraint,
-    }
+    __mapper_args__ = {'polymorphic_on': type_constraint}
 
 
 class Note(Node):
@@ -76,10 +74,10 @@ class Question(Node):
 
     hint = sa.Column(pg.TEXT, nullable=False, server_default='')
     allow_multiple = sa.Column(
-        sa.Boolean, nullable=False, server_default='False'
+        sa.Boolean, nullable=False, server_default='false'
     )
     allow_other = sa.Column(
-        sa.Boolean, nullable=False, server_default='False'
+        sa.Boolean, nullable=False, server_default='false'
     )
 
     def _default_asdict(self) -> OrderedDict:
@@ -101,6 +99,17 @@ class TextQuestion(Question):
     id = util.pk('node.id', 'question.id')
 
     __mapper_args__ = {'polymorphic_identity': 'text'}
+
+    def _asdict(self) -> OrderedDict:
+        return super()._default_asdict()
+
+
+class PhotoQuestion(Question):
+    __tablename__ = 'question_photo'
+
+    id = util.pk('node.id', 'question.id')
+
+    __mapper_args__ = {'polymorphic_identity': 'photo'}
 
     def _asdict(self) -> OrderedDict:
         return super()._default_asdict()
@@ -235,8 +244,9 @@ class Choice(Base):
         ))
 
 
-SURVEY_NODE_TYPES = {
+NODE_TYPES = {
     'text': TextQuestion,
+    'photo': PhotoQuestion,
     'integer': IntegerQuestion,
     'decimal': DecimalQuestion,
     'date': DateQuestion,
@@ -259,12 +269,12 @@ def construct_node(*, type_constraint: str, **kwargs) -> Node:
 
     :param type_constraint: the type constraint of the node. Must be one of the
                             keys of
-                            dokomoforms.models.survey.SURVEY_NODE_TYPES
+                            dokomoforms.models.survey.NODE_TYPES
     :param kwargs: the keyword arguments to pass to the constructor
     :returns: an instance of one of the Node subtypes
     :raises: dokomoforms.exc.NoSuchNodeTypeError
     """
     try:
-        return SURVEY_NODE_TYPES[type_constraint](**kwargs)
+        return NODE_TYPES[type_constraint](**kwargs)
     except KeyError:
         raise NoSuchNodeTypeError(type_constraint)

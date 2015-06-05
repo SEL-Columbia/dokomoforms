@@ -15,5 +15,5 @@ class NoSuchNodeTypeError(DokomoError):
     an invalid type_constraint.
 
     The valid type_constraints are the keys of
-    dokomoforms.models.survey.SURVEY_NODE_TYPES.
+    dokomoforms.models.survey.NODE_TYPES.
     """
