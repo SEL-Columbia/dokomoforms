@@ -73,9 +73,19 @@ class SubSurvey(Base):
     __tablename__ = 'sub_survey'
 
     id = util.pk()
+    sub_survey_number = sa.Column(sa.Integer, nullable=False)
     bucket = sa.Column(pg.TEXT, nullable=False)
     repeatable = sa.Column(sa.Boolean, nullable=False, server_default='false')
-    nodes = relationship('SurveyNode', secondary=_sub_survey_nodes)
+    nodes = relationship(
+        'SurveyNode',
+        secondary=_sub_survey_nodes,
+        order_by='SurveyNode.node_number',
+        collection_class=ordering_list('node_number'),
+        cascade='all, delete-orphan',
+        passive_updates=True,
+        passive_deletes=True,
+        single_parent=True,
+    )
 
     def _asdict(self) -> OrderedDict:
         return OrderedDict((
@@ -101,7 +111,16 @@ class SurveyNode(Base):
     node_id = sa.Column(pg.UUID, util.fk('node.id'), nullable=False)
     node = relationship('Node')
     root_survey_id = sa.Column(pg.UUID, util.fk('survey.id'))
-    nodes = relationship('SubSurvey', secondary=_node_sub_surveys)
+    nodes = relationship(
+        'SubSurvey',
+        secondary=_node_sub_surveys,
+        order_by='SubSurvey.sub_survey_number',
+        collection_class=ordering_list('sub_survey_number'),
+        cascade='all, delete-orphan',
+        passive_updates=True,
+        passive_deletes=True,
+        single_parent=True,
+    )
     required = sa.Column(sa.Boolean, nullable=False, server_default='false')
     allow_dont_know = sa.Column(
         sa.Boolean, nullable=False, server_default='false'
