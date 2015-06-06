@@ -6,6 +6,7 @@ import sqlalchemy as sa
 from sqlalchemy import func
 from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import relationship
+from sqlalchemy.ext.orderinglist import ordering_list
 
 from dokomoforms.models import util, Base
 
@@ -31,10 +32,15 @@ class Survey(Base):
     created_on = sa.Column(
         sa.DateTime(timezone=True), nullable=False, server_default=func.now()
     )
-    nodes = relationship('SurveyNode')
+    nodes = relationship(
+        'SurveyNode',
+        order_by='SurveyNode.node_number',
+        collection_class=ordering_list('node_number'),
+        cascade='all, delete-orphan',
+        passive_updates=True,
+        passive_deletes=True,
+    )
     last_update_time = util.last_update_time()
-
-    __mapper_args__ = {'polymorphic_identity': 'root'}
 
     __table_args__ = (
         sa.UniqueConstraint(
@@ -71,8 +77,6 @@ class SubSurvey(Base):
     repeatable = sa.Column(sa.Boolean, nullable=False, server_default='false')
     nodes = relationship('SurveyNode', secondary=_sub_survey_nodes)
 
-    __mapper_args__ = {'polymorphic_identity': 'sub'}
-
     def _asdict(self) -> OrderedDict:
         return OrderedDict((
             ('bucket', self.bucket),
@@ -93,10 +97,11 @@ class SurveyNode(Base):
     __tablename__ = 'survey_node'
 
     id = util.pk()
+    node_number = sa.Column(sa.Integer, nullable=False)
     node_id = sa.Column(pg.UUID, util.fk('node.id'), nullable=False)
     node = relationship('Node')
     root_survey_id = sa.Column(pg.UUID, util.fk('survey.id'))
-    sub_surveys = relationship('SubSurvey', secondary=_node_sub_surveys)
+    nodes = relationship('SubSurvey', secondary=_node_sub_surveys)
     required = sa.Column(sa.Boolean, nullable=False, server_default='false')
     allow_dont_know = sa.Column(
         sa.Boolean, nullable=False, server_default='false'
@@ -108,6 +113,6 @@ class SurveyNode(Base):
         result['logic'].update(self.logic)
         result['required'] = self.required
         result['allow_dont_know'] = self.required
-        if self.sub_surveys:
-            result['nodes'] = self.sub_surveys
+        if self.nodes:
+            result['nodes'] = self.nodes
         return result
