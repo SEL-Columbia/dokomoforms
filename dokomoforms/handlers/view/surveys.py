@@ -4,10 +4,10 @@ import tornado.web
 from sqlalchemy.engine import ResultProxy
 from tornado.escape import json_encode
 
-from dokomoforms.handlers.util.base import BaseHandler, user_owns_question
+from dokomoforms.handlers.util.base import BaseHandler
 from dokomoforms.api.survey import get_stats
 import dokomoforms.api.submission as submission_api
-from dokomoforms.api.aggregation import time_series, get_question_stats
+from dokomoforms.api.aggregation import get_question_stats
 from dokomoforms.db.survey import survey_select
 from dokomoforms.db.answer import get_geo_json, get_answers_for_question
 
