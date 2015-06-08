@@ -98,7 +98,7 @@ var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
         if ((nlat < self.slat) || (slat > self.nlat))
             return false;
         
-        if ((wlng > self.elng) || (elng < self.wlng))
+        if ((wlng > self.elng) || (elng < self.wlng)) //XXX i think this should be flipped
            return false;
         
         return true;
