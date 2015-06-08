@@ -34,8 +34,8 @@
                         <li>
                             <a href="#" class="dropdown-toggle" type="button" id="SurveysDropdown" data-toggle="dropdown" aria-expanded="true">Surveys <span class="caret"></span></a>
                             <ul class="dropdown-menu" role="menu" aria-labelledby="SurveysDropdown">
-                                {% for survey in surveys_for_menu %}
-                                    <li role="presentation"><a role="menuitem" tabindex="-1" href="/view/{{ survey['survey_id'] }}">{{ survey['survey_title'] }}</a></li>
+                                {% for the_survey in surveys_for_menu %}
+                                    <li role="presentation"><a role="menuitem" tabindex="-1" href="/view/{{ the_survey['survey_id'] }}">{{ the_survey['survey_title'] }}</a></li>
                                 {% end %}
                             </ul>
                         </li>

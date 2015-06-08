@@ -3,12 +3,13 @@ from tornado.escape import to_unicode
 import tornado.web
 
 import dokomoforms.api.submission as submission_api
-from dokomoforms.db.survey import IncorrectQuestionIdError
+from dokomoforms.db.survey import IncorrectQuestionIdError, get_surveys_by_email
 from dokomoforms.handlers.util.base import APIHandler, get_json_request_body, \
     catch_bare_integrity_error, validation_message, APINoLoginHandler
 
 
 class SubmissionsAPIHandler(APIHandler):
+
     """The endpoint for getting all submissions to all surveys."""
 
     def _get_subs(self):
@@ -56,6 +57,7 @@ class SubmissionsAPIHandler(APIHandler):
 
 
 class SubmissionActivityAPIHandler(APIHandler):
+
     """The endpoint for getting submission activity to a survey."""
 
     def get(self, survey_id: str=None):
@@ -67,6 +69,7 @@ class SubmissionActivityAPIHandler(APIHandler):
 
 
 class SingleSubmissionAPIHandler(APIHandler):
+
     """The endpoint for getting a single submission."""
 
     def get(self, submission_id: str):
@@ -76,6 +79,7 @@ class SingleSubmissionAPIHandler(APIHandler):
 
 
 class SubmitAPIHandler(APINoLoginHandler):
+
     """The endpoint for submitting to a survey. You don't need to log in to
     submit through the browser."""
 

@@ -5,15 +5,42 @@ body {
 .navbar {
   font-weight: 300;
 }
-.navbar-main-menu span.glyphicon-menu-down {
+.navbar-main-menu {
   position: relative;
-  top: -2px;
-  margin-left: 3px;
-  font-size: .5em;
 }
 .header {
-  background-color: #78C0A8;
+  height: 80px;
   /*margin-bottom: 40px;*/
+}
+.header .header-main-nav {
+  background-color: #78C0A8;
+}
+.header .header-main-nav ul {
+  padding: 0;
+  margin: 0;
+}
+.header .header-main-nav ul li {
+  list-style: none;
+  display: inline-block;
+  margin: 0px;
+}
+.header .header-main-nav ul li a {
+  color: #eeeeee;
+  display: block;
+  padding: 30px;
+  margin: 0px;
+  height: 80px;
+}
+.header .header-main-nav ul li a.active,
+.header .header-main-nav ul li a:hover {
+  color: #fff;
+  background-color: #5B9380;
+}
+.header .header-main-nav .container {
+  padding: 0;
+}
+.header .header-sub-nav {
+  background-color: #5B9380;
 }
 .header h1 {
   font-weight: 100;

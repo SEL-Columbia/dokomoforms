@@ -14,9 +14,8 @@ from dokomoforms.db.answer import get_geo_json, get_answers_for_question
 from dokomoforms.db.question import question_select, get_questions
 
 
-
-
 class ViewHandler(BaseHandler):
+
     """The endpoint for getting all of a user's surveys."""
 
     @tornado.web.authenticated
@@ -25,18 +24,21 @@ class ViewHandler(BaseHandler):
 
 
 class ViewSurveyHandler(BaseHandler):
+
     """The endpoint for getting a single survey's administration page."""
 
     @tornado.web.authenticated
     def get(self, survey_id: str):
         survey_stats = get_stats(self.db, survey_id, email=self.current_user)
-        question_stats = get_question_stats(self.db, survey_id, email=self.current_user)
+        question_stats = get_question_stats(
+            self.db, survey_id, email=self.current_user)
         survey = survey_select(self.db, survey_id, email=self.current_user)
         self.render('view-survey.html', message=None, survey=survey,
                     question_stats=question_stats, survey_stats=survey_stats)
 
 
 class ViewSurveyDataHandler(BaseHandler):
+
     """The endpoint for getting a single survey's data page."""
 
     # TODO: consider absorbing this into api.aggregation
@@ -52,7 +54,8 @@ class ViewSurveyDataHandler(BaseHandler):
     def get(self, survey_id: str):
         location_questions = []
         survey_stats = get_stats(self.db, survey_id, email=self.current_user)
-        question_stats = get_question_stats(self.db, survey_id, email=self.current_user)
+        question_stats = get_question_stats(
+            self.db, survey_id, email=self.current_user)
         for result in question_stats['result']:
             question = result['question']
             question_type = question[6]
@@ -63,7 +66,7 @@ class ViewSurveyDataHandler(BaseHandler):
                 location_questions.append({
                     "question_id": question_id,
                     "map_data": map_data
-                    });
+                })
 
         survey = survey_select(self.db, survey_id, email=self.current_user)
         self.render('view-survey-data.html', message=None, survey=survey,

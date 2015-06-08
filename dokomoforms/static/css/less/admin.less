@@ -10,7 +10,8 @@ body {
 // TOP NAV
 
 .navbar-container {
-	// padding: 0px 20px;
+	// position: absolute;
+	// width: 100%;
 }
 
 .navbar {
@@ -18,17 +19,45 @@ body {
 }
 
 .navbar-main-menu {
-	span.glyphicon-menu-down {
-		position: relative;
-		top: -2px;
-		margin-left: 3px;
-		font-size: .5em;
-	}
+	position: relative;
+	// left: -10px;
 }
 
 
 .header {
-	background-color: #78C0A8;
+	height: 80px;
+	.header-main-nav {
+		background-color: #78C0A8;
+
+		ul {
+			padding: 0;
+			margin: 0;
+			li {
+				list-style: none;
+				display: inline-block;
+				margin: 0px;
+				a {
+					color: @gray-lighter;
+					display: block;
+					padding: 30px;
+					margin: 0px;
+					height: 80px;
+					&.active, &:hover {
+						color: #fff;
+						background-color: #5B9380;
+					}
+				}
+			}
+		}
+
+		.container {
+			padding: 0;
+		}
+	}
+
+	.header-sub-nav {
+		background-color: #5B9380;
+	}
 	/*margin-bottom: 40px;*/
 
 	h1 {
