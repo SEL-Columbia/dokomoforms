@@ -17,3 +17,5 @@ config/deploy/*.rb
 Vagrantfile
 provision.sh
 .vagrant
+doko/
+.capistrano/

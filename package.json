@@ -37,5 +37,8 @@
     "mocha-istanbul": "^0.2.0",
     "should": "^6.0.1",
     "supertest": "^0.15.0"
+  },
+  "dependencies": {
+    "browserify": "^10.2.3"
   }
 }

@@ -502,7 +502,7 @@
                 </div>
             <% } else { %>
                 <div class="message-box-primary"> 
-                    <span> Hi, <strong><%- name %></strong> and welcome to the <%- survey.title %> Survey.</span>
+                    <span> Hi, <strong><%- name %></strong> and welcome to <%- survey.title %>.</span>
                     <br>
                     <br>
                     <span> If you have any questions regarding this survey, please contact the survey administrator.</span>  
@@ -514,7 +514,7 @@
     <!--<script src="/static/ratchet-2.0.2/dist/js/ratchet.js"></script>-->
     <script src="/static/ratchet-2.0.2/js/modals.js"></script>
     <script src="/static/lib.js"></script>
-    <script src="/static/app.js"></script>
+    <script src="/static/bundle.js"></script>
     <script>
         App.init({% raw survey %});
     </script>

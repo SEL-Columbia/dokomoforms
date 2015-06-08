@@ -1,9 +1,9 @@
 CACHE MANIFEST
-# Version 0.01234567890123456
+# Version 1433341165
 
 /static/persona.js
 /static/lib.js
-/static/app.js
+/static/bundle.js
 
 /static/css/survey.css
 /static/ratchet-2.0.2/dist/css/ratchet.min.css
