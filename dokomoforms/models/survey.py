@@ -48,7 +48,6 @@ class Survey(Base):
         order_by='SurveyNode.node_number',
         collection_class=ordering_list('node_number'),
         cascade='all, delete-orphan',
-        passive_updates=True,
         passive_deletes=True,
     )
     last_update_time = util.last_update_time()
@@ -88,7 +87,14 @@ class SubSurvey(Base):
 
     id = util.pk()
     sub_survey_number = sa.Column(sa.Integer, nullable=False)
-    bucket = sa.Column(pg.TEXT, nullable=False)
+    parent_node_id = sa.Column(
+        pg.UUID, util.fk('survey_node.id'), nullable=False
+    )
+    buckets = relationship(
+        'Bucket',
+        cascade='all, delete-orphan',
+        passive_deletes=True,
+    )
     repeatable = sa.Column(sa.Boolean, nullable=False, server_default='false')
     nodes = relationship(
         'SurveyNode',
@@ -96,7 +102,6 @@ class SubSurvey(Base):
         order_by='SurveyNode.node_number',
         collection_class=ordering_list('node_number'),
         cascade='all, delete-orphan',
-        passive_updates=True,
         passive_deletes=True,
         single_parent=True,
     )
@@ -104,18 +109,60 @@ class SubSurvey(Base):
     def _asdict(self) -> OrderedDict:
         return OrderedDict((
             ('deleted', self.deleted),
-            ('bucket', self.bucket),
+            ('buckets', [bucket.bucket for bucket in self.buckets]),
             ('repeatable', self.repeatable),
             ('nodes', self.nodes),
         ))
 
 
-_node_sub_surveys = sa.Table(
-    'node_sub_surveys',
-    Base.metadata,
-    sa.Column('survey_node_id', pg.UUID, sa.ForeignKey('survey_node.id')),
-    sa.Column('sub_survey_id', pg.UUID, sa.ForeignKey('sub_survey.id')),
-)
+class Bucket(Base):
+    __tablename__ = 'bucket'
+
+    id = util.pk()
+    sub_survey_id = sa.Column(
+        pg.UUID, util.fk('sub_survey.id'), nullable=False
+    )
+    bucket_type = sa.Column(
+        sa.Enum(
+            'integer', 'decimal', 'date', 'time', 'multiple_choice',
+            name='bucket_types',
+            inherit_schema=True,
+        ),
+        nullable=False,
+    )
+    last_update_time = util.last_update_time()
+
+    __mapper_args__ = {'polymorphic_on': bucket_type}
+
+    def _default_asdict(self) -> OrderedDict:
+        return OrderedDict((
+            ('id', self.id),
+            ('bucket_type', self.bucket_type),
+            ('bucket', self.bucket),
+        ))
+
+
+class IntegerBucket(Bucket):
+    __tablename__ = 'bucket_integer'
+
+    id = util.pk('bucket.id')
+    bucket = sa.Column(pg.INT4RANGE, nullable=False)
+
+    __mapper_args__ = {'polymorphic_identity': 'integer'}
+    __table_args__ = (
+        pg.ExcludeConstraint(('bucket', '&&')),
+    )
+
+    def _asdict(self) -> OrderedDict:
+        return super()._default_asdict()
+
+
+# _node_sub_surveys = sa.Table(
+#     'node_sub_surveys',
+#     Base.metadata,
+#     sa.Column('survey_node_id', pg.UUID, sa.ForeignKey('survey_node.id')),
+#     sa.Column('sub_survey_id', pg.UUID, sa.ForeignKey('sub_survey.id')),
+# )
 
 
 class SurveyNode(Base):
@@ -128,11 +175,9 @@ class SurveyNode(Base):
     root_survey_id = sa.Column(pg.UUID, util.fk('survey.id'))
     nodes = relationship(
         'SubSurvey',
-        secondary=_node_sub_surveys,
         order_by='SubSurvey.sub_survey_number',
         collection_class=ordering_list('sub_survey_number'),
         cascade='all, delete-orphan',
-        passive_updates=True,
         passive_deletes=True,
         single_parent=True,
     )

@@ -21,7 +21,6 @@ class User(Base):
         order_by='Email.address',
         backref='user',
         cascade='all, delete-orphan',
-        passive_updates=True,
         passive_deletes=True,
     )
     role = sa.Column(
@@ -61,7 +60,6 @@ class SurveyCreator(User):
         order_by='Survey.created_on',
         backref='creator',
         cascade='all, delete-orphan',
-        passive_updates=True,
         passive_deletes=True,
     )
     token = sa.Column(pg.BYTEA)

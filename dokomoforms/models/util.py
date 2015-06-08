@@ -58,7 +58,6 @@ class Base(declarative_base(metadata=metadata, metaclass=_Meta)):
                     'Email',
                     backref='user',
                     cascade='all, delete-orphan',
-                    passive_updates=True,
                     passive_deletes=True,
                 )
 
@@ -200,6 +199,13 @@ def fk(column_name: str) -> sa.Column:
 
 
 def translatable_json_column() -> sa.Column:
+    """
+    Returns a column of type JSONB for use in models. Use this for entries like
+
+        <language>: <text>
+
+    :return: a SQLAlchemy Column for a non-null JSONB type.
+    """
     return sa.Column(
         pg.json.JSONB, nullable=False, server_default='{"English": ""}'
     )

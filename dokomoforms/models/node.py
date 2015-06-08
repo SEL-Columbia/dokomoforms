@@ -188,7 +188,6 @@ class MultipleChoiceQuestion(Question):
         collection_class=ordering_list('choice_number'),
         backref='question',
         cascade='all, delete-orphan',
-        passive_updates=True,
         passive_deletes=True,
     )
 
