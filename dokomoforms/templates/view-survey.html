@@ -18,7 +18,7 @@
             </div>
         </div>
         <div class="row header-sub-nav">
-            
+            <!-- Additional sub-navigation here in next version. -->
         </div>
     </div>
     {% end %}
@@ -130,7 +130,9 @@
                 <!-- Activity Graph -->
                 <h4>Activity Graph</h4>
                 <div class="activity-graph">
-                    
+                    <div class="alert alert-info no-activity-message hide">
+                        <em>There has been no recent activity for this survey.</em>
+                    </div>
                 </div>
             </div>
         </div>
@@ -270,6 +272,7 @@
                 data = [];
 
             if (!results.length) {
+                $('.no-activity-message').removeClass('hide');
                 return;
             }
 
