@@ -7,11 +7,9 @@ from tornado.escape import json_encode
 from dokomoforms.handlers.util.base import BaseHandler, user_owns_question
 from dokomoforms.api.survey import get_stats
 import dokomoforms.api.submission as submission_api
-from dokomoforms.api.aggregation import time_series, bar_graph, \
-    get_question_stats, NoSubmissionsToQuestionError
+from dokomoforms.api.aggregation import time_series, get_question_stats
 from dokomoforms.db.survey import survey_select
 from dokomoforms.db.answer import get_geo_json, get_answers_for_question
-from dokomoforms.db.question import question_select, get_questions
 
 
 class ViewHandler(BaseHandler):
@@ -70,4 +68,5 @@ class ViewSurveyDataHandler(BaseHandler):
 
         survey = survey_select(self.db, survey_id, email=self.current_user)
         self.render('view-survey-data.html', message=None, survey=survey,
-                    question_stats=question_stats, survey_stats=survey_stats, location_questions=location_questions)
+                    question_stats=question_stats, survey_stats=survey_stats,
+                    location_questions=location_questions)

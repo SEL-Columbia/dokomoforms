@@ -32,7 +32,8 @@ def iso_date_str_to_fmt_str(date: str, format_string: str) -> str:
 
 def get_surveys_for_menu(self):
     """
-    TODO: This doesn't seem like the best way to do this, since it requires passing in self? 
+    TODO: This doesn't seem like the best way to do this,
+    since it requires passing in self?
     Should it go in the BaseHandler class?
 
     In any case, it will change when we have a cleaner way to access the db.

@@ -3,7 +3,7 @@ from tornado.escape import to_unicode
 import tornado.web
 
 import dokomoforms.api.submission as submission_api
-from dokomoforms.db.survey import IncorrectQuestionIdError, get_surveys_by_email
+from dokomoforms.db.survey import IncorrectQuestionIdError
 from dokomoforms.handlers.util.base import APIHandler, get_json_request_body, \
     catch_bare_integrity_error, validation_message, APINoLoginHandler
 
