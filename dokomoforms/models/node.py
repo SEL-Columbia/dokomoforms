@@ -25,11 +25,7 @@ class Node(Base):
     __tablename__ = 'node'
 
     id = util.pk()
-    title = sa.Column(
-        pg.TEXT,
-        sa.CheckConstraint("title != ''", name='non_empty_node_title'),
-        nullable=False,
-    )
+    title = util.translatable_json_column()
     type_constraint = sa.Column(
         sa.Enum(
             'text', 'photo', 'integer', 'decimal', 'date', 'time', 'location',
@@ -39,7 +35,7 @@ class Node(Base):
         ),
         nullable=False,
     )
-    logic = sa.Column(pg.json.JSON, nullable=False, server_default='{}')
+    logic = sa.Column(pg.json.JSONB, nullable=False, server_default='{}')
     last_update_time = util.last_update_time()
 
     __mapper_args__ = {'polymorphic_on': type_constraint}
@@ -56,6 +52,7 @@ class Note(Node):
     def _asdict(self) -> OrderedDict:
         return OrderedDict((
             ('id', self.id),
+            ('deleted', self.deleted),
             ('title', self.title),
             ('type_constraint', self.type_constraint),
             ('logic', self.logic),
@@ -70,9 +67,9 @@ class Question(Node):
     list of dokomoforms.models.survey.Choice instances.
     """
     __tablename__ = 'question'
-    id = util.pk('node.id')
 
-    hint = sa.Column(pg.TEXT, nullable=False, server_default='')
+    id = util.pk('node.id')
+    hint = util.translatable_json_column()
     allow_multiple = sa.Column(
         sa.Boolean, nullable=False, server_default='false'
     )
@@ -200,6 +197,7 @@ class MultipleChoiceQuestion(Question):
     def _asdict(self) -> OrderedDict:
         return OrderedDict((
             ('id', self.id),
+            ('deleted', self.deleted),
             ('title', self.title),
             ('hint', self.hint),
             ('choices', [choice.choice_text for choice in self.choices]),
@@ -218,7 +216,7 @@ class Choice(Base):
     __tablename__ = 'choice'
 
     id = util.pk()
-    choice_text = sa.Column(pg.TEXT, nullable=False)
+    choice_text = util.translatable_json_column()
     choice_number = sa.Column(sa.Integer, nullable=False)
     question_id = sa.Column(
         pg.UUID, util.fk('question_multiple_choice.id'), nullable=False
@@ -237,6 +235,7 @@ class Choice(Base):
     def _asdict(self) -> OrderedDict:
         return OrderedDict((
             ('id', self.id),
+            ('deleted', self.deleted),
             ('choice_text', self.choice_text),
             ('choice_number', self.choice_number),
             ('question', self.question.title),

@@ -20,6 +20,17 @@ class Survey(Base):
         sa.CheckConstraint("title != ''", name='non_empty_survey_title'),
         nullable=False,
     )
+    default_language = sa.Column(
+        pg.TEXT,
+        sa.CheckConstraint(
+            "default_language != ''", name='non_empty_default_language'
+        ),
+        nullable=False,
+        server_default='English',
+    )
+    translations = sa.Column(
+        pg.json.JSONB, nullable=False, server_default='{}'
+    )
     # TODO: expand upon this
     version = sa.Column(sa.Integer, nullable=False, server_default='1')
     # ODOT
@@ -27,7 +38,7 @@ class Survey(Base):
         pg.UUID, util.fk('survey_creator.id'), nullable=False
     )
     survey_metadata = sa.Column(
-        pg.json.JSON, nullable=False, server_default='{}'
+        pg.json.JSONB, nullable=False, server_default='{}'
     )
     created_on = sa.Column(
         sa.DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -51,7 +62,10 @@ class Survey(Base):
     def _asdict(self) -> OrderedDict:
         return OrderedDict((
             ('id', self.id),
+            ('deleted', self.deleted),
             ('title', self.title),
+            ('default_language', self.default_language),
+            ('translations', self.translations),
             ('version', self.version),
             ('creator', self.creator.name),
             ('metadata', self.survey_metadata),
@@ -89,6 +103,7 @@ class SubSurvey(Base):
 
     def _asdict(self) -> OrderedDict:
         return OrderedDict((
+            ('deleted', self.deleted),
             ('bucket', self.bucket),
             ('repeatable', self.repeatable),
             ('nodes', self.nodes),
@@ -125,11 +140,13 @@ class SurveyNode(Base):
     allow_dont_know = sa.Column(
         sa.Boolean, nullable=False, server_default='false'
     )
-    logic = sa.Column(pg.json.JSON, nullable=False, server_default='{}')
+    logic = sa.Column(pg.json.JSONB, nullable=False, server_default='{}')
 
     def _asdict(self) -> OrderedDict:
         result = self.node._asdict()
         result['logic'].update(self.logic)
+        result['node_id'] = result.pop('id')
+        result['deleted'] = self.deleted
         result['required'] = self.required
         result['allow_dont_know'] = self.required
         if self.nodes:

@@ -40,6 +40,8 @@ class _Meta(DeclarativeMeta, abc.ABCMeta):
 class Base(declarative_base(metadata=metadata, metaclass=_Meta)):
     __abstract__ = True
 
+    deleted = sa.Column(sa.Boolean, nullable=False, server_default='false')
+
     @abc.abstractmethod
     def _asdict(self) -> dict:
         """
@@ -195,6 +197,12 @@ def fk(column_name: str) -> sa.Column:
     :return: a SQLAlchemy Column for a UUID primary key.
     """
     return sa.ForeignKey(column_name, onupdate='CASCADE', ondelete='CASCADE')
+
+
+def translatable_json_column() -> sa.Column:
+    return sa.Column(
+        pg.json.JSONB, nullable=False, server_default='{"English": ""}'
+    )
 
 
 def last_update_time() -> sa.Column:

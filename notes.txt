@@ -57,3 +57,7 @@
 13. Consider adding range questions like
     What is the valid age range? (10-20)
     How long does this process take?
+14. Store images in the database?
+    Postgres has a lobject... thing but it's not mapped into SQLAlchemy
+    https://github.com/cms-dev/cms-debian/blob/master/cms/db/FSObject.py
+15. LRU cache for _asdict?

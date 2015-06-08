@@ -15,7 +15,6 @@ class User(Base):
     __tablename__ = 'auth_user'
 
     id = util.pk()
-    is_active = sa.Column(sa.Boolean, nullable=False, server_default='True')
     name = sa.Column(pg.TEXT, nullable=False)
     emails = relationship(
         'Email',
@@ -41,7 +40,7 @@ class User(Base):
     def _asdict(self) -> OrderedDict:
         return OrderedDict((
             ('id', self.id),
-            ('is_active', self.is_active),
+            ('deleted', self.deleted),
             ('name', self.name),
             ('emails', [email.address for email in self.emails]),
             ('role', self.role),
@@ -75,7 +74,7 @@ class SurveyCreator(User):
     def _asdict(self) -> OrderedDict:
         return OrderedDict((
             ('id', self.id),
-            ('is_active', self.is_active),
+            ('deleted', self.deleted),
             ('name', self.name),
             ('emails', [email.address for email in self.emails]),
             ('role', self.role),

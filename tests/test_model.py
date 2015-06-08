@@ -5,6 +5,7 @@ from tests.util import DokoTest, engine
 
 from sqlalchemy import func
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import IntegrityError
 
 import dokomoforms.models as models
 import dokomoforms.exc as exc
@@ -24,7 +25,7 @@ class TestUser(DokoTest):
             json.loads(user._to_json()),
             {
                 'id': user.id,
-                'is_active': True,
+                'deleted': False,
                 'name': 'a',
                 'emails': ['b'],
                 'role': 'enumerator',
@@ -48,6 +49,19 @@ class TestUser(DokoTest):
             session.query(func.count(models.Email.id)).scalar(),
             0
         )
+
+    def test_email_identifies_one_user(self):
+        """No duplicate e-mail address allowed."""
+        session = make_session()
+        with self.assertRaises(IntegrityError):
+            with session.begin():
+                user_a = models.User(name='a')
+                user_a.emails = [models.Email(address='a')]
+                session.add(user_a)
+
+                user_b = models.User(name='b')
+                user_b.emails = [models.Email(address='a')]
+                session.add(user_b)
 
 
 class TestNode(DokoTest):
