@@ -127,35 +127,18 @@ class SubSurvey(Base):
         ))
 
 
+bucket_type_enum = sa.Enum(
+    'integer', 'decimal', 'date', 'time', 'multiple_choice',
+    name='bucket_type_name',
+    inherit_schema=True,
+    metadata=Base.metadata,
+)
+
+
 class Bucket(Base):
-    __tablename__ = 'bucket'
+    __abstract__ = True
 
-    id = util.pk()
-    sub_survey_id = sa.Column(pg.UUID, nullable=False)
-    sub_survey_parent_type_constraint = sa.Column(
-        node_type_enum, nullable=False
-    )
-    bucket_type = sa.Column(
-        sa.Enum(
-            'integer', 'decimal', 'date', 'time', 'multiple_choice',
-            name='bucket_types',
-            inherit_schema=True,
-        ),
-        nullable=False,
-    )
     last_update_time = util.last_update_time()
-
-    __mapper_args__ = {'polymorphic_on': bucket_type}
-
-    __table_args__ = (
-        sa.ForeignKeyConstraint(
-            ['sub_survey_id', 'sub_survey_parent_type_constraint'],
-            ['sub_survey.id', 'sub_survey.parent_type_constraint']
-        ),
-        sa.CheckConstraint(
-            'bucket_type::TEXT = sub_survey_parent_type_constraint::TEXT'
-        ),
-    )
 
     def _default_asdict(self) -> OrderedDict:
         return OrderedDict((
@@ -165,15 +148,38 @@ class Bucket(Base):
         ))
 
 
+def _bucket_type_check_constraint():
+    return sa.CheckConstraint(
+        'bucket_type::TEXT = sub_survey_parent_type_constraint::TEXT'
+    )
+
+
+def _bucket_fk_constraint():
+    return sa.ForeignKeyConstraint(
+        ['sub_survey_id', 'sub_survey_parent_type_constraint'],
+        ['sub_survey.id', 'sub_survey.parent_type_constraint']
+    )
+
+
+def _bucket_exclude_constraint():
+    return pg.ExcludeConstraint(('sub_survey_id', '='), ('bucket', '&&'))
+
+
 class IntegerBucket(Bucket):
     __tablename__ = 'bucket_integer'
 
-    id = util.pk('bucket.id')
+    id = util.pk()
+    bucket_type = sa.Column(bucket_type_enum, nullable=False)
+    sub_survey_id = sa.Column(pg.UUID, nullable=False)
+    sub_survey_parent_type_constraint = sa.Column(
+        node_type_enum, nullable=False
+    )
     bucket = sa.Column(pg.INT4RANGE, nullable=False)
 
-    __mapper_args__ = {'polymorphic_identity': 'integer'}
     __table_args__ = (
-        pg.ExcludeConstraint(('bucket', '&&')),
+        _bucket_type_check_constraint(),
+        _bucket_fk_constraint(),
+        _bucket_exclude_constraint(),
     )
 
     def _asdict(self) -> OrderedDict:
@@ -183,12 +189,18 @@ class IntegerBucket(Bucket):
 class DecimalBucket(Bucket):
     __tablename__ = 'bucket_decimal'
 
-    id = util.pk('bucket.id')
+    id = util.pk()
+    bucket_type = sa.Column(bucket_type_enum, nullable=False)
+    sub_survey_id = sa.Column(pg.UUID, nullable=False)
+    sub_survey_parent_type_constraint = sa.Column(
+        node_type_enum, nullable=False
+    )
     bucket = sa.Column(pg.NUMRANGE, nullable=False)
 
-    __mapper_args__ = {'polymorphic_identity': 'decimal'}
     __table_args__ = (
-        pg.ExcludeConstraint(('bucket', '&&')),
+        _bucket_type_check_constraint(),
+        _bucket_fk_constraint(),
+        _bucket_exclude_constraint(),
     )
 
     def _asdict(self) -> OrderedDict:
@@ -198,12 +210,18 @@ class DecimalBucket(Bucket):
 class DateBucket(Bucket):
     __tablename__ = 'bucket_date'
 
-    id = util.pk('bucket.id')
+    id = util.pk()
+    bucket_type = sa.Column(bucket_type_enum, nullable=False)
+    sub_survey_id = sa.Column(pg.UUID, nullable=False)
+    sub_survey_parent_type_constraint = sa.Column(
+        node_type_enum, nullable=False
+    )
     bucket = sa.Column(pg.DATERANGE, nullable=False)
 
-    __mapper_args__ = {'polymorphic_identity': 'date'}
     __table_args__ = (
-        pg.ExcludeConstraint(('bucket', '&&')),
+        _bucket_type_check_constraint(),
+        _bucket_fk_constraint(),
+        _bucket_exclude_constraint(),
     )
 
     def _asdict(self) -> OrderedDict:
@@ -213,12 +231,18 @@ class DateBucket(Bucket):
 class TimeBucket(Bucket):
     __tablename__ = 'bucket_time'
 
-    id = util.pk('bucket.id')
+    id = util.pk()
+    bucket_type = sa.Column(bucket_type_enum, nullable=False)
+    sub_survey_id = sa.Column(pg.UUID, nullable=False)
+    sub_survey_parent_type_constraint = sa.Column(
+        node_type_enum, nullable=False
+    )
     bucket = sa.Column(pg.TSTZRANGE, nullable=False)
 
-    __mapper_args__ = {'polymorphic_identity': 'time'}
     __table_args__ = (
-        pg.ExcludeConstraint(('bucket', '&&')),
+        _bucket_type_check_constraint(),
+        _bucket_fk_constraint(),
+        _bucket_exclude_constraint(),
     )
 
     def _asdict(self) -> OrderedDict:
@@ -228,13 +252,19 @@ class TimeBucket(Bucket):
 class MultipleChoiceBucket(Bucket):
     __tablename__ = 'bucket_multiple_choice'
 
-    id = util.pk('bucket.id')
+    id = util.pk()
+    bucket_type = sa.Column(bucket_type_enum, nullable=False)
+    sub_survey_id = sa.Column(pg.UUID, nullable=False)
+    sub_survey_parent_type_constraint = sa.Column(
+        node_type_enum, nullable=False
+    )
     bucket = sa.Column(pg.UUID, nullable=False)
     parent_survey_node_id = sa.Column(pg.UUID, nullable=False)
     parent_node_id = sa.Column(pg.UUID, nullable=False)
 
-    __mapper_args__ = {'polymorphic_identity': 'multiple_choice'}
     __table_args__ = (
+        _bucket_type_check_constraint(),
+        _bucket_fk_constraint(),
         sa.ForeignKeyConstraint(
             ['bucket', 'parent_node_id'],
             ['choice.id', 'choice.question_id']
@@ -258,11 +288,11 @@ BUCKET_TYPES = {
 }
 
 
-def construct_bucket(*, type_constraint: str, **kwargs) -> Bucket:
+def construct_bucket(*, bucket_type: str, **kwargs) -> Bucket:
     try:
-        return BUCKET_TYPES[type_constraint](**kwargs)
+        return BUCKET_TYPES[bucket_type](**kwargs)
     except KeyError:
-        raise NoSuchBucketTypeError(type_constraint)
+        raise NoSuchBucketTypeError(bucket_type)
 
 
 class SurveyNode(Base):
