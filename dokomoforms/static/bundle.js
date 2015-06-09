@@ -469,7 +469,7 @@ var NUM_FAC = 256;
 var FAC_RAD = 2; //in KM
 
 var getNearbyFacilities = require('./facilities.js').getNearbyFacilities;
-var objectID = require('./facilities.js').objectID();
+var objectID = require('./facilities.js').objectID;
 
 //TODO:Remove refernce to App
 
