@@ -70,7 +70,7 @@ describe('Persona login tests', function(done) {
                   responseText: { email: 'test_email' }
             });
 
-            $('#login').click();
+            $('.btn-login').click();
     });
 
 });
