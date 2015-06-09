@@ -11,6 +11,15 @@ from dokomoforms.models import util, Base
 from dokomoforms.exc import NoSuchNodeTypeError
 
 
+node_type_enum = sa.Enum(
+    'text', 'photo', 'integer', 'decimal', 'date', 'time', 'location',
+    'facility', 'multiple_choice', 'note',
+    name='type_constraint_name',
+    inherit_schema=True,
+    metadata=Base.metadata,
+)
+
+
 class Node(Base):
     """
     A node is its own entity. A node can be a dokomoforms.models.survey.Note or
@@ -26,19 +35,14 @@ class Node(Base):
 
     id = util.pk()
     title = util.translatable_json_column()
-    type_constraint = sa.Column(
-        sa.Enum(
-            'text', 'photo', 'integer', 'decimal', 'date', 'time', 'location',
-            'facility', 'multiple_choice', 'note',
-            name='type_constraint_name',
-            inherit_schema=True,
-        ),
-        nullable=False,
-    )
+    type_constraint = sa.Column(node_type_enum, nullable=False)
     logic = sa.Column(pg.json.JSONB, nullable=False, server_default='{}')
     last_update_time = util.last_update_time()
 
     __mapper_args__ = {'polymorphic_on': type_constraint}
+    __table_args__ = (
+        sa.UniqueConstraint('id', 'type_constraint'),
+    )
 
 
 class Note(Node):
@@ -229,6 +233,10 @@ class Choice(Base):
         sa.UniqueConstraint(
             'question_id', 'choice_text', name='unique_choice_text'
         ),
+    )
+
+    __table_args__ = (
+        sa.UniqueConstraint('id', 'question_id'),
     )
 
     def _asdict(self) -> OrderedDict:

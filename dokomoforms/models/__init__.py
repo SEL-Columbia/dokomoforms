@@ -1,7 +1,7 @@
 from dokomoforms.models.util import Base, create_engine, ModelJSONEncoder
 from dokomoforms.models.user import User, SurveyCreator, Email
 from dokomoforms.models.node import (
-    Node, Question, construct_node, NODE_TYPES,
+    Node, Question, construct_node, NODE_TYPES, node_type_enum,
     Note,
     TextQuestion, PhotoQuestion, IntegerQuestion, DecimalQuestion,
     DateQuestion, TimeQuestion, LocationQuestion, FacilityQuestion,
@@ -14,7 +14,7 @@ __all__ = [
     'Base', 'create_engine', 'ModelJSONEncoder',
     'User', 'SurveyCreator', 'Email',
     'Survey', 'SubSurvey', 'SurveyNode',
-    'Node', 'Question', 'construct_node', 'NODE_TYPES',
+    'Node', 'Question', 'construct_node', 'NODE_TYPES', 'node_type_enum',
     'Note',
     'TextQuestion', 'PhotoQuestion', 'IntegerQuestion', 'DecimalQuestion',
     'DateQuestion', 'TimeQuestion', 'LocationQuestion', 'FacilityQuestion',

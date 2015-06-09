@@ -8,7 +8,8 @@ from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.orderinglist import ordering_list
 
-from dokomoforms.models import util, Base
+from dokomoforms.models import util, Base, node_type_enum
+from dokomoforms.exc import NoSuchBucketTypeError
 
 
 class Survey(Base):
@@ -87,9 +88,9 @@ class SubSurvey(Base):
 
     id = util.pk()
     sub_survey_number = sa.Column(sa.Integer, nullable=False)
-    parent_node_id = sa.Column(
-        pg.UUID, util.fk('survey_node.id'), nullable=False
-    )
+    parent_survey_node_id = sa.Column(pg.UUID, nullable=False)
+    parent_node_id = sa.Column(pg.UUID, nullable=False)
+    parent_type_constraint = sa.Column(node_type_enum, nullable=False)
     buckets = relationship(
         'Bucket',
         cascade='all, delete-orphan',
@@ -106,6 +107,17 @@ class SubSurvey(Base):
         single_parent=True,
     )
 
+    __table_args__ = (
+        sa.UniqueConstraint('id', 'parent_type_constraint'),
+        sa.UniqueConstraint('parent_survey_node_id', 'parent_node_id'),
+        sa.ForeignKeyConstraint(
+            ['parent_survey_node_id', 'parent_type_constraint',
+                'parent_node_id'],
+            ['survey_node.id', 'survey_node.type_constraint',
+                'survey_node.node_id']
+        ),
+    )
+
     def _asdict(self) -> OrderedDict:
         return OrderedDict((
             ('deleted', self.deleted),
@@ -119,8 +131,9 @@ class Bucket(Base):
     __tablename__ = 'bucket'
 
     id = util.pk()
-    sub_survey_id = sa.Column(
-        pg.UUID, util.fk('sub_survey.id'), nullable=False
+    sub_survey_id = sa.Column(pg.UUID, nullable=False)
+    sub_survey_parent_type_constraint = sa.Column(
+        node_type_enum, nullable=False
     )
     bucket_type = sa.Column(
         sa.Enum(
@@ -133,6 +146,16 @@ class Bucket(Base):
     last_update_time = util.last_update_time()
 
     __mapper_args__ = {'polymorphic_on': bucket_type}
+
+    __table_args__ = (
+        sa.ForeignKeyConstraint(
+            ['sub_survey_id', 'sub_survey_parent_type_constraint'],
+            ['sub_survey.id', 'sub_survey.parent_type_constraint']
+        ),
+        sa.CheckConstraint(
+            'bucket_type::TEXT = sub_survey_parent_type_constraint::TEXT'
+        ),
+    )
 
     def _default_asdict(self) -> OrderedDict:
         return OrderedDict((
@@ -157,12 +180,89 @@ class IntegerBucket(Bucket):
         return super()._default_asdict()
 
 
-# _node_sub_surveys = sa.Table(
-#     'node_sub_surveys',
-#     Base.metadata,
-#     sa.Column('survey_node_id', pg.UUID, sa.ForeignKey('survey_node.id')),
-#     sa.Column('sub_survey_id', pg.UUID, sa.ForeignKey('sub_survey.id')),
-# )
+class DecimalBucket(Bucket):
+    __tablename__ = 'bucket_decimal'
+
+    id = util.pk('bucket.id')
+    bucket = sa.Column(pg.NUMRANGE, nullable=False)
+
+    __mapper_args__ = {'polymorphic_identity': 'decimal'}
+    __table_args__ = (
+        pg.ExcludeConstraint(('bucket', '&&')),
+    )
+
+    def _asdict(self) -> OrderedDict:
+        return super()._default_asdict()
+
+
+class DateBucket(Bucket):
+    __tablename__ = 'bucket_date'
+
+    id = util.pk('bucket.id')
+    bucket = sa.Column(pg.DATERANGE, nullable=False)
+
+    __mapper_args__ = {'polymorphic_identity': 'date'}
+    __table_args__ = (
+        pg.ExcludeConstraint(('bucket', '&&')),
+    )
+
+    def _asdict(self) -> OrderedDict:
+        return super()._default_asdict()
+
+
+class TimeBucket(Bucket):
+    __tablename__ = 'bucket_time'
+
+    id = util.pk('bucket.id')
+    bucket = sa.Column(pg.TSTZRANGE, nullable=False)
+
+    __mapper_args__ = {'polymorphic_identity': 'time'}
+    __table_args__ = (
+        pg.ExcludeConstraint(('bucket', '&&')),
+    )
+
+    def _asdict(self) -> OrderedDict:
+        return super()._default_asdict()
+
+
+class MultipleChoiceBucket(Bucket):
+    __tablename__ = 'bucket_multiple_choice'
+
+    id = util.pk('bucket.id')
+    bucket = sa.Column(pg.UUID, nullable=False)
+    parent_survey_node_id = sa.Column(pg.UUID, nullable=False)
+    parent_node_id = sa.Column(pg.UUID, nullable=False)
+
+    __mapper_args__ = {'polymorphic_identity': 'multiple_choice'}
+    __table_args__ = (
+        sa.ForeignKeyConstraint(
+            ['bucket', 'parent_node_id'],
+            ['choice.id', 'choice.question_id']
+        ),
+        sa.ForeignKeyConstraint(
+            ['parent_survey_node_id', 'parent_node_id'],
+            ['sub_survey.parent_survey_node_id', 'sub_survey.parent_node_id']
+        ),
+    )
+
+    def _asdict(self) -> OrderedDict:
+        return super()._default_asdict()
+
+
+BUCKET_TYPES = {
+    'integer': IntegerBucket,
+    'decimal': DecimalBucket,
+    'date': DateBucket,
+    'time': TimeBucket,
+    'multiple_choice': MultipleChoiceBucket,
+}
+
+
+def construct_bucket(*, type_constraint: str, **kwargs) -> Bucket:
+    try:
+        return BUCKET_TYPES[type_constraint](**kwargs)
+    except KeyError:
+        raise NoSuchBucketTypeError(type_constraint)
 
 
 class SurveyNode(Base):
@@ -170,7 +270,8 @@ class SurveyNode(Base):
 
     id = util.pk()
     node_number = sa.Column(sa.Integer, nullable=False)
-    node_id = sa.Column(pg.UUID, util.fk('node.id'), nullable=False)
+    node_id = sa.Column(pg.UUID, nullable=False)
+    type_constraint = sa.Column(node_type_enum, nullable=False)
     node = relationship('Node')
     root_survey_id = sa.Column(pg.UUID, util.fk('survey.id'))
     nodes = relationship(
@@ -186,6 +287,14 @@ class SurveyNode(Base):
         sa.Boolean, nullable=False, server_default='false'
     )
     logic = sa.Column(pg.json.JSONB, nullable=False, server_default='{}')
+
+    __table_args__ = (
+        sa.UniqueConstraint('id', 'node_id', 'type_constraint'),
+        sa.ForeignKeyConstraint(
+            ['node_id', 'type_constraint'],
+            ['node.id', 'node.type_constraint']
+        ),
+    )
 
     def _asdict(self) -> OrderedDict:
         result = self.node._asdict()
