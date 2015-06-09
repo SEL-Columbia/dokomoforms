@@ -54,11 +54,10 @@ function getCookie(name) {
 
     });
     
-    $('#login').click(function(){
+    $('.btn-login').click(function(){
         navigator.id.request();
     });
-    $('#logout').click(function(){
-        console.log("HEREERER\n");
+    $('.btn-logout').click(function(){
         navigator.id.logout();
     });
 })();

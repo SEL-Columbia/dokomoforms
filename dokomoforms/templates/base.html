@@ -49,13 +49,13 @@
                         <a href="#" class="dropdown-toggle" type="button" id="UserDropdown" data-toggle="dropdown" aria-expanded="true">{{ current_user }} <span class="caret"></span></a>
                         <ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="UserDropdown">
                             <li role="presentation"><a role="menuitem" tabindex="-1" href="#"><span class="glyphicon glyphicon-cog"></span> Settings</a></li>
-                            <li role="presentation"><a role="menuitem" tabindex="-1"href="#"><span class="glyphicon glyphicon-log-out" id="logout"></span> Log Out</a></li>
+                            <li role="presentation"><a class="btn-logout" role="menuitem" tabindex="-1"href="#"><span class="glyphicon glyphicon-log-out" id="logout"></span> Log Out</a></li>
                         </ul>
                     </li>
 
                     
                     {% else %}
-                    <li><a class="btn btn-block" href="#" id="login">Login or Register</a></li>
+                    <li><a class="btn btn-block btn-login" href="#" id="login">Login or Register</a></li>
                     {% end %}
                 </ul>
             </div>

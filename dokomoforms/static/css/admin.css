@@ -65,6 +65,13 @@ h4 {
 .light-shadow {
   box-shadow: 0px 1px 5px #888888;
 }
+.info-icon {
+  cursor: default;
+  color: #bfbfbf;
+  font-style: italic;
+  text-transform: lowercase;
+  font-family: Georgia, "Times New Roman", Times, serif;
+}
 .subheader {
   background-color: #eeeeee;
   padding-bottom: 30px;
