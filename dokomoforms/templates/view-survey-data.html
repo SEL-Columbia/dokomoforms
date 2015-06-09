@@ -88,7 +88,7 @@
                     {% for stats in question_stats['result'] %}
                         <li>
                         
-                            <div class="question-title-bar {% if stats['question'].type_constraint_name == "location" %} question-location {% end %}" 
+                            <div class="question-title-bar question-type-{{ stats['question'].type_constraint_name }} {% if stats['question'].type_constraint_name == "location" %} question-location {% end %}" 
                             {% if stats['question'].type_constraint_name == "location" %} rel="location-map-{{ stats['question'].question_id }}" {% end %}>
                                 
                                 {{ stats['question'].sequence_number }}. {{ stats['question'].question_title }} 
@@ -135,6 +135,7 @@
 
 <script type="text/javascript">
     $(function() {
+        var map;
 
         $(document).on('click', '.question-title-bar', function(e) {
             $el = $(this);
@@ -145,9 +146,11 @@
             }
             $el.siblings('.question-stats').slideToggle();
             if ($el.hasClass('question-location')) {
-                var id = $el.attr('rel');
-                console.log(id);
-                drawMap(id, map_data[id]);
+                if (!map) {
+                    var id = $el.attr('rel');
+                    console.log(id);
+                    drawMap(id, map_data[id]);
+                }
             }
         });
 
@@ -198,7 +201,7 @@
 
         function drawMap(element_id, map_data) {
 
-            var map = L.map(element_id, {
+            map = L.map(element_id, {
                 dragging: true,
                 zoom: 14,
                 // zoomControl: false,
