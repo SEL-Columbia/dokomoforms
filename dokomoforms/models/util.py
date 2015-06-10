@@ -22,6 +22,7 @@ import sqlalchemy.engine
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.sql import func
+from sqlalchemy.sql.functions import current_timestamp
 
 metadata = sa.MetaData(schema=options.schema)
 
@@ -106,6 +107,8 @@ sa.event.listen(
     sa.DDL(
         'CREATE SCHEMA IF NOT EXISTS {schema};'
         'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'
+        ' WITH SCHEMA pg_catalog;'
+        'CREATE EXTENSION IF NOT EXISTS "btree_gist"'
         ' WITH SCHEMA pg_catalog;'.format(schema=options.schema)
     ),
 )
@@ -221,6 +224,6 @@ def last_update_time() -> sa.Column:
     return sa.Column(
         sa.DateTime(timezone=True),
         nullable=False,
-        server_default=func.now(),
-        onupdate=func.now(),
+        server_default=current_timestamp(),
+        onupdate=current_timestamp(),
     )

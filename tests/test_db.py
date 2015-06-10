@@ -1,5 +1,6 @@
 """Database interaction tests"""
-from tests.util import DokoTest
+from tests.util import DokoTest, tearDownModule
+utils = (tearDownModule,)
 
 from dokomoforms.models import Base
 

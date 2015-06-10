@@ -21,4 +21,8 @@ class DokoTest(unittest.TestCase):
 
     def tearDown(self):
         """Drops the doko_test schema."""
-        engine.execute(DDL('DROP SCHEMA IF EXISTS doko_test CASCADE'))
+        Base.metadata.drop_all(engine)
+
+
+def tearDownModule():
+    engine.execute(DDL('DROP SCHEMA IF EXISTS doko_test CASCADE'))

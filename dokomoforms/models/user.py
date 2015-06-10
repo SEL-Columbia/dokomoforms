@@ -4,7 +4,7 @@ from collections import OrderedDict
 
 from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
+from sqlalchemy.sql.functions import current_timestamp
 import sqlalchemy as sa
 
 from dokomoforms.models import util, Base
@@ -64,7 +64,9 @@ class SurveyCreator(User):
     )
     token = sa.Column(pg.BYTEA)
     token_expiration = sa.Column(
-        sa.DateTime(timezone=True), nullable=False, server_default=func.now()
+        sa.DateTime(timezone=True),
+        nullable=False,
+        server_default=current_timestamp(),
     )
 
     __mapper_args__ = {'polymorphic_identity': 'creator'}

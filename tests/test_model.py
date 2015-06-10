@@ -2,7 +2,8 @@
 import json
 from decimal import Decimal
 
-from tests.util import DokoTest, engine
+from tests.util import DokoTest, engine, tearDownModule
+utils = (tearDownModule,)
 
 from sqlalchemy import func
 from sqlalchemy.orm import sessionmaker
