@@ -20,9 +20,10 @@ class DokoTest(unittest.TestCase):
         Base.metadata.create_all(engine)
 
     def tearDown(self):
-        """Drops the doko_test schema."""
+        """Drops all the tables in the doko_test schema."""
         Base.metadata.drop_all(engine)
 
 
 def tearDownModule():
+    """Drops the doko_test schema."""
     engine.execute(DDL('DROP SCHEMA IF EXISTS doko_test CASCADE'))

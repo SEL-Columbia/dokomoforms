@@ -172,7 +172,7 @@ class TestChoice(DokoTest):
 
 
 class TestSurvey(DokoTest):
-    def test_one_question_surveys(self):
+    def test_one_node_surveys(self):
         session = make_session()
         with session.begin():
             creator = models.SurveyCreator(
@@ -208,7 +208,7 @@ class TestSurvey(DokoTest):
         self.assertListEqual(
             [len(the_creator.surveys[n].nodes) for n in range(10)],
             [1] * 10,
-            msg='there is a survey with more than one question'
+            msg='there is a survey with more than one node'
         )
 
 
@@ -275,6 +275,7 @@ class TestBucket(DokoTest):
                 session.add(creator)
 
     def test_integer_incorrect_range(self):
+        """A decimal is not an integer"""
         session = make_session()
         with self.assertRaises(DataError):
             with session.begin():
@@ -330,6 +331,7 @@ class TestBucket(DokoTest):
         self.assertEqual(session.query(func.count(Bucket.id)).scalar(), 2)
 
     def test_integer_bucket_no_overlap(self):
+        """The range [,] covers all integers, so (-2, 6] overlaps."""
         session = make_session()
         with self.assertRaises(IntegrityError):
             with session.begin():
@@ -357,6 +359,112 @@ class TestBucket(DokoTest):
                     ),
                 ]
                 session.add(creator)
+
+    def test_integer_bucket_no_overlap_different_sub_surveys(self):
+        """
+        Different SubSurveys belonging to the same SurveyNode cannot have
+        overlapping buckets.
+        """
+        session = make_session()
+        with self.assertRaises(IntegrityError):
+            with session.begin():
+                creator, survey = self._create_blank_survey()
+                survey.nodes = [
+                    models.SurveyNode(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title='node',
+                        ),
+                        nodes=[
+                            models.SubSurvey(
+                                buckets=[
+                                    models.construct_bucket(
+                                        bucket_type='integer',
+                                        bucket='[1, 5]'
+                                    ),
+                                ],
+                            ),
+                            models.SubSurvey(
+                                buckets=[
+                                    models.construct_bucket(
+                                        bucket_type='integer',
+                                        bucket='[3, 7]'
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                ]
+                session.add(creator)
+
+    def test_integer_bucket_no_empty_range(self):
+        """There are no integers between 2 and 3 exclusive"""
+        session = make_session()
+        with self.assertRaises(IntegrityError):
+            with session.begin():
+                creator, survey = self._create_blank_survey()
+                survey.nodes = [
+                    models.SurveyNode(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title='node',
+                        ),
+                        nodes=[
+                            models.SubSurvey(
+                                buckets=[
+                                    models.construct_bucket(
+                                        bucket_type='integer',
+                                        bucket='(2, 3)'
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                ]
+                session.add(creator)
+
+    def test_integer_overlapping_buckets_different_nodes(self):
+        """Nothing wrong with overlapping buckets on different nodes."""
+        session = make_session()
+        with session.begin():
+            creator, survey = self._create_blank_survey()
+            survey.nodes = [
+                models.SurveyNode(
+                    node=models.construct_node(
+                        type_constraint='integer',
+                        title='node1',
+                    ),
+                    nodes=[
+                        models.SubSurvey(
+                            buckets=[
+                                models.construct_bucket(
+                                    bucket_type='integer',
+                                    bucket='[1, 5]'
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                models.SurveyNode(
+                    node=models.construct_node(
+                        type_constraint='integer',
+                        title='node2',
+                    ),
+                    nodes=[
+                        models.SubSurvey(
+                            buckets=[
+                                models.construct_bucket(
+                                    bucket_type='integer',
+                                    bucket='[3, 7]'
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ]
+            session.add(creator)
+
+        self.assertEqual(session.query(func.count(Bucket.id)).scalar(), 2)
 
     def test_decimal_bucket(self):
         session = make_session()

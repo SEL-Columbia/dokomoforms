@@ -80,7 +80,6 @@ class Survey(Base):
 _sub_survey_nodes = sa.Table(
     'sub_survey_nodes',
     Base.metadata,
-    # sa.Column('sub_survey_id', pg.UUID, sa.ForeignKey('sub_survey.id')),
     sa.Column('sub_survey_id', sa.Integer, sa.ForeignKey('sub_survey.id')),
     sa.Column('survey_node_id', pg.UUID, sa.ForeignKey('survey_node.id')),
 )
@@ -89,7 +88,6 @@ _sub_survey_nodes = sa.Table(
 class SubSurvey(Base):
     __tablename__ = 'sub_survey'
 
-    # id = util.pk()
     id = sa.Column(sa.Integer, primary_key=True)
     sub_survey_number = sa.Column(sa.Integer, nullable=False)
     parent_survey_node_id = sa.Column(pg.UUID, nullable=False)
