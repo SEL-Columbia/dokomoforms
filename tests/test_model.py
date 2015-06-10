@@ -1,5 +1,6 @@
 """Model tests"""
 import json
+from decimal import Decimal
 
 from tests.util import DokoTest, engine
 
@@ -381,4 +382,4 @@ class TestBucket(DokoTest):
             session.add(creator)
 
         the_bucket = session.query(Bucket).one()
-        self.assertEqual(the_bucket.bucket, NumericRange(2, 3, '[)'))
+        self.assertEqual(the_bucket.bucket, NumericRange(Decimal('1.3'), Decimal('2.3'), '(]'))
