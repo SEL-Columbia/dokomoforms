@@ -54,10 +54,10 @@ function getCookie(name) {
 
     });
     
-    $('.btn-login').click(function(){
+    $(document).on('click', '.btn-login', function(){
         navigator.id.request();
     });
-    $('.btn-logout').click(function(){
+    $(document).on('click', '.btn-logout', function(){
         navigator.id.logout();
     });
 })();

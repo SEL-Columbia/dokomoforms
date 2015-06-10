@@ -60,11 +60,13 @@ describe('Persona login tests', function(done) {
                   url: "/user/login/persona",
                   type: 'post',
                   onAfterSuccess: function() { 
+                      console.log('test this thing');
                       localStorage.email.should.match('test_email');
                       done();
                   },
                   onAfterError: function() { 
-                      assert(false, "Failed to handle xsrf request"); 
+                    console.log('error');
+                      assert(false, "Failed to handle xsrf request");
                   },
                   status: 200,
                   responseText: { email: 'test_email' }
