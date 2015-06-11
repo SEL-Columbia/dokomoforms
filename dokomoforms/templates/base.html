@@ -62,10 +62,20 @@
             <!--/.nav-collapse -->
         </div>
     </nav>
-    {% block header %}{% end %}
-    {% block subheader %}{% end %}
-    {% block content %}{% end %}
+    {% block header %} {% end %}
+    {% block subheader %} {% end %}
+    {% block content %} {% end %}
     {% block footer %} {% end %}
+
+    {% block modal %} 
+    <div class="modal fade bs-example-modal-lg modal-submission" tabindex="-1" role="dialog" aria-labelledby="Submission Detail" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              
+            </div>
+        </div>
+    </div>
+    {% end %}
 
     <!-- Jquery for everything -->
     <script src="/static/jquery-2.1.3.min.js"></script>
@@ -85,10 +95,22 @@
 
 
     <script type="text/javascript">
+        function openSubmissionDetailModal(submission_id) {
+            var url = '/view/submission/' + submission_id;
+            $('.modal-submission .modal-content').load(url);
+            $('.modal-submission').modal();
+        }
+
         // enable tooltips
         $(function() {
             $('[data-toggle="tooltip"]').tooltip({
                 container: 'body'
+            });
+
+            // submission modal
+            $(document).on('click', '.btn-view-submission', function() {
+                var submission_id = $(this).data('id');
+                openSubmissionDetailModal(submission_id);
             });
         });
     </script>
