@@ -421,7 +421,7 @@
         </div>
 
         <input class="text_input other_input" type="text"
-                placeholder="Enter an excuse for your incompetence."
+                placeholder="Please explain..."
                 value="<%- question.answer[question.choices.length] && question.answer[question.choices.length].response %>"
         >
     </script>
@@ -449,7 +449,7 @@
                 style="display: none;"
         >
             <input class="text_input dont_know_input" type="text" 
-                placeholder="Enter an excuse for your incompetence."
+                placeholder="Please explain..."
                 disabled=true
                 <% if (is_other) { %>
                     value="<%- ans.response %>"

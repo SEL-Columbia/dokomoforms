@@ -101,13 +101,14 @@
             $('.modal-submission').modal();
         }
 
-        // enable tooltips
         $(function() {
+            
+            // enable tooltips
             $('[data-toggle="tooltip"]').tooltip({
                 container: 'body'
             });
 
-            // submission modal
+            // submission modal click handler
             $(document).on('click', '.btn-view-submission', function() {
                 var submission_id = $(this).data('id');
                 openSubmissionDetailModal(submission_id);
