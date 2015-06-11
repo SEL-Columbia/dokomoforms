@@ -1,7 +1,6 @@
 """Model tests"""
 import json
 import datetime
-import psycopg2
 from decimal import Decimal
 
 from tests.util import DokoTest, engine, tearDownModule
@@ -555,16 +554,15 @@ class TestBucket(DokoTest):
             session.add(creator)
 
         the_bucket = session.query(Bucket).one()
+        tzinfo = the_bucket.bucket.lower.tzinfo
         self.assertEqual(
             the_bucket.bucket,
             DateTimeTZRange(
                 datetime.datetime(
-                    2015, 1, 1, 1, 11,
-                    tzinfo=psycopg2.tz.FixedOffsetTimezone(offset=-300)
+                    2015, 1, 1, 1, 11, tzinfo=tzinfo
                 ),
                 datetime.datetime(
-                    2015, 1, 1, 2, 22,
-                    tzinfo=psycopg2.tz.FixedOffsetTimezone(offset=-300)
+                    2015, 1, 1, 2, 22, tzinfo=tzinfo
                 ),
                 '(]'
             )
