@@ -12,8 +12,8 @@ from dokomoforms.exc import NoSuchNodeTypeError
 
 
 node_type_enum = sa.Enum(
-    'text', 'photo', 'integer', 'decimal', 'date', 'time', 'location',
-    'facility', 'multiple_choice', 'note',
+    'text', 'photo', 'integer', 'decimal', 'date', 'time', 'timestamp',
+    'location', 'facility', 'multiple_choice', 'note',
     name='type_constraint_name',
     inherit_schema=True,
     metadata=Base.metadata,
@@ -160,6 +160,17 @@ class TimeQuestion(Question):
         return super()._default_asdict()
 
 
+class TimeStampQuestion(Question):
+    __tablename__ = 'question_timestamp'
+
+    id = util.pk('node.id', 'question.id')
+
+    __mapper_args__ = {'polymorphic_identity': 'timestamp'}
+
+    def _asdict(self) -> OrderedDict:
+        return super()._default_asdict()
+
+
 class LocationQuestion(Question):
     __tablename__ = 'question_location'
 
@@ -257,6 +268,7 @@ NODE_TYPES = {
     'decimal': DecimalQuestion,
     'date': DateQuestion,
     'time': TimeQuestion,
+    'timestamp': TimeStampQuestion,
     'location': LocationQuestion,
     'facility': FacilityQuestion,
     'multiple_choice': MultipleChoiceQuestion,

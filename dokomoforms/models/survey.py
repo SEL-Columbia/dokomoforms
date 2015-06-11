@@ -2,6 +2,9 @@
 
 from collections import OrderedDict
 
+import datetime
+import dateutil.parser
+
 import sqlalchemy as sa
 from sqlalchemy.sql.functions import current_timestamp
 from sqlalchemy.dialects import postgresql as pg
@@ -144,7 +147,8 @@ class Bucket(Base):
     sub_survey_parent_node_id = sa.Column(pg.UUID, nullable=False)
     bucket_type = sa.Column(
         sa.Enum(
-            'integer', 'decimal', 'date', 'time', 'multiple_choice',
+            'integer', 'decimal', 'date', 'time', 'timestamp',
+            'multiple_choice',
             name='bucket_type_name',
             inherit_schema=True,
         ),
@@ -252,6 +256,20 @@ class TimeBucket(Bucket):
         return super()._default_asdict()
 
 
+class TimeStampBucket(Bucket):
+    __tablename__ = 'bucket_timestamp'
+
+    id = util.pk()
+    the_sub_survey_id = sa.Column(sa.Integer, nullable=False)
+    bucket = sa.Column(pg.TSTZRANGE, nullable=False)
+
+    __mapper_args__ = {'polymorphic_identity': 'timestamp'}
+    __table_args__ = _bucket_range_constraints()
+
+    def _asdict(self) -> OrderedDict:
+        return super()._default_asdict()
+
+
 class MultipleChoiceBucket(Bucket):
     __tablename__ = 'bucket_multiple_choice'
 
@@ -293,15 +311,40 @@ BUCKET_TYPES = {
     'decimal': DecimalBucket,
     'date': DateBucket,
     'time': TimeBucket,
+    'timestamp': TimeStampBucket,
     'multiple_choice': MultipleChoiceBucket,
 }
 
 
 def construct_bucket(*, bucket_type: str, **kwargs) -> Bucket:
     try:
-        return BUCKET_TYPES[bucket_type](**kwargs)
+        create_bucket = BUCKET_TYPES[bucket_type]
     except KeyError:
         raise NoSuchBucketTypeError(bucket_type)
+
+    if bucket_type == 'time' and 'bucket' in kwargs:
+        bucket_str = kwargs['bucket'].strip()
+
+        open_bracket = bucket_str[0]
+        bucket_str_contents = bucket_str[1:-1]
+        close_bracket = bucket_str[-1]
+
+        lower, upper = bucket_str_contents.split(',')
+
+        unix_epoch = datetime.datetime(1970, 1, 1)
+
+        lower = datetime.datetime.combine(
+            unix_epoch, dateutil.parser.parse(lower).time()
+        )
+        upper = datetime.datetime.combine(
+            unix_epoch, dateutil.parser.parse(upper).time()
+        )
+
+        kwargs['bucket'] = (
+            open_bracket + lower.isoformat() + ',' +
+            upper.isoformat() + close_bracket
+        )
+    return create_bucket(**kwargs)
 
 
 class SurveyNode(Base):

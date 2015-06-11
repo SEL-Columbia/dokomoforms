@@ -65,9 +65,12 @@ class Login(BaseHandler):
             raise tornado.web.HTTPError(400, 'Failed assertion test')
 
         try:
-            user = self.session.query(User.id, User.name).join(Email).filter(
-                Email.address == data['email']
-            ).one()
+            user = (
+                self.session.query(User.id, User.name)
+                .join(Email)
+                .filter(Email.address == data['email'])
+                .one()
+            )
             cookie_options = {
                 'expires_days': None,
                 'httponly': True,

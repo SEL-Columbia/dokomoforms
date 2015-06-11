@@ -4,8 +4,8 @@ from dokomoforms.models.node import (
     Node, Question, construct_node, NODE_TYPES, node_type_enum,
     Note,
     TextQuestion, PhotoQuestion, IntegerQuestion, DecimalQuestion,
-    DateQuestion, TimeQuestion, LocationQuestion, FacilityQuestion,
-    MultipleChoiceQuestion,
+    DateQuestion, TimeQuestion, TimeStampQuestion, LocationQuestion,
+    FacilityQuestion, MultipleChoiceQuestion,
     Choice,
 )
 from dokomoforms.models.survey import (
@@ -19,7 +19,7 @@ __all__ = [
     'Node', 'Question', 'construct_node', 'NODE_TYPES', 'node_type_enum',
     'Note',
     'TextQuestion', 'PhotoQuestion', 'IntegerQuestion', 'DecimalQuestion',
-    'DateQuestion', 'TimeQuestion', 'LocationQuestion', 'FacilityQuestion',
-    'MultipleChoiceQuestion',
+    'DateQuestion', 'TimeQuestion', 'TimeStampQuestion', 'LocationQuestion',
+    'FacilityQuestion', 'MultipleChoiceQuestion',
     'Choice',
 ]

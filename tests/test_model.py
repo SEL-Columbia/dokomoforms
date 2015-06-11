@@ -102,7 +102,7 @@ class TestNode(DokoTest):
                 ))
         self.assertEqual(
             session.query(func.count(models.Node.id)).scalar(),
-            10,
+            11,
         )
         self.assertEqual(
             session.query(func.count(models.Note.id)).scalar(),
@@ -110,7 +110,7 @@ class TestNode(DokoTest):
         )
         self.assertEqual(
             session.query(func.count(models.Question.id)).scalar(),
-            9,
+            10,
         )
 
 
@@ -174,6 +174,7 @@ class TestChoice(DokoTest):
 
 class TestSurvey(DokoTest):
     def test_one_node_surveys(self):
+        number_of_questions = 11
         session = make_session()
         with session.begin():
             creator = models.SurveyCreator(
@@ -198,17 +199,20 @@ class TestSurvey(DokoTest):
 
         the_creator = session.query(models.SurveyCreator).one()
         self.assertEqual(
-            len(the_creator.surveys), 10, msg='all 10 surveys were created'
+            len(the_creator.surveys),
+            number_of_questions,
+            msg='not all {} surveys were created'.format(number_of_questions)
         )
         self.assertListEqual(
             [the_creator.surveys[n].nodes[0].type_constraint
-                for n in range(10)],
+                for n in range(number_of_questions)],
             node_types,
             msg='the surveys were not created in the right order'
         )
         self.assertListEqual(
-            [len(the_creator.surveys[n].nodes) for n in range(10)],
-            [1] * 10,
+            [len(the_creator.surveys[n].nodes)
+                for n in range(number_of_questions)],
+            [1] * number_of_questions,
             msg='there is a survey with more than one node'
         )
 
@@ -544,6 +548,89 @@ class TestBucket(DokoTest):
                             buckets=[
                                 models.construct_bucket(
                                     bucket_type='time',
+                                    bucket='(1:11, 2:22]'
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ]
+            session.add(creator)
+
+        the_bucket = session.query(Bucket).one()
+        tzinfo = the_bucket.bucket.lower.tzinfo
+        self.assertEqual(
+            the_bucket.bucket,
+            DateTimeTZRange(
+                datetime.datetime(1970, 1, 1, 1, 11, tzinfo=tzinfo),
+                datetime.datetime(1970, 1, 1, 2, 22, tzinfo=tzinfo),
+                '(]'
+            )
+        )
+
+    def test_time_bucket_all_valid_time_formats(self):
+        valid_time_formats = [
+            '[04:05:06.789, 04:05:06.790]',
+            '[04:05:06, 04:05:07]',
+            '[04:05, 04:06]',
+            '[040506, 040507]',
+            '[04:05 AM, 04:06 AM]',
+            '[04:05 PM, 04:06 PM]',
+            '[04:05:06.789-8, 04:05:06.790-8]',
+            '[04:05:06-08:00, 04:05:07-08:00]',
+            '[04:05-08:00, 04:06-08:00]',
+            '[040506-08, 040507-08]',
+            '[04:05:06 PST, 04:05:07 PST]',
+            # Not sure if this is worth trying to parse...
+            # '[2003-04-12 04:05:06 America/New_York,'
+            # ' 2003-04-12 04:05:07 America/New_York]',
+        ]
+        session = make_session()
+        with session.begin():
+            creator = models.SurveyCreator(
+                name='creator',
+                emails=[models.Email(address='email')],
+            )
+            for i, time_format in enumerate(valid_time_formats):
+                survey = models.Survey(title='Test {}'.format(i))
+                creator.surveys.append(survey)
+                survey.nodes = [
+                    models.SurveyNode(
+                        node=models.construct_node(
+                            type_constraint='time',
+                            title='node',
+                        ),
+                        nodes=[
+                            models.SubSurvey(
+                                buckets=[
+                                    models.construct_bucket(
+                                        bucket_type='time',
+                                        bucket=time_format
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                ]
+            session.add(creator)
+
+        self.assertEqual(session.query(func.count(Bucket.id)).scalar(), 11)
+
+    def test_timestamp_bucket(self):
+        session = make_session()
+        with session.begin():
+            creator, survey = self._create_blank_survey()
+            survey.nodes = [
+                models.SurveyNode(
+                    node=models.construct_node(
+                        type_constraint='timestamp',
+                        title='node',
+                    ),
+                    nodes=[
+                        models.SubSurvey(
+                            buckets=[
+                                models.construct_bucket(
+                                    bucket_type='timestamp',
                                     bucket='(2015-1-1 1:11, 2015-1-1 2:22]'
                                 ),
                             ],
