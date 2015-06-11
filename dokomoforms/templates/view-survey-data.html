@@ -219,7 +219,8 @@
             _.each(map_data, function(location) {
                 var lng = parseFloat(location[0]),
                     lat = parseFloat(location[1]),
-                    answers = JSON.parse(location[2]).answers,
+                    submission = JSON.parse(location[2]),
+                    answers = submission.answers,
                     submission_text;
                 // stored lon/lat in revisit, switch around
                 var marker = new L.marker([lat, lng], {
@@ -227,18 +228,9 @@
                 });
                 marker.options.icon = new L.icon({iconUrl: "/static/img/icons/normal_base.png", iconAnchor: [15, 48]});
                 
-                submission_text = "<ul>";
-                _.each(answers, function(ans) {
-                    var metadata = "";
-                    if (ans.answer_metadata && !_.isEmpty(ans.answer_metadata)) {
-                        metadata += "<br />" + JSON.stringify(ans.answer_metadata);
-                    }
-                    submission_text += "<li><strong>" + ans.sequence_number + ". " + ans.question_title + "</strong><br />" + ans.answer + metadata + "</li>";
+                marker.on('click', function() {
+                    openSubmissionDetailModal(submission.submission_id);
                 });
-                
-                submission_text += "</ul";
-
-                marker.bindPopup(submission_text);
                 markers.push(marker);
 
             });
