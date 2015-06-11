@@ -1,5 +1,7 @@
 """Model tests"""
 import json
+import datetime
+import psycopg2
 from decimal import Decimal
 
 from tests.util import DokoTest, engine, tearDownModule
@@ -9,7 +11,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError, DataError
 
-from psycopg2.extras import NumericRange
+from psycopg2.extras import NumericRange, DateRange, DateTimeTZRange
 
 import dokomoforms.models as models
 import dokomoforms.exc as exc
@@ -495,3 +497,218 @@ class TestBucket(DokoTest):
             the_bucket.bucket,
             NumericRange(Decimal('1.3'), Decimal('2.3'), '(]'),
         )
+
+    def test_date_bucket(self):
+        session = make_session()
+        with session.begin():
+            creator, survey = self._create_blank_survey()
+            survey.nodes = [
+                models.SurveyNode(
+                    node=models.construct_node(
+                        type_constraint='date',
+                        title='node',
+                    ),
+                    nodes=[
+                        models.SubSurvey(
+                            buckets=[
+                                models.construct_bucket(
+                                    bucket_type='date',
+                                    bucket='(2015-1-1, 2015-2-2]'
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ]
+            session.add(creator)
+
+        the_bucket = session.query(Bucket).one()
+        self.assertEqual(
+            the_bucket.bucket,
+            DateRange(
+                datetime.date(2015, 1, 2), datetime.date(2015, 2, 3), '[)'
+            ),
+        )
+
+    def test_time_bucket(self):
+        session = make_session()
+        with session.begin():
+            creator, survey = self._create_blank_survey()
+            survey.nodes = [
+                models.SurveyNode(
+                    node=models.construct_node(
+                        type_constraint='time',
+                        title='node',
+                    ),
+                    nodes=[
+                        models.SubSurvey(
+                            buckets=[
+                                models.construct_bucket(
+                                    bucket_type='time',
+                                    bucket='(2015-1-1 1:11, 2015-1-1 2:22]'
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ]
+            session.add(creator)
+
+        the_bucket = session.query(Bucket).one()
+        self.assertEqual(
+            the_bucket.bucket,
+            DateTimeTZRange(
+                datetime.datetime(
+                    2015, 1, 1, 1, 11,
+                    tzinfo=psycopg2.tz.FixedOffsetTimezone(offset=-300)
+                ),
+                datetime.datetime(
+                    2015, 1, 1, 2, 22,
+                    tzinfo=psycopg2.tz.FixedOffsetTimezone(offset=-300)
+                ),
+                '(]'
+            )
+        )
+
+    def test_multiple_choice_bucket(self):
+        session = make_session()
+        with session.begin():
+            creator, survey = self._create_blank_survey()
+            node = models.construct_node(
+                type_constraint='multiple_choice', title='node'
+            )
+            choice = models.Choice()
+            node.choices = [choice]
+            session.add(choice)
+            session.flush()
+
+            survey.nodes = [
+                models.SurveyNode(
+                    node=node,
+                    nodes=[
+                        models.SubSurvey(
+                            buckets=[
+                                models.construct_bucket(
+                                    bucket_type='multiple_choice',
+                                    bucket=choice.id
+                                ),
+                            ],
+                        ),
+                    ]
+                ),
+            ]
+            session.add(creator)
+
+        the_bucket = session.query(Bucket).one()
+        choice_id = session.query(models.Choice).one().id
+        self.assertEqual(the_bucket.bucket, choice_id)
+
+    def test_multiple_choice_multiple_buckets(self):
+        session = make_session()
+        with session.begin():
+            creator, survey = self._create_blank_survey()
+            node = models.construct_node(
+                type_constraint='multiple_choice', title='node'
+            )
+            choice1 = models.Choice()
+            choice2 = models.Choice()
+            node.choices = [choice1, choice2]
+            session.add(choice1, choice2)
+            session.flush()
+
+            survey.nodes = [
+                models.SurveyNode(
+                    node=node,
+                    nodes=[
+                        models.SubSurvey(
+                            buckets=[
+                                models.construct_bucket(
+                                    bucket_type='multiple_choice',
+                                    bucket=choice1.id
+                                ),
+                                models.construct_bucket(
+                                    bucket_type='multiple_choice',
+                                    bucket=choice2.id
+                                ),
+                            ],
+                        ),
+                    ]
+                ),
+            ]
+            session.add(creator)
+
+        bucket1 = session.query(Bucket).all()[0]
+        choice1_id = session.query(models.Choice).all()[0].id
+        self.assertEqual(bucket1.bucket, choice1_id)
+
+        bucket2 = session.query(Bucket).all()[1]
+        choice2_id = session.query(models.Choice).all()[1].id
+        self.assertEqual(bucket2.bucket, choice2_id)
+
+    def test_multiple_choice_bucket_no_overlap(self):
+        session = make_session()
+        with self.assertRaises(IntegrityError):
+            with session.begin():
+                creator, survey = self._create_blank_survey()
+                node = models.construct_node(
+                    type_constraint='multiple_choice', title='node'
+                )
+                choice = models.Choice()
+                node.choices = [choice]
+                session.add(choice)
+                session.flush()
+
+                survey.nodes = [
+                    models.SurveyNode(
+                        node=node,
+                        nodes=[
+                            models.SubSurvey(
+                                buckets=[
+                                    models.construct_bucket(
+                                        bucket_type='multiple_choice',
+                                        bucket=choice.id
+                                    ),
+                                    models.construct_bucket(
+                                        bucket_type='multiple_choice',
+                                        bucket=choice.id
+                                    ),
+                                ],
+                            ),
+                        ]
+                    ),
+                ]
+                session.add(creator)
+
+    def test_multiple_choice_bucket_choice_from_wrong_question(self):
+        session = make_session()
+        with self.assertRaises(IntegrityError):
+            with session.begin():
+                creator, survey = self._create_blank_survey()
+                wrong_node = models.construct_node(
+                    type_constraint='multiple_choice', title='wrong'
+                )
+                wrong_choice = models.Choice()
+                wrong_node.choices = [wrong_choice]
+                session.add(wrong_choice)
+                session.flush()
+
+                survey.nodes = [
+                    models.SurveyNode(
+                        node=models.construct_node(
+                            type_constraint='multiple_choice',
+                            title='node',
+                            choices=[models.Choice()],
+                        ),
+                        nodes=[
+                            models.SubSurvey(
+                                buckets=[
+                                    models.construct_bucket(
+                                        bucket_type='multiple_choice',
+                                        bucket=wrong_choice.id
+                                    ),
+                                ],
+                            ),
+                        ]
+                    ),
+                ]
+                session.add(creator)

@@ -110,7 +110,10 @@ class SubSurvey(Base):
     )
 
     __table_args__ = (
-        sa.UniqueConstraint('id', 'parent_type_constraint'),
+        sa.UniqueConstraint(
+            'id', 'parent_type_constraint', 'parent_survey_node_id',
+            'parent_node_id'
+        ),
         sa.UniqueConstraint('parent_survey_node_id', 'parent_node_id'),
         sa.ForeignKeyConstraint(
             ['parent_survey_node_id', 'parent_type_constraint',
@@ -137,6 +140,8 @@ class Bucket(Base):
     sub_survey_parent_type_constraint = sa.Column(
         node_type_enum, nullable=False
     )
+    sub_survey_parent_survey_node_id = sa.Column(pg.UUID, nullable=False)
+    sub_survey_parent_node_id = sa.Column(pg.UUID, nullable=False)
     bucket_type = sa.Column(
         sa.Enum(
             'integer', 'decimal', 'date', 'time', 'multiple_choice',
@@ -153,10 +158,24 @@ class Bucket(Base):
             'bucket_type::TEXT = sub_survey_parent_type_constraint::TEXT'
         ),
         sa.ForeignKeyConstraint(
-            ['sub_survey_id', 'sub_survey_parent_type_constraint'],
-            ['sub_survey.id', 'sub_survey.parent_type_constraint']
+            [
+                'sub_survey_id',
+                'sub_survey_parent_type_constraint',
+                'sub_survey_parent_survey_node_id',
+                'sub_survey_parent_node_id'
+            ],
+            [
+                'sub_survey.id',
+                'sub_survey.parent_type_constraint',
+                'sub_survey.parent_survey_node_id',
+                'sub_survey.parent_node_id'
+            ]
         ),
         sa.UniqueConstraint('id', 'sub_survey_id'),
+        sa.UniqueConstraint(
+            'id', 'sub_survey_id', 'sub_survey_parent_survey_node_id',
+            'sub_survey_parent_node_id'
+        ),
     )
 
     def _default_asdict(self) -> OrderedDict:
@@ -236,21 +255,32 @@ class TimeBucket(Bucket):
 class MultipleChoiceBucket(Bucket):
     __tablename__ = 'bucket_multiple_choice'
 
-    id = util.pk('bucket.id')
+    id = util.pk()
+    the_sub_survey_id = sa.Column(sa.Integer, nullable=False)
     bucket = sa.Column(pg.UUID, nullable=False)
     parent_survey_node_id = sa.Column(pg.UUID, nullable=False)
     parent_node_id = sa.Column(pg.UUID, nullable=False)
 
     __mapper_args__ = {'polymorphic_identity': 'multiple_choice'}
     __table_args__ = (
+        sa.UniqueConstraint('bucket', 'the_sub_survey_id'),
         sa.ForeignKeyConstraint(
             ['bucket', 'parent_node_id'],
             ['choice.id', 'choice.question_id']
         ),
         sa.ForeignKeyConstraint(
-            ['parent_survey_node_id', 'parent_node_id'],
-            ['sub_survey.parent_survey_node_id',
-                'sub_survey.parent_node_id']
+            [
+                'id',
+                'the_sub_survey_id',
+                'parent_survey_node_id',
+                'parent_node_id'
+            ],
+            [
+                'bucket.id',
+                'bucket.sub_survey_id',
+                'bucket.sub_survey_parent_survey_node_id',
+                'bucket.sub_survey_parent_node_id'
+            ]
         ),
     )
 
