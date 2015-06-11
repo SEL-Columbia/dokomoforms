@@ -632,10 +632,16 @@ class MultiSelectTest(TypeTest):
             'window.scrollTo(0, {});'.format(submission_link.location['y']))
         submission_link.click()
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located(
+                (By.CLASS_NAME, 'submission-detail-header')
+            )
+        )
+
         # Test it
         self.assertEqual(
-            len(self.drv.find_elements_by_xpath(
-                '/html/body/div[3]/div/div[2]/div/ul/li'
+            len(self.drv.find_elements_by_css_selector(
+                'ul.survey-responses li'
             )),
             2
         )
