@@ -558,12 +558,8 @@ class TestBucket(DokoTest):
         self.assertEqual(
             the_bucket.bucket,
             DateTimeTZRange(
-                datetime.datetime(
-                    2015, 1, 1, 1, 11, tzinfo=tzinfo
-                ),
-                datetime.datetime(
-                    2015, 1, 1, 2, 22, tzinfo=tzinfo
-                ),
+                datetime.datetime(2015, 1, 1, 1, 11, tzinfo=tzinfo),
+                datetime.datetime(2015, 1, 1, 2, 22, tzinfo=tzinfo),
                 '(]'
             )
         )
