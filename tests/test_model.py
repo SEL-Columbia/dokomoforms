@@ -226,7 +226,7 @@ class TestBucket(DokoTest):
                         type_constraint='integer',
                         title='node',
                     ),
-                    nodes=[
+                    sub_surveys=[
                         models.SubSurvey(
                             buckets=[
                                 models.construct_bucket(
@@ -253,7 +253,7 @@ class TestBucket(DokoTest):
                             type_constraint='integer',
                             title='node',
                         ),
-                        nodes=[
+                        sub_surveys=[
                             models.SubSurvey(
                                 buckets=[
                                     models.construct_bucket(
@@ -278,7 +278,7 @@ class TestBucket(DokoTest):
                             type_constraint='integer',
                             title='node',
                         ),
-                        nodes=[
+                        sub_surveys=[
                             models.SubSurvey(
                                 buckets=[
                                     models.construct_bucket(
@@ -301,7 +301,7 @@ class TestBucket(DokoTest):
                         type_constraint='integer',
                         title='node',
                     ),
-                    nodes=[
+                    sub_surveys=[
                         models.SubSurvey(
                             buckets=[
                                 models.construct_bucket(
@@ -332,7 +332,7 @@ class TestBucket(DokoTest):
                             type_constraint='integer',
                             title='node',
                         ),
-                        nodes=[
+                        sub_surveys=[
                             models.SubSurvey(
                                 buckets=[
                                     models.construct_bucket(
@@ -364,7 +364,7 @@ class TestBucket(DokoTest):
                             type_constraint='integer',
                             title='node',
                         ),
-                        nodes=[
+                        sub_surveys=[
                             models.SubSurvey(
                                 buckets=[
                                     models.construct_bucket(
@@ -397,7 +397,7 @@ class TestBucket(DokoTest):
                             type_constraint='integer',
                             title='node',
                         ),
-                        nodes=[
+                        sub_surveys=[
                             models.SubSurvey(
                                 buckets=[
                                     models.construct_bucket(
@@ -421,7 +421,7 @@ class TestBucket(DokoTest):
                         type_constraint='integer',
                         title='node1',
                     ),
-                    nodes=[
+                    sub_surveys=[
                         models.SubSurvey(
                             buckets=[
                                 models.construct_bucket(
@@ -437,7 +437,7 @@ class TestBucket(DokoTest):
                         type_constraint='integer',
                         title='node2',
                     ),
-                    nodes=[
+                    sub_surveys=[
                         models.SubSurvey(
                             buckets=[
                                 models.construct_bucket(
@@ -462,7 +462,7 @@ class TestBucket(DokoTest):
                         type_constraint='decimal',
                         title='node',
                     ),
-                    nodes=[
+                    sub_surveys=[
                         models.SubSurvey(
                             buckets=[
                                 models.construct_bucket(
@@ -491,7 +491,7 @@ class TestBucket(DokoTest):
                         type_constraint='date',
                         title='node',
                     ),
-                    nodes=[
+                    sub_surveys=[
                         models.SubSurvey(
                             buckets=[
                                 models.construct_bucket(
@@ -522,7 +522,7 @@ class TestBucket(DokoTest):
                         type_constraint='time',
                         title='node',
                     ),
-                    nodes=[
+                    sub_surveys=[
                         models.SubSurvey(
                             buckets=[
                                 models.construct_bucket(
@@ -578,7 +578,7 @@ class TestBucket(DokoTest):
                             type_constraint='time',
                             title='node',
                         ),
-                        nodes=[
+                        sub_surveys=[
                             models.SubSurvey(
                                 buckets=[
                                     models.construct_bucket(
@@ -606,7 +606,7 @@ class TestBucket(DokoTest):
                         type_constraint='timestamp',
                         title='node',
                     ),
-                    nodes=[
+                    sub_surveys=[
                         models.SubSurvey(
                             buckets=[
                                 models.construct_bucket(
@@ -643,7 +643,7 @@ class TestBucket(DokoTest):
             survey.nodes = [
                 models.SurveyNode(
                     node=node,
-                    nodes=[
+                    sub_surveys=[
                         models.SubSurvey(
                             buckets=[
                                 models.construct_bucket(
@@ -674,7 +674,7 @@ class TestBucket(DokoTest):
             survey.nodes = [
                 models.SurveyNode(
                     node=node,
-                    nodes=[
+                    sub_surveys=[
                         models.SubSurvey(
                             buckets=[
                                 models.construct_bucket(
@@ -713,7 +713,7 @@ class TestBucket(DokoTest):
                 survey.nodes = [
                     models.SurveyNode(
                         node=node,
-                        nodes=[
+                        sub_surveys=[
                             models.SubSurvey(
                                 buckets=[
                                     models.construct_bucket(
@@ -748,7 +748,7 @@ class TestBucket(DokoTest):
                             title='node',
                             choices=[models.Choice()],
                         ),
-                        nodes=[
+                        sub_surveys=[
                             models.SubSurvey(
                                 buckets=[
                                     models.construct_bucket(

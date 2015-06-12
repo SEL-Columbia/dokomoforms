@@ -373,7 +373,7 @@ class SurveyNode(Base):
     type_constraint = sa.Column(node_type_enum, nullable=False)
     node = relationship('Node')
     root_survey_id = sa.Column(pg.UUID, util.fk('survey.id'))
-    nodes = relationship(
+    sub_surveys = relationship(
         'SubSurvey',
         order_by='SubSurvey.sub_survey_number',
         collection_class=ordering_list('sub_survey_number'),
@@ -404,5 +404,5 @@ class SurveyNode(Base):
         result['required'] = self.required
         result['allow_dont_know'] = self.required
         if self.nodes:
-            result['nodes'] = self.nodes
+            result['sub_surveys'] = self.sub_surveys
         return result
