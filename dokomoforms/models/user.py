@@ -43,6 +43,7 @@ class User(Base):
             ('name', self.name),
             ('emails', [email.address for email in self.emails]),
             ('role', self.role),
+            ('allowed_surveys', self.allowed_surveys),
             ('last_update_time', self.last_update_time),
         ))
 
@@ -72,21 +73,12 @@ class SurveyCreator(User):
     __mapper_args__ = {'polymorphic_identity': 'creator'}
 
     def _asdict(self) -> OrderedDict:
-        return OrderedDict((
-            ('id', self.id),
-            ('deleted', self.deleted),
-            ('name', self.name),
-            ('emails', [email.address for email in self.emails]),
-            ('role', self.role),
-            (
-                'surveys',
-                OrderedDict(
-                    (survey.title, survey.id) for survey in self.surveys
-                ),
-            ),
-            ('token_expiration', self.token_expiration),
-            ('last_update_time', self.last_update_time),
-        ))
+        result = super()._asdict()
+        result['surveys'] = OrderedDict(
+            (survey.title, survey.id) for survey in self.surveys
+        )
+        result['token_expiration'] = self.token_expiration
+        return result
 
 
 class Email(Base):

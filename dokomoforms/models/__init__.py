@@ -9,17 +9,28 @@ from dokomoforms.models.node import (
     Choice,
 )
 from dokomoforms.models.survey import (
-    Survey, SubSurvey, SurveyNode, construct_bucket
+    Survey, AuthenticationRequiredSurvey, SubSurvey, SurveyNode,
+    construct_bucket, survey_type_enum,
+)
+from dokomoforms.models.submission import (
+    Submission, AuthenticatedSubmission, NonAuthenticatedSubmission,
 )
 
 __all__ = [
+    # Util
     'Base', 'create_engine', 'ModelJSONEncoder',
+    # User
     'User', 'SurveyCreator', 'Email',
-    'Survey', 'SubSurvey', 'SurveyNode', 'construct_bucket',
+    # Node
     'Node', 'Question', 'construct_node', 'NODE_TYPES', 'node_type_enum',
     'Note',
     'TextQuestion', 'PhotoQuestion', 'IntegerQuestion', 'DecimalQuestion',
     'DateQuestion', 'TimeQuestion', 'TimeStampQuestion', 'LocationQuestion',
     'FacilityQuestion', 'MultipleChoiceQuestion',
     'Choice',
+    # Survey
+    'Survey', 'AuthenticationRequiredSurvey', 'SubSurvey', 'SurveyNode',
+    'construct_bucket', 'survey_type_enum',
+    # Submission
+    'Submission', 'AuthenticatedSubmission', 'NonAuthenticatedSubmission',
 ]

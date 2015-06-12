@@ -1,4 +1,6 @@
 """Model tests"""
+
+from collections import OrderedDict
 import json
 import datetime
 from decimal import Decimal
@@ -26,15 +28,16 @@ class TestUser(DokoTest):
             self.session.add(new_user)
         user = self.session.query(models.User).one()
         self.assertEqual(
-            json.loads(user._to_json()),
-            {
-                'id': user.id,
-                'deleted': False,
-                'name': 'a',
-                'emails': ['b'],
-                'role': 'enumerator',
-                'last_update_time': user.last_update_time.isoformat(),
-            }
+            json.loads(user._to_json(), object_pairs_hook=OrderedDict),
+            OrderedDict((
+                ('id', user.id),
+                ('deleted', False),
+                ('name', 'a'),
+                ('emails', ['b']),
+                ('role', 'enumerator'),
+                ('allowed_surveys', user.allowed_surveys),
+                ('last_update_time', user.last_update_time.isoformat()),
+            ))
         )
 
     def test_deleting_user_clears_email(self):
@@ -857,3 +860,25 @@ class TestBucket(DokoTest):
                     ),
                 ]
                 self.session.add(creator)
+
+
+class TestSubmission(DokoTest):
+    def test_authenticated_submission(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            enumerator = models.User(name='enumerator')
+            creator.surveys = [
+                models.AuthenticationRequiredSurvey(
+                    title='survey',
+                ),
+            ]
+            creator.enumerators = [enumerator]
+
+            self.session.add(creator)
+
+            submission = models.AuthenticatedSubmission(
+                survey=creator.surveys[0],
+                enumerator=enumerator,
+            )
+
+            self.session.add(submission)

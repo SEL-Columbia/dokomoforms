@@ -16,6 +16,13 @@ from dokomoforms.models import util, Base, node_type_enum
 from dokomoforms.exc import NoSuchBucketTypeError
 
 
+survey_type_enum = sa.Enum(
+    'false', 'true',
+    name='authenticate_submitter_enum',
+    inherit_schema=True,
+)
+
+
 class Survey(Base):
     __tablename__ = 'survey'
 
@@ -35,6 +42,14 @@ class Survey(Base):
     )
     translations = sa.Column(
         pg.json.JSONB, nullable=False, server_default='{}'
+    )
+    authenticate_submitter = sa.Column(survey_type_enum, nullable=False)
+    submissions = relationship(
+        'Submission',
+        order_by='Submission.save_time',
+        backref='survey',
+        cascade='all, delete-orphan',
+        passive_deletes=True,
     )
     # TODO: expand upon this
     version = sa.Column(sa.Integer, nullable=False, server_default='1')
@@ -59,10 +74,15 @@ class Survey(Base):
     )
     last_update_time = util.last_update_time()
 
+    __mapper_args__ = {
+        'polymorphic_on': authenticate_submitter,
+        'polymorphic_identity': 'false',
+    }
     __table_args__ = (
         sa.UniqueConstraint(
             'title', 'creator_id', name='unique_survey_title_per_user'
         ),
+        sa.UniqueConstraint('id', 'authenticate_submitter'),
     )
 
     def _asdict(self) -> OrderedDict:
@@ -72,13 +92,41 @@ class Survey(Base):
             ('title', self.title),
             ('default_language', self.default_language),
             ('translations', self.translations),
+            ('authenticate_submitter', self.authenticate_submitter),
             ('version', self.version),
-            ('creator', self.creator.name),
+            ('creator_id', self.creator_id),
+            ('creator_name', self.creator.name),
             ('metadata', self.survey_metadata),
             ('created_on', self.created_on),
             ('last_update_time', self.last_update_time),
             ('nodes', self.nodes),
         ))
+
+
+_enumerator_table = sa.Table(
+    'enumerator',
+    Base.metadata,
+    sa.Column(
+        'authentication_required_survey_id',
+        pg.UUID,
+        util.fk('survey_authentication_required.id')
+    ),
+    sa.Column('user_id', pg.UUID, util.fk('auth_user.id'))
+)
+
+
+class AuthenticationRequiredSurvey(Survey):
+    __tablename__ = 'survey_authentication_required'
+
+    id = util.pk('survey')
+    enumerators = relationship(
+        'User',
+        secondary=_enumerator_table,
+        backref='allowed_surveys',
+        passive_deletes=True,
+    )
+
+    __mapper_args__ = {'polymorphic_identity': 'true'}
 
 
 _sub_survey_nodes = sa.Table(
@@ -335,7 +383,7 @@ BUCKET_TYPES = {
 }
 
 
-def _set_date_to_unix_epoch(time: str) -> datetime.datetime:
+def _time_at_unix_epoch_date(time: str) -> datetime.datetime:
     return datetime.datetime.combine(
         datetime.datetime(1970, 1, 1), dateutil.parser.parse(time).time()
     )
@@ -357,8 +405,8 @@ def construct_bucket(*, bucket_type: str, **kwargs) -> Bucket:
         lower, upper = bucket_str_contents.split(',')
 
         kwargs['bucket'] = (
-            open_bracket + _set_date_to_unix_epoch(lower).isoformat() + ',' +
-            _set_date_to_unix_epoch(upper).isoformat() + close_bracket
+            open_bracket + _time_at_unix_epoch_date(lower).isoformat() + ',' +
+            _time_at_unix_epoch_date(upper).isoformat() + close_bracket
         )
 
     return create_bucket(**kwargs)
