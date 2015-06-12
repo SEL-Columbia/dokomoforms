@@ -1,5 +1,6 @@
 """Survey models."""
 
+import abc
 from collections import OrderedDict
 
 import datetime
@@ -155,6 +156,12 @@ class Bucket(Base):
         ),
         nullable=False,
     )
+
+    @property
+    @abc.abstractmethod
+    def bucket(self):
+        pass
+
     last_update_time = util.last_update_time()
 
     __mapper_args__ = {'polymorphic_on': bucket_type}
