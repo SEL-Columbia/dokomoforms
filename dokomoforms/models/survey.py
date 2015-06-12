@@ -122,7 +122,8 @@ class SubSurvey(Base):
             ['parent_survey_node_id', 'parent_type_constraint',
                 'parent_node_id'],
             ['survey_node.id', 'survey_node.type_constraint',
-                'survey_node.node_id']
+                'survey_node.node_id'],
+            onupdate='CASCADE', ondelete='CASCADE'
         ),
     )
 
@@ -173,7 +174,8 @@ class Bucket(Base):
                 'sub_survey.parent_type_constraint',
                 'sub_survey.parent_survey_node_id',
                 'sub_survey.parent_node_id'
-            ]
+            ],
+            onupdate='CASCADE', ondelete='CASCADE'
         ),
         sa.UniqueConstraint('id', 'sub_survey_id'),
         sa.UniqueConstraint(
@@ -195,7 +197,8 @@ def _bucket_range_constraints() -> tuple:
         pg.ExcludeConstraint(('the_sub_survey_id', '='), ('bucket', '&&')),
         sa.CheckConstraint('NOT isempty(bucket)'),
         sa.ForeignKeyConstraint(
-            ['id', 'the_sub_survey_id'], ['bucket.id', 'bucket.sub_survey_id']
+            ['id', 'the_sub_survey_id'], ['bucket.id', 'bucket.sub_survey_id'],
+            onupdate='CASCADE', ondelete='CASCADE'
         ),
     )
 
@@ -250,7 +253,13 @@ class TimeBucket(Bucket):
     bucket = sa.Column(pg.TSTZRANGE, nullable=False)
 
     __mapper_args__ = {'polymorphic_identity': 'time'}
-    __table_args__ = _bucket_range_constraints()
+    __table_args__ = (
+        _bucket_range_constraints() +
+        (
+            sa.CheckConstraint("date(lower(bucket)) = '1970-01-01'"),
+            sa.CheckConstraint("date(upper(bucket)) = '1970-01-01'"),
+        )
+    )
 
     def _asdict(self) -> OrderedDict:
         return super()._default_asdict()
@@ -284,7 +293,8 @@ class MultipleChoiceBucket(Bucket):
         sa.UniqueConstraint('bucket', 'the_sub_survey_id'),
         sa.ForeignKeyConstraint(
             ['bucket', 'parent_node_id'],
-            ['choice.id', 'choice.question_id']
+            ['choice.id', 'choice.question_id'],
+            onupdate='CASCADE', ondelete='CASCADE'
         ),
         sa.ForeignKeyConstraint(
             [
@@ -298,7 +308,8 @@ class MultipleChoiceBucket(Bucket):
                 'bucket.sub_survey_id',
                 'bucket.sub_survey_parent_survey_node_id',
                 'bucket.sub_survey_parent_node_id'
-            ]
+            ],
+            onupdate='CASCADE', ondelete='CASCADE'
         ),
     )
 
@@ -316,6 +327,12 @@ BUCKET_TYPES = {
 }
 
 
+def _set_date_to_unix_epoch(time: str) -> datetime.datetime:
+    return datetime.datetime.combine(
+        datetime.datetime(1970, 1, 1), dateutil.parser.parse(time).time()
+    )
+
+
 def construct_bucket(*, bucket_type: str, **kwargs) -> Bucket:
     try:
         create_bucket = BUCKET_TYPES[bucket_type]
@@ -331,19 +348,11 @@ def construct_bucket(*, bucket_type: str, **kwargs) -> Bucket:
 
         lower, upper = bucket_str_contents.split(',')
 
-        unix_epoch = datetime.datetime(1970, 1, 1)
-
-        lower = datetime.datetime.combine(
-            unix_epoch, dateutil.parser.parse(lower).time()
-        )
-        upper = datetime.datetime.combine(
-            unix_epoch, dateutil.parser.parse(upper).time()
-        )
-
         kwargs['bucket'] = (
-            open_bracket + lower.isoformat() + ',' +
-            upper.isoformat() + close_bracket
+            open_bracket + _set_date_to_unix_epoch(lower).isoformat() + ',' +
+            _set_date_to_unix_epoch(upper).isoformat() + close_bracket
         )
+
     return create_bucket(**kwargs)
 
 
@@ -374,7 +383,8 @@ class SurveyNode(Base):
         sa.UniqueConstraint('id', 'node_id', 'type_constraint'),
         sa.ForeignKeyConstraint(
             ['node_id', 'type_constraint'],
-            ['node.id', 'node.type_constraint']
+            ['node.id', 'node.type_constraint'],
+            onupdate='CASCADE', ondelete='CASCADE'
         ),
     )
 
