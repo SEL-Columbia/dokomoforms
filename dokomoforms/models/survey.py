@@ -284,15 +284,16 @@ class MultipleChoiceBucket(Bucket):
 
     id = util.pk()
     the_sub_survey_id = sa.Column(sa.Integer, nullable=False)
-    bucket = sa.Column(pg.UUID, nullable=False)
+    choice_id = sa.Column(pg.UUID, nullable=False)
+    bucket = relationship('Choice')
     parent_survey_node_id = sa.Column(pg.UUID, nullable=False)
     parent_node_id = sa.Column(pg.UUID, nullable=False)
 
     __mapper_args__ = {'polymorphic_identity': 'multiple_choice'}
     __table_args__ = (
-        sa.UniqueConstraint('bucket', 'the_sub_survey_id'),
+        sa.UniqueConstraint('choice_id', 'the_sub_survey_id'),
         sa.ForeignKeyConstraint(
-            ['bucket', 'parent_node_id'],
+            ['choice_id', 'parent_node_id'],
             ['choice.id', 'choice.question_id'],
             onupdate='CASCADE', ondelete='CASCADE'
         ),

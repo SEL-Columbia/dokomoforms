@@ -639,8 +639,6 @@ class TestBucket(DokoTest):
             )
             choice = models.Choice()
             node.choices = [choice]
-            self.session.add(choice)
-            self.session.flush()
 
             survey.nodes = [
                 models.SurveyNode(
@@ -650,7 +648,7 @@ class TestBucket(DokoTest):
                             buckets=[
                                 models.construct_bucket(
                                     bucket_type='multiple_choice',
-                                    bucket=choice.id
+                                    bucket=choice
                                 ),
                             ],
                         ),
@@ -660,8 +658,8 @@ class TestBucket(DokoTest):
             self.session.add(creator)
 
         the_bucket = self.session.query(Bucket).one()
-        choice_id = self.session.query(models.Choice).one().id
-        self.assertEqual(the_bucket.bucket, choice_id)
+        the_choice = self.session.query(models.Choice).one()
+        self.assertIs(the_bucket.bucket, the_choice)
 
     def test_multiple_choice_multiple_buckets(self):
         with self.session.begin():
@@ -672,8 +670,6 @@ class TestBucket(DokoTest):
             choice1 = models.Choice()
             choice2 = models.Choice()
             node.choices = [choice1, choice2]
-            self.session.add(choice1, choice2)
-            self.session.flush()
 
             survey.nodes = [
                 models.SurveyNode(
@@ -683,11 +679,11 @@ class TestBucket(DokoTest):
                             buckets=[
                                 models.construct_bucket(
                                     bucket_type='multiple_choice',
-                                    bucket=choice1.id
+                                    bucket=choice1
                                 ),
                                 models.construct_bucket(
                                     bucket_type='multiple_choice',
-                                    bucket=choice2.id
+                                    bucket=choice2
                                 ),
                             ],
                         ),
@@ -697,12 +693,12 @@ class TestBucket(DokoTest):
             self.session.add(creator)
 
         bucket1 = self.session.query(Bucket).all()[0]
-        choice1_id = self.session.query(models.Choice).all()[0].id
-        self.assertEqual(bucket1.bucket, choice1_id)
+        choice1 = self.session.query(models.Choice).all()[0]
+        self.assertIs(bucket1.bucket, choice1)
 
         bucket2 = self.session.query(Bucket).all()[1]
-        choice2_id = self.session.query(models.Choice).all()[1].id
-        self.assertEqual(bucket2.bucket, choice2_id)
+        choice2 = self.session.query(models.Choice).all()[1]
+        self.assertIs(bucket2.bucket, choice2)
 
     def test_multiple_choice_bucket_no_overlap(self):
         with self.assertRaises(IntegrityError):
@@ -713,8 +709,6 @@ class TestBucket(DokoTest):
                 )
                 choice = models.Choice()
                 node.choices = [choice]
-                self.session.add(choice)
-                self.session.flush()
 
                 survey.nodes = [
                     models.SurveyNode(
@@ -724,11 +718,11 @@ class TestBucket(DokoTest):
                                 buckets=[
                                     models.construct_bucket(
                                         bucket_type='multiple_choice',
-                                        bucket=choice.id
+                                        bucket=choice
                                     ),
                                     models.construct_bucket(
                                         bucket_type='multiple_choice',
-                                        bucket=choice.id
+                                        bucket=choice
                                     ),
                                 ],
                             ),
@@ -746,8 +740,6 @@ class TestBucket(DokoTest):
                 )
                 wrong_choice = models.Choice()
                 wrong_node.choices = [wrong_choice]
-                self.session.add(wrong_choice)
-                self.session.flush()
 
                 survey.nodes = [
                     models.SurveyNode(
@@ -761,7 +753,7 @@ class TestBucket(DokoTest):
                                 buckets=[
                                     models.construct_bucket(
                                         bucket_type='multiple_choice',
-                                        bucket=wrong_choice.id
+                                        bucket=wrong_choice
                                     ),
                                 ],
                             ),
