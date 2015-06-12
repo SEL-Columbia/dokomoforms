@@ -6,6 +6,8 @@ from decimal import Decimal
 from tests.util import DokoTest, setUpModule, tearDownModule
 utils = (setUpModule, tearDownModule)
 
+import psycopg2
+
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError, DataError
 
@@ -549,16 +551,21 @@ class TestBucket(DokoTest):
 
     def test_time_bucket_all_valid_time_formats(self):
         valid_time_formats = [
+            # From
+            # http://www.postgresql.org/docs/9.4/static/datatype-datetime.html
+            # #DATATYPE-DATETIME-TIME-TABLE
             '[04:05:06.789, 04:05:06.790]',
             '[04:05:06, 04:05:07]',
             '[04:05, 04:06]',
-            '[040506, 040507]',
+            # This gets interpreted as a date -- no go
+            # '[040506, 040507]',
             '[04:05 AM, 04:06 AM]',
             '[04:05 PM, 04:06 PM]',
             '[04:05:06.789-8, 04:05:06.790-8]',
             '[04:05:06-08:00, 04:05:07-08:00]',
             '[04:05-08:00, 04:06-08:00]',
-            '[040506-08, 040507-08]',
+            # This gets interpreted as a date plus an hour
+            # '[040506-08, 040507-08]',
             '[04:05:06 PST, 04:05:07 PST]',
             # Not sure if this is worth trying to parse...
             # '[2003-04-12 04:05:06 America/New_York,'
@@ -594,7 +601,96 @@ class TestBucket(DokoTest):
 
         self.assertEqual(
             self.session.query(func.count(Bucket.id)).scalar(),
-            11
+            9
+        )
+        buckets = self.session.query(Bucket)
+        tzinfo = buckets[0].bucket.lower.tzinfo
+
+        def make_range(lower: tuple, upper: tuple) -> DateTimeTZRange:
+            return DateTimeTZRange(
+                datetime.datetime(*lower, tzinfo=tzinfo),
+                datetime.datetime(*upper, tzinfo=tzinfo),
+                '[]'
+            )
+
+        self.assertEqual(
+            buckets[0].bucket,
+            make_range(
+                (1970, 1, 1, 4, 5, 6, 789000), (1970, 1, 1, 4, 5, 6, 790000)
+            )
+        )
+        self.assertEqual(
+            buckets[1].bucket,
+            make_range(
+                (1970, 1, 1, 4, 5, 6), (1970, 1, 1, 4, 5, 7)
+            )
+        )
+        self.assertEqual(
+            buckets[2].bucket,
+            make_range(
+                (1970, 1, 1, 4, 5), (1970, 1, 1, 4, 6)
+            )
+        )
+        self.assertEqual(
+            buckets[3].bucket,
+            make_range(
+                (1970, 1, 1, 4, 5), (1970, 1, 1, 4, 6)
+            )
+        )
+        self.assertEqual(
+            buckets[4].bucket,
+            make_range(
+                (1970, 1, 1, 16, 5), (1970, 1, 1, 16, 6)
+            )
+        )
+        specified_tz = psycopg2.tz.FixedOffsetTimezone(offset=-300, name=None)
+        self.assertEqual(
+            buckets[5].bucket,
+            DateTimeTZRange(
+                datetime.datetime(
+                    1970, 1, 1, 4, 5, 6, 789000, tzinfo=specified_tz
+                ),
+                datetime.datetime(
+                    1970, 1, 1, 4, 5, 6, 790000, tzinfo=specified_tz
+                ),
+                '[]'
+            )
+        )
+        self.assertEqual(
+            buckets[6].bucket,
+            DateTimeTZRange(
+                datetime.datetime(
+                    1970, 1, 1, 4, 5, 6, tzinfo=specified_tz
+                ),
+                datetime.datetime(
+                    1970, 1, 1, 4, 5, 7, tzinfo=specified_tz
+                ),
+                '[]'
+            )
+        )
+        self.assertEqual(
+            buckets[7].bucket,
+            DateTimeTZRange(
+                datetime.datetime(
+                    1970, 1, 1, 4, 5, tzinfo=specified_tz
+                ),
+                datetime.datetime(
+                    1970, 1, 1, 4, 6, tzinfo=specified_tz
+                ),
+                '[]'
+            )
+        )
+        self.assertEqual(
+            buckets[8].bucket,
+            DateTimeTZRange(
+                datetime.datetime(
+                    1970, 1, 1, 4, 5, 6, tzinfo=specified_tz
+                ),
+                datetime.datetime(
+                    1970, 1, 1, 4, 5, 7, tzinfo=specified_tz
+                ),
+                '[]'
+            )
         )
 
     def test_timestamp_bucket(self):
