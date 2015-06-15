@@ -886,7 +886,7 @@ class TestBucket(DokoTest):
                                     ),
                                 ],
                             ),
-                        ]
+                        ],
                     ),
                 ]
                 self.session.add(creator)
@@ -913,9 +913,9 @@ class TestSubmission(DokoTest):
 
             self.session.add(submission)
 
-        self.assertEqual(
-            self.session.query(func.count(models.Submission.id)).scalar(),
-            1
+        self.assertIs(
+            self.session.query(models.Submission).one().enumerator,
+            self.session.query(models.User).filter_by(role='enumerator').one()
         )
 
     def test_enumerator_only(self):
@@ -985,4 +985,14 @@ class TestSubmission(DokoTest):
         self.assertEqual(
             self.session.query(func.count(models.Submission.id)).scalar(),
             2
+        )
+        self.assertEqual(
+            self.session
+            .query(func.count(models.PublicSubmission.id)).scalar(),
+            2
+        )
+        self.assertEqual(
+            self.session
+            .query(func.count(models.EnumeratorOnlySubmission.id)).scalar(),
+            0
         )
