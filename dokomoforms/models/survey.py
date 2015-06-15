@@ -308,13 +308,7 @@ class TimeBucket(Bucket):
     bucket = sa.Column(pg.TSTZRANGE, nullable=False)
 
     __mapper_args__ = {'polymorphic_identity': 'time'}
-    __table_args__ = (
-        _bucket_range_constraints() +
-        (
-            sa.CheckConstraint("date(lower(bucket)) = '1970-01-01'"),
-            sa.CheckConstraint("date(upper(bucket)) = '1970-01-01'"),
-        )
-    )
+    __table_args__ = _bucket_range_constraints()
 
     def _asdict(self) -> OrderedDict:
         return super()._default_asdict()
@@ -383,9 +377,29 @@ BUCKET_TYPES = {
 }
 
 
-def _time_at_unix_epoch_date(time: str) -> datetime.datetime:
+def _time_at_unix_epoch_date(time: str, upper=False) -> datetime.datetime:
+    the_date = datetime.datetime(1970, 1, 1)
+    if upper and time.strip() == '':
+        the_date = datetime.datetime(1970, 1, 2)
     return datetime.datetime.combine(
-        datetime.datetime(1970, 1, 1), dateutil.parser.parse(time).time()
+        the_date, dateutil.parser.parse(time).timetz()
+    )
+
+
+def _set_time_bucket_dates(bucket: str) -> str:
+    bucket_str = bucket.strip()
+
+    open_bracket = bucket_str[0]
+    bucket_str_contents = bucket_str[1:-1]
+    close_bracket = bucket_str[-1]
+
+    lower, upper = bucket_str_contents.split(',')
+
+    return (
+        open_bracket +
+        _time_at_unix_epoch_date(lower).isoformat() + ',' +
+        _time_at_unix_epoch_date(upper, upper=True).isoformat() +
+        close_bracket
     )
 
 
@@ -396,18 +410,7 @@ def construct_bucket(*, bucket_type: str, **kwargs) -> Bucket:
         raise NoSuchBucketTypeError(bucket_type)
 
     if bucket_type == 'time' and 'bucket' in kwargs:
-        bucket_str = kwargs['bucket'].strip()
-
-        open_bracket = bucket_str[0]
-        bucket_str_contents = bucket_str[1:-1]
-        close_bracket = bucket_str[-1]
-
-        lower, upper = bucket_str_contents.split(',')
-
-        kwargs['bucket'] = (
-            open_bracket + _time_at_unix_epoch_date(lower).isoformat() + ',' +
-            _time_at_unix_epoch_date(upper).isoformat() + close_bracket
-        )
+        kwargs['bucket'] = _set_time_bucket_dates(kwargs['bucket'])
 
     return create_bucket(**kwargs)
 

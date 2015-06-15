@@ -16,6 +16,7 @@ from sqlalchemy.exc import IntegrityError, DataError
 from psycopg2.extras import NumericRange, DateRange, DateTimeTZRange
 
 import dokomoforms.models as models
+import dokomoforms.models.survey
 import dokomoforms.exc as exc
 from dokomoforms.models.survey import Bucket
 
@@ -552,6 +553,14 @@ class TestBucket(DokoTest):
             )
         )
 
+    def test_set_time_bucket_dates(self):
+        _set_dates = dokomoforms.models.survey._set_time_bucket_dates
+        self.assertEqual(
+            _set_dates('   (  04:05:06.789-8  , 04:05:06.790-8   ]'),
+            '(1970-01-01T04:05:06.789000-08:00,'
+            '1970-01-01T04:05:06.790000-08:00]'
+        )
+
     def test_time_bucket_all_valid_time_formats(self):
         valid_time_formats = [
             # From
@@ -573,6 +582,9 @@ class TestBucket(DokoTest):
             # Not sure if this is worth trying to parse...
             # '[2003-04-12 04:05:06 America/New_York,'
             # ' 2003-04-12 04:05:07 America/New_York]',
+            '[,04:05 AM]',
+            '[04:05 AM,]',
+            '[,]',
         ]
         with self.session.begin():
             creator = models.SurveyCreator(
@@ -604,7 +616,7 @@ class TestBucket(DokoTest):
 
         self.assertEqual(
             self.session.query(func.count(Bucket.id)).scalar(),
-            9
+            12
         )
         buckets = self.session.query(Bucket)
         tzinfo = buckets[0].bucket.lower.tzinfo
@@ -651,10 +663,10 @@ class TestBucket(DokoTest):
             buckets[5].bucket,
             DateTimeTZRange(
                 datetime.datetime(
-                    1970, 1, 1, 4, 5, 6, 789000, tzinfo=specified_tz
+                    1970, 1, 1, 7, 5, 6, 789000, tzinfo=specified_tz
                 ),
                 datetime.datetime(
-                    1970, 1, 1, 4, 5, 6, 790000, tzinfo=specified_tz
+                    1970, 1, 1, 7, 5, 6, 790000, tzinfo=specified_tz
                 ),
                 '[]'
             )
@@ -663,10 +675,10 @@ class TestBucket(DokoTest):
             buckets[6].bucket,
             DateTimeTZRange(
                 datetime.datetime(
-                    1970, 1, 1, 4, 5, 6, tzinfo=specified_tz
+                    1970, 1, 1, 7, 5, 6, tzinfo=specified_tz
                 ),
                 datetime.datetime(
-                    1970, 1, 1, 4, 5, 7, tzinfo=specified_tz
+                    1970, 1, 1, 7, 5, 7, tzinfo=specified_tz
                 ),
                 '[]'
             )
@@ -675,10 +687,10 @@ class TestBucket(DokoTest):
             buckets[7].bucket,
             DateTimeTZRange(
                 datetime.datetime(
-                    1970, 1, 1, 4, 5, tzinfo=specified_tz
+                    1970, 1, 1, 7, 5, tzinfo=specified_tz
                 ),
                 datetime.datetime(
-                    1970, 1, 1, 4, 6, tzinfo=specified_tz
+                    1970, 1, 1, 7, 6, tzinfo=specified_tz
                 ),
                 '[]'
             )
@@ -693,6 +705,24 @@ class TestBucket(DokoTest):
                     1970, 1, 1, 4, 5, 7, tzinfo=specified_tz
                 ),
                 '[]'
+            )
+        )
+        self.assertEqual(
+            buckets[9].bucket,
+            make_range(
+                (1970, 1, 1, 0, 0), (1970, 1, 1, 4, 5)
+            )
+        )
+        self.assertEqual(
+            buckets[10].bucket,
+            make_range(
+                (1970, 1, 1, 4, 5), (1970, 1, 2, 0, 0)
+            )
+        )
+        self.assertEqual(
+            buckets[11].bucket,
+            make_range(
+                (1970, 1, 1, 0, 0), (1970, 1, 2, 0, 0)
             )
         )
 
