@@ -900,9 +900,9 @@ class TestSubmission(DokoTest):
             creator.surveys = [
                 models.AuthenticationRequiredSurvey(
                     title='survey',
+                    enumerators=[enumerator]
                 ),
             ]
-            creator.enumerators = [enumerator]
 
             self.session.add(creator)
 
@@ -912,3 +912,47 @@ class TestSubmission(DokoTest):
             )
 
             self.session.add(submission)
+
+    def test_authentication_is_required(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                creator = models.SurveyCreator(name='creator')
+                enumerator = models.User(name='enumerator')
+                creator.surveys = [
+                    models.AuthenticationRequiredSurvey(
+                        title='survey',
+                    ),
+                ]
+                creator.enumerators = [enumerator]
+
+                self.session.add(creator)
+
+                submission = models.NonAuthenticatedSubmission(
+                    survey=creator.surveys[0],
+                )
+
+                self.session.add(submission)
+
+    def test_wrong_user_cannot_submit(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                creator = models.SurveyCreator(name='creator')
+                enumerator = models.User(name='enumerator')
+                creator.surveys = [
+                    models.AuthenticationRequiredSurvey(
+                        title='survey',
+                    ),
+                ]
+                creator.enumerators = [enumerator]
+
+                self.session.add(creator)
+
+                bad_user = models.User(name='bad')
+                self.session.add(bad_user)
+
+                submission = models.AuthenticatedSubmission(
+                    survey=creator.surveys[0],
+                    enumerator=bad_user,
+                )
+
+                self.session.add(submission)

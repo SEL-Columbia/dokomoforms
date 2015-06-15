@@ -111,7 +111,8 @@ _enumerator_table = sa.Table(
         pg.UUID,
         util.fk('survey_authentication_required.id')
     ),
-    sa.Column('user_id', pg.UUID, util.fk('auth_user.id'))
+    sa.Column('user_id', pg.UUID, util.fk('auth_user.id')),
+    sa.UniqueConstraint('authentication_required_survey_id', 'user_id'),
 )
 
 

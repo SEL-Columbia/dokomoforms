@@ -47,6 +47,7 @@ class Submission(Base):
             ['survey.id', 'survey.authenticate_submitter']
         ),
         sa.UniqueConstraint('id', 'authenticate_submitter'),
+        sa.UniqueConstraint('id', 'survey_id'),
     )
 
     def _default_asdict(self) -> OrderedDict:
@@ -65,13 +66,24 @@ class Submission(Base):
 class AuthenticatedSubmission(Submission):
     __tablename__ = 'submission_authenticated'
 
-    id = util.pk('submission.id')
+    id = util.pk()
+    the_survey_id = sa.Column(pg.UUID, nullable=False)
     enumerator_user_id = sa.Column(
         pg.UUID, util.fk('auth_user.id'), nullable=False
     )
     enumerator = relationship('User')
 
     __mapper_args__ = {'polymorphic_identity': 'authenticated'}
+    __table_args__ = (
+        sa.ForeignKeyConstraint(
+            ['id', 'the_survey_id'], ['submission.id', 'submission.survey_id']
+        ),
+        sa.ForeignKeyConstraint(
+            ['the_survey_id', 'enumerator_user_id'],
+            ['enumerator.authentication_required_survey_id',
+                'enumerator.user_id']
+        ),
+    )
 
     def _asdict(self) -> OrderedDict:
         result = super()._default_asdict()
@@ -93,6 +105,8 @@ class NonAuthenticatedSubmission(Submission):
         ),
         sa.CheckConstraint('NOT should_authenticate::TEXT::BOOLEAN'),
     )
+
+    __mapper_args__ = {'polymorphic_identity': 'unauthenticated'}
 
     def _asdict(self):
         return super()._default_asdict()
