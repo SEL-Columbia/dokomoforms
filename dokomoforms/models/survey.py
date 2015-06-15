@@ -377,12 +377,34 @@ BUCKET_TYPES = {
 }
 
 
+TZINFOS = dict()
+
+
+def _set_tzinfos():
+    global TZINFOS
+    if not TZINFOS:
+        from dokomoforms.models import create_engine
+        engine = create_engine(echo=False)
+        connection = engine.connect()
+        tzinfos = connection.execute(
+            'SELECT abbrev, utc_offset FROM pg_timezone_abbrevs'
+        )
+        connection.close()
+        TZINFOS = {
+            abbrev: int(offset.total_seconds()) for abbrev, offset in tzinfos
+        }
+        del engine
+
+
+_set_tzinfos()
+
+
 def _time_at_unix_epoch_date(time: str, upper=False) -> datetime.datetime:
     the_date = datetime.datetime(1970, 1, 1)
     if upper and time.strip() == '':
         the_date = datetime.datetime(1970, 1, 2)
     return datetime.datetime.combine(
-        the_date, dateutil.parser.parse(time).timetz()
+        the_date, dateutil.parser.parse(time, tzinfos=TZINFOS).timetz()
     )
 
 

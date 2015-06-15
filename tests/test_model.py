@@ -699,10 +699,10 @@ class TestBucket(DokoTest):
             buckets[8].bucket,
             DateTimeTZRange(
                 datetime.datetime(
-                    1970, 1, 1, 4, 5, 6, tzinfo=specified_tz
+                    1970, 1, 1, 7, 5, 6, tzinfo=specified_tz
                 ),
                 datetime.datetime(
-                    1970, 1, 1, 4, 5, 7, tzinfo=specified_tz
+                    1970, 1, 1, 7, 5, 7, tzinfo=specified_tz
                 ),
                 '[]'
             )
