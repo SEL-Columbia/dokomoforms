@@ -58,3 +58,14 @@ class BaseHandler(tornado.web.RequestHandler):
     #         self.write(kwargs)
     #     else:
     #         super().write_error(status_code, **kwargs)
+
+
+class BaseAPIHandler(BaseHandler):
+
+    @property
+    def api_version(self):
+        return self.application._api_version
+
+    @property
+    def api_root_path(self):
+        return self.application._api_root_path

@@ -29,6 +29,8 @@ _pwd = os.path.dirname(__file__)
 bold = '\033[1m'
 green = '\033[92m'
 
+UUID_REGEX = '[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][' \
+             'a-f0-9]{3}-?[a-f0-9]{12}'
 
 def modify_text(text: str, modifier: str) -> str:
     """
@@ -95,11 +97,23 @@ class Application(tornado.web.Application):
         option), then prepares the database and creates a session.
 
         """
+        self._api_version = 'v0'
+        self._api_root_path = '/api/' + self._api_version
+
         urls = [
             # Administrative
             url(r'/', handlers.Index, name='index'),
             url(r'/user/login/?', handlers.Login, name='login'),
             url(r'/user/logout/?', handlers.Logout, name='logout'),
+
+            # API
+            # TODO: These are temporary placeholders. JW - 06/15/15
+            url(r'' + self._api_root_path + '/surveys',
+                handlers.SurveysAPIList, name="surveys"),
+            url(r'' + self._api_root_path +
+                '/surveys/({})/?'.format(UUID_REGEX),
+                handlers.SurveysAPISingle,
+                name="survey"),
         ]
         settings = {
             'template_path': os.path.join(_pwd, 'dokomoforms/templates'),
