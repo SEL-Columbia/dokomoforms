@@ -893,12 +893,12 @@ class TestBucket(DokoTest):
 
 
 class TestSubmission(DokoTest):
-    def test_authenticated_submission(self):
+    def test_enumerator_submission(self):
         with self.session.begin():
             creator = models.SurveyCreator(name='creator')
             enumerator = models.User(name='enumerator')
             creator.surveys = [
-                models.AuthenticationRequiredSurvey(
+                models.EnumeratorOnlySurvey(
                     title='survey',
                     enumerators=[enumerator]
                 ),
@@ -906,20 +906,25 @@ class TestSubmission(DokoTest):
 
             self.session.add(creator)
 
-            submission = models.AuthenticatedSubmission(
+            submission = models.EnumeratorOnlySubmission(
                 survey=creator.surveys[0],
                 enumerator=enumerator,
             )
 
             self.session.add(submission)
 
-    def test_authentication_is_required(self):
+        self.assertEqual(
+            self.session.query(func.count(models.Submission.id)).scalar(),
+            1
+        )
+
+    def test_enumerator_only(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
                 creator = models.SurveyCreator(name='creator')
                 enumerator = models.User(name='enumerator')
                 creator.surveys = [
-                    models.AuthenticationRequiredSurvey(
+                    models.EnumeratorOnlySurvey(
                         title='survey',
                     ),
                 ]
@@ -927,32 +932,57 @@ class TestSubmission(DokoTest):
 
                 self.session.add(creator)
 
-                submission = models.NonAuthenticatedSubmission(
+                submission = models.PublicSubmission(
                     survey=creator.surveys[0],
                 )
 
                 self.session.add(submission)
 
-    def test_wrong_user_cannot_submit(self):
+    def test_non_enumerator_cannot_submit(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
                 creator = models.SurveyCreator(name='creator')
-                enumerator = models.User(name='enumerator')
                 creator.surveys = [
-                    models.AuthenticationRequiredSurvey(
+                    models.EnumeratorOnlySurvey(
                         title='survey',
                     ),
                 ]
-                creator.enumerators = [enumerator]
 
                 self.session.add(creator)
 
                 bad_user = models.User(name='bad')
                 self.session.add(bad_user)
 
-                submission = models.AuthenticatedSubmission(
+                submission = models.EnumeratorOnlySubmission(
                     survey=creator.surveys[0],
                     enumerator=bad_user,
                 )
 
                 self.session.add(submission)
+
+    def test_authentication_not_required(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            authentic_user = models.User(name='enumerator')
+            creator.surveys = [models.Survey(title='survey')]
+
+            self.session.add(creator)
+
+            auth_submission = models.PublicSubmission(
+                survey=creator.surveys[0],
+                enumerator=authentic_user,
+            )
+
+            self.session.add(auth_submission)
+
+            regular_submission = models.PublicSubmission(
+                survey=creator.surveys[0],
+                submitter_name='regular',
+            )
+
+            self.session.add(regular_submission)
+
+        self.assertEqual(
+            self.session.query(func.count(models.Submission.id)).scalar(),
+            2
+        )

@@ -18,7 +18,7 @@ from dokomoforms.exc import NoSuchBucketTypeError
 
 survey_type_enum = sa.Enum(
     'false', 'true',
-    name='authenticate_submitter_enum',
+    name='enumerator_only_enum',
     inherit_schema=True,
 )
 
@@ -43,7 +43,7 @@ class Survey(Base):
     translations = sa.Column(
         pg.json.JSONB, nullable=False, server_default='{}'
     )
-    authenticate_submitter = sa.Column(survey_type_enum, nullable=False)
+    enumerator_only = sa.Column(survey_type_enum, nullable=False)
     submissions = relationship(
         'Submission',
         order_by='Submission.save_time',
@@ -75,14 +75,14 @@ class Survey(Base):
     last_update_time = util.last_update_time()
 
     __mapper_args__ = {
-        'polymorphic_on': authenticate_submitter,
+        'polymorphic_on': enumerator_only,
         'polymorphic_identity': 'false',
     }
     __table_args__ = (
         sa.UniqueConstraint(
             'title', 'creator_id', name='unique_survey_title_per_user'
         ),
-        sa.UniqueConstraint('id', 'authenticate_submitter'),
+        sa.UniqueConstraint('id', 'enumerator_only'),
     )
 
     def _asdict(self) -> OrderedDict:
@@ -92,7 +92,7 @@ class Survey(Base):
             ('title', self.title),
             ('default_language', self.default_language),
             ('translations', self.translations),
-            ('authenticate_submitter', self.authenticate_submitter),
+            ('enumerator_only', self.enumerator_only),
             ('version', self.version),
             ('creator_id', self.creator_id),
             ('creator_name', self.creator.name),
@@ -107,17 +107,17 @@ _enumerator_table = sa.Table(
     'enumerator',
     Base.metadata,
     sa.Column(
-        'authentication_required_survey_id',
+        'enumerator_only_survey_id',
         pg.UUID,
-        util.fk('survey_authentication_required.id')
+        util.fk('survey_enumerator_only.id')
     ),
     sa.Column('user_id', pg.UUID, util.fk('auth_user.id')),
-    sa.UniqueConstraint('authentication_required_survey_id', 'user_id'),
+    sa.UniqueConstraint('enumerator_only_survey_id', 'user_id'),
 )
 
 
-class AuthenticationRequiredSurvey(Survey):
-    __tablename__ = 'survey_authentication_required'
+class EnumeratorOnlySurvey(Survey):
+    __tablename__ = 'survey_enumerator_only'
 
     id = util.pk('survey')
     enumerators = relationship(

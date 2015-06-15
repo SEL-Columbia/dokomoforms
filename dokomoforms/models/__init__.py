@@ -9,11 +9,11 @@ from dokomoforms.models.node import (
     Choice,
 )
 from dokomoforms.models.survey import (
-    Survey, AuthenticationRequiredSurvey, SubSurvey, SurveyNode,
+    Survey, EnumeratorOnlySurvey, SubSurvey, SurveyNode,
     construct_bucket, survey_type_enum,
 )
 from dokomoforms.models.submission import (
-    Submission, AuthenticatedSubmission, NonAuthenticatedSubmission,
+    Submission, EnumeratorOnlySubmission, PublicSubmission,
 )
 
 __all__ = [
@@ -29,8 +29,8 @@ __all__ = [
     'FacilityQuestion', 'MultipleChoiceQuestion',
     'Choice',
     # Survey
-    'Survey', 'AuthenticationRequiredSurvey', 'SubSurvey', 'SurveyNode',
+    'Survey', 'EnumeratorOnlySurvey', 'SubSurvey', 'SurveyNode',
     'construct_bucket', 'survey_type_enum',
     # Submission
-    'Submission', 'AuthenticatedSubmission', 'NonAuthenticatedSubmission',
+    'Submission', 'EnumeratorOnlySubmission', 'PublicSubmission',
 ]
