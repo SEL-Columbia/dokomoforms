@@ -108,8 +108,11 @@ sa.event.listen(
         'CREATE SCHEMA IF NOT EXISTS {schema};'
         'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'
         ' WITH SCHEMA pg_catalog;'
+        'CREATE EXTENSION IF NOT EXISTS "postgis"'
+        ' WITH SCHEMA {schema};'
         'CREATE EXTENSION IF NOT EXISTS "btree_gist"'
-        ' WITH SCHEMA pg_catalog;'.format(schema=options.schema)
+        ' WITH SCHEMA pg_catalog;'
+        .format(schema=options.schema)
     ),
 )
 
