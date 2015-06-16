@@ -8,6 +8,7 @@ import dateutil.parser
 
 import sqlalchemy as sa
 from sqlalchemy.sql.functions import current_timestamp
+from sqlalchemy.sql.elements import quoted_name
 from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.orderinglist import ordering_list
@@ -133,7 +134,7 @@ class EnumeratorOnlySurvey(Survey):
 _sub_survey_nodes = sa.Table(
     'sub_survey_nodes',
     Base.metadata,
-    sa.Column('sub_survey_id', sa.Integer, sa.ForeignKey('sub_survey.id')),
+    sa.Column('sub_survey_id', pg.UUID, sa.ForeignKey('sub_survey.id')),
     sa.Column('survey_node_id', pg.UUID, sa.ForeignKey('survey_node.id')),
 )
 
@@ -141,7 +142,7 @@ _sub_survey_nodes = sa.Table(
 class SubSurvey(Base):
     __tablename__ = 'sub_survey'
 
-    id = sa.Column(sa.Integer, primary_key=True)
+    id = util.pk()
     sub_survey_number = sa.Column(sa.Integer, nullable=False)
     parent_survey_node_id = sa.Column(pg.UUID, nullable=False)
     parent_node_id = sa.Column(pg.UUID, nullable=False)
@@ -190,7 +191,7 @@ class Bucket(Base):
     __tablename__ = 'bucket'
 
     id = util.pk()
-    sub_survey_id = sa.Column(sa.Integer, nullable=False)
+    sub_survey_id = sa.Column(pg.UUID, nullable=False)
     sub_survey_parent_type_constraint = sa.Column(
         node_type_enum, nullable=False
     )
@@ -250,7 +251,15 @@ class Bucket(Base):
 
 def _bucket_range_constraints() -> tuple:
     return (
-        pg.ExcludeConstraint(('the_sub_survey_id', '='), ('bucket', '&&')),
+        pg.ExcludeConstraint(
+            (
+                sa.Column(quoted_name(
+                    'CAST("the_sub_survey_id" AS TEXT)', quote=False
+                )),
+                '='
+            ),
+            ('bucket', '&&')
+        ),
         sa.CheckConstraint('NOT isempty(bucket)'),
         sa.ForeignKeyConstraint(
             ['id', 'the_sub_survey_id'], ['bucket.id', 'bucket.sub_survey_id'],
@@ -263,7 +272,7 @@ class IntegerBucket(Bucket):
     __tablename__ = 'bucket_integer'
 
     id = util.pk()
-    the_sub_survey_id = sa.Column(sa.Integer, nullable=False)
+    the_sub_survey_id = sa.Column(pg.UUID, nullable=False)
     bucket = sa.Column(pg.INT4RANGE, nullable=False)
 
     __mapper_args__ = {'polymorphic_identity': 'integer'}
@@ -277,7 +286,7 @@ class DecimalBucket(Bucket):
     __tablename__ = 'bucket_decimal'
 
     id = util.pk()
-    the_sub_survey_id = sa.Column(sa.Integer, nullable=False)
+    the_sub_survey_id = sa.Column(pg.UUID, nullable=False)
     bucket = sa.Column(pg.NUMRANGE, nullable=False)
 
     __mapper_args__ = {'polymorphic_identity': 'decimal'}
@@ -291,7 +300,7 @@ class DateBucket(Bucket):
     __tablename__ = 'bucket_date'
 
     id = util.pk()
-    the_sub_survey_id = sa.Column(sa.Integer, nullable=False)
+    the_sub_survey_id = sa.Column(pg.UUID, nullable=False)
     bucket = sa.Column(pg.DATERANGE, nullable=False)
 
     __mapper_args__ = {'polymorphic_identity': 'date'}
@@ -305,7 +314,7 @@ class TimeBucket(Bucket):
     __tablename__ = 'bucket_time'
 
     id = util.pk()
-    the_sub_survey_id = sa.Column(sa.Integer, nullable=False)
+    the_sub_survey_id = sa.Column(pg.UUID, nullable=False)
     bucket = sa.Column(pg.TSTZRANGE, nullable=False)
 
     __mapper_args__ = {'polymorphic_identity': 'time'}
@@ -319,7 +328,7 @@ class TimeStampBucket(Bucket):
     __tablename__ = 'bucket_timestamp'
 
     id = util.pk()
-    the_sub_survey_id = sa.Column(sa.Integer, nullable=False)
+    the_sub_survey_id = sa.Column(pg.UUID, nullable=False)
     bucket = sa.Column(pg.TSTZRANGE, nullable=False)
 
     __mapper_args__ = {'polymorphic_identity': 'timestamp'}
@@ -333,7 +342,7 @@ class MultipleChoiceBucket(Bucket):
     __tablename__ = 'bucket_multiple_choice'
 
     id = util.pk()
-    the_sub_survey_id = sa.Column(sa.Integer, nullable=False)
+    the_sub_survey_id = sa.Column(pg.UUID, nullable=False)
     choice_id = sa.Column(pg.UUID, nullable=False)
     bucket = relationship('Choice')
     parent_survey_node_id = sa.Column(pg.UUID, nullable=False)
