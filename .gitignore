@@ -10,3 +10,7 @@ htmlcov/
 .python-version
 locale/dokomoforms.po
 node_modules/
+Vagrantfile
+.vagrant
+provision.sh
+.DS_Store
