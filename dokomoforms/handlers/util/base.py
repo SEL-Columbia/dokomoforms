@@ -13,6 +13,7 @@ from dokomoforms.db.question import question_select
 from dokomoforms.db.survey import get_email_address
 from dokomoforms import settings
 from dokomoforms.utils.logger import setup_custom_logger
+from dokomoforms.db.survey import get_surveys_by_email_for_menu
 
 
 def iso_date_str_to_fmt_str(date: str, format_string: str) -> str:
@@ -29,7 +30,20 @@ def iso_date_str_to_fmt_str(date: str, format_string: str) -> str:
         return None
 
 
+def get_surveys_for_menu(self):
+    """
+    TODO: This doesn't seem like the best way to do this,
+    since it requires passing in self?
+    Should it go in the BaseHandler class?
+
+    In any case, it will change when we have a cleaner way to access the db.
+    """
+    surveys = get_surveys_by_email_for_menu(self.db, self.current_user, 10)
+    return surveys
+
+
 class BaseHandler(tornado.web.RequestHandler):
+
     """Common handler functions here (e.g. user auth, template helpers)"""
 
     @property
@@ -74,12 +88,16 @@ class BaseHandler(tornado.web.RequestHandler):
         """Template globals"""
         namespace = super().get_template_namespace()
         namespace.update({
-            'iso_date_str_to_fmt_str': iso_date_str_to_fmt_str
+            'iso_date_str_to_fmt_str': iso_date_str_to_fmt_str,
+
+            # a list of survey_id and survey_title for all surveys
+            'surveys_for_menu': get_surveys_for_menu(self)
         })
         return namespace
 
 
 class APIHandler(BaseHandler):
+
     """Handler for authenticated API endpoints."""
 
     def get_email(self) -> str:
@@ -120,6 +138,7 @@ class APIHandler(BaseHandler):
 
 
 class APINoLoginHandler(BaseHandler):
+
     """
     Handler for API endpoints that do not depend on a specific user (e.g.,
     survey submission). As such, the get_email() method has not been defined.

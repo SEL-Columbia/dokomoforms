@@ -2,17 +2,45 @@ body {
   padding-top: 50px;
   padding-bottom: 30px;
 }
-h4 {
-  text-transform: uppercase;
-  font-weight: 900;
-  margin-bottom: 20px;
+.navbar {
+  font-weight: 300;
 }
-.light-shadow {
-  box-shadow: 0px 1px 5px #888888;
+.navbar-main-menu {
+  position: relative;
 }
 .header {
-  background-color: #78C0A8;
+  height: 80px;
   /*margin-bottom: 40px;*/
+}
+.header .header-main-nav {
+  background-color: #78C0A8;
+}
+.header .header-main-nav ul {
+  padding: 0;
+  margin: 0;
+}
+.header .header-main-nav ul li {
+  list-style: none;
+  display: inline-block;
+  margin: 0px;
+}
+.header .header-main-nav ul li a {
+  color: #eeeeee;
+  display: block;
+  padding: 30px;
+  margin: 0px;
+  height: 80px;
+}
+.header .header-main-nav ul li a.active,
+.header .header-main-nav ul li a:hover {
+  color: #fff;
+  background-color: #5B9380;
+}
+.header .header-main-nav .container {
+  padding: 0;
+}
+.header .header-sub-nav {
+  background-color: #5B9380;
 }
 .header h1 {
   font-weight: 100;
@@ -25,6 +53,24 @@ h4 {
 }
 .header .header-controls {
   padding-top: 25px;
+}
+.header-account-overview {
+  background-color: #9F4F0F;
+}
+h4 {
+  text-transform: uppercase;
+  font-weight: 900;
+  margin-bottom: 20px;
+}
+.light-shadow {
+  box-shadow: 0px 1px 5px #888888;
+}
+.info-icon {
+  cursor: default;
+  color: #bfbfbf;
+  font-style: italic;
+  text-transform: lowercase;
+  font-family: Georgia, "Times New Roman", Times, serif;
 }
 .subheader {
   background-color: #eeeeee;
@@ -150,11 +196,19 @@ ul.survey-questions .question-title-bar {
   padding: 5px 10px;
   font-size: 1.5em;
 }
+ul.survey-questions .question-title-bar:hover {
+  background-color: #eeeeee;
+  cursor: pointer;
+}
+ul.survey-questions .question-title-bar.open {
+  background-color: #f07818;
+}
 ul.survey-questions .question-title-bar .question-type {
   font-size: .5em;
   text-transform: uppercase;
   color: #bfbfbf;
-  margin-left: 40px;
+  position: relative;
+  top: 10px;
 }
 ul.survey-questions .question-stats {
   display: none;
@@ -190,6 +244,18 @@ ul.survey-responses .response-data {
   padding: 5px 10px;
   font-size: 1.3em;
   font-weight: 700;
+}
+/* View Survey */
+.tab-pane-submissions-list {
+  margin-top: 11px;
+}
+#submissions-map-container {
+  height: 400px;
+  width: 100%;
+}
+/* View Data */
+.location-map {
+  height: 300px;
 }
 /* Bootstrap Overrides */
 .nav-tabs > li a {

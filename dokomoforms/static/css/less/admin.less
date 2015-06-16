@@ -6,18 +6,58 @@ body {
   padding-bottom: 30px;
 }
 
-h4 {
-	text-transform: uppercase;
-	font-weight: 900;
-	margin-bottom: 20px;
+
+// TOP NAV
+
+.navbar-container {
+	// position: absolute;
+	// width: 100%;
 }
 
-.light-shadow {
-	box-shadow: 0px 1px 5px #888888;
+.navbar {
+	font-weight: 300;
 }
+
+.navbar-main-menu {
+	position: relative;
+	// left: -10px;
+}
+
 
 .header {
-	background-color: #78C0A8;
+	height: 80px;
+	.header-main-nav {
+		background-color: #78C0A8;
+
+		ul {
+			padding: 0;
+			margin: 0;
+			li {
+				list-style: none;
+				display: inline-block;
+				margin: 0px;
+				a {
+					color: @gray-lighter;
+					display: block;
+					padding: 30px;
+					margin: 0px;
+					height: 80px;
+					&.active, &:hover {
+						color: #fff;
+						background-color: #5B9380;
+					}
+				}
+			}
+		}
+
+		.container {
+			padding: 0;
+		}
+	}
+
+	.header-sub-nav {
+		background-color: #5B9380;
+	}
 	/*margin-bottom: 40px;*/
 
 	h1 {
@@ -34,6 +74,28 @@ h4 {
 	.header-controls {
 		padding-top: 25px;
 	}
+}
+
+.header-account-overview {
+	background-color: #9F4F0F;
+}
+
+h4 {
+	text-transform: uppercase;
+	font-weight: 900;
+	margin-bottom: 20px;
+}
+
+.light-shadow {
+	box-shadow: 0px 1px 5px #888888;
+}
+
+.info-icon {
+	cursor: default;
+	color: @gray-light;
+	font-style: italic;
+	text-transform: lowercase;
+	font-family: @font-family-serif;
 }
 
 .subheader {
@@ -140,11 +202,22 @@ ul.survey-questions {
 		padding: 5px 10px;
 		font-size: 1.5em;
 
+		&:hover {
+			background-color: @gray-lighter;
+			cursor: pointer;
+		}
+
+		&.open {
+			background-color: @brand-secondary;
+		}
+
 		.question-type {
 			font-size: .5em;
 			text-transform: uppercase;
 			color: @gray-light;
-			margin-left: 40px;
+			position: relative;
+			top: 10px;
+			// margin-left: 40px;
 		}
 	}
 
@@ -191,6 +264,22 @@ ul.survey-responses {
 	}
 }
 
+
+/* View Survey */
+.tab-pane-submissions-list {
+	margin-top: 11px;
+}
+
+#submissions-map-container {
+	height: 400px;
+	width: 100%;
+}
+
+
+/* View Data */
+.location-map {
+	height: 300px;
+}
 
 /* Bootstrap Overrides */
 
