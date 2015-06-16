@@ -223,6 +223,9 @@ class TestBucket(DokoTest):
         creator.surveys = [survey]
         return creator, survey
 
+    def test_non_instantiable(self):
+        self.assertRaises(TypeError, Bucket)
+
     def test_integer_bucket(self):
         with self.session.begin():
             creator, survey = self._create_blank_survey()
@@ -996,3 +999,8 @@ class TestSubmission(DokoTest):
             .query(func.count(models.EnumeratorOnlySubmission.id)).scalar(),
             0
         )
+
+
+class TestAnswer(DokoTest):
+    def test_non_instantiable(self):
+        self.assertRaises(TypeError, models.Answer)

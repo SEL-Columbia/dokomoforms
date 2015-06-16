@@ -4,7 +4,7 @@ from dokomoforms.models.node import (
     Node, Question, construct_node, NODE_TYPES, node_type_enum,
     Note,
     TextQuestion, PhotoQuestion, IntegerQuestion, DecimalQuestion,
-    DateQuestion, TimeQuestion, TimeStampQuestion, LocationQuestion,
+    DateQuestion, TimeQuestion, TimestampQuestion, LocationQuestion,
     FacilityQuestion, MultipleChoiceQuestion,
     Choice,
 )
@@ -15,7 +15,7 @@ from dokomoforms.models.survey import (
 from dokomoforms.models.submission import (
     Submission, EnumeratorOnlySubmission, PublicSubmission,
 )
-from dokomoforms.models.answer import Answer
+from dokomoforms.models.answer import Answer, Photo, construct_answer
 
 __all__ = [
     # Util
@@ -26,7 +26,7 @@ __all__ = [
     'Node', 'Question', 'construct_node', 'NODE_TYPES', 'node_type_enum',
     'Note',
     'TextQuestion', 'PhotoQuestion', 'IntegerQuestion', 'DecimalQuestion',
-    'DateQuestion', 'TimeQuestion', 'TimeStampQuestion', 'LocationQuestion',
+    'DateQuestion', 'TimeQuestion', 'TimestampQuestion', 'LocationQuestion',
     'FacilityQuestion', 'MultipleChoiceQuestion',
     'Choice',
     # Survey
@@ -35,5 +35,5 @@ __all__ = [
     # Submission
     'Submission', 'EnumeratorOnlySubmission', 'PublicSubmission',
     # Answer
-    'Answer',
+    'Answer', 'Photo', 'construct_answer',
 ]

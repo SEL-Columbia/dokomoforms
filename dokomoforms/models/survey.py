@@ -11,6 +11,7 @@ from sqlalchemy.sql.functions import current_timestamp
 from sqlalchemy.sql.elements import quoted_name
 from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import relationship
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.orderinglist import ordering_list
 
 from dokomoforms.models import util, Base, node_type_enum
@@ -62,7 +63,7 @@ class Survey(Base):
         pg.json.JSONB, nullable=False, server_default='{}'
     )
     created_on = sa.Column(
-        sa.DateTime(timezone=True),
+        pg.TIMESTAMP(timezone=True),
         nullable=False,
         server_default=current_timestamp(),
     )
@@ -241,7 +242,7 @@ class Bucket(Base):
         ),
     )
 
-    def _default_asdict(self) -> OrderedDict:
+    def _asdict(self) -> OrderedDict:
         return OrderedDict((
             ('id', self.id),
             ('bucket_type', self.bucket_type),
@@ -249,93 +250,62 @@ class Bucket(Base):
         ))
 
 
-def _bucket_range_constraints() -> tuple:
-    return (
-        pg.ExcludeConstraint(
-            (
-                sa.Column(quoted_name(
-                    'CAST("the_sub_survey_id" AS TEXT)', quote=False
-                )),
-                '='
+class _RangeBucketMixin:
+    id = util.pk()
+    the_sub_survey_id = sa.Column(pg.UUID, nullable=False)
+
+    @declared_attr
+    def __table_args__(cls):
+        return (
+            pg.ExcludeConstraint(
+                (
+                    # Workaround for
+                    # https://bitbucket.org/zzzeek/sqlalchemy/issue/3454
+                    # For SQLAlchemy 1.0.6, replace with actual cast()
+                    sa.Column(quoted_name(
+                        'CAST("the_sub_survey_id" AS TEXT)', quote=False
+                    )),
+                    '='
+                ),
+                ('bucket', '&&')
             ),
-            ('bucket', '&&')
-        ),
-        sa.CheckConstraint('NOT isempty(bucket)'),
-        sa.ForeignKeyConstraint(
-            ['id', 'the_sub_survey_id'], ['bucket.id', 'bucket.sub_survey_id'],
-            onupdate='CASCADE', ondelete='CASCADE'
-        ),
-    )
+            sa.CheckConstraint('NOT isempty(bucket)'),
+            sa.ForeignKeyConstraint(
+                ['id', 'the_sub_survey_id'],
+                ['bucket.id', 'bucket.sub_survey_id'],
+                onupdate='CASCADE', ondelete='CASCADE'
+            ),
+        )
 
 
-class IntegerBucket(Bucket):
+class IntegerBucket(_RangeBucketMixin, Bucket):
     __tablename__ = 'bucket_integer'
-
-    id = util.pk()
-    the_sub_survey_id = sa.Column(pg.UUID, nullable=False)
     bucket = sa.Column(pg.INT4RANGE, nullable=False)
-
     __mapper_args__ = {'polymorphic_identity': 'integer'}
-    __table_args__ = _bucket_range_constraints()
-
-    def _asdict(self) -> OrderedDict:
-        return super()._default_asdict()
 
 
-class DecimalBucket(Bucket):
+class DecimalBucket(_RangeBucketMixin, Bucket):
     __tablename__ = 'bucket_decimal'
-
-    id = util.pk()
-    the_sub_survey_id = sa.Column(pg.UUID, nullable=False)
     bucket = sa.Column(pg.NUMRANGE, nullable=False)
-
     __mapper_args__ = {'polymorphic_identity': 'decimal'}
-    __table_args__ = _bucket_range_constraints()
-
-    def _asdict(self) -> OrderedDict:
-        return super()._default_asdict()
 
 
-class DateBucket(Bucket):
+class DateBucket(_RangeBucketMixin, Bucket):
     __tablename__ = 'bucket_date'
-
-    id = util.pk()
-    the_sub_survey_id = sa.Column(pg.UUID, nullable=False)
     bucket = sa.Column(pg.DATERANGE, nullable=False)
-
     __mapper_args__ = {'polymorphic_identity': 'date'}
-    __table_args__ = _bucket_range_constraints()
-
-    def _asdict(self) -> OrderedDict:
-        return super()._default_asdict()
 
 
-class TimeBucket(Bucket):
+class TimeBucket(_RangeBucketMixin, Bucket):
     __tablename__ = 'bucket_time'
-
-    id = util.pk()
-    the_sub_survey_id = sa.Column(pg.UUID, nullable=False)
     bucket = sa.Column(pg.TSTZRANGE, nullable=False)
-
     __mapper_args__ = {'polymorphic_identity': 'time'}
-    __table_args__ = _bucket_range_constraints()
-
-    def _asdict(self) -> OrderedDict:
-        return super()._default_asdict()
 
 
-class TimeStampBucket(Bucket):
+class TimestampBucket(_RangeBucketMixin, Bucket):
     __tablename__ = 'bucket_timestamp'
-
-    id = util.pk()
-    the_sub_survey_id = sa.Column(pg.UUID, nullable=False)
     bucket = sa.Column(pg.TSTZRANGE, nullable=False)
-
     __mapper_args__ = {'polymorphic_identity': 'timestamp'}
-    __table_args__ = _bucket_range_constraints()
-
-    def _asdict(self) -> OrderedDict:
-        return super()._default_asdict()
 
 
 class MultipleChoiceBucket(Bucket):
@@ -373,16 +343,13 @@ class MultipleChoiceBucket(Bucket):
         ),
     )
 
-    def _asdict(self) -> OrderedDict:
-        return super()._default_asdict()
-
 
 BUCKET_TYPES = {
     'integer': IntegerBucket,
     'decimal': DecimalBucket,
     'date': DateBucket,
     'time': TimeBucket,
-    'timestamp': TimeStampBucket,
+    'timestamp': TimestampBucket,
     'multiple_choice': MultipleChoiceBucket,
 }
 
@@ -469,6 +436,8 @@ class SurveyNode(Base):
         sa.Boolean, nullable=False, server_default='false'
     )
     logic = sa.Column(pg.json.JSONB, nullable=False, server_default='{}')
+    last_update_time = util.last_update_time()
+    answers = relationship('Answer', order_by='Answer.submission_time')
 
     __table_args__ = (
         sa.UniqueConstraint('id', 'node_id', 'type_constraint'),
@@ -483,9 +452,11 @@ class SurveyNode(Base):
         result = self.node._asdict()
         result['logic'].update(self.logic)
         result['node_id'] = result.pop('id')
+        result['id'] = self.id
         result['deleted'] = self.deleted
         result['required'] = self.required
         result['allow_dont_know'] = self.required
+        result['last_update_time'] = self.last_update_time
         if self.nodes:
             result['sub_surveys'] = self.sub_surveys
         return result

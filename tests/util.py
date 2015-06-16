@@ -18,7 +18,12 @@ Session = sessionmaker()
 
 def setUpModule():
     """Creates the tables in the doko_test schema."""
-    Base.metadata.create_all(engine)
+    engine.execute(DDL('DROP SCHEMA IF EXISTS doko_test CASCADE'))
+    try:
+        Base.metadata.create_all(engine)
+    except Exception:
+        engine.execute(DDL('DROP SCHEMA IF EXISTS doko_test CASCADE'))
+        raise
 
 
 def tearDownModule():

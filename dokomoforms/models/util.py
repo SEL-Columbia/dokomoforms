@@ -106,11 +106,13 @@ sa.event.listen(
     # database without any prefix.
     sa.DDL(
         'CREATE SCHEMA IF NOT EXISTS {schema};'
-        'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'
+        'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'  # UUID columns
         ' WITH SCHEMA pg_catalog;'
-        'CREATE EXTENSION IF NOT EXISTS "postgis"'
+        # 'CREATE EXTENSION IF NOT EXISTS "lo"'  # Large Object (BLOB)
+        # ' WITH SCHEMA pg_catalog;'
+        'CREATE EXTENSION IF NOT EXISTS "postgis"'  # Geometry columns
         ' WITH SCHEMA {schema};'
-        'CREATE EXTENSION IF NOT EXISTS "btree_gist"'
+        'CREATE EXTENSION IF NOT EXISTS "btree_gist"'  # Exclusion constraints
         ' WITH SCHEMA pg_catalog;'
         .format(schema=options.schema)
     ),
@@ -167,8 +169,8 @@ def create_engine(echo: bool=None) -> sqlalchemy.engine.Engine:
             options.db_host,
             options.db_database,
         ),
-        pool_size=0,
-        max_overflow=-1,
+        # pool_size=0,
+        # max_overflow=-1,
         echo=echo,
     )
 
@@ -225,7 +227,7 @@ def last_update_time() -> sa.Column:
              column
     """
     return sa.Column(
-        sa.DateTime(timezone=True),
+        pg.TIMESTAMP(timezone=True),
         nullable=False,
         server_default=current_timestamp(),
         onupdate=current_timestamp(),

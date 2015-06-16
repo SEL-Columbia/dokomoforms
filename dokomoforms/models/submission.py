@@ -6,6 +6,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.functions import current_timestamp
+from sqlalchemy.ext.orderinglist import ordering_list
 
 from dokomoforms.models import util, Base, survey_type_enum
 
@@ -24,17 +25,24 @@ class Submission(Base):
     survey_id = sa.Column(pg.UUID, nullable=False)
     enumerator_only = sa.Column(survey_type_enum, nullable=False)
     save_time = sa.Column(
-        sa.DateTime(timezone=True),
+        pg.TIMESTAMP(timezone=True),
         nullable=False,
         server_default=current_timestamp(),
     )
     submission_time = sa.Column(
-        sa.DateTime(timezone=True),
+        pg.TIMESTAMP(timezone=True),
         nullable=False,
         server_default=current_timestamp(),
     )
     submitter_name = sa.Column(pg.TEXT, nullable=False, server_default='')
     submitter_email = sa.Column(pg.TEXT, nullable=False, server_default='')
+    answers = relationship(
+        'Answer',
+        order_by='Answer.answer_number',
+        collection_class=ordering_list('answer_number'),
+        cascade='all, delete-orphan',
+        passive_deletes=True,
+    )
     last_update_time = util.last_update_time()
 
     __mapper_args__ = {
@@ -48,6 +56,7 @@ class Submission(Base):
         ),
         sa.UniqueConstraint('id', 'enumerator_only'),
         sa.UniqueConstraint('id', 'survey_id'),
+        sa.UniqueConstraint('id', 'submission_time', 'survey_id'),
     )
 
     def _default_asdict(self) -> OrderedDict:
@@ -60,6 +69,7 @@ class Submission(Base):
             ('last_update_time', self.last_update_time),
             ('submitter_name', self.submitter_name),
             ('submitter_email', self.submitter_email),
+            ('answers', [answer.response for answer in self.answers]),
         ))
 
 
