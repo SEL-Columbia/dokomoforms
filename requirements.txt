@@ -1,5 +1,6 @@
 tornado==4.1
-SQLAlchemy==0.9.9
+SQLAlchemy==1.0.5
+geoalchemy2==0.2.5
 psycopg2==2.6
 py-bcrypt==0.4
 py-dateutil==2.2
