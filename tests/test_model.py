@@ -1004,3 +1004,44 @@ class TestSubmission(DokoTest):
 class TestAnswer(DokoTest):
     def test_non_instantiable(self):
         self.assertRaises(TypeError, models.Answer)
+
+    def test_basic_case(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title='survey',
+                nodes=[
+                    models.SurveyNode(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title='integer question',
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        with self.session.begin():
+            the_survey = self.session.query(models.Survey).one()
+            submission = models.PublicSubmission(
+                survey=the_survey,
+                answers=[
+                    models.construct_answer(
+                        survey_node=the_survey.nodes[0],
+                        type_constraint='integer',
+                        answer=3,
+                    ),
+                ]
+            )
+
+            self.session.add(submission)
+
+        self.assertIs(
+            self.session.query(models.Answer).one(),
+            self.session.query(models.Survey).one().submissions[0].answers[0]
+        )
+
+    def test_cannot_answer_note(self):
+        pass

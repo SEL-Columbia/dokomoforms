@@ -9,6 +9,8 @@ from sqlalchemy.orm import relationship, synonym
 from sqlalchemy.ext.hybrid import hybrid_property
 # from sqlalchemy.sql.type_api import UserDefinedType
 
+from geoalchemy2 import Geometry
+
 from dokomoforms.models import util, Base, node_type_enum
 from dokomoforms.exc import NoSuchNodeTypeError
 
@@ -22,10 +24,11 @@ class Answer(Base):
     submission_time = sa.Column(pg.TIMESTAMP(timezone=True), nullable=False)
     survey_id = sa.Column(pg.UUID, nullable=False)
     survey_node_id = sa.Column(pg.UUID, nullable=False)
+    survey_node = relationship('SurveyNode')
     allow_multiple = sa.Column(sa.Boolean, nullable=False)
     allow_other = sa.Column(sa.Boolean, nullable=False)
     allow_dont_know = sa.Column(sa.Boolean, nullable=False)
-    node_id = sa.Column(pg.UUID, nullable=False)
+    question_id = sa.Column(pg.UUID, nullable=False)
     type_constraint = sa.Column(node_type_enum, nullable=False)
     last_update_time = util.last_update_time()
 
@@ -71,7 +74,7 @@ class Answer(Base):
         sa.UniqueConstraint('id', 'allow_other', 'allow_dont_know'),
         sa.UniqueConstraint(
             'id', 'allow_other', 'allow_dont_know', 'survey_node_id',
-            'node_id', 'submission_id',
+            'question_id', 'submission_id',
         ),
         sa.ForeignKeyConstraint(
             ['submission_id', 'submission_time', 'survey_id'],
@@ -79,13 +82,13 @@ class Answer(Base):
                 'submission.survey_id']
         ),
         sa.ForeignKeyConstraint(
-            ['survey_node_id', 'allow_multiple', 'allow_other'],
+            ['question_id', 'allow_multiple', 'allow_other'],
             ['question.id', 'question.allow_multiple', 'question.allow_other']
         ),
         sa.ForeignKeyConstraint(
             [
                 'survey_node_id',
-                'node_id',
+                'question_id',
                 'type_constraint',
                 'allow_dont_know',
             ],
@@ -113,7 +116,7 @@ class Answer(Base):
             ('submission_time', self.submission_time),
             ('survey_id', self.survey_id),
             ('survey_node_id', self.survey_node_id),
-            ('node_id', self.node_id),
+            ('question_id', self.node_id),
             ('type_constraint', self.type_constraint),
             ('last_update_time', self.last_update_time),
             ('response', self.response),
@@ -149,9 +152,18 @@ def _answer_mixin_table_args():
         ),
         sa.CheckConstraint(
             '''
-            (CASE WHEN main_answer IS NOT NULL THEN 1 ELSE 0 END) +
-            (CASE WHEN other       IS NOT NULL THEN 1 ELSE 0 END) +
-            (CASE WHEN dont_know   IS NOT NULL THEN 1 ELSE 0 END) =
+            (CASE WHEN (main_answer IS NOT NULL) AND
+                       (other       IS     NULL) AND
+                       (dont_know   IS     NULL)
+                THEN 1 ELSE 0 END) +
+            (CASE WHEN (main_answer IS     NULL) AND
+                       (other       IS NOT NULL) AND
+                       (dont_know   IS     NULL)
+                THEN 1 ELSE 0 END) +
+            (CASE WHEN (main_answer IS     NULL) AND
+                       (other       IS     NULL) AND
+                       (dont_know   IS NOT NULL)
+                THEN 1 ELSE 0 END) =
             1
             '''
         ),
@@ -252,7 +264,7 @@ class TimestampAnswer(_AnswerMixin, Answer):
 
 class LocationAnswer(_AnswerMixin, Answer):
     __tablename__ = 'answer_location'
-    main_answer = sa.Column(sa.Integer)  # Geometry
+    main_answer = sa.Column(Geometry('POINT', 4326))
     answer = synonym('main_answer')
     __mapper_args__ = {'polymorphic_identity': 'location'}
     __table_args__ = _answer_mixin_table_args()
@@ -260,7 +272,7 @@ class LocationAnswer(_AnswerMixin, Answer):
 
 class FacilityAnswer(_AnswerMixin, Answer):
     __tablename__ = 'answer_facility'
-    main_answer = sa.Column(sa.Integer)  # Geometry
+    main_answer = sa.Column(Geometry('POINT', 4326))
     facility_id = sa.Column(pg.TEXT)
     facility_name = sa.Column(pg.TEXT)
     facility_sector = sa.Column(pg.TEXT)
@@ -303,7 +315,7 @@ class MultipleChoiceAnswer(_AnswerMixin, Answer):
     choice = relationship('Choice')
     answer = synonym('choice')
     the_survey_node_id = sa.Column(pg.UUID, nullable=False)
-    the_node_id = sa.Column(pg.UUID, nullable=False)
+    the_question_id = sa.Column(pg.UUID, nullable=False)
     the_submission_id = sa.Column(pg.UUID, nullable=False)
 
     __mapper_args__ = {'polymorphic_identity': 'multiple_choice'}
@@ -314,7 +326,7 @@ class MultipleChoiceAnswer(_AnswerMixin, Answer):
                 'the_allow_other',
                 'the_allow_dont_know',
                 'the_survey_node_id',
-                'the_node_id',
+                'the_question_id',
                 'the_submission_id',
             ],
             [
@@ -322,12 +334,12 @@ class MultipleChoiceAnswer(_AnswerMixin, Answer):
                 'answer.allow_other',
                 'answer.allow_dont_know',
                 'answer.survey_node_id',
-                'answer.node_id',
+                'answer.question_id',
                 'answer.submission_id',
             ]
         ),
         sa.ForeignKeyConstraint(
-            ['main_answer', 'the_node_id'],
+            ['main_answer', 'the_question_id'],
             ['choice.id', 'choice.question_id']
         ),
         sa.UniqueConstraint(
@@ -353,6 +365,16 @@ ANSWER_TYPES = {
 
 def construct_answer(*, type_constraint: str, **kwargs) -> Answer:
     try:
-        return ANSWER_TYPES[type_constraint](**kwargs)
+        create_answer = ANSWER_TYPES[type_constraint]
     except KeyError:
         raise NoSuchNodeTypeError(type_constraint)
+
+    survey_node = kwargs.get('survey_node', None)
+    no_question_details = all(
+        detail not in kwargs for detail in ('allow_multiple', 'allow_other')
+    )
+    if survey_node is not None and no_question_details:
+        kwargs['allow_multiple'] = survey_node.node.allow_multiple
+        kwargs['allow_other'] = survey_node.node.allow_other
+
+    return create_answer(**kwargs)
