@@ -70,7 +70,10 @@ class Answer(Base):
     __mapper_args__ = {'polymorphic_on': type_constraint}
     __table_args__ = (
         sa.UniqueConstraint('id', 'allow_other', 'allow_dont_know'),
-        sa.UniqueConstraint('id', 'allow_other', 'allow_dont_know', 'node_id'),
+        sa.UniqueConstraint(
+            'id', 'allow_other', 'allow_dont_know', 'survey_node_id',
+            'node_id', 'submission_id',
+        ),
         sa.ForeignKeyConstraint(
             ['submission_id', 'submission_time', 'survey_id'],
             ['submission.id', 'submission.submission_time',
@@ -291,7 +294,9 @@ class MultipleChoiceAnswer(_AnswerMixin, Answer):
     main_answer = sa.Column(pg.UUID)
     choice = relationship('Choice')
     answer = synonym('choice')
+    the_survey_node_id = sa.Column(pg.UUID, nullable=False)
     the_node_id = sa.Column(pg.UUID, nullable=False)
+    the_submission_id = sa.Column(pg.UUID, nullable=False)
     __mapper_args__ = {'polymorphic_identity': 'multiple_choice'}
 
     @declared_attr
@@ -302,18 +307,26 @@ class MultipleChoiceAnswer(_AnswerMixin, Answer):
                     'id',
                     'the_allow_other',
                     'the_allow_dont_know',
+                    'the_survey_node_id',
                     'the_node_id',
+                    'the_submission_id',
                 ],
                 [
                     'answer.id',
                     'answer.allow_other',
                     'answer.allow_dont_know',
+                    'answer.survey_node_id',
                     'answer.node_id',
+                    'answer.submission_id',
                 ]
             ),
             sa.ForeignKeyConstraint(
                 ['main_answer', 'the_node_id'],
                 ['choice.id', 'choice.question_id']
+            ),
+            sa.UniqueConstraint(
+                'the_survey_node_id', 'main_answer', 'the_submission_id',
+                name='cannot_pick_the_same_choice_twice',
             ),
         )
 
