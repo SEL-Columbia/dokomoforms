@@ -800,7 +800,7 @@ class TestBucket(DokoTest):
                 type_constraint='multiple_choice', title='node'
             )
             choice1 = models.Choice()
-            choice2 = models.Choice()
+            choice2 = models.Choice(choice_text='second choice')
             node.choices = [choice1, choice2]
 
             survey.nodes = [

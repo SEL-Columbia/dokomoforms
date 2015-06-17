@@ -203,9 +203,6 @@ class Choice(Base):
         sa.UniqueConstraint(
             'question_id', 'choice_text', name='unique_choice_text'
         ),
-    )
-
-    __table_args__ = (
         sa.UniqueConstraint('id', 'question_id'),
     )
 
