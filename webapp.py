@@ -27,6 +27,7 @@ import dokomoforms.models as models
 from dokomoforms.options import options
 import dokomoforms.handlers as handlers
 from dokomoforms.models import create_engine, Base
+from dokomoforms.api.surveys import SurveyResource
 
 _pwd = os.path.dirname(__file__)
 bold = '\033[1m'
@@ -112,21 +113,29 @@ class Application(tornado.web.Application):
 
             # API
             # TODO: These are temporary placeholders. JW - 06/15/15
-            # url(r'' + self._api_root_path + '/surveys',
-            #    handlers.SurveysAPIList, name="surveys"),
-            # url(r'' + self._api_root_path +
-            #    '/surveys/({})/?'.format(UUID_REGEX),
-            #    handlers.SurveysAPISingle,
-            #    name="survey"),
+            url(r'' + self._api_root_path + '/surveys',
+                SurveyResource.as_list(), name="surveys"),
+            url(r'' + self._api_root_path +
+                '/surveys/({})/?'.format(UUID_REGEX),
+                SurveyResource.as_detail(),
+                name="survey"),
+
+            # Identical to the above.
+            # url(r''+'api/posts/$', PostResource.as_list(),
+            #    name='api_post_list'),
+            # url(r'api/posts/(?P<pk>\d+)/$', PostResource.as_detail(),
+            #    name='api_post_detail'),
         ]
         settings = {
             'template_path': os.path.join(_pwd, 'dokomoforms/templates'),
             'static_path': os.path.join(_pwd, 'dokomoforms/static'),
             'default_handler_class': handlers.NotFound,
-            'xsrf_cookies': True,
+            'xsrf_cookies': False,
             'cookie_secret': get_cookie_secret(),
             'login_url': '/',
             'debug': options.debug,
+            # if debug, autoreload
+            'autoreload': options.debug
         }
         super().__init__(urls, **settings)
         self.engine = create_engine()
@@ -142,7 +151,8 @@ class Application(tornado.web.Application):
 
 application = Application()
 
-# Auto-generate REST api handlers
+# TESTING - Auto-generate REST api handlers using tornado-restless
+"""
 api = ApiManager(application=application,
                  session_maker=application.sessionmaker)
 
@@ -157,6 +167,7 @@ api.create_api(models.Submission,
 api.create_api(models.User,
                url_prefix='/api/v0',
                collection_name='users')
+"""
 
 
 def main():

@@ -105,7 +105,7 @@ class DokoHTTPTest(AsyncHTTPTestCase):
     def append_query_params(self, url, params_dict):
         """
         Convenience method which url encodes a dict of params
-        and appends them to a url with a '?', returning the 
+        and appends them to a url with a '?', returning the
         resulting url.
         """
         params = urlencode(params_dict)
