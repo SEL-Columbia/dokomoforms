@@ -111,9 +111,10 @@ _enumerator_table = sa.Table(
     sa.Column(
         'enumerator_only_survey_id',
         pg.UUID,
-        util.fk('survey_enumerator_only.id')
+        util.fk('survey_enumerator_only.id'),
+        nullable=False,
     ),
-    sa.Column('user_id', pg.UUID, util.fk('auth_user.id')),
+    sa.Column('user_id', pg.UUID, util.fk('auth_user.id'), nullable=False),
     sa.UniqueConstraint('enumerator_only_survey_id', 'user_id'),
 )
 
@@ -135,8 +136,18 @@ class EnumeratorOnlySurvey(Survey):
 _sub_survey_nodes = sa.Table(
     'sub_survey_nodes',
     Base.metadata,
-    sa.Column('sub_survey_id', pg.UUID, sa.ForeignKey('sub_survey.id')),
-    sa.Column('survey_node_id', pg.UUID, sa.ForeignKey('survey_node.id')),
+    sa.Column(
+        'sub_survey_id',
+        pg.UUID,
+        sa.ForeignKey('sub_survey.id'),
+        nullable=False,
+    ),
+    sa.Column('survey_node_id', pg.UUID, nullable=False),
+    sa.Column('survey_node_number', sa.Integer, nullable=False),
+    sa.ForeignKeyConstraint(
+        ['survey_node_id', 'survey_node_number'],
+        ['survey_node.id', 'survey_node.node_number']
+    ),
 )
 
 
@@ -440,6 +451,8 @@ class SurveyNode(Base):
     answers = relationship('Answer', order_by='Answer.submission_time')
 
     __table_args__ = (
+        sa.UniqueConstraint('id', 'node_number'),
+        sa.UniqueConstraint('root_survey_id', 'node_number'),
         sa.UniqueConstraint('id', 'node_id', 'type_constraint'),
         sa.UniqueConstraint(
             'id', 'node_id', 'type_constraint', 'allow_dont_know'
