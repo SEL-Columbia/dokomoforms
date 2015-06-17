@@ -21,6 +21,9 @@ from tornado.web import url
 import tornado.httpserver
 import tornado.web
 
+from tornado_restless import ApiManager
+import dokomoforms.models as models
+
 from dokomoforms.options import options
 import dokomoforms.handlers as handlers
 from dokomoforms.models import create_engine, Base
@@ -31,6 +34,7 @@ green = '\033[92m'
 
 UUID_REGEX = '[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][' \
              'a-f0-9]{3}-?[a-f0-9]{12}'
+
 
 def modify_text(text: str, modifier: str) -> str:
     """
@@ -108,12 +112,12 @@ class Application(tornado.web.Application):
 
             # API
             # TODO: These are temporary placeholders. JW - 06/15/15
-            url(r'' + self._api_root_path + '/surveys',
-                handlers.SurveysAPIList, name="surveys"),
-            url(r'' + self._api_root_path +
-                '/surveys/({})/?'.format(UUID_REGEX),
-                handlers.SurveysAPISingle,
-                name="survey"),
+            # url(r'' + self._api_root_path + '/surveys',
+            #    handlers.SurveysAPIList, name="surveys"),
+            # url(r'' + self._api_root_path +
+            #    '/surveys/({})/?'.format(UUID_REGEX),
+            #    handlers.SurveysAPISingle,
+            #    name="survey"),
         ]
         settings = {
             'template_path': os.path.join(_pwd, 'dokomoforms/templates'),
@@ -132,13 +136,33 @@ class Application(tornado.web.Application):
                 DDL('DROP SCHEMA IF EXISTS {} CASCADE'.format(options.schema))
             )
         Base.metadata.create_all(self.engine)
-        self.session = sessionmaker(bind=self.engine, autocommit=True)()
+        self.sessionmaker = sessionmaker(bind=self.engine, autocommit=True)
+        self.session = self.sessionmaker()
+
+
+application = Application()
+
+# Auto-generate REST api handlers
+api = ApiManager(application=application,
+                 session_maker=application.sessionmaker)
+
+api.create_api(models.Survey,
+               url_prefix='/api/v0',
+               collection_name='surveys')
+
+api.create_api(models.Submission,
+               url_prefix='/api/v0',
+               collection_name='submissions')
+
+api.create_api(models.User,
+               url_prefix='/api/v0',
+               collection_name='users')
 
 
 def main():
     if options.kill:
         ensure_that_user_wants_to_drop_schema()
-    http_server = tornado.httpserver.HTTPServer(Application())
+    http_server = tornado.httpserver.HTTPServer(application)
     tornado.locale.load_gettext_translations(
         os.path.join(_pwd, 'locale'), 'dokomoforms'
     )
