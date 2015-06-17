@@ -110,8 +110,7 @@ sa.event.listen(
         ' WITH SCHEMA pg_catalog;'
         # 'CREATE EXTENSION IF NOT EXISTS "lo"'  # Large Object (BLOB)
         # ' WITH SCHEMA pg_catalog;'
-        'CREATE EXTENSION IF NOT EXISTS "postgis"'  # Geometry columns
-        ' WITH SCHEMA {schema};'
+        'CREATE EXTENSION IF NOT EXISTS "postgis";'  # Geometry columns
         'CREATE EXTENSION IF NOT EXISTS "btree_gist"'  # Exclusion constraints
         ' WITH SCHEMA pg_catalog;'
         .format(schema=options.schema)
