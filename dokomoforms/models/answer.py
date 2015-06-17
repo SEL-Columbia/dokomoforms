@@ -23,6 +23,9 @@ class Answer(Base):
     submission_time = sa.Column(pg.TIMESTAMP(timezone=True), nullable=False)
     survey_id = sa.Column(pg.UUID, nullable=False)
     survey_node_id = sa.Column(pg.UUID, nullable=False)
+    allow_multiple = sa.Column(sa.Boolean, nullable=False)
+    allow_other = sa.Column(sa.Boolean, nullable=False)
+    allow_dont_know = sa.Column(sa.Boolean, nullable=False)
     node_id = sa.Column(pg.UUID, nullable=False)
     type_constraint = sa.Column(node_type_enum, nullable=False)
     last_update_time = util.last_update_time()
@@ -66,16 +69,36 @@ class Answer(Base):
 
     __mapper_args__ = {'polymorphic_on': type_constraint}
     __table_args__ = (
-        sa.UniqueConstraint('id', 'node_id'),
+        sa.UniqueConstraint('id', 'allow_other', 'allow_dont_know'),
+        sa.UniqueConstraint('id', 'allow_other', 'allow_dont_know', 'node_id'),
         sa.ForeignKeyConstraint(
             ['submission_id', 'submission_time', 'survey_id'],
             ['submission.id', 'submission.submission_time',
                 'submission.survey_id']
         ),
         sa.ForeignKeyConstraint(
-            ['survey_node_id', 'node_id', 'type_constraint'],
-            ['survey_node.id', 'survey_node.node_id',
-                'survey_node.type_constraint']
+            ['survey_node_id', 'allow_multiple', 'allow_other'],
+            ['question.id', 'question.allow_multiple', 'question.allow_other']
+        ),
+        sa.ForeignKeyConstraint(
+            [
+                'survey_node_id',
+                'node_id',
+                'type_constraint',
+                'allow_dont_know',
+            ],
+            [
+                'survey_node.id',
+                'survey_node.node_id',
+                'survey_node.type_constraint',
+                'survey_node.allow_dont_know',
+            ]
+        ),
+        sa.Index(
+            'only_one_answer_allowed',
+            'survey_node_id', 'submission_id',
+            unique=True,
+            postgresql_where=sa.not_(allow_multiple),
         ),
     )
 
@@ -96,9 +119,9 @@ class Answer(Base):
 
 
 class _AnswerMixin:
-    @declared_attr
-    def id(cls):
-        return util.pk('answer.id')
+    id = util.pk()
+    the_allow_other = sa.Column(sa.Boolean, nullable=False)
+    the_allow_dont_know = sa.Column(sa.Boolean, nullable=False)
 
     @declared_attr
     def answer(cls):
@@ -110,6 +133,22 @@ class _AnswerMixin:
     @declared_attr
     def __table_args__(cls):
         return (
+            sa.ForeignKeyConstraint(
+                ['id', 'the_allow_other', 'the_allow_dont_know'],
+                ['answer.id', 'answer.allow_other', 'answer.allow_dont_know']
+            ),
+            sa.CheckConstraint(
+                # "other" responses are allowed XOR other is null
+                '''
+                the_allow_other != (other IS NULL)
+                '''
+            ),
+            sa.CheckConstraint(
+                # "dont_know" responses are allowed XOR dont_know is null
+                '''
+                the_allow_dont_know != (dont_know IS NULL)
+                '''
+            ),
             sa.CheckConstraint(
                 '''
                 (CASE WHEN main_answer IS NOT NULL THEN 1 ELSE 0 END) +
@@ -150,6 +189,13 @@ class Photo(Base):
     id = util.pk()
     image = sa.Column(pg.BYTEA, nullable=False)
     # image = sa.Column(LObject)
+
+    def _asdict(self) -> OrderedDict:
+        return OrderedDict((
+            ('id', self.id),
+            ('deleted', self.deleted),
+            ('image', self.image),
+        ))
 
 
 # sa.event.listen(
@@ -240,6 +286,8 @@ class FacilityAnswer(_AnswerMixin, Answer):
 class MultipleChoiceAnswer(_AnswerMixin, Answer):
     __tablename__ = 'answer_multiple_choice'
     id = util.pk()
+    the_allow_other = sa.Column(sa.Boolean, nullable=False)
+    the_allow_dont_know = sa.Column(sa.Boolean, nullable=False)
     main_answer = sa.Column(pg.UUID)
     choice = relationship('Choice')
     answer = synonym('choice')
@@ -248,9 +296,20 @@ class MultipleChoiceAnswer(_AnswerMixin, Answer):
 
     @declared_attr
     def __table_args__(cls):
-        return _AnswerMixin.__table_args__ + (
+        return _AnswerMixin.__table_args__[1:] + (
             sa.ForeignKeyConstraint(
-                ['id', 'the_node_id'], ['answer.id', 'answer.node_id']
+                [
+                    'id',
+                    'the_allow_other',
+                    'the_allow_dont_know',
+                    'the_node_id',
+                ],
+                [
+                    'answer.id',
+                    'answer.allow_other',
+                    'answer.allow_dont_know',
+                    'answer.node_id',
+                ]
             ),
             sa.ForeignKeyConstraint(
                 ['main_answer', 'the_node_id'],

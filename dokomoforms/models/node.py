@@ -82,6 +82,10 @@ class Question(Node):
         sa.Boolean, nullable=False, server_default='false'
     )
 
+    __table_args__ = (
+        sa.UniqueConstraint('id', 'allow_multiple', 'allow_other'),
+    )
+
     def _default_asdict(self) -> OrderedDict:
         return OrderedDict((
             ('id', self.id),

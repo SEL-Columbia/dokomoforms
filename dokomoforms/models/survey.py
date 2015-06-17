@@ -441,6 +441,9 @@ class SurveyNode(Base):
 
     __table_args__ = (
         sa.UniqueConstraint('id', 'node_id', 'type_constraint'),
+        sa.UniqueConstraint(
+            'id', 'node_id', 'type_constraint', 'allow_dont_know'
+        ),
         sa.ForeignKeyConstraint(
             ['node_id', 'type_constraint'],
             ['node.id', 'node.type_constraint'],
