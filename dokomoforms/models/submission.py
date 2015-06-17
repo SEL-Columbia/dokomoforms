@@ -47,7 +47,6 @@ class Submission(Base):
 
     __mapper_args__ = {
         'polymorphic_on': submission_type,
-        'polymorphic_identity': 'unauthenticated',
     }
     __table_args__ = (
         sa.ForeignKeyConstraint(
