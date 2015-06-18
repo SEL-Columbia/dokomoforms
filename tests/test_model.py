@@ -5,13 +5,16 @@ import json
 import datetime
 from decimal import Decimal
 
-from tests.util import DokoTest, setUpModule, tearDownModule
+from tests.util import (
+    DokoTest, setUpModule, tearDownModule, test_continues_after_rollback
+)
 utils = (setUpModule, tearDownModule)
 
 import psycopg2
 
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError, DataError
+from sqlalchemy.orm.exc import FlushError
 
 from psycopg2.extras import NumericRange, DateRange, DateTimeTZRange
 
@@ -215,6 +218,48 @@ class TestSurvey(DokoTest):
             [1] * number_of_questions,
             msg='there is a survey with more than one node'
         )
+
+    def test_enforce_non_answerable(self):
+        with self.assertRaises(AssertionError):
+            with self.session.begin():
+                creator = models.SurveyCreator(
+                    name='creator',
+                    surveys=[
+                        models.Survey(
+                            title='non_answerable',
+                            nodes=[
+                                models.NonAnswerableSurveyNode(
+                                    node=models.construct_node(
+                                        title='should be note',
+                                        type_constraint='integer',
+                                    ),
+                                )
+                            ],
+                        ),
+                    ],
+                )
+                self.session.add(creator)
+
+    def test_enforce_answerable(self):
+        with self.assertRaises(AssertionError):
+            with self.session.begin():
+                creator = models.SurveyCreator(
+                    name='creator',
+                    surveys=[
+                        models.Survey(
+                            title='answerable',
+                            nodes=[
+                                models.AnswerableSurveyNode(
+                                    node=models.construct_node(
+                                        title='should be question',
+                                        type_constraint='note',
+                                    ),
+                                )
+                            ],
+                        ),
+                    ],
+                )
+                self.session.add(creator)
 
 
 class TestBucket(DokoTest):
@@ -1047,5 +1092,93 @@ class TestAnswer(DokoTest):
             self.session.query(models.Survey).one().submissions[0].answers[0]
         )
 
-    def test_cannot_answer_note(self):
+    @test_continues_after_rollback
+    def test_cannot_answer_a_note(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(
+                name='creator',
+                surveys=[
+                    models.Survey(
+                        title='non_answerable',
+                        nodes=[
+                            models.NonAnswerableSurveyNode(
+                                node=models.construct_node(
+                                    type_constraint='note',
+                                    title="can't answer me!",
+                                ),
+                            ),
+                        ],
+                    ),
+                ],
+            )
+            self.session.add(creator)
+
+        with self.assertRaises(exc.NotAnAnswerTypeError):
+            with self.session.begin():
+                survey = self.session.query(models.Survey).one()
+                submission = models.PublicSubmission(
+                    survey=survey,
+                    answers=[
+                        models.construct_answer(
+                            survey_node=survey.nodes[0],
+                            type_constraint='note',
+                        ),
+                    ],
+                )
+                self.session.add(submission)
+
+        with self.assertRaises(FlushError):
+            with self.session.begin():
+                survey = self.session.query(models.Survey).one()
+                submission = models.PublicSubmission(
+                    survey=survey,
+                    answers=[
+                        models.construct_answer(
+                            survey_node=survey.nodes[0],
+                            type_constraint='integer',
+                            answer=3,
+                        ),
+                    ],
+                )
+                self.session.add(submission)
+
+    def test_answer_type_matches_question_type(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title='survey',
+                nodes=[
+                    models.AnswerableSurveyNode(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title='integer question',
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        with self.session.begin():
+            the_survey = self.session.query(models.Survey).one()
+            submission = models.PublicSubmission(
+                survey=the_survey,
+                answers=[
+                    models.construct_answer(
+                        survey_node=the_survey.nodes[0],
+                        type_constraint='decimal',
+                        answer=3.5,
+                    ),
+                ]
+            )
+
+            self.session.add(submission)
+
+        self.assertIs(
+            self.session.query(models.Answer).one(),
+            self.session.query(models.Survey).one().submissions[0].answers[0]
+        )
+
+    def test_reject_incorrect_integer_answer_syntax(self):
         pass

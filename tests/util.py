@@ -2,7 +2,9 @@
 Defines setup and teardown functions for test modules.
 Also injects the --schema=doko_test option.
 """
+
 import unittest
+from functools import wraps
 
 from dokomoforms.options import inject_options
 
@@ -43,3 +45,35 @@ class DokoTest(unittest.TestCase):
         self.session.close()
         self.transaction.rollback()
         self.connection.close()
+
+
+def test_continues_after_rollback(doko_test):
+    @wraps(doko_test)
+    def wrapper(self):
+        self.session.close()
+        self.session = Session(bind=engine, autocommit=True)
+        try:
+            return doko_test(self)
+        finally:
+            connection = engine.connect()
+            with connection.begin():
+                connection.execute(
+                    '''
+                    DO
+                    $func$
+                    BEGIN
+                      EXECUTE (
+                        SELECT 'TRUNCATE TABLE '
+                          || string_agg(
+                               'doko_test.' || quote_ident(t.tablename), ', '
+                             )
+                          || ' CASCADE'
+                        FROM   pg_tables t
+                        WHERE  t.schemaname = 'doko_test'
+                      );
+                    END
+                    $func$;
+                    '''
+                )
+            self.session.close()
+    return wrapper

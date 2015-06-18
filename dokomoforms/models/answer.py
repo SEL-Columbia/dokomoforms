@@ -12,7 +12,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from geoalchemy2 import Geometry
 
 from dokomoforms.models import util, Base, node_type_enum
-from dokomoforms.exc import NoSuchNodeTypeError
+from dokomoforms.exc import NotAnAnswerTypeError
 
 
 class Answer(Base):
@@ -116,7 +116,7 @@ class Answer(Base):
             ('submission_time', self.submission_time),
             ('survey_id', self.survey_id),
             ('survey_node_id', self.survey_node_id),
-            ('question_id', self.node_id),
+            ('question_id', self.question_id),
             ('type_constraint', self.type_constraint),
             ('last_update_time', self.last_update_time),
             ('response', self.response),
@@ -367,4 +367,4 @@ def construct_answer(*, type_constraint: str, **kwargs) -> Answer:
     try:
         return ANSWER_TYPES[type_constraint](**kwargs)
     except KeyError:
-        raise NoSuchNodeTypeError(type_constraint)
+        raise NotAnAnswerTypeError(type_constraint)
