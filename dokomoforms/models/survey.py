@@ -545,7 +545,6 @@ class AnswerableSurveyNode(SurveyNode):
     def _asdict(self) -> OrderedDict:
         result = super()._asdict()
         result['required'] = self.required
-        result['allow_dont_know'] = self.required
         result['allow_dont_know'] = self.allow_dont_know
         if self.sub_surveys:
             result['sub_surveys'] = self.sub_surveys

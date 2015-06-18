@@ -116,7 +116,7 @@ class PublicSubmission(Submission):
         sa.CheckConstraint('NOT should_authenticate::TEXT::BOOLEAN'),
     )
 
-    # __mapper_args__ = {'polymorphic_identity': 'unauthenticated'}
+    __mapper_args__ = {'polymorphic_identity': 'unauthenticated'}
 
     def _asdict(self):
         result = super()._default_asdict()
