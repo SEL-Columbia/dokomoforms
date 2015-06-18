@@ -18,9 +18,32 @@ class BaseResource(TornadoResource):
     # The serializer is used to serialize / deserialize models to json
     serializer = ModelJSONSerializer()
 
+    # The name of the property for the array of objects returned in a json list
+    objects_key = 'objects'
+
     @property
     def session(self):
         return self.r_handler.session
+
+    def wrap_list_response(self, data):
+        """
+        Takes a list of data & wraps it in a dictionary (within the ``objects``
+        key).
+        For security in JSON responses, it's better to wrap the list results in
+        an ``object`` (due to the way the ``Array`` constructor can be attacked
+        in Javascript).
+        See http://haacked.com/archive/2009/06/25/json-hijacking.aspx/
+        & similar for details.
+        Overridable to allow for modifying the key names, adding data (or just
+        insecurely return a plain old list if that's your thing).
+        :param data: A list of data about to be serialized
+        :type data: list
+        :returns: A wrapping dict
+        :rtype: dict
+        """
+        return {
+            self.objects_key: data
+        }
 
     def is_authenticated(self):
         # Open everything wide!

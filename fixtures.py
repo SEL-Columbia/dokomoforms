@@ -36,10 +36,14 @@ with session.begin():
     )
     node_types = list(models.NODE_TYPES)
     for node_type in node_types:
+        sn = (
+            models.NonAnswerableSurveyNode if node_type == 'note' else
+            models.AnswerableSurveyNode
+        )
         survey = models.Survey(
             title=node_type + '_survey',
             nodes=[
-                models.SurveyNode(
+                sn(
                     node=models.construct_node(
                         type_constraint=node_type,
                         title=node_type + '_node',
@@ -49,11 +53,5 @@ with session.begin():
         )
         creator.surveys.append(survey)
     session.add(creator)
-
-
-surveys = session.query(models.Survey).all()
-print(type(surveys))
-# surveys_as_dicts = map(lambda survey: survey._asdict(), surveys)
-# print(json.dumps(surveys_as_dicts))
 
 session.close()
