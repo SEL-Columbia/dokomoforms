@@ -1,5 +1,6 @@
 from restless.tnd import TornadoResource
 
+from dokomoforms.api.serializer import ModelJSONSerializer
 from dokomoforms.handlers.util import BaseAPIHandler
 
 
@@ -8,9 +9,14 @@ class BaseResource(TornadoResource):
     BaseResource does some basic configuration for the restless resources.
     - sets the base request handler class which is used by the resources
     - providing reference to the ORM session via request handler
+    - inserting a serializer for dokomo Models
     - setting up authentication
     """
+
     _request_handler_base_ = BaseAPIHandler
+
+    # The serializer is used to serialize / deserialize models to json
+    serializer = ModelJSONSerializer()
 
     @property
     def session(self):

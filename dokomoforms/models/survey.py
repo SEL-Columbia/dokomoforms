@@ -477,6 +477,6 @@ class SurveyNode(Base):
         result['deleted'] = self.deleted
         result['required'] = self.required
         result['allow_dont_know'] = self.required
-        if self.nodes:
+        if self.sub_surveys:
             result['sub_surveys'] = self.sub_surveys
         return result

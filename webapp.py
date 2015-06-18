@@ -21,7 +21,6 @@ from tornado.web import url
 import tornado.httpserver
 import tornado.web
 
-from tornado_restless import ApiManager
 import dokomoforms.models as models
 
 from dokomoforms.options import options
@@ -112,19 +111,14 @@ class Application(tornado.web.Application):
             url(r'/user/logout/?', handlers.Logout, name='logout'),
 
             # API
-            # TODO: These are temporary placeholders. JW - 06/15/15
+            # TODO: It's possible to add these from the Resources themselves...
+            # Should we?
             url(r'' + self._api_root_path + '/surveys',
                 SurveyResource.as_list(), name="surveys"),
             url(r'' + self._api_root_path +
                 '/surveys/({})/?'.format(UUID_REGEX),
                 SurveyResource.as_detail(),
                 name="survey"),
-
-            # Identical to the above.
-            # url(r''+'api/posts/$', PostResource.as_list(),
-            #    name='api_post_list'),
-            # url(r'api/posts/(?P<pk>\d+)/$', PostResource.as_detail(),
-            #    name='api_post_detail'),
         ]
         settings = {
             'template_path': os.path.join(_pwd, 'dokomoforms/templates'),
@@ -150,25 +144,6 @@ class Application(tornado.web.Application):
 
 
 application = Application()
-
-# TESTING - Auto-generate REST api handlers using tornado-restless
-"""
-api = ApiManager(application=application,
-                 session_maker=application.sessionmaker)
-
-api.create_api(models.Survey,
-               url_prefix='/api/v0',
-               collection_name='surveys')
-
-api.create_api(models.Submission,
-               url_prefix='/api/v0',
-               collection_name='submissions')
-
-api.create_api(models.User,
-               url_prefix='/api/v0',
-               collection_name='users')
-"""
-
 
 def main():
     if options.kill:

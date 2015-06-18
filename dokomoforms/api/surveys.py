@@ -18,7 +18,7 @@ class SurveyResource(BaseResource):
         'version': 'version',
         'creator_id': 'creator_id',
         'creator_name': 'creator.name',
-        'metadata': 'metadata',
+        'metadata': 'survey_metadata',
         'created_on': 'created_on',
         'last_update_time': 'last_update_time',
         'nodes': 'nodes',
@@ -26,7 +26,9 @@ class SurveyResource(BaseResource):
 
     # GET /api/surveys/
     def list(self):
-        return self.session.query(Survey).all()
+        surveys = self.session.query(Survey).all()
+        surveys_as_dicts = map(lambda survey: survey._asdict(), surveys)
+        return surveys
 
     # GET /api/surveys/<survey_id>
     def detail(self, survey_id):
@@ -90,3 +92,32 @@ class SurveyResource(BaseResource):
         else:
             survey.deleted = True
             self.session.commit()
+
+    def wrap_list_response(self, data):
+        """
+        Takes a list of data & wraps it in a dictionary (within the ``objects``
+        key).
+        For security in JSON responses, it's better to wrap the list results in
+        an ``object`` (due to the way the ``Array`` constructor can be attacked
+        in Javascript). See http://haacked.com/archive/2009/06/25/json-hijacking.aspx/
+        & similar for details.
+        Overridable to allow for modifying the key names, adding data (or just
+        insecurely return a plain old list if that's your thing).
+        :param data: A list of data about to be serialized
+        :type data: list
+        :returns: A wrapping dict
+        :rtype: dict
+        """
+        return {
+            "surveys": data
+        }
+
+    def prepare(self, data):
+        # ``data`` is the object/dict to be exposed.
+        # We'll call ``super`` to prep the data, then we'll mask the email.
+        prepped = super().prepare(data)
+
+        # nodes = prepped['nodes']
+        # prepped['email'] = email[:at_offset + 1] + "..."
+
+        return prepped
