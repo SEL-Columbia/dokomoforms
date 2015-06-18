@@ -182,10 +182,16 @@ class SubSurvey(Base):
         ),
         sa.UniqueConstraint('parent_survey_node_id', 'parent_node_id'),
         sa.ForeignKeyConstraint(
-            ['parent_survey_node_id', 'parent_type_constraint',
-                'parent_node_id'],
-            ['survey_node.id', 'survey_node.type_constraint',
-                'survey_node.node_id'],
+            [
+                'parent_survey_node_id',
+                'parent_type_constraint',
+                'parent_node_id',
+            ],
+            [
+                'survey_node_answerable.id',
+                'survey_node_answerable.type_constraint',
+                'survey_node_answerable.node_id'
+            ],
             onupdate='CASCADE', ondelete='CASCADE'
         ),
     )
@@ -430,10 +436,75 @@ class SurveyNode(Base):
 
     id = util.pk()
     node_number = sa.Column(sa.Integer, nullable=False)
+
+    survey_node_answerable = sa.Column(
+        sa.Enum(
+            'non_answerable', 'answerable',
+            name='answerable_enum', inherit_schema=True
+        ),
+        nullable=False,
+    )
+
+    @property
+    @abc.abstractmethod
+    def node_id(self):
+        pass
+
+    @property
+    @abc.abstractmethod
+    def node(self):
+        pass
+
+    @property
+    @abc.abstractmethod
+    def type_constraint(self):
+        pass
+    root_survey_id = sa.Column(pg.UUID, util.fk('survey.id'))
+    logic = sa.Column(pg.json.JSONB, nullable=False, server_default='{}')
+    last_update_time = util.last_update_time()
+
+    __mapper_args__ = {'polymorphic_on': survey_node_answerable}
+    __table_args__ = (
+        sa.UniqueConstraint('id', 'node_number'),
+        sa.UniqueConstraint('root_survey_id', 'node_number'),
+    )
+
+    def _asdict(self) -> OrderedDict:
+        result = self.node._asdict()
+        result['logic'].update(self.logic)
+        result['node_id'] = result.pop('id')
+        result['id'] = self.id
+        result['deleted'] = self.deleted
+        result['last_update_time'] = self.last_update_time
+        return result
+
+
+class NonAnswerableSurveyNode(SurveyNode):
+    __tablename__ = 'survey_node_non_answerable'
+
+    id = util.pk('survey_node.id')
     node_id = sa.Column(pg.UUID, nullable=False)
     type_constraint = sa.Column(node_type_enum, nullable=False)
-    node = relationship('Node')
-    root_survey_id = sa.Column(pg.UUID, util.fk('survey.id'))
+    node = relationship('Note')
+
+    __mapper_args__ = {'polymorphic_identity': 'non_answerable'}
+    __table_args__ = (
+        sa.ForeignKeyConstraint(
+            ['node_id', 'type_constraint'],
+            ['note.id', 'note.the_type_constraint']
+        ),
+    )
+
+
+class AnswerableSurveyNode(SurveyNode):
+    __tablename__ = 'survey_node_answerable'
+
+    id = util.pk('survey_node.id')
+    node_id = sa.Column(pg.UUID, nullable=False)
+    type_constraint = sa.Column(node_type_enum, nullable=False)
+    allow_multiple = sa.Column(sa.Boolean, nullable=False)
+    allow_other = sa.Column(sa.Boolean, nullable=False)
+    node = relationship('Question')
     sub_surveys = relationship(
         'SubSurvey',
         order_by='SubSurvey.sub_survey_number',
@@ -446,33 +517,35 @@ class SurveyNode(Base):
     allow_dont_know = sa.Column(
         sa.Boolean, nullable=False, server_default='false'
     )
-    logic = sa.Column(pg.json.JSONB, nullable=False, server_default='{}')
-    last_update_time = util.last_update_time()
     answers = relationship('Answer', order_by='Answer.submission_time')
 
+    __mapper_args__ = {'polymorphic_identity': 'answerable'}
     __table_args__ = (
-        sa.UniqueConstraint('id', 'node_number'),
-        sa.UniqueConstraint('root_survey_id', 'node_number'),
-        sa.UniqueConstraint('id', 'node_id', 'type_constraint'),
+        sa.UniqueConstraint('id', 'type_constraint', 'node_id'),
         sa.UniqueConstraint(
-            'id', 'node_id', 'type_constraint', 'allow_dont_know'
+            'id', 'node_id', 'type_constraint', 'allow_multiple',
+            'allow_other', 'allow_dont_know'
         ),
         sa.ForeignKeyConstraint(
-            ['node_id', 'type_constraint'],
-            ['node.id', 'node.type_constraint'],
-            onupdate='CASCADE', ondelete='CASCADE'
+            [
+                'node_id',
+                'type_constraint',
+                'allow_multiple',
+                'allow_other',
+            ],
+            [
+                'question.id',
+                'question.the_type_constraint',
+                'question.allow_multiple',
+                'question.allow_other',
+            ]
         ),
     )
 
     def _asdict(self) -> OrderedDict:
-        result = self.node._asdict()
-        result['logic'].update(self.logic)
-        result['node_id'] = result.pop('id')
-        result['id'] = self.id
-        result['deleted'] = self.deleted
+        result = super()._asdict()
         result['required'] = self.required
         result['allow_dont_know'] = self.allow_dont_know
-        result['last_update_time'] = self.last_update_time
         if self.sub_surveys:
             result['sub_surveys'] = self.sub_surveys
         return result

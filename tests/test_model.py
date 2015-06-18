@@ -179,10 +179,14 @@ class TestSurvey(DokoTest):
             )
             node_types = list(models.NODE_TYPES)
             for node_type in node_types:
+                sn = (
+                    models.NonAnswerableSurveyNode if node_type == 'note' else
+                    models.AnswerableSurveyNode
+                )
                 survey = models.Survey(
                     title=node_type + '_survey',
                     nodes=[
-                        models.SurveyNode(
+                        sn(
                             node=models.construct_node(
                                 type_constraint=node_type,
                                 title=node_type + '_node',
@@ -230,7 +234,7 @@ class TestBucket(DokoTest):
         with self.session.begin():
             creator, survey = self._create_blank_survey()
             survey.nodes = [
-                models.SurveyNode(
+                models.AnswerableSurveyNode(
                     node=models.construct_node(
                         type_constraint='integer',
                         title='node',
@@ -257,7 +261,7 @@ class TestBucket(DokoTest):
             with self.session.begin():
                 creator, survey = self._create_blank_survey()
                 survey.nodes = [
-                    models.SurveyNode(
+                    models.AnswerableSurveyNode(
                         node=models.construct_node(
                             type_constraint='integer',
                             title='node',
@@ -282,7 +286,7 @@ class TestBucket(DokoTest):
             with self.session.begin():
                 creator, survey = self._create_blank_survey()
                 survey.nodes = [
-                    models.SurveyNode(
+                    models.AnswerableSurveyNode(
                         node=models.construct_node(
                             type_constraint='integer',
                             title='node',
@@ -305,7 +309,7 @@ class TestBucket(DokoTest):
         with self.session.begin():
             creator, survey = self._create_blank_survey()
             survey.nodes = [
-                models.SurveyNode(
+                models.AnswerableSurveyNode(
                     node=models.construct_node(
                         type_constraint='integer',
                         title='node',
@@ -336,7 +340,7 @@ class TestBucket(DokoTest):
             with self.session.begin():
                 creator, survey = self._create_blank_survey()
                 survey.nodes = [
-                    models.SurveyNode(
+                    models.AnswerableSurveyNode(
                         node=models.construct_node(
                             type_constraint='integer',
                             title='node',
@@ -368,7 +372,7 @@ class TestBucket(DokoTest):
             with self.session.begin():
                 creator, survey = self._create_blank_survey()
                 survey.nodes = [
-                    models.SurveyNode(
+                    models.AnswerableSurveyNode(
                         node=models.construct_node(
                             type_constraint='integer',
                             title='node',
@@ -401,7 +405,7 @@ class TestBucket(DokoTest):
             with self.session.begin():
                 creator, survey = self._create_blank_survey()
                 survey.nodes = [
-                    models.SurveyNode(
+                    models.AnswerableSurveyNode(
                         node=models.construct_node(
                             type_constraint='integer',
                             title='node',
@@ -425,7 +429,7 @@ class TestBucket(DokoTest):
         with self.session.begin():
             creator, survey = self._create_blank_survey()
             survey.nodes = [
-                models.SurveyNode(
+                models.AnswerableSurveyNode(
                     node=models.construct_node(
                         type_constraint='integer',
                         title='node1',
@@ -441,7 +445,7 @@ class TestBucket(DokoTest):
                         ),
                     ],
                 ),
-                models.SurveyNode(
+                models.AnswerableSurveyNode(
                     node=models.construct_node(
                         type_constraint='integer',
                         title='node2',
@@ -466,7 +470,7 @@ class TestBucket(DokoTest):
         with self.session.begin():
             creator, survey = self._create_blank_survey()
             survey.nodes = [
-                models.SurveyNode(
+                models.AnswerableSurveyNode(
                     node=models.construct_node(
                         type_constraint='decimal',
                         title='node',
@@ -495,7 +499,7 @@ class TestBucket(DokoTest):
         with self.session.begin():
             creator, survey = self._create_blank_survey()
             survey.nodes = [
-                models.SurveyNode(
+                models.AnswerableSurveyNode(
                     node=models.construct_node(
                         type_constraint='date',
                         title='node',
@@ -526,7 +530,7 @@ class TestBucket(DokoTest):
         with self.session.begin():
             creator, survey = self._create_blank_survey()
             survey.nodes = [
-                models.SurveyNode(
+                models.AnswerableSurveyNode(
                     node=models.construct_node(
                         type_constraint='time',
                         title='node',
@@ -598,7 +602,7 @@ class TestBucket(DokoTest):
                 survey = models.Survey(title='Test {}'.format(i))
                 creator.surveys.append(survey)
                 survey.nodes = [
-                    models.SurveyNode(
+                    models.AnswerableSurveyNode(
                         node=models.construct_node(
                             type_constraint='time',
                             title='node',
@@ -733,7 +737,7 @@ class TestBucket(DokoTest):
         with self.session.begin():
             creator, survey = self._create_blank_survey()
             survey.nodes = [
-                models.SurveyNode(
+                models.AnswerableSurveyNode(
                     node=models.construct_node(
                         type_constraint='timestamp',
                         title='node',
@@ -773,7 +777,7 @@ class TestBucket(DokoTest):
             node.choices = [choice]
 
             survey.nodes = [
-                models.SurveyNode(
+                models.AnswerableSurveyNode(
                     node=node,
                     sub_surveys=[
                         models.SubSurvey(
@@ -804,7 +808,7 @@ class TestBucket(DokoTest):
             node.choices = [choice1, choice2]
 
             survey.nodes = [
-                models.SurveyNode(
+                models.AnswerableSurveyNode(
                     node=node,
                     sub_surveys=[
                         models.SubSurvey(
@@ -843,7 +847,7 @@ class TestBucket(DokoTest):
                 node.choices = [choice]
 
                 survey.nodes = [
-                    models.SurveyNode(
+                    models.AnswerableSurveyNode(
                         node=node,
                         sub_surveys=[
                             models.SubSurvey(
@@ -874,7 +878,7 @@ class TestBucket(DokoTest):
                 wrong_node.choices = [wrong_choice]
 
                 survey.nodes = [
-                    models.SurveyNode(
+                    models.AnswerableSurveyNode(
                         node=models.construct_node(
                             type_constraint='multiple_choice',
                             title='node',
@@ -1011,7 +1015,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title='survey',
                 nodes=[
-                    models.SurveyNode(
+                    models.AnswerableSurveyNode(
                         node=models.construct_node(
                             type_constraint='integer',
                             title='integer question',

@@ -50,9 +50,16 @@ class Note(Node):
     """Notes provide information interspersed with survey questions."""
     __tablename__ = 'note'
 
-    id = util.pk('node.id')
+    id = util.pk()
+    the_type_constraint = sa.Column(node_type_enum, nullable=False)
 
     __mapper_args__ = {'polymorphic_identity': 'note'}
+    __table_args__ = (
+        sa.UniqueConstraint('id', 'the_type_constraint'),
+        sa.ForeignKeyConstraint(
+            ['id', 'the_type_constraint'], ['node.id', 'node.type_constraint']
+        ),
+    )
 
     def _asdict(self) -> OrderedDict:
         return OrderedDict((
@@ -73,7 +80,8 @@ class Question(Node):
     """
     __tablename__ = 'question'
 
-    id = util.pk('node.id')
+    id = util.pk()
+    the_type_constraint = sa.Column(node_type_enum, nullable=False)
     hint = util.translatable_json_column()
     allow_multiple = sa.Column(
         sa.Boolean, nullable=False, server_default='false'
@@ -83,7 +91,12 @@ class Question(Node):
     )
 
     __table_args__ = (
-        sa.UniqueConstraint('id', 'allow_multiple', 'allow_other'),
+        sa.UniqueConstraint(
+            'id', 'the_type_constraint', 'allow_multiple', 'allow_other'
+        ),
+        sa.ForeignKeyConstraint(
+            ['id', 'the_type_constraint'], ['node.id', 'node.type_constraint']
+        ),
     )
 
     def _default_asdict(self) -> OrderedDict:

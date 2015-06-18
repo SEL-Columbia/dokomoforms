@@ -24,7 +24,7 @@ class Answer(Base):
     submission_time = sa.Column(pg.TIMESTAMP(timezone=True), nullable=False)
     survey_id = sa.Column(pg.UUID, nullable=False)
     survey_node_id = sa.Column(pg.UUID, nullable=False)
-    survey_node = relationship('SurveyNode')
+    survey_node = relationship('AnswerableSurveyNode')
     allow_multiple = sa.Column(sa.Boolean, nullable=False)
     allow_other = sa.Column(sa.Boolean, nullable=False)
     allow_dont_know = sa.Column(sa.Boolean, nullable=False)
@@ -82,21 +82,21 @@ class Answer(Base):
                 'submission.survey_id']
         ),
         sa.ForeignKeyConstraint(
-            ['question_id', 'allow_multiple', 'allow_other'],
-            ['question.id', 'question.allow_multiple', 'question.allow_other']
-        ),
-        sa.ForeignKeyConstraint(
             [
                 'survey_node_id',
                 'question_id',
                 'type_constraint',
+                'allow_multiple',
+                'allow_other',
                 'allow_dont_know',
             ],
             [
-                'survey_node.id',
-                'survey_node.node_id',
-                'survey_node.type_constraint',
-                'survey_node.allow_dont_know',
+                'survey_node_answerable.id',
+                'survey_node_answerable.node_id',
+                'survey_node_answerable.type_constraint',
+                'survey_node_answerable.allow_multiple',
+                'survey_node_answerable.allow_other',
+                'survey_node_answerable.allow_dont_know',
             ]
         ),
         sa.Index(
@@ -365,16 +365,6 @@ ANSWER_TYPES = {
 
 def construct_answer(*, type_constraint: str, **kwargs) -> Answer:
     try:
-        create_answer = ANSWER_TYPES[type_constraint]
+        return ANSWER_TYPES[type_constraint](**kwargs)
     except KeyError:
         raise NoSuchNodeTypeError(type_constraint)
-
-    survey_node = kwargs.get('survey_node', None)
-    no_question_details = all(
-        detail not in kwargs for detail in ('allow_multiple', 'allow_other')
-    )
-    if survey_node is not None and no_question_details:
-        kwargs['allow_multiple'] = survey_node.node.allow_multiple
-        kwargs['allow_other'] = survey_node.node.allow_other
-
-    return create_answer(**kwargs)
