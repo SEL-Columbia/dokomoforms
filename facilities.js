@@ -1,49 +1,44 @@
 window.l = [];
-var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
+var facilityTree = function(nlat, wlng, slat, elng) {
     // Ajax request made below node definition
     var self = this;
     this.nlat = nlat;
     this.wlng = wlng;
     this.slat = slat;
     this.elng = elng;
-    this.countThresh = countThresh;
-    this.distThresh = distThresh;
 
     var facilityNode = function(obj) {
         
         // Bounding Box
-        this.nlat = obj.nlat;
-        this.wlng = obj.wlng;
-        this.slat = obj.slat;
-        this.elng = obj.elng;
-        this.count = obj.count;// revisit query
+        this.en = obj.en;
+        this.ws = obj.ws;
+
         this.center = obj.center;
-        this.latSep = Math.abs(this.center.lat - nlat);
-        this.lngSep = Math.abs(this.center.lng - wlng);
+        this.sep = obj.sep;
 
         // Stats
         this.uncompressedSize = obj.uncompressedSize || 0;
         this.compressedSize = obj.compressedSize || 0;
-        this.level = obj.level;
-
-        if (!window.l[this.level]) 
-            console.log("level:", this.level);
+        this.count = obj.count || 0;
 
         // Data
-        this.hasData = obj.data ? true : false; 
-        if (this.hasData)
+        this.isRoot = obj.isRoot
+        this.isLeaf = obj.isLeaf
+        this.children = {};
+        if (this.isLeaf && obj.data) {
             this.setFacilities(obj.data);
-    
+        }
+
         // Children
         if (obj.children) {
-            if (obj.children.length > 0)
-                this.nw = new facilityNode(obj.children[0]);
-            if (obj.children.length > 1)
-                this.ne = new facilityNode(obj.children[1]);
-            if (obj.children.length > 2)
-                this.sw = new facilityNode(obj.children[2]);
-            if (obj.children.length > 3)
-                this.se = new facilityNode(obj.children[3]);
+            if (obj.children.wn)
+                this.children.wn = new facilityNode(obj.children.wn);
+            if (obj.children.en)
+                this.children.en = new facilityNode(obj.children.en);
+            if (obj.children.ws)
+                this.children.ws = new facilityNode(obj.children.ws);
+            if (obj.children.es)
+                this.children.es = new facilityNode(obj.children.es);
         }
     
     };
@@ -52,53 +47,53 @@ var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
         var indent = indent || "";
         var shift = "--";
     
-        console.log(indent + " Node: " + this.center.lat, this.center.lng, this.count);
-        if (this.nw && this.nw.count) { 
+        console.log(indent + " Node: " + this.center[1], this.center[0], this.count);
+        if (this.children.wn && this.children.wn.count) { 
             console.log(indent + shift + " NW");
-            this.nw.print(indent + shift)
+            this.children.wn.print(indent + shift)
         }
     
-        if (this.ne && this.ne.count) { 
+        if (this.children.en && this.children.en.count) { 
             console.log(indent + shift + " NE");
-            this.ne.print(indent + shift)
+            this.children.en.print(indent + shift)
         }
     
-        if (this.sw && this.sw.count) { 
+        if (this.children.ws && this.children.ws.count) { 
             console.log(indent + shift + " SW");
-            this.sw.print(indent + shift)
+            this.children.ws.print(indent + shift)
         }
     
-        if (this.se && this.se.count)  {
+        if (this.children.es && this.children.es.count)  {
             console.log(indent + shift + " SE");
-            this.se.print(indent + shift)
+            this.children.es.print(indent + shift)
         }
     
         console.log(indent + "__");
     };
     
     facilityNode.prototype.setFacilities = function(facilities) {
-        localStorage.setItem(this.nlat+""+this.wlng+""+this.slat+""+this.elng, facilities);
+        var id = this.en[1]+""+this.ws[0]+""+this.ws[1]+""+this.en[0];
+        localStorage.setItem(id, facilities);
     };
     
     facilityNode.prototype.getFacilities = function() {
-        return JSON.parse(LZString.decompressFromUTF16(localStorage[this.nlat+""+this.wlng+""+this.slat+""+this.elng]));
+        var id = this.en[1]+""+this.ws[0]+""+this.ws[1]+""+this.en[0];
+        return JSON.parse(LZString.decompressFromUTF16(localStorage[id]));
     };
 
-    facilityNode.prototype.getFacilitiesC = function() {
-        return (LZString.decompressFromUTF16(localStorage[this.nlat+""+this.wlng+""+this.slat+""+this.elng]));
-    };
     facilityNode.prototype.within = function(lat, lng) {
         var self = this;
-        return (lat < self.nlat && lat >= self.slat && lng > self.wlng && lng <= self.elng);
+        return ((lat < self.en[1] && lat >= self.ws[1]) 
+               && (lng > self.ws[0] && lng <= self.es[0]));
     }
 
     facilityNode.prototype.crossesBound = function(nlat, wlng, slat, elng) {
         var self = this;
 
-        if ((nlat < self.slat) || (slat > self.nlat))
+        if ((nlat < self.ws[1]) || (slat > self.en[1]))
             return false;
         
-        if ((wlng > self.elng) || (elng < self.wlng)) //XXX i think this should be flipped
+        if ((wlng > self.en[0]) || (elng < self.ws[0])) 
            return false;
         
         return true;
@@ -107,10 +102,10 @@ var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
     facilityNode.prototype.distance = function(lat, lng) {
         var self = this;
         var R = 6371000; // metres
-        var e = self.center.lat * Math.PI/180;
+        var e = self.center[1] * Math.PI/180;
         var f = lat * Math.PI/180;
-        var g = (lat - self.center.lat) * Math.PI/180;
-        var h = (lng - self.center.lng) * Math.PI/180;
+        var g = (lat - self.center[1]) * Math.PI/180;
+        var h = (lng - self.center[0]) * Math.PI/180;
 
         var a = Math.sin(g/2) * Math.sin(g/2) +
                 Math.cos(e) * Math.cos(f) *
@@ -126,20 +121,22 @@ var facilityTree = function(nlat, wlng, slat, elng, countThresh, distThresh) {
         url: "http://localhost:3000/api/v0/facilities.json",
         data: {
             within: self.nlat + "," + self.wlng + "," + self.slat + "," + self.elng,
-            compress: 'anything can be here',
-            threshold: self.countThresh,
-            seperation: self.distThresh,
+            compressed: 'anything can be here',
             //fields: "name,uuid,coordinates,properties:sector", 
         },
         success: function(data) {
             console.log("Recieved Data traversing");
             self.total = data.total;
-            self.root = new facilityNode(data.facilities[0]); 
+            self.root = new facilityNode(data.facilities); 
         },
         error: function(data) {
             console.log("Done");
         },
     });
+
+    console.log("http://localhost:3000/api/v0/facilities.json", "?within=", 
+            self.nlat + "," + self.wlng + "," + self.slat + "," + self.elng, 
+            "&compressed");
 
 }
 
@@ -147,35 +144,35 @@ facilityTree.prototype._getNNode = function(lat, lng, node) {
     var self = this;
 
     // Maybe I'm a leaf?
-    if (node.hasData) { 
+    if (node.isLeaf) { 
         return node;
     }
 
     if (node.count > 0) {
         // NW
-        if (node.nw && node.nw.within(lat, lng)) {
-            var cnode = self._getNNode(lat, lng, node.nw);
+        if (node.children.wn && node.children.wn.within(lat, lng)) {
+            var cnode = self._getNNode(lat, lng, node.children.wn);
             if (cnode) 
                 return cnode;
         }
 
         // NE
-        if (node.ne && node.ne.within(lat, lng)) {
-            var cnode = self._getNNode(lat, lng, node.ne);
+        if (node.children.en && node.children.en.within(lat, lng)) {
+            var cnode = self._getNNode(lat, lng, node.children.en);
             if (cnode) 
                 return cnode;
         }
 
         // SW
-        if (node.sw && node.sw.within(lat, lng)) {
-            var cnode = self._getNNode(lat, lng, node.sw);
+        if (node.children.ws && node.children.ws.within(lat, lng)) {
+            var cnode = self._getNNode(lat, lng, node.children.ws);
             if (cnode) 
                 return cnode;
         }
 
         // SE
-        if (node.se && node.se.within(lat, lng)) {
-            var cnode = self._getNNode(lat, lng, node.se);
+        if (node.children.es && node.children.es.within(lat, lng)) {
+            var cnode = self._getNNode(lat, lng, node.children.es);
             if (cnode) 
                 return cnode;
         }
@@ -189,7 +186,7 @@ facilityTree.prototype.getNNode = function(lat, lng) {
         return null;
 
     var node = self._getNNode(lat, lng, self.root);
-    console.log('node: ', node.center.lat, node.center.lng, "distance from center", node.distance(lat,lng));
+    console.log('node: ', node.center[1], node.center[0], "distance from center", node.distance(lat,lng));
 
     return node;
 }
@@ -198,30 +195,30 @@ facilityTree.prototype._getRNodes = function(nlat, wlng, slat, elng, node) {
     var self = this;
 
     // Maybe I'm a leaf?
-    if (node.hasData) { 
+    if (node.isLeaf) { 
         return [node]
     }
 
     var nodes = [];
     if (node.count > 0) {
         // NW
-        if (node.nw && node.nw.crossesBound(nlat, wlng, slat, elng)) {
-            nodes = nodes.concat(self._getRNodes(nlat, wlng, slat, elng, node.nw));
+        if (node.children.wn && node.children.wn.crossesBound(nlat, wlng, slat, elng)) {
+            nodes = nodes.concat(self._getRNodes(nlat, wlng, slat, elng, node.children.wn));
         }
 
         // NE
-        if (node.ne && node.ne.crossesBound(nlat, wlng, slat, elng)) {
-            nodes = nodes.concat(self._getRNodes(nlat, wlng, slat, elng, node.ne));
+        if (node.children.en && node.children.en.crossesBound(nlat, wlng, slat, elng)) {
+            nodes = nodes.concat(self._getRNodes(nlat, wlng, slat, elng, node.children.en));
         }
 
         // SW
-        if (node.sw && node.sw.crossesBound(nlat, wlng, slat, elng)) {
-            nodes = nodes.concat(self._getRNodes(nlat, wlng, slat, elng, node.sw));
+        if (node.children.ws && node.children.ws.crossesBound(nlat, wlng, slat, elng)) {
+            nodes = nodes.concat(self._getRNodes(nlat, wlng, slat, elng, node.children.ws));
         }
 
         // SE
-        if (node.se && node.se.crossesBound(nlat, wlng, slat, elng)) {
-            nodes = nodes.concat(self._getRNodes(nlat, wlng, slat, elng, node.se));
+        if (node.children.es && node.children.es.crossesBound(nlat, wlng, slat, elng)) {
+            nodes = nodes.concat(self._getRNodes(nlat, wlng, slat, elng, node.children.es));
         }
     }
 
@@ -329,27 +326,27 @@ facilityTree.prototype._getLeaves = function(node) {
     var self = this;
 
     // Check if this is a leaf
-    if (!node.nw && !node.ne && !node.sw && !node.se) 
+    if (node.isLeaf) 
         return [node];
 
     // Otherwise check all children
     var nodes = [];
     if (node.count > 0) {
         // NW
-        if (node.nw) 
-            nodes = nodes.concat(self._getLeaves(node.nw));
+        if (node.children.wn) 
+            nodes = nodes.concat(self._getLeaves(node.children.wn));
 
         // NE
-        if (node.ne) 
-            nodes = nodes.concat(self._getLeaves(node.ne));
+        if (node.children.en) 
+            nodes = nodes.concat(self._getLeaves(node.children.en));
 
         // SW
-        if (node.sw) 
-            nodes = nodes.concat(self._getLeaves(node.sw));
+        if (node.children.ws) 
+            nodes = nodes.concat(self._getLeaves(node.children.ws));
 
         // SE
-        if (node.se) 
-            nodes = nodes.concat(self._getLeaves(node.se));
+        if (node.children.es) 
+            nodes = nodes.concat(self._getLeaves(node.children.es));
     }
 
     return nodes;
@@ -394,7 +391,8 @@ window.ls = function() {
 
 console.log("Initilizing ... (wait for request to complete");
 //var tree = new facilityTree(90, -180, 0, 0, 50, 0);
-var tree = new facilityTree(85, -180, -85, 180, 2500, 0.000001);
+//var tree = new facilityTree(85, -180, -85, 180);
+var tree = new facilityTree(8, -8, -22, 40);
 window.tree;
 
 
