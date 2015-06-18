@@ -14,6 +14,9 @@ class SurveyResource(BaseResource):
     ModelJSONEncoder for json conversion.
     """
 
+    # Set the property name on the outputted json
+    objects_key = 'surveys'
+
     # The preparer defines the fields that get returned.
     preparer = FieldsPreparer(fields={
         'id': 'id',
@@ -33,7 +36,8 @@ class SurveyResource(BaseResource):
 
     # GET /api/surveys/
     def list(self):
-        surveys = self.session.query(Survey).all()
+        surveys = self.session.query(Survey).filter(
+            Survey.deleted == False).all()
         return surveys
 
     # GET /api/surveys/<survey_id>
@@ -59,72 +63,36 @@ class SurveyResource(BaseResource):
             )
 
             self.session.add(survey)
-            self.session.commit()
 
-            """
-            creator = models.SurveyCreator(
-                name='creator',
-                emails=[models.Email(address='email')],
-            )
-            node_types = list(models.NODE_TYPES)
-            for node_type in node_types:
-                survey = models.Survey(
-                    title=node_type + '_survey',
-                    nodes=[
-                        models.SurveyNode(
-                            node=models.construct_node(
-                                type_constraint=node_type,
-                                title=node_type + '_node',
-                            ),
-                        ),
-                    ],
-                )
-                creator.surveys.append(survey)
-            self.session.add(creator)
-            """
         return survey
 
-    # Add this!
     # PUT /api/surveys/<survey_id>/
     def update(self, survey_id):
-        pass
-
-    # Add this!
-    # DELETE /api/surveys/<survey_id>/
-    def delete(self, survey_id):
         survey = self.session.query(Survey).get(survey_id)
         if not survey:
             raise exc.NotFound()
         else:
-            survey.deleted = True
-            self.session.commit()
+            return survey
 
-    def wrap_list_response(self, data):
+    # DELETE /api/surveys/<survey_id>/
+    def delete(self, survey_id):
         """
-        Takes a list of data & wraps it in a dictionary (within the ``objects``
-        key).
-        For security in JSON responses, it's better to wrap the list results in
-        an ``object`` (due to the way the ``Array`` constructor can be attacked
-        in Javascript).
-        See http://haacked.com/archive/2009/06/25/json-hijacking.aspx/
-        & similar for details.
-        Overridable to allow for modifying the key names, adding data (or just
-        insecurely return a plain old list if that's your thing).
-        :param data: A list of data about to be serialized
-        :type data: list
-        :returns: A wrapping dict
-        :rtype: dict
+        curl -X DELETE -H "Content-Type: application/json"
+        http://local.dokomoforms.org:8888/api/v0/surveys/e383f48c-674f-4ab9-a919-bbf1ca7bfb46
         """
-        return {
-            "surveys": data
-        }
+        with self.session.begin():
+            survey = self.session.query(Survey).get(survey_id)
+            if not survey:
+                raise exc.NotFound()
+            else:
+                survey.deleted = True
 
     def prepare(self, data):
         # ``data`` is the object/dict to be exposed.
-        # We'll call ``super`` to prep the data, then we'll mask the email.
+        # We'll call ``super`` to prep the data, then we can modify it.
         prepped = super().prepare(data)
 
-        # nodes = prepped['nodes']
-        # prepped['email'] = email[:at_offset + 1] + "..."
+        # modify prepped here
 
+        # then return the modified data.
         return prepped
