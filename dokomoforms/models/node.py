@@ -6,6 +6,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.orderinglist import ordering_list
+from sqlalchemy.ext.declarative import declared_attr
 
 from dokomoforms.models import util, Base
 from dokomoforms.exc import NoSuchNodeTypeError
@@ -49,9 +50,16 @@ class Note(Node):
     """Notes provide information interspersed with survey questions."""
     __tablename__ = 'note'
 
-    id = util.pk('node.id')
+    id = util.pk()
+    the_type_constraint = sa.Column(node_type_enum, nullable=False)
 
     __mapper_args__ = {'polymorphic_identity': 'note'}
+    __table_args__ = (
+        sa.UniqueConstraint('id', 'the_type_constraint'),
+        sa.ForeignKeyConstraint(
+            ['id', 'the_type_constraint'], ['node.id', 'node.type_constraint']
+        ),
+    )
 
     def _asdict(self) -> OrderedDict:
         return OrderedDict((
@@ -72,13 +80,23 @@ class Question(Node):
     """
     __tablename__ = 'question'
 
-    id = util.pk('node.id')
+    id = util.pk()
+    the_type_constraint = sa.Column(node_type_enum, nullable=False)
     hint = util.translatable_json_column()
     allow_multiple = sa.Column(
         sa.Boolean, nullable=False, server_default='false'
     )
     allow_other = sa.Column(
         sa.Boolean, nullable=False, server_default='false'
+    )
+
+    __table_args__ = (
+        sa.UniqueConstraint(
+            'id', 'the_type_constraint', 'allow_multiple', 'allow_other'
+        ),
+        sa.ForeignKeyConstraint(
+            ['id', 'the_type_constraint'], ['node.id', 'node.type_constraint']
+        ),
     )
 
     def _default_asdict(self) -> OrderedDict:
@@ -94,109 +112,63 @@ class Question(Node):
         ))
 
 
-class TextQuestion(Question):
+class _QuestionMixin:
+    @declared_attr
+    def id(cls):
+        return util.pk('node.id', 'question.id')
+
+    def _asdict(self) -> OrderedDict:
+        return super()._default_asdict()
+
+
+class TextQuestion(_QuestionMixin, Question):
     __tablename__ = 'question_text'
-
-    id = util.pk('node.id', 'question.id')
-
     __mapper_args__ = {'polymorphic_identity': 'text'}
 
-    def _asdict(self) -> OrderedDict:
-        return super()._default_asdict()
 
-
-class PhotoQuestion(Question):
+class PhotoQuestion(_QuestionMixin, Question):
     __tablename__ = 'question_photo'
-
-    id = util.pk('node.id', 'question.id')
-
     __mapper_args__ = {'polymorphic_identity': 'photo'}
 
-    def _asdict(self) -> OrderedDict:
-        return super()._default_asdict()
 
-
-class IntegerQuestion(Question):
+class IntegerQuestion(_QuestionMixin, Question):
     __tablename__ = 'question_integer'
-
-    id = util.pk('node.id', 'question.id')
-
     __mapper_args__ = {'polymorphic_identity': 'integer'}
 
-    def _asdict(self) -> OrderedDict:
-        return super()._default_asdict()
 
-
-class DecimalQuestion(Question):
+class DecimalQuestion(_QuestionMixin, Question):
     __tablename__ = 'question_decimal'
-
-    id = util.pk('node.id', 'question.id')
-
     __mapper_args__ = {'polymorphic_identity': 'decimal'}
 
-    def _asdict(self) -> OrderedDict:
-        return super()._default_asdict()
 
-
-class DateQuestion(Question):
+class DateQuestion(_QuestionMixin, Question):
     __tablename__ = 'question_date'
-
-    id = util.pk('node.id', 'question.id')
-
     __mapper_args__ = {'polymorphic_identity': 'date'}
 
-    def _asdict(self) -> OrderedDict:
-        return super()._default_asdict()
 
-
-class TimeQuestion(Question):
+class TimeQuestion(_QuestionMixin, Question):
     __tablename__ = 'question_time'
-
-    id = util.pk('node.id', 'question.id')
-
     __mapper_args__ = {'polymorphic_identity': 'time'}
 
-    def _asdict(self) -> OrderedDict:
-        return super()._default_asdict()
 
-
-class TimeStampQuestion(Question):
+class TimestampQuestion(_QuestionMixin, Question):
     __tablename__ = 'question_timestamp'
-
-    id = util.pk('node.id', 'question.id')
-
     __mapper_args__ = {'polymorphic_identity': 'timestamp'}
 
-    def _asdict(self) -> OrderedDict:
-        return super()._default_asdict()
 
-
-class LocationQuestion(Question):
+class LocationQuestion(_QuestionMixin, Question):
     __tablename__ = 'question_location'
-
-    id = util.pk('node.id', 'question.id')
-
     __mapper_args__ = {'polymorphic_identity': 'location'}
 
-    def _asdict(self) -> OrderedDict:
-        return super()._default_asdict()
 
-
-class FacilityQuestion(Question):
+class FacilityQuestion(_QuestionMixin, Question):
     __tablename__ = 'question_facility'
-
-    id = util.pk('node.id', 'question.id')
-
     __mapper_args__ = {'polymorphic_identity': 'facility'}
 
-    def _asdict(self) -> OrderedDict:
-        return super()._default_asdict()
 
-
-class MultipleChoiceQuestion(Question):
+class MultipleChoiceQuestion(_QuestionMixin, Question):
     __tablename__ = 'question_multiple_choice'
 
-    id = util.pk('node.id', 'question.id')
     choices = relationship(
         'Choice',
         order_by='Choice.choice_number',
@@ -244,9 +216,6 @@ class Choice(Base):
         sa.UniqueConstraint(
             'question_id', 'choice_text', name='unique_choice_text'
         ),
-    )
-
-    __table_args__ = (
         sa.UniqueConstraint('id', 'question_id'),
     )
 
@@ -268,7 +237,7 @@ NODE_TYPES = {
     'decimal': DecimalQuestion,
     'date': DateQuestion,
     'time': TimeQuestion,
-    'timestamp': TimeStampQuestion,
+    'timestamp': TimestampQuestion,
     'location': LocationQuestion,
     'facility': FacilityQuestion,
     'multiple_choice': MultipleChoiceQuestion,

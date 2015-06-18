@@ -2,10 +2,12 @@
 Defines setup and teardown functions for test modules.
 Also injects the --schema=doko_test option.
 """
+
 import unittest
 from urllib.parse import urlencode
 
 from tornado.testing import AsyncHTTPTestCase
+from functools import wraps
 
 from dokomoforms.options import inject_options
 
@@ -22,7 +24,12 @@ Session = sessionmaker()
 
 def setUpModule():
     """Creates the tables in the doko_test schema."""
-    Base.metadata.create_all(engine)
+    engine.execute(DDL('DROP SCHEMA IF EXISTS doko_test CASCADE'))
+    try:
+        Base.metadata.create_all(engine)
+    except Exception:
+        engine.execute(DDL('DROP SCHEMA IF EXISTS doko_test CASCADE'))
+        raise
 
 
 def tearDownModule():
@@ -34,12 +41,7 @@ def load_fixtures():
     """
     Load database fixtures.
     """
-    #os.system("psql %s --user=%s --password=%s < %s" % (settings['db_name'],
-    #    settings['db_user'], settings['db_password'], settings['db_fixtures_file']))
 
-    #return tornado.database.Connection(
-    #    host=settings['db_host'], database=settings['db_name'],
-    #    user=settings['db_user'], password=settings['db_password'])
     pass
 
 
@@ -47,12 +49,7 @@ def unload_fixtures():
     """
     Unload database fixtures.
     """
-    #os.system("psql %s --user=%s --password=%s < %s" % (settings['db_name'],
-    #    settings['db_user'], settings['db_password'], settings['db_fixtures_file']))
 
-    #return tornado.database.Connection(
-    #    host=settings['db_host'], database=settings['db_name'],
-    #    user=settings['db_user'], password=settings['db_password'])
     pass
 
 
@@ -111,3 +108,35 @@ class DokoHTTPTest(AsyncHTTPTestCase):
         params = urlencode(params_dict)
         url += '?' + params
         return url
+
+
+def test_continues_after_rollback(doko_test):
+    @wraps(doko_test)
+    def wrapper(self):
+        self.session.close()
+        self.session = Session(bind=engine, autocommit=True)
+        try:
+            return doko_test(self)
+        finally:
+            connection = engine.connect()
+            with connection.begin():
+                connection.execute(
+                    '''
+                    DO
+                    $func$
+                    BEGIN
+                      EXECUTE (
+                        SELECT 'TRUNCATE TABLE '
+                          || string_agg(
+                               'doko_test.' || quote_ident(t.tablename), ', '
+                             )
+                          || ' CASCADE'
+                        FROM   pg_tables t
+                        WHERE  t.schemaname = 'doko_test'
+                      );
+                    END
+                    $func$;
+                    '''
+                )
+            self.session.close()
+    return wrapper

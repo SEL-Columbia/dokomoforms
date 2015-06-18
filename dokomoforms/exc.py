@@ -19,6 +19,16 @@ class NoSuchNodeTypeError(DokomoError):
     """
 
 
+class NotAnAnswerTypeError(DokomoError):
+    """
+    Raised when dokomoforms.models.node.construct_node is called with
+    an invalid type_constraint.
+
+    The valid type_constraints are the keys of
+    dokomoforms.models.node.NODE_TYPES.
+    """
+
+
 class NoSuchBucketTypeError(DokomoError):
     """
     Raised when dokomoforms.models.survey.construct_bucket is called with

@@ -65,7 +65,7 @@ class SurveyCreator(User):
     )
     token = sa.Column(pg.BYTEA)
     token_expiration = sa.Column(
-        sa.DateTime(timezone=True),
+        pg.TIMESTAMP(timezone=True),
         nullable=False,
         server_default=current_timestamp(),
     )

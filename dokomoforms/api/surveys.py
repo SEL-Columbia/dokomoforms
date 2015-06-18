@@ -7,7 +7,14 @@ from dokomoforms.models import Survey
 
 
 class SurveyResource(BaseResource):
+    """
+    Restless resource for Surveys.
 
+    BaseResource sets the serializer, which uses the dokomo models'
+    ModelJSONEncoder for json conversion.
+    """
+
+    # The preparer defines the fields that get returned.
     preparer = FieldsPreparer(fields={
         'id': 'id',
         'deleted': 'deleted',
@@ -27,7 +34,6 @@ class SurveyResource(BaseResource):
     # GET /api/surveys/
     def list(self):
         surveys = self.session.query(Survey).all()
-        surveys_as_dicts = map(lambda survey: survey._asdict(), surveys)
         return surveys
 
     # GET /api/surveys/<survey_id>
@@ -99,7 +105,8 @@ class SurveyResource(BaseResource):
         key).
         For security in JSON responses, it's better to wrap the list results in
         an ``object`` (due to the way the ``Array`` constructor can be attacked
-        in Javascript). See http://haacked.com/archive/2009/06/25/json-hijacking.aspx/
+        in Javascript).
+        See http://haacked.com/archive/2009/06/25/json-hijacking.aspx/
         & similar for details.
         Overridable to allow for modifying the key names, adding data (or just
         insecurely return a plain old list if that's your thing).
