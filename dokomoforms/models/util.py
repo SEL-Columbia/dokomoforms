@@ -105,6 +105,7 @@ sa.event.listen(
     # Creating extensions in pg_catalog makes them available to the entire
     # database without any prefix.
     sa.DDL(
+        'CREATE SCHEMA IF NOT EXISTS public;'
         'CREATE SCHEMA IF NOT EXISTS {schema};'
         'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'  # UUID columns
         ' WITH SCHEMA pg_catalog;'
