@@ -212,11 +212,11 @@
   background-color: #67b89d;
 }
 .navbar-default {
-  background-image: -webkit-linear-gradient(top, #f2f2f2 0%, #d8d8d8 100%);
-  background-image: -o-linear-gradient(top, #f2f2f2 0%, #d8d8d8 100%);
-  background-image: linear-gradient(to bottom, #f2f2f2 0%, #d8d8d8 100%);
+  background-image: -webkit-linear-gradient(top, #ffffff 0%, #ffffff 100%);
+  background-image: -o-linear-gradient(top, #ffffff 0%, #ffffff 100%);
+  background-image: linear-gradient(to bottom, #ffffff 0%, #ffffff 100%);
   background-repeat: repeat-x;
-  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#fff2f2f2', endColorstr='#ffd8d8d8', GradientType=0);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffffff', endColorstr='#ffffffff', GradientType=0);
   filter: progid:DXImageTransform.Microsoft.gradient(enabled = false);
   border-radius: 4px;
   -webkit-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 1px 5px rgba(0, 0, 0, 0.075);
@@ -224,11 +224,11 @@
 }
 .navbar-default .navbar-nav > .open > a,
 .navbar-default .navbar-nav > .active > a {
-  background-image: -webkit-linear-gradient(top, #bbbbbb 0%, #c2c2c2 100%);
-  background-image: -o-linear-gradient(top, #bbbbbb 0%, #c2c2c2 100%);
-  background-image: linear-gradient(to bottom, #bbbbbb 0%, #c2c2c2 100%);
+  background-image: -webkit-linear-gradient(top, #e2e2e2 0%, #e9e9e9 100%);
+  background-image: -o-linear-gradient(top, #e2e2e2 0%, #e9e9e9 100%);
+  background-image: linear-gradient(to bottom, #e2e2e2 0%, #e9e9e9 100%);
   background-repeat: repeat-x;
-  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffbbbbbb', endColorstr='#ffc2c2c2', GradientType=0);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffe2e2e2', endColorstr='#ffe9e9e9', GradientType=0);
   -webkit-box-shadow: inset 0 3px 9px rgba(0, 0, 0, 0.075);
   box-shadow: inset 0 3px 9px rgba(0, 0, 0, 0.075);
 }

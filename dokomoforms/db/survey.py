@@ -209,6 +209,27 @@ def get_free_title(connection: Connection,
     return title + '({})'.format(free_number)
 
 
+def get_surveys_by_email_for_menu(connection: Connection,
+                                  email: str,
+                                  limit: int=None) -> ResultProxy:
+    """
+    Get all surveys for the specified user ordered by creation time,
+    returning only title and id.
+
+    :param connection: a SQLAlchemy Connection
+    :param email: the e-mail address of the user
+    :param limit: how many results to return. Defaults to all
+    :return: the corresponding survey records
+    """
+    table = survey_table.join(auth_user_table)
+    return connection.execute(
+        select([
+            survey_table.c.survey_id, survey_table.c.survey_title
+        ]).select_from(table).limit(limit).where(
+            auth_user_table.c.email == email
+        ).order_by('created_on asc')).fetchall()
+
+
 class SurveyDoesNotExistError(Exception):
     pass
 

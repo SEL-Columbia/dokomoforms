@@ -1,29 +1,6 @@
-{% extends "base.html" %}
-
-{% block header %}
-<div class="header">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6"><h1><a href="/view/{{ survey.survey_id }}">{{ survey.survey_title }}</a></h1></div>
-            <div class="col-md-6 header-controls">
-                <div class="btn-group pull-right">
-                    <button class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" aria-expanded="false"><span class="glyphicon glyphicon-menu-hamburger"></span></button>
-                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
-                        <li><a href="/">Account Dashboard</a></li>
-                        <li><a href="/view/{{ survey.survey_id }}">Manage Survey</a></li>
-                        <li><a href="/view/data/{{ survey.survey_id }}">View Survey Data</a></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% end %}
-
-
 {% block subheader %}
-<div class="subheader">
-    <div class="container">
+<div class="subheader submission-detail-header">
+    <div class="container-fluid">
         <div class="row">
             <div class="col-md-12">
                 <h3>Submission Detail</h3>
@@ -70,7 +47,7 @@
 
 {% block content %}
     <div class="content">
-        <div class="container" role="main">
+        <div class="container-fluid" role="main">
             
             <div class="message">
             </div>

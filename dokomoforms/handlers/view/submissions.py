@@ -7,6 +7,7 @@ import dokomoforms.api.submission as submission_api
 
 
 class ViewSubmissionHandler(BaseHandler):
+
     """The endpoint for viewing a submission."""
 
     @tornado.web.authenticated
