@@ -25,8 +25,11 @@ var facilityTree = function(nlat, wlng, slat, elng) {
         this.isRoot = obj.isRoot
         this.isLeaf = obj.isLeaf
         this.children = {};
-        if (this.isLeaf && obj.data) {
+        if (this.isLeaf) {
             this.setFacilities(obj.data);
+            drawBox(this.en, this.ws, "#FF0000", obj);
+        } else {
+            drawBox(this.en, this.ws, "#0000FF");
         }
 
         // Children
@@ -385,12 +388,13 @@ facilityTree.prototype.getCount = function() {
 // Helper get localStorage size
 window.ls = function() {
     return Object.keys(localStorage).reduce(function(sum, key) {
-        return localStorage[key].length * 2 + sum
+        return localStorage[key].length + sum
     }, 0);
 }
 
 console.log("Initilizing ... (wait for request to complete");
 //var tree = new facilityTree(90, -180, 0, 0, 50, 0);
+//var tree = new facilityTree(85, -72,  -85, -74);
 //var tree = new facilityTree(85, -180, -85, 180);
 var tree = new facilityTree(8, -8, -22, 40);
 window.tree;
