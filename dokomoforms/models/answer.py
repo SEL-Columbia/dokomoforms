@@ -5,8 +5,9 @@ from collections import OrderedDict
 
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as pg
-from sqlalchemy.orm import relationship, synonym
+from sqlalchemy.orm import relationship, synonym, column_property
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.sql import func
 # from sqlalchemy.sql.type_api import UserDefinedType
 
 from geoalchemy2 import Geometry
@@ -276,7 +277,16 @@ class TimestampAnswer(_AnswerMixin, Answer):
 class LocationAnswer(_AnswerMixin, Answer):
     __tablename__ = 'answer_location'
     main_answer = sa.Column(Geometry('POINT', 4326))
-    answer = synonym('main_answer')
+    geo_json = column_property(func.ST_AsGeoJSON(main_answer))
+
+    @hybrid_property
+    def answer(self):
+        return self.geo_json
+
+    @answer.setter
+    def answer(self, location: dict):
+        self.main_answer = 'SRID=4326;POINT({lng} {lat})'.format(**location)
+
     __mapper_args__ = {'polymorphic_identity': 'location'}
     __table_args__ = _answer_mixin_table_args()
 
@@ -284,6 +294,7 @@ class LocationAnswer(_AnswerMixin, Answer):
 class FacilityAnswer(_AnswerMixin, Answer):
     __tablename__ = 'answer_facility'
     main_answer = sa.Column(Geometry('POINT', 4326))
+    geo_json = column_property(func.ST_AsGeoJSON(main_answer))
     facility_id = sa.Column(pg.TEXT)
     facility_name = sa.Column(pg.TEXT)
     facility_sector = sa.Column(pg.TEXT)
@@ -291,11 +302,21 @@ class FacilityAnswer(_AnswerMixin, Answer):
     @hybrid_property
     def answer(self) -> OrderedDict:
         return OrderedDict((
-            ('facility_location', self.main_answer),
+            ('facility_location', self.geo_json),
             ('facility_id', self.facility_id),
             ('facility_name', self.facility_name),
             ('facility_sector', self.facility_sector),
         ))
+
+    @answer.setter
+    def answer(self, facility_info: dict):
+        self.main_answer = (
+            'SRID=4326;POINT({lng} {lat})'
+            .format(**facility_info['facility_location'])
+        )
+        self.facility_id = facility_info['facility_id']
+        self.facility_name = facility_info['facility_name']
+        self.facility_sector = facility_info['facility_sector']
 
     __mapper_args__ = {'polymorphic_identity': 'facility'}
     __table_args__ = _answer_mixin_table_args() + (
@@ -376,6 +397,8 @@ ANSWER_TYPES = {
 
 def construct_answer(*, type_constraint: str, **kwargs) -> Answer:
     try:
-        return ANSWER_TYPES[type_constraint](**kwargs)
+        create_answer = ANSWER_TYPES[type_constraint]
     except KeyError:
         raise NotAnAnswerTypeError(type_constraint)
+
+    return create_answer(**kwargs)

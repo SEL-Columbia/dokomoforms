@@ -262,6 +262,8 @@ def construct_node(*, type_constraint: str, **kwargs) -> Node:
     :raises: dokomoforms.exc.NoSuchNodeTypeError
     """
     try:
-        return NODE_TYPES[type_constraint](**kwargs)
+        create_node = NODE_TYPES[type_constraint]
     except KeyError:
         raise NoSuchNodeTypeError(type_constraint)
+
+    return create_node(**kwargs)

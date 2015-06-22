@@ -86,7 +86,10 @@ class Email(Base):
     __tablename__ = 'email'
 
     id = util.pk()
-    address = sa.Column(pg.TEXT, nullable=False, unique=True)
+    address = sa.Column(
+        pg.TEXT, sa.CheckConstraint("address ~ '.*@.*'"),
+        nullable=False, unique=True
+    )
     user_id = sa.Column(pg.UUID, util.fk('auth_user.id'), nullable=False)
     last_update_time = util.last_update_time()
 
