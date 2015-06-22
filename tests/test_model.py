@@ -1082,7 +1082,7 @@ class TestAnswer(DokoTest):
                         type_constraint='integer',
                         answer=3,
                     ),
-                ]
+                ],
             )
 
             self.session.add(submission)
@@ -1168,13 +1168,44 @@ class TestAnswer(DokoTest):
                     answers=[
                         models.construct_answer(
                             survey_node=the_survey.nodes[0],
-                            type_constraint='decimal',
-                            answer=3.5,
+                            type_constraint='text',
+                            answer='not an integer',
                         ),
-                    ]
+                    ],
                 )
 
                 self.session.add(submission)
 
     def test_reject_incorrect_integer_answer_syntax(self):
-        pass
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title='survey',
+                nodes=[
+                    models.AnswerableSurveyNode(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title='integer question',
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        with self.assertRaises(DataError):
+            with self.session.begin():
+                the_survey = self.session.query(models.Survey).one()
+                submission = models.PublicSubmission(
+                    survey=the_survey,
+                    answers=[
+                        models.construct_answer(
+                            survey_node=the_survey.nodes[0],
+                            type_constraint='integer',
+                            answer='not an integer',
+                        ),
+                    ],
+                )
+
+                self.session.add(submission)
