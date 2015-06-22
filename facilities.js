@@ -393,10 +393,32 @@ window.ls = function() {
 }
 
 console.log("Initilizing ... (wait for request to complete");
-//var tree = new facilityTree(90, -180, 0, 0, 50, 0);
-//var tree = new facilityTree(85, -72,  -85, -74);
-//var tree = new facilityTree(85, -180, -85, 180);
-var tree = new facilityTree(8, -8, -22, 40);
+
+//Nigeria
+var nlat = 8;
+var wlng = -8;
+var slat = -22;
+var elng = 40;
+
+// NYC
+//var nlat = 85; 
+//var wlng = -72;
+//var slat = -85
+//var elng = -74;
+
+// World
+//var nlat = 85;
+//var wlng = -180;
+//var slat = -85;
+//var elng = 180;
+
+localStorage.clear();
+var tree = new facilityTree(nlat, wlng, slat, elng);
+
+setTimeout(function() {
+    updateStats(tree, [[nlat, wlng], [slat, elng]]);
+}, 5000);
+
 window.tree;
 
 
