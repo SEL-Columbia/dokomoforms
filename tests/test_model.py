@@ -1160,25 +1160,21 @@ class TestAnswer(DokoTest):
 
             self.session.add(creator)
 
-        with self.session.begin():
-            the_survey = self.session.query(models.Survey).one()
-            submission = models.PublicSubmission(
-                survey=the_survey,
-                answers=[
-                    models.construct_answer(
-                        survey_node=the_survey.nodes[0],
-                        type_constraint='decimal',
-                        answer=3.5,
-                    ),
-                ]
-            )
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                the_survey = self.session.query(models.Survey).one()
+                submission = models.PublicSubmission(
+                    survey=the_survey,
+                    answers=[
+                        models.construct_answer(
+                            survey_node=the_survey.nodes[0],
+                            type_constraint='decimal',
+                            answer=3.5,
+                        ),
+                    ]
+                )
 
-            self.session.add(submission)
-
-        self.assertIs(
-            self.session.query(models.Answer).one(),
-            self.session.query(models.Survey).one().submissions[0].answers[0]
-        )
+                self.session.add(submission)
 
     def test_reject_incorrect_integer_answer_syntax(self):
         pass

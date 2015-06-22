@@ -30,6 +30,16 @@ class Answer(Base):
     allow_dont_know = sa.Column(sa.Boolean, nullable=False)
     question_id = sa.Column(pg.UUID, nullable=False)
     type_constraint = sa.Column(node_type_enum, nullable=False)
+    answer_type = sa.Column(
+        sa.Enum(
+            'text', 'photo', 'integer', 'decimal', 'date', 'time',
+            'timestamp', 'location', 'facility', 'multiple_choice',
+            name='answer_type_name',
+            inherit_schema=True,
+            metadata=Base.metadata,
+        ),
+        nullable=False,
+    )
     last_update_time = util.last_update_time()
 
     @property
@@ -69,13 +79,14 @@ class Answer(Base):
             ('response', response),
         ))
 
-    __mapper_args__ = {'polymorphic_on': type_constraint}
+    __mapper_args__ = {'polymorphic_on': answer_type}
     __table_args__ = (
         sa.UniqueConstraint('id', 'allow_other', 'allow_dont_know'),
         sa.UniqueConstraint(
             'id', 'allow_other', 'allow_dont_know', 'survey_node_id',
             'question_id', 'submission_id',
         ),
+        sa.CheckConstraint('type_constraint::TEXT = answer_type::TEXT'),
         sa.ForeignKeyConstraint(
             ['submission_id', 'submission_time', 'survey_id'],
             ['submission.id', 'submission.submission_time',
