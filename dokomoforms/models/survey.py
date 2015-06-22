@@ -14,7 +14,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.orderinglist import ordering_list
 
-from dokomoforms.models import util, Base, node_type_enum
+from dokomoforms.models import util, Base, node_type_enum, construct_node
 from dokomoforms.exc import NoSuchBucketTypeError
 
 
@@ -549,3 +549,36 @@ class AnswerableSurveyNode(SurveyNode):
         if self.sub_surveys:
             result['sub_surveys'] = self.sub_surveys
         return result
+
+
+def construct_survey_node(*, type_constraint: str, **kwargs) -> SurveyNode:
+    """
+    Returns a subclass of dokomoforms.models.survey.SurveyNode determined by
+    the type_constraint parameter. This utility function makes it easy to
+    create an instance of a SurveyNode subclass based on external
+    input.
+
+    See http://stackoverflow.com/q/30518484/1475412
+
+    :param type_constraint: the type constraint of the node. Must be one of the
+                            keys of
+                            dokomoforms.models.survey.NODE_TYPES
+    :param kwargs: the keyword arguments to pass to the constructor
+    :returns: an instance of one of the Node subtypes
+    :raises: dokomoforms.exc.NoSuchNodeTypeError
+    """
+
+    survey_node_constructor = (
+        NonAnswerableSurveyNode if type_constraint
+        is 'note' else AnswerableSurveyNode
+    )
+
+    try:
+        return survey_node_constructor(
+            node=construct_node(
+                type_constraint=type_constraint,
+                **kwargs
+            ),
+        )
+    except KeyError:
+        raise NoSuchNodeTypeError(type_constraint)

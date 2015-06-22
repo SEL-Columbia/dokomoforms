@@ -120,6 +120,13 @@ class Application(tornado.web.Application):
                 SurveyResource.as_detail(),
                 name="survey"),
         ]
+        # if options.debug:
+        urls += [
+            url(r'/debug/create/(.+)/?', handlers.DebugUserCreationHandler),
+            url(r'/debug/login/(.+)/?', handlers.DebugLoginHandler),
+            url(r'/debug/logout/?', handlers.DebugLogoutHandler),
+        ]
+
         settings = {
             'template_path': os.path.join(_pwd, 'dokomoforms/templates'),
             'static_path': os.path.join(_pwd, 'dokomoforms/static'),
@@ -143,12 +150,10 @@ class Application(tornado.web.Application):
         self.session = self.sessionmaker()
 
 
-application = Application()
-
 def main():
     if options.kill:
         ensure_that_user_wants_to_drop_schema()
-    http_server = tornado.httpserver.HTTPServer(application)
+    http_server = tornado.httpserver.HTTPServer(Application())
     tornado.locale.load_gettext_translations(
         os.path.join(_pwd, 'locale'), 'dokomoforms'
     )

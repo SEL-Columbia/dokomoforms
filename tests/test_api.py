@@ -1,9 +1,6 @@
 """API tests"""
 
-from collections import OrderedDict
-from tornado.escape import json_decode
-import datetime
-from decimal import Decimal
+from tornado.escape import json_decode, json_encode
 
 from tests.util import DokoHTTPTest, setUpModule, tearDownModule
 
@@ -31,10 +28,8 @@ class TestSurveyApi(DokoHTTPTest):
 
         # check that the expected keys are present
         self.assertTrue('surveys' in survey_dict)
-        self.assertTrue("offset" in survey_dict)
-        self.assertTrue("limit" in survey_dict)
-        self.assertTrue("filtered_entries" in survey_dict)
-        self.assertTrue("total_entries" in survey_dict)
+
+        self.assertTrue(len(survey_dict['surveys']) == 11)
 
         # check that no error is present
         self.assertFalse("error" in survey_dict)
@@ -110,16 +105,52 @@ class TestSurveyApi(DokoHTTPTest):
         self.assertTrue('last_updated' in survey_dict)
 
     def test_create_survey(self):
+        # login - user has been created in fixtures
+        self.login('test_user')
+
         # url to test
         url = self.api_root + '/surveys'
         # http method
         method = 'POST'
         # body
-        body = '{"survey_body_json"}'
+        body = {
+            "metadata": {},
+            "enumerator_only": "false",
+            "deleted": False,
+            "translations": {},
+            "default_language": "English",
+            "title": "Another Test Survey",
+            "nodes": [
+                {
+                    "title": "time_node",
+                    "hint": {
+                        "English": ""
+                    },
+                    "allow_multiple": False,
+                    "allow_other": False,
+                    "type_constraint": "time",
+                    "logic": {},
+                    "deleted": False
+                }
+            ]
+        }
         # make request
-        response = self.fetch(url, method=method, body=body)
+        response = self.fetch(url, method=method, body=json_encode(body))
+
+        print(response)
+
         # test response
-        self.fail("Not yet implemented.")
+        # check that response is valid parseable json
+        survey_dict = json_decode(response.body)
+
+        # check that expected keys are present
+        self.assertTrue('id' in survey_dict)
+        self.assertTrue('metadata' in survey_dict)
+        self.assertTrue('nodes' in survey_dict)
+        self.assertTrue('title' in survey_dict)
+        self.assertTrue('version' in survey_dict)
+        self.assertTrue('created_on' in survey_dict)
+        self.assertTrue('last_update_time' in survey_dict)
 
     def test_update_survey(self):
         survey_id = 'A known id'

@@ -1,10 +1,6 @@
 from sqlalchemy import DDL
 from sqlalchemy.orm import sessionmaker
 
-from tornado.escape import json_decode, json_encode
-
-import json
-
 from dokomoforms.models import create_engine, Base
 from dokomoforms.options import options, inject_options
 import dokomoforms.models as models
@@ -55,3 +51,5 @@ with session.begin():
     session.add(creator)
 
 session.close()
+
+engine.execute(DDL('DROP SCHEMA IF EXISTS ' + options.schema + ' CASCADE'))

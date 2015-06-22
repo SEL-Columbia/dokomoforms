@@ -25,6 +25,10 @@ class BaseResource(TornadoResource):
     def session(self):
         return self.r_handler.session
 
+    @property
+    def current_user_model(self):
+        return self.r_handler.current_user_model
+
     def wrap_list_response(self, data):
         """
         Takes a list of data & wraps it in a dictionary (within the ``objects``

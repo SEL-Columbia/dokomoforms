@@ -1,7 +1,9 @@
 """Useful reusable functions for handlers, plus the BaseHandler."""
 
 import tornado.web
-from tornado.escape import to_unicode
+from tornado.escape import to_unicode, json_decode
+
+from dokomoforms.models import User
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -18,6 +20,16 @@ class BaseHandler(tornado.web.RequestHandler):
         :return: the SQLAlchemy session
         """
         return self.application.session
+
+    @property
+    def current_user_model(self):
+        try:
+            user = json_decode(self.current_user)
+            user_id = user['user_id']
+            user_model = self.session.query(User).get(user_id)
+            return user_model
+        except:
+            return None
 
     def prepare(self):
         """

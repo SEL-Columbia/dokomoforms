@@ -7,16 +7,19 @@ import unittest
 from urllib.parse import urlencode
 
 from tornado.testing import AsyncHTTPTestCase
+import tornado.ioloop
 from functools import wraps
 
 from dokomoforms.options import inject_options
 
-inject_options(schema='doko_test')
+inject_options(schema='doko_test', debug='true')
 
 from sqlalchemy import DDL
 from sqlalchemy.orm import sessionmaker
 from dokomoforms.models import create_engine, Base
 from webapp import Application
+from tests.fixtures import load_fixtures, unload_fixtures
+from dokomoforms.handlers import DebugLoginHandler
 
 engine = create_engine(echo=False)
 Session = sessionmaker()
@@ -35,22 +38,6 @@ def setUpModule():
 def tearDownModule():
     """Drops the doko_test schema."""
     engine.execute(DDL('DROP SCHEMA IF EXISTS doko_test CASCADE'))
-
-
-def load_fixtures():
-    """
-    Load database fixtures.
-    """
-
-    pass
-
-
-def unload_fixtures():
-    """
-    Unload database fixtures.
-    """
-
-    pass
 
 
 class DokoTest(unittest.TestCase):
@@ -75,9 +62,7 @@ class DokoHTTPTest(AsyncHTTPTestCase):
     Or this could happen in setUpModule?
     """
 
-    def __init__(self, methodName='runTest', **kwargs):
-        super().__init__(methodName=methodName, **kwargs)
-        self._api_root = '/api/v0'
+    _api_root = '/api/v0'
 
     @property
     def api_root(self):
@@ -97,7 +82,16 @@ class DokoHTTPTest(AsyncHTTPTestCase):
         """
         Returns an instance of the application to be tested.
         """
+
         return Application()
+
+    def login(self, user_email):
+        # url to test
+        url = '/debug/login/' + user_email
+        # http method (just for clarity)
+        method = 'GET'
+        # make login request
+        self.fetch(url, method=method)
 
     def append_query_params(self, url, params_dict):
         """

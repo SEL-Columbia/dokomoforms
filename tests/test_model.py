@@ -182,18 +182,16 @@ class TestSurvey(DokoTest):
             )
             node_types = list(models.NODE_TYPES)
             for node_type in node_types:
-                sn = (
-                    models.NonAnswerableSurveyNode if node_type == 'note' else
-                    models.AnswerableSurveyNode
-                )
+                # sn = (
+                #    models.NonAnswerableSurveyNode if node_type == 'note' else
+                #    models.AnswerableSurveyNode
+                # )
                 survey = models.Survey(
                     title=node_type + '_survey',
                     nodes=[
-                        sn(
-                            node=models.construct_node(
-                                type_constraint=node_type,
-                                title=node_type + '_node',
-                            ),
+                        models.construct_survey_node(
+                            type_constraint=node_type,
+                            title=node_type + '_node',
                         ),
                     ],
                 )
@@ -260,6 +258,12 @@ class TestSurvey(DokoTest):
                     ],
                 )
                 self.session.add(creator)
+
+    def test_construct_survey_node_wrong_type(self):
+        self.assertRaises(
+            exc.NoSuchNodeTypeError,
+            models.construct_survey_node, type_constraint='wrong'
+        )
 
 
 class TestBucket(DokoTest):

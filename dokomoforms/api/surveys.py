@@ -1,9 +1,10 @@
-from restless.tnd import TornadoResource
+import tornado.web
+
 from restless.preparers import FieldsPreparer
 import restless.exceptions as exc
 
 from dokomoforms.api import BaseResource
-from dokomoforms.models import Survey
+from dokomoforms.models import Survey, construct_survey_node
 
 
 class SurveyResource(BaseResource):
@@ -37,7 +38,7 @@ class SurveyResource(BaseResource):
     # GET /api/surveys/
     def list(self):
         surveys = self.session.query(Survey).filter(
-            Survey.deleted == False).all()
+            Survey.deleted is not False).all()
         return surveys
 
     # GET /api/surveys/<survey_id>
@@ -51,18 +52,31 @@ class SurveyResource(BaseResource):
     # POST /api/surveys/
     def create(self):
         """
-        curl -X POST -H "Content-Type: application/json" \
-            -d '{"title": "New Test Survey"}' \
-            http://local.dokomoforms.org:8888/api/surveys
+        Creates a new survey using the current_user_model (i.e. logged-in user)
+        as creator.
         """
-        with self.session.begin():
-            survey = Survey(
-                title=self.data['title'],
-                enumerator_only='false',
-                creator_id='756d7705-c4ea-434d-98f8-4382532f5a3f'
+        if self.current_user_model is None:
+            raise tornado.web.HTTPError(
+                403,
+                reason=(
+                    'You do not have sufficient privilages.'
+                ),
             )
 
-            self.session.add(survey)
+        def create_survey_node(node):
+            # pass node props as kwargs
+            print(node)
+            return construct_survey_node(**node)
+
+        with self.session.begin():
+            # create a list of Node models
+            nodes = list(map(create_survey_node, self.data['nodes']))
+            del self.data['nodes']
+            # pass survey props as kwargs
+            creator = self.current_user_model
+            survey = Survey(**self.data)
+            survey.nodes = nodes
+            creator.surveys.append(survey)
 
         return survey
 
