@@ -35,7 +35,7 @@ class Node(Base):
     __tablename__ = 'node'
 
     id = util.pk()
-    title = util.translatable_json_column()
+    title = util.translatable_json_column('title')
     type_constraint = sa.Column(node_type_enum, nullable=False)
     logic = sa.Column(pg.json.JSONB, nullable=False, server_default='{}')
     last_update_time = util.last_update_time()
@@ -82,7 +82,7 @@ class Question(Node):
 
     id = util.pk()
     the_type_constraint = sa.Column(node_type_enum, nullable=False)
-    hint = util.translatable_json_column()
+    hint = util.translatable_json_column('hint', default='{"English": ""}')
     allow_multiple = sa.Column(
         sa.Boolean, nullable=False, server_default='false'
     )
@@ -184,9 +184,18 @@ class MultipleChoiceQuestion(_QuestionMixin, Question):
         return OrderedDict((
             ('id', self.id),
             ('deleted', self.deleted),
-            ('title', self.title),
+            ('title', OrderedDict(sorted(self.title.items()))),
             ('hint', self.hint),
-            ('choices', [choice.choice_text for choice in self.choices]),
+            (
+                'choices',
+                [OrderedDict((
+                    ('choice_id', choice.id),
+                    (
+                        'choice_text',
+                        OrderedDict(sorted(choice.choice_text.items()))
+                    ),
+                )) for choice in self.choices]
+            ),
             ('allow_multiple', self.allow_multiple),
             ('allow_other', self.allow_other),
             ('type_constraint', self.type_constraint),
@@ -202,7 +211,7 @@ class Choice(Base):
     __tablename__ = 'choice'
 
     id = util.pk()
-    choice_text = util.translatable_json_column()
+    choice_text = util.translatable_json_column('choice_text')
     choice_number = sa.Column(sa.Integer, nullable=False)
     question_id = sa.Column(
         pg.UUID, util.fk('question_multiple_choice.id'), nullable=False

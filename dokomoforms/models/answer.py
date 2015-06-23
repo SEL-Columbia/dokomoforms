@@ -46,32 +46,32 @@ class Answer(Base):
     @property
     @abc.abstractmethod
     def main_answer(self):
-        '''
+        """
         The main_answer is the only answer for simple types (integer, text,
         etc.) and for other types is the part of the answer that is most
         important. In practice, the main_answer is special only in that all
         Answer models have it, which is necessary for certain constraints and
         for the response property.
-        '''
+        """
 
     @property
     @abc.abstractmethod
     def answer(self):
-        '''
+        """
         This property is the most useful representation available of the
         answer. In the simplest case it is just a synonym for main_answer.
         It could otherwise be a dictionary or another model.
-        '''
+        """
 
     @property
     @abc.abstractmethod
     def other(self):
-        '''A text field containing "other" responses.'''
+        """A text field containing "other" responses."""
 
     @property
     @abc.abstractmethod
     def dont_know(self):
-        '''A text field containing "don't know" responses'''
+        """A text field containing "don't know" responses"""
 
     @hybrid_property
     def response(self) -> OrderedDict:
@@ -162,20 +162,20 @@ def _answer_mixin_table_args():
         ),
         sa.CheckConstraint(
             # "other" responses are allowed XOR other is null
-            '''
+            """
             the_allow_other != (other IS NULL)
-            ''',
+            """,
             name='check_whether_other_is_allowed'
         ),
         sa.CheckConstraint(
             # "dont_know" responses are allowed XOR dont_know is null
-            '''
+            """
             the_allow_dont_know != (dont_know IS NULL)
-            ''',
+            """,
             name='check_whether_dont_know_is_allowed'
         ),
         sa.CheckConstraint(
-            '''
+            """
             (CASE WHEN (main_answer IS NOT NULL) AND
                        (other       IS     NULL) AND
                        (dont_know   IS     NULL)
@@ -189,7 +189,7 @@ def _answer_mixin_table_args():
                        (dont_know   IS NOT NULL)
                 THEN 1 ELSE 0 END) =
             1
-            ''',
+            """,
             name='only_one_answer_type_check'
         ),
     )
@@ -334,7 +334,7 @@ class FacilityAnswer(_AnswerMixin, Answer):
     __mapper_args__ = {'polymorphic_identity': 'facility'}
     __table_args__ = _answer_mixin_table_args() + (
         sa.CheckConstraint(
-            '''
+            """
             (CASE WHEN (main_answer     IS     NULL) AND
                        (facility_id     IS     NULL) AND
                        (facility_name   IS     NULL) AND
@@ -346,7 +346,7 @@ class FacilityAnswer(_AnswerMixin, Answer):
                        (facility_sector IS NOT NULL)
                 THEN 1 ELSE 0 END) =
             1
-            '''
+            """
         ),
     )
 

@@ -29,11 +29,7 @@ class Survey(Base):
     __tablename__ = 'survey'
 
     id = util.pk()
-    title = sa.Column(
-        pg.TEXT,
-        sa.CheckConstraint("title != ''", name='non_empty_survey_title'),
-        nullable=False,
-    )
+    title = util.translatable_json_column('title')
     default_language = sa.Column(
         pg.TEXT,
         sa.CheckConstraint(
@@ -85,6 +81,14 @@ class Survey(Base):
             'title', 'creator_id', name='unique_survey_title_per_user'
         ),
         sa.UniqueConstraint('id', 'enumerator_only'),
+        sa.CheckConstraint(
+            "title ? default_language",
+            name='title_in_default_langauge_exists'
+        ),
+        sa.CheckConstraint(
+            "(title->>default_language) != ''",
+            name='title_in_default_langauge_non_empty'
+        ),
     )
 
     def _asdict(self) -> OrderedDict:

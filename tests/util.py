@@ -58,7 +58,7 @@ def test_continues_after_rollback(doko_test):
             connection = engine.connect()
             with connection.begin():
                 connection.execute(
-                    '''
+                    """
                     DO
                     $func$
                     BEGIN
@@ -73,7 +73,7 @@ def test_continues_after_rollback(doko_test):
                       );
                     END
                     $func$;
-                    '''
+                    """
                 )
             self.session.close()
     return wrapper
