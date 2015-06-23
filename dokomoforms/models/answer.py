@@ -46,22 +46,32 @@ class Answer(Base):
     @property
     @abc.abstractmethod
     def main_answer(self):
-        pass
+        '''
+        The main_answer is the only answer for simple types (integer, text,
+        etc.) and for other types is the part of the answer that is most
+        important. In practice, the main_answer is special only in that all
+        Answer models have it, which is necessary for certain constraints and
+        for the response property.
+        '''
 
     @property
     @abc.abstractmethod
     def answer(self):
-        pass
+        '''
+        This property is the most useful representation available of the
+        answer. In the simplest case it is just a synonym for main_answer.
+        It could otherwise be a dictionary or another model.
+        '''
 
     @property
     @abc.abstractmethod
     def other(self):
-        pass
+        '''A text field containing "other" responses.'''
 
     @property
     @abc.abstractmethod
     def dont_know(self):
-        pass
+        '''A text field containing "don't know" responses'''
 
     @hybrid_property
     def response(self) -> OrderedDict:

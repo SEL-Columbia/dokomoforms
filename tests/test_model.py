@@ -1102,6 +1102,69 @@ class TestAnswer(DokoTest):
             {'response_type': 'answer', 'response': 3}
         )
 
+    def test_asdict(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title='survey',
+                nodes=[
+                    models.AnswerableSurveyNode(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title='integer question',
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        with self.session.begin():
+            the_survey = self.session.query(models.Survey).one()
+            submission = models.PublicSubmission(
+                survey=the_survey,
+                answers=[
+                    models.construct_answer(
+                        survey_node=the_survey.nodes[0],
+                        type_constraint='integer',
+                        answer=3,
+                    ),
+                ],
+            )
+
+            self.session.add(submission)
+
+        answer = self.session.query(models.Answer).one()
+        self.assertEqual(
+            answer._asdict(),
+            OrderedDict((
+                ('id', answer.id),
+                ('deleted', False),
+                ('answer_number', 0),
+                ('submission_id', answer.submission_id),
+                ('submission_time', answer.submission_time),
+                ('survey_id', self.session.query(models.Survey.id).scalar()),
+                (
+                    'survey_node_id',
+                    self.session.query(models.SurveyNode.id).scalar()
+                ),
+                (
+                    'question_id',
+                    self.session.query(models.Question.id).scalar()
+                ),
+                ('type_constraint', 'integer'),
+                ('last_update_time', answer.last_update_time),
+                (
+                    'response',
+                    OrderedDict((
+                        ('response_type', 'answer'), ('response', 3)
+                    ))
+                ),
+            ))
+        )
+        
+
     @test_continues_after_rollback
     def test_cannot_answer_a_note(self):
         with self.session.begin():
