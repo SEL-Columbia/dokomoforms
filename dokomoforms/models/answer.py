@@ -154,13 +154,15 @@ def _answer_mixin_table_args():
             # "other" responses are allowed XOR other is null
             '''
             the_allow_other != (other IS NULL)
-            '''
+            ''',
+            name='check_whether_other_is_allowed'
         ),
         sa.CheckConstraint(
             # "dont_know" responses are allowed XOR dont_know is null
             '''
             the_allow_dont_know != (dont_know IS NULL)
-            '''
+            ''',
+            name='check_whether_dont_know_is_allowed'
         ),
         sa.CheckConstraint(
             '''
@@ -177,7 +179,8 @@ def _answer_mixin_table_args():
                        (dont_know   IS NOT NULL)
                 THEN 1 ELSE 0 END) =
             1
-            '''
+            ''',
+            name='only_one_answer_type_check'
         ),
     )
 

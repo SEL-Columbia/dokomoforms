@@ -1093,6 +1093,14 @@ class TestAnswer(DokoTest):
             self.session.query(models.Answer).one(),
             self.session.query(models.Survey).one().submissions[0].answers[0]
         )
+        self.assertEqual(
+            self.session.query(models.Answer).one().answer,
+            3
+        )
+        self.assertDictEqual(
+            self.session.query(models.Answer).one().response,
+            {'response_type': 'answer', 'response': 3}
+        )
 
     @test_continues_after_rollback
     def test_cannot_answer_a_note(self):
@@ -1619,6 +1627,232 @@ class TestAnswer(DokoTest):
                             survey_node=the_survey.nodes[0],
                             type_constraint='multiple_choice',
                             answer=the_survey.nodes[1].node.choices[0],
+                        ),
+                    ],
+                )
+
+                self.session.add(submission)
+
+    def test_cant_answer_other_by_default(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title='survey',
+                nodes=[
+                    models.AnswerableSurveyNode(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title='other_not_allowed',
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                the_survey = self.session.query(models.Survey).one()
+                submission = models.PublicSubmission(
+                    survey=the_survey,
+                    answers=[
+                        models.construct_answer(
+                            survey_node=the_survey.nodes[0],
+                            type_constraint='integer',
+                            other='other',
+                        ),
+                    ],
+                )
+
+                self.session.add(submission)
+
+    def test_answer_other(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title='survey',
+                nodes=[
+                    models.AnswerableSurveyNode(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title='other_not_allowed',
+                            allow_other=True,
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        with self.session.begin():
+            the_survey = self.session.query(models.Survey).one()
+            submission = models.PublicSubmission(
+                survey=the_survey,
+                answers=[
+                    models.construct_answer(
+                        survey_node=the_survey.nodes[0],
+                        type_constraint='integer',
+                        other='other answer',
+                    ),
+                ],
+            )
+
+            self.session.add(submission)
+
+        self.assertEqual(
+            self.session.query(models.Answer).one().other,
+            'other answer'
+        )
+        self.assertDictEqual(
+            self.session.query(models.Answer).one().response,
+            {'response_type': 'other', 'response': 'other answer'}
+        )
+
+    def test_cant_give_answer_and_other(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title='survey',
+                nodes=[
+                    models.AnswerableSurveyNode(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title='other allowed',
+                            allow_other=True,
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                the_survey = self.session.query(models.Survey).one()
+                submission = models.PublicSubmission(
+                    survey=the_survey,
+                    answers=[
+                        models.construct_answer(
+                            survey_node=the_survey.nodes[0],
+                            type_constraint='integer',
+                            answer=3,
+                            other='other answer',
+                        ),
+                    ],
+                )
+
+                self.session.add(submission)
+
+    def test_cant_answer_dont_know_by_default(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title='survey',
+                nodes=[
+                    models.AnswerableSurveyNode(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title='dont_know_not_allowed',
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                the_survey = self.session.query(models.Survey).one()
+                submission = models.PublicSubmission(
+                    survey=the_survey,
+                    answers=[
+                        models.construct_answer(
+                            survey_node=the_survey.nodes[0],
+                            type_constraint='integer',
+                            dont_know='dont_know',
+                        ),
+                    ],
+                )
+
+                self.session.add(submission)
+
+    def test_answer_dont_know(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title='survey',
+                nodes=[
+                    models.AnswerableSurveyNode(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title='dont_know_not_allowed',
+                        ),
+                        allow_dont_know=True,
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        with self.session.begin():
+            the_survey = self.session.query(models.Survey).one()
+            submission = models.PublicSubmission(
+                survey=the_survey,
+                answers=[
+                    models.construct_answer(
+                        survey_node=the_survey.nodes[0],
+                        type_constraint='integer',
+                        dont_know='dont_know answer',
+                    ),
+                ],
+            )
+
+            self.session.add(submission)
+
+        self.assertEqual(
+            self.session.query(models.Answer).one().dont_know,
+            'dont_know answer'
+        )
+        self.assertDictEqual(
+            self.session.query(models.Answer).one().response,
+            {'response_type': 'dont_know', 'response': 'dont_know answer'}
+        )
+
+    def test_cant_give_answer_and_dont_know(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title='survey',
+                nodes=[
+                    models.AnswerableSurveyNode(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title='dont_know allowed',
+                        ),
+                        allow_dont_know=True,
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                the_survey = self.session.query(models.Survey).one()
+                submission = models.PublicSubmission(
+                    survey=the_survey,
+                    answers=[
+                        models.construct_answer(
+                            survey_node=the_survey.nodes[0],
+                            type_constraint='integer',
+                            answer=3,
+                            dont_know='dont_know answer',
                         ),
                     ],
                 )
