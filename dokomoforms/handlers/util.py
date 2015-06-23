@@ -2,6 +2,7 @@
 
 import tornado.web
 from tornado.escape import to_unicode, json_decode
+from dokomoforms.options import options
 
 from dokomoforms.models import User
 
@@ -61,8 +62,15 @@ class BaseHandler(tornado.web.RequestHandler):
                      'user_name': <name>
                  }
         """
-        user = self.get_secure_cookie('user')
-        return to_unicode(user) if user else None
+
+        try:
+            # TEST_USER must be the full json string,
+            # as indicated above
+            user = options.TEST_USER
+            return user
+        except AttributeError:
+            user = self.get_secure_cookie('user')
+            return to_unicode(user) if user else None
 
     # def write_error(self, status_code, **kwargs):
     #     if status_code == 422 and 'exc_info' in kwargs:

@@ -12,7 +12,16 @@ from functools import wraps
 
 from dokomoforms.options import inject_options
 
-inject_options(schema='doko_test', debug='true')
+inject_options(
+    schema='doko_test',
+    # fake logged in user with ID from fixture
+    TEST_USER="""
+        {
+            "user_id": "b7becd02-1a3f-4c1d-a0e1-286ba121aef4",
+            "user_name": "test_user"
+        }
+    """
+)
 
 from sqlalchemy import DDL
 from sqlalchemy.orm import sessionmaker
@@ -84,14 +93,6 @@ class DokoHTTPTest(AsyncHTTPTestCase):
         """
 
         return Application()
-
-    def login(self, user_email):
-        # url to test
-        url = '/debug/login/' + user_email
-        # http method (just for clarity)
-        method = 'GET'
-        # make login request
-        self.fetch(url, method=method)
 
     def append_query_params(self, url, params_dict):
         """

@@ -1,5 +1,4 @@
 """API tests"""
-
 from tornado.escape import json_decode, json_encode
 
 from tests.util import DokoHTTPTest, setUpModule, tearDownModule
@@ -13,6 +12,9 @@ TODO: add expception and error response tests
 
 
 class TestSurveyApi(DokoHTTPTest):
+    """
+    These tests are made against the known fixture data.
+    """
 
     def test_list_surveys(self):
         # url to test
@@ -105,9 +107,6 @@ class TestSurveyApi(DokoHTTPTest):
         self.assertTrue('last_updated' in survey_dict)
 
     def test_create_survey(self):
-        # login - user has been created in fixtures
-        self.login('test_user')
-
         # url to test
         url = self.api_root + '/surveys'
         # http method
@@ -119,10 +118,10 @@ class TestSurveyApi(DokoHTTPTest):
             "deleted": False,
             "translations": {},
             "default_language": "English",
-            "title": "Another Test Survey",
+            "title": "Test_Survey",
             "nodes": [
                 {
-                    "title": "time_node",
+                    "title": "test_time_node",
                     "hint": {
                         "English": ""
                     },
@@ -134,10 +133,11 @@ class TestSurveyApi(DokoHTTPTest):
                 }
             ]
         }
-        # make request
-        response = self.fetch(url, method=method, body=json_encode(body))
 
-        print(response)
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
 
         # test response
         # check that response is valid parseable json

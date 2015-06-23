@@ -30,6 +30,7 @@ define('db_host', help='database host')
 define('db_database', help='database name')
 define('db_user', help='database user')
 define('db_password', help='database password')
+define('TEST_USER', help='A test user for... testing.')
 define(
     'kill',
     default=False,

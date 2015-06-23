@@ -19,6 +19,8 @@ def load_fixtures():
     with session.begin():
         creator = models.SurveyCreator(
             name='test_user',
+            # known ID against which we can test
+            id='b7becd02-1a3f-4c1d-a0e1-286ba121aef4',
             emails=[models.Email(address='test_user')],
         )
         node_types = list(models.NODE_TYPES)
