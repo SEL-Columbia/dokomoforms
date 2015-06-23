@@ -41,6 +41,7 @@ class TestUser(DokoTest):
                 ('name', 'a'),
                 ('emails', ['b@b']),
                 ('role', 'enumerator'),
+                ('default_language', 'English'),
                 ('allowed_surveys', user.allowed_surveys),
                 ('last_update_time', user.last_update_time.isoformat()),
             ))

@@ -35,9 +35,9 @@ class Node(Base):
     __tablename__ = 'node'
 
     id = util.pk()
-    title = util.translatable_json_column('title')
+    title = util.json_column('title')
     type_constraint = sa.Column(node_type_enum, nullable=False)
-    logic = sa.Column(pg.json.JSONB, nullable=False, server_default='{}')
+    logic = util.json_column('logic', default='{}')
     last_update_time = util.last_update_time()
 
     __mapper_args__ = {'polymorphic_on': type_constraint}
@@ -82,7 +82,7 @@ class Question(Node):
 
     id = util.pk()
     the_type_constraint = sa.Column(node_type_enum, nullable=False)
-    hint = util.translatable_json_column('hint', default='{"English": ""}')
+    hint = util.json_column('hint', default='{"English": ""}')
     allow_multiple = sa.Column(
         sa.Boolean, nullable=False, server_default='false'
     )
@@ -211,7 +211,7 @@ class Choice(Base):
     __tablename__ = 'choice'
 
     id = util.pk()
-    choice_text = util.translatable_json_column('choice_text')
+    choice_text = util.json_column('choice_text')
     choice_number = sa.Column(sa.Integer, nullable=False)
     question_id = sa.Column(
         pg.UUID, util.fk('question_multiple_choice.id'), nullable=False

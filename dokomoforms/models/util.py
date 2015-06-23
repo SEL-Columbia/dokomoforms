@@ -206,7 +206,7 @@ def fk(column_name: str) -> sa.Column:
     return sa.ForeignKey(column_name, onupdate='CASCADE', ondelete='CASCADE')
 
 
-def translatable_json_column(column_name: str, *, default=None) -> sa.Column:
+def json_column(column_name: str, *, default=None) -> sa.Column:
     """
     Returns a column of type JSONB for use in models. Use this for entries like
 
