@@ -1163,7 +1163,6 @@ class TestAnswer(DokoTest):
                 ),
             ))
         )
-        
 
     @test_continues_after_rollback
     def test_cannot_answer_a_note(self):
