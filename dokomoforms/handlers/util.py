@@ -5,9 +5,10 @@ from tornado.escape import to_unicode
 
 
 class BaseHandler(tornado.web.RequestHandler):
-    """
-    The base class for handlers. Makes the database session and current user
-    available.
+
+    """The base class for handlers.
+
+    Makes the database session and current user available.
     """
 
     @property
@@ -20,16 +21,17 @@ class BaseHandler(tornado.web.RequestHandler):
         return self.application.session
 
     def prepare(self):
-        """
-        Default behavior before any HTTP method. By default, just sets up
-        the XSRF token.
+        """Default behavior before any HTTP method.
+
+        By default, just sets up the XSRF token.
 
         """
-        # Just accessing the token make the handler send it to the browser
+        # Just accessing the token makes the handler send it to the browser
         self.xsrf_token
 
     def get(self, *args, **kwargs):
-        """
+        """404 unless this method is overridden.
+
         The presence of this GET method means that endpoints which only
         accept POST are hidden from browsers.
 
@@ -38,16 +40,14 @@ class BaseHandler(tornado.web.RequestHandler):
         raise tornado.web.HTTPError(404)
 
     def get_current_user(self) -> str:
-        """
+        """Make current_user accessible.
+
         You probably shouldn't override this method. It makes
         {{ current_user }} accessible to templates and self.current_user
         accessible to handlers.
 
-        :return: a string containing the dictionary
-                 {
-                     'user_id': <UUID>,
-                     'user_name': <name>
-                 }
+        :return: a string containing the dictionary {'user_id': <UUID>,
+                 'user_name': <name>}
         """
         user = self.get_secure_cookie('user')
         return to_unicode(user) if user else None

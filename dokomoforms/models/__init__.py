@@ -1,3 +1,5 @@
+"""All the models used in Dokomo Forms."""
+
 from dokomoforms.models.util import Base, create_engine, ModelJSONEncoder
 from dokomoforms.models.user import User, SurveyCreator, Email
 from dokomoforms.models.node import (
@@ -18,7 +20,7 @@ from dokomoforms.models.submission import (
 )
 from dokomoforms.models.answer import Answer, Photo, construct_answer
 
-__all__ = [
+__all__ = (
     # Util
     'Base', 'create_engine', 'ModelJSONEncoder',
     # User
@@ -38,4 +40,4 @@ __all__ = [
     'Submission', 'EnumeratorOnlySubmission', 'PublicSubmission',
     # Answer
     'Answer', 'Photo', 'construct_answer',
-]
+)

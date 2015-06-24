@@ -11,7 +11,9 @@ from dokomoforms.models import util, Base
 
 
 class User(Base):
+
     """Models a user. A user has at least one e-mail address."""
+
     __tablename__ = 'auth_user'
 
     id = util.pk()
@@ -58,10 +60,13 @@ class User(Base):
 
 
 class SurveyCreator(User):
-    """
+
+    """A User who can create Surveys.
+
     Regular users can answer surveys, but only SurveyCreator instances can
     create surveys.
     """
+
     __tablename__ = 'survey_creator'
 
     id = util.pk('auth_user.id')
@@ -91,7 +96,9 @@ class SurveyCreator(User):
 
 
 class Email(Base):
+
     """Models an e-mail address."""
+
     __tablename__ = 'email'
 
     id = util.pk()

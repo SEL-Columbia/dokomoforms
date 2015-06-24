@@ -26,6 +26,12 @@ survey_type_enum = sa.Enum(
 
 
 class Survey(Base):
+
+    """A Survey has a list of SurveyNodes.
+
+    Use an EnumeratorOnlySurvey to restrict submissions to enumerators.
+    """
+
     __tablename__ = 'survey'
 
     id = util.pk()
@@ -52,7 +58,11 @@ class Survey(Base):
     creator_id = sa.Column(
         pg.UUID, util.fk('survey_creator.id'), nullable=False
     )
+
+    # This is survey_metadata rather than just metadata because all models
+    # have a metadata attribute which is important for SQLAlchemy.
     survey_metadata = util.json_column('survey_metadata', default='{}')
+
     created_on = sa.Column(
         pg.TIMESTAMP(timezone=True),
         nullable=False,
@@ -118,6 +128,9 @@ _enumerator_table = sa.Table(
 
 
 class EnumeratorOnlySurvey(Survey):
+
+    """Only enumerators (designated Users) can submit to this."""
+
     __tablename__ = 'survey_enumerator_only'
 
     id = util.pk('survey')
@@ -150,6 +163,12 @@ _sub_survey_nodes = sa.Table(
 
 
 class SubSurvey(Base):
+
+    """A SubSurvey behaves like a Survey but belongs to a SurveyNode.
+
+    The way to arrive at a certain SubSurvey is encoded in its buckets.
+    """
+
     __tablename__ = 'sub_survey'
 
     id = util.pk()
@@ -204,6 +223,12 @@ class SubSurvey(Base):
 
 
 class Bucket(Base):
+
+    """A Bucket determines how to arrive at a SubSurvey.
+
+    A Bucket can be a range or a Choice.
+    """
+
     __tablename__ = 'bucket'
 
     id = util.pk()
@@ -226,6 +251,10 @@ class Bucket(Base):
     @property
     @abc.abstractmethod
     def bucket(self):
+        """The bucket is a range or Choice.
+
+        Buckets for a given SubSurvey cannot overlap.
+        """
         pass
 
     last_update_time = util.last_update_time()
@@ -294,36 +323,54 @@ class _RangeBucketMixin:
 
 
 class IntegerBucket(_RangeBucketMixin, Bucket):
+
+    """INT4RANGE bucket."""
+
     __tablename__ = 'bucket_integer'
     bucket = sa.Column(pg.INT4RANGE, nullable=False)
     __mapper_args__ = {'polymorphic_identity': 'integer'}
 
 
 class DecimalBucket(_RangeBucketMixin, Bucket):
+
+    """NUMRANGE bucket."""
+
     __tablename__ = 'bucket_decimal'
     bucket = sa.Column(pg.NUMRANGE, nullable=False)
     __mapper_args__ = {'polymorphic_identity': 'decimal'}
 
 
 class DateBucket(_RangeBucketMixin, Bucket):
+
+    """DATERANGE bucket."""
+
     __tablename__ = 'bucket_date'
     bucket = sa.Column(pg.DATERANGE, nullable=False)
     __mapper_args__ = {'polymorphic_identity': 'date'}
 
 
 class TimeBucket(_RangeBucketMixin, Bucket):
+
+    """TSTZRANGE bucket which ignores the date."""
+
     __tablename__ = 'bucket_time'
     bucket = sa.Column(pg.TSTZRANGE, nullable=False)
     __mapper_args__ = {'polymorphic_identity': 'time'}
 
 
 class TimestampBucket(_RangeBucketMixin, Bucket):
+
+    """TSTZRANGE bucket."""
+
     __tablename__ = 'bucket_timestamp'
     bucket = sa.Column(pg.TSTZRANGE, nullable=False)
     __mapper_args__ = {'polymorphic_identity': 'timestamp'}
 
 
 class MultipleChoiceBucket(Bucket):
+
+    """Choice id bucket."""
+
     __tablename__ = 'bucket_multiple_choice'
 
     id = util.pk()
@@ -415,6 +462,20 @@ def _set_time_bucket_dates(bucket: str) -> str:
 
 
 def construct_bucket(*, bucket_type: str, **kwargs) -> Bucket:
+    """Return a subclass of dokomoforms.models.survey.Bucket.
+
+    The subclass is determined by the bucket_type parameter. This utility
+    function makes it easy to create an instance of a Bucket subclass based
+    on external input.
+
+    See http://stackoverflow.com/q/30518484/1475412
+
+    :param bucket_type: the type of the bucket. Must be one of the keys of
+                        dokomoforms.models.survey.BUCKET_TYPES
+    :param kwargs: the keyword arguments to pass to the constructor
+    :returns: an instance of one of the Bucket subtypes
+    :raises: dokomoforms.exc.NoSuchBucketTypeError
+    """
     try:
         create_bucket = BUCKET_TYPES[bucket_type]
     except KeyError:
@@ -427,6 +488,9 @@ def construct_bucket(*, bucket_type: str, **kwargs) -> Bucket:
 
 
 class SurveyNode(Base):
+
+    """A SurveyNode contains a Node and adds survey-specific metadata."""
+
     __tablename__ = 'survey_node'
 
     id = util.pk()
@@ -443,17 +507,18 @@ class SurveyNode(Base):
     @property
     @abc.abstractmethod
     def node_id(self):
-        pass
+        """The id of the Node."""
 
     @property
     @abc.abstractmethod
     def node(self):
-        pass
+        """The Node instance."""
 
     @property
     @abc.abstractmethod
     def type_constraint(self):
-        pass
+        """The type_constraint of the Node."""
+
     root_survey_id = sa.Column(pg.UUID, util.fk('survey.id'))
     logic = util.json_column('logic', default='{}')
     last_update_time = util.last_update_time()
@@ -475,6 +540,9 @@ class SurveyNode(Base):
 
 
 class NonAnswerableSurveyNode(SurveyNode):
+
+    """Contains a Node which is not answerablei (e.g., a Note)."""
+
     __tablename__ = 'survey_node_non_answerable'
 
     id = util.pk('survey_node.id')
@@ -492,6 +560,9 @@ class NonAnswerableSurveyNode(SurveyNode):
 
 
 class AnswerableSurveyNode(SurveyNode):
+
+    """Contains a Node which is answerable (.e.g, a Question)."""
+
     __tablename__ = 'survey_node_answerable'
 
     id = util.pk('survey_node.id')

@@ -1165,6 +1165,26 @@ class TestSubmission(DokoTest):
 
                 self.session.add(submission)
 
+    def test_enumerator_only_submission_requires_enumerator(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                creator = models.SurveyCreator(name='creator')
+                enumerator = models.User(name='enumerator')
+                creator.surveys = [
+                    models.EnumeratorOnlySurvey(
+                        title={'English': 'survey'},
+                    ),
+                ]
+                creator.enumerators = [enumerator]
+
+                self.session.add(creator)
+
+                submission = models.EnumeratorOnlySubmission(
+                    survey=creator.surveys[0],
+                )
+
+                self.session.add(submission)
+
     def test_non_enumerator_cannot_submit(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
