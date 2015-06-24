@@ -1,4 +1,5 @@
-"""
+"""Test utilities.
+
 Defines setup and teardown functions for test modules.
 Also injects the --schema=doko_test option.
 """
@@ -23,7 +24,7 @@ Session = sessionmaker()
 
 
 def setUpModule():
-    """Creates the tables in the doko_test schema."""
+    """Create the tables in the doko_test schema."""
     engine.execute(DDL('DROP SCHEMA IF EXISTS doko_test CASCADE'))
     try:
         Base.metadata.create_all(engine)
@@ -33,25 +34,34 @@ def setUpModule():
 
 
 def tearDownModule():
-    """Drops the doko_test schema."""
+    """Drop the doko_test schema."""
     engine.execute(DDL('DROP SCHEMA IF EXISTS doko_test CASCADE'))
 
 
 class DokoTest(unittest.TestCase):
+
+    """Tests that subclass DokoTest happen in a database transaction.
+
+    Since subtransactions don't exactly work under this scheme, if you need
+    to access the database after a rollback (e.g., an exception happens),
+    you need to use the test_continues_after_rollback decorator.
+    """
+
     def setUp(self):
-        """Starts a transaction"""
+        """Start a transaction."""
         self.connection = engine.connect()
         self.transaction = self.connection.begin()
         self.session = Session(bind=self.connection, autocommit=True)
 
     def tearDown(self):
-        """Rolls back the transaction"""
+        """Roll back the transaction."""
         self.session.close()
         self.transaction.rollback()
         self.connection.close()
 
 
 def test_continues_after_rollback(doko_test):
+    """Use this if a test needs to access the database after a rollback."""
     @wraps(doko_test)
     def wrapper(self):
         self.session.close()

@@ -12,6 +12,7 @@
 #
 # All configuration values have a default; values that are commented out
 # serve to show the default.
+"""Sphinx configuration."""
 
 import sys
 import os
@@ -39,11 +40,13 @@ extensions = [
 # Document __init__ methods
 # http://stackoverflow.com/a/5599712/1475412
 def skip(app, what, name, obj, skip, options):
+    """Document __init__methods."""
     if name == '__init__':
         return False
     return skip
 
 def setup(app):
+    """Register the skip function."""
     app.connect('autodoc-skip-member', skip)
 
 # Add any paths that contain templates here, relative to this directory.

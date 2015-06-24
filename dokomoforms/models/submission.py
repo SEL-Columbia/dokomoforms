@@ -12,6 +12,9 @@ from dokomoforms.models import util, Base, survey_type_enum
 
 
 class Submission(Base):
+
+    """A Submission references a Survey and has a list of Answers."""
+
     __tablename__ = 'submission'
 
     id = util.pk()
@@ -73,6 +76,12 @@ class Submission(Base):
 
 
 class EnumeratorOnlySubmission(Submission):
+
+    """An EnumeratorOnlySubmission must have an enumerator.
+
+    Use an EnumeratorOnlySubmission for an EnumeratorOnlySurvey.
+    """
+
     __tablename__ = 'submission_enumerator_only'
 
     id = util.pk()
@@ -101,6 +110,12 @@ class EnumeratorOnlySubmission(Submission):
 
 
 class PublicSubmission(Submission):
+
+    """A PublicSubmission might have an enumerator.
+
+    Use a PublicSubmission for a Survey.
+    """
+
     __tablename__ = 'submission_public'
 
     id = util.pk()
