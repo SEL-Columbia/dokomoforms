@@ -4,19 +4,19 @@ from restless.preparers import FieldsPreparer
 import restless.exceptions as exc
 
 from dokomoforms.api import BaseResource
-from dokomoforms.models import Survey, construct_survey_node
+from dokomoforms.models import Submission, construct_submission_node
 
 
-class SurveyResource(BaseResource):
+class SubmissionResource(BaseResource):
     """
-    Restless resource for Surveys.
+    Restless resource for Submissions.
 
     BaseResource sets the serializer, which uses the dokomo models'
     ModelJSONEncoder for json conversion.
     """
 
     # Set the property name on the outputted json
-    objects_key = 'surveys'
+    objects_key = 'submissions'
 
     # The preparer defines the fields that get returned.
     preparer = FieldsPreparer(fields={
@@ -29,31 +29,31 @@ class SurveyResource(BaseResource):
         'version': 'version',
         'creator_id': 'creator_id',
         'creator_name': 'creator.name',
-        'metadata': 'survey_metadata',
+        'metadata': 'submission_metadata',
         'created_on': 'created_on',
         'last_update_time': 'last_update_time',
         'nodes': 'nodes',
     })
 
-    # GET /api/surveys/
+    # GET /api/submissions/
     def list(self):
-        surveys = self.session.query(Survey).filter(
-            Survey.deleted is not False).all()
-        return surveys
+        submissions = self.session.query(Submission).filter(
+            Submission.deleted is not False).all()
+        return submissions
 
-    # GET /api/surveys/<survey_id>
-    def detail(self, survey_id):
-        survey = self.session.query(Survey).get(survey_id)
-        if not survey:
+    # GET /api/submissions/<submission_id>
+    def detail(self, submission_id):
+        submission = self.session.query(Submission).get(submission_id)
+        if not submission:
             raise exc.NotFound()
         else:
-            return survey
+            return submission
 
-    # POST /api/surveys/
+    # POST /api/submissions/
     def create(self):
         """
-        Creates a new survey using the current_user_model (i.e. logged-in user)
-        as creator.
+        Creates a new submission using the current_user_model
+        (i.e. logged-in user) as creator.
         """
         if self.current_user_model is None:
             raise tornado.web.HTTPError(
@@ -63,46 +63,46 @@ class SurveyResource(BaseResource):
                 ),
             )
 
-        def create_survey_node(node):
+        def create_submission_node(node):
             # pass node props as kwargs
             print(node)
-            return construct_survey_node(**node)
+            return construct_submission_node(**node)
 
         with self.session.begin():
             # create a list of Node models
-            nodes = list(map(create_survey_node, self.data['nodes']))
+            nodes = list(map(create_submission_node, self.data['nodes']))
             # remove the existing nodes key from the received data
             del self.data['nodes']
             creator = self.current_user_model
-            # pass survey props as kwargs
-            survey = Survey(**self.data)
+            # pass submission props as kwargs
+            submission = Submission(**self.data)
             # add the node models
-            survey.nodes = nodes
-            # add the survey to the creator
-            creator.surveys.append(survey)
+            submission.nodes = nodes
+            # add the submission to the creator
+            creator.submissions.append(submission)
 
-        return survey
+        return submission
 
-    # PUT /api/surveys/<survey_id>/
-    def update(self, survey_id):
-        survey = self.session.query(Survey).get(survey_id)
-        if not survey:
+    # PUT /api/submissions/<submission_id>/
+    def update(self, submission_id):
+        submission = self.session.query(Submission).get(submission_id)
+        if not submission:
             raise exc.NotFound()
         else:
-            return survey
+            return submission
 
-    # DELETE /api/surveys/<survey_id>/
-    def delete(self, survey_id):
+    # DELETE /api/submissions/<submission_id>/
+    def delete(self, submission_id):
         """
         curl -X DELETE -H "Content-Type: application/json"
-        http://local.dokomoforms.org:8888/api/v0/surveys/e383f48c-674f-4ab9-a919-bbf1ca7bfb46
+        http://local.dokomoforms.org:8888/api/v0/submissions/e383f48c-674f-4ab9-a919-bbf1ca7bfb46
         """
         with self.session.begin():
-            survey = self.session.query(Survey).get(survey_id)
-            if not survey:
+            submission = self.session.query(Submission).get(submission_id)
+            if not submission:
                 raise exc.NotFound()
             else:
-                survey.deleted = True
+                submission.deleted = True
 
     def prepare(self, data):
         # ``data`` is the object/dict to be exposed.

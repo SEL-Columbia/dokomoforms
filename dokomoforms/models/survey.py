@@ -29,11 +29,7 @@ class Survey(Base):
     __tablename__ = 'survey'
 
     id = util.pk()
-    title = sa.Column(
-        pg.TEXT,
-        sa.CheckConstraint("title != ''", name='non_empty_survey_title'),
-        nullable=False,
-    )
+    title = util.json_column('title')
     default_language = sa.Column(
         pg.TEXT,
         sa.CheckConstraint(
@@ -41,9 +37,6 @@ class Survey(Base):
         ),
         nullable=False,
         server_default='English',
-    )
-    translations = sa.Column(
-        pg.json.JSONB, nullable=False, server_default='{}'
     )
     enumerator_only = sa.Column(survey_type_enum, nullable=False)
     submissions = relationship(
@@ -59,9 +52,7 @@ class Survey(Base):
     creator_id = sa.Column(
         pg.UUID, util.fk('survey_creator.id'), nullable=False
     )
-    survey_metadata = sa.Column(
-        pg.json.JSONB, nullable=False, server_default='{}'
-    )
+    survey_metadata = util.json_column('survey_metadata', default='{}')
     created_on = sa.Column(
         pg.TIMESTAMP(timezone=True),
         nullable=False,
@@ -85,6 +76,14 @@ class Survey(Base):
             'title', 'creator_id', name='unique_survey_title_per_user'
         ),
         sa.UniqueConstraint('id', 'enumerator_only'),
+        sa.CheckConstraint(
+            "title ? default_language",
+            name='title_in_default_langauge_exists'
+        ),
+        sa.CheckConstraint(
+            "(title->>default_language) != ''",
+            name='title_in_default_langauge_non_empty'
+        ),
     )
 
     def _asdict(self) -> OrderedDict:
@@ -93,7 +92,6 @@ class Survey(Base):
             ('deleted', self.deleted),
             ('title', self.title),
             ('default_language', self.default_language),
-            ('translations', self.translations),
             ('enumerator_only', self.enumerator_only),
             ('version', self.version),
             ('creator_id', self.creator_id),
@@ -460,7 +458,7 @@ class SurveyNode(Base):
     def type_constraint(self):
         pass
     root_survey_id = sa.Column(pg.UUID, util.fk('survey.id'))
-    logic = sa.Column(pg.json.JSONB, nullable=False, server_default='{}')
+    logic = util.json_column('logic', default='{}')
     last_update_time = util.last_update_time()
 
     __mapper_args__ = {'polymorphic_on': survey_node_answerable}

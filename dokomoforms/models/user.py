@@ -29,6 +29,14 @@ class User(Base):
         ),
         nullable=False,
     )
+    default_language = sa.Column(
+        pg.TEXT,
+        sa.CheckConstraint(
+            "default_language != ''", name='non_empty_default_language'
+        ),
+        nullable=False,
+        server_default='English',
+    )
     last_update_time = util.last_update_time()
 
     __mapper_args__ = {
@@ -43,6 +51,7 @@ class User(Base):
             ('name', self.name),
             ('emails', [email.address for email in self.emails]),
             ('role', self.role),
+            ('default_language', self.default_language),
             ('allowed_surveys', self.allowed_surveys),
             ('last_update_time', self.last_update_time),
         ))
@@ -86,7 +95,10 @@ class Email(Base):
     __tablename__ = 'email'
 
     id = util.pk()
-    address = sa.Column(pg.TEXT, nullable=False, unique=True)
+    address = sa.Column(
+        pg.TEXT, sa.CheckConstraint("address ~ '.*@.*'"),
+        nullable=False, unique=True
+    )
     user_id = sa.Column(pg.UUID, util.fk('auth_user.id'), nullable=False)
     last_update_time = util.last_update_time()
 

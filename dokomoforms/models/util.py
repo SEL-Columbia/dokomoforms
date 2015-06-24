@@ -206,16 +206,25 @@ def fk(column_name: str) -> sa.Column:
     return sa.ForeignKey(column_name, onupdate='CASCADE', ondelete='CASCADE')
 
 
-def translatable_json_column() -> sa.Column:
+def json_column(column_name: str, *, default=None) -> sa.Column:
     """
     Returns a column of type JSONB for use in models. Use this for entries like
 
         <language>: <text>
 
+    :param column_name: the name of the column
+    :param default: the column default (default value None, meaning no column
+                    default)
     :return: a SQLAlchemy Column for a non-null JSONB type.
     """
     return sa.Column(
-        pg.json.JSONB, nullable=False, server_default='{"English": ""}'
+        pg.json.JSONB,
+        sa.CheckConstraint(
+            "{} @> '{{}}'".format(column_name),
+            name='{}_valid_json_check'.format(column_name),
+        ),
+        nullable=False,
+        server_default=default,
     )
 
 

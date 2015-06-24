@@ -28,7 +28,6 @@ from sqlalchemy.orm import sessionmaker
 from dokomoforms.models import create_engine, Base
 from webapp import Application
 from tests.fixtures import load_fixtures, unload_fixtures
-from dokomoforms.handlers import DebugLoginHandler
 
 engine = create_engine(echo=False)
 Session = sessionmaker()
@@ -116,7 +115,7 @@ def test_continues_after_rollback(doko_test):
             connection = engine.connect()
             with connection.begin():
                 connection.execute(
-                    '''
+                    """
                     DO
                     $func$
                     BEGIN
@@ -131,7 +130,7 @@ def test_continues_after_rollback(doko_test):
                       );
                     END
                     $func$;
-                    '''
+                    """
                 )
             self.session.close()
     return wrapper

@@ -49,7 +49,7 @@ class TestSurveyApi(DokoHTTPTest):
         # make request
         response = self.fetch(url, method=method)
         # test response
-
+        print(response)
         # check that response is valid parseable json
         survey_dict = json_decode(response.body)
 

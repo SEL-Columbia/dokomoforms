@@ -5,8 +5,9 @@ from collections import OrderedDict
 
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as pg
-from sqlalchemy.orm import relationship, synonym
+from sqlalchemy.orm import relationship, synonym, column_property
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.sql import func
 # from sqlalchemy.sql.type_api import UserDefinedType
 
 from geoalchemy2 import Geometry
@@ -30,27 +31,47 @@ class Answer(Base):
     allow_dont_know = sa.Column(sa.Boolean, nullable=False)
     question_id = sa.Column(pg.UUID, nullable=False)
     type_constraint = sa.Column(node_type_enum, nullable=False)
+    answer_type = sa.Column(
+        sa.Enum(
+            'text', 'photo', 'integer', 'decimal', 'date', 'time',
+            'timestamp', 'location', 'facility', 'multiple_choice',
+            name='answer_type_name',
+            inherit_schema=True,
+            metadata=Base.metadata,
+        ),
+        nullable=False,
+    )
     last_update_time = util.last_update_time()
 
     @property
     @abc.abstractmethod
     def main_answer(self):
-        pass
+        """
+        The main_answer is the only answer for simple types (integer, text,
+        etc.) and for other types is the part of the answer that is most
+        important. In practice, the main_answer is special only in that all
+        Answer models have it, which is necessary for certain constraints and
+        for the response property.
+        """
 
     @property
     @abc.abstractmethod
     def answer(self):
-        pass
+        """
+        This property is the most useful representation available of the
+        answer. In the simplest case it is just a synonym for main_answer.
+        It could otherwise be a dictionary or another model.
+        """
 
     @property
     @abc.abstractmethod
     def other(self):
-        pass
+        """A text field containing "other" responses."""
 
     @property
     @abc.abstractmethod
     def dont_know(self):
-        pass
+        """A text field containing "don't know" responses"""
 
     @hybrid_property
     def response(self) -> OrderedDict:
@@ -69,13 +90,14 @@ class Answer(Base):
             ('response', response),
         ))
 
-    __mapper_args__ = {'polymorphic_on': type_constraint}
+    __mapper_args__ = {'polymorphic_on': answer_type}
     __table_args__ = (
         sa.UniqueConstraint('id', 'allow_other', 'allow_dont_know'),
         sa.UniqueConstraint(
             'id', 'allow_other', 'allow_dont_know', 'survey_node_id',
             'question_id', 'submission_id',
         ),
+        sa.CheckConstraint('type_constraint::TEXT = answer_type::TEXT'),
         sa.ForeignKeyConstraint(
             ['submission_id', 'submission_time', 'survey_id'],
             ['submission.id', 'submission.submission_time',
@@ -140,18 +162,20 @@ def _answer_mixin_table_args():
         ),
         sa.CheckConstraint(
             # "other" responses are allowed XOR other is null
-            '''
+            """
             the_allow_other != (other IS NULL)
-            '''
+            """,
+            name='check_whether_other_is_allowed'
         ),
         sa.CheckConstraint(
             # "dont_know" responses are allowed XOR dont_know is null
-            '''
+            """
             the_allow_dont_know != (dont_know IS NULL)
-            '''
+            """,
+            name='check_whether_dont_know_is_allowed'
         ),
         sa.CheckConstraint(
-            '''
+            """
             (CASE WHEN (main_answer IS NOT NULL) AND
                        (other       IS     NULL) AND
                        (dont_know   IS     NULL)
@@ -165,7 +189,8 @@ def _answer_mixin_table_args():
                        (dont_know   IS NOT NULL)
                 THEN 1 ELSE 0 END) =
             1
-            '''
+            """,
+            name='only_one_answer_type_check'
         ),
     )
 
@@ -265,7 +290,16 @@ class TimestampAnswer(_AnswerMixin, Answer):
 class LocationAnswer(_AnswerMixin, Answer):
     __tablename__ = 'answer_location'
     main_answer = sa.Column(Geometry('POINT', 4326))
-    answer = synonym('main_answer')
+    geo_json = column_property(func.ST_AsGeoJSON(main_answer))
+
+    @hybrid_property
+    def answer(self):
+        return self.geo_json
+
+    @answer.setter
+    def answer(self, location: dict):
+        self.main_answer = 'SRID=4326;POINT({lng} {lat})'.format(**location)
+
     __mapper_args__ = {'polymorphic_identity': 'location'}
     __table_args__ = _answer_mixin_table_args()
 
@@ -273,6 +307,7 @@ class LocationAnswer(_AnswerMixin, Answer):
 class FacilityAnswer(_AnswerMixin, Answer):
     __tablename__ = 'answer_facility'
     main_answer = sa.Column(Geometry('POINT', 4326))
+    geo_json = column_property(func.ST_AsGeoJSON(main_answer))
     facility_id = sa.Column(pg.TEXT)
     facility_name = sa.Column(pg.TEXT)
     facility_sector = sa.Column(pg.TEXT)
@@ -280,16 +315,26 @@ class FacilityAnswer(_AnswerMixin, Answer):
     @hybrid_property
     def answer(self) -> OrderedDict:
         return OrderedDict((
-            ('facility_location', self.main_answer),
+            ('facility_location', self.geo_json),
             ('facility_id', self.facility_id),
             ('facility_name', self.facility_name),
             ('facility_sector', self.facility_sector),
         ))
 
+    @answer.setter
+    def answer(self, facility_info: dict):
+        self.main_answer = (
+            'SRID=4326;POINT({lng} {lat})'
+            .format(**facility_info['facility_location'])
+        )
+        self.facility_id = facility_info['facility_id']
+        self.facility_name = facility_info['facility_name']
+        self.facility_sector = facility_info['facility_sector']
+
     __mapper_args__ = {'polymorphic_identity': 'facility'}
     __table_args__ = _answer_mixin_table_args() + (
         sa.CheckConstraint(
-            '''
+            """
             (CASE WHEN (main_answer     IS     NULL) AND
                        (facility_id     IS     NULL) AND
                        (facility_name   IS     NULL) AND
@@ -301,7 +346,7 @@ class FacilityAnswer(_AnswerMixin, Answer):
                        (facility_sector IS NOT NULL)
                 THEN 1 ELSE 0 END) =
             1
-            '''
+            """
         ),
     )
 
@@ -365,6 +410,8 @@ ANSWER_TYPES = {
 
 def construct_answer(*, type_constraint: str, **kwargs) -> Answer:
     try:
-        return ANSWER_TYPES[type_constraint](**kwargs)
+        create_answer = ANSWER_TYPES[type_constraint]
     except KeyError:
         raise NotAnAnswerTypeError(type_constraint)
+
+    return create_answer(**kwargs)
