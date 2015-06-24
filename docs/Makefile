@@ -87,9 +87,9 @@ qthelp:
 	@echo
 	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
 	      ".qhcp project file in $(BUILDDIR)/qthelp, like this:"
-	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/DokomoForms.qhcp"
+	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/dokomoforms.qhcp"
 	@echo "To view the help file:"
-	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/DokomoForms.qhc"
+	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/dokomoforms.qhc"
 
 applehelp:
 	$(SPHINXBUILD) -b applehelp $(ALLSPHINXOPTS) $(BUILDDIR)/applehelp
@@ -104,8 +104,8 @@ devhelp:
 	@echo
 	@echo "Build finished."
 	@echo "To view the help file:"
-	@echo "# mkdir -p $$HOME/.local/share/devhelp/DokomoForms"
-	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/DokomoForms"
+	@echo "# mkdir -p $$HOME/.local/share/devhelp/dokomoforms"
+	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/dokomoforms"
 	@echo "# devhelp"
 
 epub:

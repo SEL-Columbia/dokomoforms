@@ -43,11 +43,8 @@ class BaseHandler(tornado.web.RequestHandler):
         {{ current_user }} accessible to templates and self.current_user
         accessible to handlers.
 
-        :return: a string containing the dictionary
-                 {
-                     'user_id': <UUID>,
-                     'user_name': <name>
-                 }
+        :return: a string containing the dictionary {'user_id': <UUID>,
+                 'user_name': <name>}
         """
         user = self.get_secure_cookie('user')
         return to_unicode(user) if user else None
