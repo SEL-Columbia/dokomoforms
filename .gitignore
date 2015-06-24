@@ -10,3 +10,6 @@ htmlcov/
 .python-version
 locale/dokomoforms.po
 node_modules/
+_build
+_static
+_templates
