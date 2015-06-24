@@ -9,9 +9,7 @@ The SQLAlchemy documentation suggests setting those columns in the base
 class or using class mixins, but it makes it less explicit which columns exist
 when looking at the models' definitions.
 """
-from dokomoforms.options import options, parse_options
-
-parse_options()  # Necessary to load the schema properly. Feels like a hack...
+from dokomoforms.options import options
 
 import abc
 import datetime

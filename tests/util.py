@@ -6,13 +6,17 @@ Also injects the --schema=doko_test option.
 import unittest
 from functools import wraps
 
-from dokomoforms.options import inject_options
+from dokomoforms.options import inject_options, parse_options
 
 inject_options(schema='doko_test')
+parse_options()
 
 from sqlalchemy import DDL
 from sqlalchemy.orm import sessionmaker
 from dokomoforms.models import create_engine, Base
+from dokomoforms.models.survey import _set_tzinfos
+
+_set_tzinfos()
 
 engine = create_engine(echo=False)
 Session = sessionmaker()

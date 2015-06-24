@@ -22,8 +22,15 @@ import tornado.httpserver
 import tornado.web
 
 from dokomoforms.options import options
+
+if __name__ == '__main__':
+    from dokomoforms.options import parse_options
+    # Necessary to load the schema properly. Feels like a hack...
+    parse_options()
+
 import dokomoforms.handlers as handlers
 from dokomoforms.models import create_engine, Base
+from dokomoforms.models.survey import _set_tzinfos
 
 _pwd = os.path.dirname(__file__)
 bold = '\033[1m'
@@ -118,6 +125,7 @@ class Application(tornado.web.Application):
                 DDL('DROP SCHEMA IF EXISTS {} CASCADE'.format(options.schema))
             )
         Base.metadata.create_all(self.engine)
+        _set_tzinfos()
         self.session = sessionmaker(bind=self.engine, autocommit=True)()
 
 

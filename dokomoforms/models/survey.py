@@ -388,9 +388,6 @@ def _set_tzinfos():
         del engine
 
 
-_set_tzinfos()
-
-
 def _time_at_unix_epoch_date(time: str, upper=False) -> datetime.datetime:
     the_date = datetime.datetime(1970, 1, 1)
     if upper and time.strip() == '':
