@@ -88,9 +88,12 @@ class SurveyCreator(User):
 
     def _asdict(self) -> OrderedDict:
         result = super()._asdict()
-        result['surveys'] = OrderedDict(
-            (survey.title, survey.id) for survey in self.surveys
-        )
+        result['surveys'] = [
+            OrderedDict((
+                ('survey_id', survey.id),
+                ('survey_title', survey.title),
+            )) for survey in self.surveys
+        ]
         result['token_expiration'] = self.token_expiration
         return result
 

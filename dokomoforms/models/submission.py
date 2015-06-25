@@ -26,7 +26,7 @@ class Submission(Base):
         nullable=False,
     )
     survey_id = sa.Column(pg.UUID, nullable=False)
-    enumerator_only = sa.Column(survey_type_enum, nullable=False)
+    survey_type = sa.Column(survey_type_enum, nullable=False)
     save_time = sa.Column(
         pg.TIMESTAMP(timezone=True),
         nullable=False,
@@ -38,7 +38,10 @@ class Submission(Base):
         server_default=current_timestamp(),
     )
     submitter_name = sa.Column(pg.TEXT, nullable=False, server_default='')
-    submitter_email = sa.Column(pg.TEXT, nullable=False, server_default='')
+    submitter_email = sa.Column(
+        pg.TEXT, sa.CheckConstraint("submitter_email ~ '^$|.*@.*'"),
+        nullable=False, server_default=''
+    )
     answers = relationship(
         'Answer',
         order_by='Answer.answer_number',
@@ -53,10 +56,10 @@ class Submission(Base):
     }
     __table_args__ = (
         sa.ForeignKeyConstraint(
-            ['survey_id', 'enumerator_only'],
-            ['survey.id', 'survey.enumerator_only']
+            ['survey_id', 'survey_type'],
+            ['survey.id', 'survey.survey_type']
         ),
-        sa.UniqueConstraint('id', 'enumerator_only'),
+        sa.UniqueConstraint('id', 'survey_type'),
         sa.UniqueConstraint('id', 'survey_id'),
         sa.UniqueConstraint('id', 'submission_time', 'survey_id'),
     )
@@ -121,14 +124,14 @@ class PublicSubmission(Submission):
     id = util.pk()
     enumerator_user_id = sa.Column(pg.UUID, util.fk('auth_user.id'))
     enumerator = relationship('User')
-    should_authenticate = sa.Column(survey_type_enum, nullable=False)
+    survey_type = sa.Column(survey_type_enum, nullable=False)
 
     __table_args__ = (
         sa.ForeignKeyConstraint(
-            ['id', 'should_authenticate'],
-            ['submission.id', 'submission.enumerator_only']
+            ['id', 'survey_type'],
+            ['submission.id', 'submission.survey_type']
         ),
-        sa.CheckConstraint('NOT should_authenticate::TEXT::BOOLEAN'),
+        sa.CheckConstraint("survey_type::TEXT = 'public'"),
     )
 
     __mapper_args__ = {'polymorphic_identity': 'unauthenticated'}

@@ -45,7 +45,7 @@ class Base(declarative_base(metadata=metadata, metaclass=_Meta)):
 
     deleted = sa.Column(sa.Boolean, nullable=False, server_default='false')
 
-    @abc.abstractmethod
+    @abc.abstractmethod  # pragma: no cover
     def _asdict(self) -> dict:
         """Return a dictionary representation of the model.
 
@@ -78,9 +78,8 @@ class Base(declarative_base(metadata=metadata, metaclass=_Meta)):
         instead of a regular dict so that the _to_json and __str__ methods
         always return the keys in the same order.
         """
-        pass
 
-    def _to_json(self, tornado_encode: bool=True, **kwargs) -> str:
+    def _to_json(self, *, tornado_encode: bool=True, **kwargs) -> str:
         """Return the JSON representation of this model.
 
         See dokomoforms.models.util.Base._asdict and

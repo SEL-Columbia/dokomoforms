@@ -8,7 +8,6 @@ import dateutil.parser
 
 import sqlalchemy as sa
 from sqlalchemy.sql.functions import current_timestamp
-from sqlalchemy.sql.elements import quoted_name
 from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declared_attr
@@ -19,7 +18,7 @@ from dokomoforms.exc import NoSuchBucketTypeError
 
 
 survey_type_enum = sa.Enum(
-    'false', 'true',
+    'public', 'enumerator_only',
     name='enumerator_only_enum',
     inherit_schema=True,
 )
@@ -44,7 +43,7 @@ class Survey(Base):
         nullable=False,
         server_default='English',
     )
-    enumerator_only = sa.Column(survey_type_enum, nullable=False)
+    survey_type = sa.Column(survey_type_enum, nullable=False)
     submissions = relationship(
         'Submission',
         order_by='Submission.save_time',
@@ -78,14 +77,14 @@ class Survey(Base):
     last_update_time = util.last_update_time()
 
     __mapper_args__ = {
-        'polymorphic_on': enumerator_only,
-        'polymorphic_identity': 'false',
+        'polymorphic_on': survey_type,
+        'polymorphic_identity': 'public',
     }
     __table_args__ = (
         sa.UniqueConstraint(
             'title', 'creator_id', name='unique_survey_title_per_user'
         ),
-        sa.UniqueConstraint('id', 'enumerator_only'),
+        sa.UniqueConstraint('id', 'survey_type'),
         sa.CheckConstraint(
             "title ? default_language",
             name='title_in_default_langauge_exists'
@@ -100,9 +99,9 @@ class Survey(Base):
         return OrderedDict((
             ('id', self.id),
             ('deleted', self.deleted),
-            ('title', self.title),
+            ('title', OrderedDict(sorted(self.title.items()))),
             ('default_language', self.default_language),
-            ('enumerator_only', self.enumerator_only),
+            ('survey_type', self.survey_type),
             ('version', self.version),
             ('creator_id', self.creator_id),
             ('creator_name', self.creator.name),
@@ -141,7 +140,7 @@ class EnumeratorOnlySurvey(Survey):
         passive_deletes=True,
     )
 
-    __mapper_args__ = {'polymorphic_identity': 'true'}
+    __mapper_args__ = {'polymorphic_identity': 'enumerator_only'}
 
 
 _sub_survey_nodes = sa.Table(
@@ -248,14 +247,13 @@ class Bucket(Base):
         nullable=False,
     )
 
-    @property
+    @property  # pragma: no cover
     @abc.abstractmethod
     def bucket(self):
         """The bucket is a range or Choice.
 
         Buckets for a given SubSurvey cannot overlap.
         """
-        pass
 
     last_update_time = util.last_update_time()
 
@@ -302,15 +300,7 @@ class _RangeBucketMixin:
     def __table_args__(cls):
         return (
             pg.ExcludeConstraint(
-                (
-                    # Workaround for
-                    # https://bitbucket.org/zzzeek/sqlalchemy/issue/3454
-                    # For SQLAlchemy 1.0.6, replace with actual cast()
-                    sa.Column(quoted_name(
-                        'CAST("the_sub_survey_id" AS TEXT)', quote=False
-                    )),
-                    '='
-                ),
+                (sa.cast(cls.the_sub_survey_id, pg.TEXT), '='),
                 ('bucket', '&&')
             ),
             sa.CheckConstraint('NOT isempty(bucket)'),
@@ -504,17 +494,17 @@ class SurveyNode(Base):
         nullable=False,
     )
 
-    @property
+    @property  # pragma: no cover
     @abc.abstractmethod
     def node_id(self):
         """The id of the Node."""
 
-    @property
+    @property  # pragma: no cover
     @abc.abstractmethod
     def node(self):
         """The Node instance."""
 
-    @property
+    @property  # pragma: no cover
     @abc.abstractmethod
     def type_constraint(self):
         """The type_constraint of the Node."""

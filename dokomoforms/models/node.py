@@ -273,9 +273,18 @@ class Choice(Base):
         return OrderedDict((
             ('id', self.id),
             ('deleted', self.deleted),
-            ('choice_text', self.choice_text),
+            ('choice_text', OrderedDict(sorted(self.choice_text.items()))),
             ('choice_number', self.choice_number),
-            ('question', self.question.title),
+            (
+                'question',
+                OrderedDict((
+                    ('question_id', self.question_id),
+                    (
+                        'question_title',
+                        OrderedDict(sorted(self.question.title.items()))
+                    ),
+                ))
+            ),
             ('last_update_time', self.last_update_time),
         ))
 
