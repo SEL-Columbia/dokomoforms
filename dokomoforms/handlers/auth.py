@@ -73,7 +73,6 @@ class Login(BaseHandler):
                 .one()
             )
             cookie_options = {
-                'expires_days': None,
                 'httponly': True,
             }
             if options.https:
