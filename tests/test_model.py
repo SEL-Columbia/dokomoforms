@@ -42,17 +42,18 @@ class TestBase(unittest.TestCase):
     def test_str(self):
         self.assertEqual(
             models.Base.__str__(models.User(name='base')),
-            (
-                '{\n'
-                '    "id": null,\n'
-                '    "deleted": null,\n'
-                '    "name": "base",\n'
-                '    "emails": [],\n'
-                '    "role": "enumerator",\n'
-                '    "default_language": null,\n'
-                '    "allowed_surveys": [],\n'
-                '    "last_update_time": null\n'
-                '}'
+            json.dumps(
+                OrderedDict((
+                    ('id', None),
+                    ('deleted', None),
+                    ('name', 'base'),
+                    ('emails', []),
+                    ('role', 'enumerator'),
+                    ('default_language', None),
+                    ('allowed_surveys', []),
+                    ('last_update_time', None),
+                )),
+                indent=4
             )
         )
 
@@ -62,8 +63,9 @@ class TestBase(unittest.TestCase):
         )
 
     def test_create_engine(self):
+        from dokomoforms.options import options
         engine1 = models.create_engine()
-        self.assertEqual(engine1.echo, 'debug')
+        self.assertEqual(engine1.echo, 'debug' if options.debug else False)
 
         engine2 = models.create_engine(True)
         self.assertEqual(engine2.echo, True)

@@ -24,7 +24,7 @@ import tornado.web
 
 from dokomoforms.options import options
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     from dokomoforms.options import parse_options
     # Necessary to load the schema properly. Feels like a hack...
     parse_options()
