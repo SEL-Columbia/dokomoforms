@@ -13,10 +13,8 @@ Image = window.Image;
 navigator = window.navigator;
 localStorage = {};
 
-var mah_code = require('../dokomoforms/static/app.js');
-var Widgets = mah_code.Widgets;
-var App = mah_code.App;
-
+App = require('../dokomoforms/static/application.js').App;
+Widgets = require('../dokomoforms/static/widgets.js').Widgets;
 
 // Location and Facility Question rendering
 describe('Widget creation tests', function(done) {
@@ -26,17 +24,21 @@ describe('Widget creation tests', function(done) {
 
 
     beforeEach(function(done) {
+        $.mockjax.clear();
         App.facilities = [];
         App.unsynced_facilities = {};
+        App.location = {};
         done();
     });
 
     afterEach(function(done) {
+        $.mockjax.clear();
         $(".page_nav__next").off('click'); //XXX Find out why events are cached
         $(".page_nav__prev").off('click');
         $('.content').empty();
         $('.bar-footer').empty()
         localStorage = {};
+        App.location = {};
         done();
     });
     
@@ -468,81 +470,7 @@ describe('Widget creation tests', function(done) {
 
         });
     
-    it('should render facility widget with default location',
-        function(done) {
-            var question = {
-                question_to_sequence_number: -1,
-                type_constraint_name: "facility",
-                logic: {},
-                answer: [],
-                question_title: "Good year for flixs though",
-                sequence_number: 1
-            };
-            
-            // Create content div with widget template
-            var widgetHTML = $('#widget_' + question.type_constraint_name).html();
-            var widgetTemplate = _.template(widgetHTML);
-            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
 
-            $('.content')
-                .data('index', 1)
-                .html(compiledHTML)
-
-            Widgets[question.type_constraint_name](question, $('.content'));
-
-            $('.question__title')
-                .text()
-                .should.match("Good year for flixs though");
-
-            done();
-
-        });
-
-    it('should render facility widget with default location and retrieve facilities',
-        function(done) {
-            //XXX: Fake Revisit response, make this an actual test
-            var question = {
-                question_to_sequence_number: -1,
-                type_constraint_name: "facility",
-                logic: {},
-                answer: [],
-                question_title: "Good year for flixs though",
-                sequence_number: 1
-            };
-            
-            //XXX: Figure this out
-            //navigator.onLine = true
-            
-            // Create content div with widget template
-            var widgetHTML = $('#widget_' + question.type_constraint_name).html();
-            var widgetTemplate = _.template(widgetHTML);
-            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
-
-            $('.content')
-                .data('index', 1)
-                .html(compiledHTML)
-
-            var barfootHTML = $('#template_footer').html();
-            var barfootTemplate = _.template(barfootHTML);
-            compiledHTML = barfootTemplate({
-                'other_text': question.logic.other_text
-            });
-
-            $('.bar-footer').html(compiledHTML);
-            $('.bar-footer').removeClass('bar-footer-extended');
-            $('.bar-footer').removeClass('bar-footer-super-extended');
-            $('.bar-footer').css("height", "");
-
-            Widgets[question.type_constraint_name](question, $('.content'), $('.bar-footer'))
-
-            $('.question__title')
-                .text()
-                .should.match("Good year for flixs though");
-
-            done();
-
-        });
-    
     it('should render facility widget with default location and some default facilities',
         function(done) {
             var question = {
@@ -553,14 +481,15 @@ describe('Widget creation tests', function(done) {
                 question_title: "Good year for flixs though+",
                 sequence_number: 1
             };
-            
+
             // Preload some facilities;
             App.facilities = require('./fixtures/facilities.json');
+            App.location =  {'lat': 40, 'lon': 70};
 
             // Create content div with widget template
             var widgetHTML = $('#widget_' + question.type_constraint_name).html();
             var widgetTemplate = _.template(widgetHTML);
-            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
+            var compiledHTML = widgetTemplate({question: question});
 
             $('.content')
                 .data('index', 1)
@@ -583,13 +512,13 @@ describe('Widget creation tests', function(done) {
                 .text()
                 .should.match("Good year for flixs though+");
 
-            $('#map').find('.leaflet-marker-icon').length.should.be.exactly(68); // basic check to see if markers are rendered
 
+            $('.question__radio').length.should.match(10);
             done();
 
         });
 
-    it('should render facility widget with default location an unsynced facility',
+    it('should render facility widget with unset location and no facilities',
         function(done) {
             var question = {
                 question_to_sequence_number: -1,
@@ -600,17 +529,10 @@ describe('Widget creation tests', function(done) {
                 sequence_number: 1
             };
             
-            // Preload some facilities;
-            App.unsynced_facilities[1] = {
-                'name': 'New Facility', 'uuid': 1, 
-                'properties' : {'sector': 'health'},
-                'coordinates' : [40.01, 70.01]
-            };
-
             // Create content div with widget template
             var widgetHTML = $('#widget_' + question.type_constraint_name).html();
             var widgetTemplate = _.template(widgetHTML);
-            var compiledHTML = widgetTemplate({question: question, start_loc: {'lat': 40, 'lon': 70}});
+            var compiledHTML = widgetTemplate({question: question});
 
             $('.content')
                 .data('index', 1)
@@ -633,8 +555,8 @@ describe('Widget creation tests', function(done) {
                 .text()
                 .should.match("That lego movie song sucks");
 
-            $('#map').find('.leaflet-marker-icon').length.should.be.exactly(1); // basic check to see if markers are rendered
-
+            $('.question__radio').length.should.match(0);
+            $('.facility__btn')[0].style.display.should.equal('none'); // Should be there but not visible
             done();
 
         });

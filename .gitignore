@@ -10,8 +10,12 @@ cover/
 .python-version
 node_modules/
 test/*.log
-.vagrant
 data/
 reports/
 config/deploy/*.rb
 .DS_Store
+Vagrantfile
+provision.sh
+.vagrant
+doko/
+.capistrano/

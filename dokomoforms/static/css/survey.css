@@ -5,8 +5,6 @@
 /* General styles
 =================================================*/
 html {
-    font-family: 'Roboto', sans-serif !important;
-    font-weight: 300;
 }
 
 h1 {
@@ -14,6 +12,8 @@ h1 {
 }
 
 body {
+    font-family: 'Roboto', sans-serif !important;
+    font-weight: 300;
     background-color: rgb(250, 250, 250);
 }
 
@@ -23,6 +23,7 @@ h3 {
 }
 
 input[type] {
+    font-family: 'Roboto', sans-serif !important;
     border: 1px solid #DDD;
     border-left: 0px solid #DDD;
     border-right: 0px solid #DDD;
@@ -58,6 +59,51 @@ input[type=checkbox] {
     margin-top: 8px;
     min-height: 0px;
 }
+
+input[type=radio]:not(old) {
+    width     : 2em;
+    margin    : 0;
+    padding   : 0;
+    font-size : 1em;
+    opacity   : 0;
+    min-height: 0px;
+}
+
+
+input[type=radio]:not(old) + label {
+    display      : inline-block;
+    margin-left  : -2em;
+    line-height  : 1.5em;
+    margin-top: 10px;
+}
+
+
+input[type=radio]:not(old) + label > span {
+    display          : inline-block;
+    width            : 2em;
+    height           : 2em;
+    border           : 0.15em solid #AAA;
+    border-radius    : 1em;
+    background       : #FFF;
+    vertical-align   : bottom;
+    margin-right: 20px;
+}
+
+input[type=radio]:not(old):checked + label > span > span {
+    display          : block;
+    width            : 1em;
+    height           : 1em;
+    border           : 0px solid;
+    border-radius    : 1em;
+    background       : #000;
+    margin-top: 5.25px;
+    margin-left: 5px;
+}
+
+input[type=radio]:not(old):checked + label > span {
+    border: 0.15em solid #000;
+}
+
 
 input[type=number]::-webkit-outer-spin-button,
 input[type=number]::-webkit-inner-spin-button {
@@ -100,6 +146,7 @@ select {
 
     border: 1px solid #DDD;
     padding: 14px 15px;
+    font-family: 'Roboto', sans-serif !important;
     font-size: 14px;
     min-height: 50px;
     outline: none;
@@ -126,12 +173,25 @@ a, .icon {
     width: 100%;
     padding: 4px 0px;
     padding-left: 20px;
+    cursor: pointer;
+}
+.question__btn__other label {
+    cursor: pointer;
+}
+
+.message-box-success {
+    padding: 18px;
+    overflow: hidden;
+    background-color: #DCF9EF;
+    border-radius: 6px;
+    margin: 20px 0px;
+    margin-top: 40px;
 }
 
 .message-box-primary {
     padding: 18px;
     overflow: hidden;
-    background-color: rgba(172, 209, 233, 0.75);
+    background-color: #E3F0FE;
     border-radius: 6px;
     margin: 20px 0px;
     margin-top: 40px;
@@ -140,10 +200,34 @@ a, .icon {
 .message-box-warning {
     padding: 18px;
     overflow: hidden;
-    background-color: rgba(255, 245, 184, 1.0);
+    background-color: #FCEBB6;
     border-radius: 6px;
     margin: 20px 0px;
     margin-top: 40px;
+}
+
+.message-box-error {
+    padding: 18px;
+    overflow: hidden;
+    background-color: #FCEBB6;
+    border-radius: 6px;
+    margin: 20px 0px;
+    margin-top: 40px;
+}
+
+.message-success {
+    background-color: #DCF9EF !important;
+}
+.message-primary {
+    background-color: #E3F0FE !important;
+}
+
+.message-warning {
+    background-color: #FCEBB6 !important;
+}
+
+.message-error {
+    background-color: #F2DEDE !important;
 }
 
 .align-left {
@@ -191,39 +275,111 @@ a, .icon {
 .overlay {
     width: 100%;
     height: 100%;
-    background: #000;
+    background: #CDCDCD;
     opacity: 0.5;
     position: absolute;
     top: 0;
     left: 0;
-    zIndex: 100;
+}
+
+.submitting_content {
+    position: fixed;
+    top: 35%;
+    text-align: left;
+}
+
+.submitting_title {
+    display: inline-block;
+}
+
+.submitting_sync {
+    display: inline-block;
 }
 
 .message {
-    display: none;
-    position: absolute;
-    left: 20%;
-    width: 60%;
-    padding: 12px;
-    box-sizing: border-box;
-    border-radius: 7px;
-    text-align: center;
-    font-size: 18px;
-    z-index: 99;
-    margin-top: 30px;
-    color: #FFF;
 }
 
-.message_warning {
-    background: rgba(0, 0, 255, 0.95);
+.message_main {
+    height: 100%;
+    font-weight: 300;
+    font-size: 14px;
+    padding-top: 40px;
+    color: #4A4A4A;
 }
 
-.message_error {
-    background: rgba(255, 0, 0, 0.95);
+.message_btn_content {
+    border-top: 1px solid #DDD;
+    padding-top: 8px;
+    position: fixed;
+    bottom: 0px;
+    right: 0px;
+    left: 0px;
+    height: 80px;
 }
 
-.message_success {
-    background: rgba(0, 255, 0, 0.95);
+.modal_header {
+    box-shadow: 0px 2px 2px #aaa;
+    font-family: 'Roboto', sans-serif !important;
+    color: #000 !important;
+    font-weight: 500 !important;
+    top: 0;
+    position: fixed;
+    left: 0;
+    z-index: 10;
+    padding-left: 20px;
+    height: 44px;
+    background-color: #fff;
+    border-bottom: 1px solid #ddd;
+    width: 100%;
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 44px;
+    color: #000;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.modal_btn {
+    height: 61.6px;
+}
+
+.question__radio {
+    border: 1px solid #DDD;
+    padding: 0px 0px 14px 20px;
+    text-align: left;
+    min-height: 50px;
+    background-color: white;
+    font-size: 14px;
+    cursor: pointer !important;
+}
+
+.question__radio__selected {
+    border: 1px solid #777;
+    background-color: #DDD;
+}
+
+.question__radio label {
+    font-weight: 500;
+    cursor: pointer !important;
+}
+
+.question__radio__span__btn {
+    float: left;
+    margin-top: 4px;
+    cursor: pointer !important;
+}
+
+.question__radio__span__meta {
+    padding-left: 49px;
+    margin-top: -12px;
+    float: left;
+    color: #777;
+    cursor: pointer !important;
+}
+
+.question__toggle {
+    margin: 10px 0px;
+    width: 80px;
 }
 
 /* Rachet style changes
@@ -273,34 +429,87 @@ header {
     font-family: 'Roboto', sans-serif !important;
 }
 
+.menu {
+    cursor: pointer;
+}
+
+.title-extended {
+    height: 176px;
+}
+
+.title_menu {
+    clear: both;
+    display: block;
+    color: #000;
+    text-align: right;
+    font-weight: 700;
+    width: 100%;
+    cursor: pointer;
+    user-select:none;
+}
+
+.title_menu_option {
+    padding-top: 10px;
+    border-top: 1px solid #A9A9A9;
+    height: 44px;
+    width: 100%;
+    background-color: #FFF;
+    cursor: pointer;
+}
+
 .btn {
+    font-family: 'Roboto', sans-serif !important;
     font-weight: 300;
+    user-select:none;
 }
 
 .bar .btn {
-    font-weight: 300;
+    font-weight: 700;
+}
+
+.btn-text  {
+    font-weight: 700 !important;
+    color: #FFF;
 }
 
 .btn-primary {
-    box-shadow: 0px 4px 0px #FF5511;
-    background-color: #FF7700;
-    border: 1px solid #FF7700;
+    box-shadow: 0px 4px 0px #9F4F0F;
+    background-color: #F07818;
+    border: 1px solid #F07818;
+    font-weight: 700;
 }
 
-.btn-primary:hover, .btn-primary:active, .btn-primary:focus {
-    background-color: #FF5511;
-    border: 1px solid #FF5511;
+.btn-primary:active {
+    background-color: #9F4F0F;
+    border: 1px solid #9F4F0F;
 }
 
 .btn-positive {
-    box-shadow: 0px 4px 0px #53B695;
-    background-color: #53C6A5;
-    border: 1px solid #53C6A5;
+    box-shadow: 0px 4px 0px #5B9380;
+    background-color: #78c0a8;
+    border: 1px solid #78C0A8;
 }
 
-.btn-positive:active, .btn-positive:hover, .btn-positive:focus {
-    background-color: #53B695;
-    border: 1px solid #53B695;
+.btn-positive:active {
+    background-color: #5B9380;
+    border: 1px solid #5B9380;
+}
+
+.btn-netural {
+    box-shadow: 0px 4px 0px #4A4A4A;
+    background-color: #9B9B9B;
+    border: 1px solid #9B9B9B;
+    font-family: 'Roboto', sans-serif !important;
+    font-weight: 500;
+    color: #FFF;
+}
+
+.btn-netural:active, .btn-netural:hover, .btn-netural:focus {
+    background-color: #4A4A4A;
+    border: 1px solid #4A4A4A;
+    font-family: 'Roboto', sans-serif !important;
+    font-weight: 500;
+    color: #FFF;
 }
 
 .content-padded {

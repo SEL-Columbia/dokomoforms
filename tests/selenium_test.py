@@ -51,6 +51,7 @@ def report_success_status(method):
 
 
 class DriverTest(unittest.TestCase):
+
     def setUp(self):
         self.passed = False
 
@@ -141,25 +142,26 @@ class DriverTest(unittest.TestCase):
 
 
 class SubmissionTest(DriverTest):
+
     @report_success_status
     def testSubmitSuccessfully(self):  # flake8: noqa
         # Log in
         self.drv.get(base + '/debug/login/test_email')
-        self.drv.get(base + '/view')
+        self.drv.get(base + '/')
 
         # Click on the survey
         WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
-            (By.XPATH,
-             '/html/body/div[2]/div/div[2]/div/table/tbody/tr/td[1]/a[1]'))
+            (By.CLASS_NAME,
+             'btn-manage'))
         )
-        self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/div[2]/div/table/tbody/tr/td[1]/a[1]'
+        self.drv.find_element_by_class_name(
+            'btn-manage'
         ).click()
 
         # Click on the shareable link
         # WebDriverWait(self.drv, 4).until(EC.presence_of_element_located(
-        # (By.XPATH, '/html/body/div[2]/div/a')))
-        # self.drv.find_element_by_xpath('/html/body/div[2]/div/a').click()
+        # (By.XPATH, '/html/body/div[3]/div/a')))
+        # self.drv.find_element_by_xpath('/html/body/div[3]/div/a').click()
 
         # Look into where the link is later...
         survey_id = self.drv.current_url.split('/')[-1]
@@ -168,10 +170,10 @@ class SubmissionTest(DriverTest):
         # Fill out the survey
         self.drv.find_element_by_class_name('start_btn').click()
         WebDriverWait(self.drv, 4).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[1]/div[2]/input')))
+            (By.XPATH, '/html/body/div[3]/div[2]/input')))
         next_class = 'page_nav__next'
         next_button = lambda: self.drv.find_element_by_class_name(next_class)
-        in_xpath = '/html/body/div[1]/div[2]/'
+        in_xpath = '/html/body/div[3]/div[2]/'
 
         self.drv.find_elements_by_tag_name('input')[0].send_keys('1')
         if self.browser_name == 'safari':
@@ -227,9 +229,7 @@ class SubmissionTest(DriverTest):
         )
         self.drv.find_element_by_class_name('question__find__btn').click()
         next_button().click()
-        self.drv.find_element_by_xpath(
-            '/html/body/div[1]/div[2]/input'
-        ).send_keys('text 7')
+        self.drv.find_element_by_xpath(in_xpath + 'input').send_keys('text 7')
         if self.browser_name == 'safari':
             self.drv.execute_script("$('input').change()")
         next_button().click()
@@ -241,16 +241,24 @@ class SubmissionTest(DriverTest):
         else:
             self.drv.find_elements_by_tag_name('option')[-1].click()
         self.drv.find_element_by_xpath(
-            '/html/body/div[1]/input').send_keys('other 8')
+            '/html/body/div[3]/input').send_keys('other 8')
         if self.browser_name == 'safari':
             self.drv.execute_script("$('input').change()")
         next_button().click()
         next_button().click()  # note question
+        
         WebDriverWait(self.drv, 3).until(EC.presence_of_element_located(
-            (By.XPATH, '/html/body/div[1]/input')))
+            (By.CLASS_NAME, 'question__radio__span__btn')))
         self.drv.find_element_by_class_name('facility__btn').click()
-        self.drv.find_element_by_xpath(
-            '/html/body/div[1]/input').send_keys('new_test_facility')
+        self.drv.find_element_by_class_name(
+            'facility_name_input').send_keys('new_test_facility')
+        if self.browser_name == 'android':
+            self.drv.find_element_by_tag_name('select').click()
+            self.drv.switch_to.window('NATIVE_APP')
+            self.drv.find_elements_by_tag_name('TextView')[-4].click()
+            self.drv.switch_to.window('WEBVIEW_0')
+        else:
+            self.drv.find_elements_by_tag_name('option')[1].click()
         next_button().click()
 
         self.drv.find_elements_by_tag_name('input')[0].send_keys(
@@ -259,28 +267,18 @@ class SubmissionTest(DriverTest):
         self.drv.find_element_by_class_name('sync_btn').click()
 
         # Check the submissions
-        self.drv.get(base + '/view')
+        self.drv.get(base + '/view/'+survey_id)
         WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
-            (By.XPATH,
-             '/html/body/div[2]/div/div[2]/div/table/tbody/tr/td[1]/a[1]'))
-        )
-        self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/div[2]/div/table/tbody/tr/td[1]/a[1]'
-        ).click()
-        WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
-            (By.XPATH,
-             '/html/body/div[2]/div/div[3]/div/div/div['
-             '2]/div/table/tbody/tr/td[4]/a')
+            (By.CLASS_NAME, 'btn-view-submission')
         ))
-        submission_link = self.drv.find_element_by_xpath(
-            '/html/body/div[2]/div/div[3]/div/div/div['
-            '2]/div/table/tbody/tr/td[4]/a')
+        submission_link = self.drv.find_element_by_class_name(
+            'btn-view-submission')
         self.drv.execute_script(
             'window.scrollTo(0, {});'.format(submission_link.location['y']))
         submission_link.click()
 
         # Check the submission
-        self.assertIn('data">\n\n1', self.drv.page_source)
+        self.assertIn('Submission Detail', self.drv.page_source)
         self.assertIn('1. choice 1', self.drv.page_source)
         self.assertIn('3.3', self.drv.page_source)
         self.assertIn('4. date question',
@@ -295,6 +293,7 @@ class SubmissionTest(DriverTest):
 
 
 class TypeTest(DriverTest):
+
     def tearDown(self):
         super().tearDown()
         connection.execute(survey_table.delete().where(
@@ -327,8 +326,9 @@ class TypeTest(DriverTest):
 
 
 class IntegerTest(TypeTest):
+
     @report_success_status
-    def testVisualization(self):
+    def testDetailDisplay(self):
         # Create the survey
         survey_id, question_id = self._create_survey('integer')
 
@@ -347,22 +347,25 @@ class IntegerTest(TypeTest):
         # Log in
         self.drv.get(base + '/debug/login/test_email')
 
-        # Get the visualization page
-        self.drv.get(base + '/visualize/' + question_id)
+        # Go to the survey data page
+        self.drv.get(base + '/view/data/' + survey_id)
 
         # Test it
-        line_graph = self.drv.find_element_by_id('line_graph')
-        self.assertTrue(line_graph.is_displayed())
+        self.drv.find_element_by_css_selector('.question-type-integer').click()
+        stats = self.drv.find_element_by_css_selector(
+            '.question-type-integer + .question-stats')
+        self.assertTrue(stats.is_displayed())
 
-        WebDriverWait(self.drv, 5).until(
-            EC.presence_of_element_located((By.ID, 'bar_graph')))
-        bar_graph = self.drv.find_element_by_id('bar_graph')
-        self.assertTrue(bar_graph.is_displayed())
+        # WebDriverWait(self.drv, 5).until(
+        #     EC.presence_of_element_located((By.ID, 'bar_graph')))
+        # bar_graph = self.drv.find_element_by_id('bar_graph')
+        # self.assertTrue(bar_graph.is_displayed())
 
 
 class DecimalTest(TypeTest):
+
     @report_success_status
-    def testVisualization(self):
+    def testDetailDisplay(self):
         # Create the survey
         survey_id, question_id = self._create_survey('decimal')
 
@@ -395,8 +398,9 @@ class DecimalTest(TypeTest):
 
 
 class TextTest(TypeTest):
+
     @report_success_status
-    def testVisualization(self):
+    def testDetailDisplay(self):
         # Create the survey
         survey_id, question_id = self._create_survey('text')
 
@@ -429,8 +433,9 @@ class TextTest(TypeTest):
 
 
 class DateTest(TypeTest):
+
     @report_success_status
-    def testVisualization(self):
+    def testDetailDisplay(self):
         # Create the survey
         survey_id, question_id = self._create_survey('date')
 
@@ -471,8 +476,9 @@ class DateTest(TypeTest):
 
 
 class TimeTest(TypeTest):
+
     @report_success_status
-    def testVisualization(self):
+    def testDetailDisplay(self):
         # Create the survey
         survey_id, question_id = self._create_survey('time')
 
@@ -513,8 +519,9 @@ class TimeTest(TypeTest):
 
 
 class MultipleChoiceTest(TypeTest):
+
     @report_success_status
-    def testVisualization(self):
+    def testDetailDisplay(self):
         # Create the survey
         survey_id, question_id = self._create_survey('multiple_choice',
                                                      choices=['only choice'])
@@ -553,8 +560,9 @@ class MultipleChoiceTest(TypeTest):
 
 
 class MultiSelectTest(TypeTest):
+
     @report_success_status
-    def testVisualization(self):
+    def testDetailDisplay(self):
         # Create the survey
         survey_id, question_id = self._create_survey(
             'multiple_choice',
@@ -615,20 +623,25 @@ class MultiSelectTest(TypeTest):
 
         # Get the submission page
         self.drv.get(base + '/view/' + survey_id)
-        link_xpath = '/html/body/div[2]/div/div[3]/div/div/div[' \
-                     '2]/div/table/tbody/tr/td[4]/a'
         WebDriverWait(self.drv, 5).until(EC.presence_of_element_located(
-            (By.XPATH, link_xpath))
-        )
-        submission_link = self.drv.find_element_by_xpath(link_xpath)
+            (By.CLASS_NAME, 'btn-view-submission')
+        ))
+        submission_link = self.drv.find_element_by_class_name(
+            'btn-view-submission')
         self.drv.execute_script(
             'window.scrollTo(0, {});'.format(submission_link.location['y']))
         submission_link.click()
 
+        WebDriverWait(self.drv, 5).until(
+            EC.presence_of_element_located(
+                (By.CLASS_NAME, 'submission-detail-header')
+            )
+        )
+
         # Test it
         self.assertEqual(
-            len(self.drv.find_elements_by_xpath(
-                '/html/body/div[3]/div/div[2]/div/ul/li'
+            len(self.drv.find_elements_by_css_selector(
+                'ul.survey-responses li'
             )),
             2
         )
@@ -648,8 +661,9 @@ class MultiSelectTest(TypeTest):
 
 
 class LocationTest(TypeTest):
+
     @report_success_status
-    def testVisualization(self):
+    def testDetailDisplay(self):
         # Create the survey
         survey_id, question_id = self._create_survey('location')
 
@@ -698,3 +712,4 @@ class LocationTest(TypeTest):
 
 if __name__ == '__main__':
     unittest.main()
+

@@ -14,10 +14,9 @@ Image = window.Image;
 navigator = window.navigator;
 localStorage = {};
 
-var mah_code = require('../dokomoforms/static/app.js');
-var App = mah_code.App;
-var Survey = mah_code.Survey;
-var Widgets = mah_code.Widgets;
+App = require('../dokomoforms/static/application.js').App;
+Survey = require('../dokomoforms/static/survey.js').Survey;
+Widgets = require('../dokomoforms/static/widgets.js').Widgets;
 
 
 // User interaction, "trigger" tests
@@ -87,7 +86,7 @@ describe('User next/prev tests', function(done) {
             done();
         });
 
-    it('should NOT move from question 0 to homepage when prev is clicked ', 
+    it('should move from question 0 to homepage when prev is clicked ', 
         function(done) {
             var survey = App.survey;
             var questions = survey.questions;
@@ -99,7 +98,7 @@ describe('User next/prev tests', function(done) {
 
             $(".page_nav__prev").trigger("click");
             first_question.should.equal(survey.current_question);
-            $(".question__title").html().trim().should.equal(survey.current_question.question_title); //XXX homepage
+            $("h3").html().trim().should.equal(survey.title); //XXX homepage
 
             done();
         });
@@ -134,7 +133,7 @@ describe('User next/prev tests', function(done) {
 
             first_question.should.equal(survey.current_question);
 
-            $("input").not('.dont_know_input').val("1").trigger("change");
+            $("input").not('.dont_know_input').val("1").trigger("keyup");
             first_question.answer[0].response.should.equal(1);
 
             $(".page_nav__next").trigger("click");
@@ -296,7 +295,7 @@ describe('User multiple choice tests', function(done) {
             mc_question.should.equal(survey.current_question);
 
             $('.question__select').val("other").change();
-            $('.other_input').val("poop").change();
+            $('.other_input').val("poop").trigger('keyup');
 
             mc_question.answer[choices.length].response.should.match("poop");
 
@@ -332,12 +331,12 @@ describe('User multiple choice tests', function(done) {
             mc_question.should.equal(survey.current_question);
 
             $('.question__select').val("other").change();
-            $('.other_input').val("").change(); // No value ==> you didn't fill out other
+            $('.other_input').val("").trigger('keyup'); // No value ==> you didn't fill out other
 
             $(".page_nav__next").trigger("click");
             mc_question.should.equal(survey.current_question); // cant move until answer is filled
 
-            $('.other_input').val("poop").change(); // No value ==> you didn't fill out other
+            $('.other_input').val("poop").trigger('keyup'); // No value ==> you didn't fill out other
             $(".page_nav__next").trigger("click");
             mc_question.should.not.equal(survey.current_question); // now things are good
 
@@ -451,7 +450,7 @@ describe('User dont know tests', function(done) {
 
             $(".question__btn__other input").click().trigger("change");
 
-            $(".dont_know_input").val("poop").trigger("change");
+            $(".dont_know_input").val("poop").trigger("keyup");
             first_question.answer[0].response.should.match("poop");
             first_question.answer[0].is_type_exception.should.match(true);
             done();
@@ -469,8 +468,7 @@ describe('User dont know tests', function(done) {
 
             $(".question__btn__other input").click().trigger("change");
 
-            $(".dont_know_input").val("poop").trigger("change");
-            console.log(first_question.answer);
+            $(".dont_know_input").val("poop").trigger("keyup");
             first_question.answer.length.should.equal(1);
 
             $(".question__btn__other input").click().trigger("change");
@@ -493,7 +491,7 @@ describe('User dont know tests', function(done) {
             var first_question = questions[0];
             first_question.should.equal(survey.current_question);
 
-            $('.content').find('.text_input').val('1').trigger('change');
+            $('.content').find('.text_input').val('1').trigger('keyup');
             first_question.answer[0].response.should.equal(1);
             first_question.answer[0].is_type_exception.should.equal(false);
 
@@ -522,7 +520,7 @@ describe('User dont know tests', function(done) {
             $(".question__btn__other input").trigger("click");
 
             // change value
-            $(".dont_know_input").val("poop").trigger("change");
+            $(".dont_know_input").val("poop").trigger("keyup");
             first_question.answer[0].response.should.match("poop");
             first_question.answer[0].is_type_exception.should.match(true);
 
@@ -539,5 +537,84 @@ describe('User dont know tests', function(done) {
 
            
         });
+});
+
+
+describe('User add/delete  tests', function(done) {
+
+    before(function(done) {
+        done();
+    });
+
+    beforeEach(function(done) {
+        $(".page_nav__next").off(); //XXX Find out why events are cached
+        $(".page_nav__prev").off();
+        raw_survey = require('./fixtures/survey.json');
+        App.init(raw_survey)
+        $('.start_btn').click(); // Start the survey;
+        done();
+    });
+
+    afterEach(function(done) {
+        raw_survey = null;
+        localStorage = {};
+        done();
+    });
+
+    it('should add a new input', function(done) {
+            var survey = App.survey;
+            var questions = survey.questions;
+
+            var first_question = questions[0]; // This question allows multiple
+
+            survey.render(first_question);
+
+            first_question.should.equal(survey.current_question);
+            $('.content').find('.text_input').length.should.match(1);
+            $('.question__add').click();
+            $('.content').find('.text_input').length.should.match(2);
+            done();
+
+           
+    });
+
+    it('should remove a new input', function(done) {
+            var survey = App.survey;
+            var questions = survey.questions;
+
+            var first_question = questions[0]; // This question allows multiple
+
+            survey.render(first_question);
+
+            first_question.should.equal(survey.current_question);
+            $('.content').find('.text_input').length.should.match(1);
+            $('.question__add').click();
+            $('.content').find('.text_input').length.should.match(2);
+            $('.question__minus').click();
+            $('.content').find('.text_input').length.should.match(1);
+            done();
+
+           
+    });
+
+    it('should remove a first inputs value', function(done) {
+            var survey = App.survey;
+            var questions = survey.questions;
+
+            var first_question = questions[0]; // This question allows multiple
+
+            survey.render(first_question);
+
+            first_question.should.equal(survey.current_question);
+            $('.content').find('.text_input').length.should.match(1);
+            $('.content').find('.text_input').val('123').trigger('keyup');
+            first_question.answer[0].response.should.match(123);
+            $('.question__minus').click();
+            $('.content').find('.text_input').length.should.match(1);
+            should(first_question.answer[0]).not.be.ok;
+            done();
+
+           
+    });
 });
 

@@ -17,10 +17,9 @@ localStorage = {};
 setTimeout = function(cb, time) { cb(); };
 btoa = function(str) { return ''; }; // w.e we don't need to post anyway
 
-var mah_code = require('../dokomoforms/static/app.js');
-var App = mah_code.App;
-var Survey = mah_code.Survey;
-var Widgets = mah_code.Widgets;
+App = require('../dokomoforms/static/application.js').App;
+Survey = require('../dokomoforms/static/survey.js').Survey;
+Widgets = require('../dokomoforms/static/widgets.js').Widgets;
 
 var survey = null;
 
@@ -190,6 +189,38 @@ describe('Survey unit and regression tests', function(done) {
             done();
 
         });
+
+    it('next: should accept falsy response 0',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "integer",
+                    logic: {required: true},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    logic: {},
+                    sequence_number: 2
+                },
+            ];
+
+            survey = new Survey("id", 0, questions, {});
+            questions[0].should.equal(survey.current_question);
+
+            // state SHOULD change
+            questions[0].answer = [{response:0}];
+            survey.next(NEXT);
+            questions[0].should.not.equal(survey.current_question);
+            questions[1].should.equal(survey.current_question);
+
+            done();
+
+        });
     
     it('next: should enforce required correctly for falsy response ""',
         function(done) {
@@ -294,12 +325,10 @@ describe('Survey unit and regression tests', function(done) {
             questions[1].should.not.equal(survey.current_question);
             
             // state SHOULDNT change
-            //questions[0].answer = ["date"];
-            //survey.next(NEXT);
-            //questions[0].should.equal(survey.current_question);
-            //questions[1].should.not.equal(survey.current_question);
-            //XXX VALIDATION FOR TIME NOT DONE;
-
+            questions[0].answer = ["date"];
+            survey.next(NEXT);
+            questions[0].should.equal(survey.current_question);
+            questions[1].should.not.equal(survey.current_question);
 
             done();
 
@@ -579,6 +608,69 @@ describe('Survey unit and regression tests', function(done) {
 
         });
 
+    it('next: should prevent moving on when answer is not valid',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "date",
+                    logic: {with_other: true},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    logic: {},
+                    sequence_number: 2
+                },
+            ];
+
+            survey = new Survey("id", 0, questions, {});
+            questions[0].should.equal(survey.current_question);
+
+            // state should not change
+            questions[0].answer = [{response: 'not a date', failed_validation: true}];
+            survey.next(NEXT);
+            questions[1].should.not.equal(survey.current_question);
+            questions[0].should.equal(survey.current_question);
+            
+            done();
+
+        });
+
+    it('next: should allow moving on when answer is valid',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "date",
+                    logic: {with_other: true},
+                    sequence_number: 1
+                },
+                {
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    logic: {},
+                    sequence_number: 2
+                },
+            ];
+
+            survey = new Survey("id", 0, questions, {});
+            questions[0].should.equal(survey.current_question);
+
+            // state should change
+            questions[0].answer = [{response: '1999, Dec 31st', failed_validation: false}];
+            survey.next(NEXT);
+            questions[0].should.not.equal(survey.current_question);
+            questions[1].should.equal(survey.current_question);
+            
+            done();
+
+        });
     it('submit: empty submission',
         function(done) {
             var NEXT = 1;
@@ -602,7 +694,7 @@ describe('Survey unit and regression tests', function(done) {
             App.survey = survey;
             survey.submit();
             App.sync();
-            $('.message').text().should.match("Saving failed, No questions answer in Survey!");
+            $('.message').text().should.match("Saving failed, No questions answered in Survey!");
             done();
 
         });
@@ -728,5 +820,78 @@ describe('Survey unit and regression tests', function(done) {
             //XXX CANT SOLVE MYSTERY OF NO MOCK CB
             done();
         });
+
+    it('saveState: should save question response state',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_id: '1',
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "text",
+                    logic: {required: true},
+                    sequence_number: 1
+                },
+                {
+                    question_id: '2',
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    logic: {},
+                    sequence_number: 2
+                },
+            ];
+
+            var state = JSON.parse(localStorage["id"] || '{}');
+            Object.keys(state).length.should.equal(0); // Should be empty to begin with
+            survey = new Survey("id", 0, questions, {});
+            questions[0].should.equal(survey.current_question);
+
+            questions[0].answer = [{response: Widgets._validate("text", "yo")}];
+            survey.saveState();
+            
+            var state = JSON.parse(localStorage["id"] || '{}');
+            Object.keys(state).length.should.not.equal(0); // Should be filled
+            state['1'][0].should.be.ok;
+            state['1'][0].response.should.match("yo");
+
+            done();
+
+        });
+
+    it('clearState: should clear question response state',
+        function(done) {
+            var NEXT = 1;
+            var PREV = -1;
+            var questions = [
+                {
+                    question_id: '1',
+                    question_to_sequence_number: 2,
+                    type_constraint_name: "text",
+                    logic: {required: true},
+                    sequence_number: 1
+                },
+                {
+                    question_id: '2',
+                    question_to_sequence_number: -1,
+                    type_constraint_name: "integer",
+                    logic: {},
+                    sequence_number: 2
+                },
+            ];
+
+            survey = new Survey("id", 0, questions, {});
+
+            questions[0].answer = [{response: Widgets._validate("text", "yo")}];
+            survey.saveState();
+            var state = JSON.parse(localStorage["id"] || '{}');
+            Object.keys(state).length.should.not.equal(0); // Should be filled
+
+            survey.clearState();
+            var state = JSON.parse(localStorage["id"] || '{}');
+            Object.keys(state).length.should.equal(0); // Should be empty
+            questions[0].answer.length.should.equal(0); // Should be cleared
+            done();
+    });
 });
 

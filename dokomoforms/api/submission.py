@@ -23,6 +23,7 @@ from dokomoforms.db.survey import SurveyDoesNotExistError, get_email_address, \
 
 
 class RequiredQuestionSkippedError(Exception):
+
     """A submission does not contain an answer to a required question."""
     pass
 

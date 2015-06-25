@@ -38,4 +38,14 @@
       event.preventDefault(); // prevents rewriting url (apps can still use hash values in url)
     }
   });
+
+  window.addEventListener('click', function (event) {
+    var modal = getModal(event);
+    if (modal) {
+      if (modal && modal.classList.contains('modal')) {
+        modal.classList.toggle('active');
+      }
+      event.preventDefault(); // prevents rewriting url (apps can still use hash values in url)
+    }
+  });
 }());
