@@ -138,7 +138,7 @@ class Application(tornado.web.Application):
         self.session = sessionmaker(bind=self.engine, autocommit=True)()
 
 
-def main():
+def main():  # pragma: no cover
     """Start the Tornado web server."""
     if options.kill:
         ensure_that_user_wants_to_drop_schema()
@@ -160,5 +160,5 @@ def main():
     tornado.ioloop.IOLoop.current().start()
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     main()
