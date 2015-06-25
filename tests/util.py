@@ -14,6 +14,7 @@ from dokomoforms.options import inject_options
 
 inject_options(
     schema='doko_test',
+    # debug=True,
     # fake logged in user with ID from fixture
     TEST_USER="""
         {
@@ -79,11 +80,17 @@ class DokoHTTPTest(AsyncHTTPTestCase):
     def setUp(self):
         """Insert test data"""
         super().setUp()
+        self.connection = engine.connect()
+        self.transaction = self.connection.begin()
+        self.session = Session(bind=self.connection, autocommit=True)
         load_fixtures()
 
     def tearDown(self):
         """Remove test data"""
         super().tearDown()
+        self.session.close()
+        self.transaction.rollback()
+        self.connection.close()
         unload_fixtures()
 
     def get_app(self):

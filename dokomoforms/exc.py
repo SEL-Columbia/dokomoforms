@@ -19,6 +19,15 @@ class NoSuchNodeTypeError(DokomoError):
     """
 
 
+class NoSuchSubmissionTypeError(DokomoError):
+    """
+    Raised when dokomoforms.models.submission.construct_submission
+    is called with an invalid submission_type.
+
+    The valid types are 'unathenticated' and 'authenticated'
+    """
+
+
 class NotAnAnswerTypeError(DokomoError):
     """
     Raised when dokomoforms.models.node.construct_node is called with

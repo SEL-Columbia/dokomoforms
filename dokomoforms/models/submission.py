@@ -124,3 +124,30 @@ class PublicSubmission(Submission):
             result['enumerator_user_id'] = self.enumerator_user_id
             result['enumerator_user_name'] = self.enumerator.name
         return result
+
+
+def construct_submission(*, submission_type: str, **kwargs) -> Submission:
+    """
+    Returns a subclass of dokomoforms.models.submission.Submission determined
+    by the submission_type parameter. This utility function makes it easy to
+    create an instance of a Submission subclass based on external
+    input.
+
+    See http://stackoverflow.com/q/30518484/1475412
+
+    :param submission_type: the type of submission. Must be either
+        'unauthenticated' or 'authenticated'
+    :param kwargs: the keyword arguments to pass to the constructor
+    :returns: an instance of one of the Node subtypes
+    :raises: dokomoforms.exc.NoSuchSubmissionTypeError
+    """
+
+    survey_constructor = EnumeratorOnlySubmission
+
+    if submission_type == 'unauthenticated':
+        survey_constructor = PublicSubmission
+
+    try:
+        return survey_constructor(**kwargs)
+    except KeyError:
+        raise NoSuchSubmissionTypeError(submission_type)

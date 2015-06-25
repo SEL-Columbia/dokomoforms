@@ -63,12 +63,9 @@ class BaseHandler(tornado.web.RequestHandler):
                  }
         """
 
-        try:
-            # TEST_USER must be the full json string,
-            # as indicated above
-            user = options.TEST_USER
-            return user
-        except AttributeError:
+        if options.TEST_USER:
+            return options.TEST_USER
+        else:
             user = self.get_secure_cookie('user')
             return to_unicode(user) if user else None
 

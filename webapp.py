@@ -26,7 +26,7 @@ import dokomoforms.models as models
 from dokomoforms.options import options
 import dokomoforms.handlers as handlers
 from dokomoforms.models import create_engine, Base
-from dokomoforms.api.surveys import SurveyResource
+from dokomoforms.api import SurveyResource, SubmissionResource
 
 _pwd = os.path.dirname(__file__)
 bold = '\033[1m'
@@ -111,21 +111,50 @@ class Application(tornado.web.Application):
             url(r'/user/logout/?', handlers.Logout, name='logout'),
 
             # API
-            # TODO: It's possible to add these from the Resources themselves...
-            # Should we?
-            url(r'' + self._api_root_path + '/surveys',
+
+            # Surveys
+            url(r'' + self._api_root_path + '/surveys/?',
                 SurveyResource.as_list(), name="surveys"),
             url(r'' + self._api_root_path +
                 '/surveys/({})/?'.format(UUID_REGEX),
                 SurveyResource.as_detail(),
                 name="survey"),
+            url(r'' + self._api_root_path +
+                '/surveys/({})/submit/?'.format(UUID_REGEX),
+                SurveyResource.as_view('submit'),
+                name="submit_to_survey"),
+            url(r'' + self._api_root_path +
+                '/surveys/({})/submissions/?'.format(UUID_REGEX),
+                SurveyResource.as_view('list_submissions'),
+                name="survey_list_submissions"),
+            url(r'' + self._api_root_path +
+                '/surveys/({})/stats/?'.format(UUID_REGEX),
+                SurveyResource.as_view('stats'),
+                name="survey_stats"),
+            url(r'' + self._api_root_path +
+                '/surveys/({})/activity/?'.format(UUID_REGEX),
+                SurveyResource.as_view('activity'),
+                name="survey_activity"),
+            url(r'' + self._api_root_path +
+                '/surveys/activity/?'.format(UUID_REGEX),
+                SurveyResource.as_view('activity_all'),
+                name="activity_all"),
+
+            # Submissions
+            url(r'' + self._api_root_path + '/submissions',
+                SubmissionResource.as_list(), name="sumbissions"),
+            url(r'' + self._api_root_path +
+                '/submissions/({})/?'.format(UUID_REGEX),
+                SubmissionResource.as_detail(),
+                name="submission"),
         ]
-        # if options.debug:
-        urls += [
-            url(r'/debug/create/(.+)/?', handlers.DebugUserCreationHandler),
-            url(r'/debug/login/(.+)/?', handlers.DebugLoginHandler),
-            url(r'/debug/logout/?', handlers.DebugLogoutHandler),
-        ]
+        if options.debug:
+            urls += [
+                url(r'/debug/create/(.+)/?',
+                    handlers.DebugUserCreationHandler),
+                url(r'/debug/login/(.+)/?', handlers.DebugLoginHandler),
+                url(r'/debug/logout/?', handlers.DebugLogoutHandler),
+            ]
 
         settings = {
             'template_path': os.path.join(_pwd, 'dokomoforms/templates'),
@@ -134,9 +163,8 @@ class Application(tornado.web.Application):
             'xsrf_cookies': False,
             'cookie_secret': get_cookie_secret(),
             'login_url': '/',
-            'debug': options.debug,
-            # if debug, autoreload
-            'autoreload': options.debug
+            'debug': options.dev or options.debug,
+            'autoreload': options.dev or options.autoreload
         }
         super().__init__(urls, **settings)
         self.engine = create_engine()

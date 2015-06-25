@@ -3,6 +3,15 @@ from restless.tnd import TornadoResource
 from dokomoforms.api.serializer import ModelJSONSerializer
 from dokomoforms.handlers.util import BaseAPIHandler
 
+"""
+A list of the expected query arguments
+"""
+QUERY_ARGS = [
+    'limit',
+    'offset',
+    'draw'
+]
+
 
 class BaseResource(TornadoResource):
     """
@@ -45,17 +54,20 @@ class BaseResource(TornadoResource):
         :returns: A wrapping dict
         :rtype: dict
         """
-        return {
+        response = {
             self.objects_key: data
         }
+        # add additional properties to the response object
+        full_response = self._add_meta_props(response)
+
+        return full_response
 
     def is_authenticated(self):
-        # Open everything wide!
-        # DANGEROUS, DO NOT DO IN PRODUCTION.
-        return True
+        if self.request_method() == 'GET':
+            return True
 
-        # Alternatively, if the user is logged into the site...
-        # return self.request.user.is_authenticated()
+        # Require logged-in user to POST/PUT/DELETE
+        return self.r_handler.current_user is not None
 
         # Alternatively, you could check an API key. (Need a model for this...)
         # from myapp.models import ApiKey
@@ -64,3 +76,59 @@ class BaseResource(TornadoResource):
         #     return True
         # except ApiKey.DoesNotExist:
         #     return False
+
+    def _generate_list_response(self, model_cls, **kwargs):
+        """
+        Given a model class, build up the ORM query based on query params
+        and return the query result.
+        """
+        query = self.session.query(model_cls)
+
+        limit = self.r_handler.get_query_argument('limit', False)
+        offset = self.r_handler.get_query_argument('offset', False)
+        deleted = self.r_handler.get_query_argument('show_deleted', False)
+
+        if not deleted:
+            query = query.filter(model_cls.deleted == False)
+
+        if 'filter' in kwargs:
+            query = query.filter(kwargs['filter'])
+
+        if limit:
+            query = query.limit(int(limit))
+
+        if offset:
+            query = query.offset(int(offset))
+
+        response = query.all()
+
+        return response
+
+    def _add_meta_props(self, response):
+        """
+        Add the appropriate metadata fields to the response body object. Any
+        properties that should sit alongside the list of objects being
+        returned should be added here.
+
+        e.g. if the request contained a limit, include the limit value in
+        the response:
+
+        {
+            "objects": [{
+                "title": "Testing"
+            },
+            {
+                "title": "Check One"
+            }],
+            "limit": 5
+        }
+
+        TODO: this will require a bit more sophistication, since we probably
+        don't want to just reflect query params willy nilly.
+        """
+        for prop in QUERY_ARGS:
+            prop_value = self.r_handler.get_query_argument(prop, None)
+            if prop_value is not None:
+                response[prop] = prop_value
+
+        return response

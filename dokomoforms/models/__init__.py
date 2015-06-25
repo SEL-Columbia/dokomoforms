@@ -15,6 +15,7 @@ from dokomoforms.models.survey import (
 )
 from dokomoforms.models.submission import (
     Submission, EnumeratorOnlySubmission, PublicSubmission,
+    construct_submission
 )
 from dokomoforms.models.answer import Answer, Photo, construct_answer
 
@@ -36,6 +37,7 @@ __all__ = [
     'construct_bucket', 'survey_type_enum', 'construct_survey_node'
     # Submission
     'Submission', 'EnumeratorOnlySubmission', 'PublicSubmission',
+    'construct_submission'
     # Answer
     'Answer', 'Photo', 'construct_answer',
 ]
