@@ -800,7 +800,6 @@ Widgets.facility = function(question, page, footer) {
             }];
 
             
-            //$(this).addClass('question__radio__selected');
             rbutton.prop('checked', true);
 
         });

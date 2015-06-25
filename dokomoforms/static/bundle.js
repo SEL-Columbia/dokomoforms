@@ -1,10 +1,19 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-//TODO:Remove refernce to App
+//TODO:Remove reference to App
+
+/*
+ * Revisit get facilities API call. 
+ *
+ * @lat: latitude value
+ * @lng: longitude value
+ * @rad: radius in KM
+ * @lim: number of facilities to return
+ * @cb: Success callback
+ */
 function getNearbyFacilities(lat, lng, rad, lim, cb) {
     var url = "http://staging.revisit.global/api/v0/facilities.json"; 
 
     // Revisit ajax req
-    //console/g.log("MADE EXTERNAL REVISIT QUERY");
     $.get(url,{
             near: lat + "," + lng,
             rad: rad,
@@ -31,6 +40,11 @@ function getNearbyFacilities(lat, lng, rad, lim, cb) {
     );
 }
 
+/*
+ * Revisit post facility API call. 
+ *
+ * @facility: facility object to post
+ */
 function postNewFacility(facility) {
     var url = "http://staging.revisit.global/api/v0/facilities.json"; 
 
@@ -67,7 +81,11 @@ function postNewFacility(facility) {
     });
 }
 
-// Def not legit but hey
+/*
+ * Generate objectID compatitable with Mongo for the Revisit API
+ *
+ * Returns an objectID string
+ */
 function objectID() {
     return 'xxxxxxxxxxxxxxxxxxxxxxxx'.replace(/[x]/g, function() {
         var r = Math.random()*16|0;
@@ -84,9 +102,21 @@ exports.objectID = objectID;
 var NEXT = 1;
 var PREV = -1;
 
+//XXX TODO: remove reference to Widgets
+
 var Widgets = require('./widgets.js').Widgets;
 
-//XXX TODO: remove reference to Widgets
+/*
+ * Create a new Survey
+ *
+ * @id: survey id
+ * @version: current survey version
+ * @questions: survey questions
+ * @metadata: JSON representing misc survey details
+ * @title: survey title
+ * @created_on: ISO 8601 time representing survey creation time
+ * @last_updated: ISO 8601 time representing survey last_updated time
+ */
 function Survey(id, version, questions, metadata, title, created_on, last_updated) {
     var self = this;
     this.id = id;
@@ -100,8 +130,8 @@ function Survey(id, version, questions, metadata, title, created_on, last_update
     this.last_updated = new Date(last_updated).toDateString();
 
     // Load answers from localStorage
+    // XXX Pass answers in 
     var answers = JSON.parse(localStorage[this.id] || '{}');
-    //console/g.log(answers);
     _.each(self.questions, function(question) {
         question.answer = answers[question.question_id] || [];
         // Set next pointers
@@ -126,7 +156,12 @@ function Survey(id, version, questions, metadata, title, created_on, last_update
     
 }
 
-// Search by sequence number instead of array pos
+/*
+ * Search for a survey question by sequence number
+ * @seq: Question sequence number
+ *
+ * Returns a question object
+ */
 Survey.prototype.getQuestion = function(seq) {
     var self = this;
     for(var i = 0; i < self.questions.length; i++) {
@@ -138,8 +173,14 @@ Survey.prototype.getQuestion = function(seq) {
     return null;
 };
 
-// Answer array may have elements even if answer[0] is undefined
-// Return a non empty response or an empty one if none found
+/*
+ * Return first response found in given question, 
+ * return an empty response otherwise.
+ *
+ * @question: Survey question object
+ *
+ * Returns a JSON response
+ */
 Survey.prototype.getFirstResponse = function(question) {
     for (var i = 0; i < question.answer.length; i++) {
         var answer = question.answer[i];
@@ -151,17 +192,17 @@ Survey.prototype.getFirstResponse = function(question) {
     return {'response': null, 'is_type_exception': false, 'metadata': null};
 };
 
-// Choose next question, deals with branching and back/forth movement
+/*
+ * Choose the next question to render. Calls survey.render
+ * Deals with branching and back/forth movement.
+ * 
+ * @offset: either NEXT or PREV
+ */
 Survey.prototype.next = function(offset) {
     var self = this;
 
     var next_question = offset === PREV ? this.current_question.prev : this.current_question.next;
     var index = $('.content').data('index');
-
-    var first_answer = this.getFirstResponse(this.current_question); 
-    var first_response = first_answer.response;
-    var first_is_type_exception = first_answer.is_type_exception;
-    var first_metadata = first_answer.metadata;
 
     // Backward at first question
     if (index === self.lowest_sequence_number && offset === PREV) {
@@ -177,7 +218,13 @@ Survey.prototype.next = function(offset) {
     
     // Normal forward
     if (offset === NEXT) {
-        // Is it a valid response?
+        var first_answer = this.getFirstResponse(this.current_question); 
+        var first_response = first_answer.response;
+        var first_is_type_exception = first_answer.is_type_exception;
+        var first_metadata = first_answer.metadata;
+
+
+        // Are all responses valid?
         bad_answers = [];
         this.current_question.answer.forEach(function(resp) {
             if (resp && resp.failed_validation)
@@ -190,6 +237,7 @@ Survey.prototype.next = function(offset) {
             + self.current_question.type_constraint_name, 'Survey Response Error', 'message-error');
             return;
         }
+
 
         // Are you required?
         if (this.current_question.logic.required && (first_response === null)) {
@@ -222,7 +270,12 @@ Survey.prototype.next = function(offset) {
     self.render(next_question);
 };
 
-// Render template for given question
+/*
+ * Render template for given question.
+ * Render save page if question object is null.
+ *
+ * @question: A survey question object
+ */
 Survey.prototype.render = function(question) {
     $('header').removeClass('title-extended');
     $('.title_menu').hide();
@@ -236,6 +289,7 @@ Survey.prototype.render = function(question) {
         Widgets.interval = null;
     }
 
+    // Determine index
     var index = question ? question.sequence_number : this.questions.length + 1;
 
     // Update navs
@@ -293,7 +347,8 @@ Survey.prototype.render = function(question) {
         // Attach widget events
         Widgets[question.type_constraint_name](question, content, barfoot);
 
-    } else {
+        
+    } else { //XXX Move all of this
         // Add submit button
         barfootHTML = $('#template_footer__submit').html();
         barfootTemplate = _.template(barfootHTML);
@@ -335,7 +390,7 @@ Survey.prototype.render = function(question) {
             });
     }
     
-    // Update nav
+    // Update current question number
     $('.page_nav__progress')
         .text((index) + ' / ' + (this.questions.length + 1));
     
@@ -345,9 +400,11 @@ Survey.prototype.render = function(question) {
         self.next(offset);
     });
     
-
 };
 
+/*
+ * Save the current state of the survey (i.e question answers) to localStorage.
+ */
 Survey.prototype.saveState = function() {
     var self = this;
     var answers = {};
@@ -356,12 +413,18 @@ Survey.prototype.saveState = function() {
     _.each(self.questions, function(question) {
         answers[question.question_id] = question.answer;
     });
+
     answers['location'] = App.location;
 
     // Save answers in storage
+    // XXX Move this out of here
     localStorage[self.id] = JSON.stringify(answers);
 }
 
+/*
+ * Clear the current state of the survey (i.e question answers) and remove the 
+ * state in localStorage.
+ */
 Survey.prototype.clearState = function() {
     var self = this;
 
@@ -369,21 +432,25 @@ Survey.prototype.clearState = function() {
     _.each(self.questions, function(question) {
         question.answer = [];
     });
+
     App.location = {};
 
     // Clear answers in storage
+    // XXX Move this out of here
     localStorage[self.id] = JSON.stringify({});
 }
 
+/*
+ * 'Submit' survey to localStorage and App.unsynced array after transforming 
+ * survey to Dokomoforms submission API form.
+ */
 Survey.prototype.submit = function() {
     var self = this;
 
     // Prepare POST request
     var survey_answers = [];
     self.questions.forEach(function(q) {
-        //console.log('q', q);
         q.answer.forEach(function(ans, ind) {
-
             if (ans == null) {
                 return;
             }
@@ -439,6 +506,7 @@ Survey.prototype.submit = function() {
       return;
     } 
 
+    // XXX Move everything below out of here
     // Save Revisit data 
     localStorage.setItem("facilities", 
             JSON.stringify(App.facilities));
@@ -468,27 +536,35 @@ var OFF = false;
 var NUM_FAC = 256;
 var FAC_RAD = 2; //in KM
 
+//TODO:Remove refernce to App
+//TODO: why the hell does every _method have a different args order
 var getNearbyFacilities = require('./facilities.js').getNearbyFacilities;
 var objectID = require('./facilities.js').objectID;
 
-//TODO:Remove refernce to App
-
+/*
+ * Widgets for every question type. Called after page template rendering.
+ * Responsible for setting the question object's answer and dealing with all 
+ * user events.
+ *
+ * Underscore methods are helper methods that encapsulate functionality that can
+ * appear on any question type.
+ */
 var Widgets = {
     interval: null,
 };
 
-// This widget's events. Called after page template rendering.
-// Responsible for setting the question object's answer
-//
-// question: question data
-// page: the widget container DOM element
-// type: type of widget, handles all accept
-//
-//      multiple choice
-//      facility
-//      note
-//
-// All widgets store results in the questions.answer array
+/*
+ * Generic widget event handler.
+ *
+ * All widgets store results in the questions.answer array
+ * @question: question data
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element
+ * @type: type of widget, handles all except
+ *      multiple choice
+ *      facility
+ *      note
+ */
 Widgets._input = function(question, page, footer, type) {
     var self = this;
     
@@ -496,7 +572,7 @@ Widgets._input = function(question, page, footer, type) {
     self._renderRepeat(page, footer, type, question);
 
     //Render don't know
-    self._renderOther(page, footer, type, question);
+    self._renderDontKnow(page, footer, type, question);
 
     // Clean up answer array, short circuits on is_type_exception responses
     self._orderAnswerArray(page, footer, question, type);
@@ -523,7 +599,13 @@ Widgets._input = function(question, page, footer, type) {
     
 };
 
-// Handle creating multiple inputs for widgets that support it 
+/*
+ * Handle creating multiple inputs for widgets that support it 
+ *
+ * @page: the widget container DOM element
+ * @input: input field to base new input on
+ * @question: question data
+ */
 Widgets._addNewInput = function(page, input, question) {
     if (question.allow_multiple) { //XXX: Technically this btn clickable => allow_multiple 
         input.parent()
@@ -535,6 +617,18 @@ Widgets._addNewInput = function(page, input, question) {
     }
 };
 
+/*
+ * Remove the input and specified index. 
+ * Removes answer if input is the only input. 
+ * Reorders answer array to keep answer array index in sync with DOM.
+ *
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element (orderAnswerArray requirement)
+ * @type: question type name (XXX: Redundant with question object)
+ * @inputs: current inputs on page array
+ * @question: question data
+ * @index: index inputs array for which input to remove
+ */
 Widgets._removeInput = function(page, footer, type, inputs, question, index) {
     var self = this;
     if (question.allow_multiple && (inputs.length > 1)) { //XXX: Technically this btn clickable => allow_multiple 
@@ -553,6 +647,14 @@ Widgets._removeInput = function(page, footer, type, inputs, question, index) {
         .focus()
 };
 
+/*
+ * Recreates answer array to keep index values in sync with DOM input positions.
+ *
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element to search for dont_know responses
+ * @question: question data
+ * @type: question type name (XXX: Redundant with question object)
+ */
 Widgets._orderAnswerArray = function(page, footer, question, type) {
     question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
     var self = this;
@@ -587,9 +689,16 @@ Widgets._orderAnswerArray = function(page, footer, question, type) {
     });
 }
 
-// Render 'don't know' section if question has with_other logic
-// Display response and alter widget state if first response is other
-Widgets._renderOther = function(page, footer, type, question) {
+/*
+ * Render 'don't know' section if question has with_other logic
+ * Display response and alter widget state if first response is other
+ *
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element to search for dont_know responses
+ * @type: question type name (XXX: Redundant with question object)
+ * @question: question data
+ */
+Widgets._renderDontKnow = function(page, footer, type, question) {
     var self = this;
     // Render don't know feature 
     if (question.logic.allow_dont_know) {
@@ -606,15 +715,15 @@ Widgets._renderOther = function(page, footer, type, question) {
         var other_response = question.answer && question.answer[0] && question.answer[0].is_type_exception && question.answer[0].metadata.type_exception === "dont_know";
         if (other_response) {
             $('.question__btn__other').find('input').prop('checked', true);
-            this._toggleOther(page, footer, type, question, ON);
+            this._toggleDontKnow(page, footer, type, question, ON);
         }
 
-        // Click the other button when you don't know answer
+        // Clicking the dont-know checkbox handler
         $(footer)
             .find('.question__btn__other :checkbox')
             .change(function() { 
                 var selected = $(this).is(':checked'); 
-                self._toggleOther(page, footer, type, question, selected);
+                self._toggleDontKnow(page, footer, type, question, selected);
             });
 
 
@@ -635,9 +744,17 @@ Widgets._renderOther = function(page, footer, type, question) {
         }
 }
 
-// Toggle the 'don't know' section based on passed in state value on given page
-// Alters question.answer array
-Widgets._toggleOther = function(page, footer, type, question, state) {
+/*
+ * Toggle the 'don't know' section based on passed in state value on given page
+ * Alters question.answer array
+ *
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element to search for dont_know responses
+ * @type: question type name (XXX: Redundant with question object)
+ * @question: question data
+ * @state: ON or OFF
+ */
+Widgets._toggleDontKnow = function(page, footer, type, question, state) {
     var self = this;
     question.answer = [];
     
@@ -729,7 +846,14 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
     }
 }
 
-// Render +/- buttons on given page
+/*
+ * Render add button on given page. Set up add and remove input handlers.
+ *
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element to search for dont_know responses
+ * @type: question type name (XXX: Redundant with question object)
+ * @question: question data
+ */
 Widgets._renderRepeat = function(page, footer, type, question) {
     var self = this;
     // Render add/minus input buttons 
@@ -760,7 +884,13 @@ Widgets._renderRepeat = function(page, footer, type, question) {
     }
 }
 
-// Basic input validation
+/* 
+ * Basic input validation
+ *
+ * @type: question type name used to determine what validation to use
+ * @answer: response to validate
+ * @logic: JSON for question specific logic to enforce. (XXX USE THIS)
+ */
 Widgets._validate = function(type, answer, logic) {
     //XXX enforce logic
     var val = null;
@@ -819,33 +949,78 @@ Widgets._validate = function(type, answer, logic) {
     return val;
 };
 
+/* 
+ * Text Widget
+ *
+ * @question: question data
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element
+ */
 Widgets.text = function(question, page, footer) {
     this._input(question, page, footer, "text");
 };
 
+/* 
+ * Integer Widget
+ *
+ * @question: question data
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element
+ */
 Widgets.integer = function(question, page, footer) {
     this._input(question, page, footer, "integer");
 };
 
+/* 
+ * Decimal Widget
+ *
+ * @question: question data
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element
+ */
 Widgets.decimal = function(question, page, footer) {
     this._input(question, page, footer, "decimal");
 };
 
+/* 
+ * Date Widget
+ *
+ * @question: question data
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element
+ */
 Widgets.date = function(question, page, footer) {
     //XXX: TODO change input thing to be jquery-ey
     this._input(question, page, footer, "date"); //XXX: Fix validation
 };
 
+/* 
+ * Time Widget
+ *
+ * @question: question data
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element
+ */
 Widgets.time = function(question, page, footer) {
     //XXX: TODO change input thing to be jquery-ey
     this._input(question, page, footer, "time"); //XXX: Fix validation
 };
 
+/* 
+ * Note Widget
+ */
 Widgets.note = function() {
 };
 
-// Multiple choice and multiple choice with other are handled here by same func
-// XXX: possibly two widgets (multi select and multi choice)
+/* 
+ * Multiple Choice Widget
+ *
+ * @question: question data
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element
+ *
+ * Multiple choice and multiple select are handled here.
+ */
 Widgets.multiple_choice = function(question, page, footer) {
     var self = this;
 
@@ -858,7 +1033,7 @@ Widgets.multiple_choice = function(question, page, footer) {
 
 
     //Render don't know
-    self._renderOther(page, footer, 'multiple_choice', question);
+    self._renderDontKnow(page, footer, 'multiple_choice', question);
 
     // handle change for text field
     var $other = $(page)
@@ -920,11 +1095,6 @@ Widgets.multiple_choice = function(question, page, footer) {
                 } 
              });
 
-            // Toggle off other if deselected on change event 
-            //if (svals.indexOf('other') < 0) { 
-            //    $other.hide();
-            //}
-            
         });
 
     // Selection is handled in _template however toggling of view is done here
@@ -936,6 +1106,15 @@ Widgets.multiple_choice = function(question, page, footer) {
     }
 };
 
+/* 
+ * Location Widget
+ *
+ * @question: question data
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element
+ *
+ * Note: Disables input field change handler.
+ */
 Widgets.location = function(question, page, footer) {
     // generic setup
     this._input(question, page, footer, "location");
@@ -993,7 +1172,18 @@ Widgets.location = function(question, page, footer) {
         .off('keyup');
 };
 
-// Similar to location however you cannot just add location, 
+/* 
+ * Facility Widget
+ *
+ * Toggles between two widget states: 
+ *      add facilities state 
+ *      select facility state
+ *
+ * @question: question data
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element
+ *
+ */
 Widgets.facility = function(question, page, footer) {
     // Hide add button by default
     $('.facility__btn').hide();
@@ -1028,7 +1218,11 @@ Widgets.facility = function(question, page, footer) {
         }
     }
 
-    // handles calling drawPoint gets called once per getNearby call 
+    /*
+     * Create radio buttons for the nearest facilities in facilities_dict.
+     *
+     * @facilities_dict: A dict of facilities with the facility uuids as keys
+     */
     function drawFacilities(facilities_dict) {
 
         var loc = App.location;
@@ -1087,6 +1281,14 @@ Widgets.facility = function(question, page, footer) {
     } 
 
 
+    /*
+     * Create and append a radio button
+     * @value: value to be stored in value field of button
+     * @name: label to be displayed next to button
+     * @sector: sector to be displayed under button
+     * @distance: distance to be displayed under button
+     * @region: where to append new button.
+     */
     function addNewButton(value, name, sector, distance, region) {
         var div_html = "<div class='question__radio'>"
             + "<input type='radio' id='"+ value + "' name='facility' value='"+ value +"'/>"
@@ -1248,8 +1450,6 @@ Widgets.facility = function(question, page, footer) {
 exports.Widgets = Widgets; 
 
 },{"./facilities.js":1}],4:[function(require,module,exports){
-var NEXT = 1;
-var PREV = -1;
 var NUM_FAC = 256;
 var FAC_RAD = 2; //in KM
 
@@ -1258,14 +1458,23 @@ var postNewFacility = require('./facilities.js').postNewFacility;
 var Widgets = require('./widgets.js').Widgets;
 var Survey = require('./survey.js').Survey;
 
+// In memory variables used across the webapp
 var App = {
     unsynced: [], // unsynced surveys
     facilities: [], // revisit facilities
     unsynced_facilities: {}, // new facilities
     location: {},
-    submitter_name: ''
+    submitter_name: '',
+    submitter_email: '',
+    survey: null,
 };
 
+/*
+ * Initilize the webapp by creating a new survey, and reading any values saved 
+ * in storage. Function is called on page load.
+ *
+ * @survey: JSON representation of the survey
+ */
 App.init = function(survey) {
     var self = this;
     self.survey = new Survey(survey.survey_id, 
@@ -1283,10 +1492,11 @@ App.init = function(survey) {
     self.submitter_name = localStorage.name || "";
     self.submitter_email = localStorage.email || "";
     
-    // Init if unsynced is undefined
+    // Set up an empty dictonary if no unsynced surveys are found
     if (!localStorage.unsynced) {
         localStorage.unsynced = JSON.stringify({});
     }
+
     // Load up any unsynced submissions
     App.unsynced = JSON.parse(localStorage.unsynced)[self.survey.id] || []; 
 
@@ -1305,18 +1515,20 @@ App.init = function(survey) {
         );
     }
 
-    // AppCache updates
+    // Listen to appcache updates, reload JS.
     window.applicationCache.addEventListener('updateready', function() {
-        alert('app updated, reloading...');
+        console.log('app updated, reloading...');
         window.location.reload();
     });
 
+    // Clicking burger
     $('header')
         .on('click', '.menu', function(e) {
             $('header').toggleClass('title-extended');
             $('.title_menu').toggle();
         });
 
+    // Clear all survey data
     $('header')
         .on('click', '.menu_clear', function(e) {
             $('header').toggleClass('title-extended');
@@ -1327,6 +1539,7 @@ App.init = function(survey) {
             App.message('All survey data erased.', 'Surveys Nuked', 'message-warning');
         });
 
+    // Clear active survey data
     $('header')
         .on('click', '.menu_restart', function(e) {
             $('header').toggleClass('title-extended');
@@ -1337,6 +1550,7 @@ App.init = function(survey) {
             App.message('Active survey has been cleared.', 'Survey Reset', 'message-warning');
         });
 
+    // Save active survey state
     $('header')
         .on('click', '.menu_save', function(e) {
             $('header').toggleClass('title-extended');
@@ -1346,9 +1560,17 @@ App.init = function(survey) {
             App.message('Active survey has been saved.', 'Survey Saved', 'message-success');
         });
         
+    // Begin survey at Application splash page
     App.splash();
 };
 
+/*
+ * Submit all unsynced surveys to Dokomoforms. Should only be called on when 
+ * device has a web connection. Calls App.submit
+ *
+ * Removes successfully submitted survey from unsynced array and localStorage. 
+ * Launches modal on completion.
+ */
 App.sync = function() {
     var self = this;
     //$('.submit_modal')[0].click(); // Pop Up Submitting Modal
@@ -1358,9 +1580,11 @@ App.sync = function() {
         //$('.submit_modal')[0].click(); // Remove submitting modal;
         App.splash();
         if (!App.unsynced.length) {
-            App.message('All ' + self.count + ' surveys synced succesfully.', 'Survey Synced', 'message-success');
+            App.message('All ' + self.count + ' surveys synced succesfully.', 
+                    'Survey Synced', 'message-success');
         } else {
-            App.message(App.unsynced.length + ' survey(s) failed to sync succesfully. Please try again later.', 'Survey Sync Failed', 'message-error');
+            App.message(App.unsynced.length + ' survey(s) failed to sync succesfully. Please try again later.', 
+                    'Survey Sync Failed', 'message-error');
         }
     };
     _.each(App.unsynced, function(survey) {
@@ -1391,40 +1615,49 @@ App.sync = function() {
         );
     });
 
-    // Facilities junk
+    // Attempt to submit unsynced facilities to Revisit
     _.map(App.unsynced_facilities, function(facility) {
         postNewFacility(facility); 
     });
 };
 
+/*
+ * Trigger modal event, powered by ratchet. 
+ *
+ * @text: modal message
+ * @title: modal title
+ * @style: modal type (possible classes in css)
+ */
 App.message = function(text, title, style) {
-    // Shows a message to user
-    // E.g. "Your survey has been submitted"
     $('.message_btn')[0].click();
     
     $('.modal_header').empty()
-        //XXX Look into doing this in a more clean way
+        // Remove any posible class attached to modal div
         .removeClass('message-primary')
         .removeClass('message-error')
         .removeClass('message-warning')
         .removeClass('message-success')
+        // Attach requested class
         .addClass(style)
         .text(title);
-
 
     // Message text region
     $('.message')
         .text(text);
 };
 
+/* 
+ * Webapp splash page, text loaded from template.
+ * This is where user syncs and starts surveys.
+ */ 
 App.splash = function() {
     $('header').removeClass('title-extended');
     $('.title_menu').hide();
     var self = this;
     var survey = self.survey;
-    $('.overlay').hide(); // Always remove overlay after moving
+    $('.overlay').hide(); // Always remove overlay after moving.
 
-    // Update page nav bar
+    // Update page nav and footer
     var barnav  = $('.bar-nav');
     var barnavHTML = $('#template_nav__splash').html();
     var barnavTemplate = _.template(barnavHTML);
@@ -1476,14 +1709,19 @@ App.splash = function() {
         .one('click', function() {
             if (navigator.onLine) {
                 App.sync();
-                // Reload page to update template values
-                App.splash();
             } else {
                 App.message('Please connect to the internet first.', 'Connection Error', 'message-warning');
             }
         });
 };
 
+/*
+ * Submits a single survey to Dokomoforms.
+ *
+ * @survey: Object representation of a completed survey
+ * @done: Successful submission callback
+ * @fail: Failed submission callback
+ */
 App.submit = function(survey, done, fail) {
     function getCookie(name) {
         var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
@@ -1519,7 +1757,7 @@ App.submit = function(survey, done, fail) {
 exports = exports || {};
 exports.App = App;
 
-//For window
+// For window
 window = window || {};
 window.App = App;
 
