@@ -3,27 +3,35 @@ var OFF = false;
 var NUM_FAC = 256;
 var FAC_RAD = 2; //in KM
 
+//TODO:Remove refernce to App
+//TODO: why the hell does every _method have a different args order
 var getNearbyFacilities = require('./facilities.js').getNearbyFacilities;
 var objectID = require('./facilities.js').objectID;
 
-//TODO:Remove refernce to App
-
+/*
+ * Widgets for every question type. Called after page template rendering.
+ * Responsible for setting the question object's answer and dealing with all 
+ * user events.
+ *
+ * Underscore methods are helper methods that encapsulate functionality that can
+ * appear on any question type.
+ */
 var Widgets = {
     interval: null,
 };
 
-// This widget's events. Called after page template rendering.
-// Responsible for setting the question object's answer
-//
-// question: question data
-// page: the widget container DOM element
-// type: type of widget, handles all accept
-//
-//      multiple choice
-//      facility
-//      note
-//
-// All widgets store results in the questions.answer array
+/*
+ * Generic widget event handler.
+ *
+ * All widgets store results in the questions.answer array
+ * @question: question data
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element
+ * @type: type of widget, handles all except
+ *      multiple choice
+ *      facility
+ *      note
+ */
 Widgets._input = function(question, page, footer, type) {
     var self = this;
     
@@ -31,7 +39,7 @@ Widgets._input = function(question, page, footer, type) {
     self._renderRepeat(page, footer, type, question);
 
     //Render don't know
-    self._renderOther(page, footer, type, question);
+    self._renderDontKnow(page, footer, type, question);
 
     // Clean up answer array, short circuits on is_type_exception responses
     self._orderAnswerArray(page, footer, question, type);
@@ -58,7 +66,13 @@ Widgets._input = function(question, page, footer, type) {
     
 };
 
-// Handle creating multiple inputs for widgets that support it 
+/*
+ * Handle creating multiple inputs for widgets that support it 
+ *
+ * @page: the widget container DOM element
+ * @input: input field to base new input on
+ * @question: question data
+ */
 Widgets._addNewInput = function(page, input, question) {
     if (question.allow_multiple) { //XXX: Technically this btn clickable => allow_multiple 
         input.parent()
@@ -70,6 +84,18 @@ Widgets._addNewInput = function(page, input, question) {
     }
 };
 
+/*
+ * Remove the input and specified index. 
+ * Removes answer if input is the only input. 
+ * Reorders answer array to keep answer array index in sync with DOM.
+ *
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element (orderAnswerArray requirement)
+ * @type: question type name (XXX: Redundant with question object)
+ * @inputs: current inputs on page array
+ * @question: question data
+ * @index: index inputs array for which input to remove
+ */
 Widgets._removeInput = function(page, footer, type, inputs, question, index) {
     var self = this;
     if (question.allow_multiple && (inputs.length > 1)) { //XXX: Technically this btn clickable => allow_multiple 
@@ -88,6 +114,14 @@ Widgets._removeInput = function(page, footer, type, inputs, question, index) {
         .focus()
 };
 
+/*
+ * Recreates answer array to keep index values in sync with DOM input positions.
+ *
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element to search for dont_know responses
+ * @question: question data
+ * @type: question type name (XXX: Redundant with question object)
+ */
 Widgets._orderAnswerArray = function(page, footer, question, type) {
     question.answer = []; //XXX: Must be reinit'd to prevent sparse array problems
     var self = this;
@@ -122,9 +156,16 @@ Widgets._orderAnswerArray = function(page, footer, question, type) {
     });
 }
 
-// Render 'don't know' section if question has with_other logic
-// Display response and alter widget state if first response is other
-Widgets._renderOther = function(page, footer, type, question) {
+/*
+ * Render 'don't know' section if question has with_other logic
+ * Display response and alter widget state if first response is other
+ *
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element to search for dont_know responses
+ * @type: question type name (XXX: Redundant with question object)
+ * @question: question data
+ */
+Widgets._renderDontKnow = function(page, footer, type, question) {
     var self = this;
     // Render don't know feature 
     if (question.logic.allow_dont_know) {
@@ -141,15 +182,15 @@ Widgets._renderOther = function(page, footer, type, question) {
         var other_response = question.answer && question.answer[0] && question.answer[0].is_type_exception && question.answer[0].metadata.type_exception === "dont_know";
         if (other_response) {
             $('.question__btn__other').find('input').prop('checked', true);
-            this._toggleOther(page, footer, type, question, ON);
+            this._toggleDontKnow(page, footer, type, question, ON);
         }
 
-        // Click the other button when you don't know answer
+        // Clicking the dont-know checkbox handler
         $(footer)
             .find('.question__btn__other :checkbox')
             .change(function() { 
                 var selected = $(this).is(':checked'); 
-                self._toggleOther(page, footer, type, question, selected);
+                self._toggleDontKnow(page, footer, type, question, selected);
             });
 
 
@@ -170,9 +211,17 @@ Widgets._renderOther = function(page, footer, type, question) {
         }
 }
 
-// Toggle the 'don't know' section based on passed in state value on given page
-// Alters question.answer array
-Widgets._toggleOther = function(page, footer, type, question, state) {
+/*
+ * Toggle the 'don't know' section based on passed in state value on given page
+ * Alters question.answer array
+ *
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element to search for dont_know responses
+ * @type: question type name (XXX: Redundant with question object)
+ * @question: question data
+ * @state: ON or OFF
+ */
+Widgets._toggleDontKnow = function(page, footer, type, question, state) {
     var self = this;
     question.answer = [];
     
@@ -264,7 +313,14 @@ Widgets._toggleOther = function(page, footer, type, question, state) {
     }
 }
 
-// Render +/- buttons on given page
+/*
+ * Render add button on given page. Set up add and remove input handlers.
+ *
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element to search for dont_know responses
+ * @type: question type name (XXX: Redundant with question object)
+ * @question: question data
+ */
 Widgets._renderRepeat = function(page, footer, type, question) {
     var self = this;
     // Render add/minus input buttons 
@@ -295,7 +351,13 @@ Widgets._renderRepeat = function(page, footer, type, question) {
     }
 }
 
-// Basic input validation
+/* 
+ * Basic input validation
+ *
+ * @type: question type name used to determine what validation to use
+ * @answer: response to validate
+ * @logic: JSON for question specific logic to enforce. (XXX USE THIS)
+ */
 Widgets._validate = function(type, answer, logic) {
     //XXX enforce logic
     var val = null;
@@ -354,33 +416,78 @@ Widgets._validate = function(type, answer, logic) {
     return val;
 };
 
+/* 
+ * Text Widget
+ *
+ * @question: question data
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element
+ */
 Widgets.text = function(question, page, footer) {
     this._input(question, page, footer, "text");
 };
 
+/* 
+ * Integer Widget
+ *
+ * @question: question data
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element
+ */
 Widgets.integer = function(question, page, footer) {
     this._input(question, page, footer, "integer");
 };
 
+/* 
+ * Decimal Widget
+ *
+ * @question: question data
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element
+ */
 Widgets.decimal = function(question, page, footer) {
     this._input(question, page, footer, "decimal");
 };
 
+/* 
+ * Date Widget
+ *
+ * @question: question data
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element
+ */
 Widgets.date = function(question, page, footer) {
     //XXX: TODO change input thing to be jquery-ey
     this._input(question, page, footer, "date"); //XXX: Fix validation
 };
 
+/* 
+ * Time Widget
+ *
+ * @question: question data
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element
+ */
 Widgets.time = function(question, page, footer) {
     //XXX: TODO change input thing to be jquery-ey
     this._input(question, page, footer, "time"); //XXX: Fix validation
 };
 
+/* 
+ * Note Widget
+ */
 Widgets.note = function() {
 };
 
-// Multiple choice and multiple choice with other are handled here by same func
-// XXX: possibly two widgets (multi select and multi choice)
+/* 
+ * Multiple Choice Widget
+ *
+ * @question: question data
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element
+ *
+ * Multiple choice and multiple select are handled here.
+ */
 Widgets.multiple_choice = function(question, page, footer) {
     var self = this;
 
@@ -393,7 +500,7 @@ Widgets.multiple_choice = function(question, page, footer) {
 
 
     //Render don't know
-    self._renderOther(page, footer, 'multiple_choice', question);
+    self._renderDontKnow(page, footer, 'multiple_choice', question);
 
     // handle change for text field
     var $other = $(page)
@@ -455,11 +562,6 @@ Widgets.multiple_choice = function(question, page, footer) {
                 } 
              });
 
-            // Toggle off other if deselected on change event 
-            //if (svals.indexOf('other') < 0) { 
-            //    $other.hide();
-            //}
-            
         });
 
     // Selection is handled in _template however toggling of view is done here
@@ -471,6 +573,15 @@ Widgets.multiple_choice = function(question, page, footer) {
     }
 };
 
+/* 
+ * Location Widget
+ *
+ * @question: question data
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element
+ *
+ * Note: Disables input field change handler.
+ */
 Widgets.location = function(question, page, footer) {
     // generic setup
     this._input(question, page, footer, "location");
@@ -528,7 +639,18 @@ Widgets.location = function(question, page, footer) {
         .off('keyup');
 };
 
-// Similar to location however you cannot just add location, 
+/* 
+ * Facility Widget
+ *
+ * Toggles between two widget states: 
+ *      add facilities state 
+ *      select facility state
+ *
+ * @question: question data
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element
+ *
+ */
 Widgets.facility = function(question, page, footer) {
     // Hide add button by default
     $('.facility__btn').hide();
@@ -563,7 +685,11 @@ Widgets.facility = function(question, page, footer) {
         }
     }
 
-    // handles calling drawPoint gets called once per getNearby call 
+    /*
+     * Create radio buttons for the nearest facilities in facilities_dict.
+     *
+     * @facilities_dict: A dict of facilities with the facility uuids as keys
+     */
     function drawFacilities(facilities_dict) {
 
         var loc = App.location;
@@ -622,6 +748,14 @@ Widgets.facility = function(question, page, footer) {
     } 
 
 
+    /*
+     * Create and append a radio button
+     * @value: value to be stored in value field of button
+     * @name: label to be displayed next to button
+     * @sector: sector to be displayed under button
+     * @distance: distance to be displayed under button
+     * @region: where to append new button.
+     */
     function addNewButton(value, name, sector, distance, region) {
         var div_html = "<div class='question__radio'>"
             + "<input type='radio' id='"+ value + "' name='facility' value='"+ value +"'/>"

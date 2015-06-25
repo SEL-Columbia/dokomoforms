@@ -1,9 +1,18 @@
-//TODO:Remove refernce to App
+//TODO:Remove reference to App
+
+/*
+ * Revisit get facilities API call. 
+ *
+ * @lat: latitude value
+ * @lng: longitude value
+ * @rad: radius in KM
+ * @lim: number of facilities to return
+ * @cb: Success callback
+ */
 function getNearbyFacilities(lat, lng, rad, lim, cb) {
     var url = "http://staging.revisit.global/api/v0/facilities.json"; 
 
     // Revisit ajax req
-    //console/g.log("MADE EXTERNAL REVISIT QUERY");
     $.get(url,{
             near: lat + "," + lng,
             rad: rad,
@@ -30,6 +39,11 @@ function getNearbyFacilities(lat, lng, rad, lim, cb) {
     );
 }
 
+/*
+ * Revisit post facility API call. 
+ *
+ * @facility: facility object to post
+ */
 function postNewFacility(facility) {
     var url = "http://staging.revisit.global/api/v0/facilities.json"; 
 
@@ -66,7 +80,11 @@ function postNewFacility(facility) {
     });
 }
 
-// Def not legit but hey
+/*
+ * Generate objectID compatitable with Mongo for the Revisit API
+ *
+ * Returns an objectID string
+ */
 function objectID() {
     return 'xxxxxxxxxxxxxxxxxxxxxxxx'.replace(/[x]/g, function() {
         var r = Math.random()*16|0;

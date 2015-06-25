@@ -1,5 +1,3 @@
-var NEXT = 1;
-var PREV = -1;
 var NUM_FAC = 256;
 var FAC_RAD = 2; //in KM
 
@@ -8,14 +6,23 @@ var postNewFacility = require('./facilities.js').postNewFacility;
 var Widgets = require('./widgets.js').Widgets;
 var Survey = require('./survey.js').Survey;
 
+// In memory variables used across the webapp
 var App = {
     unsynced: [], // unsynced surveys
     facilities: [], // revisit facilities
     unsynced_facilities: {}, // new facilities
     location: {},
-    submitter_name: ''
+    submitter_name: '',
+    submitter_email: '',
+    survey: null,
 };
 
+/*
+ * Initilize the webapp by creating a new survey, and reading any values saved 
+ * in storage. Function is called on page load.
+ *
+ * @survey: JSON representation of the survey
+ */
 App.init = function(survey) {
     var self = this;
     self.survey = new Survey(survey.survey_id, 
@@ -33,10 +40,11 @@ App.init = function(survey) {
     self.submitter_name = localStorage.name || "";
     self.submitter_email = localStorage.email || "";
     
-    // Init if unsynced is undefined
+    // Set up an empty dictonary if no unsynced surveys are found
     if (!localStorage.unsynced) {
         localStorage.unsynced = JSON.stringify({});
     }
+
     // Load up any unsynced submissions
     App.unsynced = JSON.parse(localStorage.unsynced)[self.survey.id] || []; 
 
@@ -55,18 +63,20 @@ App.init = function(survey) {
         );
     }
 
-    // AppCache updates
+    // Listen to appcache updates, reload JS.
     window.applicationCache.addEventListener('updateready', function() {
-        alert('app updated, reloading...');
+        console.log('app updated, reloading...');
         window.location.reload();
     });
 
+    // Clicking burger
     $('header')
         .on('click', '.menu', function(e) {
             $('header').toggleClass('title-extended');
             $('.title_menu').toggle();
         });
 
+    // Clear all survey data
     $('header')
         .on('click', '.menu_clear', function(e) {
             $('header').toggleClass('title-extended');
@@ -77,6 +87,7 @@ App.init = function(survey) {
             App.message('All survey data erased.', 'Surveys Nuked', 'message-warning');
         });
 
+    // Clear active survey data
     $('header')
         .on('click', '.menu_restart', function(e) {
             $('header').toggleClass('title-extended');
@@ -87,6 +98,7 @@ App.init = function(survey) {
             App.message('Active survey has been cleared.', 'Survey Reset', 'message-warning');
         });
 
+    // Save active survey state
     $('header')
         .on('click', '.menu_save', function(e) {
             $('header').toggleClass('title-extended');
@@ -96,9 +108,17 @@ App.init = function(survey) {
             App.message('Active survey has been saved.', 'Survey Saved', 'message-success');
         });
         
+    // Begin survey at Application splash page
     App.splash();
 };
 
+/*
+ * Submit all unsynced surveys to Dokomoforms. Should only be called on when 
+ * device has a web connection. Calls App.submit
+ *
+ * Removes successfully submitted survey from unsynced array and localStorage. 
+ * Launches modal on completion.
+ */
 App.sync = function() {
     var self = this;
     //$('.submit_modal')[0].click(); // Pop Up Submitting Modal
@@ -108,9 +128,11 @@ App.sync = function() {
         //$('.submit_modal')[0].click(); // Remove submitting modal;
         App.splash();
         if (!App.unsynced.length) {
-            App.message('All ' + self.count + ' surveys synced succesfully.', 'Survey Synced', 'message-success');
+            App.message('All ' + self.count + ' surveys synced succesfully.', 
+                    'Survey Synced', 'message-success');
         } else {
-            App.message(App.unsynced.length + ' survey(s) failed to sync succesfully. Please try again later.', 'Survey Sync Failed', 'message-error');
+            App.message(App.unsynced.length + ' survey(s) failed to sync succesfully. Please try again later.', 
+                    'Survey Sync Failed', 'message-error');
         }
     };
     _.each(App.unsynced, function(survey) {
@@ -141,40 +163,49 @@ App.sync = function() {
         );
     });
 
-    // Facilities junk
+    // Attempt to submit unsynced facilities to Revisit
     _.map(App.unsynced_facilities, function(facility) {
         postNewFacility(facility); 
     });
 };
 
+/*
+ * Trigger modal event, powered by ratchet. 
+ *
+ * @text: modal message
+ * @title: modal title
+ * @style: modal type (possible classes in css)
+ */
 App.message = function(text, title, style) {
-    // Shows a message to user
-    // E.g. "Your survey has been submitted"
     $('.message_btn')[0].click();
     
     $('.modal_header').empty()
-        //XXX Look into doing this in a more clean way
+        // Remove any posible class attached to modal div
         .removeClass('message-primary')
         .removeClass('message-error')
         .removeClass('message-warning')
         .removeClass('message-success')
+        // Attach requested class
         .addClass(style)
         .text(title);
-
 
     // Message text region
     $('.message')
         .text(text);
 };
 
+/* 
+ * Webapp splash page, text loaded from template.
+ * This is where user syncs and starts surveys.
+ */ 
 App.splash = function() {
     $('header').removeClass('title-extended');
     $('.title_menu').hide();
     var self = this;
     var survey = self.survey;
-    $('.overlay').hide(); // Always remove overlay after moving
+    $('.overlay').hide(); // Always remove overlay after moving.
 
-    // Update page nav bar
+    // Update page nav and footer
     var barnav  = $('.bar-nav');
     var barnavHTML = $('#template_nav__splash').html();
     var barnavTemplate = _.template(barnavHTML);
@@ -226,14 +257,19 @@ App.splash = function() {
         .one('click', function() {
             if (navigator.onLine) {
                 App.sync();
-                // Reload page to update template values
-                App.splash();
             } else {
                 App.message('Please connect to the internet first.', 'Connection Error', 'message-warning');
             }
         });
 };
 
+/*
+ * Submits a single survey to Dokomoforms.
+ *
+ * @survey: Object representation of a completed survey
+ * @done: Successful submission callback
+ * @fail: Failed submission callback
+ */
 App.submit = function(survey, done, fail) {
     function getCookie(name) {
         var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
@@ -269,6 +305,6 @@ App.submit = function(survey, done, fail) {
 exports = exports || {};
 exports.App = App;
 
-//For window
+// For window
 window = window || {};
 window.App = App;

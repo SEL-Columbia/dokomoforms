@@ -1,9 +1,21 @@
 var NEXT = 1;
 var PREV = -1;
 
+//XXX TODO: remove reference to Widgets
+
 var Widgets = require('./widgets.js').Widgets;
 
-//XXX TODO: remove reference to Widgets
+/*
+ * Create a new Survey
+ *
+ * @id: survey id
+ * @version: current survey version
+ * @questions: survey questions
+ * @metadata: JSON representing misc survey details
+ * @title: survey title
+ * @created_on: ISO 8601 time representing survey creation time
+ * @last_updated: ISO 8601 time representing survey last_updated time
+ */
 function Survey(id, version, questions, metadata, title, created_on, last_updated) {
     var self = this;
     this.id = id;
@@ -17,8 +29,8 @@ function Survey(id, version, questions, metadata, title, created_on, last_update
     this.last_updated = new Date(last_updated).toDateString();
 
     // Load answers from localStorage
+    // XXX Pass answers in 
     var answers = JSON.parse(localStorage[this.id] || '{}');
-    //console/g.log(answers);
     _.each(self.questions, function(question) {
         question.answer = answers[question.question_id] || [];
         // Set next pointers
@@ -43,7 +55,12 @@ function Survey(id, version, questions, metadata, title, created_on, last_update
     
 }
 
-// Search by sequence number instead of array pos
+/*
+ * Search for a survey question by sequence number
+ * @seq: Question sequence number
+ *
+ * Returns a question object
+ */
 Survey.prototype.getQuestion = function(seq) {
     var self = this;
     for(var i = 0; i < self.questions.length; i++) {
@@ -55,8 +72,14 @@ Survey.prototype.getQuestion = function(seq) {
     return null;
 };
 
-// Answer array may have elements even if answer[0] is undefined
-// Return a non empty response or an empty one if none found
+/*
+ * Return first response found in given question, 
+ * return an empty response otherwise.
+ *
+ * @question: Survey question object
+ *
+ * Returns a JSON response
+ */
 Survey.prototype.getFirstResponse = function(question) {
     for (var i = 0; i < question.answer.length; i++) {
         var answer = question.answer[i];
@@ -68,17 +91,17 @@ Survey.prototype.getFirstResponse = function(question) {
     return {'response': null, 'is_type_exception': false, 'metadata': null};
 };
 
-// Choose next question, deals with branching and back/forth movement
+/*
+ * Choose the next question to render. Calls survey.render
+ * Deals with branching and back/forth movement.
+ * 
+ * @offset: either NEXT or PREV
+ */
 Survey.prototype.next = function(offset) {
     var self = this;
 
     var next_question = offset === PREV ? this.current_question.prev : this.current_question.next;
     var index = $('.content').data('index');
-
-    var first_answer = this.getFirstResponse(this.current_question); 
-    var first_response = first_answer.response;
-    var first_is_type_exception = first_answer.is_type_exception;
-    var first_metadata = first_answer.metadata;
 
     // Backward at first question
     if (index === self.lowest_sequence_number && offset === PREV) {
@@ -94,7 +117,13 @@ Survey.prototype.next = function(offset) {
     
     // Normal forward
     if (offset === NEXT) {
-        // Is it a valid response?
+        var first_answer = this.getFirstResponse(this.current_question); 
+        var first_response = first_answer.response;
+        var first_is_type_exception = first_answer.is_type_exception;
+        var first_metadata = first_answer.metadata;
+
+
+        // Are all responses valid?
         bad_answers = [];
         this.current_question.answer.forEach(function(resp) {
             if (resp && resp.failed_validation)
@@ -107,6 +136,7 @@ Survey.prototype.next = function(offset) {
             + self.current_question.type_constraint_name, 'Survey Response Error', 'message-error');
             return;
         }
+
 
         // Are you required?
         if (this.current_question.logic.required && (first_response === null)) {
@@ -139,7 +169,12 @@ Survey.prototype.next = function(offset) {
     self.render(next_question);
 };
 
-// Render template for given question
+/*
+ * Render template for given question.
+ * Render save page if question object is null.
+ *
+ * @question: A survey question object
+ */
 Survey.prototype.render = function(question) {
     $('header').removeClass('title-extended');
     $('.title_menu').hide();
@@ -153,6 +188,7 @@ Survey.prototype.render = function(question) {
         Widgets.interval = null;
     }
 
+    // Determine index
     var index = question ? question.sequence_number : this.questions.length + 1;
 
     // Update navs
@@ -210,7 +246,8 @@ Survey.prototype.render = function(question) {
         // Attach widget events
         Widgets[question.type_constraint_name](question, content, barfoot);
 
-    } else {
+        
+    } else { //XXX Move all of this
         // Add submit button
         barfootHTML = $('#template_footer__submit').html();
         barfootTemplate = _.template(barfootHTML);
@@ -252,7 +289,7 @@ Survey.prototype.render = function(question) {
             });
     }
     
-    // Update nav
+    // Update current question number
     $('.page_nav__progress')
         .text((index) + ' / ' + (this.questions.length + 1));
     
@@ -262,9 +299,11 @@ Survey.prototype.render = function(question) {
         self.next(offset);
     });
     
-
 };
 
+/*
+ * Save the current state of the survey (i.e question answers) to localStorage.
+ */
 Survey.prototype.saveState = function() {
     var self = this;
     var answers = {};
@@ -273,12 +312,18 @@ Survey.prototype.saveState = function() {
     _.each(self.questions, function(question) {
         answers[question.question_id] = question.answer;
     });
+
     answers['location'] = App.location;
 
     // Save answers in storage
+    // XXX Move this out of here
     localStorage[self.id] = JSON.stringify(answers);
 }
 
+/*
+ * Clear the current state of the survey (i.e question answers) and remove the 
+ * state in localStorage.
+ */
 Survey.prototype.clearState = function() {
     var self = this;
 
@@ -286,21 +331,25 @@ Survey.prototype.clearState = function() {
     _.each(self.questions, function(question) {
         question.answer = [];
     });
+
     App.location = {};
 
     // Clear answers in storage
+    // XXX Move this out of here
     localStorage[self.id] = JSON.stringify({});
 }
 
+/*
+ * 'Submit' survey to localStorage and App.unsynced array after transforming 
+ * survey to Dokomoforms submission API form.
+ */
 Survey.prototype.submit = function() {
     var self = this;
 
     // Prepare POST request
     var survey_answers = [];
     self.questions.forEach(function(q) {
-        //console.log('q', q);
         q.answer.forEach(function(ans, ind) {
-
             if (ans == null) {
                 return;
             }
@@ -356,6 +405,7 @@ Survey.prototype.submit = function() {
       return;
     } 
 
+    // XXX Move everything below out of here
     // Save Revisit data 
     localStorage.setItem("facilities", 
             JSON.stringify(App.facilities));
