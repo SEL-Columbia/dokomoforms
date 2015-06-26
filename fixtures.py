@@ -68,7 +68,12 @@ with session.begin():
     single_survey = models.Survey(
         id='b0816b52-204f-41d4-aaf0-ac6ae2970923',
         title={'English': 'single_survey'},
-        nodes=[],
+        nodes=[
+            models.construct_survey_node(
+                type_constraint='integer',
+                title={'English': 'integer node'},
+            )
+        ],
     )
 
     # Add another survey with known ID for creator_b
@@ -86,12 +91,19 @@ with session.begin():
     )
 
     # Add another public submission with a known ID
-    #single_regular_submission = models.PublicSubmission(
-    #    id='b0816b52-204f-41d4-aaf0-ac6ae2970923',
-    #    survey=single_survey,
-    #    submitter_name='regular',
-    #)
-    #session.add(single_regular_submission)
+    single_regular_submission = models.PublicSubmission(
+        id='b0816b52-204f-41d4-aaf0-ac6ae2970923',
+        survey=single_survey,
+        submitter_name='regular',
+        answers=[
+            models.construct_answer(
+                survey_node=single_survey.nodes[0],
+                type_constraint='integer',
+                answer=3,
+            ),
+        ]
+    )
+    session.add(single_regular_submission)
 
     # Add 100 public submissions over the past 100 days
     today = datetime.date.today()

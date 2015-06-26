@@ -52,7 +52,7 @@ def load_fixtures():
             # Add a single submission per survey
             regular_submission = models.PublicSubmission(
                 survey=survey,
-                submitter_name='regular',
+                submitter_name='regular'
             )
             session.add(regular_submission)
 
@@ -60,7 +60,15 @@ def load_fixtures():
         single_survey = models.Survey(
             id='b0816b52-204f-41d4-aaf0-ac6ae2970923',
             title={'English': 'single_survey'},
-            nodes=[],
+            nodes=[
+                models.construct_survey_node(
+                    # NOTE: this becomes the ID for both the SurveyNode
+                    # and the Node.
+                    id="60e56824-910c-47aa-b5c0-71493277b43f",
+                    type_constraint='integer',
+                    title={'English': 'integer node'},
+                )
+            ],
         )
 
         # Add another survey with known ID for creator_b
@@ -82,6 +90,13 @@ def load_fixtures():
             id='b0816b52-204f-41d4-aaf0-ac6ae2970923',
             survey=single_survey,
             submitter_name='regular',
+            answers=[
+                models.construct_answer(
+                    survey_node=single_survey.nodes[0],
+                    type_constraint='integer',
+                    answer=3,
+                ),
+            ]
         )
         session.add(single_regular_submission)
 
@@ -106,6 +121,9 @@ def load_fixtures():
         session.add(creator)
         session.add(creator_b)
         session.add(enumerator)
+
+    # while True:
+    #    pass
 
 
 def unload_fixtures():

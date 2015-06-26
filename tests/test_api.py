@@ -14,7 +14,7 @@ TODO: add expception and error response tests
 
 # The numbers expected to be present via fixtures
 TOTAL_SURVEYS = 14
-TOTAL_SUBMISSIONS = 114
+TOTAL_SUBMISSIONS = 112
 
 
 class TestSurveyApi(DokoHTTPTest):
@@ -36,7 +36,7 @@ class TestSurveyApi(DokoHTTPTest):
         # check that the expected keys are present
         self.assertTrue('surveys' in survey_dict)
 
-        self.assertTrue(len(survey_dict['surveys']) == TOTAL_SURVEYS)
+        self.assertEqual(len(survey_dict['surveys']), TOTAL_SURVEYS)
 
         # check that no error is present
         self.assertFalse("error" in survey_dict)
@@ -264,7 +264,7 @@ class TestSurveyApi(DokoHTTPTest):
         # test response
         activity = json_decode(response.body)
         self.assertTrue('activity' in activity)
-        self.assertTrue(len(activity['activity']) == 30)
+        self.assertEqual(len(activity['activity']), 30)
 
         # test 'days' query param
         query_params = {
@@ -274,7 +274,7 @@ class TestSurveyApi(DokoHTTPTest):
         response = self.fetch(url, method=method)
         activity = json_decode(response.body)
         self.assertTrue('activity' in activity)
-        self.assertTrue(len(activity['activity']) == 10)
+        self.assertEqual(len(activity['activity']), 10)
 
     def test_submission_activity_for_single_surveys(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
@@ -288,7 +288,17 @@ class TestSurveyApi(DokoHTTPTest):
         activity = json_decode(response.body)
 
         self.assertTrue('activity' in activity)
-        # self.assertTrue(len(activity['activity']) == TOTAL_SUBMISSIONS)
+        self.assertEqual(len(activity['activity']), 30)
+
+        # test 'days' query param
+        query_params = {
+            'days': 10
+        }
+        url = self.append_query_params(url, query_params)
+        response = self.fetch(url, method=method)
+        activity = json_decode(response.body)
+        self.assertTrue('activity' in activity)
+        self.assertEqual(len(activity['activity']), 10)
 
     # TODO: We probably eventually want surveys not to be totally public.
     # def test_survey_access_denied_for_unauthorized_user(self):
@@ -320,8 +330,8 @@ class TestSubmissionApi(DokoHTTPTest):
 
         # check that the expected keys are present
         self.assertTrue('submissions' in submission_dict)
-        self.assertTrue(
-            len(submission_dict['submissions']) == TOTAL_SUBMISSIONS)
+        self.assertEqual(
+            len(submission_dict['submissions']), TOTAL_SUBMISSIONS)
 
         self.assertFalse("error" in submission_dict)
 
@@ -373,6 +383,46 @@ class TestSubmissionApi(DokoHTTPTest):
         self.assertTrue('last_update_time' in submission_dict)
         self.assertTrue('submission_time' in submission_dict)
         self.assertTrue('survey_id' in submission_dict)
+
+    def test_create_public_submission_with_integer_answer(self):
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": "b0816b52-204f-41d4-aaf0-ac6ae2970923",
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": "60e56824-910c-47aa-b5c0-71493277b43f",
+                    "type_constraint": "integer",
+                    "answer": 3
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+
+        self.assertEqual(len(submission_dict['answers']), 1)
+
+        self.assertDictEqual(
+            submission_dict['answers'][0]['response'],
+            {'response_type': 'answer', 'response': 3}
+        )
 
     def test_create_enum_only_submission(self):
         # url to test
@@ -445,24 +495,6 @@ class TestSubmissionApi(DokoHTTPTest):
         submission = self.session.query(Submission).get(submission_id)
 
         self.assertTrue(submission.deleted)
-
-    def test_delete_submission_via_post(self):
-        submission_id = 'A known id'
-        query_params = {
-            '_method': 'DELETE'
-        }
-        # url to test
-        url = self.api_root + '/submissions/' + submission_id
-        # append query params
-        url = self.append_query_params(url, query_params)
-        # http method
-        method = 'POST'
-        # body
-        body = '{"submission_body_json"}'
-        # make request
-        response = self.fetch(url, method=method, body=body)
-        # test response
-        self.fail("Not yet implemented.")
 
 
 class TestUserApi(DokoHTTPTest):

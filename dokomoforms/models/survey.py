@@ -572,11 +572,25 @@ def construct_survey_node(*, type_constraint: str, **kwargs) -> SurveyNode:
     )
 
     try:
-        return survey_node_constructor(
-            node=construct_node(
-                type_constraint=type_constraint,
-                **kwargs
-            ),
-        )
+        # it's unclear whether an id passed into kwargs should
+        # pertain to the survey_node or node? Since it's unlikely
+        # that an id will be passed except for testing cases,
+        # for now it's BOTH.
+        if 'id' in kwargs:
+            survey_node = survey_node_constructor(
+                id=kwargs['id'],
+                node=construct_node(
+                    type_constraint=type_constraint,
+                    **kwargs
+                ),
+            )
+        else:
+            survey_node = survey_node_constructor(
+                node=construct_node(
+                    type_constraint=type_constraint,
+                    **kwargs
+                ),
+            )
+        return survey_node
     except KeyError:
         raise NoSuchNodeTypeError(type_constraint)

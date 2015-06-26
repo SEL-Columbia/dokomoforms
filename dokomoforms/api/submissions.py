@@ -4,7 +4,8 @@ import restless.exceptions as exc
 from dokomoforms.api import BaseResource
 from dokomoforms.models import (
     Survey, Submission, User,
-    construct_submission, construct_answer
+    construct_submission, construct_answer,
+    SurveyNode
 )
 
 
@@ -72,12 +73,21 @@ class SubmissionResource(BaseResource):
 
         self.data['survey'] = survey
 
+        def create_answer(answer_dict):
+            # put the survey_node model in place of the survey_node_id
+            if 'survey_node_id' in answer_dict:
+                survey_node = self.session.query(SurveyNode).get(
+                    answer_dict['survey_node_id'])
+                if survey_node is not None:
+                    answer_dict['survey_node'] = survey_node
+                    return construct_answer(**answer_dict)
+
         with self.session.begin():
             # create a list of Answer models
             if 'answers' in self.data:
-                answers = list(map(construct_answer, self.data['answers']))
-                # remove the existing answers key from the received data
-                del self.data['answers']
+                answers = list(map(create_answer, self.data['answers']))
+                self.data['answers'] = answers
+                # del self.data['answers']
 
             # pass submission props as kwargs
             if 'submission_type' not in self.data:
@@ -87,8 +97,8 @@ class SubmissionResource(BaseResource):
             submission = construct_submission(**self.data)
 
             # add the answer models
-            if 'answers' in self.data:
-                submission.answers = answers
+            # if 'answers' in self.data:
+            #    submission.answers = answers
 
             # add the submission
             self.session.add(submission)
