@@ -531,7 +531,7 @@ class SurveyNode(Base):
 
 class NonAnswerableSurveyNode(SurveyNode):
 
-    """Contains a Node which is not answerablei (e.g., a Note)."""
+    """Contains a Node which is not answerable (e.g., a Note)."""
 
     __tablename__ = 'survey_node_non_answerable'
 
