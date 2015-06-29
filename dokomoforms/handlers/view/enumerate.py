@@ -16,9 +16,7 @@ class Enumerate(BaseHandler):
         sr = SurveyResource()
         survey_model = self.session.query(Survey).get(survey_id)
         survey = sr.prepare(survey_model);
-        print(json.dumps(survey, cls=ModelJSONEncoder));
-        print("Hey")
+        print(survey['version'])
+        print(survey['title'])
         self.render('survey.html',
-                    survey=json.dumps(survey, cls=ModelJSONEncoder),
-                    survey_version=survey['version'],
-                    survey_title=survey['title'])
+                    survey=json.dumps(survey, cls=ModelJSONEncoder)),

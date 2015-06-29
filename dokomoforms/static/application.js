@@ -33,13 +33,15 @@ App.init = function(survey) {
     
     console.log(survey.nodes);
     self.survey = new Survey(survey.survey_id, 
-            survey.survey_version, 
+            survey.version, 
             survey.nodes, 
             answers,
             survey.metadata, 
-            survey.survey_title, 
+            survey.title[survey.default_language], 
             survey.created_on,
-            survey.last_updated);
+            survey.last_update_time,
+            survey.default_language
+            );
 
     // Set up an empty dictonary if no unsynced surveys are found
     if (!localStorage.unsynced) {

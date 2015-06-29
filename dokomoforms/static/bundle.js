@@ -113,9 +113,9 @@ var Widgets = require('./widgets.js').Widgets;
  * @metadata: JSON representing misc survey details
  * @title: survey title
  * @created_on: ISO 8601 time representing survey creation time
- * @last_updated: ISO 8601 time representing survey last_updated time
+ * @last_update_time: ISO 8601 time representing survey last_update_time time
  */
-function Survey(id, version, questions, answers, metadata, title, created_on, last_updated) {
+function Survey(id, version, questions, answers, metadata, title, created_on, last_update_time, default_language) {
     var self = this;
     this.id = id;
     this.questions = questions;
@@ -125,7 +125,8 @@ function Survey(id, version, questions, answers, metadata, title, created_on, la
     this.version = version;
     this.title = title;
     this.created_on = new Date(created_on).toDateString();
-    this.last_updated = new Date(last_updated).toDateString();
+    this.last_update_time = new Date(last_update_time).toDateString();
+    this.default_language = default_language;
 
     //XXX Patch work needs to be removed
     _.each(self.questions, function(question, idx) {
@@ -242,7 +243,7 @@ Survey.prototype.next = function(offset) {
         if (bad_answers.length) {
             App.message(bad_answers.length 
             + ' response(s) found not valid for question type: ' 
-            + self.current_question.type_constraint_name, 'Survey Response Error', 'message-error');
+            + self.current_question.type_constraint, 'Survey Response Error', 'message-error');
             return;
         }
 
@@ -339,7 +340,7 @@ Survey.prototype.render = function(question) {
             .html(compiledHTML);
 
         // Show widget
-        widgetHTML = $('#widget_' + question.type_constraint_name).html();
+        widgetHTML = $('#widget_' + question.type_constraint).html();
         widgetTemplate = _.template(widgetHTML);
         compiledHTML = widgetTemplate({question: question});
         self.current_question = question;
@@ -353,7 +354,7 @@ Survey.prototype.render = function(question) {
             .scrollTop(); //XXX: Ignored in chrome ...
         
         // Attach widget events
-        Widgets[question.type_constraint_name](question, content, barfoot);
+        Widgets[question.type_constraint](question, content, barfoot);
 
         
     } else { //XXX Move all of this
@@ -1482,13 +1483,15 @@ App.init = function(survey) {
     
     console.log(survey.nodes);
     self.survey = new Survey(survey.survey_id, 
-            survey.survey_version, 
+            survey.version, 
             survey.nodes, 
             answers,
             survey.metadata, 
-            survey.survey_title, 
+            survey.title[survey.default_language], 
             survey.created_on,
-            survey.last_updated);
+            survey.last_update_time,
+            survey.default_language
+            );
 
     // Set up an empty dictonary if no unsynced surveys are found
     if (!localStorage.unsynced) {
