@@ -34,6 +34,11 @@ class BaseResource(TornadoResource):
     def session(self):
         return self.r_handler.session
 
+    #@session.setter
+    #def session(self, session):
+    #    'setting'
+    #    self.session = session
+
     @property
     def current_user_model(self):
         return self.r_handler.current_user_model

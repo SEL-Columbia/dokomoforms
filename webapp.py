@@ -110,9 +110,12 @@ class Application(tornado.web.Application):
             url(r'/user/login/?', handlers.Login, name='login'),
             url(r'/user/logout/?', handlers.Logout, name='logout'),
 
-            # API
+            # Pages
+            url(r'/enumerate/({})/?'.format(UUID_REGEX),
+                handlers.Enumerate, name="enumerate"),
 
-            # Surveys
+            # API
+            ## Surveys
             url(r'' + self._api_root_path + '/surveys/?',
                 SurveyResource.as_list(), name="surveys"),
             url(r'' + self._api_root_path +
@@ -140,7 +143,7 @@ class Application(tornado.web.Application):
                 SurveyResource.as_view('activity_all'),
                 name="activity_all"),
 
-            # Submissions
+            ## Submissions
             url(r'' + self._api_root_path + '/submissions',
                 SubmissionResource.as_list(), name="sumbissions"),
             url(r'' + self._api_root_path +
@@ -148,6 +151,8 @@ class Application(tornado.web.Application):
                 SubmissionResource.as_detail(),
                 name="submission"),
         ]
+
+        # Debug
         if options.debug:
             urls += [
                 url(r'/debug/create/(.+)/?',
