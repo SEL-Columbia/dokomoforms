@@ -19,4 +19,5 @@ class Enumerate(BaseHandler):
         print(survey['version'])
         print(survey['title'])
         self.render('survey.html',
+                    survey_title=survey['title'],
                     survey=json.dumps(survey, cls=ModelJSONEncoder)),

@@ -461,7 +461,7 @@ Widgets.date = function(question, page, footer) {
 };
 
 /* 
- * Time Widget
+ * Time and Timestamp Widget
  *
  * @question: question data
  * @page: the widget container DOM element
@@ -470,6 +470,11 @@ Widgets.date = function(question, page, footer) {
 Widgets.time = function(question, page, footer) {
     //XXX: TODO change input thing to be jquery-ey
     this._input(question, page, footer, "time"); //XXX: Fix validation
+};
+
+Widgets.timestamp = function(question, page, footer) {
+    //XXX: TODO change input thing to be jquery-ey
+    this._input(question, page, footer, "timestamp"); //XXX: Fix validation
 };
 
 /* 
@@ -571,6 +576,118 @@ Widgets.multiple_choice = function(question, page, footer) {
         $other.show();
     }
 };
+
+/* 
+ * Photo Widget
+ *
+ * @question: question data
+ * @page: the widget container DOM element
+ * @footer: footer container DOM element
+ *
+ * Note: Disables input field change handler.
+ * XXX IN PROGRESSS
+ */
+Widgets.photo = function(question, page, footer) {
+    this._input(question, page, footer, "photo");
+    var self = this;
+    var playing = false;
+    var video = $('.question__video')[0];
+
+    // Camera selection
+    var camera = null;
+    if (window.MediaStreamTrack){
+        // Save the last camera id. It's likely the outward facing one.
+        MediaStreamTrack.getSources(function(sources) {
+            sources.forEach(function(source) {
+                if (source.kind == 'video') {
+                    camera = source.id;
+                }
+            });
+        });
+    }
+
+    // Browser implementations
+    navigator.getUserMedia = navigator.getUserMedia ||
+        navigator.webkitGetUserMedia ||
+        navigator.mozGetUserMedia ||
+        navigator.msGetUserMedia;
+
+    // Start video immediately 
+    navigator.getUserMedia({
+        video: {optional: [{sourceId: camera}]}
+    }, function(stream) {
+        video.src = window.URL.createObjectURL(stream);
+        video.play();
+        playing = true;
+    }, function(err) {
+        console.log("Video failed:", err);
+    });
+
+    // Set up canvas
+    var canvas = $('.question__canvas')[0];
+    canvas.width = 320; //redundant
+    canvas.height = 240;
+    var context = canvas.getContext('2d');
+
+
+    function updatePhoto(video, canvas, context) {
+        // Find current length of inputs and update the last one;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        var photo = canvas.toDataURL("image/jpeg", 0.5);
+
+        // Tests
+        window.photo = photo;
+        //var img = $('<img>')
+        //img.attr('src', photo);
+        //img.appendTo(page);
+
+        // update array val
+        var questions_len = $(page).find('.text_input').length;
+        question.answer[questions_len - 1] = {
+            response: photo,
+            is_type_exception: false,
+            metadata: {},
+        }            
+
+        // update latest lon/lat values
+        var questions_len = $(page).find('.text_input').length;
+        $(page).find('.text_input')
+            .last().val(photo);
+    }
+
+
+    window.video = video;
+    window.context = context;
+    window.canvas = canvas;
+
+    // Add photo
+    $(page)
+        .find('.question__photo__btn')
+        .click(function() {
+            if (playing) {
+                video.pause();
+                navigator.vibrate(50);
+                updatePhoto(video, canvas, context);
+                playing = false;
+                $('.question__photo__btn')
+                    .find('.btn_text')
+                    .text('click to redo photo');
+            } else {
+                video.play();
+                playing = true;
+                $('.question__photo__btn')
+                    .find('.btn_text')
+                    .text('take a photo');
+            }
+        });
+
+
+    // Disable default event
+    $(page)
+        .find('.text_input')
+        .off('keyup');
+};
+
 
 /* 
  * Location Widget

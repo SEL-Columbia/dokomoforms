@@ -26,11 +26,13 @@ function Survey(id, version, questions, answers, metadata, title, created_on, la
     this.created_on = new Date(created_on).toDateString();
     this.last_update_time = new Date(last_update_time).toDateString();
     this.default_language = default_language;
+    console.log(self.default_language);
 
     //XXX Patch work needs to be removed
     _.each(self.questions, function(question, idx) {
         question.sequence_number = idx;
         question.question_to_sequence_number = idx + 1;
+        question.default_language = self.default_language;
         if (idx == self.questions.length - 1) {
             question.question_to_sequence_number = -1;
         }
@@ -39,7 +41,7 @@ function Survey(id, version, questions, answers, metadata, title, created_on, la
     console.log(self.questions);
     // Set up questions
     _.each(self.questions, function(question) {
-        question.answer = answers[question.question_id] || [];
+        question.answer = answers[question.id] || [];
         // Set next pointers
         question.next = self.getQuestion(question.question_to_sequence_number);
     });
@@ -319,7 +321,7 @@ Survey.prototype.getState = function() {
 
     // Save answers locally 
     _.each(self.questions, function(question) {
-        answers[question.question_id] = question.answer;
+        answers[question.id] = question.answer;
     });
 
     answers['location'] = App.location;
@@ -376,7 +378,7 @@ Survey.prototype.submit = function() {
             }
 
             survey_answers.push({
-                question_id: q.question_id,
+                id: q.id,
                 answer: response,
                 answer_metadata: metadata,
                 is_type_exception: is_type_exception

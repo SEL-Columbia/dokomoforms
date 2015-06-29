@@ -109,8 +109,8 @@
 
     <script id="widget_text" type="text/html">
         <div class="content-padded">
-            <h3 class="question__title  "><%- question.question_title %></h3>
-            <p class="question__hint "><%- question.hint || "" %></p>
+            <h3 class="question__title  "><%- question.title[question.default_language] %></h3>
+            <p class="question__hint "><%- question.hint[question.default_language] || "" %></p>
         </div>
 
         <%  var no_response = true;
@@ -140,8 +140,8 @@
     
     <script id="widget_integer" type="text/html">
         <div class="content-padded">
-            <h3 class="question__title "><%- question.question_title %></h3>
-            <p class="question__hint "><%- question.hint || "" %></p>
+            <h3 class="question__title "><%- question.title[question.default_language] %></h3>
+            <p class="question__hint "><%- question.hint[question.default_language] || "" %></p>
         </div>
 
         <%  var no_response = true;
@@ -171,8 +171,8 @@
     
     <script id="widget_decimal" type="text/html">
         <div class="content-padded">
-            <h3 class="question__title "><%- question.question_title %></h3>
-            <p class="question__hint "><%- question.hint || "" %></p>
+            <h3 class="question__title "><%- question.title[question.default_language] %></h3>
+            <p class="question__hint "><%- question.hint[question.default_language] || "" %></p>
         </div>
 
         <%  var no_response = true;
@@ -202,8 +202,8 @@
 
     <script id="widget_date" type="text/html">
         <div class="content-padded">
-            <h3 class="question__title "><%- question.question_title %></h3>
-            <p class="question__hint "><%- question.hint || "" %></p>
+            <h3 class="question__title "><%- question.title[question.default_language] %></h3>
+            <p class="question__hint "><%- question.hint[question.default_language] || "" %></p>
         </div>
 
         <%  var no_response = true;
@@ -233,8 +233,8 @@
 
     <script id="widget_time" type="text/html">
         <div class="content-padded">
-            <h3 class="question__title "><%- question.question_title %></h3>
-            <p class="question__hint "><%- question.hint || "" %></p>
+            <h3 class="question__title "><%- question.title[question.default_language] %></h3>
+            <p class="question__hint "><%- question.hint[question.default_language] || "" %></p>
         </div>
 
         <%  var no_response = true;
@@ -262,10 +262,79 @@
         <% } %>
     </script>
 
+    <script id="widget_timestamp" type="text/html">
+        <div class="content-padded">
+            <h3 class="question__title "><%- question.title[question.default_language] %></h3>
+            <p class="question__hint "><%- question.hint[question.default_language] || "" %></p>
+        </div>
+
+        <%  var no_response = true;
+            _.each(question.answer, function(ans) {
+            if (ans && ans.response !== null && !ans.is_type_exception) { 
+                no_response = false; %>
+                <div class="input_container">
+                <input class="text_input" type="time" 
+                    placeholder="Please provide another time."
+                    value="<%- ans.response %>"
+                >
+                <span class="icon icon-close question__minus"></span>
+                </div>
+            <% } %>
+        <% }); %>
+
+        <% if (no_response) { %>
+            <div class="input_container">
+            <input class="text_input" type="time" 
+                   placeholder="Please provide a time."
+                   value="<%- question.default || '' %>"
+            >
+            <span class="icon icon-close question__minus"></span>
+            </div>
+        <% } %>
+    </script>
+
+    <script id="widget_photo" type="text/html">
+        <div class="content-padded">
+            <h3 class="question__title "><%- question.title[question.default_language] %></h3>
+            <p class="question__hint "><%- question.hint[question.default_language] || "" %></p>
+
+            <button class="btn question__photo__btn">
+                <span class="icon icon-star"></span>
+                <span class="btn_text"> take a photo</span>
+            </button>
+        </div>
+            
+        <canvas class="question__canvas" style="display:none; width:320px; height:240px;"></canvas>
+        <video class="question__video"></video>
+
+        <%  var no_response = true;
+            _.each(question.answer, function(ans) {
+            if (ans && ans.response !== null && !ans.is_type_exception) { 
+                no_response = false; %>
+                <div class="input_container">
+                <input class="text_input" type="text" 
+                    placeholder="Please click 'take a photo'."
+                    value="<%- ans.response %>"
+                >
+                <span class="icon icon-close question__minus"></span>
+                </div>
+            <% } %>
+        <% }); %>
+
+        <% if (no_response) { %>
+            <div class="input_container">
+            <input class="text_input" type="text" 
+                   placeholder="Please click 'take a photo'."
+            >
+            <span class="icon icon-close question__minus"></span>
+            </div>
+        <% } %>
+    </script>
+
     <script id="widget_location" type="text/html">
         <div class="content-padded">
-            <h3 class="question__title "><%- question.question_title %></h3>
-            <p class="question__hint "><%- question.hint || "" %></p>
+            <h3 class="question__title "><%- question.title[question.default_language] %></h3>
+            <p class="question__hint "><%- question.hint[question.default_language] || "" %></p>
 
             <button class="btn question__find__btn ">
                 <span class="icon icon-star"></span>
@@ -300,8 +369,8 @@
 
     <script id="widget_facility" type="text/html">
         <div class="content-padded">
-            <h3 class="question__title "><%- question.question_title %></h3>
-            <p class="question__hint "><%- question.hint || "" %></p>
+            <h3 class="question__title "><%- question.title[question.default_language] %></h3>
+            <p class="question__hint "><%- question.hint[question.default_language] || "" %></p>
 
             <button class="btn question__find__btn ">
                 <span class="icon icon-star"></span>
@@ -385,8 +454,8 @@
 
     <script id="widget_multiple_choice" type="text/html">
         <div class="content-padded">
-            <h3 class="question__title "><%- question.question_title %></h3>
-            <p class="question__hint "><%- question.hint || "" %></p>
+            <h3 class="question__title "><%- question.title[question.default_language] %></h3>
+            <p class="question__hint "><%- question.hint[question.default_language] || "" %></p>
 
             <select class="question__select " 
                 <%  if (question.allow_multiple) { %> 
@@ -427,8 +496,8 @@
     
     <script id="widget_note" type="text/html">
         <div class="content-padded">
-            <h3 class="question__title "><%- question.question_title %></h3>
-            <p class="question__hint "><%- question.hint || "" %></p>
+            <h3 class="question__title "><%- question.title[question.default_language] %></h3>
+            <p class="question__hint "><%- "A breif message from the survey creator" %></p>
         </div>
     </script>
 

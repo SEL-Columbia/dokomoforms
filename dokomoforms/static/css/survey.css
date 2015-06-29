@@ -165,6 +165,18 @@ a, .icon {
     margin-top: 20px;
 }
 
+.question__video {
+    border: 1px solid #DDD;
+    border-left: 0px solid #DDD;
+    border-right: 0px solid #DDD;
+    background: white;
+    display: block;
+    margin: auto;
+    margin-bottom: 20px;
+    height: 240px;
+    width: 340px;
+}
+
 .question__btn__other {
     margin-top: 18px;
     border-top: 1px solid #DDD;
