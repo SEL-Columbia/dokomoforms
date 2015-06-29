@@ -1,19 +1,14 @@
 import datetime
 from sqlalchemy import DDL
 from sqlalchemy.orm import sessionmaker
-from dokomoforms.options import options, inject_options
 
-inject_options(schema='doko_test')
-
-from dokomoforms.models import create_engine
 import dokomoforms.models as models
 
 
-engine = create_engine(echo=False)
 Session = sessionmaker()
 
 
-def load_fixtures():
+def load_fixtures(engine):
     # creates db schema
     session = Session(bind=engine, autocommit=True)
 
@@ -42,8 +37,10 @@ def load_fixtures():
                 title={'English': node_type + '_survey'},
                 nodes=[
                     models.construct_survey_node(
-                        type_constraint=node_type,
-                        title={'English': node_type + '_node'},
+                        node = models.construct_node(
+                            title={'English': node_type + '_node'},
+                            type_constraint=node_type,
+                        ),
                     ),
                 ],
             )
@@ -65,8 +62,10 @@ def load_fixtures():
                     # NOTE: this becomes the ID for both the SurveyNode
                     # and the Node.
                     id="60e56824-910c-47aa-b5c0-71493277b43f",
-                    type_constraint='integer',
-                    title={'English': 'integer node'},
+                    node = models.construct_node(
+                        title={'English': 'integer node'},
+                        type_constraint='integer',
+                    ),
                 )
             ],
         )
@@ -126,6 +125,6 @@ def load_fixtures():
     #    pass
 
 
-def unload_fixtures():
+def unload_fixtures(engine, schema_name):
     print('unload_fixtures')
-    engine.execute(DDL('DROP SCHEMA IF EXISTS ' + options.schema + ' CASCADE'))
+    engine.execute(DDL('DROP SCHEMA IF EXISTS ' + schema_name + ' CASCADE'))

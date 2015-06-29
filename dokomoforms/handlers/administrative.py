@@ -8,11 +8,16 @@ from dokomoforms.handlers.util import BaseHandler
 
 
 class Index(BaseHandler):
+
+    """The root URL."""
+
     def get(self):
+        """GET /."""
         self.render('administrative_index.html')
 
 
 class NotFound(BaseHandler):
+
     """This is the "default" handler according to Tornado."""
 
     def prepare(self):

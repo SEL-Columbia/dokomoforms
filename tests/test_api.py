@@ -125,12 +125,13 @@ class TestSurveyApi(DokoHTTPTest):
         # body
         body = {
             "metadata": {},
-            "enumerator_only": "false",
+            "survey_type": "public",
             "deleted": False,
             "default_language": "English",
             "title": {"English": "Test_Survey"},
             "nodes": [
                 {
+                    "node_number": 0,
                     "title": {"English": "test_time_node"},
                     "hint": {
                         "English": ""
@@ -154,6 +155,7 @@ class TestSurveyApi(DokoHTTPTest):
         survey_dict = json_decode(response.body)
 
         # check that expected keys are present
+        assert False, survey_dict
         self.assertTrue('id' in survey_dict)
         self.assertTrue('metadata' in survey_dict)
         self.assertTrue('nodes' in survey_dict)

@@ -1,16 +1,18 @@
-"""
-Exceptions in dokomoforms.
+"""Exceptions in dokomoforms.
 
 The base exception class is dokomoforms.exc.DokomoError
 """
 
 
 class DokomoError(Exception):
+
     """The base class for all exceptions used in Dokomo Forms."""
 
 
 class NoSuchNodeTypeError(DokomoError):
-    """
+
+    """Invalid type_constraint for construct_node.
+
     Raised when dokomoforms.models.node.construct_node is called with
     an invalid type_constraint.
 
@@ -29,17 +31,21 @@ class NoSuchSubmissionTypeError(DokomoError):
 
 
 class NotAnAnswerTypeError(DokomoError):
-    """
-    Raised when dokomoforms.models.node.construct_node is called with
+
+    """Invalid type_constraint for construct_answer.
+
+    Raised when dokomoforms.models.node.construct_answer is called with
     an invalid type_constraint.
 
     The valid type_constraints are the keys of
-    dokomoforms.models.node.NODE_TYPES.
+    dokomoforms.models.answer.ANSWER_TYPES.
     """
 
 
 class NoSuchBucketTypeError(DokomoError):
-    """
+
+    """Invalid type_constraint for construct_bucket.
+
     Raised when dokomoforms.models.survey.construct_bucket is called with
     an invalid type_constraint.
 

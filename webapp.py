@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-"""
+"""Main Dokomo Forms entry point.
+
 Execute this script to start the Tornado server and WSGI container. It will
 ensure that the proper tables and extensions exist in the specified schema
 of the PostgreSQL database.
@@ -24,9 +25,18 @@ import tornado.web
 import dokomoforms.models as models
 
 from dokomoforms.options import options
+
+if __name__ == '__main__':  # pragma: no cover
+    from dokomoforms.options import parse_options
+    # Necessary to load the schema properly. Feels like a hack...
+    parse_options()
+
 import dokomoforms.handlers as handlers
 from dokomoforms.models import create_engine, Base
 from dokomoforms.api import SurveyResource, SubmissionResource
+# =======
+# from dokomoforms.models.survey import _set_tzinfos
+# >>>>>>> origin/phoenix
 
 _pwd = os.path.dirname(__file__)
 bold = '\033[1m'
@@ -37,8 +47,7 @@ UUID_REGEX = '[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][' \
 
 
 def modify_text(text: str, modifier: str) -> str:
-    """
-    Modifies text for printing to the command line.
+    """Modify text for printing to the command line.
 
     :param text: the string to modify
     :param modifier: the escape sequence that marks the modifier
@@ -48,14 +57,18 @@ def modify_text(text: str, modifier: str) -> str:
 
 
 def get_cookie_secret() -> bytes:
-    """
-    Returns the secret from the cookie_secret file. If the file doesn't
-    exist, tells the user how to generate a secret then exits with code 1.
+    """Return the secret from the cookie_secret file.
+
+    The cookie secret is in the file <project_directory>/cookie_secret. If
+    the file doesn't exist, the script will exit with code 1 and tell the
+    user how to generate it.
 
     :return: the cookie secret as bytes
     """
     try:
-        return open(os.path.join(_pwd, 'cookie_secret'), 'rb').read()
+        with open(os.path.join(_pwd, 'cookie_secret'), 'rb') as cookie_file:
+            cookie_secret = cookie_file.read()
+        return cookie_secret
     except IOError:
         print(textwrap.fill(
             '{error} no secret key found for creating secure user session'
@@ -68,7 +81,8 @@ def get_cookie_secret() -> bytes:
 
 
 def ensure_that_user_wants_to_drop_schema():
-    """
+    """Check that user asked to drop the schema intentionally.
+
     Interrogates the user to make sure that the schema specified by
     options.schema should be dropped. If the user decides against it,
     exits the application.
@@ -94,8 +108,12 @@ def ensure_that_user_wants_to_drop_schema():
 
 
 class Application(tornado.web.Application):
+
+    """The tornado.web.Application for Dokomo Forms."""
+
     def __init__(self):
-        """
+        """Set up the application with handlers and a db connection.
+
         Defines the URLs (with associated handlers) and settings for the
         application, drops the database schema (if the user selected that
         option), then prepares the database and creates a session.
@@ -176,9 +194,14 @@ class Application(tornado.web.Application):
         Base.metadata.create_all(self.engine)
         self.sessionmaker = sessionmaker(bind=self.engine, autocommit=True)
         self.session = self.sessionmaker()
+# =======
+#         _set_tzinfos()
+#         self.session = sessionmaker(bind=self.engine, autocommit=True)()
+# >>>>>>> origin/phoenix
 
 
-def main():
+def main():  # pragma: no cover
+    """Start the Tornado web server."""
     if options.kill:
         ensure_that_user_wants_to_drop_schema()
     http_server = tornado.httpserver.HTTPServer(Application())
@@ -199,5 +222,5 @@ def main():
     tornado.ioloop.IOLoop.current().start()
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     main()
