@@ -34,6 +34,7 @@ class Survey(Base):
     __tablename__ = 'survey'
 
     id = util.pk()
+    languages = util.languages_column('languages')
     title = util.json_column('title')
     default_language = sa.Column(
         pg.TEXT,
@@ -85,9 +86,11 @@ class Survey(Base):
             'title', 'creator_id', name='unique_survey_title_per_user'
         ),
         sa.UniqueConstraint('id', 'survey_type'),
+        sa.UniqueConstraint('id', 'languages'),
+        util.languages_constraint('title', 'languages'),
         sa.CheckConstraint(
-            "title ? default_language",
-            name='title_in_default_langauge_exists'
+            "languages @> ARRAY[default_language]",
+            name='default_language_in_languages_exists'
         ),
         sa.CheckConstraint(
             "(title->>default_language) != ''",
@@ -495,6 +498,9 @@ class SurveyNode(Base):
     )
 
     node_id = sa.Column(pg.UUID, nullable=False)
+    node_languages = sa.Column(
+        pg.ARRAY(pg.TEXT, as_tuple=True), nullable=False
+    )
     type_constraint = sa.Column(node_type_enum, nullable=False)
     the_node = relationship('Node')
 
@@ -503,7 +509,10 @@ class SurveyNode(Base):
     def node(self):
         """The Node instance."""
 
-    root_survey_id = sa.Column(pg.UUID, util.fk('survey.id'))
+    root_survey_id = sa.Column(pg.UUID)
+    root_survey_languages = sa.Column(
+        pg.ARRAY(pg.TEXT, as_tuple=True), nullable=False
+    )
     logic = util.json_column('logic', default='{}')
     last_update_time = util.last_update_time()
 
@@ -513,8 +522,12 @@ class SurveyNode(Base):
         sa.UniqueConstraint('id', 'node_id', 'type_constraint'),
         sa.UniqueConstraint('root_survey_id', 'node_number'),
         sa.ForeignKeyConstraint(
-            ['node_id', 'type_constraint'],
-            ['node.id', 'node.type_constraint']
+            ['root_survey_id', 'root_survey_languages'],
+            ['survey.id', 'survey.languages']
+        ),
+        sa.ForeignKeyConstraint(
+            ['node_id', 'node_languages', 'type_constraint'],
+            ['node.id', 'node.languages', 'node.type_constraint']
         ),
     )
 

@@ -208,6 +208,42 @@ class TestNode(DokoTest):
         node = self.session.query(models.Node).one()
         self.assertEqual(node.languages, ('French', 'German'))
 
+    def test_construct_node_with_no_languages(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                self.session.add(models.construct_node(
+                    type_constraint='text',
+                    languages=[],
+                    title={
+                        'German': 'german test',
+                        'Italian': 'italian test',
+                        'French': 'french test',
+                    },
+                    hint={
+                        'German': 'german hint ',
+                        'Italian': 'italian hint',
+                        'French': 'french hint',
+                    },
+                ))
+
+    def test_construct_node_with_missing_translations(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                self.session.add(models.construct_node(
+                    type_constraint='text',
+                    languages=['French', 'German', 'Spanish'],
+                    title={
+                        'German': 'german test',
+                        'Italian': 'italian test',
+                        'French': 'french test',
+                    },
+                    hint={
+                        'German': 'german hint ',
+                        'Italian': 'italian hint',
+                        'French': 'french hint',
+                    },
+                ))
+
     def test_asdict(self):
         with self.session.begin():
             self.session.add(models.construct_node(
@@ -624,6 +660,7 @@ class TestSurvey(DokoTest):
                 surveys=[
                     models.Survey(
                         title={'French': 'answerable'},
+                        languages=['French'],
                         default_language='French',
                     ),
                 ],
@@ -662,6 +699,8 @@ class TestSurveyNode(DokoTest):
         self.assertEqual(
             survey_node._asdict(),
             OrderedDict((
+                ('deleted', False),
+                ('languages', ('English',)),
                 ('title', {'English': 'integer node'}),
                 ('hint', {'English': ''}),
                 ('allow_multiple', False),
@@ -671,7 +710,6 @@ class TestSurveyNode(DokoTest):
                 ('last_update_time', survey_node.last_update_time),
                 ('node_id', self.session.query(models.Node.id).scalar()),
                 ('id', survey_node.id),
-                ('deleted', False),
                 ('required', False),
                 ('allow_dont_know', False),
             ))
@@ -705,6 +743,8 @@ class TestSurveyNode(DokoTest):
         self.assertEqual(
             survey_node._asdict(),
             OrderedDict((
+                ('deleted', False),
+                ('languages', ('English',)),
                 ('title', {'English': 'integer node'}),
                 ('hint', {'English': ''}),
                 ('allow_multiple', False),
@@ -714,7 +754,6 @@ class TestSurveyNode(DokoTest):
                 ('last_update_time', survey_node.last_update_time),
                 ('node_id', self.session.query(models.Node.id).scalar()),
                 ('id', survey_node.id),
-                ('deleted', False),
                 ('required', False),
                 ('allow_dont_know', False),
                 ('sub_surveys', self.session.query(models.SubSurvey).all()),

@@ -249,7 +249,7 @@ def languages_column(column_name) -> sa.Column:
     return sa.Column(
         pg.ARRAY(pg.TEXT, as_tuple=True),
         sa.CheckConstraint(
-            'ARRAY_LENGTH({}, 1) > 0'.format(column_name)
+            'COALESCE(ARRAY_LENGTH({}, 1), 0) > 0'.format(column_name)
         ),
         nullable=False,
         default=['English'],
