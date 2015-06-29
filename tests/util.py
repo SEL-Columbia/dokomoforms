@@ -1,4 +1,5 @@
-"""
+"""Test utilities.
+
 Defines setup and teardown functions for test modules.
 Also injects the --schema=doko_test option.
 """
@@ -10,7 +11,7 @@ from tornado.testing import AsyncHTTPTestCase
 import tornado.ioloop
 from functools import wraps
 
-from dokomoforms.options import inject_options
+from dokomoforms.options import inject_options, parse_options
 
 inject_options(
     schema='doko_test',
@@ -23,19 +24,28 @@ inject_options(
         }
     """
 )
+# =======
+# inject_options(schema='doko_test')
+parse_options()
+# >>>>>>> origin/phoenix
 
 from sqlalchemy import DDL
 from sqlalchemy.orm import sessionmaker
 from dokomoforms.models import create_engine, Base
 from webapp import Application
 from tests.fixtures import load_fixtures, unload_fixtures
+# =======
+# from dokomoforms.models.survey import _set_tzinfos
+# 
+# _set_tzinfos()
+# >>>>>>> origin/phoenix
 
 engine = create_engine(echo=False)
 Session = sessionmaker()
 
 
 def setUpModule():
-    """Creates the tables in the doko_test schema."""
+    """Create the tables in the doko_test schema."""
     engine.execute(DDL('DROP SCHEMA IF EXISTS doko_test CASCADE'))
     try:
         Base.metadata.create_all(engine)
@@ -45,19 +55,27 @@ def setUpModule():
 
 
 def tearDownModule():
-    """Drops the doko_test schema."""
+    """Drop the doko_test schema."""
     engine.execute(DDL('DROP SCHEMA IF EXISTS doko_test CASCADE'))
 
 
 class DokoTest(unittest.TestCase):
+
+    """Tests that subclass DokoTest happen in a database transaction.
+
+    Since subtransactions don't exactly work under this scheme, if you need
+    to access the database after a rollback (e.g., an exception happens),
+    you need to use the test_continues_after_rollback decorator.
+    """
+
     def setUp(self):
-        """Starts a transaction"""
+        """Start a transaction."""
         self.connection = engine.connect()
         self.transaction = self.connection.begin()
         self.session = Session(bind=self.connection, autocommit=True)
 
     def tearDown(self):
-        """Rolls back the transaction"""
+        """Roll back the transaction."""
         self.session.close()
         self.transaction.rollback()
         self.connection.close()
@@ -83,7 +101,7 @@ class DokoHTTPTest(AsyncHTTPTestCase):
         self.connection = engine.connect()
         self.transaction = self.connection.begin()
         self.session = Session(bind=self.connection, autocommit=True)
-        load_fixtures()
+        load_fixtures(engine)
 
     def tearDown(self):
         """Remove test data"""
@@ -91,7 +109,7 @@ class DokoHTTPTest(AsyncHTTPTestCase):
         self.session.close()
         self.transaction.rollback()
         self.connection.close()
-        unload_fixtures()
+        unload_fixtures(engine, 'doko_test')
 
     def get_app(self):
         """
@@ -112,6 +130,7 @@ class DokoHTTPTest(AsyncHTTPTestCase):
 
 
 def test_continues_after_rollback(doko_test):
+    """Use this if a test needs to access the database after a rollback."""
     @wraps(doko_test)
     def wrapper(self):
         self.session.close()

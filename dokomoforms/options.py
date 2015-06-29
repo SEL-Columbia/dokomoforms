@@ -1,5 +1,4 @@
-"""
-All the application options are defined here.
+"""All the application options are defined here.
 
 If you need to inject options at runtime (for testing, etc...):
 
@@ -12,7 +11,7 @@ import os.path
 import tornado.options
 from tornado.options import define, options
 
-__all__ = ['options']
+__all__ = ('options',)
 _arg = None
 
 # Application options
@@ -44,7 +43,8 @@ define(
 
 
 def inject_options(**kwargs):
-    """
+    """Add extra options programmatically.
+
     dokomoforms.options.parse_options reads from sys.argv if
     dokomoforms.options._arg is None. Calling
     dokomoforms.options.inject_options(name1='value1', name2='value2', ...) at
@@ -65,7 +65,8 @@ def inject_options(**kwargs):
 
 
 def parse_options():
-    """
+    """tornado.options.parse_command_line doesn't cut it.
+
     Tells Tornado to read from the config.py file (which in turn reads from
     the local_config.py file), then from options specified by
     dokomoforms.options._arg (sys.argv if _arg is None, or the list of

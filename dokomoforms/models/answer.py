@@ -17,6 +17,13 @@ from dokomoforms.exc import NotAnAnswerTypeError
 
 
 class Answer(Base):
+
+    """An Answer is a response to a SurveyNode.
+
+    An Answer can be one of an answer, an "other" response or a "don't know"
+    response. Answer.response abstracts over these 3 possibilites.
+    """
+
     __tablename__ = 'answer'
 
     id = util.pk()
@@ -46,7 +53,8 @@ class Answer(Base):
     @property
     @abc.abstractmethod
     def main_answer(self):
-        """
+        """The representative part of a provided answer.
+
         The main_answer is the only answer for simple types (integer, text,
         etc.) and for other types is the part of the answer that is most
         important. In practice, the main_answer is special only in that all
@@ -57,7 +65,8 @@ class Answer(Base):
     @property
     @abc.abstractmethod
     def answer(self):
-        """
+        """The answer. Could be the same as main_answer in simple cases.
+
         This property is the most useful representation available of the
         answer. In the simplest case it is just a synonym for main_answer.
         It could otherwise be a dictionary or another model.
@@ -71,10 +80,17 @@ class Answer(Base):
     @property
     @abc.abstractmethod
     def dont_know(self):
-        """A text field containing "don't know" responses"""
+        """A text field containing "don't know" responses."""
 
     @hybrid_property
     def response(self) -> OrderedDict:
+        """A dictionary that abstracts over answer, other, and dont_know.
+
+        {
+            'response_type': 'answer|other|dont_know',
+            'response': <one of self.answer, self.other, self.dont_know>
+        }
+        """
         possible_responses = [
             ('answer', self.main_answer),
             ('other', self.other),
@@ -114,8 +130,8 @@ class Answer(Base):
             ],
             [
                 'survey_node_answerable.id',
-                'survey_node_answerable.node_id',
-                'survey_node_answerable.type_constraint',
+                'survey_node_answerable.the_node_id',
+                'survey_node_answerable.the_type_constraint',
                 'survey_node_answerable.allow_multiple',
                 'survey_node_answerable.allow_other',
                 'survey_node_answerable.allow_dont_know',
@@ -196,6 +212,9 @@ def _answer_mixin_table_args():
 
 
 class TextAnswer(_AnswerMixin, Answer):
+
+    """A TEXT answer."""
+
     __tablename__ = 'answer_text'
     main_answer = sa.Column(pg.TEXT)
     answer = synonym('main_answer')
@@ -204,6 +223,9 @@ class TextAnswer(_AnswerMixin, Answer):
 
 
 class PhotoAnswer(_AnswerMixin, Answer):
+
+    """A photo answer (the id of a Photo)."""
+
     __tablename__ = 'answer_photo'
     main_answer = sa.Column(pg.UUID, util.fk('photo.id'))
     answer = synonym('main_answer')
@@ -223,6 +245,9 @@ class PhotoAnswer(_AnswerMixin, Answer):
 
 
 class Photo(Base):
+
+    """A BYTEA holding an image."""
+
     __tablename__ = 'photo'
 
     id = util.pk()
@@ -248,6 +273,9 @@ class Photo(Base):
 
 
 class IntegerAnswer(_AnswerMixin, Answer):
+
+    """An INTEGER answer (signed 4 byte)."""
+
     __tablename__ = 'answer_integer'
     main_answer = sa.Column(sa.Integer)
     answer = synonym('main_answer')
@@ -256,6 +284,9 @@ class IntegerAnswer(_AnswerMixin, Answer):
 
 
 class DecimalAnswer(_AnswerMixin, Answer):
+
+    """A NUMERIC answer."""
+
     __tablename__ = 'answer_decimal'
     main_answer = sa.Column(pg.NUMERIC)
     answer = synonym('main_answer')
@@ -264,6 +295,9 @@ class DecimalAnswer(_AnswerMixin, Answer):
 
 
 class DateAnswer(_AnswerMixin, Answer):
+
+    """A DATE answer."""
+
     __tablename__ = 'answer_date'
     main_answer = sa.Column(sa.Date)
     answer = synonym('main_answer')
@@ -272,6 +306,9 @@ class DateAnswer(_AnswerMixin, Answer):
 
 
 class TimeAnswer(_AnswerMixin, Answer):
+
+    """A TIME WITH TIME ZONE answer."""
+
     __tablename__ = 'answer_time'
     main_answer = sa.Column(sa.Time(timezone=True))
     answer = synonym('main_answer')
@@ -280,6 +317,9 @@ class TimeAnswer(_AnswerMixin, Answer):
 
 
 class TimestampAnswer(_AnswerMixin, Answer):
+
+    """A TIMESTAMP WITH TIME ZONE answer."""
+
     __tablename__ = 'answer_timestamp'
     main_answer = sa.Column(pg.TIMESTAMP(timezone=True))
     answer = synonym('main_answer')
@@ -288,16 +328,30 @@ class TimestampAnswer(_AnswerMixin, Answer):
 
 
 class LocationAnswer(_AnswerMixin, Answer):
+
+    """A GEOMETRY('POINT', 4326) answer.
+
+    Accepts input in the form
+    {
+        'lng': <longitude>,
+        'lat': <latitude>
+    }
+
+    The output is a GeoJSON.
+    """
+
     __tablename__ = 'answer_location'
     main_answer = sa.Column(Geometry('POINT', 4326))
     geo_json = column_property(func.ST_AsGeoJSON(main_answer))
 
     @hybrid_property
     def answer(self):
+        """LocationAnswer.geo_json."""
         return self.geo_json
 
     @answer.setter
     def answer(self, location: dict):
+        """Set LocationAnswer.main_answer using a dict of lng and lat."""
         self.main_answer = 'SRID=4326;POINT({lng} {lat})'.format(**location)
 
     __mapper_args__ = {'polymorphic_identity': 'location'}
@@ -305,6 +359,20 @@ class LocationAnswer(_AnswerMixin, Answer):
 
 
 class FacilityAnswer(_AnswerMixin, Answer):
+
+    """A facility answer (a la Revisit).
+
+    FacilityAnswer.answer is a dictionary with 4 keys:
+    facility_location, facility_id, facility_name, facility_sector
+
+    facility_location accepts input in the form
+    {
+        'lng': <longitude>,
+        'lat': <latitude>
+    }
+    and outputs a GeoJSON.
+    """
+
     __tablename__ = 'answer_facility'
     main_answer = sa.Column(Geometry('POINT', 4326))
     geo_json = column_property(func.ST_AsGeoJSON(main_answer))
@@ -314,6 +382,7 @@ class FacilityAnswer(_AnswerMixin, Answer):
 
     @hybrid_property
     def answer(self) -> OrderedDict:
+        """A dictionary of location, id, name, and sector."""
         return OrderedDict((
             ('facility_location', self.geo_json),
             ('facility_id', self.facility_id),
@@ -323,6 +392,7 @@ class FacilityAnswer(_AnswerMixin, Answer):
 
     @answer.setter
     def answer(self, facility_info: dict):
+        """Set FacilityAnswer.answer with a dict."""
         self.main_answer = (
             'SRID=4326;POINT({lng} {lat})'
             .format(**facility_info['facility_location'])
@@ -352,6 +422,9 @@ class FacilityAnswer(_AnswerMixin, Answer):
 
 
 class MultipleChoiceAnswer(_AnswerMixin, Answer):
+
+    """A Choice answer."""
+
     __tablename__ = 'answer_multiple_choice'
     id = util.pk()
     the_allow_other = sa.Column(sa.Boolean, nullable=False)
@@ -409,6 +482,20 @@ ANSWER_TYPES = {
 
 
 def construct_answer(*, type_constraint: str, **kwargs) -> Answer:
+    """Return a subclass of dokomoforms.models.answer.Answer.
+
+    The subclass is determined by the type_constraint parameter. This utility
+    function makes it easy to create an instance of an Answer subclass based
+    on external input.
+
+    See http://stackoverflow.com/q/30518484/1475412
+
+    :param type_constraint: the type of the answer. Must be one of the keys of
+                            dokomoforms.models.answer.ANSWER_TYPES
+    :param kwargs: the keyword arguments to pass to the constructor
+    :returns: an instance of one of the Answer subtypes
+    :raies: dokomoforms.exc.NotAnAnswerTypeError
+    """
     try:
         create_answer = ANSWER_TYPES[type_constraint]
     except KeyError:

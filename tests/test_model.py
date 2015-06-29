@@ -4,6 +4,7 @@ from collections import OrderedDict
 import json
 import datetime
 from decimal import Decimal
+import unittest
 
 from tests.util import (
     DokoTest, setUpModule, tearDownModule, test_continues_after_rollback
@@ -26,6 +27,53 @@ import dokomoforms.exc as exc
 from dokomoforms.models.survey import Bucket
 
 
+class TestBase(unittest.TestCase):
+    def test_to_json(self):
+        self.assertEqual(
+            models.Base._to_json({'</': 'a'}),
+            '{"<\\/": "a"}'
+        )
+
+        self.assertEqual(
+            models.Base._to_json({'</': 'a'}, tornado_encode=False),
+            '{"</": "a"}'
+        )
+
+    def test_str(self):
+        self.assertEqual(
+            models.Base.__str__(models.User(name='base')),
+            json.dumps(
+                OrderedDict((
+                    ('id', None),
+                    ('deleted', None),
+                    ('name', 'base'),
+                    ('emails', []),
+                    ('role', 'enumerator'),
+                    ('default_language', None),
+                    ('allowed_surveys', []),
+                    ('last_update_time', None),
+                )),
+                indent=4
+            )
+        )
+
+    def test_model_json_encoder(self):
+        self.assertRaises(
+            TypeError, models.ModelJSONEncoder().default, object()
+        )
+
+    def test_create_engine(self):
+        from dokomoforms.options import options
+        engine1 = models.create_engine()
+        self.assertEqual(engine1.echo, 'debug' if options.debug else False)
+
+        engine2 = models.create_engine(True)
+        self.assertEqual(engine2.echo, True)
+
+        engine3 = models.create_engine(False)
+        self.assertEqual(engine3.echo, False)
+
+
 class TestUser(DokoTest):
     def test_to_json(self):
         with self.session.begin():
@@ -42,8 +90,58 @@ class TestUser(DokoTest):
                 ('emails', ['b@b']),
                 ('role', 'enumerator'),
                 ('default_language', 'English'),
-                ('allowed_surveys', user.allowed_surveys),
+                ('allowed_surveys', []),
                 ('last_update_time', user.last_update_time.isoformat()),
+            ))
+        )
+
+    def test_email_to_json(self):
+        with self.session.begin():
+            new_user = models.User(name='a')
+            new_user.emails = [models.Email(address='b@b')]
+            self.session.add(new_user)
+        email = self.session.query(models.Email).one()
+        self.assertEqual(
+            email._asdict(),
+            OrderedDict((
+                ('id', email.id),
+                ('address', 'b@b'),
+                ('user', 'a'),
+                ('last_update_time', email.last_update_time),
+            ))
+        )
+
+    def test_survey_creator_asdict(self):
+        with self.session.begin():
+            new_user = models.SurveyCreator(name='a')
+            new_user.emails = [models.Email(address='b@b')]
+            new_user.surveys.append(
+                models.Survey(title={'English': 'some title'})
+            )
+            self.session.add(new_user)
+        user = self.session.query(models.User).one()
+        self.assertEqual(
+            user._asdict(),
+            OrderedDict((
+                ('id', user.id),
+                ('deleted', False),
+                ('name', 'a'),
+                ('emails', ['b@b']),
+                ('role', 'creator'),
+                ('default_language', 'English'),
+                ('allowed_surveys', []),
+                ('last_update_time', user.last_update_time),
+                (
+                    'surveys',
+                    [OrderedDict((
+                        (
+                            'survey_id',
+                            self.session.query(models.Survey.id).scalar()
+                        ),
+                        ('survey_title', {'English': 'some title'}),
+                    ))]
+                ),
+                ('token_expiration', user.token_expiration),
             ))
         )
 
@@ -127,7 +225,7 @@ class TestNode(DokoTest):
                         models.Survey(
                             title={'English': 'non_answerable'},
                             nodes=[
-                                models.NonAnswerableSurveyNode(
+                                models.construct_survey_node(
                                     node=models.construct_node(
                                         title={'English': 'should be note'},
                                         type_constraint='integer',
@@ -148,7 +246,7 @@ class TestNode(DokoTest):
                         models.Survey(
                             title={'English': 'answerable'},
                             nodes=[
-                                models.AnswerableSurveyNode(
+                                models.construct_survey_node(
                                     node=models.construct_node(
                                         title={
                                             'English': 'should be question'
@@ -188,7 +286,7 @@ class TestNode(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.NonAnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='note',
                             title={'English': 'a note'},
@@ -219,7 +317,7 @@ class TestNode(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='multiple_choice',
                             title={
@@ -306,6 +404,39 @@ class TestChoice(DokoTest):
         self.assertEqual(choices[1].choice_number, 1)
         self.assertEqual(choices[2].choice_number, 2)
 
+    def test_asdict(self):
+        with self.session.begin():
+            q = models.construct_node(
+                title={'English': 'some MC question'},
+                type_constraint='multiple_choice',
+            )
+            q.choices = [models.Choice(choice_text={'English': 'some choice'})]
+            self.session.add(q)
+
+        choice = self.session.query(models.Choice).one()
+        self.assertEqual(
+            choice._asdict(),
+            OrderedDict((
+                ('id', choice.id),
+                ('deleted', False),
+                ('choice_text', OrderedDict((('English', 'some choice'),))),
+                ('choice_number', 0),
+                (
+                    'question',
+                    OrderedDict((
+                        ('question_id', choice.question_id),
+                        (
+                            'question_title',
+                            OrderedDict((
+                                ('English', 'some MC question'),
+                            ))
+                        ),
+                    ))
+                ),
+                ('last_update_time', choice.last_update_time),
+            ))
+        )
+
     def test_question_delete_cascades_to_choices(self):
         with self.session.begin():
             q = models.construct_node(
@@ -342,6 +473,12 @@ class TestChoice(DokoTest):
 
 
 class TestSurvey(DokoTest):
+    def test_set_tzinfos(self):
+        from dokomoforms.models.survey import _set_tzinfos
+        _set_tzinfos()
+        from dokomoforms.models.survey import TZINFOS
+        self.assertIsNotNone(TZINFOS)
+
     def test_one_node_surveys(self):
         number_of_questions = 11
         with self.session.begin():
@@ -355,8 +492,10 @@ class TestSurvey(DokoTest):
                     title={'English': node_type + '_survey'},
                     nodes=[
                         models.construct_survey_node(
-                            type_constraint=node_type,
-                            title=node_type + '_node',
+                            node = models.construct_node(
+                                type_constraint=node_type,
+                                title={'English': node_type + '_node'},
+                            )
                         ),
                     ],
                 )
@@ -380,6 +519,48 @@ class TestSurvey(DokoTest):
                 for n in range(number_of_questions)],
             [1] * number_of_questions,
             msg='there is a survey with more than one node'
+        )
+
+    def test_asdict(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(
+                name='creator',
+                emails=[models.Email(address='email@email')],
+            )
+            survey = models.Survey(
+                title={'English': 'some survey'},
+                nodes=[
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title={'English': 'integer node'},
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys.append(survey)
+            self.session.add(creator)
+
+        the_survey = self.session.query(models.Survey).one()
+        self.assertEqual(
+            the_survey._asdict(),
+            OrderedDict((
+                ('id', the_survey.id),
+                ('deleted', False),
+                ('title', OrderedDict((('English', 'some survey'),))),
+                ('default_language', 'English'),
+                ('survey_type', 'public'),
+                ('version', 1),
+                (
+                    'creator_id',
+                    self.session.query(models.SurveyCreator.id).scalar()
+                ),
+                ('creator_name', 'creator'),
+                ('metadata', {}),
+                ('created_on', the_survey.created_on),
+                ('last_update_time', the_survey.last_update_time),
+                ('nodes', [self.session.query(models.SurveyNode).one()]),
+            ))
         )
 
     def test_title_in_default_langauge_must_exist(self):
@@ -433,6 +614,90 @@ class TestSurvey(DokoTest):
         )
 
 
+class TestSurveyNode(DokoTest):
+    def test_asdict(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(
+                name='creator',
+                emails=[models.Email(address='email@email')],
+            )
+            survey = models.Survey(
+                title={'English': 'some survey'},
+                nodes=[
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title={'English': 'integer node'},
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys.append(survey)
+            self.session.add(creator)
+
+        survey_node = self.session.query(models.SurveyNode).one()
+        self.assertEqual(
+            survey_node._asdict(),
+            OrderedDict((
+                ('title', {'English': 'integer node'}),
+                ('hint', {'English': ''}),
+                ('allow_multiple', False),
+                ('allow_other', False),
+                ('type_constraint', 'integer'),
+                ('logic', {}),
+                ('last_update_time', survey_node.last_update_time),
+                ('node_id', self.session.query(models.Node.id).scalar()),
+                ('id', survey_node.id),
+                ('deleted', False),
+                ('required', False),
+                ('allow_dont_know', False),
+            ))
+        )
+
+    def test_asdict_with_sub_survey(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(
+                name='creator',
+                emails=[models.Email(address='email@email')],
+            )
+            survey = models.Survey(
+                title={'English': 'some survey'},
+                nodes=[
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title={'English': 'integer node'},
+                        ),
+                        sub_surveys=[
+                            models.SubSurvey(),
+                        ],
+                    ),
+                ],
+            )
+            creator.surveys.append(survey)
+            self.session.add(creator)
+
+        survey_node = self.session.query(models.SurveyNode).one()
+        self.assertEqual(
+            survey_node._asdict(),
+            OrderedDict((
+                ('title', {'English': 'integer node'}),
+                ('hint', {'English': ''}),
+                ('allow_multiple', False),
+                ('allow_other', False),
+                ('type_constraint', 'integer'),
+                ('logic', {}),
+                ('last_update_time', survey_node.last_update_time),
+                ('node_id', self.session.query(models.Node.id).scalar()),
+                ('id', survey_node.id),
+                ('deleted', False),
+                ('required', False),
+                ('allow_dont_know', False),
+                ('sub_surveys', self.session.query(models.SubSurvey).all()),
+            ))
+        )
+
+
 class TestBucket(DokoTest):
     def _create_blank_survey(self) -> (models.SurveyCreator, models.Survey):
         creator = models.SurveyCreator(
@@ -443,14 +708,24 @@ class TestBucket(DokoTest):
         creator.surveys = [survey]
         return creator, survey
 
+    def test_bucket(self):
+        self.assertRaises(TypeError, Bucket.bucket)
+
     def test_non_instantiable(self):
         self.assertRaises(TypeError, Bucket)
+
+    def test_bucket_type_exists(self):
+        self.assertRaises(
+            exc.NoSuchBucketTypeError,
+            models.construct_bucket,
+            bucket_type='wrong',
+        )
 
     def test_integer_bucket(self):
         with self.session.begin():
             creator, survey = self._create_blank_survey()
             survey.nodes = [
-                models.AnswerableSurveyNode(
+                models.construct_survey_node(
                     node=models.construct_node(
                         type_constraint='integer',
                         title={'English': 'node'},
@@ -472,12 +747,79 @@ class TestBucket(DokoTest):
         the_bucket = self.session.query(Bucket).one()
         self.assertEqual(the_bucket.bucket, NumericRange(2, 3, '[)'))
 
+    def test_sub_survey_asdict(self):
+        with self.session.begin():
+            creator, survey = self._create_blank_survey()
+            survey.nodes = [
+                models.construct_survey_node(
+                    node=models.construct_node(
+                        type_constraint='integer',
+                        title={'English': 'node'},
+                    ),
+                    sub_surveys=[
+                        models.SubSurvey(
+                            buckets=[
+                                models.construct_bucket(
+                                    bucket_type='integer',
+                                    bucket='(1, 2]'
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ]
+            self.session.add(creator)
+
+        sub_survey = self.session.query(models.SubSurvey).one()
+        self.assertEqual(
+            sub_survey._asdict(),
+            OrderedDict((
+                ('deleted', False),
+                ('buckets', [NumericRange(2, 3, '[)')]),
+                ('repeatable', False),
+                ('nodes', []),
+            ))
+        )
+
+    def test_bucket_asdict(self):
+        with self.session.begin():
+            creator, survey = self._create_blank_survey()
+            survey.nodes = [
+                models.construct_survey_node(
+                    node=models.construct_node(
+                        type_constraint='integer',
+                        title={'English': 'node'},
+                    ),
+                    sub_surveys=[
+                        models.SubSurvey(
+                            buckets=[
+                                models.construct_bucket(
+                                    bucket_type='integer',
+                                    bucket='(1, 2]'
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ]
+            self.session.add(creator)
+
+        bucket = self.session.query(Bucket).one()
+        self.assertEqual(
+            bucket._asdict(),
+            OrderedDict((
+                ('id', bucket.id),
+                ('bucket_type', 'integer'),
+                ('bucket', NumericRange(2, 3, '[)')),
+            ))
+        )
+
     def test_integer_incorrect_bucket_type(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
                 creator, survey = self._create_blank_survey()
                 survey.nodes = [
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='integer',
                             title={'English': 'node'},
@@ -502,7 +844,7 @@ class TestBucket(DokoTest):
             with self.session.begin():
                 creator, survey = self._create_blank_survey()
                 survey.nodes = [
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='integer',
                             title={'English': 'node'},
@@ -525,7 +867,7 @@ class TestBucket(DokoTest):
         with self.session.begin():
             creator, survey = self._create_blank_survey()
             survey.nodes = [
-                models.AnswerableSurveyNode(
+                models.construct_survey_node(
                     node=models.construct_node(
                         type_constraint='integer',
                         title={'English': 'node'},
@@ -556,7 +898,7 @@ class TestBucket(DokoTest):
             with self.session.begin():
                 creator, survey = self._create_blank_survey()
                 survey.nodes = [
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='integer',
                             title={'English': 'node'},
@@ -588,7 +930,7 @@ class TestBucket(DokoTest):
             with self.session.begin():
                 creator, survey = self._create_blank_survey()
                 survey.nodes = [
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='integer',
                             title={'English': 'node'},
@@ -621,7 +963,7 @@ class TestBucket(DokoTest):
             with self.session.begin():
                 creator, survey = self._create_blank_survey()
                 survey.nodes = [
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='integer',
                             title={'English': 'node'},
@@ -645,7 +987,7 @@ class TestBucket(DokoTest):
         with self.session.begin():
             creator, survey = self._create_blank_survey()
             survey.nodes = [
-                models.AnswerableSurveyNode(
+                models.construct_survey_node(
                     node=models.construct_node(
                         type_constraint='integer',
                         title={'English': 'node1'},
@@ -661,7 +1003,7 @@ class TestBucket(DokoTest):
                         ),
                     ],
                 ),
-                models.AnswerableSurveyNode(
+                models.construct_survey_node(
                     node=models.construct_node(
                         type_constraint='integer',
                         title={'English': 'node2'},
@@ -686,7 +1028,7 @@ class TestBucket(DokoTest):
         with self.session.begin():
             creator, survey = self._create_blank_survey()
             survey.nodes = [
-                models.AnswerableSurveyNode(
+                models.construct_survey_node(
                     node=models.construct_node(
                         type_constraint='decimal',
                         title={'English': 'node'},
@@ -715,7 +1057,7 @@ class TestBucket(DokoTest):
         with self.session.begin():
             creator, survey = self._create_blank_survey()
             survey.nodes = [
-                models.AnswerableSurveyNode(
+                models.construct_survey_node(
                     node=models.construct_node(
                         type_constraint='date',
                         title={'English': 'node'},
@@ -746,7 +1088,7 @@ class TestBucket(DokoTest):
         with self.session.begin():
             creator, survey = self._create_blank_survey()
             survey.nodes = [
-                models.AnswerableSurveyNode(
+                models.construct_survey_node(
                     node=models.construct_node(
                         type_constraint='time',
                         title={'English': 'node'},
@@ -820,7 +1162,7 @@ class TestBucket(DokoTest):
                 )
                 creator.surveys.append(survey)
                 survey.nodes = [
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='time',
                             title={'English': 'node'},
@@ -955,7 +1297,7 @@ class TestBucket(DokoTest):
         with self.session.begin():
             creator, survey = self._create_blank_survey()
             survey.nodes = [
-                models.AnswerableSurveyNode(
+                models.construct_survey_node(
                     node=models.construct_node(
                         type_constraint='timestamp',
                         title={'English': 'node'},
@@ -996,7 +1338,7 @@ class TestBucket(DokoTest):
             node.choices = [choice]
 
             survey.nodes = [
-                models.AnswerableSurveyNode(
+                models.construct_survey_node(
                     node=node,
                     sub_surveys=[
                         models.SubSurvey(
@@ -1028,7 +1370,7 @@ class TestBucket(DokoTest):
             node.choices = [choice1, choice2]
 
             survey.nodes = [
-                models.AnswerableSurveyNode(
+                models.construct_survey_node(
                     node=node,
                     sub_surveys=[
                         models.SubSurvey(
@@ -1067,7 +1409,7 @@ class TestBucket(DokoTest):
                 node.choices = [choice]
 
                 survey.nodes = [
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=node,
                         sub_surveys=[
                             models.SubSurvey(
@@ -1098,7 +1440,7 @@ class TestBucket(DokoTest):
                 wrong_node.choices = [wrong_choice]
 
                 survey.nodes = [
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='multiple_choice',
                             title={'English': 'node'},
@@ -1145,6 +1487,76 @@ class TestSubmission(DokoTest):
             self.session.query(models.User).filter_by(role='enumerator').one()
         )
 
+    def test_enumerator_only_submission_asdict(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            enumerator = models.User(name='enumerator')
+            creator.surveys = [
+                models.EnumeratorOnlySurvey(
+                    title={'English': 'survey'},
+                    enumerators=[enumerator],
+                    nodes=[
+                        models.construct_survey_node(
+                            node=models.construct_node(
+                                type_constraint='location',
+                                title={'English': 'location?'},
+                            ),
+                        ),
+                    ],
+                ),
+            ]
+
+            self.session.add(creator)
+
+            submission = models.EnumeratorOnlySubmission(
+                survey=creator.surveys[0],
+                enumerator=enumerator,
+                answers=[
+                    models.construct_answer(
+                        type_constraint='location',
+                        survey_node=creator.surveys[0].nodes[0],
+                        answer={'lng': 5, 'lat': 3},
+                    ),
+                ],
+            )
+
+            self.session.add(submission)
+
+        the_submission = self.session.query(models.Submission).one()
+        self.assertEqual(
+            the_submission._asdict(),
+            OrderedDict((
+                ('id', the_submission.id),
+                ('deleted', False),
+                ('survey_id', self.session.query(models.Survey.id).scalar()),
+                ('save_time', the_submission.save_time),
+                ('submission_time', the_submission.submission_time),
+                ('last_update_time', the_submission.last_update_time),
+                ('submitter_name', ''),
+                ('submitter_email', ''),
+                (
+                    'answers',
+                    [
+                        OrderedDict((
+                            ('response_type', 'answer'),
+                            (
+                                'response',
+                                '{"type":"Point","coordinates":[5,3]}'
+                            ),
+                        )),
+                    ]
+                ),
+                (
+                    'enumerator_user_id',
+                    self.session
+                    .query(models.User.id)
+                    .filter_by(role='enumerator')
+                    .scalar()
+                ),
+                ('enumerator_user_name', 'enumerator'),
+            ))
+        )
+
     def test_enumerator_only(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
@@ -1160,6 +1572,26 @@ class TestSubmission(DokoTest):
                 self.session.add(creator)
 
                 submission = models.PublicSubmission(
+                    survey=creator.surveys[0],
+                )
+
+                self.session.add(submission)
+
+    def test_enumerator_only_submission_requires_enumerator(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                creator = models.SurveyCreator(name='creator')
+                enumerator = models.User(name='enumerator')
+                creator.surveys = [
+                    models.EnumeratorOnlySurvey(
+                        title={'English': 'survey'},
+                    ),
+                ]
+                creator.enumerators = [enumerator]
+
+                self.session.add(creator)
+
+                submission = models.EnumeratorOnlySubmission(
                     survey=creator.surveys[0],
                 )
 
@@ -1187,7 +1619,7 @@ class TestSubmission(DokoTest):
 
                 self.session.add(submission)
 
-    def test_authentication_not_required(self):
+    def test_authentication_not_required_for_regular_survey(self):
         with self.session.begin():
             creator = models.SurveyCreator(name='creator')
             authentic_user = models.User(name='enumerator')
@@ -1224,6 +1656,76 @@ class TestSubmission(DokoTest):
             0
         )
 
+    def test_public_submission_asdict_non_enumerator(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            creator.surveys = [models.Survey(title={'English': 'survey'})]
+
+            self.session.add(creator)
+
+            auth_submission = models.PublicSubmission(
+                survey=creator.surveys[0],
+                submitter_name='not an enumerator',
+                submitter_email='some@email',
+            )
+
+            self.session.add(auth_submission)
+
+        the_submission = self.session.query(models.Submission).one()
+        self.assertEqual(
+            the_submission._asdict(),
+            OrderedDict((
+                ('id', the_submission.id),
+                ('deleted', False),
+                ('survey_id', self.session.query(models.Survey.id).scalar()),
+                ('save_time', the_submission.save_time),
+                ('submission_time', the_submission.submission_time),
+                ('last_update_time', the_submission.last_update_time),
+                ('submitter_name', 'not an enumerator'),
+                ('submitter_email', 'some@email'),
+                ('answers', []),
+            ))
+        )
+
+    def test_public_submission_asdict_enumerator(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            authentic_user = models.User(name='enumerator')
+            creator.surveys = [models.Survey(title={'English': 'survey'})]
+
+            self.session.add(creator)
+
+            auth_submission = models.PublicSubmission(
+                survey=creator.surveys[0],
+                enumerator=authentic_user,
+            )
+
+            self.session.add(auth_submission)
+
+        the_submission = self.session.query(models.Submission).one()
+        self.assertEqual(
+            the_submission._asdict(),
+            OrderedDict((
+                ('id', the_submission.id),
+                ('deleted', False),
+                ('survey_id', self.session.query(models.Survey.id).scalar()),
+                ('save_time', the_submission.save_time),
+                ('submission_time', the_submission.submission_time),
+                ('last_update_time', the_submission.last_update_time),
+                ('submitter_name', ''),
+                ('submitter_email', ''),
+                ('answers', []),
+                (
+                    'enumerator_user_id',
+                    self.session
+                    .query(models.User.id)
+                    .filter_by(role='enumerator')
+                    .scalar()
+                ),
+                ('enumerator_user_name', 'enumerator'),
+            ))
+        )
+
 
 class TestAnswer(DokoTest):
     def test_non_instantiable(self):
@@ -1235,7 +1737,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='integer',
                             title={'English': 'integer question'},
@@ -1281,7 +1783,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='integer',
                             title={'English': 'integer question'},
@@ -1346,7 +1848,7 @@ class TestAnswer(DokoTest):
                     models.Survey(
                         title={'English': 'non_answerable'},
                         nodes=[
-                            models.NonAnswerableSurveyNode(
+                            models.construct_survey_node(
                                 node=models.construct_node(
                                     type_constraint='note',
                                     title={'English': "can't answer me!"},
@@ -1393,7 +1895,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='integer',
                             title={'English': 'integer question'},
@@ -1427,7 +1929,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='integer',
                             title={'English': 'integer question'},
@@ -1461,7 +1963,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='text',
                             title={'English': 'text_question'},
@@ -1502,7 +2004,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='integer',
                             title={'English': 'integer_question'},
@@ -1540,7 +2042,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='decimal',
                             title={'English': 'decimal_question'},
@@ -1578,7 +2080,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='date',
                             title={'English': 'date_question'},
@@ -1616,7 +2118,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='time',
                             title={'English': 'time_question'},
@@ -1662,7 +2164,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='timestamp',
                             title={'English': 'timestamp_question'},
@@ -1708,7 +2210,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='location',
                             title={'English': 'location_question'},
@@ -1746,7 +2248,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='facility',
                             title={'English': 'facility_question'},
@@ -1793,7 +2295,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='multiple_choice',
                             title={'English': 'multiple_choice_question'},
@@ -1834,7 +2336,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={"English": "survey"},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='multiple_choice',
                             title={"English": "multiple_choice_question_1"},
@@ -1843,7 +2345,7 @@ class TestAnswer(DokoTest):
                             )],
                         ),
                     ),
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='multiple_choice',
                             title={"English": "multiple_choice_question_2"},
@@ -1880,7 +2382,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='integer',
                             title={'English': 'other_not_allowed'},
@@ -1914,7 +2416,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='integer',
                             title={'English': 'other_not_allowed'},
@@ -1957,7 +2459,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='integer',
                             title={'English': 'other allowed'},
@@ -1993,7 +2495,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='integer',
                             title={'English': 'dont_know_not_allowed'},
@@ -2027,7 +2529,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='integer',
                             title={'English': 'dont_know_not_allowed'},
@@ -2070,7 +2572,7 @@ class TestAnswer(DokoTest):
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
-                    models.AnswerableSurveyNode(
+                    models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='integer',
                             title={'English': 'dont_know allowed'},

@@ -14,3 +14,6 @@ Vagrantfile
 .vagrant
 provision.sh
 .DS_Store
+_build
+_static
+_templates
