@@ -1,4 +1,5 @@
-"""
+"""Default configuration file.
+
 Treat this as a read-only file! It sets the defaults for the configuration
 values.
 

@@ -10,7 +10,8 @@ from sqlalchemy.sql.expression import func
 from dokomoforms.api import BaseResource
 from dokomoforms.models import (
     Survey, Submission, construct_survey_node,
-    User, construct_submission, construct_answer
+    User, construct_submission, construct_answer,
+    Node, construct_node
 )
 
 
@@ -110,13 +111,17 @@ class SurveyResource(BaseResource):
                 # treat this as a DELETE request:
                 self.delete()
 
-        def create_survey_node(node):
+        def create_or_get_survey_node(node_dict):
             # pass node props as kwargs
-            return construct_survey_node(**node)
+            if 'id' in node_dict:
+                node = self.session.query(Node).get(node_dict['id'])
+            else:
+                node = construct_node(**node_dict)
+            return node
 
         with self.session.begin():
             # create a list of Node models
-            nodes = list(map(create_survey_node, self.data['nodes']))
+            nodes = list(map(create_or_get_survey_node, self.data['nodes']))
             # remove the existing nodes key from the received data
             del self.data['nodes']
             creator = self.current_user_model
