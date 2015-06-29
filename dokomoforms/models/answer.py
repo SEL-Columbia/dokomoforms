@@ -130,8 +130,8 @@ class Answer(Base):
             ],
             [
                 'survey_node_answerable.id',
-                'survey_node_answerable.node_id',
-                'survey_node_answerable.type_constraint',
+                'survey_node_answerable.the_node_id',
+                'survey_node_answerable.the_type_constraint',
                 'survey_node_answerable.allow_multiple',
                 'survey_node_answerable.allow_other',
                 'survey_node_answerable.allow_dont_know',

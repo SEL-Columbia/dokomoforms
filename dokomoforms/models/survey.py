@@ -13,7 +13,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.orderinglist import ordering_list
 
-from dokomoforms.models import util, Base, node_type_enum
+from dokomoforms.models import util, Base, node_type_enum, Node
 from dokomoforms.exc import NoSuchBucketTypeError
 
 
@@ -205,8 +205,8 @@ class SubSurvey(Base):
             ],
             [
                 'survey_node_answerable.id',
-                'survey_node_answerable.type_constraint',
-                'survey_node_answerable.node_id'
+                'survey_node_answerable.the_type_constraint',
+                'survey_node_answerable.the_node_id'
             ],
             onupdate='CASCADE', ondelete='CASCADE'
         ),
@@ -494,20 +494,14 @@ class SurveyNode(Base):
         nullable=False,
     )
 
-    @property  # pragma: no cover
-    @abc.abstractmethod
-    def node_id(self):
-        """The id of the Node."""
+    node_id = sa.Column(pg.UUID, nullable=False)
+    type_constraint = sa.Column(node_type_enum, nullable=False)
+    the_node = relationship('Node')
 
     @property  # pragma: no cover
     @abc.abstractmethod
     def node(self):
         """The Node instance."""
-
-    @property  # pragma: no cover
-    @abc.abstractmethod
-    def type_constraint(self):
-        """The type_constraint of the Node."""
 
     root_survey_id = sa.Column(pg.UUID, util.fk('survey.id'))
     logic = util.json_column('logic', default='{}')
@@ -516,7 +510,12 @@ class SurveyNode(Base):
     __mapper_args__ = {'polymorphic_on': survey_node_answerable}
     __table_args__ = (
         sa.UniqueConstraint('id', 'node_number'),
+        sa.UniqueConstraint('id', 'node_id', 'type_constraint'),
         sa.UniqueConstraint('root_survey_id', 'node_number'),
+        sa.ForeignKeyConstraint(
+            ['node_id', 'type_constraint'],
+            ['node.id', 'node.type_constraint']
+        ),
     )
 
     def _asdict(self) -> OrderedDict:
@@ -535,16 +534,17 @@ class NonAnswerableSurveyNode(SurveyNode):
 
     __tablename__ = 'survey_node_non_answerable'
 
-    id = util.pk('survey_node.id')
-    node_id = sa.Column(pg.UUID, nullable=False)
-    type_constraint = sa.Column(node_type_enum, nullable=False)
+    id = util.pk()
+    the_node_id = sa.Column(pg.UUID, util.fk('note.id'), nullable=False)
+    the_type_constraint = sa.Column(node_type_enum, nullable=False)
     node = relationship('Note')
 
     __mapper_args__ = {'polymorphic_identity': 'non_answerable'}
     __table_args__ = (
         sa.ForeignKeyConstraint(
-            ['node_id', 'type_constraint'],
-            ['note.id', 'note.the_type_constraint']
+            ['id', 'the_node_id', 'the_type_constraint'],
+            ['survey_node.id', 'survey_node.node_id',
+                'survey_node.type_constraint']
         ),
     )
 
@@ -555,9 +555,9 @@ class AnswerableSurveyNode(SurveyNode):
 
     __tablename__ = 'survey_node_answerable'
 
-    id = util.pk('survey_node.id')
-    node_id = sa.Column(pg.UUID, nullable=False)
-    type_constraint = sa.Column(node_type_enum, nullable=False)
+    id = util.pk()
+    the_node_id = sa.Column(pg.UUID, nullable=False)
+    the_type_constraint = sa.Column(node_type_enum, nullable=False)
     allow_multiple = sa.Column(sa.Boolean, nullable=False)
     allow_other = sa.Column(sa.Boolean, nullable=False)
     node = relationship('Question')
@@ -577,21 +577,24 @@ class AnswerableSurveyNode(SurveyNode):
 
     __mapper_args__ = {'polymorphic_identity': 'answerable'}
     __table_args__ = (
-        sa.UniqueConstraint('id', 'type_constraint', 'node_id'),
+        sa.UniqueConstraint('id', 'the_type_constraint', 'the_node_id'),
         sa.UniqueConstraint(
-            'id', 'node_id', 'type_constraint', 'allow_multiple',
+            'id', 'the_node_id', 'the_type_constraint', 'allow_multiple',
             'allow_other', 'allow_dont_know'
         ),
         sa.ForeignKeyConstraint(
+            ['id', 'the_node_id', 'the_type_constraint'],
+            ['survey_node.id', 'survey_node.node_id',
+                'survey_node.type_constraint']
+        ),
+        sa.ForeignKeyConstraint(
             [
-                'node_id',
-                'type_constraint',
+                'the_node_id',
                 'allow_multiple',
                 'allow_other',
             ],
             [
                 'question.id',
-                'question.the_type_constraint',
                 'question.allow_multiple',
                 'question.allow_other',
             ]
@@ -605,3 +608,16 @@ class AnswerableSurveyNode(SurveyNode):
         if self.sub_surveys:
             result['sub_surveys'] = self.sub_surveys
         return result
+
+
+def construct_survey_node(*,
+                          answerable: bool, node: Node,
+                          **kwargs) -> SurveyNode:
+    """Return a subclass of dokomoforms.models.survey.SurveyNode.
+
+    :param answerable: TODO
+    :param node: TODO
+    :returns: an instance of one of the SurveyNode subclasses.
+    """
+    create = AnswerableSurveyNode if answerable else NonAnswerableSurveyNode
+    return create(node=node, the_node=node, **kwargs)

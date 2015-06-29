@@ -99,9 +99,7 @@ class Question(Node):
     )
 
     __table_args__ = (
-        sa.UniqueConstraint(
-            'id', 'the_type_constraint', 'allow_multiple', 'allow_other'
-        ),
+        sa.UniqueConstraint('id', 'allow_multiple', 'allow_other'),
         sa.ForeignKeyConstraint(
             ['id', 'the_type_constraint'], ['node.id', 'node.type_constraint']
         ),

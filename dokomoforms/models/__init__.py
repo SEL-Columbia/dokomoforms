@@ -12,7 +12,7 @@ from dokomoforms.models.node import (
 )
 from dokomoforms.models.survey import (
     Survey, EnumeratorOnlySurvey, SubSurvey, SurveyNode,
-    NonAnswerableSurveyNode, AnswerableSurveyNode,
+    NonAnswerableSurveyNode, AnswerableSurveyNode, construct_survey_node,
     construct_bucket, survey_type_enum,
 )
 from dokomoforms.models.submission import (
@@ -34,7 +34,7 @@ __all__ = (
     'Choice',
     # Survey
     'Survey', 'EnumeratorOnlySurvey', 'SubSurvey', 'SurveyNode',
-    'NonAnswerableSurveyNode', 'AnswerableSurveyNode',
+    'NonAnswerableSurveyNode', 'AnswerableSurveyNode', 'construct_survey_node',
     'construct_bucket', 'survey_type_enum',
     # Submission
     'Submission', 'EnumeratorOnlySubmission', 'PublicSubmission',
