@@ -189,6 +189,25 @@ class TestNode(DokoTest):
         question = self.session.query(models.Question).one()
         self.assertEqual(question.title, {'English': 'test'})
 
+    def test_construct_node_with_languages(self):
+        with self.session.begin():
+            self.session.add(models.construct_node(
+                type_constraint='text',
+                languages=['French', 'German'],
+                title={
+                    'German': 'german test',
+                    'Italian': 'italian test',
+                    'French': 'french test',
+                },
+                hint={
+                    'German': 'german hint ',
+                    'Italian': 'italian hint',
+                    'French': 'french hint',
+                },
+            ))
+        node = self.session.query(models.Node).one()
+        self.assertEqual(node.languages, ('French', 'German'))
+
     def test_asdict(self):
         with self.session.begin():
             self.session.add(models.construct_node(
@@ -200,6 +219,8 @@ class TestNode(DokoTest):
             node._asdict(),
             OrderedDict((
                 ('id', node.id),
+                ('deleted', False),
+                ('languages', ('English',)),
                 ('title', {'English': 'test'}),
                 ('hint', {'English': ''}),
                 ('allow_multiple', False),
@@ -307,6 +328,7 @@ class TestNode(DokoTest):
             OrderedDict((
                 ('id', note.id),
                 ('deleted', False),
+                ('languages', ('English',)),
                 ('title', {'English': 'a note'}),
                 ('type_constraint', 'note'),
                 ('logic', {}),

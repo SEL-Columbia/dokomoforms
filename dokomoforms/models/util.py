@@ -237,6 +237,45 @@ def json_column(column_name: str, *, default=None) -> sa.Column:
     )
 
 
+def languages_column(column_name) -> sa.Column:
+    """A TEXT[] column of length > 0.
+
+    Return an ARRAY(TEXT, as_tuple=True) column.
+
+    :param column_name: the name of the column
+    :returns: a SQLAlchemy Column for a non-null ARRAY(TEXT, as_tuple=True)
+              type.
+    """
+    return sa.Column(
+        pg.ARRAY(pg.TEXT, as_tuple=True),
+        sa.CheckConstraint(
+            'ARRAY_LENGTH({}, 1) > 0'.format(column_name)
+        ),
+        nullable=False,
+        default=['English'],
+    )
+
+
+def languages_constraint(column_name, languages_column_name) -> sa.Constraint:
+    """CHECK CONSTRAINT for a translatable column.
+
+    Checks that all of the languages in the languages column exist as keys in
+    the translatable column.
+
+    :param column_name: the name of the translatable column
+    :param languages_column_name: the name of the TEXT[] column containing the
+                                  languages.
+    :return: a SQLAlchemy Constraint to ensure that all the required
+             translations are available.
+    """
+    return sa.CheckConstraint(
+        "{} ?& {}".format(column_name, languages_column_name),
+        name='all_{}_languages_present_in_{}'.format(
+            column_name, languages_column_name
+        ),
+    )
+
+
 def last_update_time() -> sa.Column:
     """A timestamp column set to CURRENT_TIMESTAMP on update.
 
