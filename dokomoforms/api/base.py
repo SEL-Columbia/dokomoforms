@@ -1,7 +1,10 @@
 from restless.tnd import TornadoResource
+import restless.exceptions as exc
 
 from dokomoforms.api.serializer import ModelJSONSerializer
 from dokomoforms.handlers.util import BaseAPIHandler
+
+from dokomoforms.models import NODE_TYPES, Node
 
 """
 A list of the expected query arguments
@@ -9,6 +12,7 @@ A list of the expected query arguments
 QUERY_ARGS = [
     'limit',
     'offset',
+    'type',
     'draw'
 ]
 
@@ -37,6 +41,10 @@ class BaseResource(TornadoResource):
     @property
     def current_user_model(self):
         return self.r_handler.current_user_model
+
+    @property
+    def current_user(self):
+        return self.r_handler.current_user
 
     def wrap_list_response(self, data):
         """
@@ -87,18 +95,38 @@ class BaseResource(TornadoResource):
         limit = self.r_handler.get_query_argument('limit', False)
         offset = self.r_handler.get_query_argument('offset', False)
         deleted = self.r_handler.get_query_argument('show_deleted', False)
+        search_term = self.r_handler.get_query_argument('search', False)
+        search_fields = self.r_handler.get_query_argument(
+            'search_fields', 'title')
+        search_lang = self.r_handler.get_query_argument('lang', 'English')
+        type = self.r_handler.get_query_argument('type', False)
 
         if not deleted:
             query = query.filter(model_cls.deleted == False)
 
-        if 'filter' in kwargs:
-            query = query.filter(kwargs['filter'])
-
-        if limit:
+        if limit is not False:
             query = query.limit(int(limit))
 
-        if offset:
+        if offset is not False:
             query = query.offset(int(offset))
+
+        if type is not False:
+            if (model_cls == Node and
+                    hasattr(model_cls, 'type_constraint') and
+                    type in NODE_TYPES):
+                query = query.filter(model_cls.type_constraint == type)
+            else:
+                raise exc.BadRequest("'" + type + "' type is invalid")
+
+        # TODO: this isn't complete -- needs jsonb lookupability.
+        if search_term is not False:
+            search_fields_list = search_fields.split(',')
+            for search_field in search_fields_list:
+                if hasattr(model_cls, search_field):
+                    query = query.filter(
+                        getattr(
+                            model_cls, search_field
+                        ).ilike('%' + search_term + '%'))
 
         response = query.all()
 

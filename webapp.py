@@ -26,7 +26,9 @@ import dokomoforms.models as models
 from dokomoforms.options import options
 import dokomoforms.handlers as handlers
 from dokomoforms.models import create_engine, Base
-from dokomoforms.api import SurveyResource, SubmissionResource
+from dokomoforms.api import (
+    SurveyResource, SubmissionResource, NodeResource
+)
 
 _pwd = os.path.dirname(__file__)
 bold = '\033[1m'
@@ -142,11 +144,19 @@ class Application(tornado.web.Application):
 
             # Submissions
             url(r'' + self._api_root_path + '/submissions',
-                SubmissionResource.as_list(), name="sumbissions"),
+                SubmissionResource.as_list(), name="submissions"),
             url(r'' + self._api_root_path +
                 '/submissions/({})/?'.format(UUID_REGEX),
                 SubmissionResource.as_detail(),
                 name="submission"),
+
+            # Nodes
+            url(r'' + self._api_root_path + '/nodes',
+                NodeResource.as_list(), name="nodes"),
+            url(r'' + self._api_root_path +
+                '/nodes/({})/?'.format(UUID_REGEX),
+                NodeResource.as_detail(),
+                name="node"),
         ]
         if options.debug:
             urls += [

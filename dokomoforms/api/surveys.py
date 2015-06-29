@@ -26,20 +26,20 @@ class SurveyResource(BaseResource):
     objects_key = 'surveys'
 
     # The preparer defines the fields that get returned.
-    preparer = FieldsPreparer(fields={
-        'id': 'id',
-        'deleted': 'deleted',
-        'title': 'title',
-        'default_language': 'default_language',
-        'enumerator_only': 'enumerator_only',
-        'version': 'version',
-        'creator_id': 'creator_id',
-        'creator_name': 'creator.name',
-        'metadata': 'survey_metadata',
-        'created_on': 'created_on',
-        'last_update_time': 'last_update_time',
-        'nodes': 'nodes',
-    })
+    #preparer = FieldsPreparer(fields={
+    #    'id': 'id',
+    #    'deleted': 'deleted',
+    #    'title': 'title',
+    #    'default_language': 'default_language',
+    #    'enumerator_only': 'enumerator_only',
+    #    'version': 'version',
+    #    'creator_id': 'creator_id',
+    #    'creator_name': 'creator.name',
+    #    'metadata': 'survey_metadata',
+    #    'created_on': 'created_on',
+    #    'last_update_time': 'last_update_time',
+    #    'nodes': 'nodes',
+    #})
 
     http_methods = {
         'list': {
@@ -81,7 +81,7 @@ class SurveyResource(BaseResource):
     def detail(self, survey_id):
         """Return a single survey."""
         survey = self.session.query(Survey).get(survey_id)
-        if not survey:
+        if survey is None:
             raise exc.NotFound()
         else:
             return survey
@@ -302,3 +302,12 @@ class SurveyResource(BaseResource):
                 'num_submissions': day[1]
             })
         return response
+
+        def prepare(self, data):
+            """
+            If we don't prep the data, all the fields get returned!
+
+            We can subtract fields here if there are fields which shouldn't
+            be included in the API.
+            """
+            return data
