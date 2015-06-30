@@ -60,6 +60,7 @@ def load_fixtures(engine):
             title={'English': 'single_survey'},
             nodes=[
                 models.construct_survey_node(
+                    id="60e56824-910c-47aa-b5c0-71493277b43f",
                     node=models.construct_node(
                         id="60e56824-910c-47aa-b5c0-71493277b43f",
                         title={'English': 'integer node'},

@@ -15,7 +15,7 @@ from dokomoforms.options import inject_options, parse_options
 
 inject_options(
     schema='doko_test',
-    # debug=True,
+    debug=True,
     # fake logged in user with ID from fixture
     TEST_USER="""
         {
@@ -36,7 +36,7 @@ from webapp import Application
 from tests.fixtures import load_fixtures, unload_fixtures
 # =======
 # from dokomoforms.models.survey import _set_tzinfos
-# 
+#
 # _set_tzinfos()
 # >>>>>>> origin/phoenix
 
