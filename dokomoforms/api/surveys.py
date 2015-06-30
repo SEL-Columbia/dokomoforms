@@ -96,28 +96,18 @@ class SurveyResource(BaseResource):
         Since this captures all POST requests, we first check for a _method
         query param and treat the request accordingly.
         """
-        if self.current_user_model is None:
-            raise tornado.web.HTTPError(
-                403,
-                reason=(
-                    'You do not have sufficient privilages.'
-                ),
-            )
-
-        # Check for _method query param
-        _method = self.r_handler.get_argument('_method', None)
-        if _method is not None:
-            if _method == 'DELETE':
-                # treat this as a DELETE request:
-                self.delete()
 
         def create_or_get_survey_node(node_dict):
-            # pass node props as kwargs
+            # get or create the node
             if 'id' in node_dict:
                 node = self.session.query(Node).get(node_dict['id'])
             else:
                 node = construct_node(**node_dict)
-            return node
+            # create survey node
+            survey_node = construct_survey_node(**{
+                'node': node
+            })
+            return survey_node
 
         with self.session.begin():
             # create a list of Node models

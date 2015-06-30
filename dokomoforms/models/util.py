@@ -152,7 +152,11 @@ class ModelJSONEncoder(json.JSONEncoder):
         if isinstance(obj, (datetime.date, datetime.time)):
             return obj.isoformat()
         if isinstance(obj, (NumericRange, DateRange, DateTimeTZRange)):
-            return str(obj)
+            lower = str(obj.lower) if obj.lower is not None else 'None'
+            upper = str(obj.upper) if obj.upper is not None else 'None'
+            lower_inc = '[' if obj.lower_inc else '('
+            upper_inc = ']' if obj.upper_inc else ')'
+            return lower_inc + lower + ',' + upper + upper_inc
         return super().default(obj)
 
 
