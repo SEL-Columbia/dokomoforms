@@ -633,7 +633,7 @@ Widgets.photo = function(question, page, footer) {
     function updatePhoto(video, canvas, context) {
         // Find current length of inputs and update the last one;
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        var photo = canvas.toDataURL("image/jpeg", 0.5);
+        var photo = canvas.toDataURL("image/png", 0.5);
 
         // Tests
         window.photo = photo;

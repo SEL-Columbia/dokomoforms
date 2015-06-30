@@ -28,28 +28,21 @@ function Survey(id, version, questions, answers, metadata, title, created_on, la
     this.default_language = default_language;
     console.log(self.default_language);
 
-    //XXX Patch work needs to be removed
-    _.each(self.questions, function(question, idx) {
-        question.sequence_number = idx;
-        question.question_to_sequence_number = idx + 1;
-        question.default_language = self.default_language;
-        if (idx == self.questions.length - 1) {
-            question.question_to_sequence_number = -1;
-        }
-    });
-
-    console.log(self.questions);
     // Set up questions
-    _.each(self.questions, function(question) {
+    _.each(self.questions, function(question, idx) {
         question.answer = answers[question.id] || [];
-        // Set next pointers
-        question.next = self.getQuestion(question.question_to_sequence_number);
+        question.default_language = self.default_language;
+        // Set next and prev pointers
+        if (idx > 0)
+            question.prev = self.questions[idx - 1];
+        if (idx < self.questions.length - 1)
+            question.next = self.questions[idx + 1];
+
     });
 
 
     // Know where to start, and number
     self.current_question = self.questions[0];
-    self.lowest_sequence_number = self.current_question.sequence_number;
     self.first_question = self.current_question;
 
     // Now that you know order, you can set prev pointers
@@ -67,15 +60,16 @@ function Survey(id, version, questions, answers, metadata, title, created_on, la
 }
 
 /*
- * Search for a survey question by sequence number
- * @seq: Question sequence number
+ * Search for a survey question by id
+ * @id: Question id
  *
  * Returns a question object
  */
-Survey.prototype.getQuestion = function(seq) {
+Survey.prototype.getQuestion = function(id) {
     var self = this;
     for(var i = 0; i < self.questions.length; i++) {
-        if (self.questions[i].sequence_number === seq) {
+        // XXX search nested structure by current level only
+        if (self.questions[i].id === id) {
             return self.questions[i];
         }
     }
@@ -115,7 +109,7 @@ Survey.prototype.next = function(offset) {
     var index = $('.content').data('index');
 
     // Backward at first question
-    if (index === self.lowest_sequence_number && offset === PREV) {
+    if (index === 1 && offset === PREV) {
         App.splash();
         return;
     }
@@ -166,7 +160,7 @@ Survey.prototype.next = function(offset) {
             var branches = this.current_question.branches;
             for (var i=0; i < branches.length; i++) {
                 if (branches[i].question_choice_id === first_response) {
-                    next_question = self.getQuestion(branches[i].to_sequence_number);
+                    next_question = self.getQuestion(branches[i].to_question_id);
                     // update pointers
                     self.current_question.next = next_question;
                     next_question.prev = self.current_question; 
@@ -200,7 +194,7 @@ Survey.prototype.render = function(question) {
     }
 
     // Determine index
-    var index = question ? question.sequence_number : this.questions.length + 1;
+    var index = question ? self.questions.indexOf(question) + 1: this.questions.length + 1;
 
     // Update navs
     var barnav  = $('.bar-nav');
