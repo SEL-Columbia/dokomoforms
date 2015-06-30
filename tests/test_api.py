@@ -15,7 +15,7 @@ TODO: add expception and error response tests
 # The numbers expected to be present via fixtures
 TOTAL_SURVEYS = 14
 TOTAL_SUBMISSIONS = 112
-TOTAL_NODES = 12
+TOTAL_NODES = 15
 
 
 class TestSurveyApi(DokoHTTPTest):
@@ -503,6 +503,8 @@ class TestSubmissionApi(DokoHTTPTest):
         response = self.fetch(url, method=method, body=json_encode(body))
 
         submission_dict = json_decode(response.body)
+
+        print(response.body)
 
         self.assertTrue('save_time' in submission_dict)
         self.assertTrue('deleted' in submission_dict)

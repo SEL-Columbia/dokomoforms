@@ -91,7 +91,7 @@ class SubmissionResource(BaseResource):
 
             # pass submission props as kwargs
             if 'submission_type' not in self.data:
-                # by default fall to authenticate (i.e. EnumOnlySubmission)
+                # by default fall to authenticated (i.e. EnumOnlySubmission)
                 self.data['submission_type'] = 'authenticated'
 
             submission = construct_submission(**self.data)
