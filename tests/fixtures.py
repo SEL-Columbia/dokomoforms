@@ -76,6 +76,22 @@ def load_fixtures(engine):
                             nodes=[
                                 models.construct_survey_node(
                                     node=models.construct_node(
+                                        title={'English': 'decimal node'},
+                                        type_constraint='decimal',
+                                    ),
+                                    sub_surveys=[
+                                        models.SubSurvey(
+                                            buckets=[
+                                                models.construct_bucket(
+                                                    bucket_type='decimal',
+                                                    bucket='(1.3, 2.3]'
+                                                ),
+                                            ],
+                                        ),
+                                    ],
+                                ),
+                                models.construct_survey_node(
+                                    node=models.construct_node(
                                         title={'English': 'integer node'},
                                         type_constraint='integer',
                                     ),
@@ -87,6 +103,24 @@ def load_fixtures(engine):
                                                     bucket='(1, 2]'
                                                 ),
                                             ]
+                                        )
+                                    ],
+                                ),
+                                models.construct_survey_node(
+                                    node=models.construct_node(
+                                        title={'English': 'date node'},
+                                        type_constraint='date',
+                                    ),
+                                    sub_surveys=[
+                                        models.SubSurvey(
+                                            buckets=[
+                                                models.construct_bucket(
+                                                    bucket_type='date',
+                                                    bucket=(
+                                                        '(2015-1-1, 2015-2-2]'
+                                                    )
+                                                ),
+                                            ],
                                         ),
                                     ],
                                 )

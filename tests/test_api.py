@@ -107,7 +107,7 @@ class TestSurveyApi(DokoHTTPTest):
         self.assertTrue('created_on' in survey_dict)
         self.assertTrue('metadata' in survey_dict)
         self.assertTrue('title' in survey_dict)
-        self.assertTrue('enumerator_only' in survey_dict)
+        self.assertTrue('survey_type' in survey_dict)
         self.assertTrue('default_language' in survey_dict)
         self.assertTrue('deleted' in survey_dict)
         self.assertTrue('creator_name' in survey_dict)
@@ -118,7 +118,59 @@ class TestSurveyApi(DokoHTTPTest):
 
         self.assertFalse("error" in survey_dict)
 
-    def test_create_survey(self):
+    def test_get_single_survey_with_sub_surveys(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        survey_dict = json_decode(response.body)
+
+        survey_node = survey_dict['nodes'][0]
+        sub_surveys = survey_node['sub_surveys']
+        sub_survey = sub_surveys[0]
+
+        # check that expected keys are present
+        self.assertTrue('sub_surveys' in survey_node)
+
+        self.assertTrue('deleted' in sub_survey)
+        self.assertTrue('buckets' in sub_survey)
+        self.assertTrue('repeatable' in sub_survey)
+        self.assertTrue('nodes' in sub_survey)
+
+        self.assertFalse("error" in survey_dict)
+
+    def test_nested_sub_surveys(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        survey_dict = json_decode(response.body)
+        survey_node = survey_dict['nodes'][0]
+
+        sub_surveys = survey_node['sub_surveys']
+        sub_survey = sub_surveys[0]
+        sub_sub_surveys = sub_survey['nodes'][0]['sub_surveys']
+        sub_sub_survey = sub_sub_surveys[0]
+
+        # check that expected keys are present
+        self.assertTrue('sub_surveys' in survey_node)
+
+        self.assertTrue('deleted' in sub_sub_survey)
+        self.assertTrue('buckets' in sub_sub_survey)
+        self.assertTrue('repeatable' in sub_sub_survey)
+        self.assertTrue('nodes' in sub_sub_survey)
+
+        self.assertFalse("error" in survey_dict)
+
+    def test_create_survey_with_node_definition(self):
         # url to test
         url = self.api_root + '/surveys'
         # http method
@@ -132,7 +184,6 @@ class TestSurveyApi(DokoHTTPTest):
             "title": {"English": "Test_Survey"},
             "nodes": [
                 {
-                    "node_number": 0,
                     "title": {"English": "test_time_node"},
                     "hint": {
                         "English": ""
@@ -156,7 +207,6 @@ class TestSurveyApi(DokoHTTPTest):
         survey_dict = json_decode(response.body)
 
         # check that expected keys are present
-        assert False, survey_dict
         self.assertTrue('id' in survey_dict)
         self.assertTrue('metadata' in survey_dict)
         self.assertTrue('nodes' in survey_dict)
@@ -164,6 +214,50 @@ class TestSurveyApi(DokoHTTPTest):
         self.assertTrue('version' in survey_dict)
         self.assertTrue('created_on' in survey_dict)
         self.assertTrue('last_update_time' in survey_dict)
+
+        self.assertFalse("error" in survey_dict)
+
+    def test_create_survey_with_node_id(self):
+        node_id = "60e56824-910c-47aa-b5c0-71493277b43f"
+        # url to test
+        url = self.api_root + '/surveys'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "metadata": {},
+            "survey_type": "public",
+            "deleted": False,
+            "default_language": "English",
+            "title": {"English": "Test_Survey"},
+            "nodes": [
+                {
+                    "id": node_id
+                }
+            ]
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+
+        # test response
+        # check that response is valid parseable json
+        survey_dict = json_decode(response.body)
+        survey_node = survey_dict['nodes'][0]
+
+        # check that expected keys are present
+        self.assertTrue('id' in survey_dict)
+        self.assertTrue('metadata' in survey_dict)
+        self.assertTrue('nodes' in survey_dict)
+        self.assertTrue('title' in survey_dict)
+        self.assertTrue('version' in survey_dict)
+        self.assertTrue('created_on' in survey_dict)
+        self.assertTrue('last_update_time' in survey_dict)
+
+        self.assertEqual(
+            survey_node['node_id'], "60e56824-910c-47aa-b5c0-71493277b43f")
 
         self.assertFalse("error" in survey_dict)
 
@@ -1136,6 +1230,7 @@ class TestNodeApi(DokoHTTPTest):
         survey = self.session.query(Node).get(node_id)
 
         self.assertTrue(survey.deleted)
+
 
 class TestUserApi(DokoHTTPTest):
 
