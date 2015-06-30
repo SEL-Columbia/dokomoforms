@@ -22,6 +22,8 @@ from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.sql import func
 from sqlalchemy.sql.functions import current_timestamp
 
+from psycopg2.extras import Range
+
 metadata = sa.MetaData(schema=options.schema)
 
 
@@ -149,6 +151,9 @@ class ModelJSONEncoder(json.JSONEncoder):
             return obj._asdict()
         if isinstance(obj, (datetime.date, datetime.time)):
             return obj.isoformat()
+        if isinstance(obj, Range):
+            left, right = obj._bounds
+            return '{}{},{}{}'.format(left, obj.lower, obj.upper, right)
         return super().default(obj)
 
 
