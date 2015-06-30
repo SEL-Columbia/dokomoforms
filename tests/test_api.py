@@ -1098,6 +1098,8 @@ class TestNodeApi(DokoHTTPTest):
         self.assertTrue('logic' in node_dict)
         self.assertTrue('last_update_time' in node_dict)
         self.assertTrue('type_constraint' in node_dict)
+        self.assertTrue('choices' in node_dict)
+        self.assertEqual(len(node_dict['choices']), 2)
 
         self.assertEqual(node_dict['type_constraint'], type_constraint)
 
