@@ -9,9 +9,7 @@ The SQLAlchemy documentation suggests setting those columns in the base
 class or using class mixins, but it makes it less explicit which columns exist
 when looking at the models' definitions.
 """
-from dokomoforms.options import options, parse_options
-
-parse_options()  # Necessary to load the schema properly. Feels like a hack...
+from dokomoforms.options import options
 
 import abc
 import datetime
@@ -24,28 +22,35 @@ from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.sql import func
 from sqlalchemy.sql.functions import current_timestamp
 
+from psycopg2.extras import NumericRange, DateRange, DateTimeTZRange
+
 metadata = sa.MetaData(schema=options.schema)
 
 
 class _Meta(DeclarativeMeta, abc.ABCMeta):
-    """
+
+    """Metaclass for dokomoforms.models.Base.
+
     This is the sqlalchemy.ext.declarative.DeclarativeMeta metaclass with the
     abstract base class metaclass mixed in. It allows
     dokomoforms.models.util.Base to be an abstract class.
 
     Thanks to http://stackoverflow.com/a/30402243/1475412
     """
-    pass
 
 
 class Base(declarative_base(metadata=metadata, metaclass=_Meta)):
+
+    """The base class for all Dokomo Forms models."""
+
     __abstract__ = True
 
     deleted = sa.Column(sa.Boolean, nullable=False, server_default='false')
 
-    @abc.abstractmethod
+    @abc.abstractmethod  # pragma: no cover
     def _asdict(self) -> dict:
-        """
+        """Return a dictionary representation of the model.
+
         Model classes must implement this method to return a dictionary
         representation. If a value is itself a model or a list of models, take
         care to replace it with some other representation to avoid infinite
@@ -75,11 +80,9 @@ class Base(declarative_base(metadata=metadata, metaclass=_Meta)):
         instead of a regular dict so that the _to_json and __str__ methods
         always return the keys in the same order.
         """
-        pass
 
-    def _to_json(self, tornado_encode: bool=True, **kwargs) -> str:
-        """
-        Returns the JSON representation of this model.
+    def _to_json(self, *, tornado_encode: bool=True, **kwargs) -> str:
+        """Return the JSON representation of this model.
 
         See dokomoforms.models.util.Base._asdict and
         dokomoforms.models.util.ModelJSONEncoder
@@ -96,6 +99,7 @@ class Base(declarative_base(metadata=metadata, metaclass=_Meta)):
         return result
 
     def __str__(self) -> str:
+        """Return the string representation of this model."""
         return self._to_json(tornado_encode=False, indent=4)
 
 
@@ -120,8 +124,9 @@ sa.event.listen(
 
 
 class ModelJSONEncoder(json.JSONEncoder):
+
     """
-    This JSONEncoder knows what to do with the models in dokomoforms.models
+    This JSONEncoder knows what to do with the models in dokomoforms.models.
 
     It is used internally by the _to_json method of any of the model classes.
 
@@ -131,8 +136,10 @@ class ModelJSONEncoder(json.JSONEncoder):
             model, cls=dokomoforms.models.util.ModelJSONEncoder, **kwargs
         )
     """
+
     def default(self, obj):
-        """
+        """Handle special types for json.dumps.
+
         If obj is a model from dokomoforms.models, return a dictionary
         representation. If obj is a datetime.date or datetime.time, return an
         ISO 8601 representation string. Otherwise, throw a TypeError.
@@ -144,12 +151,15 @@ class ModelJSONEncoder(json.JSONEncoder):
             return obj._asdict()
         if isinstance(obj, (datetime.date, datetime.time)):
             return obj.isoformat()
+        if isinstance(obj, (NumericRange, DateRange, DateTimeTZRange)):
+            return str(obj)
         return super().default(obj)
 
 
 def create_engine(echo: bool=None) -> sqlalchemy.engine.Engine:
-    """
-    Returns a sqlalchemy.engine.Engine configured with the options set in
+    """Get a connection to the database.
+
+    Return a sqlalchemy.engine.Engine configured with the options set in
     dokomoforms.options.options
 
     :param echo: whether to print to the command line all of the SQL generated
@@ -176,8 +186,9 @@ def create_engine(echo: bool=None) -> sqlalchemy.engine.Engine:
 
 
 def pk(*foreign_key_column_names: str) -> sa.Column:
-    """
-    Returns a standard primary key of type UUID for use in models. If the
+    """A UUID primary key.
+
+    Return a standard primary key of type UUID for use in models. If the
     any foreign_key_column_names are supplied, the primary key will
     reference the given columns.
 
@@ -195,8 +206,9 @@ def pk(*foreign_key_column_names: str) -> sa.Column:
 
 
 def fk(column_name: str) -> sa.Column:
-    """
-    Returns a foreign key of type UUID for use in models.
+    """A foreign key with ONUPDATE CASCADE and ONDELETE CASCADE.
+
+    Return a foreign key of type UUID for use in models.
 
     The relationship CASCADEs on UPDATE and DELETE.
 
@@ -207,8 +219,9 @@ def fk(column_name: str) -> sa.Column:
 
 
 def json_column(column_name: str, *, default=None) -> sa.Column:
-    """
-    Returns a column of type JSONB for use in models. Use this for entries like
+    """A JSONB column.
+
+    Return a column of type JSONB for use in models. Use this for entries like
 
         <language>: <text>
 
@@ -229,8 +242,9 @@ def json_column(column_name: str, *, default=None) -> sa.Column:
 
 
 def last_update_time() -> sa.Column:
-    """
-    Returns a column containing the time that a record was last updated.
+    """A timestamp column set to CURRENT_TIMESTAMP on update.
+
+    Return a column containing the time that a record was last updated.
 
     :return: a SQLAlchemy Column for a datetime with time zone auto-updating
              column

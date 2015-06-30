@@ -11,7 +11,9 @@ from dokomoforms.models import util, Base
 
 
 class User(Base):
+
     """Models a user. A user has at least one e-mail address."""
+
     __tablename__ = 'auth_user'
 
     id = util.pk()
@@ -58,10 +60,13 @@ class User(Base):
 
 
 class SurveyCreator(User):
-    """
+
+    """A User who can create Surveys.
+
     Regular users can answer surveys, but only SurveyCreator instances can
     create surveys.
     """
+
     __tablename__ = 'survey_creator'
 
     id = util.pk('auth_user.id')
@@ -83,15 +88,20 @@ class SurveyCreator(User):
 
     def _asdict(self) -> OrderedDict:
         result = super()._asdict()
-        result['surveys'] = OrderedDict(
-            (survey.title, survey.id) for survey in self.surveys
-        )
+        result['surveys'] = [
+            OrderedDict((
+                ('survey_id', survey.id),
+                ('survey_title', survey.title),
+            )) for survey in self.surveys
+        ]
         result['token_expiration'] = self.token_expiration
         return result
 
 
 class Email(Base):
+
     """Models an e-mail address."""
+
     __tablename__ = 'email'
 
     id = util.pk()

@@ -22,7 +22,9 @@ node_type_enum = sa.Enum(
 
 
 class Node(Base):
-    """
+
+    """A node is a Note or Question independent of any Survey.
+
     A node is its own entity. A node can be a dokomoforms.models.survey.Note or
     a dokomoforms.models.survey.Question.
 
@@ -32,6 +34,7 @@ class Node(Base):
     To create the specific kind of Node you want, use
     dokomoforms.models.survey.node.construct_node.
     """
+
     __tablename__ = 'node'
 
     id = util.pk()
@@ -47,7 +50,9 @@ class Node(Base):
 
 
 class Note(Node):
+
     """Notes provide information interspersed with survey questions."""
+
     __tablename__ = 'note'
 
     id = util.pk()
@@ -73,11 +78,14 @@ class Note(Node):
 
 
 class Question(Node):
-    """
-    A question has a type constraint associated with it (integer, date,
+
+    """A Question has a response type associated with it.
+
+    A Question has a type constraint associated with it (integer, date,
     text...). Only a dokomoforms.models.survey.MultipleChoiceQuestion has a
     list of dokomoforms.models.survey.Choice instances.
     """
+
     __tablename__ = 'question'
 
     id = util.pk()
@@ -91,9 +99,7 @@ class Question(Node):
     )
 
     __table_args__ = (
-        sa.UniqueConstraint(
-            'id', 'the_type_constraint', 'allow_multiple', 'allow_other'
-        ),
+        sa.UniqueConstraint('id', 'allow_multiple', 'allow_other'),
         sa.ForeignKeyConstraint(
             ['id', 'the_type_constraint'], ['node.id', 'node.type_constraint']
         ),
@@ -122,51 +128,81 @@ class _QuestionMixin:
 
 
 class TextQuestion(_QuestionMixin, Question):
+
+    """A text question."""
+
     __tablename__ = 'question_text'
     __mapper_args__ = {'polymorphic_identity': 'text'}
 
 
 class PhotoQuestion(_QuestionMixin, Question):
+
+    """A photo question."""
+
     __tablename__ = 'question_photo'
     __mapper_args__ = {'polymorphic_identity': 'photo'}
 
 
 class IntegerQuestion(_QuestionMixin, Question):
+
+    """A integer question."""
+
     __tablename__ = 'question_integer'
     __mapper_args__ = {'polymorphic_identity': 'integer'}
 
 
 class DecimalQuestion(_QuestionMixin, Question):
+
+    """A decimal question."""
+
     __tablename__ = 'question_decimal'
     __mapper_args__ = {'polymorphic_identity': 'decimal'}
 
 
 class DateQuestion(_QuestionMixin, Question):
+
+    """A date question."""
+
     __tablename__ = 'question_date'
     __mapper_args__ = {'polymorphic_identity': 'date'}
 
 
 class TimeQuestion(_QuestionMixin, Question):
+
+    """A time (with time zone) question."""
+
     __tablename__ = 'question_time'
     __mapper_args__ = {'polymorphic_identity': 'time'}
 
 
 class TimestampQuestion(_QuestionMixin, Question):
+
+    """A timestamp (with time zone) question."""
+
     __tablename__ = 'question_timestamp'
     __mapper_args__ = {'polymorphic_identity': 'timestamp'}
 
 
 class LocationQuestion(_QuestionMixin, Question):
+
+    """A location question."""
+
     __tablename__ = 'question_location'
     __mapper_args__ = {'polymorphic_identity': 'location'}
 
 
 class FacilityQuestion(_QuestionMixin, Question):
+
+    """A facility question."""
+
     __tablename__ = 'question_facility'
     __mapper_args__ = {'polymorphic_identity': 'facility'}
 
 
 class MultipleChoiceQuestion(_QuestionMixin, Question):
+
+    """A multiple_choice question."""
+
     __tablename__ = 'question_multiple_choice'
 
     choices = relationship(
@@ -205,9 +241,12 @@ class MultipleChoiceQuestion(_QuestionMixin, Question):
 
 
 class Choice(Base):
-    """
+
+    """A choice for a MultipleChoiceQuestion.
+
     Models a choice for a dokomoforms.models.survey.MultipleChoiceQuestion.
     """
+
     __tablename__ = 'choice'
 
     id = util.pk()
@@ -232,9 +271,18 @@ class Choice(Base):
         return OrderedDict((
             ('id', self.id),
             ('deleted', self.deleted),
-            ('choice_text', self.choice_text),
+            ('choice_text', OrderedDict(sorted(self.choice_text.items()))),
             ('choice_number', self.choice_number),
-            ('question', self.question.title),
+            (
+                'question',
+                OrderedDict((
+                    ('question_id', self.question_id),
+                    (
+                        'question_title',
+                        OrderedDict(sorted(self.question.title.items()))
+                    ),
+                ))
+            ),
             ('last_update_time', self.last_update_time),
         ))
 
@@ -255,11 +303,11 @@ NODE_TYPES = {
 
 
 def construct_node(*, type_constraint: str, **kwargs) -> Node:
-    """
-    Returns a subclass of dokomoforms.models.survey.Node determined by
-    the type_constraint parameter. This utility function makes it easy to
-    create an instance of a Node or Question subclass based on external
-    input.
+    """Return a subclass of dokomoforms.models.node.Node.
+
+    The subclass is determined by the type_constraint parameter. This utility
+    function makes it easy to create an instance of a Node or Question
+    subclass based on external input.
 
     See http://stackoverflow.com/q/30518484/1475412
 

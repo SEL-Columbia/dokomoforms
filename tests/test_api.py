@@ -3,7 +3,7 @@ from tornado.escape import json_decode, json_encode
 
 from tests.util import DokoHTTPTest, setUpModule, tearDownModule
 
-from dokomoforms.models import Submission, Survey
+from dokomoforms.models import Submission, Survey, Node
 
 utils = (setUpModule, tearDownModule)
 
@@ -15,6 +15,7 @@ TODO: add expception and error response tests
 # The numbers expected to be present via fixtures
 TOTAL_SURVEYS = 14
 TOTAL_SUBMISSIONS = 112
+TOTAL_NODES = 12
 
 
 class TestSurveyApi(DokoHTTPTest):
@@ -125,12 +126,13 @@ class TestSurveyApi(DokoHTTPTest):
         # body
         body = {
             "metadata": {},
-            "enumerator_only": "false",
+            "survey_type": "public",
             "deleted": False,
             "default_language": "English",
             "title": {"English": "Test_Survey"},
             "nodes": [
                 {
+                    "node_number": 0,
                     "title": {"English": "test_time_node"},
                     "hint": {
                         "English": ""
@@ -154,6 +156,7 @@ class TestSurveyApi(DokoHTTPTest):
         survey_dict = json_decode(response.body)
 
         # check that expected keys are present
+        assert False, survey_dict
         self.assertTrue('id' in survey_dict)
         self.assertTrue('metadata' in survey_dict)
         self.assertTrue('nodes' in survey_dict)
@@ -469,17 +472,19 @@ class TestSubmissionApi(DokoHTTPTest):
 
         self.assertTrue('error' in submission_dict)
 
-    def test_create_multiple_submissions(self):
-        # url to test
-        url = self.api_root + '/submissions/batch'
-        # http method
-        method = 'POST'
-        # body
-        body = '{"submission_body_json"}'
-        # make request
-        response = self.fetch(url, method=method, body=body)
-        # test response
-        self.fail("Not yet implemented.")
+    # TODO: This was deemed unnecessary, submissions should be created
+    # one at a time.
+    # def test_create_multiple_submissions(self):
+    #    # url to test
+    #    url = self.api_root + '/submissions/batch'
+    #    # http method
+    #    method = 'POST'
+    #    # body
+    #    body = '{"submission_body_json"}'
+    #    # make request
+    #    response = self.fetch(url, method=method, body=body)
+    #    # test response
+    #    self.fail("Not yet implemented.")
 
     def test_delete_submission(self):
         submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
@@ -496,6 +501,639 @@ class TestSubmissionApi(DokoHTTPTest):
 
         self.assertTrue(submission.deleted)
 
+
+class TestNodeApi(DokoHTTPTest):
+
+    def test_list_nodes(self):
+        # url to test
+        url = self.api_root + '/nodes'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        node_dict = json_decode(response.body)
+        # check that the expected keys are present
+        self.assertTrue('nodes' in node_dict)
+
+        self.assertEqual(len(node_dict['nodes']), TOTAL_NODES)
+
+        # check that no error is present
+        self.assertFalse("error" in node_dict)
+
+    def test_list_nodes_with_limit(self):
+        limit = 1
+        # url to test
+        url = self.api_root + '/nodes'
+        query_params = {
+            'limit': limit
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+
+        node_dict = json_decode(response.body)
+
+        self.assertTrue('nodes' in node_dict)
+        self.assertTrue('limit' in node_dict)
+        self.assertEqual(len(node_dict['nodes']), limit)
+
+        # check that no error is present
+        self.assertFalse("error" in node_dict)
+
+    def test_list_nodes_with_offset(self):
+        offset = 5
+        # url to test
+        url = self.api_root + '/nodes'
+        query_params = {
+            'offset': offset
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        node_dict = json_decode(response.body)
+
+        self.assertTrue('nodes' in node_dict)
+        self.assertTrue('offset' in node_dict)
+        self.assertEqual(len(node_dict['nodes']), TOTAL_NODES - offset)
+
+        # check that no error is present
+        self.assertFalse("error" in node_dict)
+
+    def test_list_nodes_with_title_search(self):
+        search_term = 'integer'
+        # url to test
+        url = self.api_root + '/nodes'
+        query_params = {
+            'search': search_term,
+            'search_fields': 'title'
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        self.fail("Not yet implemented.")
+
+    def test_list_nodes_with_type_filter(self):
+        type_constraint = 'text'
+        # url to test
+        url = self.api_root + '/nodes'
+        query_params = {
+            'type': type_constraint
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        node_dict = json_decode(response.body)
+
+        self.assertTrue('nodes' in node_dict)
+        self.assertTrue('type' in node_dict)
+        self.assertEqual(len(node_dict['nodes']), 1)
+        self.assertEqual(
+            node_dict['nodes'][0]['type_constraint'], type_constraint)
+
+    def test_list_nodes_with_unknown_type_filter(self):
+        type_constraint = 'wrong'
+        # url to test
+        url = self.api_root + '/nodes'
+        query_params = {
+            'type': type_constraint
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        node_dict = json_decode(response.body)
+
+        self.assertEqual(response.code, 400)
+        self.assertTrue('error' in node_dict)
+
+    def test_get_single_node(self):
+        node_id = '60e56824-910c-47aa-b5c0-71493277b43f'
+        # url to test
+        url = self.api_root + '/nodes/' + node_id
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        # check that response is valid parseable json
+        node_dict = json_decode(response.body)
+
+        # check that expected keys are present
+        self.assertTrue('id' in node_dict)
+        self.assertTrue('hint' in node_dict)
+        self.assertTrue('title' in node_dict)
+        self.assertTrue('allow_other' in node_dict)
+        self.assertTrue('allow_multiple' in node_dict)
+        self.assertTrue('logic' in node_dict)
+        self.assertTrue('type_constraint' in node_dict)
+
+        self.assertFalse("error" in node_dict)
+
+    def test_create_note_node(self):
+        type_constraint = 'note'
+        # url to test
+        url = self.api_root + '/nodes'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "title": {"English": "test_time_node"},
+            "type_constraint": type_constraint,
+            "logic": {}
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+
+        # test response
+        # check that response is valid parseable json
+        node_dict = json_decode(response.body)
+
+        # check that expected keys are present
+        self.assertTrue('id' in node_dict)
+        self.assertTrue('title' in node_dict)
+        self.assertTrue('logic' in node_dict)
+        self.assertTrue('type_constraint' in node_dict)
+
+        self.assertEqual(node_dict['type_constraint'], type_constraint)
+
+        self.assertFalse("error" in node_dict)
+
+    def test_create_text_node(self):
+        type_constraint = 'text'
+        # url to test
+        url = self.api_root + '/nodes'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "title": {"English": type_constraint + "_node"},
+            "hint": {
+                "English": "Some test hint."
+            },
+            "allow_multiple": False,
+            "allow_other": False,
+            "type_constraint": type_constraint,
+            "logic": {},
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+
+        # test response
+        # check that response is valid parseable json
+        node_dict = json_decode(response.body)
+
+        # check that expected keys are present
+        self.assertTrue('id' in node_dict)
+        self.assertTrue('title' in node_dict)
+        self.assertTrue('hint' in node_dict)
+        self.assertTrue('allow_multiple' in node_dict)
+        self.assertTrue('allow_other' in node_dict)
+        self.assertTrue('logic' in node_dict)
+        self.assertTrue('last_update_time' in node_dict)
+        self.assertTrue('type_constraint' in node_dict)
+
+        self.assertEqual(node_dict['type_constraint'], type_constraint)
+
+        self.assertFalse("error" in node_dict)
+
+    def test_create_photo_node(self):
+        type_constraint = 'text'
+        # url to test
+        url = self.api_root + '/nodes'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "title": {"English": type_constraint + "_node"},
+            "hint": {
+                "English": "Some test hint."
+            },
+            "allow_multiple": False,
+            "allow_other": False,
+            "type_constraint": type_constraint,
+            "logic": {},
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+
+        # test response
+        # check that response is valid parseable json
+        node_dict = json_decode(response.body)
+
+        # check that expected keys are present
+        self.assertTrue('id' in node_dict)
+        self.assertTrue('title' in node_dict)
+        self.assertTrue('hint' in node_dict)
+        self.assertTrue('allow_multiple' in node_dict)
+        self.assertTrue('allow_other' in node_dict)
+        self.assertTrue('logic' in node_dict)
+        self.assertTrue('last_update_time' in node_dict)
+        self.assertTrue('type_constraint' in node_dict)
+
+        self.assertEqual(node_dict['type_constraint'], type_constraint)
+
+        self.assertFalse("error" in node_dict)
+
+    def test_create_integer_node(self):
+        type_constraint = 'integer'
+        # url to test
+        url = self.api_root + '/nodes'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "title": {"English": type_constraint + "_node"},
+            "hint": {
+                "English": "Some test hint."
+            },
+            "allow_multiple": False,
+            "allow_other": False,
+            "type_constraint": type_constraint,
+            "logic": {},
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+
+        # test response
+        # check that response is valid parseable json
+        node_dict = json_decode(response.body)
+
+        # check that expected keys are present
+        self.assertTrue('id' in node_dict)
+        self.assertTrue('title' in node_dict)
+        self.assertTrue('hint' in node_dict)
+        self.assertTrue('allow_multiple' in node_dict)
+        self.assertTrue('allow_other' in node_dict)
+        self.assertTrue('logic' in node_dict)
+        self.assertTrue('last_update_time' in node_dict)
+        self.assertTrue('type_constraint' in node_dict)
+
+        self.assertEqual(node_dict['type_constraint'], type_constraint)
+
+        self.assertFalse("error" in node_dict)
+
+    def test_create_decimal_node(self):
+        type_constraint = 'decimal'
+        # url to test
+        url = self.api_root + '/nodes'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "title": {"English": type_constraint + "_node"},
+            "hint": {
+                "English": "Some test hint."
+            },
+            "allow_multiple": False,
+            "allow_other": False,
+            "type_constraint": type_constraint,
+            "logic": {},
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+
+        # test response
+        # check that response is valid parseable json
+        node_dict = json_decode(response.body)
+
+        # check that expected keys are present
+        self.assertTrue('id' in node_dict)
+        self.assertTrue('title' in node_dict)
+        self.assertTrue('hint' in node_dict)
+        self.assertTrue('allow_multiple' in node_dict)
+        self.assertTrue('allow_other' in node_dict)
+        self.assertTrue('logic' in node_dict)
+        self.assertTrue('last_update_time' in node_dict)
+        self.assertTrue('type_constraint' in node_dict)
+
+        self.assertEqual(node_dict['type_constraint'], type_constraint)
+
+        self.assertFalse("error" in node_dict)
+
+    def test_create_date_node(self):
+        type_constraint = 'date'
+        # url to test
+        url = self.api_root + '/nodes'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "title": {"English": type_constraint + "_node"},
+            "hint": {
+                "English": "Some test hint."
+            },
+            "allow_multiple": False,
+            "allow_other": False,
+            "type_constraint": type_constraint,
+            "logic": {},
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+
+        # test response
+        # check that response is valid parseable json
+        node_dict = json_decode(response.body)
+
+        # check that expected keys are present
+        self.assertTrue('id' in node_dict)
+        self.assertTrue('title' in node_dict)
+        self.assertTrue('hint' in node_dict)
+        self.assertTrue('allow_multiple' in node_dict)
+        self.assertTrue('allow_other' in node_dict)
+        self.assertTrue('logic' in node_dict)
+        self.assertTrue('last_update_time' in node_dict)
+        self.assertTrue('type_constraint' in node_dict)
+
+        self.assertEqual(node_dict['type_constraint'], type_constraint)
+
+        self.assertFalse("error" in node_dict)
+
+    def test_create_time_node(self):
+        type_constraint = 'time'
+        # url to test
+        url = self.api_root + '/nodes'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "title": {"English": type_constraint + "_node"},
+            "hint": {
+                "English": "Some test hint."
+            },
+            "allow_multiple": False,
+            "allow_other": False,
+            "type_constraint": type_constraint,
+            "logic": {},
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+
+        # test response
+        # check that response is valid parseable json
+        node_dict = json_decode(response.body)
+
+        # check that expected keys are present
+        self.assertTrue('id' in node_dict)
+        self.assertTrue('title' in node_dict)
+        self.assertTrue('hint' in node_dict)
+        self.assertTrue('allow_multiple' in node_dict)
+        self.assertTrue('allow_other' in node_dict)
+        self.assertTrue('logic' in node_dict)
+        self.assertTrue('last_update_time' in node_dict)
+        self.assertTrue('type_constraint' in node_dict)
+
+        self.assertEqual(node_dict['type_constraint'], type_constraint)
+
+        self.assertFalse("error" in node_dict)
+
+    def test_create_timestamp_node(self):
+        type_constraint = 'timestamp'
+        # url to test
+        url = self.api_root + '/nodes'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "title": {"English": type_constraint + "_node"},
+            "hint": {
+                "English": "Some test hint."
+            },
+            "allow_multiple": False,
+            "allow_other": False,
+            "type_constraint": type_constraint,
+            "logic": {},
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+
+        # test response
+        # check that response is valid parseable json
+        node_dict = json_decode(response.body)
+
+        # check that expected keys are present
+        self.assertTrue('id' in node_dict)
+        self.assertTrue('title' in node_dict)
+        self.assertTrue('hint' in node_dict)
+        self.assertTrue('allow_multiple' in node_dict)
+        self.assertTrue('allow_other' in node_dict)
+        self.assertTrue('logic' in node_dict)
+        self.assertTrue('last_update_time' in node_dict)
+        self.assertTrue('type_constraint' in node_dict)
+
+        self.assertEqual(node_dict['type_constraint'], type_constraint)
+
+        self.assertFalse("error" in node_dict)
+
+    def test_create_location_node(self):
+        type_constraint = 'location'
+        # url to test
+        url = self.api_root + '/nodes'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "title": {"English": type_constraint + "_node"},
+            "hint": {
+                "English": "Some test hint."
+            },
+            "allow_multiple": False,
+            "allow_other": False,
+            "type_constraint": type_constraint,
+            "logic": {},
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+
+        # test response
+        # check that response is valid parseable json
+        node_dict = json_decode(response.body)
+
+        # check that expected keys are present
+        self.assertTrue('id' in node_dict)
+        self.assertTrue('title' in node_dict)
+        self.assertTrue('hint' in node_dict)
+        self.assertTrue('allow_multiple' in node_dict)
+        self.assertTrue('allow_other' in node_dict)
+        self.assertTrue('logic' in node_dict)
+        self.assertTrue('last_update_time' in node_dict)
+        self.assertTrue('type_constraint' in node_dict)
+
+        self.assertEqual(node_dict['type_constraint'], type_constraint)
+
+        self.assertFalse("error" in node_dict)
+
+    def test_create_facility_node(self):
+        type_constraint = 'facility'
+        # url to test
+        url = self.api_root + '/nodes'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "title": {"English": type_constraint + "_node"},
+            "hint": {
+                "English": "Some test hint."
+            },
+            "allow_multiple": False,
+            "allow_other": False,
+            "type_constraint": type_constraint,
+            "logic": {},
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+
+        # test response
+        # check that response is valid parseable json
+        node_dict = json_decode(response.body)
+
+        # check that expected keys are present
+        self.assertTrue('id' in node_dict)
+        self.assertTrue('title' in node_dict)
+        self.assertTrue('hint' in node_dict)
+        self.assertTrue('allow_multiple' in node_dict)
+        self.assertTrue('allow_other' in node_dict)
+        self.assertTrue('logic' in node_dict)
+        self.assertTrue('last_update_time' in node_dict)
+        self.assertTrue('type_constraint' in node_dict)
+
+        self.assertEqual(node_dict['type_constraint'], type_constraint)
+
+        self.assertFalse("error" in node_dict)
+
+    def test_create_multiple_choice_node(self):
+        type_constraint = 'multiple_choice'
+        # url to test
+        url = self.api_root + '/nodes'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "title": {"English": type_constraint + "_node"},
+            "hint": {
+                "English": "Some test hint."
+            },
+            "allow_multiple": False,
+            "allow_other": False,
+            "type_constraint": type_constraint,
+            "logic": {},
+            "choices": [
+                {
+                    "choice_text": {
+                        "English": "first choice"
+                    }
+                },
+                {
+                    "choice_text": {
+                        "English": "second choice"
+                    }
+                }
+            ]
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+
+        # test response
+        # check that response is valid parseable json
+        node_dict = json_decode(response.body)
+
+        # check that expected keys are present
+        self.assertTrue('id' in node_dict)
+        self.assertTrue('title' in node_dict)
+        self.assertTrue('hint' in node_dict)
+        self.assertTrue('allow_multiple' in node_dict)
+        self.assertTrue('allow_other' in node_dict)
+        self.assertTrue('logic' in node_dict)
+        self.assertTrue('last_update_time' in node_dict)
+        self.assertTrue('type_constraint' in node_dict)
+
+        self.assertEqual(node_dict['type_constraint'], type_constraint)
+
+        self.assertFalse("error" in node_dict)
+
+    def test_update_node(self):
+        node_id = '60e56824-910c-47aa-b5c0-71493277b43f'
+        # url to test
+        url = self.api_root + '/nodes/' + node_id
+        # http method
+        method = 'PUT'
+        # body
+        body = {
+
+        }
+        encoded_body = json_encode(body)
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+        # test response
+        self.fail("Not yet implemented.")
+
+    def test_delete_node(self):
+        node_id = '60e56824-910c-47aa-b5c0-71493277b43f'
+        # url to test
+        url = self.api_root + '/nodes/' + node_id
+        # http method
+        method = 'DELETE'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        # test response - successful DELETE returns 204 no content.
+        self.assertEqual(response.code, 204)
+
+        survey = self.session.query(Node).get(node_id)
+
+        self.assertTrue(survey.deleted)
 
 class TestUserApi(DokoHTTPTest):
 

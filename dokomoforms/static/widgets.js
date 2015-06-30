@@ -167,7 +167,7 @@ Widgets._orderAnswerArray = function(question, page, footer, type) {
 Widgets._renderDontKnow = function(question, page, footer, type) {
     var self = this;
     // Render don't know feature 
-    if (question.logic.allow_dont_know) {
+    if (question.allow_dont_know) {
         $('.question__btn__other').show();
         footer.addClass('bar-footer-extended');
         page.addClass('content-shrunk');
@@ -498,7 +498,7 @@ Widgets.multiple_choice = function(question, page, footer) {
     // array of choice uuids
     var choices = [];
     question.choices.forEach(function(choice, ind) {
-        choices[ind] = choice.question_choice_id;
+        choices[ind] = choice.choice_id;
     }); 
     choices[question.choices.length] = "other"; 
 

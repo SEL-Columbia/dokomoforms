@@ -3,6 +3,21 @@
 import datetime
 from sqlalchemy import DDL
 from sqlalchemy.orm import sessionmaker
+from dokomoforms.options import options, inject_options, parse_options
+
+inject_options(
+    schema='doko',
+    #debug=True,
+    # fake logged in user with ID from fixture
+    TEST_USER="""
+        {
+            "user_id": "b7becd02-1a3f-4c1d-a0e1-286ba121aef4",
+            "user_name": "test_user"
+        }
+    """
+)
+# inject_options(schema='doko_test')
+parse_options()
 
 from dokomoforms.models import create_engine, Base
 from dokomoforms.options import options, inject_options
@@ -10,12 +25,8 @@ import dokomoforms.models as models
 
 inject_options(schema='doko')
 
-# parse_options()
-
-
 engine = create_engine(echo=True)
 Session = sessionmaker()
-
 
 engine.execute(DDL('DROP SCHEMA IF EXISTS ' + options.schema + ' CASCADE'))
 
@@ -40,10 +51,66 @@ with session.begin():
         id='b0816b52-204f-41d4-aaf0-ac6ae2970923',
         title={'English':'test_survey'},
         nodes=[ models.construct_survey_node(
+
+                allow_dont_know=True,
+                node = models.construct_node(
                     type_constraint=node_type,
-                    title={'English': node_type + '_node'},
-                ) for node_type in node_types ],
+                    title={'English': node_type + ' node'},
+                    allow_multiple=True,
+                ),
+
+                sub_surveys=[ models.SubSurvey(
+                        buckets=[
+                            models.construct_bucket(
+                                bucket_type='integer',
+                                bucket='(1, 2]'
+                            ),
+                        ],
+                        nodes=[
+                            models.construct_survey_node(
+                                node=models.construct_node(
+                                    title={'English': 'integer sub node'},
+                                    type_constraint='integer',
+                                ),
+                                sub_surveys=[
+                                    models.SubSurvey(
+                                        buckets=[
+                                            models.construct_bucket(
+                                                bucket_type='integer',
+                                                bucket='(1, 2]'
+                                            ),
+                                        ]
+                                    ),
+                                ],
+                            )
+                        ],
+                    ) for i in range(1) if node_type == 'integer'],
+
+             ) for node_type in node_types if node_type != 'note' and node_type != 'multiple_choice'],
+
         )
+
+    survey.nodes.append(models.construct_survey_node(
+        allow_dont_know=True,
+        required=True,
+        node = models.construct_node(
+            type_constraint='multiple_choice',
+            title={'English': 'multiple_choice' + ' node'},
+            allow_other=True,
+            choices=[ models.Choice(
+                        choice_text={
+                            'English': 'choice ' + str(i),
+                        },
+                    ) for i in range(3) ],
+        ),
+    )) 
+
+    survey.nodes.append(models.construct_survey_node(
+        node = models.construct_node(
+            type_constraint='note',
+            title={'English': 'note' + ' node'},
+        ),
+    )) 
 
     # Add survey to creator
     creator.surveys.append(survey)

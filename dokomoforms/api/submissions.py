@@ -127,13 +127,3 @@ class SubmissionResource(BaseResource):
                 raise exc.NotFound()
             else:
                 submission.deleted = True
-
-    def prepare(self, data):
-        # ``data`` is the object/dict to be exposed.
-        # We'll call ``super`` to prep the data, then we can modify it.
-        prepped = super().prepare(data)
-
-        # modify prepped here
-
-        # then return the modified data.
-        return prepped

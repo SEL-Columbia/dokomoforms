@@ -10,7 +10,8 @@ from sqlalchemy.sql.expression import func
 from dokomoforms.api import BaseResource
 from dokomoforms.models import (
     Survey, Submission, construct_survey_node,
-    User, construct_submission, construct_answer
+    User, construct_submission, construct_answer,
+    Node, construct_node
 )
 
 
@@ -26,20 +27,20 @@ class SurveyResource(BaseResource):
     objects_key = 'surveys'
 
     # The preparer defines the fields that get returned.
-    preparer = FieldsPreparer(fields={
-        'id': 'id',
-        'deleted': 'deleted',
-        'title': 'title',
-        'default_language': 'default_language',
-        'enumerator_only': 'enumerator_only',
-        'version': 'version',
-        'creator_id': 'creator_id',
-        'creator_name': 'creator.name',
-        'metadata': 'survey_metadata',
-        'created_on': 'created_on',
-        'last_update_time': 'last_update_time',
-        'nodes': 'nodes',
-    })
+    #preparer = FieldsPreparer(fields={
+    #    'id': 'id',
+    #    'deleted': 'deleted',
+    #    'title': 'title',
+    #    'default_language': 'default_language',
+    #    'enumerator_only': 'enumerator_only',
+    #    'version': 'version',
+    #    'creator_id': 'creator_id',
+    #    'creator_name': 'creator.name',
+    #    'metadata': 'survey_metadata',
+    #    'created_on': 'created_on',
+    #    'last_update_time': 'last_update_time',
+    #    'nodes': 'nodes',
+    #})
 
     http_methods = {
         'list': {
@@ -81,7 +82,7 @@ class SurveyResource(BaseResource):
     def detail(self, survey_id):
         """Return a single survey."""
         survey = self.session.query(Survey).get(survey_id)
-        if not survey:
+        if survey is None:
             raise exc.NotFound()
         else:
             return survey
@@ -110,13 +111,17 @@ class SurveyResource(BaseResource):
                 # treat this as a DELETE request:
                 self.delete()
 
-        def create_survey_node(node):
+        def create_or_get_survey_node(node_dict):
             # pass node props as kwargs
-            return construct_survey_node(**node)
+            if 'id' in node_dict:
+                node = self.session.query(Node).get(node_dict['id'])
+            else:
+                node = construct_node(**node_dict)
+            return node
 
         with self.session.begin():
             # create a list of Node models
-            nodes = list(map(create_survey_node, self.data['nodes']))
+            nodes = list(map(create_or_get_survey_node, self.data['nodes']))
             # remove the existing nodes key from the received data
             del self.data['nodes']
             creator = self.current_user_model
@@ -302,3 +307,12 @@ class SurveyResource(BaseResource):
                 'num_submissions': day[1]
             })
         return response
+
+        def prepare(self, data):
+            """
+            If we don't prep the data, all the fields get returned!
+
+            We can subtract fields here if there are fields which shouldn't
+            be included in the API.
+            """
+            return data

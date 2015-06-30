@@ -17,3 +17,6 @@ provision.sh
 doko/
 reports/
 .capistrano/
+_build
+_static
+_templates

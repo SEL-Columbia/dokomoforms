@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <head>
     <meta charset="utf-8">
-    <title>{% raw survey_title %} - Dokomoforms</title>
+    <title>{% raw survey.title[survey.default_language] %} - Dokomoforms</title>
 
     <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
 
@@ -468,10 +468,10 @@
                 <% _.each(question.choices, function(choice, ind) { %>
                     <option 
                         <% if (question.answer[ind] &&
-                        choice.question_choice_id === question.answer[ind].response) { %>
+                        choice.choice_id === question.answer[ind].response) { %>
                             selected
                         <% } %>
-                        value="<%- choice.question_choice_id %>"><%- choice.choice %>
+                        value="<%- choice.choice_id %>"><%- choice.choice_text[question.default_language] %>
                     </option>
                 <% }); %>
 

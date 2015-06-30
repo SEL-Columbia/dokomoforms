@@ -1,3 +1,5 @@
+"""All the models used in Dokomo Forms."""
+
 from dokomoforms.models.util import Base, create_engine, ModelJSONEncoder
 from dokomoforms.models.user import User, SurveyCreator, Email
 from dokomoforms.models.node import (
@@ -10,8 +12,8 @@ from dokomoforms.models.node import (
 )
 from dokomoforms.models.survey import (
     Survey, EnumeratorOnlySurvey, SubSurvey, SurveyNode,
-    NonAnswerableSurveyNode, AnswerableSurveyNode,
-    construct_bucket, survey_type_enum, construct_survey_node
+    NonAnswerableSurveyNode, AnswerableSurveyNode, construct_survey_node,
+    construct_bucket, survey_type_enum,
 )
 from dokomoforms.models.submission import (
     Submission, EnumeratorOnlySubmission, PublicSubmission,
@@ -19,7 +21,7 @@ from dokomoforms.models.submission import (
 )
 from dokomoforms.models.answer import Answer, Photo, construct_answer
 
-__all__ = [
+__all__ = (
     # Util
     'Base', 'create_engine', 'ModelJSONEncoder',
     # User
@@ -33,11 +35,11 @@ __all__ = [
     'Choice',
     # Survey
     'Survey', 'EnumeratorOnlySurvey', 'SubSurvey', 'SurveyNode',
-    'NonAnswerableSurveyNode', 'AnswerableSurveyNode',
-    'construct_bucket', 'survey_type_enum', 'construct_survey_node'
+    'NonAnswerableSurveyNode', 'AnswerableSurveyNode', 'construct_survey_node',
+    'construct_bucket', 'survey_type_enum',
     # Submission
     'Submission', 'EnumeratorOnlySubmission', 'PublicSubmission',
     'construct_submission'
     # Answer
     'Answer', 'Photo', 'construct_answer',
-]
+)

@@ -31,6 +31,4 @@ class Enumerate(BaseHandler):
         survey = sr.prepare(survey_model);
 
         self.render('survey.html',
-                    survey_title=survey['title'],
-                    # JSONify same way API does
-                    survey=json.dumps(survey, cls=ModelJSONEncoder)),
+                    survey=survey),
