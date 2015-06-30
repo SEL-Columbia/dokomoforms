@@ -460,7 +460,7 @@
             <select class="question__select " 
                 <%  if (question.allow_multiple) { %> 
                     multiple 
-                    size=<%- question.choices.length + 1 + 1*question.logic.allow_other %> 
+                    size=<%- question.choices.length + 1 + 1*question.allow_other %> 
                 <% } %>
             >
 
@@ -475,7 +475,7 @@
                     </option>
                 <% }); %>
 
-                <% if (question.logic.allow_other) { %>
+                <% if (question.allow_other) { %>
                     <option 
                         <% var ans = question.answer[question.choices.length];
                         if (ans && (ans.is_type_exception && ans.metadata.type_exception === "other"))  { %>
