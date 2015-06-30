@@ -9,6 +9,7 @@ Session = sessionmaker()
 
 
 def load_fixtures(engine):
+    print('load_fixtures')
     # creates db schema
     session = Session(bind=engine, autocommit=True)
 
@@ -59,13 +60,39 @@ def load_fixtures(engine):
             title={'English': 'single_survey'},
             nodes=[
                 models.construct_survey_node(
-                    # NOTE: this becomes the ID for both the SurveyNode
-                    # and the Node.
-                    id="60e56824-910c-47aa-b5c0-71493277b43f",
-                    node = models.construct_node(
+                    node=models.construct_node(
+                        id="60e56824-910c-47aa-b5c0-71493277b43f",
                         title={'English': 'integer node'},
                         type_constraint='integer',
                     ),
+                    sub_surveys=[
+                        models.SubSurvey(
+                            buckets=[
+                                models.construct_bucket(
+                                    bucket_type='integer',
+                                    bucket='(1, 2]'
+                                ),
+                            ],
+                            nodes=[
+                                models.construct_survey_node(
+                                    node=models.construct_node(
+                                        title={'English': 'integer node'},
+                                        type_constraint='integer',
+                                    ),
+                                    sub_surveys=[
+                                        models.SubSurvey(
+                                            buckets=[
+                                                models.construct_bucket(
+                                                    bucket_type='integer',
+                                                    bucket='(1, 2]'
+                                                ),
+                                            ]
+                                        ),
+                                    ],
+                                )
+                            ]
+                        ),
+                    ],
                 )
             ],
         )

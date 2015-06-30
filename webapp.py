@@ -22,8 +22,6 @@ from tornado.web import url
 import tornado.httpserver
 import tornado.web
 
-import dokomoforms.models as models
-
 from dokomoforms.options import options
 
 if __name__ == '__main__':  # pragma: no cover
