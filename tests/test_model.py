@@ -2819,6 +2819,26 @@ class TestAnswer(DokoTest):
 
                 self.session.add(submission)
 
+    def test_only_MC_can_allow_other(self):
+        if True:
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title={'English': 'survey'},
+                nodes=[
+                    models.construct_survey_node(
+                        answerable=True,
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title={'English': 'integer bad'},
+                            allow_other=True,
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
     def test_answer_other(self):
         with self.session.begin():
             creator = models.SurveyCreator(name='creator')
@@ -2828,7 +2848,7 @@ class TestAnswer(DokoTest):
                     models.construct_survey_node(
                         answerable=True,
                         node=models.construct_node(
-                            type_constraint='integer',
+                            type_constraint='multiple_choice',
                             title={'English': 'other_not_allowed'},
                             allow_other=True,
                         ),
@@ -2846,7 +2866,7 @@ class TestAnswer(DokoTest):
                 answers=[
                     models.construct_answer(
                         survey_node=the_survey.nodes[0],
-                        type_constraint='integer',
+                        type_constraint='multiple_choice',
                         other='other answer',
                     ),
                 ],
@@ -2872,9 +2892,14 @@ class TestAnswer(DokoTest):
                     models.construct_survey_node(
                         answerable=True,
                         node=models.construct_node(
-                            type_constraint='integer',
+                            type_constraint='multiple_choice',
                             title={'English': 'other allowed'},
                             allow_other=True,
+                            choices=[
+                                models.Choice(
+                                    choice_text={'English': 'choice'},
+                                ),
+                            ],
                         ),
                     ),
                 ],
@@ -2891,8 +2916,8 @@ class TestAnswer(DokoTest):
                     answers=[
                         models.construct_answer(
                             survey_node=the_survey.nodes[0],
-                            type_constraint='integer',
-                            answer=3,
+                            type_constraint='multiple_choice',
+                            answer=self.session.query(models.Choice).one(),
                             other='other answer',
                         ),
                     ],
