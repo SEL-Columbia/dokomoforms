@@ -1853,6 +1853,24 @@ class TestBucket(DokoTest):
 
 
 class TestSubmission(DokoTest):
+    def test_administrators(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            admin = models.User(name='admin')
+            creator.surveys = [
+                models.EnumeratorOnlySurvey(
+                    title={'English': 'survey'},
+                    administrators=[admin]
+                ),
+            ]
+
+            self.session.add(creator)
+
+        self.assertIs(
+            self.session.query(models.Survey).one().administrators[0],
+            self.session.query(models.User).filter_by(name='admin').one()
+        )
+
     def test_enumerator_submission(self):
         with self.session.begin():
             creator = models.SurveyCreator(name='creator')

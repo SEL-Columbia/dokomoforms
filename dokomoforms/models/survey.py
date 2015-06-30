@@ -24,6 +24,20 @@ survey_type_enum = sa.Enum(
 )
 
 
+_administrator_table = sa.Table(
+    'administrator',
+    Base.metadata,
+    sa.Column(
+        'survey_id',
+        pg.UUID,
+        util.fk('survey.id'),
+        nullable=False,
+    ),
+    sa.Column('user_id', pg.UUID, util.fk('auth_user.id'), nullable=False),
+    sa.UniqueConstraint('survey_id', 'user_id'),
+)
+
+
 class Survey(Base):
 
     """A Survey has a list of SurveyNodes.
@@ -45,6 +59,12 @@ class Survey(Base):
         server_default='English',
     )
     survey_type = sa.Column(survey_type_enum, nullable=False)
+    administrators = relationship(
+        'User',
+        secondary=_administrator_table,
+        backref='admin_surveys',
+        passive_deletes=True,
+    )
     submissions = relationship(
         'Submission',
         order_by='Submission.save_time',
