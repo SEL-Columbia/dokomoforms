@@ -1,5 +1,21 @@
+#!/usr/bin/env python3
 import datetime
 from sqlalchemy.orm import sessionmaker
+
+if __name__ == '__main__':
+    import json
+    import sys
+    import os
+    sys.path.insert(0, os.path.abspath('.'))
+    from dokomoforms.options import inject_options, parse_options
+    inject_options(
+        schema='doko',
+        TEST_USER=json.dumps({
+            'user_id': 'b7becd02-1a3f-4c1d-a0e1-286ba121aef4',
+            'user_name': 'test_user',
+        }),
+    )
+    parse_options()
 
 import dokomoforms.models as models
 
@@ -206,3 +222,12 @@ def unload_fixtures(engine, schema_name):
             $func$;
             """
         )
+
+
+if __name__ == '__main__':
+    from sqlalchemy import DDL
+    from dokomoforms.models import create_engine, Base
+    engine = create_engine(echo=True)
+    engine.execute(DDL('DROP SCHEMA IF EXISTS doko CASCADE'))
+    Base.metadata.create_all(engine)
+    load_fixtures(engine)
