@@ -16,8 +16,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
     @property
     def session(self):
-        """
-        The SQLAlchemy session for interacting with the models.
+        """The SQLAlchemy session for interacting with the models.
 
         :return: the SQLAlchemy session
         """
@@ -25,13 +24,14 @@ class BaseHandler(tornado.web.RequestHandler):
 
     @property
     def current_user_model(self):
+        """Return the current logged in User, or None."""
         try:
             user = json_decode(self.current_user)
-            user_id = user['user_id']
-            user_model = self.session.query(User).get(user_id)
-            return user_model
-        except:
+        except ValueError:
             return None
+        user_id = user['user_id']
+        user_model = self.session.query(User).get(user_id)
+        return user_model
 
     def prepare(self):
         """Default behavior before any HTTP method.
@@ -62,7 +62,6 @@ class BaseHandler(tornado.web.RequestHandler):
         :return: a string containing the dictionary {'user_id': <UUID>,
                  'user_name': <name>}
         """
-
         if options.TEST_USER:
             return options.TEST_USER
         else:
@@ -79,10 +78,14 @@ class BaseHandler(tornado.web.RequestHandler):
 
 class BaseAPIHandler(BaseHandler):
 
+    """The Tornado handler class for API resource classes."""
+
     @property
     def api_version(self):
+        """The API version."""
         return self.application._api_version
 
     @property
     def api_root_path(self):
+        """The API URL up to the version number."""
         return self.application._api_root_path

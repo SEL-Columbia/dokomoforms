@@ -72,8 +72,8 @@ class DokoTest(unittest.TestCase):
 
 
 class DokoHTTPTest(LogTrapTestCase, AsyncHTTPTestCase):
-    """
-    A base class for HTTP (i.e. API [and handler?]) test cases.
+
+    """Base class for HTTP (i.e. API [and handler?]) test cases.
 
     TODO: maybe need to override setUp to log the user in?
     Or this could happen in setUpModule?
@@ -83,21 +83,23 @@ class DokoHTTPTest(LogTrapTestCase, AsyncHTTPTestCase):
 
     @property
     def api_root(self):
+        """The API URL up to the version."""
         return '/api/' + self.get_app()._api_version
 
     @classmethod
     def setUpClass(cls):
+        """Load the fixtures."""
         load_fixtures(engine)
 
     def setUp(self):
-        """Insert test data"""
+        """Start a transaction."""
         self.connection = engine.connect()
         self.transaction = self.connection.begin()
         self.session = Session(bind=self.connection, autocommit=True)
         super().setUp()
 
     def tearDown(self):
-        """Remove test data"""
+        """Roll back the transaction."""
         self.session.close()
         self.transaction.rollback()
         self.connection.close()
@@ -105,18 +107,17 @@ class DokoHTTPTest(LogTrapTestCase, AsyncHTTPTestCase):
 
     @classmethod
     def tearDownClass(cls):
+        """Truncate all the tables."""
         unload_fixtures(engine, 'doko_test')
 
     def get_app(self):
-        """
-        Returns an instance of the application to be tested.
-        """
-
+        """Return an instance of the application to be tested."""
         self.app = Application(self.session)
         return self.app
 
     def append_query_params(self, url, params_dict):
-        """
+        """Add parameters from a dict to the URL.
+
         Convenience method which url encodes a dict of params
         and appends them to a url with a '?', returning the
         resulting url.
