@@ -25,20 +25,10 @@ import dokomoforms.models as models
 import dokomoforms.models.survey
 import dokomoforms.exc as exc
 from dokomoforms.models.survey import Bucket
+from dokomoforms.api.serializer import ModelJSONSerializer
 
 
 class TestBase(unittest.TestCase):
-    def test_to_json(self):
-        self.assertEqual(
-            models.Base._to_json({'</': 'a'}),
-            '{"<\\/": "a"}'
-        )
-
-        self.assertEqual(
-            models.Base._to_json({'</': 'a'}, tornado_encode=False),
-            '{"</": "a"}'
-        )
-
     def test_str(self):
         self.assertEqual(
             models.Base.__str__(models.User(name='base')),
@@ -82,7 +72,10 @@ class TestUser(DokoTest):
             self.session.add(new_user)
         user = self.session.query(models.User).one()
         self.assertEqual(
-            json.loads(user._to_json(), object_pairs_hook=OrderedDict),
+            json.loads(
+                ModelJSONSerializer.serialize(None, user),
+                object_pairs_hook=OrderedDict,
+            ),
             OrderedDict((
                 ('id', user.id),
                 ('deleted', False),
@@ -95,7 +88,7 @@ class TestUser(DokoTest):
             ))
         )
 
-    def test_email_to_json(self):
+    def test_email_asdict(self):
         with self.session.begin():
             new_user = models.User(name='a')
             new_user.emails = [models.Email(address='b@b')]
@@ -936,7 +929,10 @@ class TestSurveyNode(DokoTest):
         n_t = n.last_update_time.isoformat()
         n_i = n.id
         self.assertEqual(
-            json.loads(survey._to_json(), object_pairs_hook=OrderedDict),
+            json.loads(
+                ModelJSONSerializer.serialize(None, survey),
+                object_pairs_hook=OrderedDict,
+            ),
             OrderedDict((
                 ('id', survey.id),
                 ('deleted', False),
