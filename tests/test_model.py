@@ -282,7 +282,7 @@ class TestNode(DokoTest):
                         models.Survey(
                             title={'English': 'non_answerable'},
                             nodes=[
-                                models.construct_survey_node(
+                                models.NonAnswerableSurveyNode(
                                     node=models.construct_node(
                                         title={'English': 'should be note'},
                                         type_constraint='integer',
@@ -303,7 +303,7 @@ class TestNode(DokoTest):
                         models.Survey(
                             title={'English': 'answerable'},
                             nodes=[
-                                models.construct_survey_node(
+                                models.AnswerableSurveyNode(
                                     node=models.construct_node(
                                         title={
                                             'English': 'should be question'
@@ -531,12 +531,6 @@ class TestChoice(DokoTest):
 
 
 class TestSurvey(DokoTest):
-    def test_set_tzinfos(self):
-        from dokomoforms.models.survey import _set_tzinfos
-        _set_tzinfos()
-        from dokomoforms.models.survey import TZINFOS
-        self.assertIsNotNone(TZINFOS)
-
     def test_one_node_surveys(self):
         number_of_questions = 11
         with self.session.begin():
@@ -550,7 +544,7 @@ class TestSurvey(DokoTest):
                     title={'English': node_type + '_survey'},
                     nodes=[
                         models.construct_survey_node(
-                            node = models.construct_node(
+                            node=models.construct_node(
                                 type_constraint=node_type,
                                 title={'English': node_type + '_node'},
                             )
@@ -647,12 +641,6 @@ class TestSurvey(DokoTest):
                 )
                 self.session.add(creator)
 
-    def test_construct_survey_node_wrong_type(self):
-        self.assertRaises(
-            exc.NoSuchNodeTypeError,
-            models.construct_survey_node, type_constraint='wrong'
-        )
-
     def test_alternate_default_langauge(self):
         with self.session.begin():
             creator = models.SurveyCreator(
@@ -687,7 +675,6 @@ class TestSurveyNode(DokoTest):
                             default_language='French',
                             nodes=[
                                 models.construct_survey_node(
-                                    answerable=True,
                                     node=models.construct_node(
                                         type_constraint='integer',
                                         languages=['German'],
@@ -720,7 +707,6 @@ class TestSurveyNode(DokoTest):
                             default_language='French',
                             nodes=[
                                 models.construct_survey_node(
-                                    answerable=True,
                                     node=models.construct_node(
                                         type_constraint='integer',
                                         languages=['French'],
@@ -737,7 +723,6 @@ class TestSurveyNode(DokoTest):
                                             ],
                                             nodes=[
                                                 models.construct_survey_node(
-                                                    answerable=True,
                                                     node=super_nested,
                                                 ),
                                             ],
@@ -768,7 +753,6 @@ class TestSurveyNode(DokoTest):
                         default_language='French',
                         nodes=[
                             models.construct_survey_node(
-                                answerable=True,
                                 node=models.construct_node(
                                     type_constraint='integer',
                                     languages=['French'],
@@ -785,7 +769,6 @@ class TestSurveyNode(DokoTest):
                                         ],
                                         nodes=[
                                             models.construct_survey_node(
-                                                answerable=True,
                                                 node=super_nested,
                                             ),
                                         ],
@@ -909,7 +892,6 @@ class TestSurveyNode(DokoTest):
                         default_language='French',
                         nodes=[
                             models.construct_survey_node(
-                                answerable=True,
                                 node=models.construct_node(
                                     type_constraint='integer',
                                     languages=['French'],
@@ -926,7 +908,6 @@ class TestSurveyNode(DokoTest):
                                         ],
                                         nodes=[
                                             models.construct_survey_node(
-                                                answerable=True,
                                                 node=super_nested,
                                             ),
                                         ],
@@ -1512,7 +1493,8 @@ class TestBucket(DokoTest):
             '[04:05-08:00, 04:06-08:00]',
             # This gets interpreted as a date plus an hour
             # '[040506-08, 040507-08]',
-            '[04:05:06 PST, 04:05:07 PST]',
+            # Not worth the hassle
+            # '[04:05:06 PST, 04:05:07 PST]',
             # Not sure if this is worth trying to parse...
             # '[2003-04-12 04:05:06 America/New_York,'
             # ' 2003-04-12 04:05:07 America/New_York]',
@@ -1552,7 +1534,7 @@ class TestBucket(DokoTest):
 
         self.assertEqual(
             self.session.query(func.count(Bucket.id)).scalar(),
-            12
+            11
         )
         buckets = self.session.query(Bucket)
         tzinfo = buckets[0].bucket.lower.tzinfo
@@ -1633,30 +1615,18 @@ class TestBucket(DokoTest):
         )
         self.assertEqual(
             buckets[8].bucket,
-            DateTimeTZRange(
-                datetime.datetime(
-                    1970, 1, 1, 7, 5, 6, tzinfo=specified_tz
-                ),
-                datetime.datetime(
-                    1970, 1, 1, 7, 5, 7, tzinfo=specified_tz
-                ),
-                '[]'
-            )
-        )
-        self.assertEqual(
-            buckets[9].bucket,
             make_range(
                 (1970, 1, 1, 0, 0), (1970, 1, 1, 4, 5)
             )
         )
         self.assertEqual(
-            buckets[10].bucket,
+            buckets[9].bucket,
             make_range(
                 (1970, 1, 1, 4, 5), (1970, 1, 2, 0, 0)
             )
         )
         self.assertEqual(
-            buckets[11].bucket,
+            buckets[10].bucket,
             make_range(
                 (1970, 1, 1, 0, 0), (1970, 1, 2, 0, 0)
             )
@@ -2804,7 +2774,6 @@ class TestAnswer(DokoTest):
                 title={'English': 'survey'},
                 nodes=[
                     models.construct_survey_node(
-                        answerable=True,
                         node=models.construct_node(
                             type_constraint='integer',
                             title={'English': 'integer bad'},

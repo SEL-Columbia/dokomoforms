@@ -7,15 +7,13 @@ Also injects the --schema=doko_test option.
 import unittest
 from urllib.parse import urlencode
 
-from tornado.testing import AsyncHTTPTestCase
-import tornado.ioloop
+from tornado.testing import AsyncHTTPTestCase, LogTrapTestCase
 from functools import wraps
 
 from dokomoforms.options import inject_options, parse_options
 
 inject_options(
     schema='doko_test',
-    debug=True,
     # fake logged in user with ID from fixture
     TEST_USER="""
         {
@@ -24,21 +22,13 @@ inject_options(
         }
     """
 )
-# =======
-# inject_options(schema='doko_test')
 parse_options()
-# >>>>>>> origin/phoenix
 
 from sqlalchemy import DDL
 from sqlalchemy.orm import sessionmaker
 from dokomoforms.models import create_engine, Base
 from webapp import Application
 from tests.fixtures import load_fixtures, unload_fixtures
-# =======
-# from dokomoforms.models.survey import _set_tzinfos
-#
-# _set_tzinfos()
-# >>>>>>> origin/phoenix
 
 engine = create_engine(echo=False)
 Session = sessionmaker()
@@ -81,7 +71,7 @@ class DokoTest(unittest.TestCase):
         self.connection.close()
 
 
-class DokoHTTPTest(AsyncHTTPTestCase):
+class DokoHTTPTest(LogTrapTestCase, AsyncHTTPTestCase):
     """
     A base class for HTTP (i.e. API [and handler?]) test cases.
 
@@ -95,20 +85,26 @@ class DokoHTTPTest(AsyncHTTPTestCase):
     def api_root(self):
         return '/api/' + self.get_app()._api_version
 
+    @classmethod
+    def setUpClass(cls):
+        load_fixtures(engine)
+
     def setUp(self):
         """Insert test data"""
-        super().setUp()
         self.connection = engine.connect()
         self.transaction = self.connection.begin()
         self.session = Session(bind=self.connection, autocommit=True)
-        load_fixtures(engine)
+        super().setUp()
 
     def tearDown(self):
         """Remove test data"""
-        super().tearDown()
         self.session.close()
         self.transaction.rollback()
         self.connection.close()
+        super().tearDown()
+
+    @classmethod
+    def tearDownClass(cls):
         unload_fixtures(engine, 'doko_test')
 
     def get_app(self):
@@ -116,7 +112,8 @@ class DokoHTTPTest(AsyncHTTPTestCase):
         Returns an instance of the application to be tested.
         """
 
-        return Application()
+        self.app = Application(self.session)
+        return self.app
 
     def append_query_params(self, url, params_dict):
         """

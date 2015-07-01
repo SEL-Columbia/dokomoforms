@@ -1,9 +1,6 @@
 import datetime
-import tornado.web
 
-from restless.preparers import FieldsPreparer
 import restless.exceptions as exc
-from restless.resources import skip_prepare
 
 from sqlalchemy.sql.expression import func
 
@@ -25,22 +22,6 @@ class SurveyResource(BaseResource):
 
     # Set the property name on the outputted json
     objects_key = 'surveys'
-
-    # The preparer defines the fields that get returned.
-    #preparer = FieldsPreparer(fields={
-    #    'id': 'id',
-    #    'deleted': 'deleted',
-    #    'title': 'title',
-    #    'default_language': 'default_language',
-    #    'enumerator_only': 'enumerator_only',
-    #    'version': 'version',
-    #    'creator_id': 'creator_id',
-    #    'creator_name': 'creator.name',
-    #    'metadata': 'survey_metadata',
-    #    'created_on': 'created_on',
-    #    'last_update_time': 'last_update_time',
-    #    'nodes': 'nodes',
-    #})
 
     http_methods = {
         'list': {
@@ -84,8 +65,7 @@ class SurveyResource(BaseResource):
         survey = self.session.query(Survey).get(survey_id)
         if survey is None:
             raise exc.NotFound()
-        else:
-            return survey
+        return survey
 
     # POST /api/surveys/
     def create(self):
@@ -104,10 +84,7 @@ class SurveyResource(BaseResource):
             else:
                 node = construct_node(**node_dict)
             # create survey node
-            survey_node = construct_survey_node(**{
-                'node': node
-            })
-            return survey_node
+            return construct_survey_node(node=node)
 
         with self.session.begin():
             # create a list of Node models
@@ -146,11 +123,10 @@ class SurveyResource(BaseResource):
             survey = self.session.query(Survey).get(survey_id)
             if not survey:
                 raise exc.NotFound()
-            else:
-                survey.deleted = True
+            survey.deleted = True
 
     # POST /api/surveys/<survey_id>/submit
-    @skip_prepare
+    # @skip_prepare
     def submit(self, survey_id):
         """
         List all submissions for a survey.
@@ -193,7 +169,7 @@ class SurveyResource(BaseResource):
         return submission
 
     # GET /api/surveys/<survey_id>/submissions
-    @skip_prepare
+    # @skip_prepare
     def list_submissions(self, survey_id):
         """
         List all submissions for a survey.
@@ -209,7 +185,7 @@ class SurveyResource(BaseResource):
         return response
 
     # GET /api/surveys/<survey_id>/stats
-    @skip_prepare
+    # @skip_prepare
     def stats(self, survey_id):
         """
         Get stats for a survey.
@@ -237,7 +213,7 @@ class SurveyResource(BaseResource):
         return response
 
     # GET /api/surveys/activity
-    @skip_prepare
+    # @skip_prepare
     def activity_all(self):
         """
         Get activity for all surveys.
@@ -247,7 +223,7 @@ class SurveyResource(BaseResource):
         return response
 
     # GET /api/surveys/<survey_id>/activity
-    @skip_prepare
+    # @skip_prepare
     def activity(self, survey_id):
         """
         Get activity for a single survey.

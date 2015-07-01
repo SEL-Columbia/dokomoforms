@@ -9,6 +9,7 @@ from sqlalchemy.sql.functions import current_timestamp
 from sqlalchemy.ext.orderinglist import ordering_list
 
 from dokomoforms.models import util, Base, survey_type_enum
+from dokomoforms.exc import NoSuchSubmissionTypeError
 
 
 class Submission(Base):

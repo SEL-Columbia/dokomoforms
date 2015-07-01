@@ -35,9 +35,6 @@ from dokomoforms.api import (
     SurveyResource, SubmissionResource, NodeResource
 )
 
-# =======
-# from dokomoforms.models.survey import _set_tzinfos
-# >>>>>>> origin/phoenix
 
 _pwd = os.path.dirname(__file__)
 bold = '\033[1m'
@@ -112,7 +109,7 @@ class Application(tornado.web.Application):
 
     """The tornado.web.Application for Dokomo Forms."""
 
-    def __init__(self):
+    def __init__(self, session=None):
         """Set up the application with handlers and a db connection.
 
         Defines the URLs (with associated handlers) and settings for the
@@ -187,7 +184,7 @@ class Application(tornado.web.Application):
             'template_path': os.path.join(_pwd, 'dokomoforms/templates'),
             'static_path': os.path.join(_pwd, 'dokomoforms/static'),
             'default_handler_class': handlers.NotFound,
-            'xsrf_cookies': False,
+            'xsrf_cookies': False,  # TODO: True
             'cookie_secret': get_cookie_secret(),
             'login_url': '/',
             'debug': options.dev or options.debug,
@@ -201,12 +198,11 @@ class Application(tornado.web.Application):
                 DDL('DROP SCHEMA IF EXISTS {} CASCADE'.format(options.schema))
             )
         Base.metadata.create_all(self.engine)
-        self.sessionmaker = sessionmaker(bind=self.engine, autocommit=True)
-        self.session = self.sessionmaker()
-# =======
-#         _set_tzinfos()
-#         self.session = sessionmaker(bind=self.engine, autocommit=True)()
-# >>>>>>> origin/phoenix
+        if session is None:
+            self.sessionmaker = sessionmaker(bind=self.engine, autocommit=True)
+            self.session = self.sessionmaker()
+        else:
+            self.session = session
 
 
 def main():  # pragma: no cover

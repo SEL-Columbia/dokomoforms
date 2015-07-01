@@ -1,10 +1,9 @@
 from restless.tnd import TornadoResource
-import restless.exceptions as exc
+
+from sqlalchemy.sql.expression import false
 
 from dokomoforms.api.serializer import ModelJSONSerializer
 from dokomoforms.handlers.util import BaseAPIHandler
-
-from dokomoforms.models import NODE_TYPES, Node
 
 """
 A list of the expected query arguments
@@ -92,34 +91,36 @@ class BaseResource(TornadoResource):
         """
         query = self.session.query(model_cls)
 
-        limit = self.r_handler.get_query_argument('limit', False)
-        offset = self.r_handler.get_query_argument('offset', False)
-        deleted = self.r_handler.get_query_argument('show_deleted', False)
-        search_term = self.r_handler.get_query_argument('search', False)
+        limit = self.r_handler.get_query_argument('limit', None)
+        offset = self.r_handler.get_query_argument('offset', None)
+        deleted = self.r_handler.get_query_argument('show_deleted', 'false')
+        search_term = self.r_handler.get_query_argument('search', None)
         search_fields = self.r_handler.get_query_argument(
             'search_fields', 'title')
-        search_lang = self.r_handler.get_query_argument('lang', 'English')
-        type = self.r_handler.get_query_argument('type', False)
+        # TODO: this
+        # search_lang = self.r_handler.get_query_argument('lang', 'English')
+        type = self.r_handler.get_query_argument('type', None)
 
-        if not deleted:
-            query = query.filter(model_cls.deleted == False)
+        if deleted.lower() != 'true':
+            query = query.filter(model_cls.deleted == false())
 
-        if limit is not False:
+        if limit is not None:
             query = query.limit(int(limit))
 
-        if offset is not False:
+        if offset is not None:
             query = query.offset(int(offset))
 
-        if type is not False:
-            if (model_cls == Node and
-                    hasattr(model_cls, 'type_constraint') and
-                    type in NODE_TYPES):
-                query = query.filter(model_cls.type_constraint == type)
-            else:
-                raise exc.BadRequest("'" + type + "' type is invalid")
+        if type is not None:
+            query = query.filter(model_cls.type_constraint == type)
+            # if issubclass(model_cls, Node):
+            # # if (model_cls == Node and
+            # #         hasattr(model_cls, 'type_constraint')):
+            #     query = query.filter(model_cls.type_constraint == type)
+            # else:
+            #     raise exc.BadRequest("'" + type + "' type is invalid")
 
         # TODO: this isn't complete -- needs jsonb lookupability.
-        if search_term is not False:
+        if search_term is not None:
             search_fields_list = search_fields.split(',')
             for search_field in search_fields_list:
                 if hasattr(model_cls, search_field):
@@ -128,9 +129,7 @@ class BaseResource(TornadoResource):
                             model_cls, search_field
                         ).ilike('%' + search_term + '%'))
 
-        response = query.all()
-
-        return response
+        return query.all()
 
     def _add_meta_props(self, response):
         """

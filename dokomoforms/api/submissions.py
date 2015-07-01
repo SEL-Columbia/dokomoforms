@@ -43,8 +43,7 @@ class SubmissionResource(BaseResource):
         submission = self.session.query(Submission).get(submission_id)
         if not submission:
             raise exc.NotFound()
-        else:
-            return submission
+        return submission
 
     # POST /api/submissions/
     def create(self):
@@ -110,6 +109,7 @@ class SubmissionResource(BaseResource):
         submission = self.session.query(Submission).get(submission_id)
         if not submission:
             raise exc.NotFound()
+        # TODO: FIX THIS
         else:
             # with self.session.begin():
                 # submission.update(self.data)
@@ -125,5 +125,4 @@ class SubmissionResource(BaseResource):
             submission = self.session.query(Submission).get(submission_id)
             if not submission:
                 raise exc.NotFound()
-            else:
-                submission.deleted = True
+            submission.deleted = True

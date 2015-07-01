@@ -1,4 +1,3 @@
-from restless.preparers import FieldsPreparer
 import restless.exceptions as exc
 
 from dokomoforms.api import BaseResource
@@ -30,8 +29,7 @@ class NodeResource(BaseResource):
         node = self.session.query(Node).get(node_id)
         if node is None:
             raise exc.NotFound()
-        else:
-            return node
+        return node
 
     # POST /api/nodes/
     def create(self):
@@ -63,10 +61,10 @@ class NodeResource(BaseResource):
 
         if node is None:
             raise exc.NotFound()
-        else:
-            with self.session.begin():
-                node.update(self.data)
-            return node
+
+        with self.session.begin():
+            node.update(self.data)
+        return node
 
     # DELETE /api/nodes/<node_id>/
     def delete(self, node_id):
@@ -78,8 +76,7 @@ class NodeResource(BaseResource):
             node = self.session.query(Node).get(node_id)
             if node is None:
                 raise exc.NotFound()
-            else:
-                node.deleted = True
+            node.deleted = True
 
     def prepare(self, data):
         """

@@ -1,8 +1,7 @@
-from dokomoforms.options import options, inject_options, parse_options
+from dokomoforms.options import inject_options, parse_options
 
 inject_options(
     schema='doko',
-    #debug=True,
     # fake logged in user with ID from fixture
     TEST_USER="""
         {
@@ -11,10 +10,7 @@ inject_options(
         }
     """
 )
-# =======
-# inject_options(schema='doko_test')
 parse_options()
-# >>>>>>> origin/phoenix
 
 from dokomoforms.models import create_engine, Base
 from tests.fixtures import load_fixtures, unload_fixtures
