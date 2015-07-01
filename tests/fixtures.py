@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Create fixtures for test purposes."""
 import datetime
 from sqlalchemy.orm import sessionmaker
 
@@ -24,6 +25,7 @@ Session = sessionmaker()
 
 
 def load_fixtures(engine):
+    """Create test users, surveys, and submissions."""
     # creates db schema
     session = Session(bind=engine, autocommit=True)
 
@@ -215,6 +217,7 @@ def load_fixtures(engine):
 
 
 def unload_fixtures(engine, schema_name):
+    """Truncate all the tables."""
     connection = engine.connect()
     with connection.begin():
         connection.execute(

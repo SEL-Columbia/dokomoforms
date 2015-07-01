@@ -1,3 +1,4 @@
+"""TornadoResource class for dokomoforms.models.survey.Survey."""
 import datetime
 
 import restless.exceptions as exc
@@ -12,9 +13,18 @@ from dokomoforms.models import (
 )
 
 
+def _create_or_get_survey_node(session, node_dict):
+    if 'id' in node_dict:
+        node = session.query(Node).get(node_dict['id'])
+        # TODO: raise an exception if node is None
+    else:
+        node = construct_node(**node_dict)
+    return construct_survey_node(node=node)
+
+
 class SurveyResource(BaseResource):
-    """
-    Restless resource for Surveys.
+
+    """Restless resource for Surveys.
 
     BaseResource sets the serializer, which uses the dokomo models'
     ModelJSONEncoder for json conversion.
@@ -53,13 +63,11 @@ class SurveyResource(BaseResource):
         }
     }
 
-    # GET /api/surveys/
     def list(self):
         """Return a list of surveys."""
         response = self._generate_list_response(Survey)
         return response
 
-    # GET /api/surveys/<survey_id>
     def detail(self, survey_id):
         """Return a single survey."""
         survey = self.session.query(Survey).get(survey_id)
@@ -67,43 +75,26 @@ class SurveyResource(BaseResource):
             raise exc.NotFound()
         return survey
 
-    # POST /api/surveys/
     def create(self):
+        """Create a new survey.
+
+        Uses the current_user_model (i.e. logged-in user) as creator.
         """
-        Create a new survey using the current_user_model (i.e. logged-in user)
-        as creator.
-
-        Since this captures all POST requests, we first check for a _method
-        query param and treat the request accordingly.
-        """
-
-        def create_or_get_survey_node(node_dict):
-            # get or create the node
-            if 'id' in node_dict:
-                node = self.session.query(Node).get(node_dict['id'])
-            else:
-                node = construct_node(**node_dict)
-            # create survey node
-            return construct_survey_node(node=node)
-
         with self.session.begin():
             # create a list of Node models
-            nodes = list(map(create_or_get_survey_node, self.data['nodes']))
-            # remove the existing nodes key from the received data
-            del self.data['nodes']
-            creator = self.current_user_model
+            _node = _create_or_get_survey_node
+            self.data['nodes'] = [
+                _node(self.session, node) for node in self.data['nodes']
+            ]
+            self.data['creator'] = self.current_user_model
             # pass survey props as kwargs
             survey = Survey(**self.data)
-            # add the node models
-            survey.nodes = nodes
-            # add the survey to the creator
-            creator.surveys.append(survey)
+            self.session.add(survey)
 
         return survey
 
-    # PUT /api/surveys/<survey_id>/
     def update(self, survey_id):
-        """TODO: how should this behave?"""
+        """TODO: how should this behave? Good question."""
         survey = self.session.query(Survey).get(survey_id)
 
         if not survey:
@@ -113,11 +104,10 @@ class SurveyResource(BaseResource):
                 survey.update(self.data)
             return survey
 
-    # DELETE /api/surveys/<survey_id>/
     def delete(self, survey_id):
-        """
-        Marks the survey.deleted = True. Does NOT remove the survey
-        from the DB.
+        """Set survey.deleted = True.
+
+        Does NOT remove the survey from the DB.
         """
         with self.session.begin():
             survey = self.session.query(Survey).get(survey_id)
@@ -125,12 +115,8 @@ class SurveyResource(BaseResource):
                 raise exc.NotFound()
             survey.deleted = True
 
-    # POST /api/surveys/<survey_id>/submit
-    # @skip_prepare
     def submit(self, survey_id):
-        """
-        List all submissions for a survey.
-        """
+        """List all submissions for a survey."""
         survey = self.session.query(Survey).get(survey_id)
         if survey is None:
             raise exc.BadRequest(
@@ -168,12 +154,8 @@ class SurveyResource(BaseResource):
 
         return submission
 
-    # GET /api/surveys/<survey_id>/submissions
-    # @skip_prepare
     def list_submissions(self, survey_id):
-        """
-        List all submissions for a survey.
-        """
+        """List all submissions for a survey."""
         response_list = self._generate_list_response(
             Submission, filter=(Survey.id == survey_id))
 
@@ -184,12 +166,8 @@ class SurveyResource(BaseResource):
         response = self._add_meta_props(response)
         return response
 
-    # GET /api/surveys/<survey_id>/stats
-    # @skip_prepare
     def stats(self, survey_id):
-        """
-        Get stats for a survey.
-        """
+        """Get stats for a survey."""
         user = self.current_user_model
         if user is None:
             raise exc.Unauthorized()
@@ -212,28 +190,21 @@ class SurveyResource(BaseResource):
         }
         return response
 
-    # GET /api/surveys/activity
-    # @skip_prepare
     def activity_all(self):
-        """
-        Get activity for all surveys.
-        """
+        """Get activity for all surveys."""
         days = int(self.r_handler.get_argument('days', 30))
         response = self._generate_activity_response(days)
         return response
 
-    # GET /api/surveys/<survey_id>/activity
-    # @skip_prepare
     def activity(self, survey_id):
-        """
-        Get activity for a single survey.
-        """
+        """Get activity for a single survey."""
         days = int(self.r_handler.get_argument('days', 30))
         response = self._generate_activity_response(days, survey_id)
         return response
 
     def _generate_activity_response(self, days=30, survey_id=None):
-        """
+        """Get the activity response.
+
         Build and execute the query for activity, specifying the number of days
         in the past from the current date to return.
 
@@ -275,7 +246,8 @@ class SurveyResource(BaseResource):
         return response
 
     def prepare(self, data):
-        """
+        """Determine which fields to return.
+
         If we don't prep the data, all the fields get returned!
 
         We can subtract fields here if there are fields which shouldn't

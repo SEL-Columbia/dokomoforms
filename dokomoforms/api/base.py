@@ -1,3 +1,4 @@
+"""The base class of the TornadoResource classes in the api module."""
 from restless.tnd import TornadoResource
 
 from sqlalchemy.sql.expression import false
@@ -17,7 +18,9 @@ QUERY_ARGS = [
 
 
 class BaseResource(TornadoResource):
-    """
+
+    """Set up the basics for the model resource.
+
     BaseResource does some basic configuration for the restless resources.
     - sets the base request handler class which is used by the resources
     - providing reference to the ORM session via request handler
@@ -35,18 +38,22 @@ class BaseResource(TornadoResource):
 
     @property
     def session(self):
+        """The handler's session."""
         return self.r_handler.session
 
     @property
     def current_user_model(self):
+        """The handler's current_user_model."""
         return self.r_handler.current_user_model
 
     @property
     def current_user(self):
+        """The handler's current_user."""
         return self.r_handler.current_user
 
     def wrap_list_response(self, data):
-        """
+        """Wrap a list response in a dict.
+
         Takes a list of data & wraps it in a dictionary (within the ``objects``
         key).
         For security in JSON responses, it's better to wrap the list results in
@@ -70,6 +77,7 @@ class BaseResource(TornadoResource):
         return full_response
 
     def is_authenticated(self):
+        """TODO: Return whether the request has been authenticated."""
         if self.request_method() == 'GET':
             return True
 
@@ -85,7 +93,8 @@ class BaseResource(TornadoResource):
         #     return False
 
     def _generate_list_response(self, model_cls, **kwargs):
-        """
+        """Return a query for a list response.
+
         Given a model class, build up the ORM query based on query params
         and return the query result.
         """
@@ -126,7 +135,8 @@ class BaseResource(TornadoResource):
         return query.all()
 
     def _add_meta_props(self, response):
-        """
+        """Add metadata to the response.
+
         Add the appropriate metadata fields to the response body object. Any
         properties that should sit alongside the list of objects being
         returned should be added here.

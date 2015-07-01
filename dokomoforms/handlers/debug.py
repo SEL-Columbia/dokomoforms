@@ -3,6 +3,7 @@
 from tornado.escape import json_encode
 import tornado.web
 
+from sqlalchemy.sql import exists
 from sqlalchemy.orm.exc import NoResultFound
 
 from dokomoforms.models import User, SurveyCreator, Email
@@ -11,24 +12,34 @@ from dokomoforms.options import options
 
 
 class DebugUserCreationHandler(BaseHandler):
+
     """User this page to create a user."""
 
-    def get(self, email=''):
-        with self.session.begin():
-            creator = SurveyCreator(
-                name='debug_user',
-                emails=[Email(address=email)],
-            )
-            self.session.add(creator)
-
-        self.write('Created user {}'.format(email))
-        self.set_status(201)
+    def get(self, email='test@test_email.com'):
+        """Log in for any user (creating one if necessary)."""
+        email_exists = (
+            self.session
+            .query(exists().where(Email.address == email))
+            .scalar()
+        )
+        if not email_exists:
+            with self.session.begin():
+                creator = SurveyCreator(
+                    name='debug_user',
+                    emails=[Email(address=email)],
+                )
+                self.session.add(creator)
+                self.write('Created user {}'.format(email))
+                self.set_status(201)
+        DebugLoginHandler.get(self, email)
 
 
 class DebugLoginHandler(BaseHandler):
-    """Use this page to log in as any user."""
 
-    def get(self, email=""):
+    """Use this page to log in as any existing user."""
+
+    def get(self, email="test@test_email.com"):
+        """Log in by supplying an e-mail address."""
         try:
             user = (
                 self.session.query(User.id, User.name)
@@ -61,8 +72,10 @@ class DebugLoginHandler(BaseHandler):
 
 
 class DebugLogoutHandler(BaseHandler):
+
     """Log out by visiting this page."""
 
     def get(self):
+        """Clear the 'user' cookie."""
         self.clear_cookie('user')
         self.write('You have logged out.')
