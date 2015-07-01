@@ -14,14 +14,22 @@ When a Node gets associated with a Survey, it gets wrapped in a SurveyNode. The 
 ```
 GET /api/v0/nodes
 ```
-#### Parameters
+#### Implemented Parameters
 | Name | Type | Default | Description |
 | ---- | ---- | ------- | ----------- |
 | offset | integer | 0 | The offset of the result set. |
-| limit | integer | 100 | Limits the number of results in the result set. |
-| order_by | string | created_on:DESC | A comma-delimited list of Node properties with order direction, e.g. title:ASC,type:DESC |
+| limit | integer |  | Limits the number of results in the result set. |
 | type | string |  | Filters on the `type_constraint` property of the Node. |
 | draw | integer |  | If included in the request, the `draw` parameter will be returned in the response unaltered. |
+
+#### Planned Parameters (Not Implemented)
+| Name | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| fields | string | all fields | A comma-delimited list of node properties that should be returned. |
+| search | string OR regex |  | A string or regex to search on. |
+| regex | boolean | false | Whether or not to parse the search param as a regex. |
+| search_fields | string | title | A comma-delimited list of node properties that should be searched. |
+| order_by | string | created_on:DESC | A comma-delimited list of node properties with order direction, e.g. title:ASC,created_on:DESC |
 
 *Note: All parameters are optional.*
 
