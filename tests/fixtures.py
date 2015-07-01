@@ -142,7 +142,20 @@ def load_fixtures(engine):
                             ]
                         ),
                     ],
-                )
+                ),
+                models.construct_survey_node(
+                    node=models.construct_node(
+                        id="80e56824-910c-47aa-b5c0-71493277b439",
+                        title={'English': 'Mutliple Choices'},
+                        type_constraint='multiple_choice',
+                        choices=[
+                            models.Choice(
+                                choice_text={"English": "first choice"}),
+                            models.Choice(
+                                choice_text={"English": "second choice"}),
+                        ]
+                    )
+                ),
             ],
         )
 
