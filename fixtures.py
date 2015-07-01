@@ -12,10 +12,11 @@ inject_options(
 )
 parse_options()
 
+from sqlalchemy import DDL
 from dokomoforms.models import create_engine, Base
 from tests.fixtures import load_fixtures, unload_fixtures
 
 engine = create_engine(echo=True)
-unload_fixtures(engine, 'doko')
 Base.metadata.create_all(engine)
+engine.execute(DDL('DROP SCHEMA IF EXISTS doko_test CASCADE'))
 load_fixtures(engine)
