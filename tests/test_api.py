@@ -15,7 +15,7 @@ TODO: add expception and error response tests
 # The numbers expected to be present via fixtures
 TOTAL_SURVEYS = 14
 TOTAL_SUBMISSIONS = 112
-TOTAL_NODES = 15
+TOTAL_NODES = 16
 
 
 class TestSurveyApi(DokoHTTPTest):
@@ -61,7 +61,7 @@ class TestSurveyApi(DokoHTTPTest):
 
         # check that the offset value comes back correctly
         self.assertTrue("offset" in survey_dict)
-        self.assertEqual(int(survey_dict['offset']), offset)
+        self.assertEqual(survey_dict['offset'], offset)
 
         self.assertEqual(len(survey_dict['surveys']), TOTAL_SURVEYS - offset)
         # TODO: check the known value of the first survey
@@ -86,14 +86,14 @@ class TestSurveyApi(DokoHTTPTest):
 
         # check that the limit value comes back correctly
         self.assertTrue("limit" in survey_dict)
-        self.assertEqual(int(survey_dict['limit']), 1)
+        self.assertEqual(survey_dict['limit'], 1)
 
         # check the number of surveys matches the limit
         self.assertEqual(len(survey_dict['surveys']), 1)
 
     def test_get_single_survey(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
-        # url to test
+        # url to tests
         url = self.api_root + '/surveys/' + survey_id
         # http method (just for clarity)
         method = 'GET'
@@ -179,7 +179,6 @@ class TestSurveyApi(DokoHTTPTest):
         body = {
             "metadata": {},
             "survey_type": "public",
-            "deleted": False,
             "default_language": "English",
             "title": {"English": "Test_Survey"},
             "nodes": [
@@ -227,7 +226,6 @@ class TestSurveyApi(DokoHTTPTest):
         body = {
             "metadata": {},
             "survey_type": "public",
-            "deleted": False,
             "default_language": "English",
             "title": {"English": "Test_Survey"},
             "nodes": [
@@ -517,9 +515,9 @@ class TestSubmissionApi(DokoHTTPTest):
 
         self.assertEqual(len(submission_dict['answers']), 1)
 
-        self.assertDictEqual(
+        self.assertEqual(
             submission_dict['answers'][0]['response'],
-            {'response_type': 'answer', 'response': 3}
+            3
         )
 
     def test_create_enum_only_submission(self):
@@ -635,6 +633,7 @@ class TestNodeApi(DokoHTTPTest):
 
         self.assertTrue('nodes' in node_dict)
         self.assertTrue('limit' in node_dict)
+        self.assertEqual(node_dict['limit'], limit)
         self.assertEqual(len(node_dict['nodes']), limit)
 
         # check that no error is present
@@ -658,6 +657,7 @@ class TestNodeApi(DokoHTTPTest):
 
         self.assertTrue('nodes' in node_dict)
         self.assertTrue('offset' in node_dict)
+        self.assertEqual(node_dict['offset'], offset)
         self.assertEqual(len(node_dict['nodes']), TOTAL_NODES - offset)
 
         # check that no error is present
@@ -719,7 +719,7 @@ class TestNodeApi(DokoHTTPTest):
         # test response
         node_dict = json_decode(response.body)
 
-        self.assertEqual(response.code, 400)
+        self.assertEqual(response.code, 500)
         self.assertTrue('error' in node_dict)
 
     def test_get_single_node(self):

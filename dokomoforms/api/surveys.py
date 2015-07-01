@@ -274,11 +274,11 @@ class SurveyResource(BaseResource):
             })
         return response
 
-        def prepare(self, data):
-            """
-            If we don't prep the data, all the fields get returned!
+    def prepare(self, data):
+        """
+        If we don't prep the data, all the fields get returned!
 
-            We can subtract fields here if there are fields which shouldn't
-            be included in the API.
-            """
-            return data
+        We can subtract fields here if there are fields which shouldn't
+        be included in the API.
+        """
+        return data

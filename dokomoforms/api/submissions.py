@@ -20,19 +20,6 @@ class SubmissionResource(BaseResource):
     # Set the property name on the outputted json
     objects_key = 'submissions'
 
-    # The preparer defines the fields that get returned.
-    preparer = FieldsPreparer(fields={
-        'id': 'id',
-        'deleted': 'deleted',
-        'survey_id': 'survey_id',
-        'save_time': 'save_time',
-        'submission_time': 'submission_time',
-        'last_update_time': 'last_update_time',
-        'submitter_name': 'submitter_name',
-        'submitter_email': 'submitter_email',
-        'answers': 'answers',
-    })
-
     # GET /api/submissions/
     def list(self):
         response = self._generate_list_response(Submission)
