@@ -77,30 +77,16 @@ class Base(declarative_base(metadata=metadata, metaclass=_Meta)):
             'emails': [email.address for email in self.emails],
 
         In addition, consider returning an instance of collections.OrderedDict
-        instead of a regular dict so that the _to_json and __str__ methods
-        always return the keys in the same order.
+        instead of a regular dict so that the restless serializer and __str__
+        method always return the keys in the same order.
         """
-
-    def _to_json(self, *, tornado_encode: bool=True, **kwargs) -> str:
-        """Return the JSON representation of this model.
-
-        See dokomoforms.models.util.Base._asdict and
-        dokomoforms.models.util.ModelJSONEncoder
-
-        :param tornado_encode: if True, also escapes the forward slash in any
-                               occurences of '</' in the JSON string. This is
-                               the behavior of tornado.escape.json_encode.
-                               Default True
-        :param kwargs: any keyword arguments that json.dumps accepts
-        """
-        result = json.dumps(self, cls=ModelJSONEncoder, **kwargs)
-        if tornado_encode:
-            return result.replace('</', '<\\/')
-        return result
 
     def __str__(self) -> str:
         """Return the string representation of this model."""
-        return self._to_json(tornado_encode=False, indent=4)
+        return (
+            json.dumps(self, cls=ModelJSONEncoder, indent=4)
+            .replace('</', '<\\/')
+        )
 
 
 sa.event.listen(
@@ -123,12 +109,10 @@ sa.event.listen(
 )
 
 
+# Might want to use restless.utils.MoreTypesJSONEncoder as base class
 class ModelJSONEncoder(json.JSONEncoder):
 
-    """
-    This JSONEncoder knows what to do with the models in dokomoforms.models.
-
-    It is used internally by the _to_json method of any of the model classes.
+    """This JSONEncoder handles the models in dokomoforms.models.
 
     To use it manually, call:
 
@@ -141,8 +125,14 @@ class ModelJSONEncoder(json.JSONEncoder):
         """Handle special types for json.dumps.
 
         If obj is a model from dokomoforms.models, return a dictionary
-        representation. If obj is a datetime.date or datetime.time, return an
-        ISO 8601 representation string. Otherwise, throw a TypeError.
+        representation.
+
+        If obj is a datetime.date or datetime.time, return an
+        ISO 8601 representation string.
+
+        If obj is a psycpg2 Range, return its string representation.
+
+        Otherwise, throw a TypeError.
 
         See
         https://docs.python.org/3/library/json.html#json.JSONEncoder.default
