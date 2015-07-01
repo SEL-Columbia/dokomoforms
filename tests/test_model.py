@@ -159,11 +159,11 @@ class TestUser(DokoTest):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
                 user_a = models.User(name='a')
-                user_a.emails = [models.Email(address='a')]
+                user_a.emails = [models.Email(address='@')]
                 self.session.add(user_a)
 
                 user_b = models.User(name='b')
-                user_b.emails = [models.Email(address='a')]
+                user_b.emails = [models.Email(address='@')]
                 self.session.add(user_b)
 
 

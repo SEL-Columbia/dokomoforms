@@ -645,18 +645,17 @@ class AnswerableSurveyNode(SurveyNode):
 
 
 def construct_survey_node(**kwargs) -> SurveyNode:
-    """
-    Returns a subclass of dokomoforms.models.survey.SurveyNode determined by
-    the type_constraint parameter. This utility function makes it easy to
-    create an instance of a SurveyNode subclass based on external
-    input.
+    """Return a subclass of dokomoforms.models.survey.SurveyNode.
+
+    The subclass is determined by the type_constraint parameter. This utility
+    function makes it easy to create an instance of a SurveyNode subclass
+    based on external input.
 
     See http://stackoverflow.com/q/30518484/1475412
 
     :param kwargs: the keyword arguments to pass to the constructor
     :returns: an instance of one of the Node subtypes
     """
-
     if 'node' in kwargs:
         type_constraint = kwargs['node'].type_constraint
         if 'the_node' not in kwargs:
