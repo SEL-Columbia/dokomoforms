@@ -31,11 +31,17 @@ if __name__ == '__main__':  # pragma: no cover
 
 import dokomoforms.handlers as handlers
 from dokomoforms.models import create_engine, Base
-from dokomoforms.models.survey import _set_tzinfos
+from dokomoforms.api import (
+    SurveyResource, SubmissionResource, NodeResource
+)
+
 
 _pwd = os.path.dirname(__file__)
 bold = '\033[1m'
 green = '\033[92m'
+
+UUID_REGEX = '[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][' \
+             'a-f0-9]{3}-?[a-f0-9]{12}'
 
 
 def modify_text(text: str, modifier: str) -> str:
@@ -103,7 +109,7 @@ class Application(tornado.web.Application):
 
     """The tornado.web.Application for Dokomo Forms."""
 
-    def __init__(self):
+    def __init__(self, session=None):
         """Set up the application with handlers and a db connection.
 
         Defines the URLs (with associated handlers) and settings for the
@@ -111,20 +117,78 @@ class Application(tornado.web.Application):
         option), then prepares the database and creates a session.
 
         """
+        self._api_version = 'v0'
+        self._api_root_path = '/api/' + self._api_version
+
         urls = [
             # Administrative
             url(r'/', handlers.Index, name='index'),
             url(r'/user/login/?', handlers.Login, name='login'),
             url(r'/user/logout/?', handlers.Logout, name='logout'),
+
+            # API
+
+            # Surveys
+            url(r'' + self._api_root_path + '/surveys/?',
+                SurveyResource.as_list(), name="surveys"),
+            url(r'' + self._api_root_path +
+                '/surveys/({})/?'.format(UUID_REGEX),
+                SurveyResource.as_detail(),
+                name="survey"),
+            url(r'' + self._api_root_path +
+                '/surveys/({})/submit/?'.format(UUID_REGEX),
+                SurveyResource.as_view('submit'),
+                name="submit_to_survey"),
+            url(r'' + self._api_root_path +
+                '/surveys/({})/submissions/?'.format(UUID_REGEX),
+                SurveyResource.as_view('list_submissions'),
+                name="survey_list_submissions"),
+            url(r'' + self._api_root_path +
+                '/surveys/({})/stats/?'.format(UUID_REGEX),
+                SurveyResource.as_view('stats'),
+                name="survey_stats"),
+            url(r'' + self._api_root_path +
+                '/surveys/({})/activity/?'.format(UUID_REGEX),
+                SurveyResource.as_view('activity'),
+                name="survey_activity"),
+            url(r'' + self._api_root_path +
+                '/surveys/activity/?'.format(UUID_REGEX),
+                SurveyResource.as_view('activity_all'),
+                name="activity_all"),
+
+            # Submissions
+            url(r'' + self._api_root_path + '/submissions',
+                SubmissionResource.as_list(), name="submissions"),
+            url(r'' + self._api_root_path +
+                '/submissions/({})/?'.format(UUID_REGEX),
+                SubmissionResource.as_detail(),
+                name="submission"),
+
+            # Nodes
+            url(r'' + self._api_root_path + '/nodes',
+                NodeResource.as_list(), name="nodes"),
+            url(r'' + self._api_root_path +
+                '/nodes/({})/?'.format(UUID_REGEX),
+                NodeResource.as_detail(),
+                name="node"),
         ]
+        if options.debug:
+            urls += [
+                url(r'/debug/create/(.+)/?',
+                    handlers.DebugUserCreationHandler),
+                url(r'/debug/login/(.+)/?', handlers.DebugLoginHandler),
+                url(r'/debug/logout/?', handlers.DebugLogoutHandler),
+            ]
+
         settings = {
             'template_path': os.path.join(_pwd, 'dokomoforms/templates'),
             'static_path': os.path.join(_pwd, 'dokomoforms/static'),
             'default_handler_class': handlers.NotFound,
-            'xsrf_cookies': True,
+            'xsrf_cookies': False,  # TODO: True
             'cookie_secret': get_cookie_secret(),
             'login_url': '/',
-            'debug': options.debug,
+            'debug': options.dev or options.debug,
+            'autoreload': options.dev or options.autoreload
         }
         super().__init__(urls, **settings)
         self.engine = create_engine()
@@ -134,8 +198,11 @@ class Application(tornado.web.Application):
                 DDL('DROP SCHEMA IF EXISTS {} CASCADE'.format(options.schema))
             )
         Base.metadata.create_all(self.engine)
-        _set_tzinfos()
-        self.session = sessionmaker(bind=self.engine, autocommit=True)()
+        if session is None:
+            self.sessionmaker = sessionmaker(bind=self.engine, autocommit=True)
+            self.session = self.sessionmaker()
+        else:
+            self.session = session
 
 
 def main():  # pragma: no cover

@@ -13,7 +13,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.orderinglist import ordering_list
 
-from dokomoforms.models import util, Base, node_type_enum, Node
+from dokomoforms.models import util, Base, node_type_enum
 from dokomoforms.exc import NoSuchBucketTypeError
 
 
@@ -415,31 +415,12 @@ BUCKET_TYPES = {
 }
 
 
-TZINFOS = dict()
-
-
-def _set_tzinfos():
-    global TZINFOS
-    if not TZINFOS:
-        from dokomoforms.models import create_engine
-        engine = create_engine(echo=False)
-        connection = engine.connect()
-        tzinfos = connection.execute(
-            'SELECT abbrev, utc_offset FROM pg_timezone_abbrevs'
-        )
-        connection.close()
-        TZINFOS = {
-            abbrev: int(offset.total_seconds()) for abbrev, offset in tzinfos
-        }
-        del engine
-
-
 def _time_at_unix_epoch_date(time: str, upper=False) -> datetime.datetime:
     the_date = datetime.datetime(1970, 1, 1)
     if upper and time.strip() == '':
         the_date = datetime.datetime(1970, 1, 2)
     return datetime.datetime.combine(
-        the_date, dateutil.parser.parse(time, tzinfos=TZINFOS).timetz()
+        the_date, dateutil.parser.parse(time).timetz()
     )
 
 
@@ -663,14 +644,46 @@ class AnswerableSurveyNode(SurveyNode):
         return result
 
 
-def construct_survey_node(*,
-                          answerable: bool, node: Node,
-                          **kwargs) -> SurveyNode:
-    """Return a subclass of dokomoforms.models.survey.SurveyNode.
-
-    :param answerable: TODO
-    :param node: TODO
-    :returns: an instance of one of the SurveyNode subclasses.
+def construct_survey_node(**kwargs) -> SurveyNode:
     """
-    create = AnswerableSurveyNode if answerable else NonAnswerableSurveyNode
-    return create(node=node, the_node=node, **kwargs)
+    Returns a subclass of dokomoforms.models.survey.SurveyNode determined by
+    the type_constraint parameter. This utility function makes it easy to
+    create an instance of a SurveyNode subclass based on external
+    input.
+
+    See http://stackoverflow.com/q/30518484/1475412
+
+    :param kwargs: the keyword arguments to pass to the constructor
+    :returns: an instance of one of the Node subtypes
+    """
+
+    if 'node' in kwargs:
+        type_constraint = kwargs['node'].type_constraint
+        if 'the_node' not in kwargs:
+            kwargs['the_node'] = kwargs['node']
+
+    if 'type_constraint' in kwargs:
+        type_constraint = kwargs['type_constraint']
+
+    survey_node_constructor = (
+        NonAnswerableSurveyNode if type_constraint
+        is 'note' else AnswerableSurveyNode
+    )
+
+    return survey_node_constructor(**kwargs)
+    # # it's unclear whether an id passed into kwargs should
+    # # pertain to the survey_node or node? Since it's unlikely
+    # # that an id will be passed except for testing cases,
+    # # for now it's BOTH.
+    # if 'id' in kwargs:
+    #     survey_node = survey_node_constructor(
+    #         id=kwargs['id'],
+    #         the_node=node,
+    #         node=node,
+    #     )
+    # else:
+    #     survey_node = survey_node_constructor(
+    #         the_node=node,
+    #         node=node,
+    #     )
+    # return survey_node
