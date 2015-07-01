@@ -189,6 +189,61 @@ class TestNode(DokoTest):
         question = self.session.query(models.Question).one()
         self.assertEqual(question.title, {'English': 'test'})
 
+    def test_construct_node_with_languages(self):
+        with self.session.begin():
+            self.session.add(models.construct_node(
+                type_constraint='text',
+                languages=['French', 'German'],
+                title={
+                    'German': 'german test',
+                    'Italian': 'italian test',
+                    'French': 'french test',
+                },
+                hint={
+                    'German': 'german hint ',
+                    'Italian': 'italian hint',
+                    'French': 'french hint',
+                },
+            ))
+        node = self.session.query(models.Node).one()
+        self.assertEqual(node.languages, ('French', 'German'))
+
+    def test_construct_node_with_no_languages(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                self.session.add(models.construct_node(
+                    type_constraint='text',
+                    languages=[],
+                    title={
+                        'German': 'german test',
+                        'Italian': 'italian test',
+                        'French': 'french test',
+                    },
+                    hint={
+                        'German': 'german hint ',
+                        'Italian': 'italian hint',
+                        'French': 'french hint',
+                    },
+                ))
+
+    def test_construct_node_with_missing_translations(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                self.session.add(models.construct_node(
+                    type_constraint='text',
+                    languages=['French', 'German', 'Spanish'],
+                    title={
+                        'German': 'german test',
+                        'Italian': 'italian test',
+                        'French': 'french test',
+                    },
+                    hint={
+                        'German': 'german hint ',
+                        'Italian': 'italian hint',
+                        'French': 'french hint',
+                    },
+                ))
+
     def test_asdict(self):
         with self.session.begin():
             self.session.add(models.construct_node(
@@ -200,6 +255,8 @@ class TestNode(DokoTest):
             node._asdict(),
             OrderedDict((
                 ('id', node.id),
+                ('deleted', False),
+                ('languages', ('English',)),
                 ('title', {'English': 'test'}),
                 ('hint', {'English': ''}),
                 ('allow_multiple', False),
@@ -304,6 +361,7 @@ class TestNode(DokoTest):
             OrderedDict((
                 ('id', note.id),
                 ('deleted', False),
+                ('languages', ('English',)),
                 ('title', {'English': 'a note'}),
                 ('type_constraint', 'note'),
                 ('logic', {}),
@@ -602,6 +660,7 @@ class TestSurvey(DokoTest):
                 surveys=[
                     models.Survey(
                         title={'French': 'answerable'},
+                        languages=['French'],
                         default_language='French',
                     ),
                 ],
@@ -615,6 +674,139 @@ class TestSurvey(DokoTest):
 
 
 class TestSurveyNode(DokoTest):
+    def test_requested_translations_must_exist(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                creator = models.SurveyCreator(
+                    name='creator',
+                    emails=[models.Email(address='email@email')],
+                    surveys=[
+                        models.Survey(
+                            title={'French': 'french title'},
+                            languages=['French'],
+                            default_language='French',
+                            nodes=[
+                                models.construct_survey_node(
+                                    answerable=True,
+                                    node=models.construct_node(
+                                        type_constraint='integer',
+                                        languages=['German'],
+                                        title={'German': 'german title'},
+                                        hint={'German': ''},
+                                    ),
+                                ),
+                            ],
+                        ),
+                    ],
+                )
+                self.session.add(creator)
+
+    def test_requested_translations_must_exist_even_nested(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                super_nested = models.construct_node(
+                    type_constraint='text',
+                    languages=['German'],
+                    title={'German': 'german question'},
+                    hint={'German': ''},
+                )
+                creator = models.SurveyCreator(
+                    name='creator',
+                    emails=[models.Email(address='email@email')],
+                    surveys=[
+                        models.Survey(
+                            title={'French': 'french title'},
+                            languages=['French'],
+                            default_language='French',
+                            nodes=[
+                                models.construct_survey_node(
+                                    answerable=True,
+                                    node=models.construct_node(
+                                        type_constraint='integer',
+                                        languages=['French'],
+                                        title={'French': 'French question'},
+                                        hint={'French': ''},
+                                    ),
+                                    sub_surveys=[
+                                        models.SubSurvey(
+                                            buckets=[
+                                                models.construct_bucket(
+                                                    bucket_type='integer',
+                                                    bucket='[2, 5]',
+                                                ),
+                                            ],
+                                            nodes=[
+                                                models.construct_survey_node(
+                                                    answerable=True,
+                                                    node=super_nested,
+                                                ),
+                                            ],
+                                        ),
+                                    ],
+                                ),
+                            ],
+                        ),
+                    ],
+                )
+                self.session.add(creator)
+
+    def test_super_nested(self):
+        with self.session.begin():
+            super_nested = models.construct_node(
+                type_constraint='text',
+                languages=['French'],
+                title={'French': 'french question'},
+                hint={'French': ''},
+            )
+            creator = models.SurveyCreator(
+                name='creator',
+                emails=[models.Email(address='email@email')],
+                surveys=[
+                    models.Survey(
+                        title={'French': 'french title'},
+                        languages=['French'],
+                        default_language='French',
+                        nodes=[
+                            models.construct_survey_node(
+                                answerable=True,
+                                node=models.construct_node(
+                                    type_constraint='integer',
+                                    languages=['French'],
+                                    title={'French': 'French question'},
+                                    hint={'French': ''},
+                                ),
+                                sub_surveys=[
+                                    models.SubSurvey(
+                                        buckets=[
+                                            models.construct_bucket(
+                                                bucket_type='integer',
+                                                bucket='[2, 5]',
+                                            ),
+                                        ],
+                                        nodes=[
+                                            models.construct_survey_node(
+                                                answerable=True,
+                                                node=super_nested,
+                                            ),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            )
+            self.session.add(creator)
+
+        self.assertEqual(
+            self.session.query(func.count(models.Survey.id)).scalar(),
+            1
+        )
+        self.assertEqual(
+            self.session.query(func.count(models.Node.id)).scalar(),
+            2
+        )
+
     def test_asdict(self):
         with self.session.begin():
             creator = models.SurveyCreator(
@@ -639,6 +831,8 @@ class TestSurveyNode(DokoTest):
         self.assertEqual(
             survey_node._asdict(),
             OrderedDict((
+                ('deleted', False),
+                ('languages', ('English',)),
                 ('title', {'English': 'integer node'}),
                 ('hint', {'English': ''}),
                 ('allow_multiple', False),
@@ -648,7 +842,6 @@ class TestSurveyNode(DokoTest):
                 ('last_update_time', survey_node.last_update_time),
                 ('node_id', self.session.query(models.Node.id).scalar()),
                 ('id', survey_node.id),
-                ('deleted', False),
                 ('required', False),
                 ('allow_dont_know', False),
             ))
@@ -681,6 +874,8 @@ class TestSurveyNode(DokoTest):
         self.assertEqual(
             survey_node._asdict(),
             OrderedDict((
+                ('deleted', False),
+                ('languages', ('English',)),
                 ('title', {'English': 'integer node'}),
                 ('hint', {'English': ''}),
                 ('allow_multiple', False),
@@ -690,10 +885,184 @@ class TestSurveyNode(DokoTest):
                 ('last_update_time', survey_node.last_update_time),
                 ('node_id', self.session.query(models.Node.id).scalar()),
                 ('id', survey_node.id),
-                ('deleted', False),
                 ('required', False),
                 ('allow_dont_know', False),
                 ('sub_surveys', self.session.query(models.SubSurvey).all()),
+            ))
+        )
+
+    def test_super_nested_to_json(self):
+        with self.session.begin():
+            super_nested = models.construct_node(
+                type_constraint='text',
+                languages=['French'],
+                title={'French': 'French question'},
+                hint={'French': ''},
+            )
+            creator = models.SurveyCreator(
+                name='creator',
+                emails=[models.Email(address='email@email')],
+                surveys=[
+                    models.Survey(
+                        title={'French': 'french title'},
+                        languages=['French'],
+                        default_language='French',
+                        nodes=[
+                            models.construct_survey_node(
+                                answerable=True,
+                                node=models.construct_node(
+                                    type_constraint='integer',
+                                    languages=['French'],
+                                    title={'French': 'French question'},
+                                    hint={'French': ''},
+                                ),
+                                sub_surveys=[
+                                    models.SubSurvey(
+                                        buckets=[
+                                            models.construct_bucket(
+                                                bucket_type='integer',
+                                                bucket='[2, 5]',
+                                            ),
+                                        ],
+                                        nodes=[
+                                            models.construct_survey_node(
+                                                answerable=True,
+                                                node=super_nested,
+                                            ),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            )
+            self.session.add(creator)
+
+        survey = self.session.query(models.Survey).one()
+        integer_question = (
+            self.session
+            .query(models.Question)
+            .filter_by(type_constraint='integer')
+            .one()
+        )
+        n = (
+            self.session
+            .query(models.Question)
+            .filter_by(type_constraint='text')
+            .one()
+        )
+        n_t = n.last_update_time.isoformat()
+        n_i = n.id
+        self.assertEqual(
+            json.loads(survey._to_json(), object_pairs_hook=OrderedDict),
+            OrderedDict((
+                ('id', survey.id),
+                ('deleted', False),
+                ('title', OrderedDict((('French', 'french title'),))),
+                ('default_language', 'French'),
+                ('survey_type', 'public'),
+                ('version', 1),
+                ('creator_id', self.session.query(models.User.id).scalar()),
+                ('creator_name', 'creator'),
+                ('metadata', OrderedDict()),
+                ('created_on', survey.created_on.isoformat()),
+                ('last_update_time', survey.last_update_time.isoformat()),
+                (
+                    'nodes',
+                    [
+                        OrderedDict((
+                            ('deleted', False),
+                            ('languages', ['French']),
+                            (
+                                'title',
+                                OrderedDict((('French', 'French question'),))
+                            ),
+                            ('hint', OrderedDict((('French', ''),))),
+                            ('allow_multiple', False),
+                            ('allow_other', False),
+                            ('type_constraint', 'integer'),
+                            ('logic', OrderedDict()),
+                            (
+                                'last_update_time',
+                                integer_question.last_update_time.isoformat()
+                            ),
+                            ('node_id', integer_question.id),
+                            (
+                                'id',
+                                self.session
+                                .query(models.SurveyNode.id)
+                                .filter_by(type_constraint='integer')
+                                .scalar()
+                            ),
+                            ('required', False),
+                            ('allow_dont_know', False),
+                            (
+                                'sub_surveys',
+                                [
+                                    OrderedDict((
+                                        ('deleted', False),
+                                        ('buckets', ['[2,6)']),
+                                        ('repeatable', False),
+                                        (
+                                            'nodes',
+                                            [
+                                                OrderedDict((
+                                                    ('deleted', False),
+                                                    ('languages', ['French']),
+                                                    (
+                                                        'title',
+                                                        OrderedDict((
+                                                            (
+                                                                'French',
+                                                                'French'
+                                                                ' question'
+                                                            ),
+                                                        ))
+                                                    ),
+                                                    (
+                                                        'hint',
+                                                        OrderedDict((
+                                                            ('French', ''),
+                                                        ))
+                                                    ),
+                                                    ('allow_multiple', False),
+                                                    ('allow_other', False),
+                                                    (
+                                                        'type_constraint',
+                                                        'text'
+                                                    ),
+                                                    ('logic', OrderedDict()),
+                                                    ('last_update_time', n_t),
+                                                    ('node_id', n_i),
+                                                    (
+                                                        'id',
+                                                        self.session
+                                                        .query(
+                                                            models.SurveyNode
+                                                            .id
+                                                        )
+                                                        .filter_by(
+                                                            type_constraint=(
+                                                                'text'
+                                                            )
+                                                        )
+                                                        .scalar()
+                                                    ),
+                                                    ('required', False),
+                                                    (
+                                                        'allow_dont_know',
+                                                        False
+                                                    ),
+                                                ))
+                                            ]
+                                        ),
+                                    ))
+                                ]
+                            ),
+                        ))
+                    ]
+                ),
             ))
         )
 
@@ -1462,6 +1831,24 @@ class TestBucket(DokoTest):
 
 
 class TestSubmission(DokoTest):
+    def test_administrators(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            admin = models.User(name='admin')
+            creator.surveys = [
+                models.EnumeratorOnlySurvey(
+                    title={'English': 'survey'},
+                    administrators=[admin]
+                ),
+            ]
+
+            self.session.add(creator)
+
+        self.assertIs(
+            self.session.query(models.Survey).one().administrators[0],
+            self.session.query(models.User).filter_by(name='admin').one()
+        )
+
     def test_enumerator_submission(self):
         with self.session.begin():
             creator = models.SurveyCreator(name='creator')
@@ -2410,6 +2797,26 @@ class TestAnswer(DokoTest):
 
                 self.session.add(submission)
 
+    def test_only_MC_can_allow_other(self):
+        if True:
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title={'English': 'survey'},
+                nodes=[
+                    models.construct_survey_node(
+                        answerable=True,
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title={'English': 'integer bad'},
+                            allow_other=True,
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
     def test_answer_other(self):
         with self.session.begin():
             creator = models.SurveyCreator(name='creator')
@@ -2418,7 +2825,7 @@ class TestAnswer(DokoTest):
                 nodes=[
                     models.construct_survey_node(
                         node=models.construct_node(
-                            type_constraint='integer',
+                            type_constraint='multiple_choice',
                             title={'English': 'other_not_allowed'},
                             allow_other=True,
                         ),
@@ -2436,7 +2843,7 @@ class TestAnswer(DokoTest):
                 answers=[
                     models.construct_answer(
                         survey_node=the_survey.nodes[0],
-                        type_constraint='integer',
+                        type_constraint='multiple_choice',
                         other='other answer',
                     ),
                 ],
@@ -2461,9 +2868,14 @@ class TestAnswer(DokoTest):
                 nodes=[
                     models.construct_survey_node(
                         node=models.construct_node(
-                            type_constraint='integer',
+                            type_constraint='multiple_choice',
                             title={'English': 'other allowed'},
                             allow_other=True,
+                            choices=[
+                                models.Choice(
+                                    choice_text={'English': 'choice'},
+                                ),
+                            ],
                         ),
                     ),
                 ],
@@ -2480,8 +2892,8 @@ class TestAnswer(DokoTest):
                     answers=[
                         models.construct_answer(
                             survey_node=the_survey.nodes[0],
-                            type_constraint='integer',
-                            answer=3,
+                            type_constraint='multiple_choice',
+                            answer=self.session.query(models.Choice).one(),
                             other='other answer',
                         ),
                     ],
