@@ -7,7 +7,7 @@
 
 Nodes are standalone objects which represent a single question. A Node can be one of two types, AnswerableNode and NonAnswerableNode. All Nodes are answerable with the exception of the 'note' type. The type is defined by the Node's `type_constraint` property.
 
-When a Node gets associated with a Survey, it gets wrapped in a SurveyNode. The SurveyNode can be thought of as a specific instance of a Node -- it is the linking object between the Node (i.e. question) and the Survey. This allows multiple Surveys to include a certain question while maintaining the ability to identify the question by a unique identifier, which simplifies the aggregation of answers to questions and makes the data easy to work with.
+When a Survey is created, Nodes (think "question definition") are associated with it through a SurveyNode. The SurveyNode can be thought of as a specific instance of a Node -- it is the linking object between the Node and the Survey. This allows multiple Surveys to include a certain question while maintaining the ability to identify the question by a unique ID, which simplifies the aggregation of answers and makes the data easy to work with.
 
 ### <a name="list-nodes"></a> List Nodes
 

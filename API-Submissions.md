@@ -185,3 +185,19 @@ DELETE /api/v0/submissions/<Submission_UUID>
 Delete requests have no response payload. A successful deletion will respond with an empty `204` No Content status code.
 
 **Note**: Deletions are non-destructive; data is simply marked as deleted, and will no longer appear in standard queries.
+
+
+### <a name="answers"></a> Answers
+
+Answer objects contain two properties, `response_type` and `response`. The `response_type` can be "answer", "other", and "dont_know", each indicating which type of response was provided. If "answer", the `response` will contain an answer of the type corresponding to the `type_constraint` defined by the associated Node. If "other" or "dont_know", the `response` value will be a string containing the supplied supplemental response info entered by the user, if it is present.
+
+#### Example:
+**Note:** The array of answers will always be embedded within a Submission response.
+```json
+"answers": [
+    {
+        "response_type": "answer",
+        "response": 3
+    }
+]
+```
