@@ -22,7 +22,9 @@ class NoSuchNodeTypeError(DokomoError):
 
 
 class NoSuchSubmissionTypeError(DokomoError):
-    """
+
+    """Invalid submission_type for construct_submission.
+
     Raised when dokomoforms.models.submission.construct_submission
     is called with an invalid submission_type.
 

@@ -1,6 +1,22 @@
+#!/usr/bin/env python3
+"""Create fixtures for test purposes."""
 import datetime
-from sqlalchemy import DDL
 from sqlalchemy.orm import sessionmaker
+
+if __name__ == '__main__':
+    import json
+    import sys
+    import os
+    sys.path.insert(0, os.path.abspath('.'))
+    from dokomoforms.options import inject_options, parse_options
+    inject_options(
+        schema='doko',
+        TEST_USER=json.dumps({
+            'user_id': 'b7becd02-1a3f-4c1d-a0e1-286ba121aef4',
+            'user_name': 'test_user',
+        }),
+    )
+    parse_options()
 
 import dokomoforms.models as models
 
@@ -9,7 +25,7 @@ Session = sessionmaker()
 
 
 def load_fixtures(engine):
-    print('load_fixtures')
+    """Create test users, surveys, and submissions."""
     # creates db schema
     session = Session(bind=engine, autocommit=True)
 
@@ -38,7 +54,7 @@ def load_fixtures(engine):
                 title={'English': node_type + '_survey'},
                 nodes=[
                     models.construct_survey_node(
-                        node = models.construct_node(
+                        node=models.construct_node(
                             title={'English': node_type + '_node'},
                             type_constraint=node_type,
                         ),
@@ -188,5 +204,33 @@ def load_fixtures(engine):
 
 
 def unload_fixtures(engine, schema_name):
-    print('unload_fixtures')
-    engine.execute(DDL('DROP SCHEMA IF EXISTS ' + schema_name + ' CASCADE'))
+    """Truncate all the tables."""
+    connection = engine.connect()
+    with connection.begin():
+        connection.execute(
+            """
+            DO
+            $func$
+            BEGIN
+              EXECUTE (
+                SELECT 'TRUNCATE TABLE '
+                  || string_agg(
+                       'doko_test.' || quote_ident(t.tablename), ', '
+                     )
+                  || ' CASCADE'
+                FROM   pg_tables t
+                WHERE  t.schemaname = 'doko_test'
+              );
+            END
+            $func$;
+            """
+        )
+
+
+if __name__ == '__main__':
+    from sqlalchemy import DDL
+    from dokomoforms.models import create_engine, Base
+    engine = create_engine(echo=True)
+    engine.execute(DDL('DROP SCHEMA IF EXISTS doko CASCADE'))
+    Base.metadata.create_all(engine)
+    load_fixtures(engine)

@@ -38,6 +38,7 @@ class Node(Base):
     __tablename__ = 'node'
 
     id = util.pk()
+    languages = util.languages_column('languages')
     title = util.json_column('title')
     type_constraint = sa.Column(node_type_enum, nullable=False)
     logic = util.json_column('logic', default='{}')
@@ -46,6 +47,8 @@ class Node(Base):
     __mapper_args__ = {'polymorphic_on': type_constraint}
     __table_args__ = (
         sa.UniqueConstraint('id', 'type_constraint'),
+        sa.UniqueConstraint('id', 'languages', 'type_constraint'),
+        util.languages_constraint('title', 'languages'),
     )
 
 
@@ -70,6 +73,7 @@ class Note(Node):
         return OrderedDict((
             ('id', self.id),
             ('deleted', self.deleted),
+            ('languages', self.languages),
             ('title', self.title),
             ('type_constraint', self.type_constraint),
             ('logic', self.logic),
@@ -89,6 +93,9 @@ class Question(Node):
     __tablename__ = 'question'
 
     id = util.pk()
+    the_languages = sa.Column(
+        pg.ARRAY(pg.TEXT, as_tuple=True), nullable=False
+    )
     the_type_constraint = sa.Column(node_type_enum, nullable=False)
     hint = util.json_column('hint', default='{"English": ""}')
     allow_multiple = sa.Column(
@@ -99,15 +106,30 @@ class Question(Node):
     )
 
     __table_args__ = (
-        sa.UniqueConstraint('id', 'allow_multiple', 'allow_other'),
-        sa.ForeignKeyConstraint(
-            ['id', 'the_type_constraint'], ['node.id', 'node.type_constraint']
+        sa.UniqueConstraint(
+            'id', 'the_languages', 'allow_multiple', 'allow_other'
         ),
+        sa.CheckConstraint(
+            "(CASE WHEN "
+            "  ( the_type_constraint =  'multiple_choice')"
+            "   THEN 1 ELSE 0 END) + "
+            "(CASE WHEN "
+            "  ((the_type_constraint != 'multiple_choice') AND "
+            "   (NOT allow_other))"
+            "   THEN 1 ELSE 0 END) = 1"
+        ),
+        sa.ForeignKeyConstraint(
+            ['id', 'the_languages', 'the_type_constraint'],
+            ['node.id', 'node.languages', 'node.type_constraint']
+        ),
+        util.languages_constraint('hint', 'the_languages'),
     )
 
     def _default_asdict(self) -> OrderedDict:
         return OrderedDict((
             ('id', self.id),
+            ('deleted', self.deleted),
+            ('languages', self.languages),
             ('title', self.title),
             ('hint', self.hint),
             ('allow_multiple', self.allow_multiple),

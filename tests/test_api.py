@@ -272,6 +272,7 @@ class TestSurveyApi(DokoHTTPTest):
         # make request
         response = self.fetch(url, method=method, body=body)
         # test response
+        id(response)
         self.fail("Not yet implemented.")
 
     def test_delete_survey(self):
@@ -504,8 +505,6 @@ class TestSubmissionApi(DokoHTTPTest):
 
         submission_dict = json_decode(response.body)
 
-        print(response.body)
-
         self.assertTrue('save_time' in submission_dict)
         self.assertTrue('deleted' in submission_dict)
         self.assertTrue('id' in submission_dict)
@@ -678,6 +677,7 @@ class TestNodeApi(DokoHTTPTest):
         method = 'GET'
         # make request
         response = self.fetch(url, method=method)
+        id(response)
         # test response
         self.fail("Not yet implemented.")
 
@@ -1214,6 +1214,7 @@ class TestNodeApi(DokoHTTPTest):
         encoded_body = json_encode(body)
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
+        id(response)
         # test response
         self.fail("Not yet implemented.")
 
@@ -1243,6 +1244,7 @@ class TestUserApi(DokoHTTPTest):
         method = 'GET'
         # make request
         response = self.fetch(url, method=method)
+        id(response)
         # test response
         self.fail("Not yet implemented.")
 
@@ -1253,5 +1255,6 @@ class TestUserApi(DokoHTTPTest):
         method = 'GET'
         # make request
         response = self.fetch(url, method=method)
+        id(response)
         # test response
         self.fail("Not yet implemented.")

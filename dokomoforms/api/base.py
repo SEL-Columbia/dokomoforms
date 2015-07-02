@@ -1,10 +1,10 @@
+"""The base class of the TornadoResource classes in the api module."""
 from restless.tnd import TornadoResource
-import restless.exceptions as exc
+
+from sqlalchemy.sql.expression import false
 
 from dokomoforms.api.serializer import ModelJSONSerializer
 from dokomoforms.handlers.util import BaseAPIHandler
-
-from dokomoforms.models import NODE_TYPES, Node
 
 """
 A list of the expected query arguments
@@ -18,7 +18,9 @@ QUERY_ARGS = [
 
 
 class BaseResource(TornadoResource):
-    """
+
+    """Set up the basics for the model resource.
+
     BaseResource does some basic configuration for the restless resources.
     - sets the base request handler class which is used by the resources
     - providing reference to the ORM session via request handler
@@ -36,6 +38,7 @@ class BaseResource(TornadoResource):
 
     @property
     def session(self):
+        """The handler's session."""
         return self.r_handler.session
 
     #@session.setter
@@ -45,14 +48,17 @@ class BaseResource(TornadoResource):
 
     @property
     def current_user_model(self):
+        """The handler's current_user_model."""
         return self.r_handler.current_user_model
 
     @property
     def current_user(self):
+        """The handler's current_user."""
         return self.r_handler.current_user
 
     def wrap_list_response(self, data):
-        """
+        """Wrap a list response in a dict.
+
         Takes a list of data & wraps it in a dictionary (within the ``objects``
         key).
         For security in JSON responses, it's better to wrap the list results in
@@ -76,6 +82,7 @@ class BaseResource(TornadoResource):
         return full_response
 
     def is_authenticated(self):
+        """TODO: Return whether the request has been authenticated."""
         if self.request_method() == 'GET':
             return True
 
@@ -91,40 +98,43 @@ class BaseResource(TornadoResource):
         #     return False
 
     def _generate_list_response(self, model_cls, **kwargs):
-        """
+        """Return a query for a list response.
+
         Given a model class, build up the ORM query based on query params
         and return the query result.
         """
         query = self.session.query(model_cls)
 
-        limit = self.r_handler.get_query_argument('limit', False)
-        offset = self.r_handler.get_query_argument('offset', False)
-        deleted = self.r_handler.get_query_argument('show_deleted', False)
-        search_term = self.r_handler.get_query_argument('search', False)
+        limit = self.r_handler.get_query_argument('limit', None)
+        offset = self.r_handler.get_query_argument('offset', None)
+        deleted = self.r_handler.get_query_argument('show_deleted', 'false')
+        search_term = self.r_handler.get_query_argument('search', None)
         search_fields = self.r_handler.get_query_argument(
             'search_fields', 'title')
-        search_lang = self.r_handler.get_query_argument('lang', 'English')
-        type = self.r_handler.get_query_argument('type', False)
+        # TODO: this
+        # search_lang = self.r_handler.get_query_argument('lang', 'English')
+        type = self.r_handler.get_query_argument('type', None)
 
-        if not deleted:
-            query = query.filter(model_cls.deleted == False)
+        if deleted.lower() != 'true':
+            query = query.filter(model_cls.deleted == false())
 
-        if limit is not False:
+        if limit is not None:
             query = query.limit(int(limit))
 
-        if offset is not False:
+        if offset is not None:
             query = query.offset(int(offset))
 
-        if type is not False:
-            if (model_cls == Node and
-                    hasattr(model_cls, 'type_constraint') and
-                    type in NODE_TYPES):
-                query = query.filter(model_cls.type_constraint == type)
-            else:
-                raise exc.BadRequest("'" + type + "' type is invalid")
+        if type is not None:
+            query = query.filter(model_cls.type_constraint == type)
+            # if issubclass(model_cls, Node):
+            # # if (model_cls == Node and
+            # #         hasattr(model_cls, 'type_constraint')):
+            #     query = query.filter(model_cls.type_constraint == type)
+            # else:
+            #     raise exc.BadRequest("'" + type + "' type is invalid")
 
         # TODO: this isn't complete -- needs jsonb lookupability.
-        if search_term is not False:
+        if search_term is not None:
             search_fields_list = search_fields.split(',')
             for search_field in search_fields_list:
                 if hasattr(model_cls, search_field):
@@ -133,12 +143,11 @@ class BaseResource(TornadoResource):
                             model_cls, search_field
                         ).ilike('%' + search_term + '%'))
 
-        response = query.all()
-
-        return response
+        return query.all()
 
     def _add_meta_props(self, response):
-        """
+        """Add metadata to the response.
+
         Add the appropriate metadata fields to the response body object. Any
         properties that should sit alongside the list of objects being
         returned should be added here.

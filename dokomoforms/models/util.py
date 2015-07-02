@@ -22,7 +22,7 @@ from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.sql import func
 from sqlalchemy.sql.functions import current_timestamp
 
-from psycopg2.extras import NumericRange, DateRange, DateTimeTZRange
+from psycopg2.extras import Range
 
 metadata = sa.MetaData(schema=options.schema)
 
@@ -77,30 +77,16 @@ class Base(declarative_base(metadata=metadata, metaclass=_Meta)):
             'emails': [email.address for email in self.emails],
 
         In addition, consider returning an instance of collections.OrderedDict
-        instead of a regular dict so that the _to_json and __str__ methods
-        always return the keys in the same order.
+        instead of a regular dict so that the restless serializer and __str__
+        method always return the keys in the same order.
         """
-
-    def _to_json(self, *, tornado_encode: bool=True, **kwargs) -> str:
-        """Return the JSON representation of this model.
-
-        See dokomoforms.models.util.Base._asdict and
-        dokomoforms.models.util.ModelJSONEncoder
-
-        :param tornado_encode: if True, also escapes the forward slash in any
-                               occurences of '</' in the JSON string. This is
-                               the behavior of tornado.escape.json_encode.
-                               Default True
-        :param kwargs: any keyword arguments that json.dumps accepts
-        """
-        result = json.dumps(self, cls=ModelJSONEncoder, **kwargs)
-        if tornado_encode:
-            return result.replace('</', '<\\/')
-        return result
 
     def __str__(self) -> str:
         """Return the string representation of this model."""
-        return self._to_json(tornado_encode=False, indent=4)
+        return (
+            json.dumps(self, cls=ModelJSONEncoder, indent=4)
+            .replace('</', '<\\/')
+        )
 
 
 sa.event.listen(
@@ -123,12 +109,10 @@ sa.event.listen(
 )
 
 
+# Might want to use restless.utils.MoreTypesJSONEncoder as base class
 class ModelJSONEncoder(json.JSONEncoder):
 
-    """
-    This JSONEncoder knows what to do with the models in dokomoforms.models.
-
-    It is used internally by the _to_json method of any of the model classes.
+    """This JSONEncoder handles the models in dokomoforms.models.
 
     To use it manually, call:
 
@@ -141,8 +125,14 @@ class ModelJSONEncoder(json.JSONEncoder):
         """Handle special types for json.dumps.
 
         If obj is a model from dokomoforms.models, return a dictionary
-        representation. If obj is a datetime.date or datetime.time, return an
-        ISO 8601 representation string. Otherwise, throw a TypeError.
+        representation.
+
+        If obj is a datetime.date or datetime.time, return an
+        ISO 8601 representation string.
+
+        If obj is a psycpg2 Range, return its string representation.
+
+        Otherwise, throw a TypeError.
 
         See
         https://docs.python.org/3/library/json.html#json.JSONEncoder.default
@@ -151,12 +141,9 @@ class ModelJSONEncoder(json.JSONEncoder):
             return obj._asdict()
         if isinstance(obj, (datetime.date, datetime.time)):
             return obj.isoformat()
-        if isinstance(obj, (NumericRange, DateRange, DateTimeTZRange)):
-            lower = str(obj.lower) if obj.lower is not None else 'None'
-            upper = str(obj.upper) if obj.upper is not None else 'None'
-            lower_inc = '[' if obj.lower_inc else '('
-            upper_inc = ']' if obj.upper_inc else ')'
-            return lower_inc + lower + ',' + upper + upper_inc
+        if isinstance(obj, Range):
+            left, right = obj._bounds
+            return '{}{},{}{}'.format(left, obj.lower, obj.upper, right)
         return super().default(obj)
 
 
@@ -242,6 +229,45 @@ def json_column(column_name: str, *, default=None) -> sa.Column:
         ),
         nullable=False,
         server_default=default,
+    )
+
+
+def languages_column(column_name) -> sa.Column:
+    """A TEXT[] column of length > 0.
+
+    Return an ARRAY(TEXT, as_tuple=True) column.
+
+    :param column_name: the name of the column
+    :returns: a SQLAlchemy Column for a non-null ARRAY(TEXT, as_tuple=True)
+              type.
+    """
+    return sa.Column(
+        pg.ARRAY(pg.TEXT, as_tuple=True),
+        sa.CheckConstraint(
+            'COALESCE(ARRAY_LENGTH({}, 1), 0) > 0'.format(column_name)
+        ),
+        nullable=False,
+        default=['English'],
+    )
+
+
+def languages_constraint(column_name, languages_column_name) -> sa.Constraint:
+    """CHECK CONSTRAINT for a translatable column.
+
+    Checks that all of the languages in the languages column exist as keys in
+    the translatable column.
+
+    :param column_name: the name of the translatable column
+    :param languages_column_name: the name of the TEXT[] column containing the
+                                  languages.
+    :return: a SQLAlchemy Constraint to ensure that all the required
+             translations are available.
+    """
+    return sa.CheckConstraint(
+        "{} ?& {}".format(column_name, languages_column_name),
+        name='all_{}_languages_present_in_{}'.format(
+            column_name, languages_column_name
+        ),
     )
 
 

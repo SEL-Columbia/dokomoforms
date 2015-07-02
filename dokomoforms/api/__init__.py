@@ -1,3 +1,4 @@
+"""Handlers for the API endpoints."""
 from dokomoforms.api.serializer import ModelJSONSerializer
 
 from dokomoforms.api.base import BaseResource
@@ -6,7 +7,7 @@ from dokomoforms.api.submissions import SubmissionResource
 from dokomoforms.api.nodes import NodeResource
 
 
-__all__ = [
+__all__ = (
     'ModelJSONSerializer',
 
     'BaseResource',
@@ -15,4 +16,4 @@ __all__ = [
     'SubmissionResource',
     'NodeResource',
 
-]
+)

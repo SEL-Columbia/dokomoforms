@@ -7,15 +7,13 @@ Also injects the --schema=doko_test option.
 import unittest
 from urllib.parse import urlencode
 
-from tornado.testing import AsyncHTTPTestCase
-import tornado.ioloop
+from tornado.testing import AsyncHTTPTestCase, LogTrapTestCase
 from functools import wraps
 
 from dokomoforms.options import inject_options, parse_options
 
 inject_options(
     schema='doko_test',
-    debug=True,
     # fake logged in user with ID from fixture
     TEST_USER="""
         {
@@ -24,21 +22,13 @@ inject_options(
         }
     """
 )
-# =======
-# inject_options(schema='doko_test')
 parse_options()
-# >>>>>>> origin/phoenix
 
 from sqlalchemy import DDL
 from sqlalchemy.orm import sessionmaker
 from dokomoforms.models import create_engine, Base
 from webapp import Application
 from tests.fixtures import load_fixtures, unload_fixtures
-# =======
-# from dokomoforms.models.survey import _set_tzinfos
-#
-# _set_tzinfos()
-# >>>>>>> origin/phoenix
 
 engine = create_engine(echo=False)
 Session = sessionmaker()
@@ -73,17 +63,19 @@ class DokoTest(unittest.TestCase):
         self.connection = engine.connect()
         self.transaction = self.connection.begin()
         self.session = Session(bind=self.connection, autocommit=True)
+        super().setUp()
 
     def tearDown(self):
         """Roll back the transaction."""
         self.session.close()
         self.transaction.rollback()
         self.connection.close()
+        super().tearDown()
 
 
-class DokoHTTPTest(AsyncHTTPTestCase):
-    """
-    A base class for HTTP (i.e. API [and handler?]) test cases.
+class DokoHTTPTest(DokoTest, LogTrapTestCase, AsyncHTTPTestCase):
+
+    """Base class for HTTP (i.e. API [and handler?]) test cases.
 
     TODO: maybe need to override setUp to log the user in?
     Or this could happen in setUpModule?
@@ -93,33 +85,27 @@ class DokoHTTPTest(AsyncHTTPTestCase):
 
     @property
     def api_root(self):
+        """The API URL up to the version."""
         return '/api/' + self.get_app()._api_version
 
-    def setUp(self):
-        """Insert test data"""
-        super().setUp()
-        self.connection = engine.connect()
-        self.transaction = self.connection.begin()
-        self.session = Session(bind=self.connection, autocommit=True)
+    @classmethod
+    def setUpClass(cls):
+        """Load the fixtures."""
         load_fixtures(engine)
 
-    def tearDown(self):
-        """Remove test data"""
-        super().tearDown()
-        self.session.close()
-        self.transaction.rollback()
-        self.connection.close()
+    @classmethod
+    def tearDownClass(cls):
+        """Truncate all the tables."""
         unload_fixtures(engine, 'doko_test')
 
     def get_app(self):
-        """
-        Returns an instance of the application to be tested.
-        """
-
-        return Application()
+        """Return an instance of the application to be tested."""
+        self.app = Application(self.session)
+        return self.app
 
     def append_query_params(self, url, params_dict):
-        """
+        """Add parameters from a dict to the URL.
+
         Convenience method which url encodes a dict of params
         and appends them to a url with a '?', returning the
         resulting url.

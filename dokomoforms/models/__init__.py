@@ -39,7 +39,7 @@ __all__ = (
     'construct_bucket', 'survey_type_enum',
     # Submission
     'Submission', 'EnumeratorOnlySubmission', 'PublicSubmission',
-    'construct_submission'
+    'construct_submission',
     # Answer
     'Answer', 'Photo', 'construct_answer',
 )

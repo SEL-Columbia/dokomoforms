@@ -1,7 +1,7 @@
-tornado==4.1
+tornado==4.2
 SQLAlchemy==1.0.6
 geoalchemy2==0.2.5
-psycopg2==2.6
+psycopg2==2.6.1
 py-bcrypt==0.4
 py-dateutil==2.2
 passlib==1.6.2
