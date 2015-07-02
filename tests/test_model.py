@@ -2622,7 +2622,8 @@ class TestAnswer(DokoTest):
                         survey_node=the_survey.nodes[0],
                         type_constraint='facility',
                         answer={
-                            'facility_location': {'lng': 5, 'lat': -5},
+                            'lng': 5,
+                            'lat': -5,
                             'facility_id': '1',
                             'facility_name': 'SEL',
                             'facility_sector': 'engineering',

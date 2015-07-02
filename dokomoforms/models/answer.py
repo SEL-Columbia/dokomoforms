@@ -403,7 +403,7 @@ class FacilityAnswer(_AnswerMixin, Answer):
         """Set FacilityAnswer.answer with a dict."""
         self.main_answer = (
             'SRID=4326;POINT({lng} {lat})'
-            .format(**facility_info['facility_location'])
+            .format(**facility_info)
         )
         self.facility_id = facility_info['facility_id']
         self.facility_name = facility_info['facility_name']
