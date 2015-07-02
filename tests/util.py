@@ -63,15 +63,17 @@ class DokoTest(unittest.TestCase):
         self.connection = engine.connect()
         self.transaction = self.connection.begin()
         self.session = Session(bind=self.connection, autocommit=True)
+        super().setUp()
 
     def tearDown(self):
         """Roll back the transaction."""
         self.session.close()
         self.transaction.rollback()
         self.connection.close()
+        super().tearDown()
 
 
-class DokoHTTPTest(LogTrapTestCase, AsyncHTTPTestCase):
+class DokoHTTPTest(DokoTest, LogTrapTestCase, AsyncHTTPTestCase):
 
     """Base class for HTTP (i.e. API [and handler?]) test cases.
 
@@ -90,20 +92,6 @@ class DokoHTTPTest(LogTrapTestCase, AsyncHTTPTestCase):
     def setUpClass(cls):
         """Load the fixtures."""
         load_fixtures(engine)
-
-    def setUp(self):
-        """Start a transaction."""
-        self.connection = engine.connect()
-        self.transaction = self.connection.begin()
-        self.session = Session(bind=self.connection, autocommit=True)
-        super().setUp()
-
-    def tearDown(self):
-        """Roll back the transaction."""
-        self.session.close()
-        self.transaction.rollback()
-        self.connection.close()
-        super().tearDown()
 
     @classmethod
     def tearDownClass(cls):
