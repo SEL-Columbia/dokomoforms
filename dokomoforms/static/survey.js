@@ -93,7 +93,7 @@ Survey.prototype.getFirstResponse = function(question) {
         }
     }
 
-    return {'response': null, 'is_type_exception': false, 'metadata': null};
+    return {'response': null, 'metadata': {}};
 };
 
 /*
@@ -124,8 +124,7 @@ Survey.prototype.next = function(offset) {
     if (offset === NEXT) {
         var first_answer = this.getFirstResponse(this.current_question); 
         var first_response = first_answer.response;
-        var first_is_type_exception = first_answer.is_type_exception;
-        var first_metadata = first_answer.metadata;
+        var first_is_type_exception = Boolean(first_answer.metadata.type_exception);
 
 
         // Are all responses valid?
@@ -351,7 +350,6 @@ Survey.prototype.submit = function() {
             }
 
             var response =  ans.response;
-            var is_type_exception = ans.is_type_exception || false;
             var metadata = ans.metadata || {};
             var is_new_facility = metadata.is_new; //XXX: Should I remove this is new marking?
 
@@ -359,11 +357,16 @@ Survey.prototype.submit = function() {
                 return;
             }
 
+            // Fill in metadata
+            response.response_type = 'answer';
+            if (metadata.type_exception) 
+                response.response_type = response[metadata.type_exception];
+
             if (is_new_facility) {
                 // Record this new facility for Revisit s)ubmission
                 App.unsynced_facilities[response.id] = {
-                    'name': metadata.name, 'uuid': response.id, 
-                    'properties' : {'sector': metadata.sector},
+                    'name': response.facility_name, 'uuid': response.id, 
+                    'properties' : {'sector': response.facility_sector},
                     'coordinates' : [response.lon, response.lat]
                 };
 
@@ -372,18 +375,18 @@ Survey.prototype.submit = function() {
             }
 
             survey_answers.push({
-                id: q.id,
-                answer: response,
-                answer_metadata: metadata,
-                is_type_exception: is_type_exception
+                survey_node_id: q.id,
+                response: response,
+                type_constraint: q.type_constraint
             });
 
         });
     });
 
     var data = {
-        submitter: App.submitter_name || "anon",
+        submitter_name: App.submitter_name || "anon",
         submitter_email: App.submitter_email || "anon@anon.org",
+        submission_type: "unauthenticated", //XXX 
         survey_id: self.id,
         answers: survey_answers,
         save_time: new Date().toISOString()

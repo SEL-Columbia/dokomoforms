@@ -26,13 +26,13 @@ var App = {
 App.init = function(survey) {
     var self = this;
 
-    var answers = JSON.parse(localStorage[survey.survey_id] || '{}');
+    var answers = JSON.parse(localStorage[survey.id] || '{}');
     self.facilities = JSON.parse(localStorage.facilities || "[]");
     self.submitter_name = localStorage.name || "";
     self.submitter_email = localStorage.email || "";
     
     console.log(survey.nodes);
-    self.survey = new Survey(survey.survey_id, 
+    self.survey = new Survey(survey.id, 
             survey.version, 
             survey.nodes, 
             answers,
@@ -93,6 +93,7 @@ App.init = function(survey) {
 
             localStorage.clear();
             App.splash();
+            window.location.reload();
             App.message('All survey data erased.', 'Surveys Nuked', 'message-warning');
         });
 
@@ -104,6 +105,7 @@ App.init = function(survey) {
 
             App.clearState();
             App.splash();
+            window.location.reload();
             App.message('Active survey has been cleared.', 'Survey Reset', 'message-warning');
         });
 
@@ -161,8 +163,9 @@ App.sync = function() {
                 }
             },
 
-            function(survey) { 
+            function(err, survey) { 
                 console.log('fail');
+                window.err = err;
                 --self.countdown; 
 
                 if (self.countdown === 0) {
@@ -289,7 +292,7 @@ App.submit = function(survey, done, fail) {
     survey.submission_time = new Date().toISOString();
 
     $.ajax({
-        url: '/api/surveys/'+survey.survey_id+'/submit',
+        url: '/api/v0/surveys/'+survey.survey_id+'/submit',
         type: 'POST',
         contentType: 'application/json',
         processData: false,
@@ -301,13 +304,14 @@ App.submit = function(survey, done, fail) {
         success: function() {
             done(survey);
         },
-        error: function() {
-            fail(survey);
+        error: function(err, anything) {
+            console.log(anything);
+            fail(err, survey);
         }
     });
 
     console.log('synced submission:', survey);
-    console.log('survey', '/api/surveys/'+survey.survey_id+'/submit');
+    console.log('survey', '/api/v0/surveys/'+survey.survey_id+'/submit');
 }
 
 /*

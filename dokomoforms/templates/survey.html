@@ -115,7 +115,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null && !ans.is_type_exception) { 
+            if (ans && ans.response !== null && !ans.metadata.type_exception) { 
                 no_response = false; %>
                 <div class="input_container">
                 <input class="text_input" type="text" 
@@ -146,7 +146,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null && !ans.is_type_exception) { 
+            if (ans && ans.response !== null && !ans.metadata.type_exception) { 
                 no_response = false; %>
                 <div class="input_container">
                 <input class="text_input" type="number"
@@ -208,7 +208,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null && !ans.is_type_exception) { 
+            if (ans && ans.response !== null && !ans.metadata.type_exception) { 
                 no_response = false; %>
                 <div class="input_container">
                 <input class="text_input" type="date" 
@@ -239,7 +239,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null && !ans.is_type_exception) { 
+            if (ans && ans.response !== null && !ans.metadata.type_exception) { 
                 no_response = false; %>
                 <div class="input_container">
                 <input class="text_input" type="time" 
@@ -270,7 +270,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null && !ans.is_type_exception) { 
+            if (ans && ans.response !== null && !ans.metadata.type_exception) { 
                 no_response = false; %>
                 <div class="input_container">
                 <input class="text_input" type="time" 
@@ -309,7 +309,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null && !ans.is_type_exception) { 
+            if (ans && ans.response !== null && !ans.metadata.type_exception) { 
                 no_response = false; %>
                 <div class="input_container">
                 <input class="text_input" type="text" 
@@ -344,7 +344,7 @@
 
         <%  var no_response = true;
             _.each(question.answer, function(ans) {
-            if (ans && ans.response !== null && !ans.is_type_exception) { 
+            if (ans && ans.response !== null && !ans.metadata.type_exception) { 
                 no_response = false; %>
                 <div class="input_container">
                 <input class="text_input location_input" type="text" 
@@ -401,10 +401,10 @@
         <div class='question__add__facility' style='display: none'>
             <% 
                 var ans = question.answer[0] && question.answer[0].metadata.is_new && question.answer[0]; 
-                var name = ans && ans.metadata.name || '';
-                var sector = ans && ans.metadata.sector || '';
+                var name = ans && ans.facility_name || '';
+                var sector = ans && ans.facility_sector || '';
                 var location = ans && ans.response.lat + " " + ans.response.lon || '';
-                var uuid = ans && ans.response.id || ''; 
+                var uuid = ans && ans.response.facility_id || ''; 
             %>
             <input class="text_input facility_uuid_input" type="text" 
                 style="display:none;"
@@ -478,7 +478,7 @@
                 <% if (question.allow_other) { %>
                     <option 
                         <% var ans = question.answer[question.choices.length];
-                        if (ans && (ans.is_type_exception && ans.metadata.type_exception === "other"))  { %>
+                        if (ans && ans.metadata.type_exception === "other")  { %>
                             selected
                         <% } %>
                     value="other">
@@ -512,7 +512,7 @@
     <script id="template_dont_know" type="text/html">
         <div class="question__dont_know"
             <% var ans = question.answer && question.answer[0]; //i know the position
-               var is_other = ans && ans.is_type_exception && ans.metadata.type_exception === "dont_know";
+               var is_other = ans && ans.metadata.type_exception === "dont_know";
             %>
                 style="display: none;"
         >

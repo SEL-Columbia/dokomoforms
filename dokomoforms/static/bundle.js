@@ -194,7 +194,7 @@ Survey.prototype.getFirstResponse = function(question) {
         }
     }
 
-    return {'response': null, 'is_type_exception': false, 'metadata': null};
+    return {'response': null, 'metadata': {}};
 };
 
 /*
@@ -225,8 +225,7 @@ Survey.prototype.next = function(offset) {
     if (offset === NEXT) {
         var first_answer = this.getFirstResponse(this.current_question); 
         var first_response = first_answer.response;
-        var first_is_type_exception = first_answer.is_type_exception;
-        var first_metadata = first_answer.metadata;
+        var first_is_type_exception = Boolean(first_answer.metadata.type_exception);
 
 
         // Are all responses valid?
@@ -452,7 +451,6 @@ Survey.prototype.submit = function() {
             }
 
             var response =  ans.response;
-            var is_type_exception = ans.is_type_exception || false;
             var metadata = ans.metadata || {};
             var is_new_facility = metadata.is_new; //XXX: Should I remove this is new marking?
 
@@ -460,11 +458,16 @@ Survey.prototype.submit = function() {
                 return;
             }
 
+            // Fill in metadata
+            response.response_type = 'answer';
+            if (metadata.type_exception) 
+                response.response_type = response[metadata.type_exception];
+
             if (is_new_facility) {
                 // Record this new facility for Revisit s)ubmission
                 App.unsynced_facilities[response.id] = {
-                    'name': metadata.name, 'uuid': response.id, 
-                    'properties' : {'sector': metadata.sector},
+                    'name': response.facility_name, 'uuid': response.id, 
+                    'properties' : {'sector': response.facility_sector},
                     'coordinates' : [response.lon, response.lat]
                 };
 
@@ -473,18 +476,18 @@ Survey.prototype.submit = function() {
             }
 
             survey_answers.push({
-                id: q.id,
-                answer: response,
-                answer_metadata: metadata,
-                is_type_exception: is_type_exception
+                survey_node_id: q.id,
+                response: response,
+                type_constraint: q.type_constraint
             });
 
         });
     });
 
     var data = {
-        submitter: App.submitter_name || "anon",
+        submitter_name: App.submitter_name || "anon",
         submitter_email: App.submitter_email || "anon@anon.org",
+        submission_type: "unauthenticated", //XXX 
         survey_id: self.id,
         answers: survey_answers,
         save_time: new Date().toISOString()
@@ -569,7 +572,7 @@ Widgets._input = function(question, page, footer, type) {
     //Render don't know
     self._renderDontKnow(question, page, footer, type);
 
-    // Clean up answer array, short circuits on is_type_exception responses
+    // Clean up answer array, short circuits on type_exception responses
     self._orderAnswerArray(question, page, footer, type);
 
     // Set up input event listner
@@ -579,7 +582,6 @@ Widgets._input = function(question, page, footer, type) {
             var ans_ind = $(page).find('input').index(this); 
             question.answer[ans_ind] = { 
                 response: self._validate(type, this.value, question.logic),
-                is_type_exception: false,
                 failed_validation: Boolean(null === self._validate(type, this.value, question.logic)),
                 metadata: {},
             }
@@ -658,7 +660,6 @@ Widgets._orderAnswerArray = function(question, page, footer, type) {
         if (child.value !== "") {
             question.answer[i] = {
                 response: self._validate(type, child.value, question.logic),
-                is_type_exception: false,
                 failed_validation: Boolean(null == self._validate(type, this.value, question.logic)),
                 metadata: {}
             }
@@ -670,7 +671,6 @@ Widgets._orderAnswerArray = function(question, page, footer, type) {
             // if don't know input field has a response, break 
             question.answer = [{
                 response: self._validate('text', child.value, question.logic),
-                is_type_exception: true,
                 failed_validation: Boolean(null === self._validate('text', this.value, question.logic)),
                 metadata: {
                     'type_exception': 'dont_know',
@@ -707,7 +707,10 @@ Widgets._renderDontKnow = function(question, page, footer, type) {
         var compiledHTML = widgetTemplate({question: question});
         $(footer).append(compiledHTML);
 
-        var other_response = question.answer && question.answer[0] && question.answer[0].is_type_exception && question.answer[0].metadata.type_exception === "dont_know";
+        var other_response = question.answer 
+            && question.answer[0] 
+            && question.answer[0].metadata.type_exception === "dont_know";
+
         if (other_response) {
             $('.question__btn__other').find('input').prop('checked', true);
             this._toggleDontKnow(question, page, footer, type, ON);
@@ -728,7 +731,6 @@ Widgets._renderDontKnow = function(question, page, footer, type) {
             .keyup(function() { //XXX: Change isn't sensitive enough on safari?
                 question.answer = [{ 
                     response: self._validate('text', this.value, question.logic),
-                    is_type_exception: true,
                     failed_validation: Boolean(null === self._validate('text', this.value, question.logic)),
                     metadata: {
                         'type_exception': 'dont_know',
@@ -777,7 +779,6 @@ Widgets._toggleDontKnow = function(question, page, footer, type, state) {
             // Doesn't matter if response is there or not
             question.answer[0] = {
                 response: self._validate('text', child.value, question.logic),
-                is_type_exception: true,
                 failed_validation: Boolean(null === self._validate('text', this.value, question.logic)),
                 metadata: {
                     'type_exception': 'dont_know',
@@ -821,7 +822,6 @@ Widgets._toggleDontKnow = function(question, page, footer, type, state) {
                 question.answer[i] = {
                     response: self._validate(type, child.value, question.logic),
                     failed_validation: Boolean(null === self._validate(type, this.value, question.logic)),
-                    is_type_exception: false,
                     metadata: {},
                 }
             }
@@ -1042,7 +1042,6 @@ Widgets.multiple_choice = function(question, page, footer) {
             question.answer[question.choices.length] = { 
                 response: self._validate("text", this.value, question.logic),
                 failed_validation: Boolean(null === self._validate('text', this.value, question.logic)),
-                is_type_exception: true,
                 metadata: {
                     'type_exception': 'other',
                 },
@@ -1078,14 +1077,12 @@ Widgets.multiple_choice = function(question, page, footer) {
                 // Default, fill in values (other will be overwritten below if selected)
                 question.answer[ind] = {
                     response: opt,
-                    is_type_exception: false,
                     metadata: {}
                 }
 
                 if (opt === 'other') {
                     question.answer[ind] = {
                         response: $other.val(), // Preserves prev response
-                        is_type_exception: true,
                         metadata: {
                             'type_exception': 'other',
                         },
@@ -1100,7 +1097,6 @@ Widgets.multiple_choice = function(question, page, footer) {
     // Selection is handled in _template however toggling of view is done here
     var response = question.answer[question.choices.length];
     if (response 
-            && response.is_type_exception 
             && response.metadata.type_exception === 'other') {
         $other.show();
     }
@@ -1174,7 +1170,6 @@ Widgets.photo = function(question, page, footer) {
         var questions_len = $(page).find('.text_input').length;
         question.answer[questions_len - 1] = {
             response: photo,
-            is_type_exception: false,
             metadata: {},
         }            
 
@@ -1242,7 +1237,6 @@ Widgets.location = function(question, page, footer) {
         // update array val
         question.answer[questions_len - 1] = {
             response: {'lon': coords.lon, 'lat': coords.lat},
-            is_type_exception: false,
             metadata: {},
         }
             
@@ -1299,6 +1293,7 @@ Widgets.location = function(question, page, footer) {
 Widgets.facility = function(question, page, footer) {
     // Hide add button by default
     $('.facility__btn').hide();
+    console.log(question.answer[0])
 
     // Default operation on caputre Location 
     var captureCallback = reloadFacilities;
@@ -1352,7 +1347,7 @@ Widgets.facility = function(question, page, footer) {
         console.log(facilities);
 
         var ans = question.answer[0];
-        var selected = ans && ans.response.id || null;
+        var selected = ans && ans.response.facility_id || null;
 
         // http://www.movable-type.co.uk/scripts/latlong.html
         function latLonLength(coordinates, loc) {
@@ -1385,7 +1380,7 @@ Widgets.facility = function(question, page, footer) {
             var sector = facilities[i]["properties"]["sector"];
             var distance = latLonLength(facilities[i].coordinates, loc).toFixed(2) + "m";
             var $div = addNewButton(uuid, name, sector, distance, ".question__radios");
-            if (question.answer[0] && question.answer[0].response.id === uuid) {
+            if (selected === uuid) {
                     $div.find('input[type=radio]').prop('checked', true);
                     //$div.addClass('question__radio__selected');
             }
@@ -1427,9 +1422,10 @@ Widgets.facility = function(question, page, footer) {
             e.preventDefault();
             var rbutton = $(this).find('input[type=radio]').first();
             var uuid = rbutton.val();
+            var ans = question.answer[0];
+            var selected = ans && ans.response.facility_id || null;
 
-            var rbutton = rbutton;
-            if (question.answer[0] && question.answer[0].response.id === uuid) {
+            if (selected === uuid) {
                 rbutton.prop('checked', false);
                 //$(this).removeClass('question__radio__selected');
                 question.answer = [];
@@ -1440,8 +1436,14 @@ Widgets.facility = function(question, page, footer) {
             var name = App.facilities[uuid].name;
             var sector = App.facilities[uuid]['properties'].sector;
             question.answer = [{ 
-                response: {'id': uuid, 'lat': coords[1], 'lon': coords[0] },
-                metadata: {'name': name, 'sector': sector }
+                response: {
+                    'facility_id': uuid, 
+                    'lat': coords[1], 
+                    'lon': coords[0], 
+                    'facility_name': name, 
+                    'facility_sector': sector 
+                },
+                metadata : {}
             }];
 
             
@@ -1495,8 +1497,8 @@ Widgets.facility = function(question, page, footer) {
                 captureCallback = reloadFacilities;
             } else {
                 $('.facility__btn').text("cancel");
-                if (question.answer[0] && question.answer[0].response.id) {
-                    var rbutton = $('.question__radios').find("input[value='"+ question.answer[0].response.id +"']");
+                if (question.answer[0] && question.answer[0].response.facility_id) {
+                    var rbutton = $('.question__radios').find("input[value='"+ question.answer[0].response.facility_id +"']");
                     rbutton.prop('checked', false);
                     //$(this).removeClass('question__radio__selected');
                 }
@@ -1512,8 +1514,16 @@ Widgets.facility = function(question, page, footer) {
                 var sector = $('.facility_sector_input').val();
 
                 question.answer = [{ 
-                    response: {'id': uuid, 'lat': lat, 'lon': lon },
-                    metadata: {'name': name, 'sector': sector, 'is_new': true },
+                    response: {
+                        'facility_id': uuid, 
+                        'lat': lat, 
+                        'lon': lon, 
+                        'facility_name': name, 
+                        'facility_sector': sector, 
+                    },
+                    metadata : {
+                        'is_new': true
+                    },
                     failed_validation: Boolean(!name || !sector)  
                 }];
 
@@ -1533,9 +1543,9 @@ Widgets.facility = function(question, page, footer) {
     $(page)
         .find('.facility_name_input')
         .keyup(function() {
-            question.answer[0].metadata.name = this.value;
             var name = this.value;
-            var sector = question.answer[0].metadata.sector;
+            var sector = question.answer[0].facility_sector;
+            question.answer[0].facility_name = name;
             question.answer[0].failed_validation = Boolean(!name || !sector);
         });
 
@@ -1543,9 +1553,9 @@ Widgets.facility = function(question, page, footer) {
     $(page)
         .find('.facility_sector_input')
         .change(function() {
-            question.answer[0].metadata.sector = this.value;
             var sector = this.value;
-            var name = question.answer[0].metadata.name;
+            var name = question.answer[0].facility_name;
+            question.answer[0].facility_sector = sector;
             question.answer[0].failed_validation = Boolean(!name || !sector);
         });
 
@@ -1589,13 +1599,13 @@ var App = {
 App.init = function(survey) {
     var self = this;
 
-    var answers = JSON.parse(localStorage[survey.survey_id] || '{}');
+    var answers = JSON.parse(localStorage[survey.id] || '{}');
     self.facilities = JSON.parse(localStorage.facilities || "[]");
     self.submitter_name = localStorage.name || "";
     self.submitter_email = localStorage.email || "";
     
     console.log(survey.nodes);
-    self.survey = new Survey(survey.survey_id, 
+    self.survey = new Survey(survey.id, 
             survey.version, 
             survey.nodes, 
             answers,
@@ -1656,6 +1666,7 @@ App.init = function(survey) {
 
             localStorage.clear();
             App.splash();
+            window.location.reload();
             App.message('All survey data erased.', 'Surveys Nuked', 'message-warning');
         });
 
@@ -1667,6 +1678,7 @@ App.init = function(survey) {
 
             App.clearState();
             App.splash();
+            window.location.reload();
             App.message('Active survey has been cleared.', 'Survey Reset', 'message-warning');
         });
 
@@ -1724,8 +1736,9 @@ App.sync = function() {
                 }
             },
 
-            function(survey) { 
+            function(err, survey) { 
                 console.log('fail');
+                window.err = err;
                 --self.countdown; 
 
                 if (self.countdown === 0) {
@@ -1852,7 +1865,7 @@ App.submit = function(survey, done, fail) {
     survey.submission_time = new Date().toISOString();
 
     $.ajax({
-        url: '/api/surveys/'+survey.survey_id+'/submit',
+        url: '/api/v0/surveys/'+survey.survey_id+'/submit',
         type: 'POST',
         contentType: 'application/json',
         processData: false,
@@ -1864,13 +1877,14 @@ App.submit = function(survey, done, fail) {
         success: function() {
             done(survey);
         },
-        error: function() {
-            fail(survey);
+        error: function(err, anything) {
+            console.log(anything);
+            fail(err, survey);
         }
     });
 
     console.log('synced submission:', survey);
-    console.log('survey', '/api/surveys/'+survey.survey_id+'/submit');
+    console.log('survey', '/api/v0/surveys/'+survey.survey_id+'/submit');
 }
 
 /*
