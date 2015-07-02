@@ -188,16 +188,20 @@ def _answer_mixin_table_args():
             ['answer.id', 'answer.allow_other', 'answer.allow_dont_know']
         ),
         sa.CheckConstraint(
-            # "other" responses are allowed XOR other is null
+            # other is null if "other" responses are not allowed
             """
-            the_allow_other != (other IS NULL)
+            (CASE WHEN  the_allow_other THEN 1 ELSE 0 END) +
+            (CASE WHEN ((NOT the_allow_other) AND
+                        (other IS NULL)) THEN 1 ELSE 0 END) = 1
             """,
             name='check_whether_other_is_allowed'
         ),
         sa.CheckConstraint(
-            # "dont_know" responses are allowed XOR dont_know is null
+            # dont_know is null if "dont_know" responses are not allowed
             """
-            the_allow_dont_know != (dont_know IS NULL)
+            (CASE WHEN  the_allow_dont_know THEN 1 ELSE 0 END) +
+            (CASE WHEN ((NOT the_allow_dont_know) AND
+                        (dont_know IS NULL)) THEN 1 ELSE 0 END) = 1
             """,
             name='check_whether_dont_know_is_allowed'
         ),
