@@ -450,7 +450,7 @@ Survey.prototype.submit = function() {
                 return;
             }
 
-            var response =  ans.response;
+            var response =  { 'response' : ans.response };
             var metadata = ans.metadata || {};
             var is_new_facility = metadata.is_new; //XXX: Should I remove this is new marking?
 
