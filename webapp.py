@@ -40,8 +40,9 @@ _pwd = os.path.dirname(__file__)
 bold = '\033[1m'
 green = '\033[92m'
 
-UUID_REGEX = '[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][' \
-             'a-f0-9]{3}-?[a-f0-9]{12}'
+UUID_REGEX = (
+    '[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}'
+)
 
 
 def modify_text(text: str, modifier: str) -> str:

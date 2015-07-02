@@ -172,15 +172,22 @@ class SurveyResource(BaseResource):
         if user is None:
             raise exc.Unauthorized()
 
-        result = self.session.\
-            query(func.max(Survey.created_on),
-                  func.min(Submission.submission_time),
-                  func.max(Submission.submission_time),
-                  func.count(Submission.id)).\
-            select_from(Submission).\
-            join(Submission.survey).\
-            filter(User.id == user.id).\
-            filter(Submission.survey_id == survey_id).one()
+        result = (
+            self.session
+            .query(
+                func.max(Survey.created_on),
+                func.min(Submission.submission_time),
+                func.max(Submission.submission_time),
+                func.count(Submission.id),
+            )
+            .select_from(Submission)
+            .join(Submission.survey)
+            # TODO: check this join
+            # .join(Survey)
+            .filter(User.id == user.id)
+            .filter(Submission.survey_id == survey_id)
+            .one()
+        )
 
         response = {
             "created_on": result[0],
