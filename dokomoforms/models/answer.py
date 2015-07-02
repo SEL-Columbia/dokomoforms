@@ -100,7 +100,10 @@ class Answer(Base):
             p_r for p_r in possible_responses if p_r[1] is not None
         )
         if response_type == 'answer':
-            response = self.answer
+            if self.type_constraint == 'multiple_choice':
+                response = self.choice
+            else:
+                response = self.answer
         return OrderedDict((
             ('response_type', response_type),
             ('response', response),
@@ -439,7 +442,7 @@ class MultipleChoiceAnswer(_AnswerMixin, Answer):
     the_allow_dont_know = sa.Column(sa.Boolean, nullable=False)
     main_answer = sa.Column(pg.UUID)
     choice = relationship('Choice')
-    answer = synonym('choice')
+    answer = synonym('main_answer')
     the_survey_node_id = sa.Column(pg.UUID, nullable=False)
     the_question_id = sa.Column(pg.UUID, nullable=False)
     the_submission_id = sa.Column(pg.UUID, nullable=False)
