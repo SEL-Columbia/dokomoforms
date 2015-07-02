@@ -13,7 +13,7 @@ from sqlalchemy.sql import func
 from geoalchemy2 import Geometry
 
 from dokomoforms.models import util, Base, node_type_enum
-from dokomoforms.exc import NotAnAnswerTypeError
+from dokomoforms.exc import NotAnAnswerTypeError, NotAResponseTypeError
 
 
 class Answer(Base):
@@ -100,11 +100,22 @@ class Answer(Base):
             p_r for p_r in possible_responses if p_r[1] is not None
         )
         if response_type == 'answer':
-            response = self.answer
+            if self.type_constraint == 'multiple_choice':
+                response = self.choice
+            else:
+                response = self.answer
         return OrderedDict((
             ('response_type', response_type),
             ('response', response),
         ))
+
+    @response.setter
+    def response(self, response_dict):
+        """Set the appropriate field using the response dict."""
+        response_type = response_dict['response_type']
+        if response_type not in {'answer', 'other', 'dont_know'}:
+            raise NotAResponseTypeError(response_type)
+        setattr(self, response_type, response_dict['response'])
 
     __mapper_args__ = {'polymorphic_on': answer_type}
     __table_args__ = (
@@ -395,7 +406,7 @@ class FacilityAnswer(_AnswerMixin, Answer):
         """Set FacilityAnswer.answer with a dict."""
         self.main_answer = (
             'SRID=4326;POINT({lng} {lat})'
-            .format(**facility_info['facility_location'])
+            .format(**facility_info)
         )
         self.facility_id = facility_info['facility_id']
         self.facility_name = facility_info['facility_name']
@@ -431,7 +442,7 @@ class MultipleChoiceAnswer(_AnswerMixin, Answer):
     the_allow_dont_know = sa.Column(sa.Boolean, nullable=False)
     main_answer = sa.Column(pg.UUID)
     choice = relationship('Choice')
-    answer = synonym('choice')
+    answer = synonym('main_answer')
     the_survey_node_id = sa.Column(pg.UUID, nullable=False)
     the_question_id = sa.Column(pg.UUID, nullable=False)
     the_submission_id = sa.Column(pg.UUID, nullable=False)
