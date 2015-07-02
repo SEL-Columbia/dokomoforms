@@ -6,9 +6,10 @@ import restless.exceptions as exc
 from sqlalchemy.sql.expression import func
 
 from dokomoforms.api import BaseResource
+from dokomoforms.api.submissions import _create_answer
 from dokomoforms.models import (
     Survey, Submission, construct_survey_node,
-    User, construct_submission, construct_answer,
+    User, construct_submission,
     Node, construct_node
 )
 
@@ -123,31 +124,34 @@ class SurveyResource(BaseResource):
                 "The survey could not be found."
             )
 
-        # If an enumerator ID is present, add the enumerator
-        if 'enumerator_user_id' in self.data:
-            enumerator = self.session.query(
-                User).get(self.data['enumerator_user_id'])
-            self.data['enumerator'] = enumerator
+        # If logged in, add enumerator
+        if self.current_user_model is not None:
+            if 'enumerator_user_id' in self.data:
+                # if enumerator_user_id is provided, use that user
+                enumerator = self.session.query(
+                    User).get(self.data['enumerator_user_id'])
+                self.data['enumerator'] = enumerator
+            else:
+                # otherwise the currently logged in user
+                self.data['enumerator'] = self.current_user_model
 
         self.data['survey'] = survey
 
         with self.session.begin():
             # create a list of Answer models
             if 'answers' in self.data:
-                answers = list(map(construct_answer, self.data['answers']))
-                # remove the existing answers key from the received data
-                del self.data['answers']
+                answers = self.data['answers']
+                self.data['answers'] = [
+                    _create_answer(self.session, answer) for answer in answers
+                ]
+                # del self.data['answers']
 
             # pass submission props as kwargs
             if 'submission_type' not in self.data:
-                # by default fall to authenticate (i.e. EnumOnlySubmission)
+                # by default fall to authenticated (i.e. EnumOnlySubmission)
                 self.data['submission_type'] = 'authenticated'
 
             submission = construct_submission(**self.data)
-
-            # add the answer models
-            if 'answers' in self.data:
-                submission.answers = answers
 
             # add the submission
             self.session.add(submission)

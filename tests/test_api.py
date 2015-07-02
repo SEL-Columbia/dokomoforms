@@ -9,7 +9,11 @@ utils = (setUpModule, tearDownModule)
 
 
 """
-TODO: add expception and error response tests
+TODO:
+- add exception and error response tests
+    - add error tests for unauthenticated users
+        - creating surveys
+- add tests for total_entries and filtered_entries
 """
 
 # The numbers expected to be present via fixtures
@@ -297,7 +301,6 @@ class TestSurveyApi(DokoHTTPTest):
         method = 'POST'
         # body
         body = {
-            "survey_id": "b0816b52-204f-41d4-aaf0-ac6ae2970923",
             "submitter_name": "regular",
             "submission_type": "unauthenticated"
         }
@@ -315,6 +318,249 @@ class TestSurveyApi(DokoHTTPTest):
         self.assertTrue('last_update_time' in submission_dict)
         self.assertTrue('submission_time' in submission_dict)
         self.assertTrue('survey_id' in submission_dict)
+
+    def test_submit_to_survey_with_integer_answer_response(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": "60e56824-910c-47aa-b5c0-71493277b43f",
+                    "type_constraint": "integer",
+                    "response": {
+                        "response_type": "answer",
+                        "response": 3
+                    }
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+
+        self.assertEqual(
+            submission_dict['answers'][0]['response_type'], 'answer')
+        self.assertEqual(submission_dict['answers'][0]['response'], 3)
+
+    def test_submit_to_survey_with_multiple_choice_answer_response(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": "80e56824-910c-47aa-b5c0-71493277b439",
+                    "type_constraint": "multiple_choice",
+                    "response": {
+                        "response_type": "answer",
+                        "response": "11156824-910c-47aa-b5c0-71493277b439"
+                    }
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+
+        # check answer
+        self.assertEqual(
+            submission_dict['answers'][0]['response_type'], 'answer')
+        self.assertEqual(
+            submission_dict['answers'][0]['response']['choice_number'], 1)
+        self.assertEqual(
+            submission_dict['answers']
+            [0]['response']['choice_text']['English'], 'second choice')
+
+    def test_submit_to_survey_with_other_response(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": "80e56824-910c-47aa-b5c0-71493277b439",
+                    "type_constraint": "multiple_choice",
+                    "response": {
+                        "response_type": "other",
+                        "response": "bwop"
+                    }
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+
+        self.assertEqual(
+            submission_dict['answers'][0]['response_type'], 'other')
+        self.assertEqual(submission_dict['answers'][0]['response'], 'bwop')
+
+    def test_submit_to_survey_with_dont_know_response(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": "80e56824-910c-47aa-b5c0-71493277b439",
+                    "type_constraint": "multiple_choice",
+                    "response": {
+                        "response_type": "dont_know",
+                        "response": "bwop"
+                    }
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+
+        self.assertEqual(
+            submission_dict['answers'][0]['response_type'], 'dont_know')
+        self.assertEqual(submission_dict['answers'][0]['response'], 'bwop')
+
+    def test_submit_to_public_survey_while_authenticated(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            # public survey, so unauthenticated submission type -- we'll check
+            # that an enumerator_id comes back in the response
+            "submission_type": "unauthenticated"
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+
+        # The important part:
+        self.assertTrue('enumerator_user_id' in submission_dict)
+        self.assertTrue('enumerator_user_name' in submission_dict)
+
+    def test_submit_to_enum_only_survey_while_authenticated(self):
+        survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "authenticated"
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+
+    def test_error_public_submission_to_enum_only_survey(self):
+        survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated"
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('error' in submission_dict)
+
+        self.assertEqual(response.code, 500)
 
     def test_list_submissions_to_survey(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'

@@ -146,14 +146,19 @@ def load_fixtures(engine):
                     ],
                 ),
                 models.construct_survey_node(
+                    id="80e56824-910c-47aa-b5c0-71493277b439",
+                    allow_dont_know=True,
                     node=models.construct_node(
                         id="80e56824-910c-47aa-b5c0-71493277b439",
                         title={'English': 'Mutliple Choices'},
                         type_constraint='multiple_choice',
+                        allow_other=True,
                         choices=[
                             models.Choice(
+                                id="99956824-910c-47aa-b5c0-71493277b439",
                                 choice_text={"English": "first choice"}),
                             models.Choice(
+                                id="11156824-910c-47aa-b5c0-71493277b439",
                                 choice_text={"English": "second choice"}),
                         ]
                     )
@@ -173,6 +178,9 @@ def load_fixtures(engine):
             id='c0816b52-204f-41d4-aaf0-ac6ae2970925',
             title={'English': 'enumerator_only_single_survey'},
             nodes=[],
+            enumerators=[
+                creator
+            ]
         )
 
         # Add another public submission with a known ID
