@@ -83,11 +83,12 @@ class BaseResource(TornadoResource):
 
     def is_authenticated(self):
         """TODO: Return whether the request has been authenticated."""
-        if self.request_method() == 'GET':
-            return True
+        return True
+        #if self.request_method() == 'GET':
+        #    return True
 
-        # Require logged-in user to POST/PUT/DELETE
-        return self.r_handler.current_user is not None
+        ## Require logged-in user to POST/PUT/DELETE
+        #return self.r_handler.current_user is not None
 
         # Alternatively, you could check an API key. (Need a model for this...)
         # from myapp.models import ApiKey
