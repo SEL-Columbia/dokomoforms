@@ -14,6 +14,7 @@ TODO:
     - add error tests for unauthenticated users
         - creating surveys
 - add tests for total_entries and filtered_entries
+- add tests for sub_surveys
 """
 
 # The numbers expected to be present via fixtures
