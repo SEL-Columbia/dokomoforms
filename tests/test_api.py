@@ -793,24 +793,6 @@ class TestSubmissionApi(DokoHTTPTest):
         self.assertTrue('submission_time' in submission_dict)
         self.assertTrue('survey_id' in submission_dict)
 
-    def test_create_enum_only_submission_fails_without_enumerator_id(self):
-        # url to test
-        url = self.api_root + '/submissions'
-        # http method
-        method = 'POST'
-        # body
-        body = {
-            "survey_id": "c0816b52-204f-41d4-aaf0-ac6ae2970925",
-            "submitter_name": "regular",
-            "submission_type": "authenticated"
-        }
-        # make request
-        response = self.fetch(url, method=method, body=json_encode(body))
-
-        submission_dict = json_decode(response.body)
-
-        self.assertTrue('error' in submission_dict)
-
     # TODO: This was deemed unnecessary, submissions should be created
     # one at a time.
     # def test_create_multiple_submissions(self):
