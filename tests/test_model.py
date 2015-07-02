@@ -2792,7 +2792,7 @@ class TestAnswer(DokoTest):
                     models.construct_survey_node(
                         node=models.construct_node(
                             type_constraint='multiple_choice',
-                            title={'English': 'other_not_allowed'},
+                            title={'English': 'other_allowed'},
                             allow_other=True,
                         ),
                     ),
@@ -2824,6 +2824,55 @@ class TestAnswer(DokoTest):
         self.assertDictEqual(
             self.session.query(models.Answer).one().response,
             {'response_type': 'other', 'response': 'other answer'}
+        )
+
+    def test_answer_while_other_allowed(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title={'English': 'survey'},
+                nodes=[
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            type_constraint='multiple_choice',
+                            title={'English': 'other_allowed'},
+                            allow_other=True,
+                            choices=[
+                                models.Choice(
+                                    choice_text={'English': 'choice'},
+                                ),
+                            ],
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        with self.session.begin():
+            the_survey = self.session.query(models.Survey).one()
+            submission = models.PublicSubmission(
+                survey=the_survey,
+                answers=[
+                    models.construct_answer(
+                        survey_node=the_survey.nodes[0],
+                        type_constraint='multiple_choice',
+                        answer=the_survey.nodes[0].node.choices[0].id,
+                    ),
+                ],
+            )
+
+            self.session.add(submission)
+
+        choice = self.session.query(models.Choice).one()
+        self.assertEqual(
+            self.session.query(models.Answer).one().answer,
+            choice.id
+        )
+        self.assertDictEqual(
+            self.session.query(models.Answer).one().response,
+            {'response_type': 'answer', 'response': choice}
         )
 
     def test_cant_give_answer_and_other(self):
@@ -2944,6 +2993,49 @@ class TestAnswer(DokoTest):
         self.assertDictEqual(
             self.session.query(models.Answer).one().response,
             {'response_type': 'dont_know', 'response': 'dont_know answer'}
+        )
+
+    def test_answer_while_dont_know_allowed(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title={'English': 'survey'},
+                nodes=[
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title={'English': 'dont_know_allowed'},
+                        ),
+                        allow_dont_know=True,
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        with self.session.begin():
+            the_survey = self.session.query(models.Survey).one()
+            submission = models.PublicSubmission(
+                survey=the_survey,
+                answers=[
+                    models.construct_answer(
+                        survey_node=the_survey.nodes[0],
+                        type_constraint='integer',
+                        answer=3,
+                    ),
+                ],
+            )
+
+            self.session.add(submission)
+
+        self.assertEqual(
+            self.session.query(models.Answer).one().answer,
+            3
+        )
+        self.assertDictEqual(
+            self.session.query(models.Answer).one().response,
+            {'response_type': 'answer', 'response': 3}
         )
 
     def test_cant_give_answer_and_dont_know(self):

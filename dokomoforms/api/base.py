@@ -118,20 +118,14 @@ class BaseResource(TornadoResource):
         if deleted.lower() != 'true':
             query = query.filter(model_cls.deleted == false())
 
+        if type is not None:
+            query = query.filter(model_cls.type_constraint == type)
+
         if limit is not None:
             query = query.limit(int(limit))
 
         if offset is not None:
             query = query.offset(int(offset))
-
-        if type is not None:
-            query = query.filter(model_cls.type_constraint == type)
-            # if issubclass(model_cls, Node):
-            # # if (model_cls == Node and
-            # #         hasattr(model_cls, 'type_constraint')):
-            #     query = query.filter(model_cls.type_constraint == type)
-            # else:
-            #     raise exc.BadRequest("'" + type + "' type is invalid")
 
         # TODO: this isn't complete -- needs jsonb lookupability.
         if search_term is not None:
@@ -171,6 +165,8 @@ class BaseResource(TornadoResource):
         for prop in QUERY_ARGS:
             prop_value = self.r_handler.get_query_argument(prop, None)
             if prop_value is not None:
+                if prop_value.isdigit():
+                    prop_value = int(prop_value)
                 response[prop] = prop_value
 
         return response
