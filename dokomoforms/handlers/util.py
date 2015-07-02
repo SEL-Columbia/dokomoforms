@@ -27,7 +27,7 @@ class BaseHandler(tornado.web.RequestHandler):
         """Return the current logged in User, or None."""
         try:
             user = json_decode(self.current_user)
-        except ValueError:
+        except (ValueError, TypeError):
             return None
         user_id = user['user_id']
         user_model = self.session.query(User).get(user_id)

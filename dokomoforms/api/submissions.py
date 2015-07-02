@@ -33,19 +33,6 @@ class SubmissionResource(BaseResource):
     # Set the property name on the outputted json
     objects_key = 'submissions'
 
-    # The preparer defines the fields that get returned.
-    preparer = FieldsPreparer(fields={
-        'id': 'id',
-        'deleted': 'deleted',
-        'survey_id': 'survey_id',
-        'save_time': 'save_time',
-        'submission_time': 'submission_time',
-        'last_update_time': 'last_update_time',
-        'submitter_name': 'submitter_name',
-        'submitter_email': 'submitter_email',
-        'answers': 'answers',
-    })
-
     # GET /api/submissions/
     def list(self):
         """Return a list of submissions."""
@@ -78,11 +65,16 @@ class SubmissionResource(BaseResource):
                 "The survey could not be found."
             )
 
-        # If an enumerator ID is present, add the enumerator
-        if 'enumerator_user_id' in self.data:
-            enumerator = self.session.query(
-                User).get(self.data['enumerator_user_id'])
-            self.data['enumerator'] = enumerator
+        # If logged in, add enumerator
+        if self.current_user_model is not None:
+            if 'enumerator_user_id' in self.data:
+                # if enumerator_user_id is provided, use that user
+                enumerator = self.session.query(
+                    User).get(self.data['enumerator_user_id'])
+                self.data['enumerator'] = enumerator
+            else:
+                # otherwise the currently logged in user
+                self.data['enumerator'] = self.current_user_model
 
         self.data['survey'] = survey
 
