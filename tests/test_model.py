@@ -2672,7 +2672,7 @@ class TestAnswer(DokoTest):
                     models.construct_answer(
                         survey_node=the_survey.nodes[0],
                         type_constraint='multiple_choice',
-                        answer=the_survey.nodes[0].node.choices[0],
+                        answer=the_survey.nodes[0].node.choices[0].id,
                     ),
                 ],
             )
@@ -2680,7 +2680,7 @@ class TestAnswer(DokoTest):
             self.session.add(submission)
 
         self.assertEqual(
-            self.session.query(models.Answer).one().answer.choice_text,
+            self.session.query(models.Answer).one().choice.choice_text,
             {'English': 'one'}
         )
 
@@ -2723,7 +2723,7 @@ class TestAnswer(DokoTest):
                         models.construct_answer(
                             survey_node=the_survey.nodes[0],
                             type_constraint='multiple_choice',
-                            answer=the_survey.nodes[1].node.choices[0],
+                            answer=the_survey.nodes[1].node.choices[0].id,
                         ),
                     ],
                 )
@@ -2859,7 +2859,9 @@ class TestAnswer(DokoTest):
                         models.construct_answer(
                             survey_node=the_survey.nodes[0],
                             type_constraint='multiple_choice',
-                            answer=self.session.query(models.Choice).one(),
+                            answer=(
+                                self.session.query(models.Choice.id).scalar()
+                            ),
                             other='other answer',
                         ),
                     ],
