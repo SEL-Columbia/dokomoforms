@@ -13,7 +13,7 @@ from sqlalchemy.sql import func
 from geoalchemy2 import Geometry
 
 from dokomoforms.models import util, Base, node_type_enum
-from dokomoforms.exc import NotAnAnswerTypeError
+from dokomoforms.exc import NotAnAnswerTypeError, NotAResponseTypeError
 
 
 class Answer(Base):
@@ -105,6 +105,14 @@ class Answer(Base):
             ('response_type', response_type),
             ('response', response),
         ))
+
+    @response.setter
+    def response(self, response_dict):
+        """Set the appropriate field using the response dict."""
+        response_type = response_dict['response_type']
+        if response_type not in {'answer', 'other', 'dont_know'}:
+            raise NotAResponseTypeError(response_type)
+        setattr(self, response_type, response_dict['response'])
 
     __mapper_args__ = {'polymorphic_on': answer_type}
     __table_args__ = (

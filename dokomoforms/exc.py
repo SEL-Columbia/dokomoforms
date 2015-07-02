@@ -44,6 +44,17 @@ class NotAnAnswerTypeError(DokomoError):
     """
 
 
+class NotAResponseTypeError(DokomoError):
+
+    """Invalid response_type Answer.response.setter.
+
+    Raised when trying to set the response field on an Answer with an invalid
+    response_type.
+
+    The valid response_types are 'answer', 'other', and 'dont_know'.
+    """
+
+
 class NoSuchBucketTypeError(DokomoError):
 
     """Invalid type_constraint for construct_bucket.
