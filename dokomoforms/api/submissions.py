@@ -1,5 +1,4 @@
 """TornadoResource class for dokomoforms.models.submission.Submission."""
-from restless.preparers import FieldsPreparer
 import restless.exceptions as exc
 
 from dokomoforms.api import BaseResource
