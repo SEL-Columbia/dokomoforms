@@ -55,7 +55,9 @@ class NodeResource(BaseResource):
             raise exc.NotFound()
 
         with self.session.begin():
-            node.update(self.data)
+            for key, value in self.data.items():
+                setattr(node, key, value)
+            self.session.add(node)
         return node
 
     def delete(self, node_id):

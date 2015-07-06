@@ -1439,20 +1439,25 @@ class TestNodeApi(DokoHTTPTest):
 
     def test_update_node(self):
         node_id = '60e56824-910c-47aa-b5c0-71493277b43f'
+        self.assertFalse(
+            self.session.query(Node.deleted).filter_by(id=node_id).scalar()
+        )
         # url to test
         url = self.api_root + '/nodes/' + node_id
         # http method
         method = 'PUT'
         # body
         body = {
-
+            'deleted': True
         }
         encoded_body = json_encode(body)
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
-        id(response)
         # test response
-        self.fail("Not yet implemented.")
+        self.assertTrue(json_decode(response.body)['deleted'])
+        self.assertTrue(
+            self.session.query(Node.deleted).filter_by(id=node_id).scalar()
+        )
 
     def test_delete_node(self):
         node_id = '60e56824-910c-47aa-b5c0-71493277b43f'
