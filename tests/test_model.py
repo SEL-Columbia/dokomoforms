@@ -634,6 +634,40 @@ class TestSurvey(DokoTest):
                 )
                 self.session.add(creator)
 
+    def test_title_in_default_langauge_must_be_unique_per_user(self):
+        with self.session.begin():
+            good_creator = models.SurveyCreator(
+                name='good',
+                surveys=[
+                    models.Survey(
+                        title={'English': 'title'},
+                    )
+                ],
+            )
+            self.session.add(good_creator)
+
+            bad_creator = models.SurveyCreator(
+                name='bad',
+                surveys=[
+                    models.Survey(
+                        title={'English': 'title'},
+                    )
+                ],
+            )
+            self.session.add(bad_creator)
+
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                bad = (
+                    self.session
+                    .query(models.User)
+                    .filter_by(name='bad')
+                    .one()
+                )
+                bad.surveys.append(
+                    models.Survey(title={'English': 'title'}),
+                )
+
     def test_alternate_default_langauge(self):
         with self.session.begin():
             creator = models.SurveyCreator(

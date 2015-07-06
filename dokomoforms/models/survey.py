@@ -8,6 +8,7 @@ import dateutil.parser
 
 import sqlalchemy as sa
 from sqlalchemy.sql.functions import current_timestamp
+from sqlalchemy.sql.elements import quoted_name
 from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declared_attr
@@ -104,6 +105,12 @@ class Survey(Base):
     __table_args__ = (
         sa.UniqueConstraint(
             'title', 'creator_id', name='unique_survey_title_per_user'
+        ),
+        sa.Index(
+            'unique_survey_title_in_default_language_per_user',
+            sa.column(quoted_name('(title->>default_language)', quote=False)),
+            'creator_id',
+            unique=True,
         ),
         sa.UniqueConstraint('id', 'survey_type'),
         sa.UniqueConstraint('id', 'languages'),
