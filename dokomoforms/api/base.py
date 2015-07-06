@@ -1,6 +1,7 @@
 """The base class of the TornadoResource classes in the api module."""
 from restless.tnd import TornadoResource
 
+from sqlalchemy import func, text
 from sqlalchemy.sql.expression import false
 
 from dokomoforms.api.serializer import ModelJSONSerializer
@@ -110,6 +111,26 @@ class BaseResource(TornadoResource):
         # search_lang = self.r_handler.get_query_argument('lang', 'English')
         type = self.r_handler.get_query_argument('type', None)
 
+        if search_term is not None:
+            for search_field in search_fields.split(','):
+                search_col = getattr(model_cls, search_field)
+                if str(search_col.type) == 'JSONB':
+                    query = (
+                        query
+                        .select_from(
+                            model_cls,
+                            func.jsonb_each_text(search_col).alias('search'),
+                        )
+                        .filter(text(
+                            "search.value ILIKE '%{}%'".format(search_term)
+                        ))
+                    )
+                else:
+                    query = (
+                        query
+                        .filter(search_col.ilike('%{}%'.format(search_term)))
+                    )
+
         if deleted.lower() != 'true':
             query = query.filter(model_cls.deleted == false())
 
@@ -121,16 +142,6 @@ class BaseResource(TornadoResource):
 
         if offset is not None:
             query = query.offset(int(offset))
-
-        # TODO: this isn't complete -- needs jsonb lookupability.
-        if search_term is not None:
-            search_fields_list = search_fields.split(',')
-            for search_field in search_fields_list:
-                if hasattr(model_cls, search_field):
-                    query = query.filter(
-                        getattr(
-                            model_cls, search_field
-                        ).ilike('%' + search_term + '%'))
 
         return query.all()
 

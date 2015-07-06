@@ -906,9 +906,16 @@ class TestNodeApi(DokoHTTPTest):
         method = 'GET'
         # make request
         response = self.fetch(url, method=method)
-        id(response)
         # test response
-        self.fail("Not yet implemented.")
+        response_body = json_decode(response.body)
+        nodes = response_body['nodes']
+
+        self.assertEqual(len(nodes), 3)
+        self.assertListEqual(
+            ['integer' in nodes[i]['title']['English'] for i in range(3)],
+            [True] * 3,
+            msg="Some of the returned titles don't contain the search term."
+        )
 
     def test_list_nodes_with_type_filter(self):
         type_constraint = 'text'
