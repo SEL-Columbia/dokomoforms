@@ -266,17 +266,25 @@ class TestSurveyApi(DokoHTTPTest):
 
     def test_update_survey(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        self.assertFalse(
+            self.session.query(Survey.deleted).filter_by(id=survey_id).scalar()
+        )
         # url to test
         url = self.api_root + '/surveys/' + survey_id
         # http method
         method = 'PUT'
         # body
-        body = '{"survey_body_json"}'
+        body = {
+            'deleted': True
+        }
+        encoded_body = json_encode(body)
         # make request
-        response = self.fetch(url, method=method, body=body)
+        response = self.fetch(url, method=method, body=encoded_body)
         # test response
-        id(response)
-        self.fail("Not yet implemented.")
+        self.assertTrue(json_decode(response.body)['deleted'])
+        self.assertTrue(
+            self.session.query(Survey.deleted).filter_by(id=survey_id).scalar()
+        )
 
     def test_delete_survey(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'

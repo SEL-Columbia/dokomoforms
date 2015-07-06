@@ -96,14 +96,7 @@ class SurveyResource(BaseResource):
 
     def update(self, survey_id):
         """TODO: how should this behave? Good question."""
-        survey = self.session.query(Survey).get(survey_id)
-
-        if not survey:
-            raise exc.NotFound()
-        else:
-            with self.session.begin():
-                survey.update(self.data)
-            return survey
+        return self._update(Survey, survey_id)
 
     def delete(self, survey_id):
         """Set survey.deleted = True.

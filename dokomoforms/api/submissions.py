@@ -105,14 +105,7 @@ class SubmissionResource(BaseResource):
     # PUT /api/submissions/<submission_id>/
     def update(self, submission_id):
         """TODO: Update a submission."""
-        submission = self.session.query(Submission).get(submission_id)
-        if not submission:
-            raise exc.NotFound()
-        # TODO: FIX THIS
-        else:
-            # with self.session.begin():
-                # submission.update(self.data)
-            return submission
+        return self._update(Submission, submission_id)
 
     # DELETE /api/submissions/<submission_id>/
     def delete(self, submission_id):

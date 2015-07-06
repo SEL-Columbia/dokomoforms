@@ -1,5 +1,6 @@
 """The base class of the TornadoResource classes in the api module."""
 from restless.tnd import TornadoResource
+import restless.exceptions as exc
 
 from sqlalchemy import func, text
 from sqlalchemy.sql.expression import false
@@ -176,3 +177,16 @@ class BaseResource(TornadoResource):
                 response[prop] = prop_value
 
         return response
+
+    def _update(self, model_cls, model_id):
+        """Update a model."""
+        model = self.session.query(model_cls).get(model_id)
+
+        if model is None:
+            raise exc.NotFound()
+
+        with self.session.begin():
+            for attribute, value in self.data.items():
+                setattr(model, attribute, value)
+            self.session.add(model)
+        return model

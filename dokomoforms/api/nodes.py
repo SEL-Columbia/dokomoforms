@@ -49,16 +49,7 @@ class NodeResource(BaseResource):
 
     def update(self, node_id):
         """TODO: how should this behave? Good question."""
-        node = self.session.query(Node).get(node_id)
-
-        if node is None:
-            raise exc.NotFound()
-
-        with self.session.begin():
-            for key, value in self.data.items():
-                setattr(node, key, value)
-            self.session.add(node)
-        return node
+        return self._update(Node, node_id)
 
     def delete(self, node_id):
         """Set node.deleted = True.
