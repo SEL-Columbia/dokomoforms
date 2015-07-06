@@ -1,9 +1,16 @@
 """API tests"""
+
+from datetime import datetime, timedelta
+
+import dateutil.parser
+
+from passlib.hash import bcrypt_sha256
+
 from tornado.escape import json_decode, json_encode
 
 from tests.util import DokoHTTPTest, setUpModule, tearDownModule
 
-from dokomoforms.models import Submission, Survey, Node
+from dokomoforms.models import Submission, Survey, Node, SurveyCreator
 
 utils = (setUpModule, tearDownModule)
 
@@ -1487,15 +1494,28 @@ class TestNodeApi(DokoHTTPTest):
 class TestUserApi(DokoHTTPTest):
 
     def test_create_api_token(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        self.assertIsNone(user.token)
         # url to test
         url = self.api_root + '/user/generate-api-token'
         # http method (just for clarity)
         method = 'GET'
         # make request
         response = self.fetch(url, method=method)
-        id(response)
+        response_dict = json_decode(response.body)
         # test response
-        self.fail("Not yet implemented.")
+        token = response_dict['token']
+        expiration = response_dict['expires_on']
+        self.assertTrue(bcrypt_sha256.verify(token, user.token))
+        self.assertEqual(expiration, user.token_expiration.isoformat())
+        self.assertEqual(
+            dateutil.parser.parse(expiration).date(),
+            (datetime.now() + timedelta(days=60)).date()
+        )
 
     def test_use_api_token(self):
         # url to test

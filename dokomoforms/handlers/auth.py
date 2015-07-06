@@ -1,6 +1,9 @@
 """Authentication handlers."""
 
+from collections import OrderedDict
+from datetime import datetime, timedelta
 import urllib.parse
+import uuid
 
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -9,6 +12,8 @@ import tornado.concurrent
 import tornado.web
 import tornado.gen
 import tornado.httpclient
+
+from passlib.hash import bcrypt_sha256
 
 from dokomoforms.options import options
 from dokomoforms.handlers.util import BaseHandler
@@ -106,3 +111,24 @@ class Logout(BaseHandler):
         httponly.
         """
         self.clear_cookie('user')
+
+
+class GenerateToken(BaseHandler):  # We should probably do this in JS
+
+    """GET your token here. GETting twice resets the token."""
+
+    @tornado.web.authenticated
+    def get(self):
+        """Set a new token for the logged in user and return the token."""
+        token = (
+            ''.join(char for char in str(uuid.uuid4()) if char.isalnum())
+        )
+        user = self.current_user_model
+        with self.session.begin():
+            user.token = bcrypt_sha256.encrypt(token).encode()
+            user.token_expiration = (datetime.now() + timedelta(days=60))
+            self.session.add(user)
+        self.write(OrderedDict((
+            ('token', token),
+            ('expires_on', user.token_expiration.isoformat()),
+        )))

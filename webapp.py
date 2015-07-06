@@ -172,6 +172,13 @@ class Application(tornado.web.Application):
                 '/nodes/({})/?'.format(UUID_REGEX),
                 NodeResource.as_detail(),
                 name="node"),
+
+            # Users
+            url(
+                r'' + self._api_root_path + '/user/generate-api-token/?',
+                handlers.GenerateToken,
+                name='generate_token',
+            ),
         ]
         if options.debug:
             urls += [
@@ -189,7 +196,7 @@ class Application(tornado.web.Application):
             'cookie_secret': get_cookie_secret(),
             'login_url': '/',
             'debug': options.dev or options.debug,
-            'autoreload': options.dev or options.autoreload
+            'autoreload': options.dev or options.autoreload,
         }
         super().__init__(urls, **settings)
         self.engine = create_engine()
