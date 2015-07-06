@@ -192,7 +192,7 @@ class Application(tornado.web.Application):
             'template_path': os.path.join(_pwd, 'dokomoforms/templates'),
             'static_path': os.path.join(_pwd, 'dokomoforms/static'),
             'default_handler_class': handlers.NotFound,
-            'xsrf_cookies': False,  # TODO: True
+            'xsrf_cookies': True,
             'cookie_secret': get_cookie_secret(),
             'login_url': '/',
             'debug': options.dev or options.debug,

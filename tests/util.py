@@ -5,23 +5,18 @@ Also injects the --schema=doko_test option.
 """
 
 import unittest
+from contextlib import contextmanager
+from unittest.mock import patch
 from urllib.parse import urlencode
+from functools import wraps
 
 from tornado.testing import AsyncHTTPTestCase, LogTrapTestCase
-from functools import wraps
+from tornado.web import RequestHandler
+from tornado.escape import json_encode
 
 from dokomoforms.options import inject_options, parse_options
 
-inject_options(
-    schema='doko_test',
-    # fake logged in user with ID from fixture
-    TEST_USER="""
-        {
-            "user_id": "b7becd02-1a3f-4c1d-a0e1-286ba121aef4",
-            "user_name": "test_user"
-        }
-    """
-)
+inject_options(schema='doko_test')
 parse_options()
 
 from sqlalchemy import DDL
@@ -73,6 +68,15 @@ class DokoTest(unittest.TestCase):
         super().tearDown()
 
 
+@contextmanager
+def dummy_patch():
+    """A context manager that doesn't do anything.
+
+    Also, you can set any attribute on it.
+    """
+    yield lambda: None
+
+
 class DokoHTTPTest(DokoTest, LogTrapTestCase, AsyncHTTPTestCase):
 
     """Base class for HTTP (i.e. API [and handler?]) test cases.
@@ -113,6 +117,28 @@ class DokoHTTPTest(DokoTest, LogTrapTestCase, AsyncHTTPTestCase):
         params = urlencode(params_dict)
         url += '?' + params
         return url
+
+    def fetch(self, *args,
+              _disable_xsrf: bool=True,
+              _logged_in_user: dict={
+                  'user_id': 'b7becd02-1a3f-4c1d-a0e1-286ba121aef4',
+                  'user_name': 'test_user',
+              },
+              **kwargs):
+        """Fetch, circumventing XSRF cookies and logging in (by default)."""
+        patch_xsrf = dummy_patch()
+        if _disable_xsrf:
+            patch_xsrf = patch.object(RequestHandler, 'check_xsrf_cookie')
+
+        patch_login = dummy_patch()
+        if _logged_in_user:
+            _logged_in_user = json_encode(_logged_in_user)
+            patch_login = patch.object(RequestHandler, 'get_secure_cookie')
+
+        with patch_xsrf as x, patch_login as l:
+            x.return_value = None
+            l.return_value = _logged_in_user
+            return super().fetch(*args, **kwargs)
 
 
 def test_continues_after_rollback(doko_test):
