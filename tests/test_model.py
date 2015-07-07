@@ -3376,3 +3376,115 @@ class TestAnswer(DokoTest):
             self.session.query(func.count(models.Answer.id)).scalar(),
             2
         )
+
+    def test_answer_multiple_allowed_choices(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title={'English': 'survey'},
+                nodes=[
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            type_constraint='multiple_choice',
+                            title={'English': 'choice response'},
+                            allow_multiple=True,
+                            choices=[
+                                models.Choice(
+                                    choice_text={'English': 'one'},
+                                ),
+                                models.Choice(
+                                    choice_text={'English': 'two'},
+                                ),
+                            ],
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        with self.session.begin():
+            the_survey = self.session.query(models.Survey).one()
+            submission = models.PublicSubmission(
+                survey=the_survey,
+                answers=[
+                    models.construct_answer(
+                        survey_node=the_survey.nodes[0],
+                        type_constraint='multiple_choice',
+                        response={
+                            'response_type': 'answer',
+                            'response': survey.nodes[0].node.choices[0].id,
+                        },
+                    ),
+                    models.construct_answer(
+                        survey_node=the_survey.nodes[0],
+                        type_constraint='multiple_choice',
+                        response={
+                            'response_type': 'answer',
+                            'response': survey.nodes[0].node.choices[1].id,
+                        },
+                    ),
+                ],
+            )
+
+            self.session.add(submission)
+
+        self.assertEqual(
+            self.session.query(func.count(models.Answer.id)).scalar(),
+            2
+        )
+
+    def test_answer_multiple_same_choice_forbidden(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title={'English': 'survey'},
+                nodes=[
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            type_constraint='multiple_choice',
+                            title={'English': 'choice response'},
+                            allow_multiple=True,
+                            choices=[
+                                models.Choice(
+                                    choice_text={'English': 'one'},
+                                ),
+                                models.Choice(
+                                    choice_text={'English': 'two'},
+                                ),
+                            ],
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                the_survey = self.session.query(models.Survey).one()
+                submission = models.PublicSubmission(
+                    survey=the_survey,
+                    answers=[
+                        models.construct_answer(
+                            survey_node=the_survey.nodes[0],
+                            type_constraint='multiple_choice',
+                            response={
+                                'response_type': 'answer',
+                                'response': survey.nodes[0].node.choices[0].id,
+                            },
+                        ),
+                        models.construct_answer(
+                            survey_node=the_survey.nodes[0],
+                            type_constraint='multiple_choice',
+                            response={
+                                'response_type': 'answer',
+                                'response': survey.nodes[0].node.choices[0].id,
+                            },
+                        ),
+                    ],
+                )
+
+                self.session.add(submission)
