@@ -22,6 +22,7 @@ class DebugUserCreationHandler(BaseHandler):
             .query(exists().where(Email.address == email))
             .scalar()
         )
+        created = False
         if not email_exists:
             with self.session.begin():
                 creator = SurveyCreator(
@@ -29,16 +30,16 @@ class DebugUserCreationHandler(BaseHandler):
                     emails=[Email(address=email)],
                 )
                 self.session.add(creator)
-                self.write('Created user {}'.format(email))
-                self.set_status(201)
-        DebugLoginHandler.get(self, email)
+            self.set_status(201)
+            created = True
+        DebugLoginHandler.get(self, email, created=created)
 
 
 class DebugLoginHandler(BaseHandler):
 
     """Use this page to log in as any existing user."""
 
-    def get(self, email="test@test_email.com"):
+    def get(self, email="test@test_email.com", created=False):
         """Log in by supplying an e-mail address."""
         try:
             user = (
@@ -58,7 +59,11 @@ class DebugLoginHandler(BaseHandler):
                 json_encode({'user_id': user.id, 'user_name': user.name}),
                 **cookie_options
             )
-            self.write({'email': email})
+            response = {
+                'email': email,
+                'created': created,
+            }
+            self.write(response)
             self.finish()
         except NoResultFound:
             _ = self.locale.translate

@@ -199,16 +199,18 @@ class Application(tornado.web.Application):
             'autoreload': options.dev or options.autoreload,
         }
         super().__init__(urls, **settings)
-        self.engine = create_engine()
-        if options.kill:
-            logging.info('Dropping schema {}.'.format(options.schema))
-            self.engine.execute(
-                DDL('DROP SCHEMA IF EXISTS {} CASCADE'.format(options.schema))
-            )
-        Base.metadata.create_all(self.engine)
+
+        # Database setup
         if session is None:
-            self.sessionmaker = sessionmaker(bind=self.engine, autocommit=True)
-            self.session = self.sessionmaker()
+            engine = create_engine()
+            if options.kill:
+                logging.info('Dropping schema {}.'.format(options.schema))
+                engine.execute(DDL(
+                    'DROP SCHEMA IF EXISTS {} CASCADE'.format(options.schema)
+                ))
+            Base.metadata.create_all(engine)
+            Session = sessionmaker(bind=engine, autocommit=True)
+            self.session = Session()
         else:
             self.session = session
 
