@@ -2799,23 +2799,24 @@ class TestAnswer(DokoTest):
                 self.session.add(submission)
 
     def test_only_MC_can_allow_other(self):
-        if True:
-            creator = models.SurveyCreator(name='creator')
-            survey = models.Survey(
-                title={'English': 'survey'},
-                nodes=[
-                    models.construct_survey_node(
-                        node=models.construct_node(
-                            type_constraint='integer',
-                            title={'English': 'integer bad'},
-                            allow_other=True,
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                creator = models.SurveyCreator(name='creator')
+                survey = models.Survey(
+                    title={'English': 'survey'},
+                    nodes=[
+                        models.construct_survey_node(
+                            node=models.construct_node(
+                                type_constraint='integer',
+                                title={'English': 'integer bad'},
+                                allow_other=True,
+                            ),
                         ),
-                    ),
-                ],
-            )
-            creator.surveys = [survey]
+                    ],
+                )
+                creator.surveys = [survey]
 
-            self.session.add(creator)
+                self.session.add(creator)
 
     def test_answer_other(self):
         with self.session.begin():
