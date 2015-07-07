@@ -536,6 +536,38 @@ class TestChoice(DokoTest):
 
 
 class TestSurvey(DokoTest):
+    def test_administrators(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            admin = models.User(name='admin')
+            creator.surveys = [
+                models.EnumeratorOnlySurvey(
+                    title={'English': 'survey'},
+                    administrators=[admin]
+                ),
+            ]
+
+            self.session.add(creator)
+
+        self.assertIs(
+            self.session.query(models.Survey).one().administrators[0],
+            self.session.query(models.User).filter_by(name='admin').one()
+        )
+
+    def test_unique_administrators(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                creator = models.SurveyCreator(name='creator')
+                admin = models.User(name='admin')
+                creator.surveys = [
+                    models.EnumeratorOnlySurvey(
+                        title={'English': 'survey'},
+                        administrators=[admin, admin]
+                    ),
+                ]
+
+                self.session.add(creator)
+
     def test_one_node_surveys(self):
         number_of_questions = 11
         with self.session.begin():
@@ -620,7 +652,7 @@ class TestSurvey(DokoTest):
             ))
         )
 
-    def test_title_in_default_langauge_must_exist(self):
+    def test_title_in_default_language_must_exist(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
                 creator = models.SurveyCreator(
@@ -633,7 +665,7 @@ class TestSurvey(DokoTest):
                 )
                 self.session.add(creator)
 
-    def test_title_in_default_langauge_must_not_be_empty(self):
+    def test_title_in_default_language_must_not_be_empty(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
                 creator = models.SurveyCreator(
@@ -646,7 +678,7 @@ class TestSurvey(DokoTest):
                 )
                 self.session.add(creator)
 
-    def test_title_in_default_langauge_must_be_unique_per_user(self):
+    def test_title_in_default_language_must_be_unique_per_user(self):
         with self.session.begin():
             good_creator = models.SurveyCreator(
                 name='good',
@@ -680,7 +712,7 @@ class TestSurvey(DokoTest):
                     models.Survey(title={'English': 'title'}),
                 )
 
-    def test_alternate_default_langauge(self):
+    def test_alternate_default_language(self):
         with self.session.begin():
             creator = models.SurveyCreator(
                 name='creator',
@@ -1843,24 +1875,6 @@ class TestBucket(DokoTest):
 
 
 class TestSubmission(DokoTest):
-    def test_administrators(self):
-        with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
-            admin = models.User(name='admin')
-            creator.surveys = [
-                models.EnumeratorOnlySurvey(
-                    title={'English': 'survey'},
-                    administrators=[admin]
-                ),
-            ]
-
-            self.session.add(creator)
-
-        self.assertIs(
-            self.session.query(models.Survey).one().administrators[0],
-            self.session.query(models.User).filter_by(name='admin').one()
-        )
-
     def test_enumerator_submission(self):
         with self.session.begin():
             creator = models.SurveyCreator(name='creator')

@@ -103,9 +103,6 @@ class Survey(Base):
         'polymorphic_identity': 'public',
     }
     __table_args__ = (
-        sa.UniqueConstraint(
-            'title', 'creator_id', name='unique_survey_title_per_user'
-        ),
         sa.Index(
             'unique_survey_title_in_default_language_per_user',
             sa.column(quoted_name('(title->>default_language)', quote=False)),
