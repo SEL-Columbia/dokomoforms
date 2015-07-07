@@ -88,6 +88,15 @@ class TestUser(DokoTest):
             ))
         )
 
+    def test_valid_email(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                user = models.User(
+                    name='a',
+                    emails=[models.Email(address='not legit')],
+                )
+                self.session.add(user)
+
     def test_email_asdict(self):
         with self.session.begin():
             new_user = models.User(name='a')
@@ -181,6 +190,14 @@ class TestNode(DokoTest):
         self.assertEqual(node.title, {'English': 'test'})
         question = self.session.query(models.Question).one()
         self.assertEqual(question.title, {'English': 'test'})
+
+    def test_title_is_dict(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                self.session.add(models.construct_node(
+                    type_constraint='text',
+                    title=['English', 'test'],
+                ))
 
     def test_construct_node_with_languages(self):
         with self.session.begin():
