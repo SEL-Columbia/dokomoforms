@@ -385,7 +385,6 @@ class MultipleChoiceBucket(Bucket):
 
     __mapper_args__ = {'polymorphic_identity': 'multiple_choice'}
     __table_args__ = (
-        sa.UniqueConstraint('choice_id', 'the_sub_survey_id'),
         sa.ForeignKeyConstraint(
             ['choice_id', 'parent_node_id'],
             ['choice.id', 'choice.question_id'],
@@ -510,12 +509,10 @@ class SurveyNode(Base):
 
     __mapper_args__ = {'polymorphic_on': survey_node_answerable}
     __table_args__ = (
-        sa.UniqueConstraint('id', 'node_number'),
         sa.UniqueConstraint('id', 'node_id', 'type_constraint'),
         sa.UniqueConstraint(
             'id', 'root_survey_languages', 'node_id', 'type_constraint'
         ),
-        sa.UniqueConstraint('root_survey_id', 'node_number'),
         sa.CheckConstraint(
             '(root_survey_id IS NULL) != (sub_survey_id IS NULL)'
         ),

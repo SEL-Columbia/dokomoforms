@@ -568,6 +568,20 @@ class TestSurvey(DokoTest):
 
                 self.session.add(creator)
 
+    def test_unique_enumerators(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                creator = models.SurveyCreator(name='creator')
+                enmrtr = models.User(name='enmrtr')
+                creator.surveys = [
+                    models.EnumeratorOnlySurvey(
+                        title={'English': 'survey'},
+                        enumerators=[enmrtr, enmrtr]
+                    ),
+                ]
+
+                self.session.add(creator)
+
     def test_one_node_surveys(self):
         number_of_questions = 11
         with self.session.begin():
@@ -730,6 +744,21 @@ class TestSurvey(DokoTest):
             self.session.query(func.count(models.Survey.id)).scalar(),
             1
         )
+
+    def test_bad_default_language(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                creator = models.SurveyCreator(
+                    name='creator',
+                    surveys=[
+                        models.Survey(
+                            title={'French': 'answerable'},
+                            languages=['French'],
+                            default_language='German',
+                        ),
+                    ],
+                )
+                self.session.add(creator)
 
 
 class TestSurveyNode(DokoTest):
