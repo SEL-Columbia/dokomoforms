@@ -3281,3 +3281,98 @@ class TestAnswer(DokoTest):
                 )
 
                 self.session.add(submission)
+
+    def test_answer_multiple_not_allowed(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title={'English': 'survey'},
+                nodes=[
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title={'English': 'integer response'},
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                the_survey = self.session.query(models.Survey).one()
+                submission = models.PublicSubmission(
+                    survey=the_survey,
+                    answers=[
+                        models.construct_answer(
+                            survey_node=the_survey.nodes[0],
+                            type_constraint='integer',
+                            response={
+                                'response_type': 'answer',
+                                'response': 3,
+                            },
+                        ),
+                        models.construct_answer(
+                            survey_node=the_survey.nodes[0],
+                            type_constraint='integer',
+                            response={
+                                'response_type': 'answer',
+                                'response': 4,
+                            },
+                        ),
+                    ],
+                )
+
+                self.session.add(submission)
+
+    def test_answer_multiple_allowed(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title={'English': 'survey'},
+                nodes=[
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title={'English': 'integer response'},
+                            allow_multiple=True,
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        with self.session.begin():
+            the_survey = self.session.query(models.Survey).one()
+            submission = models.PublicSubmission(
+                survey=the_survey,
+                answers=[
+                    models.construct_answer(
+                        survey_node=the_survey.nodes[0],
+                        type_constraint='integer',
+                        response={
+                            'response_type': 'answer',
+                            'response': 3,
+                        },
+                    ),
+                    models.construct_answer(
+                        survey_node=the_survey.nodes[0],
+                        type_constraint='integer',
+                        response={
+                            'response_type': 'answer',
+                            'response': 4,
+                        },
+                    ),
+                ],
+            )
+
+            self.session.add(submission)
+
+        self.assertEqual(
+            self.session.query(func.count(models.Answer.id)).scalar(),
+            2
+        )
