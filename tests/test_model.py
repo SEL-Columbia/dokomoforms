@@ -2086,6 +2086,22 @@ class TestSubmission(DokoTest):
             ))
         )
 
+    def test_submission_bad_email(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                creator = models.SurveyCreator(name='creator')
+                creator.surveys = [models.Survey(title={'English': 'survey'})]
+
+                self.session.add(creator)
+
+                auth_submission = models.PublicSubmission(
+                    survey=creator.surveys[0],
+                    submitter_name='not an enumerator',
+                    submitter_email='no at symbol',
+                )
+
+                self.session.add(auth_submission)
+
     def test_public_submission_asdict_enumerator(self):
         with self.session.begin():
             creator = models.SurveyCreator(name='creator')
