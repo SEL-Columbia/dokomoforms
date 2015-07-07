@@ -455,6 +455,18 @@ class TestChoice(DokoTest):
         self.assertEqual(choices[1].choice_number, 1)
         self.assertEqual(choices[2].choice_number, 2)
 
+    def test_unique_choice_text(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                q = models.construct_node(
+                    title={'English': 'test_automatic_numbering'},
+                    type_constraint='multiple_choice',
+                )
+                q.choices = [models.Choice(choice_text={
+                    'English': 'choice'
+                }) for i in range(2)]
+                self.session.add(q)
+
     def test_asdict(self):
         with self.session.begin():
             q = models.construct_node(
