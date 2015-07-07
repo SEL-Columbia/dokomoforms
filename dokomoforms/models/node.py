@@ -63,7 +63,6 @@ class Note(Node):
 
     __mapper_args__ = {'polymorphic_identity': 'note'}
     __table_args__ = (
-        sa.UniqueConstraint('id', 'the_type_constraint'),
         sa.ForeignKeyConstraint(
             ['id', 'the_type_constraint'], ['node.id', 'node.type_constraint']
         ),
