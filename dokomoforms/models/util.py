@@ -285,3 +285,30 @@ def last_update_time() -> sa.Column:
         server_default=current_timestamp(),
         onupdate=current_timestamp(),
     )
+
+
+def jsonb_column_ilike(*,
+                       query, model_cls, column, search_term,
+                       language=None) -> 'query':
+    """Modify a query to search a JSONB column's values.
+
+    TODO: document this
+
+    :param query: a
+    :param model_cls: aa
+    :param column: b
+    :param search_term: c
+    :params language: d
+    :return: The modified query.
+    """
+    if language is None:
+        return (
+            query
+            .select_from(
+                model_cls, func.jsonb_each_text(column).alias('search')
+            )
+            .filter(sa.text("search.value ILIKE '%{}%'".format(search_term)))
+        )
+    return (
+        query.filter(column[language].astext.ilike('%{}%'.format(search_term)))
+    )

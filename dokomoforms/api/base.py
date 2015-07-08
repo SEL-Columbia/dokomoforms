@@ -2,11 +2,11 @@
 from restless.tnd import TornadoResource
 import restless.exceptions as exc
 
-from sqlalchemy import func, text
 from sqlalchemy.sql.expression import false
 
 from dokomoforms.api.serializer import ModelJSONSerializer
 from dokomoforms.handlers.util import BaseAPIHandler
+from dokomoforms.models.util import jsonb_column_ilike
 
 """
 A list of the expected query arguments
@@ -108,23 +108,19 @@ class BaseResource(TornadoResource):
         search_term = self.r_handler.get_query_argument('search', None)
         search_fields = self.r_handler.get_query_argument(
             'search_fields', 'title')
-        # TODO: this
-        # search_lang = self.r_handler.get_query_argument('lang', 'English')
-        type = self.r_handler.get_query_argument('type', None)
+        search_lang = self.r_handler.get_query_argument('lang', None)
+        type_constraint = self.r_handler.get_query_argument('type', None)
 
         if search_term is not None:
             for search_field in search_fields.split(','):
                 search_col = getattr(model_cls, search_field)
                 if str(search_col.type) == 'JSONB':
-                    query = (
-                        query
-                        .select_from(
-                            model_cls,
-                            func.jsonb_each_text(search_col).alias('search'),
-                        )
-                        .filter(text(
-                            "search.value ILIKE '%{}%'".format(search_term)
-                        ))
+                    query = jsonb_column_ilike(
+                        query=query,
+                        model_cls=model_cls,
+                        column=search_col,
+                        search_term=search_term,
+                        language=search_lang,
                     )
                 else:
                     query = (
@@ -135,8 +131,8 @@ class BaseResource(TornadoResource):
         if deleted.lower() != 'true':
             query = query.filter(model_cls.deleted == false())
 
-        if type is not None:
-            query = query.filter(model_cls.type_constraint == type)
+        if type_constraint is not None:
+            query = query.filter(model_cls.type_constraint == type_constraint)
 
         if limit is not None:
             query = query.limit(int(limit))

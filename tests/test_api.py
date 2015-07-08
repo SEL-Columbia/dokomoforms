@@ -11,6 +11,7 @@ from tornado.escape import json_decode, json_encode
 from tests.util import DokoHTTPTest, setUpModule, tearDownModule
 
 from dokomoforms.models import Submission, Survey, Node, SurveyCreator
+import dokomoforms.models as models
 
 utils = (setUpModule, tearDownModule)
 
@@ -931,6 +932,44 @@ class TestNodeApi(DokoHTTPTest):
             [True] * 3,
             msg="Some of the returned titles don't contain the search term."
         )
+
+    def test_list_nodes_with_title_and_language_search(self):
+        with self.session.begin():
+            self.session.add_all((
+                models.construct_node(
+                    languages=['French'],
+                    title={'French': 'integer'},
+                    hint={'French': ''},
+                    type_constraint='integer',
+                ),
+                models.construct_node(
+                    languages=['French'],
+                    title={'French': 'decimal'},
+                    hint={'French': ''},
+                    type_constraint='decimal',
+                ),
+            ))
+
+        search_term = 'integer'
+        # url to test
+        url = self.api_root + '/nodes'
+        query_params = {
+            'search': search_term,
+            'search_fields': 'title',
+            'lang': 'French',
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        response_body = json_decode(response.body)
+        nodes = response_body['nodes']
+
+        self.assertEqual(len(nodes), 1)
+        self.assertEqual(nodes[0]['title'], {'French': 'integer'})
 
     def test_list_nodes_with_type_filter(self):
         type_constraint = 'text'
