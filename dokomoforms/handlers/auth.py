@@ -72,7 +72,8 @@ class Login(BaseHandler):
 
         try:
             user = (
-                self.session.query(User.id, User.name)
+                self.session
+                .query(User.id, User.name)
                 .join(Email)
                 .filter(Email.address == data['email'])
                 .one()
@@ -126,7 +127,7 @@ class GenerateToken(BaseHandler):  # We should probably do this in JS
         user = self.current_user_model
         with self.session.begin():
             user.token = bcrypt_sha256.encrypt(token).encode()
-            user.token_expiration = (datetime.now() + timedelta(days=60))
+            user.token_expiration = datetime.now() + timedelta(days=60)
             self.session.add(user)
         self.write(OrderedDict((
             ('token', token),

@@ -1,5 +1,4 @@
 """API tests"""
-
 from datetime import datetime, timedelta
 
 import dateutil.parser
@@ -12,6 +11,7 @@ from tests.util import DokoHTTPTest, setUpModule, tearDownModule
 
 from dokomoforms.models import Submission, Survey, Node, SurveyCreator
 import dokomoforms.models as models
+from dokomoforms.api.base import BaseResource
 
 utils = (setUpModule, tearDownModule)
 
@@ -29,6 +29,149 @@ TODO:
 TOTAL_SURVEYS = 14
 TOTAL_SUBMISSIONS = 112
 TOTAL_NODES = 16
+
+
+class TestAuthentication(DokoHTTPTest):
+    def test_bounce(self):
+        url = self.api_root + '/surveys'
+        response = self.fetch(url, method='GET', _logged_in_user=None)
+        self.assertEqual(response.code, 401)
+
+    def test_is_authenticated_logged_in(self):
+        fake_resource = lambda: None
+        fake_r_handler = lambda: None
+        fake_r_handler.current_user = object()
+        fake_resource.r_handler = fake_r_handler
+        self.assertTrue(BaseResource.is_authenticated(fake_resource))
+
+    def test_is_authenticated_api_token(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.token = bcrypt_sha256.encrypt('a').encode()
+            user.token_expiration = datetime.now() + timedelta(days=1)
+            self.session.add(user)
+
+        fake_resource = lambda: None
+        fake_r_handler = lambda: None
+        fake_r_handler.current_user = None
+        fake_request = lambda: None
+        fake_request.headers = {
+            'Token': 'a',
+            'Email': 'test_creator@fixtures.com',
+        }
+        fake_r_handler.request = fake_request
+        fake_resource.r_handler = fake_r_handler
+        fake_resource.session = self.session
+
+        self.assertTrue(BaseResource.is_authenticated(fake_resource))
+
+    def test_is_authenticated_wrong_user(self):
+        fake_resource = lambda: None
+        fake_r_handler = lambda: None
+        fake_r_handler.current_user = None
+        fake_request = lambda: None
+        fake_request.headers = {
+            'Token': 'b',
+            'Email': 'wrong',
+        }
+        fake_r_handler.request = fake_request
+        fake_resource.r_handler = fake_r_handler
+        fake_resource.session = self.session
+
+        self.assertFalse(BaseResource.is_authenticated(fake_resource))
+
+    def test_is_authenticated_missing_api_token(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.token = bcrypt_sha256.encrypt('a').encode()
+            user.token_expiration = datetime.now() + timedelta(days=1)
+            self.session.add(user)
+
+        fake_resource = lambda: None
+        fake_r_handler = lambda: None
+        fake_r_handler.current_user = None
+        fake_request = lambda: None
+        fake_request.headers = {
+            'Email': 'test_creator@fixtures.com',
+        }
+        fake_r_handler.request = fake_request
+        fake_resource.r_handler = fake_r_handler
+        fake_resource.session = self.session
+
+        self.assertFalse(BaseResource.is_authenticated(fake_resource))
+
+    def test_is_authenticated_token_has_not_been_generated(self):
+        fake_resource = lambda: None
+        fake_r_handler = lambda: None
+        fake_r_handler.current_user = None
+        fake_request = lambda: None
+        fake_request.headers = {
+            'Token': 'b',
+            'Email': 'test_creator@fixtures.com',
+        }
+        fake_r_handler.request = fake_request
+        fake_resource.r_handler = fake_r_handler
+        fake_resource.session = self.session
+
+        self.assertFalse(BaseResource.is_authenticated(fake_resource))
+
+    def test_is_authenticated_wrong_api_token(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.token = bcrypt_sha256.encrypt('a').encode()
+            user.token_expiration = datetime.now() + timedelta(days=1)
+            self.session.add(user)
+
+        fake_resource = lambda: None
+        fake_r_handler = lambda: None
+        fake_r_handler.current_user = None
+        fake_request = lambda: None
+        fake_request.headers = {
+            'Token': 'b',
+            'Email': 'test_creator@fixtures.com',
+        }
+        fake_r_handler.request = fake_request
+        fake_resource.r_handler = fake_r_handler
+        fake_resource.session = self.session
+
+        self.assertFalse(BaseResource.is_authenticated(fake_resource))
+
+    def test_is_authenticated_expired_api_token(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.token = bcrypt_sha256.encrypt('a').encode()
+            user.token_expiration = datetime.now() - timedelta(days=1)
+            self.session.add(user)
+
+        fake_resource = lambda: None
+        fake_r_handler = lambda: None
+        fake_r_handler.current_user = None
+        fake_request = lambda: None
+        fake_request.headers = {
+            'Token': 'a',
+            'Email': 'test_creator@fixtures.com',
+        }
+        fake_r_handler.request = fake_request
+        fake_resource.r_handler = fake_r_handler
+        fake_resource.session = self.session
+
+        self.assertFalse(BaseResource.is_authenticated(fake_resource))
 
 
 class TestSurveyApi(DokoHTTPTest):
@@ -1531,7 +1674,6 @@ class TestNodeApi(DokoHTTPTest):
 
 
 class TestUserApi(DokoHTTPTest):
-
     def test_create_api_token(self):
         user = (
             self.session
@@ -1563,6 +1705,47 @@ class TestUserApi(DokoHTTPTest):
         method = 'GET'
         # make request
         response = self.fetch(url, method=method)
-        id(response)
-        # test response
-        self.fail("Not yet implemented.")
+        token = json_decode(response.body)['token']
+
+        api_url = self.api_root + '/surveys'
+        api_response = self.fetch(
+            api_url, method='GET', _logged_in_user=None,
+            headers={'Email': 'test_creator@fixtures.com', 'Token': token},
+        )
+        self.assertEqual(
+            api_response.body, self.fetch(api_url, method='GET').body
+        )
+
+    def test_use_wrong_api_token(self):
+        api_url = self.api_root + '/surveys'
+        api_response = self.fetch(
+            api_url, method='GET', _logged_in_user=None,
+            headers={'Email': 'test_creator@fixtures.com', 'Token': 'wrong'},
+        )
+
+        self.assertEqual(api_response.code, 401)
+
+    def test_use_expired_api_token(self):
+        # url to test
+        url = self.api_root + '/user/generate-api-token'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        token = json_decode(response.body)['token']
+
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.token_expiration = datetime.now() - timedelta(days=1)
+
+        api_url = self.api_root + '/surveys'
+        api_response = self.fetch(
+            api_url, method='GET', _logged_in_user=None,
+            headers={'Email': 'test_creator@fixtures.com', 'Token': token},
+        )
+
+        self.assertEqual(api_response.code, 401)

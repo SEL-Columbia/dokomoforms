@@ -1,11 +1,17 @@
 """The base class of the TornadoResource classes in the api module."""
+from time import localtime
+
+from passlib.hash import bcrypt_sha256
+
 from restless.tnd import TornadoResource
 import restless.exceptions as exc
 
 from sqlalchemy.sql.expression import false
+from sqlalchemy.orm.exc import NoResultFound
 
 from dokomoforms.api.serializer import ModelJSONSerializer
 from dokomoforms.handlers.util import BaseAPIHandler
+from dokomoforms.models import SurveyCreator, Email
 from dokomoforms.models.util import jsonb_column_ilike
 
 """
@@ -79,20 +85,34 @@ class BaseResource(TornadoResource):
         return full_response
 
     def is_authenticated(self):
-        """TODO: Return whether the request has been authenticated."""
-        if self.request_method() == 'GET':
+        """Return whether the request has been authenticated."""
+        # A logged-in user has already authenticated.
+        if self.r_handler.current_user is not None:
             return True
 
-        # Require logged-in user to POST/PUT/DELETE
-        return self.r_handler.current_user is not None
+        # A SurveyCreator can log in with a token.
+        token = self.r_handler.request.headers.get('Token', None)
+        email = self.r_handler.request.headers.get('Email', None)
+        if (token is not None) and (email is not None):
+            # Get the user's token hash and expiration time.
+            try:
+                user = (
+                    self.session
+                    .query(SurveyCreator.token, SurveyCreator.token_expiration)
+                    .join(Email)
+                    .filter(Email.address == email)
+                    .one()
+                )
+            except NoResultFound:
+                return False
+            # Check that the token has not expired
+            if user.token_expiration.timetuple() < localtime():
+                return False
+            # Check the token
+            token_exists = user.token is not None
+            return token_exists and bcrypt_sha256.verify(token, user.token)
 
-        # Alternatively, you could check an API key. (Need a model for this...)
-        # from myapp.models import ApiKey
-        # try:
-        #     key = ApiKey.objects.get(key=self.request.GET.get('api_key'))
-        #     return True
-        # except ApiKey.DoesNotExist:
-        #     return False
+        return False
 
     def _generate_list_response(self, model_cls, **kwargs):
         """Return a query for a list response.
