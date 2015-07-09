@@ -1,4 +1,5 @@
 """API tests"""
+from collections import OrderedDict
 from datetime import datetime, timedelta
 import uuid
 
@@ -48,7 +49,10 @@ class TestErrorHandling(DokoHTTPTest):
         response = self.fetch(url, method=method)
         # test response
         self.assertEqual(response.code, 400)
-        self.assertIn('invalid', json_decode(response.body)['error'])
+        self.assertIn(
+            'invalid', json_decode(response.body)['error'],
+            msg=json_decode(response.body)
+        )
 
     def test_not_found(self):
         survey_id = str(uuid.uuid4())
@@ -793,7 +797,7 @@ class TestSurveyApi(DokoHTTPTest):
         # test response
         submission_list = json_decode(response.body)
 
-        self.assertTrue('submissions' in submission_list)
+        self.assertIn('submissions', submission_list, msg=submission_list)
         self.assertTrue('survey_id' in submission_list)
 
         self.assertFalse('error' in submission_list)
@@ -875,6 +879,61 @@ class TestSurveyApi(DokoHTTPTest):
     #    response = self.fetch(url, method=method)
     #    # test response
     #    self.assertTrue(response.code == 401)
+
+    def test_get_single_survey_with_specific_fields(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to tests
+        url = self.api_root + '/surveys/' + survey_id
+        query_params = {
+            'fields': 'title,creator_name'
+        }
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        survey_dict = json_decode(response.body)
+        self.assertEqual(
+            survey_dict,
+            OrderedDict((
+                ('title', OrderedDict((('English', 'single_survey'),))),
+                ('creator_name', 'test_user'),
+            ))
+        )
+
+    def test_list_surveys_with_specific_fields(self):
+        # url to tests
+        url = self.api_root + '/surveys'
+        query_params = {
+            'fields': 'deleted,creator_name',
+            'limit': 2,
+        }
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        survey_dict = json_decode(response.body)
+        self.assertEqual(
+            survey_dict,
+            OrderedDict((
+                (
+                    'surveys',
+                    [
+                        OrderedDict((
+                            ('deleted', False), ('creator_name', 'test_user'))
+                        ),
+                        OrderedDict((
+                            ('deleted', False), ('creator_name', 'test_user'))
+                        ),
+                    ],
+                ),
+                ('fields', 'deleted,creator_name'),
+                ('limit', 2),
+            ))
+        )
 
 
 class TestSubmissionApi(DokoHTTPTest):
@@ -1079,7 +1138,7 @@ class TestNodeApi(DokoHTTPTest):
 
         node_dict = json_decode(response.body)
 
-        self.assertTrue('nodes' in node_dict)
+        self.assertIn('nodes', node_dict, msg=node_dict)
         self.assertTrue('limit' in node_dict)
         self.assertEqual(node_dict['limit'], limit)
         self.assertEqual(len(node_dict['nodes']), limit)
@@ -1127,6 +1186,7 @@ class TestNodeApi(DokoHTTPTest):
         response = self.fetch(url, method=method)
         # test response
         response_body = json_decode(response.body)
+        self.assertIn('nodes', response_body, msg=response_body)
         nodes = response_body['nodes']
 
         self.assertEqual(len(nodes), 3)
@@ -1169,6 +1229,7 @@ class TestNodeApi(DokoHTTPTest):
         response = self.fetch(url, method=method)
         # test response
         response_body = json_decode(response.body)
+        self.assertIn('nodes', response_body, msg=response_body)
         nodes = response_body['nodes']
 
         self.assertEqual(len(nodes), 1)

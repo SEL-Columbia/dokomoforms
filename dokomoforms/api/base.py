@@ -8,23 +8,26 @@ import restless.exceptions as exc
 
 from sqlalchemy.sql.expression import false
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Query
 from sqlalchemy.orm.exc import NoResultFound
 
 from dokomoforms.api.serializer import ModelJSONSerializer
 from dokomoforms.handlers.util import BaseAPIHandler
 from dokomoforms.models import SurveyCreator, Email
-from dokomoforms.models.util import jsonb_column_ilike
+from dokomoforms.models.util import column_search, get_asdict_subset
 from dokomoforms.exc import DokomoError
 
-"""
-A list of the expected query arguments
-"""
-QUERY_ARGS = [
-    'limit',
-    'offset',
-    'type',
-    'draw'
-]
+# TODO: Find out if it is OK to remove these. @jmwohl
+# """
+# A list of the expected query arguments
+# """
+# QUERY_ARGS = [
+#     'limit',
+#     'offset',
+#     'type',
+#     'draw',
+#     'fields',
+# ]
 
 
 class BaseResource(TornadoResource):
@@ -46,17 +49,6 @@ class BaseResource(TornadoResource):
     # The name of the property for the array of objects returned in a json list
     objects_key = 'objects'
 
-    def handle_error(self, err):
-        """Generate a serialized error message.
-
-        This turns ValueError, TypeError, SQLAlchemyError, and DokomoError into
-        400 BAD REQUEST instead of 500 INTERNAL SERVER ERROR.
-        """
-        understood = (ValueError, TypeError, SQLAlchemyError, DokomoError)
-        if isinstance(err, understood):
-            err = exc.BadRequest(err)
-        return super().handle_error(err)
-
     @property
     def session(self):
         """The handler's session."""
@@ -71,6 +63,39 @@ class BaseResource(TornadoResource):
     def current_user(self):
         """The handler's current_user."""
         return self.r_handler.current_user
+
+    def _query_arg(self, argument_name, output=None, default=None):
+        """Get a useful query parameter argument."""
+        arg = self.r_handler.get_query_argument(argument_name, None)
+
+        # Return default if the argument was not given.
+        if arg is None:
+            return default
+
+        # Convert 'true'/'false' argument into True or False
+        if output is bool:
+            return arg.lower() == 'true'
+
+        # Convert a comma-separated list to a list of strings
+        if output is list:
+            return arg.split(',')
+
+        # Apply the parsing function if supplied.
+        if output is not None:
+            return output(arg)
+
+        return arg
+
+    def handle_error(self, err):
+        """Generate a serialized error message.
+
+        This turns ValueError, TypeError, SQLAlchemyError, and DokomoError into
+        400 BAD REQUEST instead of 500 INTERNAL SERVER ERROR.
+        """
+        understood = (ValueError, TypeError, SQLAlchemyError, DokomoError)
+        if isinstance(err, understood):
+            err = exc.BadRequest(err)
+        return super().handle_error(err)
 
     def wrap_list_response(self, data):
         """Wrap a list response in a dict.
@@ -127,6 +152,37 @@ class BaseResource(TornadoResource):
 
         return False
 
+    def _fields_filter(self, model_or_models, is_detail=True):
+        """Filter the fields on the given models.
+
+        TODO: Confirm that this is not a performance bottleneck.
+        """
+        fields = self._query_arg('fields', list)
+
+        # No fields specified -> return them all.
+        if fields is None:
+            # Single model result
+            if is_detail:
+                return model_or_models
+
+            # List result
+            if isinstance(model_or_models, Query):
+                return model_or_models.all()
+            return list(model_or_models)
+
+        if is_detail:
+            the_model = model_or_models
+            return get_asdict_subset(the_model, fields)
+        models = model_or_models
+        return [get_asdict_subset(model, fields) for model in models]
+
+    def _detail(self, model_cls, model_id):
+        """Return a single instance of a model."""
+        model = self.session.query(model_cls).get(model_id)
+        if model is None:
+            raise exc.NotFound()
+        return self._fields_filter(model)
+
     def _generate_list_response(self, model_cls, **kwargs):
         """Return a query for a list response.
 
@@ -135,45 +191,55 @@ class BaseResource(TornadoResource):
         """
         query = self.session.query(model_cls)
 
-        limit = self.r_handler.get_query_argument('limit', None)
-        offset = self.r_handler.get_query_argument('offset', None)
-        deleted = self.r_handler.get_query_argument('show_deleted', 'false')
-        search_term = self.r_handler.get_query_argument('search', None)
-        search_fields = self.r_handler.get_query_argument(
-            'search_fields', 'title')
-        search_lang = self.r_handler.get_query_argument('lang', None)
-        type_constraint = self.r_handler.get_query_argument('type', None)
+        limit = self._query_arg('limit', int)
+        offset = self._query_arg('offset', int)
+        deleted = self._query_arg('show_deleted', bool, False)
+        search_term = self._query_arg('search')
+        regex = self._query_arg('regex', bool, False)
+        search_fields = self._query_arg(
+            'search_fields', list, default=['title']
+        )
+        search_lang = self._query_arg('lang')
+        type_constraint = self._query_arg('type')
 
         if search_term is not None:
-            for search_field in search_fields.split(','):
+            for search_field in search_fields:
                 search_col = getattr(model_cls, search_field)
-                if str(search_col.type) == 'JSONB':
-                    query = jsonb_column_ilike(
-                        query=query,
-                        model_cls=model_cls,
-                        column=search_col,
-                        search_term=search_term,
-                        language=search_lang,
-                    )
-                else:
-                    query = (
-                        query
-                        .filter(search_col.ilike('%{}%'.format(search_term)))
-                    )
+                query = column_search(
+                    query,
+                    model_cls=model_cls,
+                    column=search_col,
+                    search_term=search_term,
+                    language=search_lang,
+                    regex=regex,
+                )
 
-        if deleted.lower() != 'true':
+        if not deleted:
             query = query.filter(model_cls.deleted == false())
 
         if type_constraint is not None:
             query = query.filter(model_cls.type_constraint == type_constraint)
 
         if limit is not None:
-            query = query.limit(int(limit))
+            query = query.limit(limit)
 
         if offset is not None:
-            query = query.offset(int(offset))
+            query = query.offset(offset)
 
-        return query.all()
+        return self._fields_filter(query, is_detail=False)
+
+    def _update(self, model_cls, model_id):
+        """Update a model."""
+        model = self.session.query(model_cls).get(model_id)
+
+        if model is None:
+            raise exc.NotFound()
+
+        with self.session.begin():
+            for attribute, value in self.data.items():
+                setattr(model, attribute, value)
+            self.session.add(model)
+        return model
 
     def _add_meta_props(self, response):
         """Add metadata to the response.
@@ -198,7 +264,7 @@ class BaseResource(TornadoResource):
         TODO: this will require a bit more sophistication, since we probably
         don't want to just reflect query params willy nilly.
         """
-        for prop in QUERY_ARGS:
+        for prop in self.r_handler.request.arguments:
             prop_value = self.r_handler.get_query_argument(prop, None)
             if prop_value is not None:
                 if prop_value.isdigit():
@@ -206,16 +272,3 @@ class BaseResource(TornadoResource):
                 response[prop] = prop_value
 
         return response
-
-    def _update(self, model_cls, model_id):
-        """Update a model."""
-        model = self.session.query(model_cls).get(model_id)
-
-        if model is None:
-            raise exc.NotFound()
-
-        with self.session.begin():
-            for attribute, value in self.data.items():
-                setattr(model, attribute, value)
-            self.session.add(model)
-        return model

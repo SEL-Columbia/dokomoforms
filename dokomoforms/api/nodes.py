@@ -25,10 +25,7 @@ class NodeResource(BaseResource):
 
     def detail(self, node_id):
         """Return a single node."""
-        node = self.session.query(Node).get(node_id)
-        if node is None:
-            raise exc.NotFound()
-        return node
+        return self._detail(Node, node_id)
 
     def create(self):
         """Create a new node."""

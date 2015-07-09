@@ -71,10 +71,7 @@ class SurveyResource(BaseResource):
 
     def detail(self, survey_id):
         """Return a single survey."""
-        survey = self.session.query(Survey).get(survey_id)
-        if survey is None:
-            raise exc.NotFound()
-        return survey
+        return self._detail(Survey, survey_id)
 
     def create(self):
         """Create a new survey.

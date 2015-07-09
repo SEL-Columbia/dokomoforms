@@ -41,10 +41,7 @@ class SubmissionResource(BaseResource):
     # GET /api/submissions/<submission_id>
     def detail(self, submission_id):
         """Return a single submission."""
-        submission = self.session.query(Submission).get(submission_id)
-        if not submission:
-            raise exc.NotFound()
-        return submission
+        return self._detail(Submission, submission_id)
 
     # POST /api/submissions/
     def create(self):
