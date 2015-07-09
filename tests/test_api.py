@@ -1,5 +1,6 @@
 """API tests"""
 from datetime import datetime, timedelta
+import uuid
 
 import dateutil.parser
 
@@ -29,6 +30,37 @@ TODO:
 TOTAL_SURVEYS = 14
 TOTAL_SUBMISSIONS = 112
 TOTAL_NODES = 16
+
+
+class TestErrorHandling(DokoHTTPTest):
+    def test_bad_value_type(self):
+        # url to test
+        offset = 'five'
+        url = self.api_root + '/surveys'
+        query_params = {
+            'offset': offset
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        self.assertEqual(response.code, 400)
+        self.assertIn('invalid', json_decode(response.body)['error'])
+
+    def test_not_found(self):
+        survey_id = str(uuid.uuid4())
+        # url to tests
+        url = self.api_root + '/surveys/' + survey_id
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        self.assertEqual(response.code, 404)
+        self.assertIn('not found', json_decode(response.body)['error'])
 
 
 class TestAuthentication(DokoHTTPTest):
@@ -371,6 +403,34 @@ class TestSurveyApi(DokoHTTPTest):
         self.assertTrue('last_update_time' in survey_dict)
 
         self.assertFalse("error" in survey_dict)
+
+    def test_create_survey_with_nonsense_node_definition(self):
+        # url to test
+        url = self.api_root + '/surveys'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "metadata": {},
+            "survey_type": "public",
+            "default_language": "English",
+            "title": {"English": "Test_Survey"},
+            "nodes": [
+                {
+                    "not a title": {"English": "test_time_node"},
+                    "deleted": False
+                }
+            ]
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+
+        # test response
+        self.assertEqual(response.code, 400)
+        self.assertIn('missing', json_decode(response.body)['error'])
 
     def test_create_survey_with_node_id(self):
         node_id = "60e56824-910c-47aa-b5c0-71493277b43f"
@@ -720,7 +780,7 @@ class TestSurveyApi(DokoHTTPTest):
 
         self.assertTrue('error' in submission_dict)
 
-        self.assertEqual(response.code, 500)
+        self.assertEqual(response.code, 400)
 
     def test_list_submissions_to_survey(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
@@ -1152,7 +1212,7 @@ class TestNodeApi(DokoHTTPTest):
         # test response
         node_dict = json_decode(response.body)
 
-        self.assertEqual(response.code, 500)
+        self.assertEqual(response.code, 400)
         self.assertTrue('error' in node_dict)
 
     def test_get_single_node(self):

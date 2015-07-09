@@ -7,12 +7,14 @@ from restless.tnd import TornadoResource
 import restless.exceptions as exc
 
 from sqlalchemy.sql.expression import false
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
 
 from dokomoforms.api.serializer import ModelJSONSerializer
 from dokomoforms.handlers.util import BaseAPIHandler
 from dokomoforms.models import SurveyCreator, Email
 from dokomoforms.models.util import jsonb_column_ilike
+from dokomoforms.exc import DokomoError
 
 """
 A list of the expected query arguments
@@ -43,6 +45,17 @@ class BaseResource(TornadoResource):
 
     # The name of the property for the array of objects returned in a json list
     objects_key = 'objects'
+
+    def handle_error(self, err):
+        """Generate a serialized error message.
+
+        This turns ValueError, TypeError, SQLAlchemyError, and DokomoError into
+        400 BAD REQUEST instead of 500 INTERNAL SERVER ERROR.
+        """
+        understood = (ValueError, TypeError, SQLAlchemyError, DokomoError)
+        if isinstance(err, understood):
+            err = exc.BadRequest(err)
+        return super().handle_error(err)
 
     @property
     def session(self):
