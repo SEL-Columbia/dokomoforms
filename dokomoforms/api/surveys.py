@@ -32,6 +32,8 @@ class SurveyResource(BaseResource):
     """
 
     # Set the property name on the outputted json
+    resource_type = Survey
+    default_sort_column_name = 'created_on'
     objects_key = 'surveys'
 
     http_methods = {
@@ -64,15 +66,6 @@ class SurveyResource(BaseResource):
         }
     }
 
-    def list(self):
-        """Return a list of surveys."""
-        response = self._generate_list_response(Survey, 'created_on')
-        return response
-
-    def detail(self, survey_id):
-        """Return a single survey."""
-        return self._detail(Survey, survey_id)
-
     def create(self):
         """Create a new survey.
 
@@ -90,21 +83,6 @@ class SurveyResource(BaseResource):
             self.session.add(survey)
 
         return survey
-
-    def update(self, survey_id):
-        """TODO: how should this behave? Good question."""
-        return self._update(Survey, survey_id)
-
-    def delete(self, survey_id):
-        """Set survey.deleted = True.
-
-        Does NOT remove the survey from the DB.
-        """
-        with self.session.begin():
-            survey = self.session.query(Survey).get(survey_id)
-            if not survey:
-                raise exc.NotFound()
-            survey.deleted = True
 
     def submit(self, survey_id):
         """List all submissions for a survey."""
@@ -150,9 +128,7 @@ class SurveyResource(BaseResource):
 
     def list_submissions(self, survey_id):
         """List all submissions for a survey."""
-        response_list = self._generate_list_response(
-            Submission, 'save_time', where=(Survey.id == survey_id)
-        )
+        response_list = self.list(where=(Survey.id == survey_id))
 
         response = {
             'survey_id': survey_id,
@@ -247,12 +223,12 @@ class SurveyResource(BaseResource):
             })
         return response
 
-    def prepare(self, data):
-        """Determine which fields to return.
+    # def prepare(self, data):
+    #     """Determine which fields to return.
 
-        If we don't prep the data, all the fields get returned!
+    #     If we don't prep the data, all the fields get returned!
 
-        We can subtract fields here if there are fields which shouldn't
-        be included in the API.
-        """
-        return data
+    #     We can subtract fields here if there are fields which shouldn't
+    #     be included in the API.
+    #     """
+    #     return data

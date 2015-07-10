@@ -1,6 +1,4 @@
 """TornadoResource class for dokomoforms.models.node.Node subclasses."""
-import restless.exceptions as exc
-
 from dokomoforms.api import BaseResource
 from dokomoforms.models import (
     Node, Choice, construct_node
@@ -15,17 +13,9 @@ class NodeResource(BaseResource):
     ModelJSONEncoder for json conversion.
     """
 
-    # Set the property name on the outputted json
+    resource_type = Node
+    default_sort_column_name = 'last_update_time'
     objects_key = 'nodes'
-
-    def list(self):
-        """Return a list of nodes."""
-        response = self._generate_list_response(Node, 'last_update_time')
-        return response
-
-    def detail(self, node_id):
-        """Return a single node."""
-        return self._detail(Node, node_id)
 
     def create(self):
         """Create a new node."""
@@ -44,27 +34,12 @@ class NodeResource(BaseResource):
 
         return node
 
-    def update(self, node_id):
-        """TODO: how should this behave? Good question."""
-        return self._update(Node, node_id)
+    # def prepare(self, data):
+    #     """Determine which fields to return.
 
-    def delete(self, node_id):
-        """Set node.deleted = True.
+    #     If we don't prep the data, all the fields get returned!
 
-        Does NOT remove the node from the DB.
-        """
-        with self.session.begin():
-            node = self.session.query(Node).get(node_id)
-            if node is None:
-                raise exc.NotFound()
-            node.deleted = True
-
-    def prepare(self, data):
-        """Determine which fields to return.
-
-        If we don't prep the data, all the fields get returned!
-
-        We can subtract fields here if there are fields which shouldn't
-        be included in the API.
-        """
-        return data
+    #     We can subtract fields here if there are fields which shouldn't
+    #     be included in the API.
+    #     """
+    #     return data

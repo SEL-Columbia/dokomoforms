@@ -30,18 +30,9 @@ class SubmissionResource(BaseResource):
     """
 
     # Set the property name on the outputted json
+    resource_type = Submission
+    default_sort_column_name = 'save_time'
     objects_key = 'submissions'
-
-    # GET /api/submissions/
-    def list(self):
-        """Return a list of submissions."""
-        response = self._generate_list_response(Submission, 'save_time')
-        return response
-
-    # GET /api/submissions/<submission_id>
-    def detail(self, submission_id):
-        """Return a single submission."""
-        return self._detail(Submission, submission_id)
 
     # POST /api/submissions/
     def create(self):
@@ -98,20 +89,3 @@ class SubmissionResource(BaseResource):
             self.session.add(submission)
 
         return submission
-
-    # PUT /api/submissions/<submission_id>/
-    def update(self, submission_id):
-        """TODO: Update a submission."""
-        return self._update(Submission, submission_id)
-
-    # DELETE /api/submissions/<submission_id>/
-    def delete(self, submission_id):
-        """Set submission.deleted = True.
-
-        Does NOT remove the submission from the DB.
-        """
-        with self.session.begin():
-            submission = self.session.query(Submission).get(submission_id)
-            if not submission:
-                raise exc.NotFound()
-            submission.deleted = True

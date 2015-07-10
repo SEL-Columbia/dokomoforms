@@ -1,4 +1,5 @@
 """The base class of the TornadoResource classes in the api module."""
+from abc import ABCMeta, abstractmethod
 from time import localtime
 
 from passlib.hash import bcrypt_sha256
@@ -31,7 +32,7 @@ from dokomoforms.exc import DokomoError
 # ]
 
 
-class BaseResource(TornadoResource):
+class BaseResource(TornadoResource, metaclass=ABCMeta):
 
     """Set up the basics for the model resource.
 
@@ -47,8 +48,20 @@ class BaseResource(TornadoResource):
     # The serializer is used to serialize / deserialize models to json
     serializer = ModelJSONSerializer()
 
-    # The name of the property for the array of objects returned in a json list
-    objects_key = 'objects'
+    @property
+    @abstractmethod
+    def resource_type(self):
+        """The model class for the resource."""
+
+    @property
+    @abstractmethod
+    def default_sort_column_name(self):
+        """The default ORDER BY column name for list responses."""
+
+    @property
+    @abstractmethod
+    def objects_key(self):
+        """The key for list responses."""
 
     @property
     def session(self):
@@ -115,9 +128,7 @@ class BaseResource(TornadoResource):
         :returns: A wrapping dict
         :rtype: dict
         """
-        response = {
-            self.objects_key: data
-        }
+        response = {self.objects_key: data}
         # add additional properties to the response object
         full_response = self._add_meta_props(response)
 
@@ -177,21 +188,20 @@ class BaseResource(TornadoResource):
         models = model_or_models
         return [get_asdict_subset(model, fields) for model in models]
 
-    def _detail(self, model_cls, model_id):
+    def detail(self, model_id):
         """Return a single instance of a model."""
-        model = self.session.query(model_cls).get(model_id)
+        model = self.session.query(self.resource_type).get(model_id)
         if model is None:
             raise exc.NotFound()
         return self._fields_filter(model)
 
-    def _generate_list_response(self,
-                                model_cls, default_sort_column_name,
-                                where=None):
-        """Return a query for a list response.
+    def list(self, where=None):
+        """Return a list of instances of this model.
 
         Given a model class, build up the ORM query based on query params
         and return the query result.
         """
+        model_cls = self.resource_type
         query = self.session.query(model_cls)
 
         limit = self._query_arg('limit', int)
@@ -204,10 +214,10 @@ class BaseResource(TornadoResource):
         )
         search_lang = self._query_arg('lang')
 
-        sort_col = default_sort_column_name
+        default_sort = ['{}:DESC'.format(self.default_sort_column_name)]
         order_by = (
             element.split(':') for element in self._query_arg(
-                'order_by', list, default=['{}:DESC'.format(sort_col)]
+                'order_by', list, default=default_sort
             )
         )
 
@@ -247,9 +257,9 @@ class BaseResource(TornadoResource):
 
         return self._fields_filter(query, is_detail=False)
 
-    def _update(self, model_cls, model_id):
+    def update(self, model_id):
         """Update a model."""
-        model = self.session.query(model_cls).get(model_id)
+        model = self.session.query(self.resource_type).get(model_id)
 
         if model is None:
             raise exc.NotFound()
@@ -259,6 +269,14 @@ class BaseResource(TornadoResource):
                 setattr(model, attribute, value)
             self.session.add(model)
         return model
+
+    def delete(self, model_id):
+        """Set the deleted attribute to True. Does not destroy the instance."""
+        with self.session.begin():
+            model = self.session.query(self.resource_type).get(model_id)
+            if model is None:
+                raise exc.NotFound()
+            model.deleted = True
 
     def _add_meta_props(self, response):
         """Add metadata to the response.
