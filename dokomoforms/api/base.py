@@ -1,5 +1,6 @@
 """The base class of the TornadoResource classes in the api module."""
 from abc import ABCMeta, abstractmethod
+from collections import OrderedDict
 from time import localtime
 
 from passlib.hash import bcrypt_sha256
@@ -7,8 +8,9 @@ from passlib.hash import bcrypt_sha256
 from restless.tnd import TornadoResource
 import restless.exceptions as exc
 
-from sqlalchemy import text
+from sqlalchemy import text, func
 from sqlalchemy.sql.expression import false
+from sqlalchemy.sql.functions import count
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Query
 from sqlalchemy.orm.exc import NoResultFound
@@ -103,10 +105,12 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
     def handle_error(self, err):
         """Generate a serialized error message.
 
-        This turns ValueError, TypeError, SQLAlchemyError, and DokomoError into
-        400 BAD REQUEST instead of 500 INTERNAL SERVER ERROR.
+        This turns expected errors into 400 BAD REQUEST instead of 500
+        INTERNAL SERVER ERROR.
         """
-        understood = (ValueError, TypeError, SQLAlchemyError, DokomoError)
+        understood = (
+            ValueError, TypeError, AttributeError, SQLAlchemyError, DokomoError
+        )
         if isinstance(err, understood):
             err = exc.BadRequest(err)
         return super().handle_error(err)
@@ -128,7 +132,14 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         :returns: A wrapping dict
         :rtype: dict
         """
-        response = {self.objects_key: data}
+        response = OrderedDict((
+            (self.objects_key, data[1]),
+            (
+                'total_entries',
+                self.session.query(func.count(self.resource_type.id)).scalar()
+            ),
+            ('filtered_entries', data[0]),
+        ))
         # add additional properties to the response object
         full_response = self._add_meta_props(response)
 
@@ -202,7 +213,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         and return the query result.
         """
         model_cls = self.resource_type
-        query = self.session.query(model_cls)
+        query = self.session.query(model_cls, count().over())
 
         limit = self._query_arg('limit', int)
         offset = self._query_arg('offset', int)
@@ -255,7 +266,12 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         if offset is not None:
             query = query.offset(offset)
 
-        return self._fields_filter(query, is_detail=False)
+        result = query.all()
+        if result:
+            num_filtered = result[0][1]
+            models = [res[0] for res in result]
+            return num_filtered, self._fields_filter(models, is_detail=False)
+        return 0, []
 
     def update(self, model_id):
         """Update a model."""
@@ -301,7 +317,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         TODO: this will require a bit more sophistication, since we probably
         don't want to just reflect query params willy nilly.
         """
-        for prop in self.r_handler.request.arguments:
+        for prop in sorted(self.r_handler.request.arguments):
             prop_value = self.r_handler.get_query_argument(prop, None)
             if prop_value is not None:
                 if prop_value.isdigit():

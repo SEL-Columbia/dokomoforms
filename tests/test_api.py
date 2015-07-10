@@ -1,6 +1,7 @@
 """API tests"""
 from collections import OrderedDict
 from datetime import datetime, timedelta
+import json
 import uuid
 
 import dateutil.parser
@@ -48,7 +49,7 @@ class TestErrorHandling(DokoHTTPTest):
         # make request
         response = self.fetch(url, method=method)
         # test response
-        self.assertEqual(response.code, 400)
+        self.assertEqual(response.code, 400, msg=response.body)
         self.assertIn(
             'invalid', json_decode(response.body)['error'],
             msg=json_decode(response.body)
@@ -902,6 +903,20 @@ class TestSurveyApi(DokoHTTPTest):
             ))
         )
 
+    def test_surveys_dont_have_a_type_constraint(self):
+        # url to tests
+        url = self.api_root + '/surveys'
+        query_params = {
+            'type': 'integer',
+        }
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        self.assertEqual(response.code, 400)
+        self.assertIn('has no attribute', json_decode(response.body)['error'])
+
     def test_list_surveys_with_specific_fields(self):
         # url to tests
         url = self.api_root + '/surveys'
@@ -915,7 +930,9 @@ class TestSurveyApi(DokoHTTPTest):
         # make request
         response = self.fetch(url, method=method)
         # test response
-        survey_dict = json_decode(response.body)
+        survey_dict = json.loads(
+            response.body.decode(), object_pairs_hook=OrderedDict
+        )
         self.assertEqual(
             survey_dict,
             OrderedDict((
@@ -930,9 +947,72 @@ class TestSurveyApi(DokoHTTPTest):
                         ),
                     ],
                 ),
+                ('total_entries', 14),
+                ('filtered_entries', 14),
                 ('fields', 'deleted,creator_name'),
                 ('limit', 2),
-            ))
+            )),
+            msg=survey_dict
+        )
+
+    def test_list_surveys_with_specific_fields_and_filter(self):
+        # url to tests
+        url = self.api_root + '/surveys'
+        query_params = OrderedDict((
+            ('fields', 'deleted,creator_name'),
+            ('search', 'a'),
+        ))
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        survey_dict = json.loads(
+            response.body.decode(), object_pairs_hook=OrderedDict
+        )
+        self.assertEqual(len(survey_dict['surveys']), 6)
+        self.assertEqual(survey_dict['total_entries'], 14)
+        self.assertEqual(survey_dict['filtered_entries'], 6)
+
+    def test_list_surveys_with_specific_fields_and_filter_and_limit(self):
+        # url to tests
+        url = self.api_root + '/surveys'
+        query_params = OrderedDict((
+            ('fields', 'deleted,creator_name'),
+            ('search', 'a'),
+            ('limit', 2),
+        ))
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        survey_dict = json.loads(
+            response.body.decode(), object_pairs_hook=OrderedDict
+        )
+        self.assertEqual(
+            survey_dict,
+            OrderedDict((
+                (
+                    'surveys',
+                    [
+                        OrderedDict((
+                            ('deleted', False), ('creator_name', 'test_user'))
+                        ),
+                        OrderedDict((
+                            ('deleted', False), ('creator_name', 'test_user'))
+                        ),
+                    ],
+                ),
+                ('total_entries', 14),
+                ('filtered_entries', 6),
+                ('fields', 'deleted,creator_name'),
+                ('limit', 2),
+                ('search', 'a'),
+            )),
+            msg=survey_dict
         )
 
 
@@ -1414,7 +1494,7 @@ class TestNodeApi(DokoHTTPTest):
         node_dict = json_decode(response.body)
 
         # check that expected keys are present
-        self.assertTrue('id' in node_dict)
+        self.assertIn('id', node_dict, msg=node_dict)
         self.assertTrue('hint' in node_dict)
         self.assertTrue('title' in node_dict)
         self.assertTrue('allow_other' in node_dict)
