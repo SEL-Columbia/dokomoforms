@@ -290,7 +290,7 @@ def last_update_time() -> sa.Column:
 
 
 def column_search(query, *,
-                  model_cls, column, search_term,
+                  model_cls, column_name, search_term,
                   language=None, regex=False) -> 'query':
     """Modify a query to search a column's values (JSONB or TEXT).
 
@@ -304,6 +304,7 @@ def column_search(query, *,
     :param regex: r
     :return: The modified query.
     """
+    column = getattr(model_cls, column_name)
     # JSONB column
     if str(column.type) == 'JSONB':
         # Search across languages
@@ -329,8 +330,8 @@ def column_search(query, *,
         if regex:
             return (
                 query
-                .filter(":col->>:lang ~* :search_term")
-                .params(col=column, lang=language, search_term=search_term)
+                .filter(sa.text("{}->>:lang ~* :search_term".format(column)))
+                .params(lang=language, search_term=search_term)
             )
         return (
             query

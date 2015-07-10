@@ -1235,6 +1235,86 @@ class TestNodeApi(DokoHTTPTest):
         self.assertEqual(len(nodes), 1)
         self.assertEqual(nodes[0]['title'], {'French': 'integer'})
 
+    def test_list_nodes_with_regex_search(self):
+        with self.session.begin():
+            self.session.add_all((
+                models.construct_node(
+                    languages=['French'],
+                    title={'French': '345'},
+                    hint={'French': ''},
+                    type_constraint='integer',
+                ),
+                models.construct_node(
+                    languages=['German'],
+                    title={'German': '678'},
+                    hint={'German': ''},
+                    type_constraint='decimal',
+                ),
+            ))
+
+        search_term = '\d+'
+        # url to test
+        url = self.api_root + '/nodes'
+        query_params = {
+            'search': search_term,
+            'search_fields': 'title',
+            'regex': 'true',
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        response_body = json_decode(response.body)
+        self.assertIn('nodes', response_body, msg=response_body)
+        nodes = response_body['nodes']
+
+        self.assertEqual(len(nodes), 2)
+        self.assertEqual(nodes[0]['title'], {'French': '345'})
+        self.assertEqual(nodes[1]['title'], {'German': '678'})
+
+    def test_list_nodes_with_regex_and_language_search(self):
+        with self.session.begin():
+            self.session.add_all((
+                models.construct_node(
+                    languages=['French'],
+                    title={'French': '345'},
+                    hint={'French': ''},
+                    type_constraint='integer',
+                ),
+                models.construct_node(
+                    languages=['German'],
+                    title={'German': '678'},
+                    hint={'German': ''},
+                    type_constraint='decimal',
+                ),
+            ))
+
+        search_term = '\d+'
+        # url to test
+        url = self.api_root + '/nodes'
+        query_params = {
+            'search': search_term,
+            'search_fields': 'title',
+            'regex': 'true',
+            'lang': 'French',
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        response_body = json_decode(response.body)
+        self.assertIn('nodes', response_body, msg=response_body)
+        nodes = response_body['nodes']
+
+        self.assertEqual(len(nodes), 1)
+        self.assertEqual(nodes[0]['title'], {'French': '345'})
+
     def test_list_nodes_with_type_filter(self):
         type_constraint = 'text'
         # url to test

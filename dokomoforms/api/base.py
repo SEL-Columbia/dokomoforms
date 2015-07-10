@@ -204,11 +204,10 @@ class BaseResource(TornadoResource):
 
         if search_term is not None:
             for search_field in search_fields:
-                search_col = getattr(model_cls, search_field)
                 query = column_search(
                     query,
                     model_cls=model_cls,
-                    column=search_col,
+                    column_name=search_field,
                     search_term=search_term,
                     language=search_lang,
                     regex=regex,
