@@ -35,7 +35,7 @@ class SubmissionResource(BaseResource):
     # GET /api/submissions/
     def list(self):
         """Return a list of submissions."""
-        response = self._generate_list_response(Submission)
+        response = self._generate_list_response(Submission, 'save_time')
         return response
 
     # GET /api/submissions/<submission_id>

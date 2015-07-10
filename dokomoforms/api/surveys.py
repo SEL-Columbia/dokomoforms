@@ -66,7 +66,7 @@ class SurveyResource(BaseResource):
 
     def list(self):
         """Return a list of surveys."""
-        response = self._generate_list_response(Survey)
+        response = self._generate_list_response(Survey, 'created_on')
         return response
 
     def detail(self, survey_id):
@@ -151,7 +151,8 @@ class SurveyResource(BaseResource):
     def list_submissions(self, survey_id):
         """List all submissions for a survey."""
         response_list = self._generate_list_response(
-            Submission, filter=(Survey.id == survey_id))
+            Submission, 'save_time', where=(Survey.id == survey_id)
+        )
 
         response = {
             'survey_id': survey_id,

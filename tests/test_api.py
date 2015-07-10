@@ -1114,7 +1114,7 @@ class TestNodeApi(DokoHTTPTest):
         # test response
         node_dict = json_decode(response.body)
         # check that the expected keys are present
-        self.assertTrue('nodes' in node_dict)
+        self.assertIn('nodes', node_dict, msg=node_dict)
 
         self.assertEqual(len(node_dict['nodes']), TOTAL_NODES)
 
@@ -1195,6 +1195,51 @@ class TestNodeApi(DokoHTTPTest):
             [True] * 3,
             msg="Some of the returned titles don't contain the search term."
         )
+
+    def test_list_nodes_order_by_title(self):
+        with self.session.begin():
+            self.session.add_all((
+                models.construct_node(
+                    languages=['French'],
+                    title={'French': 'ccc'},
+                    hint={'French': ''},
+                    type_constraint='integer',
+                ),
+                models.construct_node(
+                    languages=['German', 'French'],
+                    title={
+                        'French': 'bbb',
+                        'German': 'aaa',
+                    },
+                    hint={'German': '', 'French': ''},
+                    type_constraint='decimal',
+                ),
+            ))
+
+        search_term = '...'
+        # url to test
+        url = self.api_root + '/nodes'
+        query_params = {
+            'search': search_term,
+            'search_fields': 'title',
+            'regex': 'true',
+            'lang': 'French',
+            'order_by': "title->>'French':ASC",
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        response_body = json_decode(response.body)
+        self.assertIn('nodes', response_body, msg=response_body)
+        nodes = response_body['nodes']
+
+        self.assertEqual(len(nodes), 2)
+        self.assertEqual(nodes[0]['title']['French'], 'bbb')
+        self.assertEqual(nodes[1]['title']['French'], 'ccc')
 
     def test_list_nodes_with_title_and_language_search(self):
         with self.session.begin():

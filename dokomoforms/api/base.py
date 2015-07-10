@@ -6,6 +6,7 @@ from passlib.hash import bcrypt_sha256
 from restless.tnd import TornadoResource
 import restless.exceptions as exc
 
+from sqlalchemy import text
 from sqlalchemy.sql.expression import false
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Query
@@ -183,7 +184,9 @@ class BaseResource(TornadoResource):
             raise exc.NotFound()
         return self._fields_filter(model)
 
-    def _generate_list_response(self, model_cls, **kwargs):
+    def _generate_list_response(self,
+                                model_cls, default_sort_column_name,
+                                where=None):
         """Return a query for a list response.
 
         Given a model class, build up the ORM query based on query params
@@ -200,6 +203,14 @@ class BaseResource(TornadoResource):
             'search_fields', list, default=['title']
         )
         search_lang = self._query_arg('lang')
+
+        sort_col = default_sort_column_name
+        order_by = (
+            element.split(':') for element in self._query_arg(
+                'order_by', list, default=['{}:DESC'.format(sort_col)]
+            )
+        )
+
         type_constraint = self._query_arg('type')
 
         if search_term is not None:
@@ -218,6 +229,15 @@ class BaseResource(TornadoResource):
 
         if type_constraint is not None:
             query = query.filter(model_cls.type_constraint == type_constraint)
+
+        if where is not None:
+            query = query.filter(where)
+
+        query = query.order_by(text(
+            ', '.join(
+                '{0} {1}'.format(*order) for order in order_by
+            ) + ' NULLS LAST'
+        ))
 
         if limit is not None:
             query = query.limit(limit)

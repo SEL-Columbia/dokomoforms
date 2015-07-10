@@ -20,7 +20,7 @@ class NodeResource(BaseResource):
 
     def list(self):
         """Return a list of nodes."""
-        response = self._generate_list_response(Node)
+        response = self._generate_list_response(Node, 'last_update_time')
         return response
 
     def detail(self, node_id):
