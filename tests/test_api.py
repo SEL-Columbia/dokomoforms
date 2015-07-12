@@ -3,6 +3,7 @@ from collections import OrderedDict
 from datetime import datetime, timedelta
 import json
 import uuid
+import unittest
 
 import dateutil.parser
 
@@ -15,6 +16,7 @@ from tests.util import DokoHTTPTest, setUpModule, tearDownModule
 from dokomoforms.models import Submission, Survey, Node, SurveyCreator
 import dokomoforms.models as models
 from dokomoforms.api.base import BaseResource
+from dokomoforms.api.nodes import NodeResource
 
 utils = (setUpModule, tearDownModule)
 
@@ -66,6 +68,16 @@ class TestErrorHandling(DokoHTTPTest):
         # test response
         self.assertEqual(response.code, 404)
         self.assertIn('not found', json_decode(response.body)['error'])
+
+
+class TestApiBase(unittest.TestCase):
+    def test_current_user(self):
+        """Doesn't really test anything... it might in the future."""
+        fake_r_handler = lambda: None
+        fake_r_handler.current_user = 'test'
+        br = NodeResource()
+        br.ref_rh = fake_r_handler
+        self.assertEqual(br.current_user, 'test')
 
 
 class TestAuthentication(DokoHTTPTest):
@@ -1276,6 +1288,28 @@ class TestNodeApi(DokoHTTPTest):
             msg="Some of the returned titles don't contain the search term."
         )
 
+    def test_list_nodes_none_matching(self):
+        search_term = 'not going to find this'
+        # url to test
+        url = self.api_root + '/nodes'
+        query_params = {
+            'search': search_term,
+            'search_fields': 'title'
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        response_body = json_decode(response.body)
+        self.assertIn('nodes', response_body, msg=response_body)
+        nodes = response_body['nodes']
+
+        self.assertEqual(len(nodes), 0, msg=nodes)
+        self.assertEqual(response_body['filtered_entries'], 0)
+
     def test_list_nodes_order_by_title(self):
         with self.session.begin():
             self.session.add_all((
@@ -1982,6 +2016,26 @@ class TestNodeApi(DokoHTTPTest):
             self.session.query(Node.deleted).filter_by(id=node_id).scalar()
         )
 
+    def test_update_node_not_found(self):
+        node_id = str(uuid.uuid4())
+        # url to test
+        url = self.api_root + '/nodes/' + node_id
+        # http method
+        method = 'PUT'
+        # body
+        body = {
+            'deleted': True
+        }
+        encoded_body = json_encode(body)
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+        # test response
+        self.assertEqual(response.code, 404)
+        self.assertEqual(
+            json_decode(response.body)['error'],
+            'Resource not found.'
+        )
+
     def test_delete_node(self):
         node_id = '60e56824-910c-47aa-b5c0-71493277b43f'
         # url to test
@@ -1997,6 +2051,42 @@ class TestNodeApi(DokoHTTPTest):
         survey = self.session.query(Node).get(node_id)
 
         self.assertTrue(survey.deleted)
+
+    def test_delete_node_not_found(self):
+        node_id = str(uuid.uuid4())
+        # url to test
+        url = self.api_root + '/nodes/' + node_id
+        # http method
+        method = 'DELETE'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        self.assertEqual(response.code, 404)
+        self.assertEqual(
+            json_decode(response.body)['error'],
+            'Resource not found.'
+        )
+
+    def test_list_nodes_including_deleted(self):
+        node_id = '60e56824-910c-47aa-b5c0-71493277b43f'
+        delete_url = self.api_root + '/nodes/' + node_id
+        self.fetch(delete_url, method='DELETE')
+
+        list_url = self.api_root + '/nodes'
+        regular_response = self.fetch(list_url, method='GET')
+        self.assertEqual(
+            len(json_decode(regular_response.body)['nodes']),
+            TOTAL_NODES - 1
+        )
+
+        list_deleted_url = self.append_query_params(
+            list_url, {'show_deleted': 'true'}
+        )
+        include_deleted_response = self.fetch(list_deleted_url, method='GET')
+        self.assertEqual(
+            len(json_decode(include_deleted_response.body)['nodes']),
+            TOTAL_NODES
+        )
 
 
 class TestUserApi(DokoHTTPTest):

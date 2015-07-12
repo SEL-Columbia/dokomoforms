@@ -12,7 +12,6 @@ from sqlalchemy import text, func
 from sqlalchemy.sql.expression import false
 from sqlalchemy.sql.functions import count
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Query
 from sqlalchemy.orm.exc import NoResultFound
 
 from dokomoforms.api.serializer import ModelJSONSerializer
@@ -50,17 +49,17 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
     # The serializer is used to serialize / deserialize models to json
     serializer = ModelJSONSerializer()
 
-    @property
+    @property  # pragma: no cover
     @abstractmethod
     def resource_type(self):
         """The model class for the resource."""
 
-    @property
+    @property  # pragma: no cover
     @abstractmethod
     def default_sort_column_name(self):
         """The default ORDER BY column name for list responses."""
 
-    @property
+    @property  # pragma: no cover
     @abstractmethod
     def objects_key(self):
         """The key for list responses."""
@@ -85,7 +84,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         arg = self.r_handler.get_query_argument(argument_name, None)
 
         # Return default if the argument was not given.
-        if arg is None:
+        if arg is None:  # TODO: let arg == '' pass through?
             return default
 
         # Convert 'true'/'false' argument into True or False
@@ -184,14 +183,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
 
         # No fields specified -> return them all.
         if fields is None:
-            # Single model result
-            if is_detail:
-                return model_or_models
-
-            # List result
-            if isinstance(model_or_models, Query):
-                return model_or_models.all()
-            return list(model_or_models)
+            return model_or_models
 
         if is_detail:
             the_model = model_or_models
@@ -319,9 +311,8 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         """
         for prop in sorted(self.r_handler.request.arguments):
             prop_value = self.r_handler.get_query_argument(prop, None)
-            if prop_value is not None:
-                if prop_value.isdigit():
-                    prop_value = int(prop_value)
-                response[prop] = prop_value
+            if prop_value.isdigit():
+                prop_value = int(prop_value)
+            response[prop] = prop_value
 
         return response
