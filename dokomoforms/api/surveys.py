@@ -184,28 +184,26 @@ class SurveyResource(BaseResource):
         # truncate the datetime to just the day
         date_trunc = func.date_trunc('day', Submission.submission_time)
 
-        query = self.session.query(
-            date_trunc, func.count()).filter(
-            User.id == user.id).filter(
-            Submission.submission_time >= from_date)
+        query = (
+            self.session
+            .query(date_trunc, func.count())
+            .filter(User.id == user.id)
+            .filter(Submission.submission_time >= from_date)
+        )
 
         if survey_id is not None:
             query = query.filter(Submission.survey_id == survey_id)
 
-        query = query.group_by(
-            date_trunc)
+        query = (
+            query
+            .group_by(date_trunc)
+            .order_by(date_trunc.desc())
+        )
 
-        result = query.order_by(date_trunc.desc()).all()
-
-        response = {
-            'activity': []
-        }
-        for day in result:
-            response['activity'].append({
-                'date': day[0],
-                'num_submissions': day[1]
-            })
-        return response
+        # TODO: Figure out if this should use OrderedDict
+        return {'activity': [
+            {'date': date, 'num_submissions': num} for date, num in query
+        ]}
 
     # def prepare(self, data):
     #     """Determine which fields to return.

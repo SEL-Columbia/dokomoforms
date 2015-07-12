@@ -902,7 +902,7 @@ class TestSurveyApi(DokoHTTPTest):
         response = self.fetch(url, method=method)
         # test response
         activity = json_decode(response.body)
-        self.assertTrue('activity' in activity)
+        self.assertIn('activity', activity, msg=activity)
         self.assertEqual(len(activity['activity']), 30)
 
         # test 'days' query param
