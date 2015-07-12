@@ -7,10 +7,10 @@ import restless.exceptions as exc
 from sqlalchemy.sql.expression import func
 
 from dokomoforms.api import BaseResource
-from dokomoforms.api.submissions import _create_answer
+from dokomoforms.api.submissions import _create_submission
 from dokomoforms.models import (
     Survey, Submission, construct_survey_node,
-    User, construct_submission,
+    User,
     Node, construct_node
 )
 
@@ -71,7 +71,8 @@ class SurveyResource(BaseResource):
         """GET detail is allowed unauthenticated."""
         # TODO: always allowed unauthenticated?
         uri = self.request.uri
-        detail_url = self.application.reverse_url('surveys')
+        survey_id = uri.rstrip('/').split('/')[-1]
+        detail_url = self.application.reverse_url('survey', survey_id)
         is_detail = uri == os.path.commonprefix((uri, detail_url))
         if self.request_method() == 'GET' and is_detail:
             return True
@@ -110,43 +111,8 @@ class SurveyResource(BaseResource):
         """List all submissions for a survey."""
         survey = self.session.query(Survey).get(survey_id)
         if survey is None:
-            raise exc.BadRequest(
-                "The survey could not be found."
-            )
-
-        # If logged in, add enumerator
-        if self.current_user_model is not None:
-            if 'enumerator_user_id' in self.data:
-                # if enumerator_user_id is provided, use that user
-                enumerator = self.session.query(
-                    User).get(self.data['enumerator_user_id'])
-                self.data['enumerator'] = enumerator
-            else:
-                # otherwise the currently logged in user
-                self.data['enumerator'] = self.current_user_model
-
-        self.data['survey'] = survey
-
-        with self.session.begin():
-            # create a list of Answer models
-            if 'answers' in self.data:
-                answers = self.data['answers']
-                self.data['answers'] = [
-                    _create_answer(self.session, answer) for answer in answers
-                ]
-                # del self.data['answers']
-
-            # pass submission props as kwargs
-            if 'submission_type' not in self.data:
-                # by default fall to authenticated (i.e. EnumOnlySubmission)
-                self.data['submission_type'] = 'authenticated'
-
-            submission = construct_submission(**self.data)
-
-            # add the submission
-            self.session.add(submission)
-
-        return submission
+            raise exc.NotFound()
+        return _create_submission(self, survey)
 
     def list_submissions(self, survey_id):
         """List all submissions for a survey."""

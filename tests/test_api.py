@@ -320,6 +320,44 @@ class TestSurveyApi(DokoHTTPTest):
 
         self.assertFalse("error" in survey_dict)
 
+    def test_get_single_public_survey_without_logging_in(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to tests
+        url = self.api_root + '/surveys/' + survey_id
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method, _logged_in_user=None)
+        # test response
+        survey_dict = json_decode(response.body)
+
+        # check that expected keys are present
+        self.assertIn('id', survey_dict, msg=survey_dict)
+        self.assertTrue('created_on' in survey_dict)
+        self.assertTrue('metadata' in survey_dict)
+        self.assertTrue('title' in survey_dict)
+        self.assertTrue('survey_type' in survey_dict)
+        self.assertTrue('default_language' in survey_dict)
+        self.assertTrue('deleted' in survey_dict)
+        self.assertTrue('creator_name' in survey_dict)
+        self.assertTrue('nodes' in survey_dict)
+        self.assertTrue('last_update_time' in survey_dict)
+        self.assertTrue('creator_id' in survey_dict)
+        self.assertTrue('version' in survey_dict)
+
+        self.assertFalse("error" in survey_dict)
+
+    def test_cannot_get_enumerator_only_survey_without_logging_in(self):
+        """TODO: Find out if this makes sense."""
+        survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
+        # url to tests
+        url = self.api_root + '/surveys/' + survey_id
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method, _logged_in_user=None)
+        self.assertEqual(response.code, 401)
+
     def test_get_single_survey_with_sub_surveys(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
         # url to test
@@ -552,6 +590,21 @@ class TestSurveyApi(DokoHTTPTest):
         self.assertTrue('last_update_time' in submission_dict)
         self.assertTrue('submission_time' in submission_dict)
         self.assertTrue('survey_id' in submission_dict)
+
+    def test_submit_to_survey_bogus_survey_id(self):
+        survey_id = str(uuid.uuid4())
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated"
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 404, msg=response.body)
 
     def test_submit_to_survey_with_integer_answer_response(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
@@ -1138,7 +1191,7 @@ class TestSubmissionApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
-        self.assertEqual(response.code, 400)
+        self.assertEqual(response.code, 400, response.body)
 
         submission_dict = json_decode(response.body)
         self.assertIn('property is required', submission_dict['error'])
@@ -1292,7 +1345,7 @@ class TestSubmissionApi(DokoHTTPTest):
         response = self.fetch(
             url, method=method, body=json_encode(body), _logged_in_user=None
         )
-        self.assertEqual(response.code, 401)
+        self.assertEqual(response.code, 401, msg=response.body)
 
     def test_submission_defaults_to_authenticated(self):
         # url to test

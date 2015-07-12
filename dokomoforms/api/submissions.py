@@ -24,6 +24,52 @@ def _create_answer(session, answer_dict) -> Answer:
     raise exc.BadRequest('survey_node not found: {}'.format(survey_node_id))
 
 
+def _create_submission(self, survey):
+    # Unauthenticated submissions are only allowed if the survey_type is
+    # 'public'.
+    authenticated = super(self.__class__, self).is_authenticated()
+    if not authenticated and survey.survey_type != 'public':
+        raise exc.Unauthorized()
+
+    # If logged in, add enumerator
+    if self.current_user_model is not None:
+        if 'enumerator_user_id' in self.data:
+            # if enumerator_user_id is provided, use that user
+            enumerator = self.session.query(
+                User).get(self.data['enumerator_user_id'])
+            self.data['enumerator'] = enumerator
+        else:
+            # otherwise the currently logged in user
+            self.data['enumerator'] = self.current_user_model
+
+    self.data['survey'] = survey
+
+    with self.session.begin():
+        # create a list of Answer models
+        if 'answers' in self.data:
+            answers = self.data['answers']
+            self.data['answers'] = [
+                _create_answer(self.session, answer) for answer in answers
+            ]
+            # del self.data['answers']
+
+        # pass submission props as kwargs
+        if 'submission_type' not in self.data:
+            # by default fall to authenticated (i.e. EnumOnlySubmission)
+            self.data['submission_type'] = 'authenticated'
+
+        submission = construct_submission(**self.data)
+
+        # add the answer models
+        # if 'answers' in self.data:
+        #    submission.answers = answers
+
+        # add the submission
+        self.session.add(submission)
+
+    return submission
+
+
 class SubmissionResource(BaseResource):
 
     """Restless resource for Submissions.
@@ -52,57 +98,14 @@ class SubmissionResource(BaseResource):
 
         Uses the current_user_model (i.e. logged-in user) as creator.
         """
-        if 'survey_id' not in self.data:
+        survey_id = self.data.pop('survey_id', None)
+        if survey_id is None:
             raise exc.BadRequest(
                 "'survey_id' property is required."
             )
-
-        survey = self.session.query(Survey).get(self.data['survey_id'])
-
+        survey = self.session.query(Survey).get(survey_id)
         if survey is None:
             raise exc.BadRequest(
-                "The survey could not be found."
+                'The survey could not be found: {}'.format(survey_id)
             )
-
-        # Unauthenticated submissions are only allowed if the survey_type is
-        # 'public'.
-        if not super().is_authenticated() and survey.survey_type != 'public':
-            raise exc.Unauthorized()
-
-        # If logged in, add enumerator
-        if self.current_user_model is not None:
-            if 'enumerator_user_id' in self.data:
-                # if enumerator_user_id is provided, use that user
-                enumerator = self.session.query(
-                    User).get(self.data['enumerator_user_id'])
-                self.data['enumerator'] = enumerator
-            else:
-                # otherwise the currently logged in user
-                self.data['enumerator'] = self.current_user_model
-
-        self.data['survey'] = survey
-
-        with self.session.begin():
-            # create a list of Answer models
-            if 'answers' in self.data:
-                answers = self.data['answers']
-                self.data['answers'] = [
-                    _create_answer(self.session, answer) for answer in answers
-                ]
-                # del self.data['answers']
-
-            # pass submission props as kwargs
-            if 'submission_type' not in self.data:
-                # by default fall to authenticated (i.e. EnumOnlySubmission)
-                self.data['submission_type'] = 'authenticated'
-
-            submission = construct_submission(**self.data)
-
-            # add the answer models
-            # if 'answers' in self.data:
-            #    submission.answers = answers
-
-            # add the submission
-            self.session.add(submission)
-
-        return submission
+        return _create_submission(self, survey)
