@@ -128,8 +128,6 @@ class SurveyResource(BaseResource):
     def stats(self, survey_id):
         """Get stats for a survey."""
         user = self.current_user_model
-        if user is None:
-            raise exc.Unauthorized()
 
         result = (
             self.session
@@ -178,8 +176,6 @@ class SurveyResource(BaseResource):
         survey will be returned.
         """
         user = self.current_user_model
-        if user is None:
-            raise exc.Unauthorized()
 
         # number of days prior to return
         today = datetime.date.today()

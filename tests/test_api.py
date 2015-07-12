@@ -883,6 +883,16 @@ class TestSurveyApi(DokoHTTPTest):
         self.assertTrue("num_submissions" in stats)
         self.assertFalse("error" in stats)
 
+    def test_get_stats_for_survey_not_logged_in(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/stats'
+        # http method
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method, _logged_in_user=None)
+        self.assertEqual(response.code, 401)
+
     def test_submission_activity_for_all_surveys(self):
         # url to test
         url = self.api_root + '/surveys/activity'
