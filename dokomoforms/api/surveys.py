@@ -136,7 +136,7 @@ class SurveyResource(BaseResource):
                 func.count(Submission.id),
             )
             .select_from(Submission)
-             .join(Survey)
+            .join(Survey)
             # TODO: ask @jmwohl what this line is supposed to do
             # .filter(User.id == self.current_user_model.id)
             .filter(Submission.survey_id == survey_id)
