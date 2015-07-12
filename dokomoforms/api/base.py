@@ -310,7 +310,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         don't want to just reflect query params willy nilly.
         """
         for prop in sorted(self.r_handler.request.arguments):
-            prop_value = self.r_handler.get_query_argument(prop, None)
+            prop_value = self.r_handler.get_query_argument(prop)
             if prop_value.isdigit():
                 prop_value = int(prop_value)
             response[prop] = prop_value
