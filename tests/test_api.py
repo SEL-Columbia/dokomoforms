@@ -224,10 +224,7 @@ class TestAuthentication(DokoHTTPTest):
 
 
 class TestSurveyApi(DokoHTTPTest):
-    """
-    These tests are made against the known fixture data.
-    """
-
+    """These tests are made against the known fixture data."""
     def test_list_surveys(self):
         # url to test
         url = self.api_root + '/surveys'
@@ -1029,7 +1026,6 @@ class TestSurveyApi(DokoHTTPTest):
 
 
 class TestSubmissionApi(DokoHTTPTest):
-
     def test_list_submissions(self):
         # url to test
         url = self.api_root + '/submissions'
@@ -1195,7 +1191,6 @@ class TestSubmissionApi(DokoHTTPTest):
 
 
 class TestNodeApi(DokoHTTPTest):
-
     def test_list_nodes(self):
         # url to test
         url = self.api_root + '/nodes'
