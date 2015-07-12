@@ -213,9 +213,6 @@ def load_fixtures(engine):
         session.add(creator_b)
         session.add(enumerator)
 
-    # while True:
-    #    pass
-
 
 def unload_fixtures(engine, schema_name):
     """Truncate all the tables."""

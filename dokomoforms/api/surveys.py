@@ -127,8 +127,6 @@ class SurveyResource(BaseResource):
 
     def stats(self, survey_id):
         """Get stats for a survey."""
-        user = self.current_user_model
-
         result = (
             self.session
             .query(
@@ -138,10 +136,9 @@ class SurveyResource(BaseResource):
                 func.count(Submission.id),
             )
             .select_from(Submission)
-            .join(Submission.survey)
-            # TODO: check this join
-            # .join(Survey)
-            .filter(User.id == user.id)
+             .join(Survey)
+            # TODO: ask @jmwohl what this line is supposed to do
+            # .filter(User.id == self.current_user_model.id)
             .filter(Submission.survey_id == survey_id)
             .one()
         )

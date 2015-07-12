@@ -1,6 +1,6 @@
 """API tests"""
 from collections import OrderedDict
-from datetime import datetime, timedelta
+from datetime import datetime, date, timedelta
 import json
 import uuid
 import unittest
@@ -877,11 +877,17 @@ class TestSurveyApi(DokoHTTPTest):
         stats = json_decode(response.body)
 
         # test response
-        self.assertTrue("latest_submission_time" in stats)
-        self.assertTrue("created_on" in stats)
-        self.assertTrue("earliest_submission_time" in stats)
-        self.assertTrue("num_submissions" in stats)
-        self.assertFalse("error" in stats)
+        today = date.today()
+        self.assertTrue(
+            stats['latest_submission_time'].startswith(today.isoformat())
+        )
+        self.assertTrue(stats['created_on'].startswith(today.isoformat()))
+        self.assertTrue(
+            stats['earliest_submission_time'].startswith(
+                (today - timedelta(days=99)).isoformat()
+            )
+        )
+        self.assertEqual(stats['num_submissions'], 101)
 
     def test_get_stats_for_survey_not_logged_in(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
@@ -912,8 +918,29 @@ class TestSurveyApi(DokoHTTPTest):
         url = self.append_query_params(url, query_params)
         response = self.fetch(url, method=method)
         activity = json_decode(response.body)
-        self.assertTrue('activity' in activity)
-        self.assertEqual(len(activity['activity']), 10)
+        self.assertIn('activity', activity, msg=activity)
+        activity_list = activity['activity']
+        self.assertEqual(len(activity_list), 10)
+        self.assertEqual(activity_list[0]['num_submissions'], 13)
+        self.assertTrue(all(
+            act['num_submissions'] == 1 for act in activity_list[1:]
+        ))
+
+    def test_get_all_submission_activity(self):
+        url = self.api_root + '/surveys/activity'
+        query_params = {
+            'days': 1000
+        }
+        url = self.append_query_params(url, query_params)
+        response = self.fetch(url, method='GET')
+        activity = json_decode(response.body)
+        self.assertIn('activity', activity, msg=activity)
+        activity_list = activity['activity']
+        self.assertEqual(len(activity_list), 100)
+        self.assertEqual(
+            sum(act['num_submissions'] for act in activity_list),
+            TOTAL_SUBMISSIONS
+        )
 
     def test_submission_activity_for_single_surveys(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
