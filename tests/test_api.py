@@ -82,7 +82,7 @@ class TestApiBase(unittest.TestCase):
 
 class TestAuthentication(DokoHTTPTest):
     def test_bounce(self):
-        url = self.api_root + '/surveys'
+        url = self.api_root + '/nodes'
         response = self.fetch(url, method='GET', _logged_in_user=None)
         self.assertEqual(response.code, 401)
 
@@ -2278,7 +2278,7 @@ class TestUserApi(DokoHTTPTest):
         response = self.fetch(url, method=method)
         token = json_decode(response.body)['token']
 
-        api_url = self.api_root + '/surveys'
+        api_url = self.api_root + '/nodes'
         api_response = self.fetch(
             api_url, method='GET', _logged_in_user=None,
             headers={'Email': 'test_creator@fixtures.com', 'Token': token},
@@ -2288,7 +2288,7 @@ class TestUserApi(DokoHTTPTest):
         )
 
     def test_use_wrong_api_token(self):
-        api_url = self.api_root + '/surveys'
+        api_url = self.api_root + '/nodes'
         api_response = self.fetch(
             api_url, method='GET', _logged_in_user=None,
             headers={'Email': 'test_creator@fixtures.com', 'Token': 'wrong'},
@@ -2313,7 +2313,7 @@ class TestUserApi(DokoHTTPTest):
         with self.session.begin():
             user.token_expiration = datetime.now() - timedelta(days=1)
 
-        api_url = self.api_root + '/surveys'
+        api_url = self.api_root + '/nodes'
         api_response = self.fetch(
             api_url, method='GET', _logged_in_user=None,
             headers={'Email': 'test_creator@fixtures.com', 'Token': token},

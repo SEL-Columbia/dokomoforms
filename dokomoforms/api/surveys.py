@@ -1,4 +1,5 @@
 """TornadoResource class for dokomoforms.models.survey.Survey."""
+import os.path
 import datetime
 
 import restless.exceptions as exc
@@ -65,6 +66,27 @@ class SurveyResource(BaseResource):
             'POST': 'submit'
         }
     }
+
+    def is_authenticated(self):
+        """GET detail is allowed unauthenticated."""
+        # TODO: always allowed unauthenticated?
+        uri = self.request.uri
+        detail_url = self.application.reverse_url('surveys')
+        is_detail = uri == os.path.commonprefix((uri, detail_url))
+        if self.request_method() == 'GET' and is_detail:
+            return True
+        return super().is_authenticated()
+
+    def detail(self, survey_id):
+        """Return the given survey.
+
+        Enforces authentication for EnumeratorOnlySurvey.
+        TODO: Check if that makes sense.
+        """
+        survey = super().detail(survey_id)
+        if not super().is_authenticated() and survey.survey_type != 'public':
+            raise exc.Unauthorized()
+        return survey
 
     def create(self):
         """Create a new survey.
