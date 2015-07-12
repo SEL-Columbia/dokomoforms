@@ -1092,6 +1092,123 @@ class TestSubmissionApi(DokoHTTPTest):
         self.assertTrue('last_update_time' in submission_dict)
         self.assertTrue('submission_time' in submission_dict)
         self.assertTrue('survey_id' in submission_dict)
+        self.assertEqual(
+            submission_dict['enumerator_user_id'],
+            'b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+        )
+
+    def test_create_public_submission_not_logged_in(self):
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": "b0816b52-204f-41d4-aaf0-ac6ae2970923",
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated"
+        }
+        # make request
+        response = self.fetch(
+            url, method=method, body=json_encode(body), _logged_in_user=None
+        )
+
+        submission_dict = json_decode(response.body)
+
+        self.assertIn('save_time', submission_dict, msg=submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+        self.assertNotIn('enumerator_user_id', submission_dict)
+
+    def test_create_public_submission_no_survey_id(self):
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated"
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 400)
+
+        submission_dict = json_decode(response.body)
+        self.assertIn('property is required', submission_dict['error'])
+
+    def test_create_public_submission_survey_does_not_exist(self):
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            'survey_id': str(uuid.uuid4()),
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated"
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 400)
+
+        submission_dict = json_decode(response.body)
+        self.assertIn('could not be found', submission_dict['error'])
+
+    def test_create_public_submission_with_no_survey_node_id(self):
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": "b0816b52-204f-41d4-aaf0-ac6ae2970923",
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "type_constraint": "integer",
+                    "answer": 3,
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 400)
+
+        submission_dict = json_decode(response.body)
+        self.assertIn('property is required', submission_dict['error'])
+
+    def test_create_public_submission_with_bogus_survey_node_id(self):
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": "b0816b52-204f-41d4-aaf0-ac6ae2970923",
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    'survey_node_id': str(uuid.uuid4()),
+                    "type_constraint": "integer",
+                    "answer": 3,
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 400)
+
+        submission_dict = json_decode(response.body)
+        self.assertIn('survey_node not found', submission_dict['error'])
 
     def test_create_public_submission_with_integer_answer(self):
         # url to test
@@ -1144,6 +1261,49 @@ class TestSubmissionApi(DokoHTTPTest):
             "enumerator_user_id": "a7becd02-1a3f-4c1d-a0e1-286ba121aef3",
             "submitter_name": "regular",
             "submission_type": "authenticated"
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+
+    def test_cannot_create_enumerator_only_submission_not_logged_in(self):
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": "c0816b52-204f-41d4-aaf0-ac6ae2970925",
+            "enumerator_user_id": "a7becd02-1a3f-4c1d-a0e1-286ba121aef3",
+            "submitter_name": "regular",
+        }
+        # make request
+        response = self.fetch(
+            url, method=method, body=json_encode(body), _logged_in_user=None
+        )
+        self.assertEqual(response.code, 401)
+
+    def test_submission_defaults_to_authenticated(self):
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": "c0816b52-204f-41d4-aaf0-ac6ae2970925",
+            "enumerator_user_id": "a7becd02-1a3f-4c1d-a0e1-286ba121aef3",
+            "submitter_name": "regular",
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))

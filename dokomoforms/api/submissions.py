@@ -10,15 +10,18 @@ from dokomoforms.models import (
 
 
 def _create_answer(session, answer_dict) -> Answer:
+    survey_node_id = answer_dict.get('survey_node_id', None)
+    if survey_node_id is None:
+        raise exc.BadRequest("'survey_node_id' property is required.")
     survey_node = (
         session
         .query(SurveyNode)
-        .get(answer_dict['survey_node_id'])
+        .get(survey_node_id)
     )
     if survey_node is not None:
         answer_dict['survey_node'] = survey_node
         return construct_answer(**answer_dict)
-    # TODO: Raise an exception
+    raise exc.BadRequest('survey_node not found: {}'.format(survey_node_id))
 
 
 class SubmissionResource(BaseResource):
@@ -33,6 +36,15 @@ class SubmissionResource(BaseResource):
     resource_type = Submission
     default_sort_column_name = 'save_time'
     objects_key = 'submissions'
+
+    def is_authenticated(self):
+        """POSTs are allowed unauthenticated under the right circumstances."""
+        if self.request_method() == 'POST':
+            # At this point in the lifecycle of the request, self.data has
+            # not been populated, so we need to handle POST authentication
+            # in the create method.
+            return True
+        return super().is_authenticated()
 
     # POST /api/submissions/
     def create(self):
@@ -51,6 +63,11 @@ class SubmissionResource(BaseResource):
             raise exc.BadRequest(
                 "The survey could not be found."
             )
+
+        # Unauthenticated submissions are only allowed if the survey_type is
+        # 'public'.
+        if not super().is_authenticated() and survey.survey_type != 'public':
+            raise exc.Unauthorized()
 
         # If logged in, add enumerator
         if self.current_user_model is not None:
