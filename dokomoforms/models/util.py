@@ -342,8 +342,8 @@ def column_search(query, *,
     if regex:
         return (
             query
-            .filter(':column ~* :search_term')
-            .params(column=column, search_term=search_term)
+            .filter(sa.text('{} ~* :search_term'.format(column)))
+            .params(search_term=search_term)
         )
     return (
         query

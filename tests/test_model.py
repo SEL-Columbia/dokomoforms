@@ -347,6 +347,65 @@ class TestNode(DokoTest):
             10,
         )
 
+    def test_construct_survey_node_with_the_node(self):
+        with self.session.begin():
+            node = models.construct_node(
+                type_constraint='note',
+                title={'English': 'some title'}
+            )
+            self.session.add(node)
+
+        node = self.session.query(models.Node).one()
+        with self.assertRaises(TypeError):
+            with self.session.begin():
+                creator = models.SurveyCreator(
+                    name='creator',
+                    surveys=[
+                        models.Survey(
+                            title={'English': 'survey'},
+                            nodes=[
+                                models.construct_survey_node(
+                                    node=node,
+                                    the_node=node,
+                                ),
+                            ],
+                        ),
+                    ],
+                )
+                self.session.add(creator)
+
+    def test_construct_survey_node_without_specifying_node(self):
+        with self.session.begin():
+            node = models.construct_node(
+                type_constraint='note',
+                title={'English': 'some title'}
+            )
+            self.session.add(node)
+
+        node_id = self.session.query(models.Node.id).scalar()
+        with self.session.begin():
+            creator = models.SurveyCreator(
+                name='creator',
+                surveys=[
+                    models.Survey(
+                        title={'English': 'survey'},
+                        nodes=[
+                            models.construct_survey_node(
+                                type_constraint='note',
+                                node_id=node_id,
+                                node_languages=['English'],
+                            ),
+                        ],
+                    ),
+                ],
+            )
+            self.session.add(creator)
+
+        self.assertEqual(
+            self.session.query(func.count(models.SurveyNode.id)).scalar(),
+            1
+        )
+
     def test_note_asdict(self):
         with self.session.begin():
             creator = models.SurveyCreator(name='creator')
@@ -1921,6 +1980,14 @@ class TestBucket(DokoTest):
 
 
 class TestSubmission(DokoTest):
+    def test_construct_submission_bogus_type(self):
+        with self.assertRaises(exc.NoSuchSubmissionTypeError):
+            with self.session.begin():
+                submission = models.construct_submission(
+                    submission_type='aaa',
+                )
+                self.session.add(submission)
+
     def test_enumerator_submission(self):
         with self.session.begin():
             creator = models.SurveyCreator(name='creator')

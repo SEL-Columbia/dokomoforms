@@ -1134,6 +1134,49 @@ class TestSubmissionApi(DokoHTTPTest):
 
         self.assertFalse("error" in submission_dict)
 
+    def test_list_submissions_search_submitter_name(self):
+        search_term = 'singular'
+        # url to test
+        url = self.api_root + '/submissions'
+        query_params = {
+            'search': search_term,
+            'search_fields': 'submitter_name'
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        response_body = json_decode(response.body)
+        self.assertIn('submissions', response_body, msg=response_body)
+        submissions = response_body['submissions']
+
+        self.assertEqual(len(submissions), 1)
+
+    def test_list_submissions_search_submitter_name_regex(self):
+        search_term = '.*singular'
+        # url to test
+        url = self.api_root + '/submissions'
+        query_params = {
+            'search': search_term,
+            'search_fields': 'submitter_name',
+            'regex': 'true',
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        response_body = json_decode(response.body)
+        self.assertIn('submissions', response_body, msg=response_body)
+        submissions = response_body['submissions']
+
+        self.assertEqual(len(submissions), 1)
+
     def test_get_single_submission(self):
         submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
         # url to test

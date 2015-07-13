@@ -180,7 +180,7 @@ def load_fixtures(engine):
         single_regular_submission = models.PublicSubmission(
             id='b0816b52-204f-41d4-aaf0-ac6ae2970923',
             survey=single_survey,
-            submitter_name='regular',
+            submitter_name='regular_singular',
             answers=[
                 models.construct_answer(
                     survey_node=single_survey.nodes[0],

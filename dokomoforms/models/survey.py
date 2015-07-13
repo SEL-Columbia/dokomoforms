@@ -657,17 +657,18 @@ def construct_survey_node(**kwargs) -> SurveyNode:
     :param kwargs: the keyword arguments to pass to the constructor
     :returns: an instance of one of the Node subtypes
     """
+    if 'the_node' in kwargs:
+        raise TypeError('the_node')
     if 'node' in kwargs:
         type_constraint = kwargs['node'].type_constraint
-        if 'the_node' not in kwargs:
-            kwargs['the_node'] = kwargs['node']
+        kwargs['the_node'] = kwargs['node']
 
     if 'type_constraint' in kwargs:
         type_constraint = kwargs['type_constraint']
 
     survey_node_constructor = (
-        NonAnswerableSurveyNode if type_constraint
-        is 'note' else AnswerableSurveyNode
+        NonAnswerableSurveyNode if type_constraint == 'note'
+        else AnswerableSurveyNode
     )
 
     return survey_node_constructor(**kwargs)
