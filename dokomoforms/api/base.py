@@ -84,7 +84,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         arg = self.r_handler.get_query_argument(argument_name, None)
 
         # Return default if the argument was not given.
-        if arg is None:  # TODO: let arg == '' pass through?
+        if not arg:
             return default
 
         # Convert 'true'/'false' argument into True or False
