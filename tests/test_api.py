@@ -1268,6 +1268,36 @@ class TestSubmissionApi(DokoHTTPTest):
             'b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
         )
 
+    def test_create_public_submission_alternate_url(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated"
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+        self.assertEqual(
+            submission_dict['enumerator_user_id'],
+            'b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+        )
+
     def test_create_public_submission_not_logged_in(self):
         # url to test
         url = self.api_root + '/submissions'
@@ -1276,6 +1306,35 @@ class TestSubmissionApi(DokoHTTPTest):
         # body
         body = {
             "survey_id": "b0816b52-204f-41d4-aaf0-ac6ae2970923",
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated"
+        }
+        # make request
+        response = self.fetch(
+            url, method=method, body=json_encode(body), _logged_in_user=None
+        )
+
+        submission_dict = json_decode(response.body)
+
+        self.assertIn('save_time', submission_dict, msg=submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+        self.assertNotIn('enumerator_user_id', submission_dict)
+
+    def test_create_public_submission_not_logged_in_alternate_url(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
             "submitter_name": "regular",
             "submission_type": "unauthenticated"
         }
@@ -1332,6 +1391,21 @@ class TestSubmissionApi(DokoHTTPTest):
         submission_dict = json_decode(response.body)
         self.assertIn('could not be found', submission_dict['error'])
 
+    def test_submit_public_survey_does_not_exist_alternate_url(self):
+        survey_id = str(uuid.uuid4())
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated"
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 404)
+
     def test_create_public_submission_with_no_survey_node_id(self):
         # url to test
         url = self.api_root + '/submissions'
@@ -1340,6 +1414,30 @@ class TestSubmissionApi(DokoHTTPTest):
         # body
         body = {
             "survey_id": "b0816b52-204f-41d4-aaf0-ac6ae2970923",
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "type_constraint": "integer",
+                    "answer": 3,
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 400)
+
+        submission_dict = json_decode(response.body)
+        self.assertIn('property is required', submission_dict['error'])
+
+    def test_submit_public_no_survey_node_id_alternate_url(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
             "submitter_name": "regular",
             "submission_type": "unauthenticated",
             "answers": [
@@ -1381,6 +1479,31 @@ class TestSubmissionApi(DokoHTTPTest):
         submission_dict = json_decode(response.body)
         self.assertIn('survey_node not found', submission_dict['error'])
 
+    def test_submit_public_with_bogus_survey_node_id_alternate_url(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    'survey_node_id': str(uuid.uuid4()),
+                    "type_constraint": "integer",
+                    "answer": 3,
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 400)
+
+        submission_dict = json_decode(response.body)
+        self.assertIn('survey_node not found', submission_dict['error'])
+
     def test_create_public_submission_with_integer_answer(self):
         # url to test
         url = self.api_root + '/submissions'
@@ -1389,6 +1512,46 @@ class TestSubmissionApi(DokoHTTPTest):
         # body
         body = {
             "survey_id": "b0816b52-204f-41d4-aaf0-ac6ae2970923",
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": "60e56824-910c-47aa-b5c0-71493277b43f",
+                    "type_constraint": "integer",
+                    "answer": 3
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+
+        self.assertEqual(len(submission_dict['answers']), 1)
+
+        self.assertEqual(
+            submission_dict['answers'][0]['response'],
+            3
+        )
+
+    def test_create_public_submission_with_integer_answer_alternate_url(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
             "submitter_name": "regular",
             "submission_type": "unauthenticated",
             "answers": [
@@ -1448,6 +1611,33 @@ class TestSubmissionApi(DokoHTTPTest):
         self.assertTrue('submission_time' in submission_dict)
         self.assertTrue('survey_id' in submission_dict)
 
+    def test_create_enum_only_submission_alternate_url(self):
+        survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "enumerator_user_id": "a7becd02-1a3f-4c1d-a0e1-286ba121aef3",
+            "submitter_name": "regular",
+            "submission_type": "authenticated"
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+
+        submission_dict = json_decode(response.body)
+
+        self.assertIn('save_time', submission_dict, msg=submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+
     def test_cannot_create_enumerator_only_submission_not_logged_in(self):
         # url to test
         url = self.api_root + '/submissions'
@@ -1465,6 +1655,23 @@ class TestSubmissionApi(DokoHTTPTest):
         )
         self.assertEqual(response.code, 401, msg=response.body)
 
+    def test_401_enumerator_only_submission_not_logged_in_alternate_url(self):
+        survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "enumerator_user_id": "a7becd02-1a3f-4c1d-a0e1-286ba121aef3",
+            "submitter_name": "regular",
+        }
+        # make request
+        response = self.fetch(
+            url, method=method, body=json_encode(body), _logged_in_user=None
+        )
+        self.assertEqual(response.code, 401, msg=response.body)
+
     def test_submission_defaults_to_authenticated(self):
         # url to test
         url = self.api_root + '/submissions'
@@ -1473,6 +1680,32 @@ class TestSubmissionApi(DokoHTTPTest):
         # body
         body = {
             "survey_id": "c0816b52-204f-41d4-aaf0-ac6ae2970925",
+            "enumerator_user_id": "a7becd02-1a3f-4c1d-a0e1-286ba121aef3",
+            "submitter_name": "regular",
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+
+    def test_submission_defaults_to_authenticated_alternate_url(self):
+        survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
             "enumerator_user_id": "a7becd02-1a3f-4c1d-a0e1-286ba121aef3",
             "submitter_name": "regular",
         }
