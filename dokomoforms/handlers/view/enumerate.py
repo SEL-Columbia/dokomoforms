@@ -30,5 +30,5 @@ class Enumerate(BaseHandler):
         sr = SurveyResource()
         survey = sr.prepare(survey_model);
 
-        self.render('survey.html',
+        self.render('enumerate.html',
                     survey=survey),
