@@ -1,21 +1,14 @@
 #!/usr/bin/env python3
 """Create fixtures for test purposes."""
 import datetime
+
 from sqlalchemy.orm import sessionmaker
 
 if __name__ == '__main__':
-    import json
     import sys
     import os
     sys.path.insert(0, os.path.abspath('.'))
-    from dokomoforms.options import inject_options, parse_options
-    inject_options(
-        schema='doko',
-        TEST_USER=json.dumps({
-            'user_id': 'b7becd02-1a3f-4c1d-a0e1-286ba121aef4',
-            'user_name': 'test_user',
-        }),
-    )
+    from dokomoforms.options import parse_options
     parse_options()
 
 import dokomoforms.models as models
@@ -187,7 +180,7 @@ def load_fixtures(engine):
         single_regular_submission = models.PublicSubmission(
             id='b0816b52-204f-41d4-aaf0-ac6ae2970923',
             survey=single_survey,
-            submitter_name='regular',
+            submitter_name='regular_singular',
             answers=[
                 models.construct_answer(
                     survey_node=single_survey.nodes[0],
@@ -220,9 +213,6 @@ def load_fixtures(engine):
         session.add(creator_b)
         session.add(enumerator)
 
-    # while True:
-    #    pass
-
 
 def unload_fixtures(engine, schema_name):
     """Truncate all the tables."""
@@ -236,22 +226,25 @@ def unload_fixtures(engine, schema_name):
               EXECUTE (
                 SELECT 'TRUNCATE TABLE '
                   || string_agg(
-                       'doko_test.' || quote_ident(t.tablename), ', '
+                       '{0}.' || quote_ident(t.tablename), ', '
                      )
                   || ' CASCADE'
                 FROM   pg_tables t
-                WHERE  t.schemaname = 'doko_test'
+                WHERE  t.schemaname = '{0}'
               );
             END
             $func$;
-            """
+            """.format(schema_name)
         )
 
 
 if __name__ == '__main__':
     from sqlalchemy import DDL
+    from dokomoforms.options import options
     from dokomoforms.models import create_engine, Base
-    engine = create_engine(echo=True)
-    engine.execute(DDL('DROP SCHEMA IF EXISTS doko CASCADE'))
+    engine = create_engine(echo=options.debug)
+    engine.execute(DDL(
+        'DROP SCHEMA IF EXISTS {} CASCADE'.format(options.schema))
+    )
     Base.metadata.create_all(engine)
     load_fixtures(engine)

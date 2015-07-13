@@ -9,11 +9,10 @@ The SQLAlchemy documentation suggests setting those columns in the base
 class or using class mixins, but it makes it less explicit which columns exist
 when looking at the models' definitions.
 """
-from dokomoforms.options import options
-
 import abc
 import datetime
 import json
+from collections import OrderedDict
 
 import sqlalchemy as sa
 import sqlalchemy.engine
@@ -23,6 +22,9 @@ from sqlalchemy.sql import func
 from sqlalchemy.sql.functions import current_timestamp
 
 from psycopg2.extras import Range
+
+from dokomoforms.options import options
+
 
 metadata = sa.MetaData(schema=options.schema)
 
@@ -285,3 +287,71 @@ def last_update_time() -> sa.Column:
         server_default=current_timestamp(),
         onupdate=current_timestamp(),
     )
+
+
+def column_search(query, *,
+                  model_cls, column_name, search_term,
+                  language=None, regex=False) -> 'query':
+    """Modify a query to search a column's values (JSONB or TEXT).
+
+    TODO: document this
+
+    :param query: a
+    :param model_cls: aa
+    :param column: b
+    :param search_term: c
+    :param language: d
+    :param regex: r
+    :return: The modified query.
+    """
+    column = getattr(model_cls, column_name)
+    # JSONB column
+    if str(column.type) == 'JSONB':
+        # Search across languages
+        if language is None:
+            query = (
+                query
+                .select_from(
+                    model_cls, func.jsonb_each_text(column).alias('search')
+                )
+            )
+            if regex:
+                return (
+                    query.
+                    filter(sa.text('search.value ~* :search_term'))
+                    .params(search_term=search_term)
+                )
+            return (
+                query
+                .filter(sa.text("search.value ILIKE :search_term"))
+                .params(search_term='%{}%'.format(search_term))
+            )
+        # Search for a specific language
+        if regex:
+            return (
+                query
+                .filter(sa.text("{}->>:lang ~* :search_term".format(column)))
+                .params(lang=language, search_term=search_term)
+            )
+        return (
+            query
+            .filter(column[language].astext.ilike('%{}%'.format(search_term)))
+        )
+
+    # TEXT column
+    if regex:
+        return (
+            query
+            .filter(sa.text('{} ~* :search_term'.format(column)))
+            .params(search_term=search_term)
+        )
+    return (
+        query
+        .filter(column.ilike('%{}%'.format(search_term)))
+    )
+
+
+def get_asdict_subset(model: Base, fields: list) -> OrderedDict:
+    """Return the given fields for the model's dictionary representation."""
+    model_dict = model._asdict()
+    return OrderedDict((key, model_dict[key]) for key in fields)

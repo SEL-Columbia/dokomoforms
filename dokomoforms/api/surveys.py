@@ -1,4 +1,5 @@
 """TornadoResource class for dokomoforms.models.survey.Survey."""
+import os.path
 import datetime
 
 import restless.exceptions as exc
@@ -6,10 +7,10 @@ import restless.exceptions as exc
 from sqlalchemy.sql.expression import func
 
 from dokomoforms.api import BaseResource
-from dokomoforms.api.submissions import _create_answer
+from dokomoforms.api.submissions import _create_submission
 from dokomoforms.models import (
     Survey, Submission, construct_survey_node,
-    User, construct_submission,
+    User,
     Node, construct_node
 )
 
@@ -32,6 +33,8 @@ class SurveyResource(BaseResource):
     """
 
     # Set the property name on the outputted json
+    resource_type = Survey
+    default_sort_column_name = 'created_on'
     objects_key = 'surveys'
 
     http_methods = {
@@ -64,16 +67,26 @@ class SurveyResource(BaseResource):
         }
     }
 
-    def list(self):
-        """Return a list of surveys."""
-        response = self._generate_list_response(Survey)
-        return response
+    def is_authenticated(self):
+        """GET detail is allowed unauthenticated."""
+        # TODO: always allowed unauthenticated?
+        uri = self.request.uri
+        survey_id = uri.rstrip('/').split('/')[-1]
+        detail_url = self.application.reverse_url('survey', survey_id)
+        is_detail = uri == os.path.commonprefix((uri, detail_url))
+        if self.request_method() == 'GET' and is_detail:
+            return True
+        return super().is_authenticated()
 
     def detail(self, survey_id):
-        """Return a single survey."""
-        survey = self.session.query(Survey).get(survey_id)
-        if survey is None:
-            raise exc.NotFound()
+        """Return the given survey.
+
+        Enforces authentication for EnumeratorOnlySurvey.
+        TODO: Check if that makes sense.
+        """
+        survey = super().detail(survey_id)
+        if not super().is_authenticated() and survey.survey_type != 'public':
+            raise exc.Unauthorized()
         return survey
 
     def create(self):
@@ -94,74 +107,16 @@ class SurveyResource(BaseResource):
 
         return survey
 
-    def update(self, survey_id):
-        """TODO: how should this behave? Good question."""
-        survey = self.session.query(Survey).get(survey_id)
-
-        if not survey:
-            raise exc.NotFound()
-        else:
-            with self.session.begin():
-                survey.update(self.data)
-            return survey
-
-    def delete(self, survey_id):
-        """Set survey.deleted = True.
-
-        Does NOT remove the survey from the DB.
-        """
-        with self.session.begin():
-            survey = self.session.query(Survey).get(survey_id)
-            if not survey:
-                raise exc.NotFound()
-            survey.deleted = True
-
     def submit(self, survey_id):
         """List all submissions for a survey."""
         survey = self.session.query(Survey).get(survey_id)
         if survey is None:
-            raise exc.BadRequest(
-                "The survey could not be found."
-            )
-
-        # If logged in, add enumerator
-        if self.current_user_model is not None:
-            if 'enumerator_user_id' in self.data:
-                # if enumerator_user_id is provided, use that user
-                enumerator = self.session.query(
-                    User).get(self.data['enumerator_user_id'])
-                self.data['enumerator'] = enumerator
-            else:
-                # otherwise the currently logged in user
-                self.data['enumerator'] = self.current_user_model
-
-        self.data['survey'] = survey
-
-        with self.session.begin():
-            # create a list of Answer models
-            if 'answers' in self.data:
-                answers = self.data['answers']
-                self.data['answers'] = [
-                    _create_answer(self.session, answer) for answer in answers
-                ]
-                # del self.data['answers']
-
-            # pass submission props as kwargs
-            if 'submission_type' not in self.data:
-                # by default fall to authenticated (i.e. EnumOnlySubmission)
-                self.data['submission_type'] = 'authenticated'
-
-            submission = construct_submission(**self.data)
-
-            # add the submission
-            self.session.add(submission)
-
-        return submission
+            raise exc.NotFound()
+        return _create_submission(self, survey)
 
     def list_submissions(self, survey_id):
         """List all submissions for a survey."""
-        response_list = self._generate_list_response(
-            Submission, filter=(Survey.id == survey_id))
+        response_list = self.list(where=(Survey.id == survey_id))
 
         response = {
             'survey_id': survey_id,
@@ -172,19 +127,21 @@ class SurveyResource(BaseResource):
 
     def stats(self, survey_id):
         """Get stats for a survey."""
-        user = self.current_user_model
-        if user is None:
-            raise exc.Unauthorized()
-
-        result = self.session.\
-            query(func.max(Survey.created_on),
-                  func.min(Submission.submission_time),
-                  func.max(Submission.submission_time),
-                  func.count(Submission.id)).\
-            select_from(Submission).\
-            join(Submission.survey).\
-            filter(User.id == user.id).\
-            filter(Submission.survey_id == survey_id).one()
+        result = (
+            self.session
+            .query(
+                func.max(Survey.created_on),
+                func.min(Submission.submission_time),
+                func.max(Submission.submission_time),
+                func.count(Submission.id),
+            )
+            .select_from(Submission)
+            .join(Survey)
+            # TODO: ask @jmwohl what this line is supposed to do
+            # .filter(User.id == self.current_user_model.id)
+            .filter(Submission.survey_id == survey_id)
+            .one()
+        )
 
         response = {
             "created_on": result[0],
@@ -216,8 +173,6 @@ class SurveyResource(BaseResource):
         survey will be returned.
         """
         user = self.current_user_model
-        if user is None:
-            raise exc.Unauthorized()
 
         # number of days prior to return
         today = datetime.date.today()
@@ -226,35 +181,33 @@ class SurveyResource(BaseResource):
         # truncate the datetime to just the day
         date_trunc = func.date_trunc('day', Submission.submission_time)
 
-        query = self.session.query(
-            date_trunc, func.count()).filter(
-            User.id == user.id).filter(
-            Submission.submission_time >= from_date)
+        query = (
+            self.session
+            .query(date_trunc, func.count())
+            .filter(User.id == user.id)
+            .filter(Submission.submission_time >= from_date)
+        )
 
         if survey_id is not None:
             query = query.filter(Submission.survey_id == survey_id)
 
-        query = query.group_by(
-            date_trunc)
+        query = (
+            query
+            .group_by(date_trunc)
+            .order_by(date_trunc.desc())
+        )
 
-        result = query.order_by(date_trunc.desc()).all()
+        # TODO: Figure out if this should use OrderedDict
+        return {'activity': [
+            {'date': date, 'num_submissions': num} for date, num in query
+        ]}
 
-        response = {
-            'activity': []
-        }
-        for day in result:
-            response['activity'].append({
-                'date': day[0],
-                'num_submissions': day[1]
-            })
-        return response
+    # def prepare(self, data):
+    #     """Determine which fields to return.
 
-    def prepare(self, data):
-        """Determine which fields to return.
+    #     If we don't prep the data, all the fields get returned!
 
-        If we don't prep the data, all the fields get returned!
-
-        We can subtract fields here if there are fields which shouldn't
-        be included in the API.
-        """
-        return data
+    #     We can subtract fields here if there are fields which shouldn't
+    #     be included in the API.
+    #     """
+    #     return data

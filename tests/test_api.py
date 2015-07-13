@@ -1,9 +1,22 @@
 """API tests"""
+from collections import OrderedDict
+from datetime import datetime, date, timedelta
+import json
+import uuid
+import unittest
+
+import dateutil.parser
+
+from passlib.hash import bcrypt_sha256
+
 from tornado.escape import json_decode, json_encode
 
 from tests.util import DokoHTTPTest, setUpModule, tearDownModule
 
-from dokomoforms.models import Submission, Survey, Node
+from dokomoforms.models import Submission, Survey, Node, SurveyCreator
+import dokomoforms.models as models
+from dokomoforms.api.base import BaseResource
+from dokomoforms.api.nodes import NodeResource
 
 utils = (setUpModule, tearDownModule)
 
@@ -14,6 +27,7 @@ TODO:
     - add error tests for unauthenticated users
         - creating surveys
 - add tests for total_entries and filtered_entries
+- add tests for sub_surveys
 """
 
 # The numbers expected to be present via fixtures
@@ -22,14 +36,217 @@ TOTAL_SUBMISSIONS = 112
 TOTAL_NODES = 16
 
 
-class TestSurveyApi(DokoHTTPTest):
-    """
-    These tests are made against the known fixture data.
-    """
+class TestErrorHandling(DokoHTTPTest):
+    def test_bad_value_type(self):
+        # url to test
+        offset = 'five'
+        url = self.api_root + '/surveys'
+        query_params = {
+            'offset': offset
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        self.assertEqual(response.code, 400, msg=response.body)
+        self.assertIn(
+            'invalid', json_decode(response.body)['error'],
+            msg=json_decode(response.body)
+        )
 
+    def test_not_found(self):
+        survey_id = str(uuid.uuid4())
+        # url to tests
+        url = self.api_root + '/surveys/' + survey_id
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        self.assertEqual(response.code, 404)
+        self.assertIn('not found', json_decode(response.body)['error'])
+
+
+class TestApiBase(unittest.TestCase):
+    def test_current_user(self):
+        """Doesn't really test anything... it might in the future."""
+        fake_r_handler = lambda: None
+        fake_r_handler.current_user = 'test'
+        br = NodeResource()
+        br.ref_rh = fake_r_handler
+        self.assertEqual(br.current_user, 'test')
+
+
+class TestAuthentication(DokoHTTPTest):
+    def test_bounce(self):
+        url = self.api_root + '/nodes'
+        response = self.fetch(url, method='GET', _logged_in_user=None)
+        self.assertEqual(response.code, 401)
+
+    def test_is_authenticated_logged_in(self):
+        fake_resource = lambda: None
+        fake_r_handler = lambda: None
+        fake_r_handler.current_user = object()
+        fake_resource.r_handler = fake_r_handler
+        self.assertTrue(BaseResource.is_authenticated(fake_resource))
+
+    def test_is_authenticated_api_token(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.token = bcrypt_sha256.encrypt('a').encode()
+            user.token_expiration = datetime.now() + timedelta(days=1)
+            self.session.add(user)
+
+        fake_resource = lambda: None
+        fake_r_handler = lambda: None
+        fake_r_handler.current_user = None
+        fake_request = lambda: None
+        fake_request.headers = {
+            'Token': 'a',
+            'Email': 'test_creator@fixtures.com',
+        }
+        fake_r_handler.request = fake_request
+        fake_resource.r_handler = fake_r_handler
+        fake_resource.session = self.session
+
+        self.assertTrue(BaseResource.is_authenticated(fake_resource))
+
+    def test_is_authenticated_wrong_user(self):
+        fake_resource = lambda: None
+        fake_r_handler = lambda: None
+        fake_r_handler.current_user = None
+        fake_request = lambda: None
+        fake_request.headers = {
+            'Token': 'b',
+            'Email': 'wrong',
+        }
+        fake_r_handler.request = fake_request
+        fake_resource.r_handler = fake_r_handler
+        fake_resource.session = self.session
+
+        self.assertFalse(BaseResource.is_authenticated(fake_resource))
+
+    def test_is_authenticated_missing_api_token(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.token = bcrypt_sha256.encrypt('a').encode()
+            user.token_expiration = datetime.now() + timedelta(days=1)
+            self.session.add(user)
+
+        fake_resource = lambda: None
+        fake_r_handler = lambda: None
+        fake_r_handler.current_user = None
+        fake_request = lambda: None
+        fake_request.headers = {
+            'Email': 'test_creator@fixtures.com',
+        }
+        fake_r_handler.request = fake_request
+        fake_resource.r_handler = fake_r_handler
+        fake_resource.session = self.session
+
+        self.assertFalse(BaseResource.is_authenticated(fake_resource))
+
+    def test_is_authenticated_token_has_not_been_generated(self):
+        fake_resource = lambda: None
+        fake_r_handler = lambda: None
+        fake_r_handler.current_user = None
+        fake_request = lambda: None
+        fake_request.headers = {
+            'Token': 'b',
+            'Email': 'test_creator@fixtures.com',
+        }
+        fake_r_handler.request = fake_request
+        fake_resource.r_handler = fake_r_handler
+        fake_resource.session = self.session
+
+        self.assertFalse(BaseResource.is_authenticated(fake_resource))
+
+    def test_is_authenticated_wrong_api_token(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.token = bcrypt_sha256.encrypt('a').encode()
+            user.token_expiration = datetime.now() + timedelta(days=1)
+            self.session.add(user)
+
+        fake_resource = lambda: None
+        fake_r_handler = lambda: None
+        fake_r_handler.current_user = None
+        fake_request = lambda: None
+        fake_request.headers = {
+            'Token': 'b',
+            'Email': 'test_creator@fixtures.com',
+        }
+        fake_r_handler.request = fake_request
+        fake_resource.r_handler = fake_r_handler
+        fake_resource.session = self.session
+
+        self.assertFalse(BaseResource.is_authenticated(fake_resource))
+
+    def test_is_authenticated_expired_api_token(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.token = bcrypt_sha256.encrypt('a').encode()
+            user.token_expiration = datetime.now() - timedelta(days=1)
+            self.session.add(user)
+
+        fake_resource = lambda: None
+        fake_r_handler = lambda: None
+        fake_r_handler.current_user = None
+        fake_request = lambda: None
+        fake_request.headers = {
+            'Token': 'a',
+            'Email': 'test_creator@fixtures.com',
+        }
+        fake_r_handler.request = fake_request
+        fake_resource.r_handler = fake_r_handler
+        fake_resource.session = self.session
+
+        self.assertFalse(BaseResource.is_authenticated(fake_resource))
+
+
+class TestSurveyApi(DokoHTTPTest):
+    """These tests are made against the known fixture data."""
     def test_list_surveys(self):
         # url to test
         url = self.api_root + '/surveys'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        # check that response is valid parseable json
+        survey_dict = json_decode(response.body)
+
+        # check that the expected keys are present
+        self.assertTrue('surveys' in survey_dict)
+
+        self.assertEqual(len(survey_dict['surveys']), TOTAL_SURVEYS)
+
+        # check that no error is present
+        self.assertFalse("error" in survey_dict)
+
+    def test_list_surveys_with_empty_limit(self):
+        # url to test
+        url = self.api_root + '/surveys?limit='
         # http method (just for clarity)
         method = 'GET'
         # make request
@@ -95,6 +312,25 @@ class TestSurveyApi(DokoHTTPTest):
         # check the number of surveys matches the limit
         self.assertEqual(len(survey_dict['surveys']), 1)
 
+    def test_list_surveys_with_limit_and_bogus_parameter(self):
+        # url to test
+        url = self.api_root + '/surveys?limit=1&bbb=ccc'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+
+        # check that response is valid parseable json
+        survey_dict = json_decode(response.body)
+
+        # check that the limit value comes back correctly
+        self.assertTrue("limit" in survey_dict)
+        self.assertEqual(survey_dict['limit'], 1)
+
+        # check the number of surveys matches the limit
+        self.assertEqual(len(survey_dict['surveys']), 1)
+
     def test_get_single_survey(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
         # url to tests
@@ -121,6 +357,44 @@ class TestSurveyApi(DokoHTTPTest):
         self.assertTrue('version' in survey_dict)
 
         self.assertFalse("error" in survey_dict)
+
+    def test_get_single_public_survey_without_logging_in(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to tests
+        url = self.api_root + '/surveys/' + survey_id
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method, _logged_in_user=None)
+        # test response
+        survey_dict = json_decode(response.body)
+
+        # check that expected keys are present
+        self.assertIn('id', survey_dict, msg=survey_dict)
+        self.assertTrue('created_on' in survey_dict)
+        self.assertTrue('metadata' in survey_dict)
+        self.assertTrue('title' in survey_dict)
+        self.assertTrue('survey_type' in survey_dict)
+        self.assertTrue('default_language' in survey_dict)
+        self.assertTrue('deleted' in survey_dict)
+        self.assertTrue('creator_name' in survey_dict)
+        self.assertTrue('nodes' in survey_dict)
+        self.assertTrue('last_update_time' in survey_dict)
+        self.assertTrue('creator_id' in survey_dict)
+        self.assertTrue('version' in survey_dict)
+
+        self.assertFalse("error" in survey_dict)
+
+    def test_cannot_get_enumerator_only_survey_without_logging_in(self):
+        """TODO: Find out if this makes sense."""
+        survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
+        # url to tests
+        url = self.api_root + '/surveys/' + survey_id
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method, _logged_in_user=None)
+        self.assertEqual(response.code, 401)
 
     def test_get_single_survey_with_sub_surveys(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
@@ -220,6 +494,34 @@ class TestSurveyApi(DokoHTTPTest):
 
         self.assertFalse("error" in survey_dict)
 
+    def test_create_survey_with_nonsense_node_definition(self):
+        # url to test
+        url = self.api_root + '/surveys'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "metadata": {},
+            "survey_type": "public",
+            "default_language": "English",
+            "title": {"English": "Test_Survey"},
+            "nodes": [
+                {
+                    "not a title": {"English": "test_time_node"},
+                    "deleted": False
+                }
+            ]
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+
+        # test response
+        self.assertEqual(response.code, 400)
+        self.assertIn('missing', json_decode(response.body)['error'])
+
     def test_create_survey_with_node_id(self):
         node_id = "60e56824-910c-47aa-b5c0-71493277b43f"
         # url to test
@@ -265,17 +567,25 @@ class TestSurveyApi(DokoHTTPTest):
 
     def test_update_survey(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        self.assertFalse(
+            self.session.query(Survey.deleted).filter_by(id=survey_id).scalar()
+        )
         # url to test
         url = self.api_root + '/surveys/' + survey_id
         # http method
         method = 'PUT'
         # body
-        body = '{"survey_body_json"}'
+        body = {
+            'deleted': True
+        }
+        encoded_body = json_encode(body)
         # make request
-        response = self.fetch(url, method=method, body=body)
+        response = self.fetch(url, method=method, body=encoded_body)
         # test response
-        id(response)
-        self.fail("Not yet implemented.")
+        self.assertTrue(json_decode(response.body)['deleted'])
+        self.assertTrue(
+            self.session.query(Survey.deleted).filter_by(id=survey_id).scalar()
+        )
 
     def test_delete_survey(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
@@ -318,6 +628,21 @@ class TestSurveyApi(DokoHTTPTest):
         self.assertTrue('last_update_time' in submission_dict)
         self.assertTrue('submission_time' in submission_dict)
         self.assertTrue('survey_id' in submission_dict)
+
+    def test_submit_to_survey_bogus_survey_id(self):
+        survey_id = str(uuid.uuid4())
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated"
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 404, msg=response.body)
 
     def test_submit_to_survey_with_integer_answer_response(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
@@ -560,7 +885,7 @@ class TestSurveyApi(DokoHTTPTest):
 
         self.assertTrue('error' in submission_dict)
 
-        self.assertEqual(response.code, 500)
+        self.assertEqual(response.code, 400)
 
     def test_list_submissions_to_survey(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
@@ -573,7 +898,7 @@ class TestSurveyApi(DokoHTTPTest):
         # test response
         submission_list = json_decode(response.body)
 
-        self.assertTrue('submissions' in submission_list)
+        self.assertIn('submissions', submission_list, msg=submission_list)
         self.assertTrue('survey_id' in submission_list)
 
         self.assertFalse('error' in submission_list)
@@ -590,11 +915,27 @@ class TestSurveyApi(DokoHTTPTest):
         stats = json_decode(response.body)
 
         # test response
-        self.assertTrue("latest_submission_time" in stats)
-        self.assertTrue("created_on" in stats)
-        self.assertTrue("earliest_submission_time" in stats)
-        self.assertTrue("num_submissions" in stats)
-        self.assertFalse("error" in stats)
+        today = date.today()
+        self.assertTrue(
+            stats['latest_submission_time'].startswith(today.isoformat())
+        )
+        self.assertTrue(stats['created_on'].startswith(today.isoformat()))
+        self.assertTrue(
+            stats['earliest_submission_time'].startswith(
+                (today - timedelta(days=99)).isoformat()
+            )
+        )
+        self.assertEqual(stats['num_submissions'], 101)
+
+    def test_get_stats_for_survey_not_logged_in(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/stats'
+        # http method
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method, _logged_in_user=None)
+        self.assertEqual(response.code, 401)
 
     def test_submission_activity_for_all_surveys(self):
         # url to test
@@ -605,7 +946,7 @@ class TestSurveyApi(DokoHTTPTest):
         response = self.fetch(url, method=method)
         # test response
         activity = json_decode(response.body)
-        self.assertTrue('activity' in activity)
+        self.assertIn('activity', activity, msg=activity)
         self.assertEqual(len(activity['activity']), 30)
 
         # test 'days' query param
@@ -615,8 +956,29 @@ class TestSurveyApi(DokoHTTPTest):
         url = self.append_query_params(url, query_params)
         response = self.fetch(url, method=method)
         activity = json_decode(response.body)
-        self.assertTrue('activity' in activity)
-        self.assertEqual(len(activity['activity']), 10)
+        self.assertIn('activity', activity, msg=activity)
+        activity_list = activity['activity']
+        self.assertEqual(len(activity_list), 10)
+        self.assertEqual(activity_list[0]['num_submissions'], 13)
+        self.assertTrue(all(
+            act['num_submissions'] == 1 for act in activity_list[1:]
+        ))
+
+    def test_get_all_submission_activity(self):
+        url = self.api_root + '/surveys/activity'
+        query_params = {
+            'days': 1000
+        }
+        url = self.append_query_params(url, query_params)
+        response = self.fetch(url, method='GET')
+        activity = json_decode(response.body)
+        self.assertIn('activity', activity, msg=activity)
+        activity_list = activity['activity']
+        self.assertEqual(len(activity_list), 100)
+        self.assertEqual(
+            sum(act['num_submissions'] for act in activity_list),
+            TOTAL_SUBMISSIONS
+        )
 
     def test_submission_activity_for_single_surveys(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
@@ -656,9 +1018,142 @@ class TestSurveyApi(DokoHTTPTest):
     #    # test response
     #    self.assertTrue(response.code == 401)
 
+    def test_get_single_survey_with_specific_fields(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to tests
+        url = self.api_root + '/surveys/' + survey_id
+        query_params = {
+            'fields': 'title,creator_name'
+        }
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        survey_dict = json_decode(response.body)
+        self.assertEqual(
+            survey_dict,
+            OrderedDict((
+                ('title', OrderedDict((('English', 'single_survey'),))),
+                ('creator_name', 'test_user'),
+            ))
+        )
+
+    def test_surveys_dont_have_a_type_constraint(self):
+        # url to tests
+        url = self.api_root + '/surveys'
+        query_params = {
+            'type': 'integer',
+        }
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        self.assertEqual(response.code, 400)
+        self.assertIn('has no attribute', json_decode(response.body)['error'])
+
+    def test_list_surveys_with_specific_fields(self):
+        # url to tests
+        url = self.api_root + '/surveys'
+        query_params = {
+            'fields': 'deleted,creator_name',
+            'limit': 2,
+        }
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        survey_dict = json.loads(
+            response.body.decode(), object_pairs_hook=OrderedDict
+        )
+        self.assertEqual(
+            survey_dict,
+            OrderedDict((
+                (
+                    'surveys',
+                    [
+                        OrderedDict((
+                            ('deleted', False), ('creator_name', 'test_user'))
+                        ),
+                        OrderedDict((
+                            ('deleted', False), ('creator_name', 'test_user'))
+                        ),
+                    ],
+                ),
+                ('total_entries', 14),
+                ('filtered_entries', 14),
+                ('fields', 'deleted,creator_name'),
+                ('limit', 2),
+            )),
+            msg=survey_dict
+        )
+
+    def test_list_surveys_with_specific_fields_and_filter(self):
+        # url to tests
+        url = self.api_root + '/surveys'
+        query_params = OrderedDict((
+            ('fields', 'deleted,creator_name'),
+            ('search', 'a'),
+        ))
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        survey_dict = json.loads(
+            response.body.decode(), object_pairs_hook=OrderedDict
+        )
+        self.assertEqual(len(survey_dict['surveys']), 6)
+        self.assertEqual(survey_dict['total_entries'], 14)
+        self.assertEqual(survey_dict['filtered_entries'], 6)
+
+    def test_list_surveys_with_specific_fields_and_filter_and_limit(self):
+        # url to tests
+        url = self.api_root + '/surveys'
+        query_params = OrderedDict((
+            ('fields', 'deleted,creator_name'),
+            ('search', 'a'),
+            ('limit', 2),
+        ))
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        survey_dict = json.loads(
+            response.body.decode(), object_pairs_hook=OrderedDict
+        )
+        self.assertEqual(
+            survey_dict,
+            OrderedDict((
+                (
+                    'surveys',
+                    [
+                        OrderedDict((
+                            ('deleted', False), ('creator_name', 'test_user'))
+                        ),
+                        OrderedDict((
+                            ('deleted', False), ('creator_name', 'test_user'))
+                        ),
+                    ],
+                ),
+                ('total_entries', 14),
+                ('filtered_entries', 6),
+                ('fields', 'deleted,creator_name'),
+                ('limit', 2),
+                ('search', 'a'),
+            )),
+            msg=survey_dict
+        )
+
 
 class TestSubmissionApi(DokoHTTPTest):
-
     def test_list_submissions(self):
         # url to test
         url = self.api_root + '/submissions'
@@ -676,6 +1171,49 @@ class TestSubmissionApi(DokoHTTPTest):
             len(submission_dict['submissions']), TOTAL_SUBMISSIONS)
 
         self.assertFalse("error" in submission_dict)
+
+    def test_list_submissions_search_submitter_name(self):
+        search_term = 'singular'
+        # url to test
+        url = self.api_root + '/submissions'
+        query_params = {
+            'search': search_term,
+            'search_fields': 'submitter_name'
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        response_body = json_decode(response.body)
+        self.assertIn('submissions', response_body, msg=response_body)
+        submissions = response_body['submissions']
+
+        self.assertEqual(len(submissions), 1)
+
+    def test_list_submissions_search_submitter_name_regex(self):
+        search_term = '.*singular'
+        # url to test
+        url = self.api_root + '/submissions'
+        query_params = {
+            'search': search_term,
+            'search_fields': 'submitter_name',
+            'regex': 'true',
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        response_body = json_decode(response.body)
+        self.assertIn('submissions', response_body, msg=response_body)
+        submissions = response_body['submissions']
+
+        self.assertEqual(len(submissions), 1)
 
     def test_get_single_submission(self):
         submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
@@ -725,6 +1263,123 @@ class TestSubmissionApi(DokoHTTPTest):
         self.assertTrue('last_update_time' in submission_dict)
         self.assertTrue('submission_time' in submission_dict)
         self.assertTrue('survey_id' in submission_dict)
+        self.assertEqual(
+            submission_dict['enumerator_user_id'],
+            'b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+        )
+
+    def test_create_public_submission_not_logged_in(self):
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": "b0816b52-204f-41d4-aaf0-ac6ae2970923",
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated"
+        }
+        # make request
+        response = self.fetch(
+            url, method=method, body=json_encode(body), _logged_in_user=None
+        )
+
+        submission_dict = json_decode(response.body)
+
+        self.assertIn('save_time', submission_dict, msg=submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+        self.assertNotIn('enumerator_user_id', submission_dict)
+
+    def test_create_public_submission_no_survey_id(self):
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated"
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 400, response.body)
+
+        submission_dict = json_decode(response.body)
+        self.assertIn('property is required', submission_dict['error'])
+
+    def test_create_public_submission_survey_does_not_exist(self):
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            'survey_id': str(uuid.uuid4()),
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated"
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 400)
+
+        submission_dict = json_decode(response.body)
+        self.assertIn('could not be found', submission_dict['error'])
+
+    def test_create_public_submission_with_no_survey_node_id(self):
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": "b0816b52-204f-41d4-aaf0-ac6ae2970923",
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "type_constraint": "integer",
+                    "answer": 3,
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 400)
+
+        submission_dict = json_decode(response.body)
+        self.assertIn('property is required', submission_dict['error'])
+
+    def test_create_public_submission_with_bogus_survey_node_id(self):
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": "b0816b52-204f-41d4-aaf0-ac6ae2970923",
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    'survey_node_id': str(uuid.uuid4()),
+                    "type_constraint": "integer",
+                    "answer": 3,
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 400)
+
+        submission_dict = json_decode(response.body)
+        self.assertIn('survey_node not found', submission_dict['error'])
 
     def test_create_public_submission_with_integer_answer(self):
         # url to test
@@ -793,6 +1448,49 @@ class TestSubmissionApi(DokoHTTPTest):
         self.assertTrue('submission_time' in submission_dict)
         self.assertTrue('survey_id' in submission_dict)
 
+    def test_cannot_create_enumerator_only_submission_not_logged_in(self):
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": "c0816b52-204f-41d4-aaf0-ac6ae2970925",
+            "enumerator_user_id": "a7becd02-1a3f-4c1d-a0e1-286ba121aef3",
+            "submitter_name": "regular",
+        }
+        # make request
+        response = self.fetch(
+            url, method=method, body=json_encode(body), _logged_in_user=None
+        )
+        self.assertEqual(response.code, 401, msg=response.body)
+
+    def test_submission_defaults_to_authenticated(self):
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": "c0816b52-204f-41d4-aaf0-ac6ae2970925",
+            "enumerator_user_id": "a7becd02-1a3f-4c1d-a0e1-286ba121aef3",
+            "submitter_name": "regular",
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+
     # TODO: This was deemed unnecessary, submissions should be created
     # one at a time.
     # def test_create_multiple_submissions(self):
@@ -824,7 +1522,6 @@ class TestSubmissionApi(DokoHTTPTest):
 
 
 class TestNodeApi(DokoHTTPTest):
-
     def test_list_nodes(self):
         # url to test
         url = self.api_root + '/nodes'
@@ -835,7 +1532,7 @@ class TestNodeApi(DokoHTTPTest):
         # test response
         node_dict = json_decode(response.body)
         # check that the expected keys are present
-        self.assertTrue('nodes' in node_dict)
+        self.assertIn('nodes', node_dict, msg=node_dict)
 
         self.assertEqual(len(node_dict['nodes']), TOTAL_NODES)
 
@@ -859,7 +1556,7 @@ class TestNodeApi(DokoHTTPTest):
 
         node_dict = json_decode(response.body)
 
-        self.assertTrue('nodes' in node_dict)
+        self.assertIn('nodes', node_dict, msg=node_dict)
         self.assertTrue('limit' in node_dict)
         self.assertEqual(node_dict['limit'], limit)
         self.assertEqual(len(node_dict['nodes']), limit)
@@ -905,9 +1602,203 @@ class TestNodeApi(DokoHTTPTest):
         method = 'GET'
         # make request
         response = self.fetch(url, method=method)
-        id(response)
         # test response
-        self.fail("Not yet implemented.")
+        response_body = json_decode(response.body)
+        self.assertIn('nodes', response_body, msg=response_body)
+        nodes = response_body['nodes']
+
+        self.assertEqual(len(nodes), 3)
+        self.assertListEqual(
+            ['integer' in nodes[i]['title']['English'] for i in range(3)],
+            [True] * 3,
+            msg="Some of the returned titles don't contain the search term."
+        )
+
+    def test_list_nodes_none_matching(self):
+        search_term = 'not going to find this'
+        # url to test
+        url = self.api_root + '/nodes'
+        query_params = {
+            'search': search_term,
+            'search_fields': 'title'
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        response_body = json_decode(response.body)
+        self.assertIn('nodes', response_body, msg=response_body)
+        nodes = response_body['nodes']
+
+        self.assertEqual(len(nodes), 0, msg=nodes)
+        self.assertEqual(response_body['filtered_entries'], 0)
+
+    def test_list_nodes_order_by_title(self):
+        with self.session.begin():
+            self.session.add_all((
+                models.construct_node(
+                    languages=['French'],
+                    title={'French': 'ccc'},
+                    hint={'French': ''},
+                    type_constraint='integer',
+                ),
+                models.construct_node(
+                    languages=['German', 'French'],
+                    title={
+                        'French': 'bbb',
+                        'German': 'aaa',
+                    },
+                    hint={'German': '', 'French': ''},
+                    type_constraint='decimal',
+                ),
+            ))
+
+        search_term = '...'
+        # url to test
+        url = self.api_root + '/nodes'
+        query_params = {
+            'search': search_term,
+            'search_fields': 'title',
+            'regex': 'true',
+            'lang': 'French',
+            'order_by': "title->>'French':ASC",
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        response_body = json_decode(response.body)
+        self.assertIn('nodes', response_body, msg=response_body)
+        nodes = response_body['nodes']
+
+        self.assertEqual(len(nodes), 2)
+        self.assertEqual(nodes[0]['title']['French'], 'bbb')
+        self.assertEqual(nodes[1]['title']['French'], 'ccc')
+
+    def test_list_nodes_with_title_and_language_search(self):
+        with self.session.begin():
+            self.session.add_all((
+                models.construct_node(
+                    languages=['French'],
+                    title={'French': 'integer'},
+                    hint={'French': ''},
+                    type_constraint='integer',
+                ),
+                models.construct_node(
+                    languages=['French'],
+                    title={'French': 'decimal'},
+                    hint={'French': ''},
+                    type_constraint='decimal',
+                ),
+            ))
+
+        search_term = 'integer'
+        # url to test
+        url = self.api_root + '/nodes'
+        query_params = {
+            'search': search_term,
+            'search_fields': 'title',
+            'lang': 'French',
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        response_body = json_decode(response.body)
+        self.assertIn('nodes', response_body, msg=response_body)
+        nodes = response_body['nodes']
+
+        self.assertEqual(len(nodes), 1)
+        self.assertEqual(nodes[0]['title'], {'French': 'integer'})
+
+    def test_list_nodes_with_regex_search(self):
+        with self.session.begin():
+            self.session.add_all((
+                models.construct_node(
+                    languages=['French'],
+                    title={'French': '345'},
+                    hint={'French': ''},
+                    type_constraint='integer',
+                ),
+                models.construct_node(
+                    languages=['German'],
+                    title={'German': '678'},
+                    hint={'German': ''},
+                    type_constraint='decimal',
+                ),
+            ))
+
+        search_term = '\d+'
+        # url to test
+        url = self.api_root + '/nodes'
+        query_params = {
+            'search': search_term,
+            'search_fields': 'title',
+            'regex': 'true',
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        response_body = json_decode(response.body)
+        self.assertIn('nodes', response_body, msg=response_body)
+        nodes = response_body['nodes']
+
+        self.assertEqual(len(nodes), 2)
+        self.assertEqual(nodes[0]['title'], {'French': '345'})
+        self.assertEqual(nodes[1]['title'], {'German': '678'})
+
+    def test_list_nodes_with_regex_and_language_search(self):
+        with self.session.begin():
+            self.session.add_all((
+                models.construct_node(
+                    languages=['French'],
+                    title={'French': '345'},
+                    hint={'French': ''},
+                    type_constraint='integer',
+                ),
+                models.construct_node(
+                    languages=['German'],
+                    title={'German': '678'},
+                    hint={'German': ''},
+                    type_constraint='decimal',
+                ),
+            ))
+
+        search_term = '\d+'
+        # url to test
+        url = self.api_root + '/nodes'
+        query_params = {
+            'search': search_term,
+            'search_fields': 'title',
+            'regex': 'true',
+            'lang': 'French',
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        response_body = json_decode(response.body)
+        self.assertIn('nodes', response_body, msg=response_body)
+        nodes = response_body['nodes']
+
+        self.assertEqual(len(nodes), 1)
+        self.assertEqual(nodes[0]['title'], {'French': '345'})
 
     def test_list_nodes_with_type_filter(self):
         type_constraint = 'text'
@@ -947,7 +1838,7 @@ class TestNodeApi(DokoHTTPTest):
         # test response
         node_dict = json_decode(response.body)
 
-        self.assertEqual(response.code, 500)
+        self.assertEqual(response.code, 400)
         self.assertTrue('error' in node_dict)
 
     def test_get_single_node(self):
@@ -963,7 +1854,7 @@ class TestNodeApi(DokoHTTPTest):
         node_dict = json_decode(response.body)
 
         # check that expected keys are present
-        self.assertTrue('id' in node_dict)
+        self.assertIn('id', node_dict, msg=node_dict)
         self.assertTrue('hint' in node_dict)
         self.assertTrue('title' in node_dict)
         self.assertTrue('allow_other' in node_dict)
@@ -1431,20 +2322,45 @@ class TestNodeApi(DokoHTTPTest):
 
     def test_update_node(self):
         node_id = '60e56824-910c-47aa-b5c0-71493277b43f'
+        self.assertFalse(
+            self.session.query(Node.deleted).filter_by(id=node_id).scalar()
+        )
         # url to test
         url = self.api_root + '/nodes/' + node_id
         # http method
         method = 'PUT'
         # body
         body = {
-
+            'deleted': True
         }
         encoded_body = json_encode(body)
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
-        id(response)
         # test response
-        self.fail("Not yet implemented.")
+        self.assertTrue(json_decode(response.body)['deleted'])
+        self.assertTrue(
+            self.session.query(Node.deleted).filter_by(id=node_id).scalar()
+        )
+
+    def test_update_node_not_found(self):
+        node_id = str(uuid.uuid4())
+        # url to test
+        url = self.api_root + '/nodes/' + node_id
+        # http method
+        method = 'PUT'
+        # body
+        body = {
+            'deleted': True
+        }
+        encoded_body = json_encode(body)
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+        # test response
+        self.assertEqual(response.code, 404)
+        self.assertEqual(
+            json_decode(response.body)['error'],
+            'Resource not found.'
+        )
 
     def test_delete_node(self):
         node_id = '60e56824-910c-47aa-b5c0-71493277b43f'
@@ -1462,19 +2378,67 @@ class TestNodeApi(DokoHTTPTest):
 
         self.assertTrue(survey.deleted)
 
+    def test_delete_node_not_found(self):
+        node_id = str(uuid.uuid4())
+        # url to test
+        url = self.api_root + '/nodes/' + node_id
+        # http method
+        method = 'DELETE'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        self.assertEqual(response.code, 404)
+        self.assertEqual(
+            json_decode(response.body)['error'],
+            'Resource not found.'
+        )
+
+    def test_list_nodes_including_deleted(self):
+        node_id = '60e56824-910c-47aa-b5c0-71493277b43f'
+        delete_url = self.api_root + '/nodes/' + node_id
+        self.fetch(delete_url, method='DELETE')
+
+        list_url = self.api_root + '/nodes'
+        regular_response = self.fetch(list_url, method='GET')
+        self.assertEqual(
+            len(json_decode(regular_response.body)['nodes']),
+            TOTAL_NODES - 1
+        )
+
+        list_deleted_url = self.append_query_params(
+            list_url, {'show_deleted': 'true'}
+        )
+        include_deleted_response = self.fetch(list_deleted_url, method='GET')
+        self.assertEqual(
+            len(json_decode(include_deleted_response.body)['nodes']),
+            TOTAL_NODES
+        )
+
 
 class TestUserApi(DokoHTTPTest):
-
     def test_create_api_token(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        self.assertIsNone(user.token)
         # url to test
         url = self.api_root + '/user/generate-api-token'
         # http method (just for clarity)
         method = 'GET'
         # make request
         response = self.fetch(url, method=method)
-        id(response)
+        response_dict = json_decode(response.body)
         # test response
-        self.fail("Not yet implemented.")
+        token = response_dict['token']
+        expiration = response_dict['expires_on']
+        self.assertTrue(bcrypt_sha256.verify(token, user.token))
+        self.assertEqual(expiration, user.token_expiration.isoformat())
+        self.assertEqual(
+            dateutil.parser.parse(expiration).date(),
+            (datetime.now() + timedelta(days=60)).date()
+        )
 
     def test_use_api_token(self):
         # url to test
@@ -1483,6 +2447,47 @@ class TestUserApi(DokoHTTPTest):
         method = 'GET'
         # make request
         response = self.fetch(url, method=method)
-        id(response)
-        # test response
-        self.fail("Not yet implemented.")
+        token = json_decode(response.body)['token']
+
+        api_url = self.api_root + '/nodes'
+        api_response = self.fetch(
+            api_url, method='GET', _logged_in_user=None,
+            headers={'Email': 'test_creator@fixtures.com', 'Token': token},
+        )
+        self.assertEqual(
+            api_response.body, self.fetch(api_url, method='GET').body
+        )
+
+    def test_use_wrong_api_token(self):
+        api_url = self.api_root + '/nodes'
+        api_response = self.fetch(
+            api_url, method='GET', _logged_in_user=None,
+            headers={'Email': 'test_creator@fixtures.com', 'Token': 'wrong'},
+        )
+
+        self.assertEqual(api_response.code, 401)
+
+    def test_use_expired_api_token(self):
+        # url to test
+        url = self.api_root + '/user/generate-api-token'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        token = json_decode(response.body)['token']
+
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.token_expiration = datetime.now() - timedelta(days=1)
+
+        api_url = self.api_root + '/nodes'
+        api_response = self.fetch(
+            api_url, method='GET', _logged_in_user=None,
+            headers={'Email': 'test_creator@fixtures.com', 'Token': token},
+        )
+
+        self.assertEqual(api_response.code, 401)

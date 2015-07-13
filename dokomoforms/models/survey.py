@@ -8,6 +8,7 @@ import dateutil.parser
 
 import sqlalchemy as sa
 from sqlalchemy.sql.functions import current_timestamp
+from sqlalchemy.sql.elements import quoted_name
 from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declared_attr
@@ -102,8 +103,11 @@ class Survey(Base):
         'polymorphic_identity': 'public',
     }
     __table_args__ = (
-        sa.UniqueConstraint(
-            'title', 'creator_id', name='unique_survey_title_per_user'
+        sa.Index(
+            'unique_survey_title_in_default_language_per_user',
+            sa.column(quoted_name('(title->>default_language)', quote=False)),
+            'creator_id',
+            unique=True,
         ),
         sa.UniqueConstraint('id', 'survey_type'),
         sa.UniqueConstraint('id', 'languages'),
@@ -381,7 +385,6 @@ class MultipleChoiceBucket(Bucket):
 
     __mapper_args__ = {'polymorphic_identity': 'multiple_choice'}
     __table_args__ = (
-        sa.UniqueConstraint('choice_id', 'the_sub_survey_id'),
         sa.ForeignKeyConstraint(
             ['choice_id', 'parent_node_id'],
             ['choice.id', 'choice.question_id'],
@@ -506,12 +509,10 @@ class SurveyNode(Base):
 
     __mapper_args__ = {'polymorphic_on': survey_node_answerable}
     __table_args__ = (
-        sa.UniqueConstraint('id', 'node_number'),
         sa.UniqueConstraint('id', 'node_id', 'type_constraint'),
         sa.UniqueConstraint(
             'id', 'root_survey_languages', 'node_id', 'type_constraint'
         ),
-        sa.UniqueConstraint('root_survey_id', 'node_number'),
         sa.CheckConstraint(
             '(root_survey_id IS NULL) != (sub_survey_id IS NULL)'
         ),
@@ -656,17 +657,18 @@ def construct_survey_node(**kwargs) -> SurveyNode:
     :param kwargs: the keyword arguments to pass to the constructor
     :returns: an instance of one of the Node subtypes
     """
+    if 'the_node' in kwargs:
+        raise TypeError('the_node')
     if 'node' in kwargs:
         type_constraint = kwargs['node'].type_constraint
-        if 'the_node' not in kwargs:
-            kwargs['the_node'] = kwargs['node']
+        kwargs['the_node'] = kwargs['node']
 
     if 'type_constraint' in kwargs:
         type_constraint = kwargs['type_constraint']
 
     survey_node_constructor = (
-        NonAnswerableSurveyNode if type_constraint
-        is 'note' else AnswerableSurveyNode
+        NonAnswerableSurveyNode if type_constraint == 'note'
+        else AnswerableSurveyNode
     )
 
     return survey_node_constructor(**kwargs)

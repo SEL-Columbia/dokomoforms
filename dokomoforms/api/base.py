@@ -1,23 +1,39 @@
 """The base class of the TornadoResource classes in the api module."""
-from restless.tnd import TornadoResource
+from abc import ABCMeta, abstractmethod
+from collections import OrderedDict
+from time import localtime
 
+from passlib.hash import bcrypt_sha256
+
+from restless.tnd import TornadoResource
+import restless.exceptions as exc
+
+from sqlalchemy import text, func
 from sqlalchemy.sql.expression import false
+from sqlalchemy.sql.functions import count
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm.exc import NoResultFound
 
 from dokomoforms.api.serializer import ModelJSONSerializer
 from dokomoforms.handlers.util import BaseAPIHandler
+from dokomoforms.models import SurveyCreator, Email
+from dokomoforms.models.util import column_search, get_asdict_subset
+from dokomoforms.exc import DokomoError
 
-"""
-A list of the expected query arguments
-"""
-QUERY_ARGS = [
-    'limit',
-    'offset',
-    'type',
-    'draw'
-]
+# TODO: Find out if it is OK to remove these. @jmwohl
+# """
+# A list of the expected query arguments
+# """
+# QUERY_ARGS = [
+#     'limit',
+#     'offset',
+#     'type',
+#     'draw',
+#     'fields',
+# ]
 
 
-class BaseResource(TornadoResource):
+class BaseResource(TornadoResource, metaclass=ABCMeta):
 
     """Set up the basics for the model resource.
 
@@ -33,8 +49,20 @@ class BaseResource(TornadoResource):
     # The serializer is used to serialize / deserialize models to json
     serializer = ModelJSONSerializer()
 
-    # The name of the property for the array of objects returned in a json list
-    objects_key = 'objects'
+    @property  # pragma: no cover
+    @abstractmethod
+    def resource_type(self):
+        """The model class for the resource."""
+
+    @property  # pragma: no cover
+    @abstractmethod
+    def default_sort_column_name(self):
+        """The default ORDER BY column name for list responses."""
+
+    @property  # pragma: no cover
+    @abstractmethod
+    def objects_key(self):
+        """The key for list responses."""
 
     @property
     def session(self):
@@ -56,6 +84,41 @@ class BaseResource(TornadoResource):
         """The handler's current_user."""
         return self.r_handler.current_user
 
+    def _query_arg(self, argument_name, output=None, default=None):
+        """Get a useful query parameter argument."""
+        arg = self.r_handler.get_query_argument(argument_name, None)
+
+        # Return default if the argument was not given.
+        if not arg:
+            return default
+
+        # Convert 'true'/'false' argument into True or False
+        if output is bool:
+            return arg.lower() == 'true'
+
+        # Convert a comma-separated list to a list of strings
+        if output is list:
+            return arg.split(',')
+
+        # Apply the parsing function if supplied.
+        if output is not None:
+            return output(arg)
+
+        return arg
+
+    def handle_error(self, err):
+        """Generate a serialized error message.
+
+        This turns expected errors into 400 BAD REQUEST instead of 500
+        INTERNAL SERVER ERROR.
+        """
+        understood = (
+            ValueError, TypeError, AttributeError, SQLAlchemyError, DokomoError
+        )
+        if isinstance(err, understood):
+            err = exc.BadRequest(err)
+        return super().handle_error(err)
+
     def wrap_list_response(self, data):
         """Wrap a list response in a dict.
 
@@ -73,72 +136,160 @@ class BaseResource(TornadoResource):
         :returns: A wrapping dict
         :rtype: dict
         """
-        response = {
-            self.objects_key: data
-        }
+        response = OrderedDict((
+            (self.objects_key, data[1]),
+            (
+                'total_entries',
+                self.session.query(func.count(self.resource_type.id)).scalar()
+            ),
+            ('filtered_entries', data[0]),
+        ))
         # add additional properties to the response object
         full_response = self._add_meta_props(response)
 
         return full_response
 
     def is_authenticated(self):
-        """TODO: Return whether the request has been authenticated."""
-        return True
-        #if self.request_method() == 'GET':
-        #    return True
+        """Return whether the request has been authenticated."""
+        # A logged-in user has already authenticated.
+        if self.r_handler.current_user is not None:
+            return True
 
-        ## Require logged-in user to POST/PUT/DELETE
-        #return self.r_handler.current_user is not None
+        # A SurveyCreator can log in with a token.
+        token = self.r_handler.request.headers.get('Token', None)
+        email = self.r_handler.request.headers.get('Email', None)
+        if (token is not None) and (email is not None):
+            # Get the user's token hash and expiration time.
+            try:
+                user = (
+                    self.session
+                    .query(SurveyCreator.token, SurveyCreator.token_expiration)
+                    .join(Email)
+                    .filter(Email.address == email)
+                    .one()
+                )
+            except NoResultFound:
+                return False
+            # Check that the token has not expired
+            if user.token_expiration.timetuple() < localtime():
+                return False
+            # Check the token
+            token_exists = user.token is not None
+            return token_exists and bcrypt_sha256.verify(token, user.token)
 
-        # Alternatively, you could check an API key. (Need a model for this...)
-        # from myapp.models import ApiKey
-        # try:
-        #     key = ApiKey.objects.get(key=self.request.GET.get('api_key'))
-        #     return True
-        # except ApiKey.DoesNotExist:
-        #     return False
+        return False
 
-    def _generate_list_response(self, model_cls, **kwargs):
-        """Return a query for a list response.
+    def _fields_filter(self, model_or_models, is_detail=True):
+        """Filter the fields on the given models.
+
+        TODO: Confirm that this is not a performance bottleneck.
+        """
+        fields = self._query_arg('fields', list)
+
+        # No fields specified -> return them all.
+        if fields is None:
+            return model_or_models
+
+        if is_detail:
+            the_model = model_or_models
+            return get_asdict_subset(the_model, fields)
+        models = model_or_models
+        return [get_asdict_subset(model, fields) for model in models]
+
+    def detail(self, model_id):
+        """Return a single instance of a model."""
+        model = self.session.query(self.resource_type).get(model_id)
+        if model is None:
+            raise exc.NotFound()
+        return self._fields_filter(model)
+
+    def list(self, where=None):
+        """Return a list of instances of this model.
 
         Given a model class, build up the ORM query based on query params
         and return the query result.
         """
-        query = self.session.query(model_cls)
+        model_cls = self.resource_type
+        query = self.session.query(model_cls, count().over())
 
-        limit = self.r_handler.get_query_argument('limit', None)
-        offset = self.r_handler.get_query_argument('offset', None)
-        deleted = self.r_handler.get_query_argument('show_deleted', 'false')
-        search_term = self.r_handler.get_query_argument('search', None)
-        search_fields = self.r_handler.get_query_argument(
-            'search_fields', 'title')
-        # TODO: this
-        # search_lang = self.r_handler.get_query_argument('lang', 'English')
-        type = self.r_handler.get_query_argument('type', None)
+        limit = self._query_arg('limit', int)
+        offset = self._query_arg('offset', int)
+        deleted = self._query_arg('show_deleted', bool, False)
+        search_term = self._query_arg('search')
+        regex = self._query_arg('regex', bool, False)
+        search_fields = self._query_arg(
+            'search_fields', list, default=['title']
+        )
+        search_lang = self._query_arg('lang')
 
-        if deleted.lower() != 'true':
+        default_sort = ['{}:DESC'.format(self.default_sort_column_name)]
+        order_by = (
+            element.split(':') for element in self._query_arg(
+                'order_by', list, default=default_sort
+            )
+        )
+
+        type_constraint = self._query_arg('type')
+
+        if search_term is not None:
+            for search_field in search_fields:
+                query = column_search(
+                    query,
+                    model_cls=model_cls,
+                    column_name=search_field,
+                    search_term=search_term,
+                    language=search_lang,
+                    regex=regex,
+                )
+
+        if not deleted:
             query = query.filter(model_cls.deleted == false())
 
-        if type is not None:
-            query = query.filter(model_cls.type_constraint == type)
+        if type_constraint is not None:
+            query = query.filter(model_cls.type_constraint == type_constraint)
+
+        if where is not None:
+            query = query.filter(where)
+
+        query = query.order_by(text(
+            ', '.join(
+                '{0} {1}'.format(*order) for order in order_by
+            ) + ' NULLS LAST'
+        ))
 
         if limit is not None:
-            query = query.limit(int(limit))
+            query = query.limit(limit)
 
         if offset is not None:
-            query = query.offset(int(offset))
+            query = query.offset(offset)
 
-        # TODO: this isn't complete -- needs jsonb lookupability.
-        if search_term is not None:
-            search_fields_list = search_fields.split(',')
-            for search_field in search_fields_list:
-                if hasattr(model_cls, search_field):
-                    query = query.filter(
-                        getattr(
-                            model_cls, search_field
-                        ).ilike('%' + search_term + '%'))
+        result = query.all()
+        if result:
+            num_filtered = result[0][1]
+            models = [res[0] for res in result]
+            return num_filtered, self._fields_filter(models, is_detail=False)
+        return 0, []
 
-        return query.all()
+    def update(self, model_id):
+        """Update a model."""
+        model = self.session.query(self.resource_type).get(model_id)
+
+        if model is None:
+            raise exc.NotFound()
+
+        with self.session.begin():
+            for attribute, value in self.data.items():
+                setattr(model, attribute, value)
+            self.session.add(model)
+        return model
+
+    def delete(self, model_id):
+        """Set the deleted attribute to True. Does not destroy the instance."""
+        with self.session.begin():
+            model = self.session.query(self.resource_type).get(model_id)
+            if model is None:
+                raise exc.NotFound()
+            model.deleted = True
 
     def _add_meta_props(self, response):
         """Add metadata to the response.
@@ -163,11 +314,10 @@ class BaseResource(TornadoResource):
         TODO: this will require a bit more sophistication, since we probably
         don't want to just reflect query params willy nilly.
         """
-        for prop in QUERY_ARGS:
-            prop_value = self.r_handler.get_query_argument(prop, None)
-            if prop_value is not None:
-                if prop_value.isdigit():
-                    prop_value = int(prop_value)
-                response[prop] = prop_value
+        for prop in sorted(self.r_handler.request.arguments):
+            prop_value = self.r_handler.get_query_argument(prop)
+            if prop_value.isdigit():
+                prop_value = int(prop_value)
+            response[prop] = prop_value
 
         return response

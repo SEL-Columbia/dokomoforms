@@ -40,8 +40,9 @@ _pwd = os.path.dirname(__file__)
 bold = '\033[1m'
 green = '\033[92m'
 
-UUID_REGEX = '[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][' \
-             'a-f0-9]{3}-?[a-f0-9]{12}'
+UUID_REGEX = (
+    '[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}'
+)
 
 
 def modify_text(text: str, modifier: str) -> str:
@@ -174,6 +175,13 @@ class Application(tornado.web.Application):
                 '/nodes/({})/?'.format(UUID_REGEX),
                 NodeResource.as_detail(),
                 name="node"),
+
+            # Users
+            url(
+                r'' + self._api_root_path + '/user/generate-api-token/?',
+                handlers.GenerateToken,
+                name='generate_token',
+            ),
         ]
 
         # Debug
@@ -189,23 +197,25 @@ class Application(tornado.web.Application):
             'template_path': os.path.join(_pwd, 'dokomoforms/templates'),
             'static_path': os.path.join(_pwd, 'dokomoforms/static'),
             'default_handler_class': handlers.NotFound,
-            'xsrf_cookies': False,  # TODO: True
+            'xsrf_cookies': True,
             'cookie_secret': get_cookie_secret(),
             'login_url': '/',
             'debug': options.dev or options.debug,
-            'autoreload': options.dev or options.autoreload
+            'autoreload': options.dev or options.autoreload,
         }
         super().__init__(urls, **settings)
-        self.engine = create_engine()
-        if options.kill:
-            logging.info('Dropping schema {}.'.format(options.schema))
-            self.engine.execute(
-                DDL('DROP SCHEMA IF EXISTS {} CASCADE'.format(options.schema))
-            )
-        Base.metadata.create_all(self.engine)
+
+        # Database setup
         if session is None:
-            self.sessionmaker = sessionmaker(bind=self.engine, autocommit=True)
-            self.session = self.sessionmaker()
+            engine = create_engine()
+            if options.kill:
+                logging.info('Dropping schema {}.'.format(options.schema))
+                engine.execute(DDL(
+                    'DROP SCHEMA IF EXISTS {} CASCADE'.format(options.schema)
+                ))
+            Base.metadata.create_all(engine)
+            Session = sessionmaker(bind=engine, autocommit=True)
+            self.session = Session()
         else:
             self.session = session
 

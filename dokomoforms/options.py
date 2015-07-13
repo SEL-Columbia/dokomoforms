@@ -19,12 +19,16 @@ define('port', help='run on the given port', type=int)
 define('cookie_secret', help='string used to create session cookies')
 define('debug', default=False, help='whether to enable debug mode', type=bool)
 define('autoreload', default=False, help='whether to autoreload', type=bool)
-define('dev', default=False, help='turn on autoreload and debug, \
-    maybe some other dev options', type=bool)
+define('dev',
+       default=False,
+       help='turn on autoreload and debug, maybe some other dev options',
+       type=bool,
+       )
 
-define(
-    'https', help='whether the application accepts https traffic', type=bool
-)
+define('https',
+       help='whether the application accepts https traffic',
+       type=bool,
+       )
 define('organization', help='the name of your organization')
 
 # Database options
@@ -34,12 +38,11 @@ define('db_database', help='database name')
 define('db_user', help='database user')
 define('db_password', help='database password')
 define('TEST_USER', help='A test user for... testing.')
-define(
-    'kill',
-    default=False,
-    help='whether to drop the existing schema before starting',
-    type=bool,
-)
+define('kill',
+       default=False,
+       help='whether to drop the existing schema before starting',
+       type=bool,
+       )
 
 
 def inject_options(**kwargs):

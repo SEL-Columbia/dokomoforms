@@ -160,12 +160,11 @@ def construct_submission(*, submission_type: str, **kwargs) -> Submission:
     :returns: an instance of one of the Node subtypes
     :raises: dokomoforms.exc.NoSuchSubmissionTypeError
     """
-    survey_constructor = EnumeratorOnlySubmission
-
-    if submission_type == 'unauthenticated':
-        survey_constructor = PublicSubmission
-
-    try:
-        return survey_constructor(**kwargs)
-    except KeyError:
+    if submission_type == 'authenticated':
+        submission_constructor = EnumeratorOnlySubmission
+    elif submission_type == 'unauthenticated':
+        submission_constructor = PublicSubmission
+    else:
         raise NoSuchSubmissionTypeError(submission_type)
+
+    return submission_constructor(**kwargs)
