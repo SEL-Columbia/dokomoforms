@@ -244,6 +244,25 @@ class TestSurveyApi(DokoHTTPTest):
         # check that no error is present
         self.assertFalse("error" in survey_dict)
 
+    def test_list_surveys_with_empty_limit(self):
+        # url to test
+        url = self.api_root + '/surveys?limit='
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        # check that response is valid parseable json
+        survey_dict = json_decode(response.body)
+
+        # check that the expected keys are present
+        self.assertTrue('surveys' in survey_dict)
+
+        self.assertEqual(len(survey_dict['surveys']), TOTAL_SURVEYS)
+
+        # check that no error is present
+        self.assertFalse("error" in survey_dict)
+
     def test_list_surveys_with_offset(self):
         # url to test
         offset = 5
@@ -277,6 +296,25 @@ class TestSurveyApi(DokoHTTPTest):
         }
         # append query params
         url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+
+        # check that response is valid parseable json
+        survey_dict = json_decode(response.body)
+
+        # check that the limit value comes back correctly
+        self.assertTrue("limit" in survey_dict)
+        self.assertEqual(survey_dict['limit'], 1)
+
+        # check the number of surveys matches the limit
+        self.assertEqual(len(survey_dict['surveys']), 1)
+
+    def test_list_surveys_with_limit_and_bogus_parameter(self):
+        # url to test
+        url = self.api_root + '/surveys?limit=1&bbb=ccc'
         # http method (just for clarity)
         method = 'GET'
         # make request
