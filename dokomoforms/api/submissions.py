@@ -84,7 +84,7 @@ class SubmissionResource(BaseResource):
     objects_key = 'submissions'
 
     def is_authenticated(self):
-        """POSTs are allowed unauthenticated under the right circumstances."""
+        """Allow unauthenticated POSTs under the right circumstances."""
         if self.request_method() == 'POST':
             # At this point in the lifecycle of the request, self.data has
             # not been populated, so we need to handle POST authentication
