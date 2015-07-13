@@ -368,7 +368,7 @@ Survey.prototype.submit = function() {
                 App.unsynced_facilities[response.id] = {
                     'name': response.facility_name, 'uuid': response.id, 
                     'properties' : {'sector': response.facility_sector},
-                    'coordinates' : [response.lon, response.lat]
+                    'coordinates' : [response.lng, response.lat]
                 };
 
                 // Store it in facilities as well

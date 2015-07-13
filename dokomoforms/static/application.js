@@ -65,7 +65,7 @@ App.init = function(survey) {
     App.facilities = JSON.parse(localStorage.facilities || "{}");
     if (JSON.stringify(App.facilities) === "{}" && navigator.onLine) {
         // See if you can get some new facilities
-        getNearbyFacilities(App.location.lat, App.location.lon, 
+        getNearbyFacilities(App.location.lat, App.location.lng, 
             FAC_RAD, // Radius in km 
             NUM_FAC, // limit
             null// what to do with facilities 

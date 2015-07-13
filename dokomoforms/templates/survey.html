@@ -349,7 +349,7 @@
                 <div class="input_container">
                 <input class="text_input location_input" type="text" 
                     placeholder="Please click 'find my location'."
-                    value="<%- ans.response.lat + ' ' + ans.response.lon %>"
+                    value="<%- ans.response.lat + ' ' + ans.response.lng %>"
                 >
                 <span class="icon icon-close question__minus"></span>
                 </div>
@@ -403,7 +403,7 @@
                 var ans = question.answer[0] && question.answer[0].metadata.is_new && question.answer[0]; 
                 var name = ans && ans.facility_name || '';
                 var sector = ans && ans.facility_sector || '';
-                var location = ans && ans.response.lat + " " + ans.response.lon || '';
+                var location = ans && ans.response.lat + " " + ans.response.lng || '';
                 var uuid = ans && ans.response.facility_id || ''; 
             %>
             <input class="text_input facility_uuid_input" type="text" 

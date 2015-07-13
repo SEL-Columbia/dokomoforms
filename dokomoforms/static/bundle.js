@@ -469,7 +469,7 @@ Survey.prototype.submit = function() {
                 App.unsynced_facilities[response.id] = {
                     'name': response.facility_name, 'uuid': response.id, 
                     'properties' : {'sector': response.facility_sector},
-                    'coordinates' : [response.lon, response.lat]
+                    'coordinates' : [response.lng, response.lat]
                 };
 
                 // Store it in facilities as well
@@ -927,10 +927,10 @@ Widgets._validate = function(type, answer, logic) {
         case "location":
               if (answer && answer.split(" ").length == 2) {
                   var lat = parseFloat(answer.split(" ")[0]);
-                  var lon = parseFloat(answer.split(" ")[1]);
+                  var lng = parseFloat(answer.split(" ")[1]);
 
-                  if (!isNaN(lat) && !isNaN(lon)) {
-                      val = {'lat': lat, 'lon': lon}
+                  if (!isNaN(lat) && !isNaN(lng)) {
+                      val = {'lat': lat, 'lng': lng}
                   }
               }
               break;
@@ -1174,7 +1174,7 @@ Widgets.photo = function(question, page, footer) {
             metadata: {},
         }            
 
-        // update latest lon/lat values
+        // update latest lng/lat values
         var questions_len = $(page).find('.text_input').length;
         $(page).find('.text_input')
             .last().val(photo);
@@ -1237,14 +1237,14 @@ Widgets.location = function(question, page, footer) {
 
         // update array val
         question.answer[questions_len - 1] = {
-            response: {'lon': coords.lon, 'lat': coords.lat},
+            response: {'lng': coords.lng, 'lat': coords.lat},
             metadata: {},
         }
             
-        // update latest lon/lat values
+        // update latest lng/lat values
         var questions_len = $(page).find('.text_input').length;
         $(page).find('.text_input')
-            .last().val(coords.lat + " " + coords.lon);
+            .last().val(coords.lat + " " + coords.lng);
     }
 
     // Find me
@@ -1254,10 +1254,10 @@ Widgets.location = function(question, page, footer) {
             //App.message('Searching ...', 'message-primary');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
-                    // Server accepts [lon, lat]
+                    // Server accepts [lng, lat]
                     var loc = {
                         'lat': position.coords.latitude,
-                        'lon': position.coords.longitude, 
+                        'lng': position.coords.longitude, 
                     }
 
                     App.location = loc;
@@ -1315,7 +1315,7 @@ Widgets.facility = function(question, page, footer) {
     function reloadFacilities(loc) {
         if (navigator.onLine) {
             // Refresh if possible
-            getNearbyFacilities(loc.lat, loc.lon, 
+            getNearbyFacilities(loc.lat, loc.lng, 
                     FAC_RAD, // Radius in km 
                     NUM_FAC, // limit
                     drawFacilities // what to do with facilities
@@ -1350,13 +1350,13 @@ Widgets.facility = function(question, page, footer) {
         var ans = question.answer[0];
         var selected = ans && ans.response.facility_id || null;
 
-        // http://www.movable-type.co.uk/scripts/latlong.html
+        // http://www.movable-type.co.uk/scripts/latlngg.html
         function latLonLength(coordinates, loc) {
             var R = 6371000; // metres
             var e = loc.lat * Math.PI/180;
             var f = coordinates[1] * Math.PI/180;
             var g = (coordinates[1] - loc.lat) * Math.PI/180;
-            var h = (coordinates[0] - loc.lon) * Math.PI/180;
+            var h = (coordinates[0] - loc.lng) * Math.PI/180;
 
             var a = Math.sin(g/2) * Math.sin(g/2) +
                     Math.cos(e) * Math.cos(f) *
@@ -1440,7 +1440,7 @@ Widgets.facility = function(question, page, footer) {
                 response: {
                     'facility_id': uuid, 
                     'lat': coords[1], 
-                    'lon': coords[0], 
+                    'lng': coords[0], 
                     'facility_name': name, 
                     'facility_sector': sector 
                 },
@@ -1459,10 +1459,10 @@ Widgets.facility = function(question, page, footer) {
             //App.message('Searching ...', 'message-primary');
             navigator.geolocation.getCurrentPosition(
                 function success(position) {
-                    // Server accepts [lon, lat]
+                    // Server accepts [lng, lat]
                     var loc = {
                         'lat': position.coords.latitude,
-                        'lon': position.coords.longitude, 
+                        'lng': position.coords.longitude, 
                     }
 
                     // Remember response
@@ -1510,7 +1510,7 @@ Widgets.facility = function(question, page, footer) {
 
                 var uuid = $('.facility_uuid_input').val() || objectID();
                 var lat = $('.facility_location_input').val().split(" ")[0] || App.location.lat;
-                var lon = $('.facility_location_input').val().split(" ")[1] || App.location.lon;
+                var lng = $('.facility_location_input').val().split(" ")[1] || App.location.lng;
                 var name = $('.facility_name_input').val();
                 var sector = $('.facility_sector_input').val();
 
@@ -1518,7 +1518,7 @@ Widgets.facility = function(question, page, footer) {
                     response: {
                         'facility_id': uuid, 
                         'lat': lat, 
-                        'lon': lon, 
+                        'lng': lng, 
                         'facility_name': name, 
                         'facility_sector': sector, 
                     },
@@ -1529,7 +1529,7 @@ Widgets.facility = function(question, page, footer) {
                 }];
 
                 $('.facility_uuid_input').val(uuid);
-                $('.facility_location_input').val(lat + " " + lon);
+                $('.facility_location_input').val(lat + " " + lng);
                 $('.facility_name_input').val(name);
                 $('.facility_sector_input').val(sector);
 
@@ -1562,9 +1562,9 @@ Widgets.facility = function(question, page, footer) {
 
     // Location callback 
     function updateLocation(loc) {
-       $('.facility_location_input').val(loc.lat + " " + loc.lon);
+       $('.facility_location_input').val(loc.lat + " " + loc.lng);
        question.answer[0].response.lat = loc.lat;
-       question.answer[0].response.lon = loc.lon;
+       question.answer[0].response.lng = loc.lng;
     }
 
 };
@@ -1639,7 +1639,7 @@ App.init = function(survey) {
     App.facilities = JSON.parse(localStorage.facilities || "{}");
     if (JSON.stringify(App.facilities) === "{}" && navigator.onLine) {
         // See if you can get some new facilities
-        getNearbyFacilities(App.location.lat, App.location.lon, 
+        getNearbyFacilities(App.location.lat, App.location.lng, 
             FAC_RAD, // Radius in km 
             NUM_FAC, // limit
             null// what to do with facilities 
