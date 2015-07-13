@@ -359,8 +359,9 @@ Survey.prototype.submit = function() {
 
             // Fill in metadata
             response.response_type = 'answer';
+            console.log(metadata);
             if (metadata.type_exception) 
-                response.response_type = response[metadata.type_exception];
+                response.response_type = metadata.type_exception;
 
             if (is_new_facility) {
                 // Record this new facility for Revisit s)ubmission
