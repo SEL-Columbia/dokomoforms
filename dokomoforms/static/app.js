@@ -3,7 +3,15 @@ var React = require('react');
 var ResponseField = React.createClass({
     render: function() {
         return (
-                <input type="text" placeholder="Your name here" />
+                <div className="input_container">
+                    <input 
+                        type="text" 
+                        placeholder="Please provide a response." 
+                        value=""
+                     >
+                        <span className="icon icon-close question__minus"></span>
+                    </input>
+                 </div>
                )
     }
 });
@@ -34,11 +42,30 @@ var Title = React.createClass({
 
 var BigButton = React.createClass({
     render: function() {
+        var buttonClasses = "btn btn-block navigate-right page_nav__next";
+        if (this.props.type) {
+            buttonClasses += " " + this.props.type;
+        } else {
+            buttonClasses += " btn-primary";
+        }
+
         return (
                 <div className="bar-padded">
-                <button className="btn btn-block btn-primary navigate-right page_nav__next">
+                <button className={buttonClasses}>
                 {this.props.text}
                 </button>
+                </div>
+               )
+    }
+});
+
+var LittleButton = React.createClass({
+    render: function() {
+        return (
+                <div className="content-padded">
+                    <button className="btn">
+                        {this.props.text}
+                    </button>
                 </div>
                )
     }
@@ -111,8 +138,11 @@ var Card = React.createClass({
     },
     render: function() {
         var messageClass = "message-box";
-        if (this.props.type)  
+        if (this.props.type) { 
             messageClass += " " + this.props.type;
+        } else {
+            messageClass += " message-primary";
+        }
 
         var self = this;
         return (
@@ -170,16 +200,25 @@ var Header = React.createClass({
 });
 
 var Application = React.createClass({
+    getInitialState: function() {
+        return { showDontKnow: true }
+    },
     render: function() {
+        var contentClasses = "content";
+        if (this.state.showDontKnow) 
+            contentClasses += " content-shrunk";
+
         return (
                 <div id="wrapper">
                     <Header />
                     <div className="content">
                         <Title />
                         <Card messages={["hey", "how you doing", "i <b>love</b> toast"]} type={"message-error"}/>
+                        <Card messages={["cool"]} />
+                        <BigButton text={'Click for toast'} type={'btn-positive'} />
                         <Question />
                     </div>
-                    <Footer />
+                    <Footer showDontKnow={this.state.showDontKnow}/>
                 </div>
                )
     }
