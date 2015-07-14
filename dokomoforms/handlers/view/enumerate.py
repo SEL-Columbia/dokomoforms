@@ -1,12 +1,14 @@
 """ Survey view handler."""
+import urllib.parse as urlparse
+from urllib.parse import urlencode
 
 import tornado.web
+
+from restless.exceptions import Unauthorized
 
 from dokomoforms.handlers.util import BaseHandler
 from dokomoforms.api import SurveyResource #, SubmissionResource
 from dokomoforms.models import Survey
-from dokomoforms.models import ModelJSONEncoder
-import json
 
 
 class Enumerate(BaseHandler):
@@ -19,16 +21,19 @@ class Enumerate(BaseHandler):
 
         @survey_id: Requested survey id.
         """
+        survey_resource = SurveyResource()
+        survey_resource.ref_rh = self
+        try:
+            survey = survey_resource.detail(survey_id)
+        except Unauthorized:
+            url = self.get_login_url()
+            if '?' not in url:
+                if urlparse.urlsplit(url).scheme:
+                    next_url = self.request.full_url()
+                else:
+                    next_url = self.request.uri
+                url += '?' + urlencode({'next': next_url})
+            self.redirect(url)
+            return
 
-        # Retrieve model from session 
-        survey_model = self.session.query(Survey).get(survey_id)
-
-        if not survey_model:
-            raise tornado.web.HTTPError(404)
-
-        # Create survey resource instance to access api prepare methods
-        sr = SurveyResource()
-        survey = sr.prepare(survey_model);
-
-        self.render('enumerate.html',
-                    survey=survey),
+        self.render('enumerate.html', survey=survey)
