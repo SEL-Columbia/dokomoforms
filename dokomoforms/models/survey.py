@@ -171,6 +171,7 @@ class EnumeratorOnlySurvey(Survey):
 
 
 def construct_survey(*, survey_type: str, **kwargs):
+    """Construct either a public or enumerator_only Survey."""
     if survey_type == 'public':
         survey_constructor = Survey
     elif survey_type == 'enumerator_only':
@@ -217,7 +218,6 @@ class SubSurvey(Base):
             'id', 'parent_type_constraint', 'parent_survey_node_id',
             'parent_node_id'
         ),
-        #sa.UniqueConstraint('parent_survey_node_id', 'parent_node_id'),
         sa.ForeignKeyConstraint(
             [
                 'parent_survey_node_id',
@@ -707,7 +707,7 @@ def construct_survey_node(**kwargs) -> SurveyNode:
 
 
 def skipped_required(survey, answers) -> str:
-    #import sys
+    """Return the id of a skipped AnswerableSurveyNode, or None."""
     if not survey.nodes:
         return None
 
@@ -718,8 +718,6 @@ def skipped_required(survey, answers) -> str:
 
     while survey_node_stack:
         survey_node_index, survey_nodes = survey_node_stack.pop()
-        #print('\n{} {}\n'.format(survey_node_index, [s.node.title for s in survey_nodes]), file=sys.stderr)
-        #print(answer_stack, file=sys.stderr)
         try:
             survey_node = survey_nodes[survey_node_index]
         except IndexError:

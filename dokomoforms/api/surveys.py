@@ -3,6 +3,7 @@ import os.path
 import datetime
 
 import restless.exceptions as exc
+from restless.constants import CREATED
 
 from sqlalchemy.sql.expression import func
 
@@ -86,6 +87,11 @@ class SurveyResource(BaseResource):
             'POST': 'submit'
         }
     }
+
+    def __init__(self, *args, **kwargs):
+        """Make submit return 201."""
+        super().__init__(*args, **kwargs)
+        self.status_map['submit'] = CREATED
 
     def is_authenticated(self):
         """GET detail is allowed unauthenticated."""
