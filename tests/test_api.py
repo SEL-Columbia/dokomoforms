@@ -478,6 +478,7 @@ class TestSurveyApi(DokoHTTPTest):
 
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201)
 
         # test response
         # check that response is valid parseable json
@@ -545,6 +546,7 @@ class TestSurveyApi(DokoHTTPTest):
 
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201)
 
         # test response
         # check that response is valid parseable json
@@ -581,6 +583,7 @@ class TestSurveyApi(DokoHTTPTest):
         encoded_body = json_encode(body)
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 202)
         # test response
         self.assertTrue(json_decode(response.body)['deleted'])
         self.assertTrue(
@@ -616,6 +619,7 @@ class TestSurveyApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
 
         submission_dict = json_decode(response.body)
 
@@ -667,6 +671,7 @@ class TestSurveyApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
 
         submission_dict = json_decode(response.body)
 
@@ -707,6 +712,7 @@ class TestSurveyApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
 
         submission_dict = json_decode(response.body)
 
@@ -752,6 +758,7 @@ class TestSurveyApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
 
         submission_dict = json_decode(response.body)
 
@@ -792,6 +799,7 @@ class TestSurveyApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
 
         submission_dict = json_decode(response.body)
 
@@ -824,6 +832,7 @@ class TestSurveyApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
 
         submission_dict = json_decode(response.body)
 
@@ -854,6 +863,7 @@ class TestSurveyApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
 
         submission_dict = json_decode(response.body)
 
@@ -1251,6 +1261,7 @@ class TestSubmissionApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
 
         submission_dict = json_decode(response.body)
 
@@ -1281,6 +1292,7 @@ class TestSubmissionApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
 
         submission_dict = json_decode(response.body)
 
@@ -1313,6 +1325,7 @@ class TestSubmissionApi(DokoHTTPTest):
         response = self.fetch(
             url, method=method, body=json_encode(body), _logged_in_user=None
         )
+        self.assertEqual(response.code, 201)
 
         submission_dict = json_decode(response.body)
 
@@ -1342,6 +1355,7 @@ class TestSubmissionApi(DokoHTTPTest):
         response = self.fetch(
             url, method=method, body=json_encode(body), _logged_in_user=None
         )
+        self.assertEqual(response.code, 201)
 
         submission_dict = json_decode(response.body)
 
@@ -1524,6 +1538,7 @@ class TestSubmissionApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
 
         submission_dict = json_decode(response.body)
 
@@ -1564,6 +1579,7 @@ class TestSubmissionApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
 
         submission_dict = json_decode(response.body)
 
@@ -1598,6 +1614,7 @@ class TestSubmissionApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
 
         submission_dict = json_decode(response.body)
 
@@ -1625,6 +1642,7 @@ class TestSubmissionApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
 
         submission_dict = json_decode(response.body)
 
@@ -1685,6 +1703,7 @@ class TestSubmissionApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
 
         submission_dict = json_decode(response.body)
 
@@ -1711,6 +1730,7 @@ class TestSubmissionApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
 
         submission_dict = json_decode(response.body)
 
@@ -2114,6 +2134,7 @@ class TestNodeApi(DokoHTTPTest):
 
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201)
 
         # test response
         # check that response is valid parseable json
@@ -2151,6 +2172,7 @@ class TestNodeApi(DokoHTTPTest):
 
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201)
 
         # test response
         # check that response is valid parseable json
@@ -2192,6 +2214,7 @@ class TestNodeApi(DokoHTTPTest):
 
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201)
 
         # test response
         # check that response is valid parseable json
@@ -2233,6 +2256,7 @@ class TestNodeApi(DokoHTTPTest):
 
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201)
 
         # test response
         # check that response is valid parseable json
@@ -2274,6 +2298,7 @@ class TestNodeApi(DokoHTTPTest):
 
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201)
 
         # test response
         # check that response is valid parseable json
@@ -2315,6 +2340,7 @@ class TestNodeApi(DokoHTTPTest):
 
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201)
 
         # test response
         # check that response is valid parseable json
@@ -2356,6 +2382,7 @@ class TestNodeApi(DokoHTTPTest):
 
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201)
 
         # test response
         # check that response is valid parseable json
@@ -2397,6 +2424,7 @@ class TestNodeApi(DokoHTTPTest):
 
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201)
 
         # test response
         # check that response is valid parseable json
@@ -2438,6 +2466,7 @@ class TestNodeApi(DokoHTTPTest):
 
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201)
 
         # test response
         # check that response is valid parseable json
@@ -2479,6 +2508,7 @@ class TestNodeApi(DokoHTTPTest):
 
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201)
 
         # test response
         # check that response is valid parseable json
@@ -2532,6 +2562,7 @@ class TestNodeApi(DokoHTTPTest):
 
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201)
 
         # test response
         # check that response is valid parseable json

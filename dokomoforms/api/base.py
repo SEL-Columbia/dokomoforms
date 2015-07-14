@@ -69,11 +69,6 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         """The handler's session."""
         return self.r_handler.session
 
-    #@session.setter
-    #def session(self, session):
-    #    'setting'
-    #    self.session = session
-
     @property
     def current_user_model(self):
         """The handler's current_user_model."""

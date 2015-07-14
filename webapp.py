@@ -106,6 +106,18 @@ def ensure_that_user_wants_to_drop_schema():
     sys.exit()
 
 
+API_VERSION = 'v0'
+API_ROOT_PATH = '/api/' + API_VERSION
+
+
+def api_url(path, *args, **kwargs):
+    """Prepend the API path to API URLs."""
+    return url(
+        (r'' + API_ROOT_PATH + path).format(uuid=UUID_REGEX),
+        *args, **kwargs
+    )
+
+
 class Application(tornado.web.Application):
 
     """The tornado.web.Application for Dokomo Forms."""
@@ -121,6 +133,8 @@ class Application(tornado.web.Application):
         self._api_version = 'v0'
         self._api_root_path = '/api/' + self._api_version
 
+        sur = SurveyResource
+
         urls = [
             # Administrative
             url(r'/', handlers.Index, name='index'),
@@ -128,59 +142,57 @@ class Application(tornado.web.Application):
             url(r'/user/logout/?', handlers.Logout, name='logout'),
 
             # Pages
-            url(r'/enumerate/({})/?'.format(UUID_REGEX),
-                handlers.Enumerate, name="enumerate"),
+            url(
+                r'/enumerate/({})/?'.format(UUID_REGEX), handlers.Enumerate,
+                name='enumerate'
+            ),
 
             # API
-            ## Surveys
-            url(r'' + self._api_root_path + '/surveys/?',
-                SurveyResource.as_list(), name="surveys"),
-            url(r'' + self._api_root_path +
-                '/surveys/({})/?'.format(UUID_REGEX),
-                SurveyResource.as_detail(),
-                name="survey"),
-            url(r'' + self._api_root_path +
-                '/surveys/({})/submit/?'.format(UUID_REGEX),
-                SurveyResource.as_view('submit'),
-                name="submit_to_survey"),
-            url(r'' + self._api_root_path +
-                '/surveys/({})/submissions/?'.format(UUID_REGEX),
-                SurveyResource.as_view('list_submissions'),
-                name="survey_list_submissions"),
-            url(r'' + self._api_root_path +
-                '/surveys/({})/stats/?'.format(UUID_REGEX),
-                SurveyResource.as_view('stats'),
-                name="survey_stats"),
-            url(r'' + self._api_root_path +
-                '/surveys/({})/activity/?'.format(UUID_REGEX),
-                SurveyResource.as_view('activity'),
-                name="survey_activity"),
-            url(r'' + self._api_root_path +
-                '/surveys/activity/?'.format(UUID_REGEX),
-                SurveyResource.as_view('activity_all'),
-                name="activity_all"),
+            # * Surveys
+            api_url('/surveys/?', sur.as_list(), name='surveys'),
+            api_url('/surveys/({uuid})/?', sur.as_detail(), name='survey'),
+            api_url(
+                '/surveys/({uuid})/submit/?', sur.as_view('submit'),
+                name='submit_to_survey'
+            ),
+            api_url(
+                '/surveys/({uuid})/submissions/?',
+                sur.as_view('list_submissions'),
+                name='survey_list_submissions',
+            ),
+            api_url(
+                '/surveys/({uuid})/stats/?', sur.as_view('stats'),
+                name='survey_stats'
+            ),
+            api_url(
+                '/surveys/({uuid})/activity/?', sur.as_view('activity'),
+                name='survey_activity'
+            ),
+            api_url(
+                '/surveys/activity/?', sur.as_view('activity_all'),
+                name='activity_all'
+            ),
 
-            ## Submissions
-            url(r'' + self._api_root_path + '/submissions',
-                SubmissionResource.as_list(), name="submissions"),
-            url(r'' + self._api_root_path +
-                '/submissions/({})/?'.format(UUID_REGEX),
-                SubmissionResource.as_detail(),
-                name="submission"),
+            # * Submissions
+            api_url(
+                '/submissions/?', SubmissionResource.as_list(),
+                name='submissions'
+            ),
+            api_url(
+                '/submissions/({uuid})/?', SubmissionResource.as_detail(),
+                name='submission'
+            ),
 
-            # Nodes
-            url(r'' + self._api_root_path + '/nodes',
-                NodeResource.as_list(), name="nodes"),
-            url(r'' + self._api_root_path +
-                '/nodes/({})/?'.format(UUID_REGEX),
-                NodeResource.as_detail(),
-                name="node"),
+            # * Nodes
+            api_url('/nodes/?', NodeResource.as_list(), name='nodes'),
+            api_url(
+                '/nodes/({uuid})/?', NodeResource.as_detail(), name='node'
+            ),
 
-            # Users
-            url(
-                r'' + self._api_root_path + '/user/generate-api-token/?',
-                handlers.GenerateToken,
-                name='generate_token',
+            # * Users
+            api_url(
+                '/user/generate-api-token/?', handlers.GenerateToken,
+                name='generate_token'
             ),
         ]
 
