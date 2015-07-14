@@ -1,20 +1,21 @@
-""" Survey view handler."""
+"""Survey view handler."""
 import urllib.parse as urlparse
 from urllib.parse import urlencode
-
-import tornado.web
 
 from restless.exceptions import Unauthorized
 
 from dokomoforms.handlers.util import BaseHandler
-from dokomoforms.api import SurveyResource #, SubmissionResource
-from dokomoforms.models import Survey
+from dokomoforms.api import SurveyResource
 
 
 class Enumerate(BaseHandler):
+
+    """View and submit to a survey."""
+
     def get(self, survey_id):
-        """
-        Render survey page for given survey id, embed JSON into to template so 
+        """GET the main survey view.
+
+        Render survey page for given survey id, embed JSON into to template so
         browser can cache survey in HTML.
 
         Raises tornado http error.

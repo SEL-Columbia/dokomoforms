@@ -20,7 +20,7 @@ class TestEnumerate(DokoHTTPTest):
         try:
             survey = json_decode(survey)
         except ValueError:
-            self.fail(survey)
+            self.fail(response)
         api_url = self.api_root + '/surveys/' + survey_id
         self.assertEqual(
             survey,
@@ -40,7 +40,7 @@ class TestEnumerate(DokoHTTPTest):
         try:
             survey = json_decode(survey)
         except ValueError:
-            self.fail(survey)
+            self.fail(response)
         api_url = self.api_root + '/surveys/' + survey_id
         self.assertEqual(
             survey,
@@ -68,7 +68,7 @@ class TestEnumerate(DokoHTTPTest):
         try:
             survey = json_decode(survey)
         except ValueError:
-            self.fail(survey)
+            self.fail(response)
         api_url = self.api_root + '/surveys/' + survey_id
         self.assertEqual(
             survey,
