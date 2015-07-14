@@ -44,15 +44,26 @@ var BigButton = React.createClass({
     }
 });
 
-var Footer = React.createClass({
+var DontKnow = React.createClass({
     render: function() {
         return (
-                <div className="bar bar-standard bar-footer bar-footer-extended">
+                <div className="question__btn__other">
+                    <input type="checkbox" id="dont-know" name="dont-know" value="selected" />
+                    <label for="dont-know">I don't know the answer</label>
+                </div>
+               )
+    }
+});
+
+var Footer = React.createClass({
+    render: function() {
+        var FooterClasses = "bar bar-standard bar-footer";
+        if (this.props.showDontKnow) 
+            FooterClasses += " bar-footer-extended";
+        return (
+                <div className={FooterClasses}>
                     <BigButton text={'Next Question'} />
-                    <div className="question__btn__other">
-                        <input type="checkbox" id="dont-know" name="dont-know" value="selected" />
-                        <label for="dont-know">I don't know the answer</label>
-                    </div>
+                    { this.props.showDontKnow ? <DontKnow /> : null }
                 </div>
                )
     }
@@ -61,10 +72,7 @@ var Footer = React.createClass({
 var Question = React.createClass({
     render: function() {
         return (
-                <div className="content">
-                    <Title />
-                    <ResponseFields childCount={3} />
-                </div>
+                <ResponseFields childCount={3} />
                )
     }
 });
@@ -87,6 +95,55 @@ var Menu = React.createClass({
     }
 });
 
+var Card = React.createClass({
+    getInitialState: function() {
+        return { 
+            isBold : function(str) {
+                var bold = /<b>.*?<\/b>/g;
+                return bold.test(str);
+            },
+
+            getBoldStr : function(str) {
+                var bold = /(.*?)<b>(.*?)<\/b>/g;
+                return str.replace(bold, "$1");
+            }
+        }
+    },
+    render: function() {
+        var messageClass = "message-box";
+        if (this.props.type)  
+            messageClass += " " + this.props.type;
+
+        var self = this;
+        return (
+            <div className="content-padded">
+                <div className={messageClass} >
+                {this.props.messages.map(function(msg, idx) {
+                    return ( 
+                            <span key={idx + 1}> 
+                                {
+                                    function() {
+                                        if (self.state.isBold(msg)) {
+                                           return ( 
+                                                   <strong>
+                                                    {self.state.getBoldStr(msg)}
+                                                   </strong>
+                                                  )
+                                        } else {
+                                            return msg
+                                        }
+                                    }()
+                                }
+                                <br />
+                            </span> 
+                        )
+                })}
+                </div>
+            </div>
+       )
+    }
+});
+
 var Header = React.createClass({
     getInitialState: function() {
         return { showMenu: false }
@@ -95,8 +152,12 @@ var Header = React.createClass({
         this.setState({showMenu: this.state.showMenu ? false : true })
     },
     render: function() {
+        var headerClasses = "bar bar-nav bar-padded noselect";
+        if (this.state.showMenu) 
+            headerClasses += " title-extended";
+
         return (
-            <header className="bar bar-nav bar-padded">
+            <header className={headerClasses}>
             <h1 className="title align-left">independant</h1>
             <a className="icon icon-bars pull-right menu"
                 onClick = {this.onClick}
@@ -113,7 +174,11 @@ var Application = React.createClass({
         return (
                 <div id="wrapper">
                     <Header />
-                    <Question />
+                    <div className="content">
+                        <Title />
+                        <Card messages={["hey", "how you doing", "i <b>love</b> toast"]} type={"message-error"}/>
+                        <Question />
+                    </div>
                     <Footer />
                 </div>
                )

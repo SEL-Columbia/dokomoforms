@@ -19855,15 +19855,26 @@ var BigButton = React.createClass({displayName: "BigButton",
     }
 });
 
-var Footer = React.createClass({displayName: "Footer",
+var DontKnow = React.createClass({displayName: "DontKnow",
     render: function() {
         return (
-                React.createElement("div", {className: "bar bar-standard bar-footer bar-footer-extended"}, 
+                React.createElement("div", {className: "question__btn__other"}, 
+                    React.createElement("input", {type: "checkbox", id: "dont-know", name: "dont-know", value: "selected"}), 
+                    React.createElement("label", {for: "dont-know"}, "I don't know the answer")
+                )
+               )
+    }
+});
+
+var Footer = React.createClass({displayName: "Footer",
+    render: function() {
+        var FooterClasses = "bar bar-standard bar-footer";
+        if (this.props.showDontKnow) 
+            FooterClasses += " bar-footer-extended";
+        return (
+                React.createElement("div", {className: FooterClasses}, 
                     React.createElement(BigButton, {text: 'Next Question'}), 
-                    React.createElement("div", {className: "question__btn__other"}, 
-                        React.createElement("input", {type: "checkbox", id: "dont-know", name: "dont-know", value: "selected"}), 
-                        React.createElement("label", {for: "dont-know"}, "I don't know the answer")
-                    )
+                     this.props.showDontKnow ? React.createElement(DontKnow, null) : null
                 )
                )
     }
@@ -19872,10 +19883,7 @@ var Footer = React.createClass({displayName: "Footer",
 var Question = React.createClass({displayName: "Question",
     render: function() {
         return (
-                React.createElement("div", {className: "content"}, 
-                    React.createElement(Title, null), 
-                    React.createElement(ResponseFields, {childCount: 3})
-                )
+                React.createElement(ResponseFields, {childCount: 3})
                )
     }
 });
@@ -19898,6 +19906,55 @@ var Menu = React.createClass({displayName: "Menu",
     }
 });
 
+var Card = React.createClass({displayName: "Card",
+    getInitialState: function() {
+        return { 
+            isBold : function(str) {
+                var bold = /<b>.*?<\/b>/g;
+                return bold.test(str);
+            },
+
+            getBoldStr : function(str) {
+                var bold = /<b>(.*?)<\/b>/g;
+                return str.replace(bold, "$1");
+            }
+        }
+    },
+    render: function() {
+        var messageClass = "message-box";
+        if (this.props.type)  
+            messageClass += " " + this.props.type;
+
+        var self = this;
+        return (
+            React.createElement("div", {className: "content-padded"}, 
+                React.createElement("div", {className: messageClass}, 
+                this.props.messages.map(function(msg, idx) {
+                    return ( 
+                            React.createElement("span", {key: idx + 1}, 
+                                
+                                    function() {
+                                        if (self.state.isBold(msg)) {
+                                           return ( 
+                                                   React.createElement("strong", null, 
+                                                    self.state.getBoldStr(msg)
+                                                   )
+                                                  )
+                                        } else {
+                                            return msg
+                                        }
+                                    }(), 
+                                
+                                React.createElement("br", null)
+                            ) 
+                        )
+                })
+                )
+            )
+       )
+    }
+});
+
 var Header = React.createClass({displayName: "Header",
     getInitialState: function() {
         return { showMenu: false }
@@ -19906,8 +19963,12 @@ var Header = React.createClass({displayName: "Header",
         this.setState({showMenu: this.state.showMenu ? false : true })
     },
     render: function() {
+        var headerClasses = "bar bar-nav bar-padded noselect";
+        if (this.state.showMenu) 
+            headerClasses += " title-extended";
+
         return (
-            React.createElement("header", {className: "bar bar-nav bar-padded"}, 
+            React.createElement("header", {className: headerClasses}, 
             React.createElement("h1", {className: "title align-left"}, "independant"), 
             React.createElement("a", {className: "icon icon-bars pull-right menu", 
                 onClick: this.onClick
@@ -19924,7 +19985,11 @@ var Application = React.createClass({displayName: "Application",
         return (
                 React.createElement("div", {id: "wrapper"}, 
                     React.createElement(Header, null), 
-                    React.createElement(Question, null), 
+                    React.createElement("div", {className: "content"}, 
+                        React.createElement(Title, null), 
+                        React.createElement(Card, {messages: ["hey", "how you doing", "i <b>love</b> toast"], type: "message-error"}), 
+                        React.createElement(Question, null)
+                    ), 
                     React.createElement(Footer, null)
                 )
                )
