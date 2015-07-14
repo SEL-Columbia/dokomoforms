@@ -19816,11 +19816,13 @@ var ResponseField = React.createClass({displayName: "ResponseField",
         return (
                 React.createElement("div", {className: "input_container"}, 
                     React.createElement("input", {
-                        type: "text", 
+                        type: this.props.type ? this.props.type : "text", 
                         placeholder: "Please provide a response.", 
                         value: ""
                      }, 
+                     this.props.showMinus ? 
                         React.createElement("span", {className: "icon icon-close question__minus"})
+                        : null
                     )
                  )
                )
@@ -19833,7 +19835,7 @@ var ResponseFields = React.createClass({displayName: "ResponseFields",
         return (
                 React.createElement("div", null, 
                 children.map(function(child, idx) {
-                    return React.createElement(ResponseField, {key: idx + 1});
+                    return React.createElement(ResponseField, {key: idx + 1, showMinus: true});
                 })
                 )
                )
@@ -19882,12 +19884,48 @@ var LittleButton = React.createClass({displayName: "LittleButton",
     }
 });
 
+var Select = React.createClass({displayName: "Select",
+    getInitialState: function() {
+        return { showOther: false }
+    },
+
+    onChange: function(e) {
+        var foundOther = false;
+        for (var i = 0; i < e.target.selectedOptions.length; i++) {
+            option = e.target.selectedOptions[i]; 
+            foundOther = foundOther | option.value === "other";
+        }
+
+        this.setState({showOther: foundOther})
+    },
+
+    render: function() {
+        return (
+                React.createElement("div", null, 
+                React.createElement("select", {className: "noselect", 
+                    onChange: this.onChange}, 
+
+                React.createElement("option", {value: "null"}, "Please choose an option"), 
+                React.createElement("option", {value: "1f77897b-7b10-4277-80da-8bc29084b025"}, "choice a"), 
+                React.createElement("option", {value: "-7b10-4277-80da-8bc29084b025"}, "choice b"), 
+                this.props.withOther ? 
+                    React.createElement("option", {value: "other"}, " Other ") 
+                    : null
+                ), 
+                this.state.showOther ? React.createElement(ResponseField, null): null
+                )
+               )
+
+    }
+});
+
+
 var DontKnow = React.createClass({displayName: "DontKnow",
     render: function() {
         return (
                 React.createElement("div", {className: "question__btn__other"}, 
                     React.createElement("input", {type: "checkbox", id: "dont-know", name: "dont-know", value: "selected"}), 
-                    React.createElement("label", {for: "dont-know"}, "I don't know the answer")
+                    React.createElement("label", {htmlFor: "dont-know"}, "I don't know the answer")
                 )
                )
     }
@@ -19934,19 +19972,6 @@ var Menu = React.createClass({displayName: "Menu",
 });
 
 var Card = React.createClass({displayName: "Card",
-    getInitialState: function() {
-        return { 
-            isBold : function(str) {
-                var bold = /<b>.*?<\/b>/g;
-                return bold.test(str);
-            },
-
-            getBoldStr : function(str) {
-                var bold = /(.*?)<b>(.*?)<\/b>/g;
-                return str.replace(bold, "$1");
-            }
-        }
-    },
     render: function() {
         var messageClass = "message-box";
         if (this.props.type) { 
@@ -19961,20 +19986,8 @@ var Card = React.createClass({displayName: "Card",
                 React.createElement("div", {className: messageClass}, 
                 this.props.messages.map(function(msg, idx) {
                     return ( 
-                            React.createElement("span", {key: idx + 1}, 
-                                
-                                    function() {
-                                        if (self.state.isBold(msg)) {
-                                           return ( 
-                                                   React.createElement("strong", null, 
-                                                    self.state.getBoldStr(msg)
-                                                   )
-                                                  )
-                                        } else {
-                                            return msg
-                                        }
-                                    }(), 
-                                
+                            React.createElement("span", {key: msg}, 
+                                msg, 
                                 React.createElement("br", null)
                             ) 
                         )
@@ -20022,12 +20035,15 @@ var Application = React.createClass({displayName: "Application",
         return (
                 React.createElement("div", {id: "wrapper"}, 
                     React.createElement(Header, null), 
-                    React.createElement("div", {className: "content"}, 
+                    React.createElement("div", {className: contentClasses}, 
                         React.createElement(Title, null), 
-                        React.createElement(Card, {messages: ["hey", "how you doing", "i <b>love</b> toast"], type: "message-error"}), 
+                        React.createElement(Card, {messages: ["hey", "how you doing", 
+                            ["i ", React.createElement("b", null, "love"), " toast"]], type: "message-error"}), 
                         React.createElement(Card, {messages: ["cool"]}), 
                         React.createElement(BigButton, {text: 'Click for toast', type: 'btn-positive'}), 
-                        React.createElement(Question, null)
+                        React.createElement(Question, null), 
+                        React.createElement(LittleButton, {text: 'add another answer'}), 
+                        React.createElement(Select, {withOther: true})
                     ), 
                     React.createElement(Footer, {showDontKnow: this.state.showDontKnow})
                 )

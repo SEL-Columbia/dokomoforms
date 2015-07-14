@@ -5,11 +5,13 @@ var ResponseField = React.createClass({
         return (
                 <div className="input_container">
                     <input 
-                        type="text" 
+                        type={this.props.type ? this.props.type : "text"} 
                         placeholder="Please provide a response." 
                         value=""
                      >
+                     {this.props.showMinus ? 
                         <span className="icon icon-close question__minus"></span>
+                        : null}
                     </input>
                  </div>
                )
@@ -22,7 +24,7 @@ var ResponseFields = React.createClass({
         return (
                 <div>
                 {children.map(function(child, idx) {
-                    return <ResponseField key={idx + 1} />;
+                    return <ResponseField key={idx + 1} showMinus={true}/>;
                 })}
                 </div>
                )
@@ -71,12 +73,48 @@ var LittleButton = React.createClass({
     }
 });
 
+var Select = React.createClass({
+    getInitialState: function() {
+        return { showOther: false }
+    },
+
+    onChange: function(e) {
+        var foundOther = false;
+        for (var i = 0; i < e.target.selectedOptions.length; i++) {
+            option = e.target.selectedOptions[i]; 
+            foundOther = foundOther | option.value === "other";
+        }
+
+        this.setState({showOther: foundOther})
+    },
+
+    render: function() {
+        return (
+                <div>
+                <select className="noselect"
+                    onChange={this.onChange} >
+
+                <option value="null">Please choose an option</option>
+                <option value="1f77897b-7b10-4277-80da-8bc29084b025">choice a</option>
+                <option value="-7b10-4277-80da-8bc29084b025">choice b</option>
+                {this.props.withOther ? 
+                    <option value="other"> Other </option> 
+                    : null}
+                </select>
+                {this.state.showOther ? <ResponseField />: null}
+                </div>
+               )
+
+    }
+});
+
+
 var DontKnow = React.createClass({
     render: function() {
         return (
                 <div className="question__btn__other">
                     <input type="checkbox" id="dont-know" name="dont-know" value="selected" />
-                    <label for="dont-know">I don't know the answer</label>
+                    <label htmlFor="dont-know">I don't know the answer</label>
                 </div>
                )
     }
@@ -123,19 +161,6 @@ var Menu = React.createClass({
 });
 
 var Card = React.createClass({
-    getInitialState: function() {
-        return { 
-            isBold : function(str) {
-                var bold = /<b>.*?<\/b>/g;
-                return bold.test(str);
-            },
-
-            getBoldStr : function(str) {
-                var bold = /(.*?)<b>(.*?)<\/b>/g;
-                return str.replace(bold, "$1");
-            }
-        }
-    },
     render: function() {
         var messageClass = "message-box";
         if (this.props.type) { 
@@ -150,20 +175,8 @@ var Card = React.createClass({
                 <div className={messageClass} >
                 {this.props.messages.map(function(msg, idx) {
                     return ( 
-                            <span key={idx + 1}> 
-                                {
-                                    function() {
-                                        if (self.state.isBold(msg)) {
-                                           return ( 
-                                                   <strong>
-                                                    {self.state.getBoldStr(msg)}
-                                                   </strong>
-                                                  )
-                                        } else {
-                                            return msg
-                                        }
-                                    }()
-                                }
+                            <span key={msg}> 
+                                {msg}
                                 <br />
                             </span> 
                         )
@@ -211,12 +224,15 @@ var Application = React.createClass({
         return (
                 <div id="wrapper">
                     <Header />
-                    <div className="content">
+                    <div className={contentClasses}>
                         <Title />
-                        <Card messages={["hey", "how you doing", "i <b>love</b> toast"]} type={"message-error"}/>
+                        <Card messages={["hey", "how you doing", 
+                            ["i ", <b>love</b>, " toast"]]} type={"message-error"}/>
                         <Card messages={["cool"]} />
                         <BigButton text={'Click for toast'} type={'btn-positive'} />
                         <Question />
+                        <LittleButton text={'add another answer'} />
+                        <Select withOther={true}/>
                     </div>
                     <Footer showDontKnow={this.state.showDontKnow}/>
                 </div>
