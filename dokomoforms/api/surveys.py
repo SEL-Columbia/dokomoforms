@@ -10,19 +10,39 @@ from sqlalchemy.sql.expression import func
 from dokomoforms.api import BaseResource
 from dokomoforms.api.submissions import _create_submission
 from dokomoforms.models import (
-    Survey, Submission, construct_survey_node,
+    Survey, Submission, SubSurvey,
+    construct_survey, construct_survey_node, construct_bucket,
     User,
     Node, construct_node
 )
 
 
-def _create_or_get_survey_node(session, node_dict):
+def _create_sub_survey(session, sub_survey_dict):
+    sub_survey_dict['buckets'] = [
+        construct_bucket(**b) for b in sub_survey_dict['buckets']
+    ]
+    _cogsn = _create_or_get_survey_node
+    sub_survey_dict['nodes'] = [
+        _cogsn(session, node) for node in sub_survey_dict['nodes']
+    ]
+    return SubSurvey(**sub_survey_dict)
+
+
+def _create_or_get_survey_node(session, survey_node_dict):
+    node_dict = survey_node_dict['node']
     if 'id' in node_dict:
         node = session.query(Node).get(node_dict['id'])
         # TODO: raise an exception if node is None
     else:
         node = construct_node(**node_dict)
-    return construct_survey_node(node=node)
+    survey_node_dict['node'] = node
+    _css = _create_sub_survey
+    sub_survey_data = survey_node_dict.get('sub_surveys', None)
+    if sub_survey_data is not None:
+        survey_node_dict['sub_surveys'] = [
+            _css(session, sn) for sn in sub_survey_data
+        ]
+    return construct_survey_node(**survey_node_dict)
 
 
 class SurveyResource(BaseResource):
@@ -115,7 +135,7 @@ class SurveyResource(BaseResource):
             ]
             self.data['creator'] = self.current_user_model
             # pass survey props as kwargs
-            survey = Survey(**self.data)
+            survey = construct_survey(**self.data)
             self.session.add(survey)
 
         return survey

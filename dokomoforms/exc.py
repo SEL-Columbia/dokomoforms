@@ -44,6 +44,11 @@ class NotAnAnswerTypeError(DokomoError):
     """
 
 
+class RequiredQuestionSkipped(DokomoError):
+
+    """A submission has no answer for a required question."""
+
+
 class NotAResponseTypeError(DokomoError):
 
     """Invalid response_type Answer.response.setter.

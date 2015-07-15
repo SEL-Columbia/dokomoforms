@@ -461,15 +461,17 @@ class TestSurveyApi(DokoHTTPTest):
             "title": {"English": "Test_Survey"},
             "nodes": [
                 {
-                    "title": {"English": "test_time_node"},
-                    "hint": {
-                        "English": ""
+                    'node': {
+                        "title": {"English": "test_time_node"},
+                        "hint": {
+                            "English": ""
+                        },
+                        "allow_multiple": False,
+                        "allow_other": False,
+                        "type_constraint": "time",
+                        "logic": {},
+                        "deleted": False
                     },
-                    "allow_multiple": False,
-                    "allow_other": False,
-                    "type_constraint": "time",
-                    "logic": {},
-                    "deleted": False
                 }
             ]
         }
@@ -478,7 +480,7 @@ class TestSurveyApi(DokoHTTPTest):
 
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
-        self.assertEqual(response.code, 201)
+        self.assertEqual(response.code, 201, msg=response.body)
 
         # test response
         # check that response is valid parseable json
@@ -495,6 +497,80 @@ class TestSurveyApi(DokoHTTPTest):
 
         self.assertFalse("error" in survey_dict)
 
+    def test_create_survey_with_required_question(self):
+        # url to test
+        url = self.api_root + '/surveys'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_type": "public",
+            "title": {"English": "Test_Survey"},
+            "nodes": [
+                {
+                    'required': True,
+                    'node': {
+                        "title": {"English": "test_time_node"},
+                        "type_constraint": "integer",
+                    },
+                }
+            ]
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201, msg=response.body)
+
+    def test_create_survey_with_sub_survey(self):
+        # url to test
+        url = self.api_root + '/surveys'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_type": "public",
+            "title": {"English": "Test_Survey"},
+            "nodes": [
+                {
+                    'required': True,
+                    'node': {
+                        "title": {"English": "test_time_node"},
+                        "type_constraint": "integer",
+                    },
+                    'sub_surveys': [
+                        {
+                            'nodes': [
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'id': (
+                                            self.session
+                                            .query(Node.id)
+                                            .first()
+                                        )
+                                    },
+                                },
+                            ],
+                            'buckets': [
+                                {
+                                    'bucket_type': 'integer',
+                                    'bucket': '[1, 3]',
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ]
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201, msg=response.body)
+
     def test_create_survey_with_nonsense_node_definition(self):
         # url to test
         url = self.api_root + '/surveys'
@@ -508,9 +584,11 @@ class TestSurveyApi(DokoHTTPTest):
             "title": {"English": "Test_Survey"},
             "nodes": [
                 {
-                    "not a title": {"English": "test_time_node"},
-                    "deleted": False
-                }
+                    'node': {
+                        "not a title": {"English": "test_time_node"},
+                        "deleted": False
+                    },
+                },
             ]
         }
 
@@ -520,7 +598,7 @@ class TestSurveyApi(DokoHTTPTest):
         response = self.fetch(url, method=method, body=encoded_body)
 
         # test response
-        self.assertEqual(response.code, 400)
+        self.assertEqual(response.code, 400, msg=response.body)
         self.assertIn('missing', json_decode(response.body)['error'])
 
     def test_create_survey_with_node_id(self):
@@ -537,8 +615,8 @@ class TestSurveyApi(DokoHTTPTest):
             "title": {"English": "Test_Survey"},
             "nodes": [
                 {
-                    "id": node_id
-                }
+                    'node': {"id": node_id},
+                },
             ]
         }
 
@@ -546,7 +624,7 @@ class TestSurveyApi(DokoHTTPTest):
 
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
-        self.assertEqual(response.code, 201)
+        self.assertEqual(response.code, 201, msg=response.body)
 
         # test response
         # check that response is valid parseable json
@@ -564,6 +642,55 @@ class TestSurveyApi(DokoHTTPTest):
 
         self.assertEqual(
             survey_node['node_id'], "60e56824-910c-47aa-b5c0-71493277b43f")
+
+        self.assertFalse("error" in survey_dict)
+
+    def test_create_enumerator_only_survey(self):
+        # url to test
+        url = self.api_root + '/surveys'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "metadata": {},
+            "survey_type": 'enumerator_only',
+            "default_language": "English",
+            "title": {"English": "Test_Survey"},
+            "nodes": [
+                {
+                    'node': {
+                        "title": {"English": "test_time_node"},
+                        "hint": {
+                            "English": ""
+                        },
+                        "allow_multiple": False,
+                        "allow_other": False,
+                        "type_constraint": "time",
+                        "logic": {},
+                        "deleted": False
+                    },
+                }
+            ]
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201)
+
+        # test response
+        # check that response is valid parseable json
+        survey_dict = json_decode(response.body)
+
+        # check that expected keys are present
+        self.assertTrue('id' in survey_dict)
+        self.assertTrue('metadata' in survey_dict)
+        self.assertTrue('nodes' in survey_dict)
+        self.assertTrue('title' in survey_dict)
+        self.assertTrue('version' in survey_dict)
+        self.assertTrue('created_on' in survey_dict)
+        self.assertTrue('last_update_time' in survey_dict)
 
         self.assertFalse("error" in survey_dict)
 
@@ -712,7 +839,7 @@ class TestSurveyApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
-        self.assertEqual(response.code, 201)
+        self.assertEqual(response.code, 201, msg=response.body)
 
         submission_dict = json_decode(response.body)
 
@@ -799,7 +926,7 @@ class TestSurveyApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
-        self.assertEqual(response.code, 201)
+        self.assertEqual(response.code, 201, msg=response.body)
 
         submission_dict = json_decode(response.body)
 
@@ -1558,6 +1685,540 @@ class TestSubmissionApi(DokoHTTPTest):
             submission_dict['answers'][0]['response'],
             3
         )
+
+    def test_cannot_skip_first_required_question_no_sub_surveys(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.surveys.append(
+                models.construct_survey(
+                    survey_type='public',
+                    title={'English': 'first question required'},
+                    nodes=[
+                        models.construct_survey_node(
+                            required=True,
+                            node=models.construct_node(
+                                type_constraint='integer',
+                                title={'English': 'required first'},
+                            ),
+                        ),
+                        models.construct_survey_node(
+                            node=models.construct_node(
+                                type_constraint='text',
+                                title={'English': 'optional second'},
+                            ),
+                        ),
+                    ],
+                )
+            )
+            self.session.add(user)
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(
+                Survey.title['English'].astext == 'first question required'
+            )
+            .one()
+        )
+
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": survey.id,
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[1].id,
+                    "type_constraint": 'text',
+                    "answer": 'oops I skipped it',
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 400, msg=response.body)
+        self.assertIn('skipped', json_decode(response.body)['error'])
+
+    def test_cannot_skip_second_required_question_no_sub_surveys(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.surveys.append(
+                models.construct_survey(
+                    survey_type='public',
+                    title={'English': 'second question required'},
+                    nodes=[
+                        models.construct_survey_node(
+                            node=models.construct_node(
+                                type_constraint='integer',
+                                title={'English': 'optional first'},
+                            ),
+                        ),
+                        models.construct_survey_node(
+                            required=True,
+                            node=models.construct_node(
+                                type_constraint='text',
+                                title={'English': 'required second'},
+                            ),
+                        ),
+                    ],
+                )
+            )
+            self.session.add(user)
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(
+                Survey.title['English'].astext == 'second question required'
+            )
+            .one()
+        )
+
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": survey.id,
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": 'integer',
+                    "answer": 999,
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 400, msg=response.body)
+        self.assertIn('skipped', json_decode(response.body)['error'])
+
+    def test_cannot_skip_sub_survey(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.surveys.append(
+                models.construct_survey(
+                    survey_type='public',
+                    title={'English': 'sub surveys now'},
+                    nodes=[
+                        models.construct_survey_node(
+                            required=True,
+                            node=models.construct_node(
+                                type_constraint='integer',
+                                title={'English': 'required first'},
+                            ),
+                            sub_surveys=[
+                                models.SubSurvey(
+                                    buckets=[
+                                        models.construct_bucket(
+                                            bucket_type='integer',
+                                            bucket='[0, 5]',
+                                        ),
+                                    ],
+                                    nodes=[
+                                        models.construct_survey_node(
+                                            required=True,
+                                            node=models.construct_node(
+                                                type_constraint='integer',
+                                                title={'English': 'a'},
+                                            ),
+                                        ),
+                                        models.construct_survey_node(
+                                            required=True,
+                                            node=models.construct_node(
+                                                type_constraint='integer',
+                                                title={'English': 'b'},
+                                            ),
+                                        ),
+                                    ],
+                                ),
+                            ],
+                        ),
+                        models.construct_survey_node(
+                            required=True,
+                            node=models.construct_node(
+                                type_constraint='text',
+                                title={'English': 'optional second'},
+                            ),
+                        ),
+                    ],
+                )
+            )
+            self.session.add(user)
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(
+                Survey.title['English'].astext == 'sub surveys now'
+            )
+            .one()
+        )
+
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": survey.id,
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": 'integer',
+                    "answer": 2,
+                },
+                {
+                    "survey_node_id": survey.nodes[1].id,
+                    "type_constraint": 'text',
+                    "answer": 'did I skip something?',
+                },
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 400, msg=response.body)
+        self.assertIn('skipped', json_decode(response.body)['error'])
+
+    def test_can_skip_sub_survey_outside_bucket(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.surveys.append(
+                models.construct_survey(
+                    survey_type='public',
+                    title={'English': 'sub surveys outside bucket'},
+                    nodes=[
+                        models.construct_survey_node(
+                            required=True,
+                            node=models.construct_node(
+                                type_constraint='integer',
+                                title={'English': 'required first'},
+                            ),
+                            sub_surveys=[
+                                models.SubSurvey(
+                                    buckets=[
+                                        models.construct_bucket(
+                                            bucket_type='integer',
+                                            bucket='[0, 5]',
+                                        ),
+                                    ],
+                                    nodes=[
+                                        models.construct_survey_node(
+                                            required=True,
+                                            node=models.construct_node(
+                                                type_constraint='integer',
+                                                title={'English': 'a'},
+                                            ),
+                                        ),
+                                        models.construct_survey_node(
+                                            required=True,
+                                            node=models.construct_node(
+                                                type_constraint='integer',
+                                                title={'English': 'b'},
+                                            ),
+                                        ),
+                                    ],
+                                ),
+                            ],
+                        ),
+                        models.construct_survey_node(
+                            required=True,
+                            node=models.construct_node(
+                                type_constraint='text',
+                                title={'English': 'required second'},
+                            ),
+                        ),
+                    ],
+                )
+            )
+            self.session.add(user)
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(
+                Survey.title['English'].astext == 'sub surveys outside bucket'
+            )
+            .one()
+        )
+
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": survey.id,
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": 'integer',
+                    "answer": 7,
+                },
+                {
+                    "survey_node_id": survey.nodes[1].id,
+                    "type_constraint": 'text',
+                    "answer": 'did not skip',
+                },
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201, msg=response.body)
+
+    def test_required_questions_with_sub_surveys(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.surveys.append(
+                models.construct_survey(
+                    survey_type='public',
+                    title={'English': 'sub surveys outside bucket'},
+                    nodes=[
+                        models.construct_survey_node(
+                            required=True,
+                            node=models.construct_node(
+                                type_constraint='integer',
+                                title={'English': 'required first'},
+                            ),
+                            sub_surveys=[
+                                models.SubSurvey(
+                                    buckets=[
+                                        models.construct_bucket(
+                                            bucket_type='integer',
+                                            bucket='[0, 5]',
+                                        ),
+                                    ],
+                                    nodes=[
+                                        models.construct_survey_node(
+                                            node=models.construct_node(
+                                                type_constraint='note',
+                                                title={'English': 'a'},
+                                            ),
+                                        ),
+                                        models.construct_survey_node(
+                                            required=True,
+                                            node=models.construct_node(
+                                                type_constraint='integer',
+                                                title={'English': 'b'},
+                                            ),
+                                        ),
+                                    ],
+                                ),
+                            ],
+                        ),
+                        models.construct_survey_node(
+                            required=True,
+                            node=models.construct_node(
+                                type_constraint='text',
+                                title={'English': 'required second'},
+                            ),
+                        ),
+                    ],
+                )
+            )
+            self.session.add(user)
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(
+                Survey.title['English'].astext == 'sub surveys outside bucket'
+            )
+            .one()
+        )
+
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": survey.id,
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": 'integer',
+                    "answer": 3,
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[1].id
+                    ),
+                    "type_constraint": 'integer',
+                    "answer": 3,
+                },
+                {
+                    "survey_node_id": survey.nodes[1].id,
+                    "type_constraint": 'text',
+                    "answer": 'did not skip',
+                },
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201, msg=response.body)
+
+    def test_can_skip_sub_survey_not_traversed(self):
+        survey_url = self.api_root + '/surveys'
+        body = {
+            'survey_type': 'public',
+            'title': {'English': 'skip non traversed'},
+            'nodes': [
+                {
+                    'required': True,
+                    'node': {
+                        'title': {'English': 'a'},
+                        'type_constraint': 'integer',
+                    },
+                    'sub_surveys': [
+                        {
+                            'nodes': [
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {
+                                            'English': 'b',
+                                        },
+                                    },
+                                },
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {
+                                            'English': 'c',
+                                        },
+                                    },
+                                },
+                            ],
+                            'buckets': [
+                                {
+                                    'bucket_type': 'integer',
+                                    'bucket': '[0, 5]',
+                                },
+                            ],
+                        },
+                        {
+                            'nodes': [
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {
+                                            'English': 'e',
+                                        },
+                                    },
+                                },
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {
+                                            'English': 'f',
+                                        },
+                                    },
+                                },
+                            ],
+                            'buckets': [
+                                {
+                                    'bucket_type': 'integer',
+                                    'bucket': '[7, 10]',
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    'required': True,
+                    'node': {
+                        'title': {'English': 'd'},
+                        'type_constraint': 'text',
+                    },
+                },
+            ],
+        }
+        survey_response = self.fetch(
+            survey_url, method='POST', body=json_encode(body)
+        )
+        self.assertEqual(survey_response.code, 201, msg=survey_response.body)
+
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(
+                Survey.title['English'].astext == 'skip non traversed'
+            )
+            .one()
+        )
+
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": survey.id,
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": 'integer',
+                    "answer": 3,
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[0].id
+                    ),
+                    "type_constraint": 'integer',
+                    "answer": 3,
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[1].id
+                    ),
+                    "type_constraint": 'integer',
+                    "answer": 3,
+                },
+                {
+                    "survey_node_id": survey.nodes[1].id,
+                    "type_constraint": 'text',
+                    "answer": 'did not skip',
+                },
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201, msg=response.body)
 
     def test_create_public_submission_with_integer_answer_alternate_url(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
