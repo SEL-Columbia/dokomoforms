@@ -9,7 +9,8 @@ from sqlalchemy.sql.expression import func
 from dokomoforms.api import BaseResource
 from dokomoforms.api.submissions import _create_submission
 from dokomoforms.models import (
-    Survey, Submission, construct_survey_node, construct_bucket, SubSurvey,
+    Survey, Submission, SubSurvey,
+    construct_survey, construct_survey_node, construct_bucket,
     User,
     Node, construct_node
 )
@@ -128,7 +129,7 @@ class SurveyResource(BaseResource):
             ]
             self.data['creator'] = self.current_user_model
             # pass survey props as kwargs
-            survey = Survey(**self.data)
+            survey = construct_survey(**self.data)
             self.session.add(survey)
 
         return survey

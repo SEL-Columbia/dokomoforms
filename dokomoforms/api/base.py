@@ -108,7 +108,8 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         INTERNAL SERVER ERROR.
         """
         understood = (
-            ValueError, TypeError, AttributeError, SQLAlchemyError, DokomoError
+            KeyError, ValueError, TypeError, AttributeError,
+            SQLAlchemyError, DokomoError
         )
         if isinstance(err, understood):
             err = exc.BadRequest(err)

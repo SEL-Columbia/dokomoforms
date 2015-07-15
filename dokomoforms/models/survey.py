@@ -170,6 +170,16 @@ class EnumeratorOnlySurvey(Survey):
     __mapper_args__ = {'polymorphic_identity': 'enumerator_only'}
 
 
+def construct_survey(*, survey_type: str, **kwargs):
+    if survey_type == 'public':
+        survey_constructor = Survey
+    elif survey_type == 'enumerator_only':
+        survey_constructor = EnumeratorOnlySurvey
+    else:
+        raise TypeError
+    return survey_constructor(**kwargs)
+
+
 class SubSurvey(Base):
 
     """A SubSurvey behaves like a Survey but belongs to a SurveyNode.
@@ -207,7 +217,7 @@ class SubSurvey(Base):
             'id', 'parent_type_constraint', 'parent_survey_node_id',
             'parent_node_id'
         ),
-        sa.UniqueConstraint('parent_survey_node_id', 'parent_node_id'),
+        #sa.UniqueConstraint('parent_survey_node_id', 'parent_node_id'),
         sa.ForeignKeyConstraint(
             [
                 'parent_survey_node_id',
@@ -290,7 +300,7 @@ class Bucket(Base):
             ],
             onupdate='CASCADE', ondelete='CASCADE'
         ),
-        sa.UniqueConstraint('id', 'sub_survey_id'),
+        sa.UniqueConstraint('id', 'sub_survey_parent_survey_node_id'),
         sa.UniqueConstraint(
             'id', 'sub_survey_id', 'sub_survey_parent_survey_node_id',
             'sub_survey_parent_node_id'
@@ -307,19 +317,19 @@ class Bucket(Base):
 
 class _RangeBucketMixin:
     id = util.pk()
-    the_sub_survey_id = sa.Column(pg.UUID, nullable=False)
+    the_survey_node_id = sa.Column(pg.UUID, nullable=False)
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(self):
         return (
             pg.ExcludeConstraint(
-                (sa.cast(cls.the_sub_survey_id, pg.TEXT), '='),
+                (sa.cast(self.the_survey_node_id, pg.TEXT), '='),
                 ('bucket', '&&')
             ),
             sa.CheckConstraint('NOT isempty(bucket)'),
             sa.ForeignKeyConstraint(
-                ['id', 'the_sub_survey_id'],
-                ['bucket.id', 'bucket.sub_survey_id'],
+                ['id', 'the_survey_node_id'],
+                ['bucket.id', 'bucket.sub_survey_parent_survey_node_id'],
                 onupdate='CASCADE', ondelete='CASCADE'
             ),
         )
@@ -659,6 +669,9 @@ def construct_survey_node(**kwargs) -> SurveyNode:
     """
     if 'the_node' in kwargs:
         raise TypeError('the_node')
+
+    type_constraint = None
+
     if 'node' in kwargs:
         type_constraint = kwargs['node'].type_constraint
         kwargs['the_node'] = kwargs['node']
@@ -670,6 +683,9 @@ def construct_survey_node(**kwargs) -> SurveyNode:
         NonAnswerableSurveyNode if type_constraint == 'note'
         else AnswerableSurveyNode
     )
+
+    if type_constraint is None:
+        raise ValueError('missing type_constraint')
 
     return survey_node_constructor(**kwargs)
     # # it's unclear whether an id passed into kwargs should
@@ -688,3 +704,58 @@ def construct_survey_node(**kwargs) -> SurveyNode:
     #         node=node,
     #     )
     # return survey_node
+
+
+def skipped_required(survey, answers) -> str:
+    #import sys
+    if not survey.nodes:
+        return None
+
+    answer_stack = list(reversed(answers))
+    take_answer = True
+
+    survey_node_stack = [(0, survey.nodes)]
+
+    while survey_node_stack:
+        survey_node_index, survey_nodes = survey_node_stack.pop()
+        #print('\n{} {}\n'.format(survey_node_index, [s.node.title for s in survey_nodes]), file=sys.stderr)
+        #print(answer_stack, file=sys.stderr)
+        try:
+            survey_node = survey_nodes[survey_node_index]
+        except IndexError:
+            continue
+
+        answerable = isinstance(survey_node, AnswerableSurveyNode)
+        required = survey_node.required if answerable else False
+
+        if not answer_stack:
+            if required:
+                return survey_node.id
+            continue
+
+        if take_answer:
+            answer = answer_stack.pop()
+
+        answer_matches_node = survey_node.node_id == answer.question_id
+        if not answer_matches_node:
+            take_answer = False
+            if required:
+                return survey_node.id
+        else:
+            take_answer = True
+
+        survey_node_stack.append((survey_node_index + 1, survey_nodes))
+
+        if answer_matches_node and answerable:
+            for sub_survey in survey_node.sub_surveys:
+                for bucket in sub_survey.buckets:
+                    main_ans = answer.main_answer
+                    if main_ans is not None and main_ans in bucket.bucket:
+                        survey_nodes = sub_survey.nodes
+                        if sub_survey.repeatable:
+                            for _ in range(main_ans):
+                                survey_node_stack.append((0, survey_nodes))
+                        else:
+                            survey_node_stack.append((0, survey_nodes))
+
+    return None
