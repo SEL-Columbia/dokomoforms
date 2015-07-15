@@ -21,7 +21,6 @@ module.exports = React.createClass({displayName: "exports",
 
 },{"react":168}],2:[function(require,module,exports){
 var React = require('react'); 
-
 module.exports = React.createClass({displayName: "exports",
     render: function() {
         var messageClass = "message-box";
@@ -48,8 +47,7 @@ module.exports = React.createClass({displayName: "exports",
 
 },{"react":168}],3:[function(require,module,exports){
 var React = require('react'); 
-
-DontKnow = React.createClass({displayName: "DontKnow",
+module.exports = React.createClass({displayName: "exports",
     render: function() {
         return (
                 React.createElement("div", {className: "question__btn__other"}, 
@@ -62,7 +60,6 @@ DontKnow = React.createClass({displayName: "DontKnow",
 
 },{"react":168}],4:[function(require,module,exports){
 var React = require('react'); 
-
 module.exports = React.createClass({displayName: "exports",
     render: function() {
         return (
@@ -98,7 +95,7 @@ var React = require('react');
 var BigButton = require('./BigButton.js');
 var DontKnow = require('./DontKnow.js');
 
-Footer = React.createClass({displayName: "Footer",
+module.exports = React.createClass({displayName: "exports",
     render: function() {
         var FooterClasses = "bar bar-standard bar-footer";
         if (this.props.showDontKnow) 
@@ -20111,17 +20108,21 @@ process.umask = function() { return 0; };
 
 },{}],170:[function(require,module,exports){
 var React = require('react');
+
 var ResponseField = require('./components/baseComponents/ResponseField.js');
-var Header = require('./components/baseComponents/Header.js');
-var Title = require('./components/baseComponents/Title.js');
-var Card = require('./components/baseComponents/Card.js');
+var ResponseFields = require('./components/baseComponents/ResponseFields.js');
 var BigButton = require('./components/baseComponents/BigButton.js');
 var LittleButton = require('./components/baseComponents/LittleButton.js');
-var ResponseFields = require('./components/baseComponents/ResponseFields.js');
+var DontKnow = require('./components/baseComponents/DontKnow.js');
+
+var Title = require('./components/baseComponents/Title.js');
+var Card = require('./components/baseComponents/Card.js');
 var Select = require('./components/baseComponents/Select.js');
 var FacilityRadios = require('./components/baseComponents/FacilityRadios.js');
-var Footer = require('./components/baseComponents/Footer.js');
 var Message = require('./components/baseComponents/Message.js');
+
+var Header = require('./components/baseComponents/Header.js');
+var Footer = require('./components/baseComponents/Footer.js');
 
 var Application = React.createClass({displayName: "Application",
     getInitialState: function() {
@@ -20176,4 +20177,4 @@ init = function(survey) {
     );
 };
 
-},{"./components/baseComponents/BigButton.js":1,"./components/baseComponents/Card.js":2,"./components/baseComponents/FacilityRadios.js":4,"./components/baseComponents/Footer.js":5,"./components/baseComponents/Header.js":6,"./components/baseComponents/LittleButton.js":7,"./components/baseComponents/Message.js":9,"./components/baseComponents/ResponseField.js":10,"./components/baseComponents/ResponseFields.js":11,"./components/baseComponents/Select.js":12,"./components/baseComponents/Title.js":13,"react":168}]},{},[170]);
+},{"./components/baseComponents/BigButton.js":1,"./components/baseComponents/Card.js":2,"./components/baseComponents/DontKnow.js":3,"./components/baseComponents/FacilityRadios.js":4,"./components/baseComponents/Footer.js":5,"./components/baseComponents/Header.js":6,"./components/baseComponents/LittleButton.js":7,"./components/baseComponents/Message.js":9,"./components/baseComponents/ResponseField.js":10,"./components/baseComponents/ResponseFields.js":11,"./components/baseComponents/Select.js":12,"./components/baseComponents/Title.js":13,"react":168}]},{},[170]);

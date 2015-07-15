@@ -2,7 +2,7 @@ var React = require('react');
 var BigButton = require('./BigButton.js');
 var DontKnow = require('./DontKnow.js');
 
-Footer = React.createClass({
+module.exports = React.createClass({
     render: function() {
         var FooterClasses = "bar bar-standard bar-footer";
         if (this.props.showDontKnow) 

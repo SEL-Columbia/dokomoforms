@@ -1,6 +1,5 @@
 var React = require('react'); 
-
-DontKnow = React.createClass({
+module.exports = React.createClass({
     render: function() {
         return (
                 <div className="question__btn__other">
