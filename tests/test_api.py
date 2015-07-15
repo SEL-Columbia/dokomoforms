@@ -461,15 +461,17 @@ class TestSurveyApi(DokoHTTPTest):
             "title": {"English": "Test_Survey"},
             "nodes": [
                 {
-                    "title": {"English": "test_time_node"},
-                    "hint": {
-                        "English": ""
+                    'node': {
+                        "title": {"English": "test_time_node"},
+                        "hint": {
+                            "English": ""
+                        },
+                        "allow_multiple": False,
+                        "allow_other": False,
+                        "type_constraint": "time",
+                        "logic": {},
+                        "deleted": False
                     },
-                    "allow_multiple": False,
-                    "allow_other": False,
-                    "type_constraint": "time",
-                    "logic": {},
-                    "deleted": False
                 }
             ]
         }
@@ -478,6 +480,7 @@ class TestSurveyApi(DokoHTTPTest):
 
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201, msg=response.body)
 
         # test response
         # check that response is valid parseable json
@@ -494,6 +497,80 @@ class TestSurveyApi(DokoHTTPTest):
 
         self.assertFalse("error" in survey_dict)
 
+    def test_create_survey_with_required_question(self):
+        # url to test
+        url = self.api_root + '/surveys'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_type": "public",
+            "title": {"English": "Test_Survey"},
+            "nodes": [
+                {
+                    'required': True,
+                    'node': {
+                        "title": {"English": "test_time_node"},
+                        "type_constraint": "integer",
+                    },
+                }
+            ]
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201, msg=response.body)
+
+    def test_create_survey_with_sub_survey(self):
+        # url to test
+        url = self.api_root + '/surveys'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_type": "public",
+            "title": {"English": "Test_Survey"},
+            "nodes": [
+                {
+                    'required': True,
+                    'node': {
+                        "title": {"English": "test_time_node"},
+                        "type_constraint": "integer",
+                    },
+                    'sub_surveys': [
+                        {
+                            'nodes': [
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'id': (
+                                            self.session
+                                            .query(Node.id)
+                                            .first()
+                                        )
+                                    },
+                                },
+                            ],
+                            'buckets': [
+                                {
+                                    'bucket_type': 'integer',
+                                    'bucket': '[1, 3]',
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ]
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201, msg=response.body)
+
     def test_create_survey_with_nonsense_node_definition(self):
         # url to test
         url = self.api_root + '/surveys'
@@ -507,9 +584,11 @@ class TestSurveyApi(DokoHTTPTest):
             "title": {"English": "Test_Survey"},
             "nodes": [
                 {
-                    "not a title": {"English": "test_time_node"},
-                    "deleted": False
-                }
+                    'node': {
+                        "not a title": {"English": "test_time_node"},
+                        "deleted": False
+                    },
+                },
             ]
         }
 
@@ -519,7 +598,7 @@ class TestSurveyApi(DokoHTTPTest):
         response = self.fetch(url, method=method, body=encoded_body)
 
         # test response
-        self.assertEqual(response.code, 400)
+        self.assertEqual(response.code, 400, msg=response.body)
         self.assertIn('missing', json_decode(response.body)['error'])
 
     def test_create_survey_with_node_id(self):
@@ -536,8 +615,8 @@ class TestSurveyApi(DokoHTTPTest):
             "title": {"English": "Test_Survey"},
             "nodes": [
                 {
-                    "id": node_id
-                }
+                    'node': {"id": node_id},
+                },
             ]
         }
 
@@ -545,6 +624,7 @@ class TestSurveyApi(DokoHTTPTest):
 
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201, msg=response.body)
 
         # test response
         # check that response is valid parseable json
