@@ -19829,6 +19829,17 @@ var ResponseField = React.createClass({displayName: "ResponseField",
     }
 });
 
+var Message = React.createClass({displayName: "Message",
+    render: function() {
+        var textClass = this.props.classes;
+        return (
+                React.createElement("div", {className: "content-padded"}, 
+                        React.createElement("p", {className: textClass}, this.props.text)
+                )
+               )
+    }
+});
+
 var ResponseFields = React.createClass({displayName: "ResponseFields",
     render: function() {
         var children = Array.apply(null, {length: this.props.childCount})
@@ -19874,9 +19885,11 @@ var BigButton = React.createClass({displayName: "BigButton",
 
 var LittleButton = React.createClass({displayName: "LittleButton",
     render: function() {
+        var iconClass = "icon " + this.props.icon;
         return (
                 React.createElement("div", {className: "content-padded"}, 
                     React.createElement("button", {className: "btn"}, 
+                        this.props.icon ? React.createElement("span", {className: iconClass}) : null, 
                         this.props.text
                     )
                 )
@@ -19900,25 +19913,63 @@ var Select = React.createClass({displayName: "Select",
     },
 
     render: function() {
+       var size = this.props.multiSelect ? 
+           this.props.choices.length + 1 + 1*this.props.withOther : 1;
         return (
-                React.createElement("div", null, 
-                React.createElement("select", {className: "noselect", 
-                    onChange: this.onChange}, 
+                React.createElement("div", {className: "content-padded"}, 
+                    React.createElement("select", {className: "noselect", onChange: this.onChange, 
+                            multiple: this.props.multiSelect, 
+                            size: size
+                    }, 
 
-                React.createElement("option", {value: "null"}, "Please choose an option"), 
-                React.createElement("option", {value: "1f77897b-7b10-4277-80da-8bc29084b025"}, "choice a"), 
-                React.createElement("option", {value: "-7b10-4277-80da-8bc29084b025"}, "choice b"), 
-                this.props.withOther ? 
-                    React.createElement("option", {value: "other"}, " Other ") 
-                    : null
-                ), 
-                this.state.showOther ? React.createElement(ResponseField, null): null
+                    React.createElement("option", {key: "null", value: "null"}, "Please choose an option"), 
+                    this.props.choices.map(function(choice) {
+                        return (
+                                React.createElement("option", {key: choice.value, value: choice.value}, 
+                                     choice.text
+                                )
+                                )
+                    }), 
+                    this.props.withOther ? 
+                        React.createElement("option", {key: "other", value: "other"}, " Other ") 
+                        : null
+                    ), 
+                    this.state.showOther ? React.createElement(ResponseField, null): null
                 )
                )
 
     }
 });
 
+var FacilityRadios = React.createClass({displayName: "FacilityRadios",
+    render: function() {
+        return (
+                React.createElement("div", {className: "question__radios"}, 
+                this.props.facilities.map(function(facility) {
+                    return (React.createElement("div", {key: facility.value, className: "question__radio"}, 
+                            React.createElement("input", {
+                                type: "radio", 
+                                id: facility.value, 
+                                name: "facility", 
+                                value: facility.value}
+                            ), 
+                            React.createElement("label", {htmlFor: facility.value}, 
+                            React.createElement("span", {className: "question__radio__span__btn"}, React.createElement("span", null)), 
+                                React.createElement("strong", null, facility.name)
+                            ), 
+                            React.createElement("br", null), 
+                            React.createElement("span", {className: "question__radio__span__meta"}, 
+                                facility.sector
+                            ), 
+                            React.createElement("span", {className: "question__radio__span__meta"}, 
+                                React.createElement("em", null, facility.distance, "m")
+                            )
+                            )) 
+                })
+                )
+               )
+    }
+});
 
 var DontKnow = React.createClass({displayName: "DontKnow",
     render: function() {
@@ -19986,10 +20037,7 @@ var Card = React.createClass({displayName: "Card",
                 React.createElement("div", {className: messageClass}, 
                 this.props.messages.map(function(msg, idx) {
                     return ( 
-                            React.createElement("span", {key: msg}, 
-                                msg, 
-                                React.createElement("br", null)
-                            ) 
+                            React.createElement("span", null, " ", msg, " ", React.createElement("br", null), " ") 
                         )
                 })
                 )
@@ -20012,10 +20060,19 @@ var Header = React.createClass({displayName: "Header",
 
         return (
             React.createElement("header", {className: headerClasses}, 
-            React.createElement("h1", {className: "title align-left"}, "independant"), 
-            React.createElement("a", {className: "icon icon-bars pull-right menu", 
-                onClick: this.onClick
-            }), 
+            this.props.splash ?
+                React.createElement("h1", {className: "title align-left"}, "independant")
+             :   
+                React.createElement("span", null, 
+                React.createElement("button", {className: "btn btn-link btn-nav pull-left page_nav__prev"}, 
+                    React.createElement("span", {className: "icon icon-left-nav"}), " ", React.createElement("span", {className: ""}, "Previous")
+                ), 
+                React.createElement("h1", {className: "title"}, "7 / 11")
+                ), 
+            
+
+            React.createElement("a", {className: "icon icon-bars pull-right menu", onClick: this.onClick}), 
+
              this.state.showMenu ? React.createElement(Menu, null) : null
             )
         )
@@ -20034,7 +20091,7 @@ var Application = React.createClass({displayName: "Application",
 
         return (
                 React.createElement("div", {id: "wrapper"}, 
-                    React.createElement(Header, null), 
+                    React.createElement(Header, {splash: true}), 
                     React.createElement("div", {className: contentClasses}, 
                         React.createElement(Title, null), 
                         React.createElement(Card, {messages: ["hey", "how you doing", 
@@ -20043,7 +20100,23 @@ var Application = React.createClass({displayName: "Application",
                         React.createElement(BigButton, {text: 'Click for toast', type: 'btn-positive'}), 
                         React.createElement(Question, null), 
                         React.createElement(LittleButton, {text: 'add another answer'}), 
-                        React.createElement(Select, {withOther: true})
+                        React.createElement(Select, {withOther: true, multiSelect: true, choices: [
+                            {'value': 'toast', 'text': 'i love toast'},
+                            {'value': 'hater', 'text': 'i hate toast'}
+                        ]}), 
+                        React.createElement(ResponseField, {showMinus: false}), ";", 
+                        React.createElement(FacilityRadios, {facilities: [
+                            {'name': 'toast factory', 'distance': 100, 'sector': 'toastustry', 'value': 123456},
+                            {'name': 'toast store', 'distance': 200, 'sector': 'toastomerce', 'value': 77896},
+                            {'name': 'toast park', 'distance': 1000, 'sector': 'toastheme', 'value': 78906},
+                            {'name': 'toast app', 'distance': 50, 'sector': 'Etoast', 'value': 011126}
+                        ]}), 
+                        React.createElement(Select, {choices: [
+                            {'value': 'toast', 'text': 'i love toast'},
+                            {'value': 'hater', 'text': 'i hate toast'}
+                        ]}), 
+                        React.createElement(LittleButton, {icon: "icon-star", text: ' find me'}), 
+                        React.createElement(Message, {text: "toast? toast! TOOOOASSTTT!!!"})
                     ), 
                     React.createElement(Footer, {showDontKnow: this.state.showDontKnow})
                 )

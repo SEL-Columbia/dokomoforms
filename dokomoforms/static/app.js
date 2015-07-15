@@ -18,6 +18,17 @@ var ResponseField = React.createClass({
     }
 });
 
+var Message = React.createClass({
+    render: function() {
+        var textClass = this.props.classes;
+        return (
+                <div className='content-padded'>
+                        <p className={textClass}>{this.props.text}</p>
+                </div>
+               )
+    }
+});
+
 var ResponseFields = React.createClass({
     render: function() {
         var children = Array.apply(null, {length: this.props.childCount})
@@ -63,9 +74,11 @@ var BigButton = React.createClass({
 
 var LittleButton = React.createClass({
     render: function() {
+        var iconClass = "icon " + this.props.icon;
         return (
                 <div className="content-padded">
                     <button className="btn">
+                        {this.props.icon ? <span className={iconClass}></span> : null }
                         {this.props.text}
                     </button>
                 </div>
@@ -89,25 +102,63 @@ var Select = React.createClass({
     },
 
     render: function() {
+       var size = this.props.multiSelect ? 
+           this.props.choices.length + 1 + 1*this.props.withOther : 1;
         return (
-                <div>
-                <select className="noselect"
-                    onChange={this.onChange} >
+                <div className="content-padded">
+                    <select className="noselect" onChange={this.onChange} 
+                            multiple={this.props.multiSelect}
+                            size={size}
+                    >
 
-                <option value="null">Please choose an option</option>
-                <option value="1f77897b-7b10-4277-80da-8bc29084b025">choice a</option>
-                <option value="-7b10-4277-80da-8bc29084b025">choice b</option>
-                {this.props.withOther ? 
-                    <option value="other"> Other </option> 
-                    : null}
-                </select>
-                {this.state.showOther ? <ResponseField />: null}
+                    <option key="null" value="null">Please choose an option</option>
+                    {this.props.choices.map(function(choice) {
+                        return (
+                                <option key={choice.value} value={choice.value}>
+                                    { choice.text }
+                                </option>
+                                )
+                    })}
+                    {this.props.withOther ? 
+                        <option key="other" value="other"> Other </option> 
+                        : null}
+                    </select>
+                    {this.state.showOther ? <ResponseField />: null}
                 </div>
                )
 
     }
 });
 
+var FacilityRadios = React.createClass({
+    render: function() {
+        return (
+                <div className='question__radios'>
+                {this.props.facilities.map(function(facility) {
+                    return (<div key={facility.value} className='question__radio'>
+                            <input 
+                                type='radio' 
+                                id={facility.value} 
+                                name='facility' 
+                                value={facility.value}> 
+                            </input>
+                            <label htmlFor={facility.value} >
+                            <span className="question__radio__span__btn"><span></span></span>
+                                <strong>{facility.name}</strong>
+                            </label>
+                            <br/>
+                            <span className='question__radio__span__meta'>
+                                {facility.sector}
+                            </span>
+                            <span className='question__radio__span__meta'>
+                                <em>{facility.distance}m</em>
+                            </span>
+                            </div>) 
+                })}
+                </div>
+               )
+    }
+});
 
 var DontKnow = React.createClass({
     render: function() {
@@ -175,10 +226,7 @@ var Card = React.createClass({
                 <div className={messageClass} >
                 {this.props.messages.map(function(msg, idx) {
                     return ( 
-                            <span key={msg}> 
-                                {msg}
-                                <br />
-                            </span> 
+                            <span> {msg} <br/> </span> 
                         )
                 })}
                 </div>
@@ -201,10 +249,19 @@ var Header = React.createClass({
 
         return (
             <header className={headerClasses}>
-            <h1 className="title align-left">independant</h1>
-            <a className="icon icon-bars pull-right menu"
-                onClick = {this.onClick}
-            ></a>
+            {this.props.splash ?
+                <h1 className="title align-left">independant</h1>
+             :   
+                <span>
+                <button className="btn btn-link btn-nav pull-left page_nav__prev">
+                    <span className="icon icon-left-nav"></span> <span className="">Previous</span>
+                </button>
+                <h1 className="title">7 / 11</h1>
+                </span>
+            }
+
+            <a className="icon icon-bars pull-right menu" onClick = {this.onClick} ></a>
+
             { this.state.showMenu ? <Menu /> : null }
             </header>
         )
@@ -223,7 +280,7 @@ var Application = React.createClass({
 
         return (
                 <div id="wrapper">
-                    <Header />
+                    <Header splash={true}/>
                     <div className={contentClasses}>
                         <Title />
                         <Card messages={["hey", "how you doing", 
@@ -232,7 +289,23 @@ var Application = React.createClass({
                         <BigButton text={'Click for toast'} type={'btn-positive'} />
                         <Question />
                         <LittleButton text={'add another answer'} />
-                        <Select withOther={true}/>
+                        <Select withOther={true} multiSelect={true} choices={[
+                            {'value': 'toast', 'text': 'i love toast'},
+                            {'value': 'hater', 'text': 'i hate toast'}
+                        ]}/>
+                        <ResponseField showMinus={false}/>;
+                        <FacilityRadios facilities={[
+                            {'name': 'toast factory', 'distance': 100, 'sector': 'toastustry', 'value': 123456},
+                            {'name': 'toast store', 'distance': 200, 'sector': 'toastomerce', 'value': 77896},
+                            {'name': 'toast park', 'distance': 1000, 'sector': 'toastheme', 'value': 78906},
+                            {'name': 'toast app', 'distance': 50, 'sector': 'Etoast', 'value': 011126}
+                        ]}/>
+                        <Select choices={[
+                            {'value': 'toast', 'text': 'i love toast'},
+                            {'value': 'hater', 'text': 'i hate toast'}
+                        ]}/>
+                        <LittleButton icon={"icon-star"} text={' find me'} />
+                        <Message text={"toast? toast! TOOOOASSTTT!!!"}/>
                     </div>
                     <Footer showDontKnow={this.state.showDontKnow}/>
                 </div>
