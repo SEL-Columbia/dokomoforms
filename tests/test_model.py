@@ -1486,6 +1486,38 @@ class TestBucket(DokoTest):
                 ]
                 self.session.add(creator)
 
+    def test_two_integer_buckets_different_sub_surveys(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                creator, survey = self._create_blank_survey()
+                survey.nodes = [
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title={'English': 'node'},
+                        ),
+                        sub_surveys=[
+                            models.SubSurvey(
+                                buckets=[
+                                    models.construct_bucket(
+                                        bucket_type='integer',
+                                        bucket='[1, 5]'
+                                    ),
+                                ],
+                            ),
+                            models.SubSurvey(
+                                buckets=[
+                                    models.construct_bucket(
+                                        bucket_type='integer',
+                                        bucket='[8, 13]'
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                ]
+                self.session.add(creator)
+
     def test_integer_bucket_no_empty_range(self):
         """There are no integers between 2 and 3 exclusive"""
         with self.assertRaises(IntegrityError):

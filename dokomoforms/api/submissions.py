@@ -5,8 +5,9 @@ from dokomoforms.api import BaseResource
 from dokomoforms.models import (
     Survey, Submission, User,
     construct_submission, construct_answer, Answer,
-    SurveyNode
+    SurveyNode, skipped_required
 )
+from dokomoforms.exc import RequiredQuestionSkipped
 
 
 def _create_answer(session, answer_dict) -> Answer:
@@ -47,11 +48,11 @@ def _create_submission(self, survey):
     with self.session.begin():
         # create a list of Answer models
         if 'answers' in self.data:
-            answers = self.data['answers']
-            self.data['answers'] = [
-                _create_answer(self.session, answer) for answer in answers
+            raw_answers = self.data['answers']
+            answers = [
+                _create_answer(self.session, answer) for answer in raw_answers
             ]
-            # del self.data['answers']
+            self.data['answers'] = answers
 
         # pass submission props as kwargs
         if 'submission_type' not in self.data:
@@ -66,6 +67,12 @@ def _create_submission(self, survey):
 
         # add the submission
         self.session.add(submission)
+        self.session.flush()
+        skipped_question = skipped_required(survey, submission.answers)
+        if skipped_question is not None:
+            raise RequiredQuestionSkipped(
+                '{} skipped'.format(skipped_question)
+            )
 
     return submission
 

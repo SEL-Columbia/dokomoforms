@@ -9,19 +9,21 @@ from sqlalchemy.sql.expression import func
 from dokomoforms.api import BaseResource
 from dokomoforms.api.submissions import _create_submission
 from dokomoforms.models import (
-    Survey, Submission, construct_survey_node,
+    Survey, Submission, construct_survey_node, construct_survey,
     User,
     Node, construct_node
 )
 
 
-def _create_or_get_survey_node(session, node_dict):
+def _create_or_get_survey_node(session, survey_node_dict):
+    node_dict = survey_node_dict.pop('node')
     if 'id' in node_dict:
         node = session.query(Node).get(node_dict['id'])
         # TODO: raise an exception if node is None
     else:
         node = construct_node(**node_dict)
-    return construct_survey_node(node=node)
+    survey_node_dict['node'] = node
+    return construct_survey_node(**survey_node_dict)
 
 
 class SurveyResource(BaseResource):
@@ -109,7 +111,7 @@ class SurveyResource(BaseResource):
             ]
             self.data['creator'] = self.current_user_model
             # pass survey props as kwargs
-            survey = Survey(**self.data)
+            survey = construct_survey(**self.data)
             self.session.add(survey)
 
         return survey
