@@ -1,5 +1,15 @@
 var React = require('react');
-var a = require('./components/baseComponents.js');
+var ResponseField = require('./components/baseComponents/ResponseField.js');
+var Header = require('./components/baseComponents/Header.js');
+var Title = require('./components/baseComponents/Title.js');
+var Card = require('./components/baseComponents/Card.js');
+var BigButton = require('./components/baseComponents/BigButton.js');
+var LittleButton = require('./components/baseComponents/LittleButton.js');
+var ResponseFields = require('./components/baseComponents/ResponseFields.js');
+var Select = require('./components/baseComponents/Select.js');
+var FacilityRadios = require('./components/baseComponents/FacilityRadios.js');
+var Footer = require('./components/baseComponents/Footer.js');
+var Message = require('./components/baseComponents/Message.js');
 
 var Application = React.createClass({
     getInitialState: function() {
@@ -19,7 +29,7 @@ var Application = React.createClass({
                             ["i ", <b>love</b>, " toast"]]} type={"message-error"}/>
                         <Card messages={["cool"]} />
                         <BigButton text={'Click for toast'} type={'btn-positive'} />
-                        <Question />
+                        <ResponseFields childCount={3}/>
                         <LittleButton text={'add another answer'} />
                         <Select withOther={true} multiSelect={true} choices={[
                             {'value': 'toast', 'text': 'i love toast'},
