@@ -1,10 +1,6 @@
 """Survey models."""
-
 import abc
 from collections import OrderedDict
-
-import datetime
-import dateutil.parser
 
 import sqlalchemy as sa
 from sqlalchemy.sql.functions import current_timestamp
@@ -362,15 +358,6 @@ class DateBucket(_RangeBucketMixin, Bucket):
     __mapper_args__ = {'polymorphic_identity': 'date'}
 
 
-class TimeBucket(_RangeBucketMixin, Bucket):
-
-    """TSTZRANGE bucket which ignores the date."""
-
-    __tablename__ = 'bucket_time'
-    bucket = sa.Column(pg.TSTZRANGE, nullable=False)
-    __mapper_args__ = {'polymorphic_identity': 'time'}
-
-
 class TimestampBucket(_RangeBucketMixin, Bucket):
 
     """TSTZRANGE bucket."""
@@ -422,36 +409,9 @@ BUCKET_TYPES = {
     'integer': IntegerBucket,
     'decimal': DecimalBucket,
     'date': DateBucket,
-    'time': TimeBucket,
     'timestamp': TimestampBucket,
     'multiple_choice': MultipleChoiceBucket,
 }
-
-
-def _time_at_unix_epoch_date(time: str, upper=False) -> datetime.datetime:
-    the_date = datetime.datetime(1970, 1, 1)
-    if upper and time.strip() == '':
-        the_date = datetime.datetime(1970, 1, 2)
-    return datetime.datetime.combine(
-        the_date, dateutil.parser.parse(time).timetz()
-    )
-
-
-def _set_time_bucket_dates(bucket: str) -> str:
-    bucket_str = bucket.strip()
-
-    open_bracket = bucket_str[0]
-    bucket_str_contents = bucket_str[1:-1]
-    close_bracket = bucket_str[-1]
-
-    lower, upper = bucket_str_contents.split(',')
-
-    return (
-        open_bracket +
-        _time_at_unix_epoch_date(lower).isoformat() + ',' +
-        _time_at_unix_epoch_date(upper, upper=True).isoformat() +
-        close_bracket
-    )
 
 
 def construct_bucket(*, bucket_type: str, **kwargs) -> Bucket:
@@ -473,10 +433,6 @@ def construct_bucket(*, bucket_type: str, **kwargs) -> Bucket:
         create_bucket = BUCKET_TYPES[bucket_type]
     except KeyError:
         raise NoSuchBucketTypeError(bucket_type)
-
-    if bucket_type == 'time' and 'bucket' in kwargs:
-        kwargs['bucket'] = _set_time_bucket_dates(kwargs['bucket'])
-
     return create_bucket(**kwargs)
 
 
@@ -764,7 +720,12 @@ def skipped_required(survey, answers) -> str:
             for sub_survey in survey_node.sub_surveys:
                 for bucket in sub_survey.buckets:
                     main_ans = answer.main_answer
-                    if main_ans is not None and main_ans in bucket.bucket:
+                    not_none = main_ans is not None
+                    if answer.answer_type == 'multiple_choice':
+                        bucket_match = main_ans == bucket.bucket.id
+                    else:
+                        bucket_match = not_none and main_ans in bucket.bucket
+                    if bucket_match:
                         survey_nodes = sub_survey.nodes
                         if sub_survey.repeatable:
                             for _ in range(main_ans):

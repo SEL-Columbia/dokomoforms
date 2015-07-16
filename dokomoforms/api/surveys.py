@@ -10,14 +10,24 @@ from sqlalchemy.sql.expression import func
 from dokomoforms.api import BaseResource
 from dokomoforms.api.submissions import _create_submission
 from dokomoforms.models import (
-    Survey, Submission, SubSurvey,
+    Survey, Submission, SubSurvey, Choice,
     construct_survey, construct_survey_node, construct_bucket,
     User,
     Node, construct_node
 )
 
 
-def _create_sub_survey(session, sub_survey_dict):
+# TODO: clean up this mess
+def _create_sub_survey(session, sub_survey_dict, parent_node):
+    for bucket_dict in sub_survey_dict['buckets']:
+        if bucket_dict['bucket_type'] == 'multiple_choice':
+            choice_dict = bucket_dict['bucket']
+            choice_number = choice_dict.pop('choice_number', None)
+            if choice_number is not None:
+                bucket_dict['bucket'] = parent_node.choices[choice_number]
+            choice_id = choice_dict.pop('choice_id', None)
+            if choice_id is not None:
+                bucket_dict['bucket'] = session.query(Choice).get(choice_id)
     sub_survey_dict['buckets'] = [
         construct_bucket(**b) for b in sub_survey_dict['buckets']
     ]
@@ -35,6 +45,11 @@ def _create_or_get_survey_node(session, survey_node_dict, repeatable=None):
         node = session.query(Node).get(node_dict['id'])
         # TODO: raise an exception if node is None
     else:
+        choices = node_dict.get('choices', None)
+        if choices is not None:
+            node_dict['choices'] = [
+                Choice(**choice) for choice in choices
+            ]
         node = construct_node(**node_dict)
     survey_node_dict['node'] = node
     if repeatable is not None:
@@ -43,7 +58,7 @@ def _create_or_get_survey_node(session, survey_node_dict, repeatable=None):
     sub_survey_data = survey_node_dict.get('sub_surveys', None)
     if sub_survey_data is not None:
         survey_node_dict['sub_surveys'] = [
-            _css(session, sn) for sn in sub_survey_data
+            _css(session, ssd, node) for ssd in sub_survey_data
         ]
     return construct_survey_node(**survey_node_dict)
 

@@ -78,7 +78,7 @@ def _create_submission(self, survey):
                 .scalar()
             )
 
-        skipped_question = skipped_required(survey, answers)
+        skipped_question = skipped_required(survey, submission.answers)
         if skipped_question is not None:
             raise RequiredQuestionSkipped(
                 '{} skipped'.format(skipped_question)

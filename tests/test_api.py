@@ -618,6 +618,72 @@ class TestSurveyApi(DokoHTTPTest):
         response = self.fetch(url, method=method, body=encoded_body)
         self.assertEqual(response.code, 201, msg=response.body)
 
+    def test_create_survey_with_existing_node_and_MC_bucket(self):
+        # url to test
+        url = self.api_root + '/surveys'
+        # http method
+        method = 'POST'
+        # body
+        node = (
+            self.session
+            .query(models.MultipleChoiceQuestion)
+            .first()
+        )
+        with self.session.begin():
+            node.choices = [
+                models.Choice(
+                    choice_text={'English': 'a'},
+                )
+            ]
+            self.session.add(node)
+        body = {
+            "survey_type": "public",
+            "title": {"English": "Test_Survey"},
+            "nodes": [
+                {
+                    'required': True,
+                    'node': {
+                        'id': node.id,
+                        "title": {"English": "test_time_node"},
+                        "type_constraint": "integer",
+                    },
+                    'sub_surveys': [
+                        {
+                            'nodes': [
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'allow_multiple': True,
+                                        'type_constraint': 'integer',
+                                        'title': {'English': 'a'}
+                                    },
+                                },
+                            ],
+                            'buckets': [
+                                {
+                                    'bucket_type': 'multiple_choice',
+                                    'bucket': {
+                                        'choice_id': (
+                                            self.session
+                                            .query(models.Choice.id)
+                                            .filter_by(question_id=node.id)
+                                            .first()[0]
+                                        ),
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201, msg=response.body)
+
     def test_create_survey_with_nonsense_node_definition(self):
         # url to test
         url = self.api_root + '/surveys'
@@ -2628,7 +2694,7 @@ class TestSubmissionApi(DokoHTTPTest):
         response = self.fetch(url, method=method, body=json_encode(body))
         self.assertEqual(response.code, 201, msg=response.body)
 
-    def test_can_skip_sub_survey_not_traversed_time(self):
+    def test_can_skip_sub_survey_not_traversed_timestamp(self):
         survey_url = self.api_root + '/surveys'
         body = {
             'survey_type': 'public',
@@ -2638,7 +2704,7 @@ class TestSubmissionApi(DokoHTTPTest):
                     'required': True,
                     'node': {
                         'title': {'English': 'a'},
-                        'type_constraint': 'time',
+                        'type_constraint': 'timestamp',
                     },
                     'sub_surveys': [
                         {
@@ -2664,8 +2730,10 @@ class TestSubmissionApi(DokoHTTPTest):
                             ],
                             'buckets': [
                                 {
-                                    'bucket_type': 'time',
-                                    'bucket': '[2:22, 3:33]',
+                                    'bucket_type': 'timestamp',
+                                    'bucket': (
+                                        '[2015-01-01 1:11, 2015-01-01 2:22]'
+                                    ),
                                 },
                             ],
                         },
@@ -2683,8 +2751,10 @@ class TestSubmissionApi(DokoHTTPTest):
                             ],
                             'buckets': [
                                 {
-                                    'bucket_type': 'time',
-                                    'bucket': '[4:44, 5:55]',
+                                    'bucket_type': 'timestamp',
+                                    'bucket': (
+                                        '[2015-01-01 3:33, 2015-01-01 4:44]'
+                                    ),
                                 },
                             ],
                         },
@@ -2725,8 +2795,150 @@ class TestSubmissionApi(DokoHTTPTest):
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
-                    "type_constraint": 'time',
-                    "answer": '3:00',
+                    "type_constraint": 'timestamp',
+                    "answer": '2015-01-01 2:00',
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[0].id
+                    ),
+                    "type_constraint": 'integer',
+                    "answer": 3,
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[1].id
+                    ),
+                    "type_constraint": 'integer',
+                    "answer": 3,
+                },
+                {
+                    "survey_node_id": survey.nodes[1].id,
+                    "type_constraint": 'text',
+                    "answer": 'did not skip',
+                },
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201, msg=response.body)
+
+    def test_can_skip_sub_survey_not_traversed_multiple_choice(self):
+        survey_url = self.api_root + '/surveys'
+        body = {
+            'survey_type': 'public',
+            'title': {'English': 'skip non traversed'},
+            'nodes': [
+                {
+                    'required': True,
+                    'node': {
+                        'title': {'English': 'a'},
+                        'type_constraint': 'multiple_choice',
+                        'choices': [
+                            {
+                                'choice_text': {
+                                    'English': 'choice 1',
+                                },
+                            },
+                            {
+                                'choice_text': {
+                                    'English': 'choice 2',
+                                },
+                            },
+                        ],
+                    },
+                    'sub_surveys': [
+                        {
+                            'nodes': [
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {'English': 'b'},
+                                    },
+                                },
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {'English': 'c'},
+                                    },
+                                },
+                            ],
+                            'buckets': [
+                                {
+                                    'bucket_type': 'multiple_choice',
+                                    'bucket': {
+                                        'choice_number': 0,
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            'nodes': [
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {'English': 'd'},
+                                    },
+                                },
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {'English': 'e'},
+                                    },
+                                },
+                            ],
+                            'buckets': [
+                                {
+                                    'bucket_type': 'multiple_choice',
+                                    'bucket': {
+                                        'choice_number': 1,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    'required': True,
+                    'node': {
+                        'title': {'English': 'd'},
+                        'type_constraint': 'text',
+                    },
+                },
+            ],
+        }
+        survey_response = self.fetch(
+            survey_url, method='POST', body=json_encode(body)
+        )
+        self.assertEqual(survey_response.code, 201, msg=survey_response.body)
+
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(
+                Survey.title['English'].astext == 'skip non traversed'
+            )
+            .one()
+        )
+
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": survey.id,
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": 'multiple_choice',
+                    "answer": survey.nodes[0].node.choices[0].id,
                 },
                 {
                     "survey_node_id": (
@@ -3162,7 +3374,7 @@ class TestSubmissionApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
-        self.assertEqual(response.code, 201)
+        self.assertEqual(response.code, 201, msg=response.body)
 
         submission_dict = json_decode(response.body)
 

@@ -19,10 +19,9 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError, DataError
 from sqlalchemy.orm.exc import FlushError
 
-from psycopg2.extras import NumericRange, DateRange, DateTimeTZRange
+from psycopg2.extras import NumericRange, DateRange, DateTimeRange
 
 import dokomoforms.models as models
-import dokomoforms.models.survey
 import dokomoforms.exc as exc
 from dokomoforms.models.survey import Bucket
 from dokomoforms.api.serializer import ModelJSONSerializer
@@ -1731,204 +1730,6 @@ class TestBucket(DokoTest):
             ),
         )
 
-    def test_time_bucket(self):
-        with self.session.begin():
-            creator, survey = self._create_blank_survey()
-            survey.nodes = [
-                models.construct_survey_node(
-                    node=models.construct_node(
-                        type_constraint='time',
-                        title={'English': 'node'},
-                    ),
-                    sub_surveys=[
-                        models.SubSurvey(
-                            buckets=[
-                                models.construct_bucket(
-                                    bucket_type='time',
-                                    bucket='(1:11, 2:22]'
-                                ),
-                            ],
-                        ),
-                    ],
-                ),
-            ]
-            self.session.add(creator)
-
-        the_bucket = self.session.query(Bucket).one()
-        tzinfo = the_bucket.bucket.lower.tzinfo
-        self.assertEqual(
-            the_bucket.bucket,
-            DateTimeTZRange(
-                datetime.datetime(1970, 1, 1, 1, 11, tzinfo=tzinfo),
-                datetime.datetime(1970, 1, 1, 2, 22, tzinfo=tzinfo),
-                '(]'
-            )
-        )
-
-    def test_set_time_bucket_dates(self):
-        _set_dates = dokomoforms.models.survey._set_time_bucket_dates
-        self.assertEqual(
-            _set_dates('   (  04:05:06.789-8  , 04:05:06.790-8   ]'),
-            '(1970-01-01T04:05:06.789000-08:00,'
-            '1970-01-01T04:05:06.790000-08:00]'
-        )
-
-    def test_time_bucket_all_valid_time_formats(self):
-        valid_time_formats = [
-            # From
-            # http://www.postgresql.org/docs/9.4/static/datatype-datetime.html
-            # #DATATYPE-DATETIME-TIME-TABLE
-            '[04:05:06.789, 04:05:06.790]',
-            '[04:05:06, 04:05:07]',
-            '[04:05, 04:06]',
-            # This gets interpreted as a date -- no go
-            # '[040506, 040507]',
-            '[04:05 AM, 04:06 AM]',
-            '[04:05 PM, 04:06 PM]',
-            '[04:05:06.789-8, 04:05:06.790-8]',
-            '[04:05:06-08:00, 04:05:07-08:00]',
-            '[04:05-08:00, 04:06-08:00]',
-            # This gets interpreted as a date plus an hour
-            # '[040506-08, 040507-08]',
-            # Not worth the hassle
-            # '[04:05:06 PST, 04:05:07 PST]',
-            # Not sure if this is worth trying to parse...
-            # '[2003-04-12 04:05:06 America/New_York,'
-            # ' 2003-04-12 04:05:07 America/New_York]',
-            '[,04:05 AM]',
-            '[04:05 AM,]',
-            '[,]',
-        ]
-        with self.session.begin():
-            creator = models.SurveyCreator(
-                name='creator',
-                emails=[models.Email(address='email@email')],
-            )
-            for i, time_format in enumerate(valid_time_formats):
-                survey = models.Survey(
-                    title={'English': 'Test {}'.format(i)}
-                )
-                creator.surveys.append(survey)
-                survey.nodes = [
-                    models.construct_survey_node(
-                        node=models.construct_node(
-                            type_constraint='time',
-                            title={'English': 'node'},
-                        ),
-                        sub_surveys=[
-                            models.SubSurvey(
-                                buckets=[
-                                    models.construct_bucket(
-                                        bucket_type='time',
-                                        bucket=time_format
-                                    ),
-                                ],
-                            ),
-                        ],
-                    ),
-                ]
-            self.session.add(creator)
-
-        self.assertEqual(
-            self.session.query(func.count(Bucket.id)).scalar(),
-            11
-        )
-        buckets = self.session.query(Bucket)
-        tzinfo = buckets[0].bucket.lower.tzinfo
-
-        def make_range(lower: tuple, upper: tuple) -> DateTimeTZRange:
-            return DateTimeTZRange(
-                datetime.datetime(*lower, tzinfo=tzinfo),
-                datetime.datetime(*upper, tzinfo=tzinfo),
-                '[]'
-            )
-
-        self.assertEqual(
-            buckets[0].bucket,
-            make_range(
-                (1970, 1, 1, 4, 5, 6, 789000), (1970, 1, 1, 4, 5, 6, 790000)
-            )
-        )
-        self.assertEqual(
-            buckets[1].bucket,
-            make_range(
-                (1970, 1, 1, 4, 5, 6), (1970, 1, 1, 4, 5, 7)
-            )
-        )
-        self.assertEqual(
-            buckets[2].bucket,
-            make_range(
-                (1970, 1, 1, 4, 5), (1970, 1, 1, 4, 6)
-            )
-        )
-        self.assertEqual(
-            buckets[3].bucket,
-            make_range(
-                (1970, 1, 1, 4, 5), (1970, 1, 1, 4, 6)
-            )
-        )
-        self.assertEqual(
-            buckets[4].bucket,
-            make_range(
-                (1970, 1, 1, 16, 5), (1970, 1, 1, 16, 6)
-            )
-        )
-        specified_tz = psycopg2.tz.FixedOffsetTimezone(offset=-300, name=None)
-        self.assertEqual(
-            buckets[5].bucket,
-            DateTimeTZRange(
-                datetime.datetime(
-                    1970, 1, 1, 7, 5, 6, 789000, tzinfo=specified_tz
-                ),
-                datetime.datetime(
-                    1970, 1, 1, 7, 5, 6, 790000, tzinfo=specified_tz
-                ),
-                '[]'
-            )
-        )
-        self.assertEqual(
-            buckets[6].bucket,
-            DateTimeTZRange(
-                datetime.datetime(
-                    1970, 1, 1, 7, 5, 6, tzinfo=specified_tz
-                ),
-                datetime.datetime(
-                    1970, 1, 1, 7, 5, 7, tzinfo=specified_tz
-                ),
-                '[]'
-            )
-        )
-        self.assertEqual(
-            buckets[7].bucket,
-            DateTimeTZRange(
-                datetime.datetime(
-                    1970, 1, 1, 7, 5, tzinfo=specified_tz
-                ),
-                datetime.datetime(
-                    1970, 1, 1, 7, 6, tzinfo=specified_tz
-                ),
-                '[]'
-            )
-        )
-        self.assertEqual(
-            buckets[8].bucket,
-            make_range(
-                (1970, 1, 1, 0, 0), (1970, 1, 1, 4, 5)
-            )
-        )
-        self.assertEqual(
-            buckets[9].bucket,
-            make_range(
-                (1970, 1, 1, 4, 5), (1970, 1, 2, 0, 0)
-            )
-        )
-        self.assertEqual(
-            buckets[10].bucket,
-            make_range(
-                (1970, 1, 1, 0, 0), (1970, 1, 2, 0, 0)
-            )
-        )
-
     def test_timestamp_bucket(self):
         with self.session.begin():
             creator, survey = self._create_blank_survey()
@@ -1956,7 +1757,7 @@ class TestBucket(DokoTest):
         tzinfo = the_bucket.bucket.lower.tzinfo
         self.assertEqual(
             the_bucket.bucket,
-            DateTimeTZRange(
+            DateTimeRange(
                 datetime.datetime(2015, 1, 1, 1, 11, tzinfo=tzinfo),
                 datetime.datetime(2015, 1, 1, 2, 22, tzinfo=tzinfo),
                 '(]'
