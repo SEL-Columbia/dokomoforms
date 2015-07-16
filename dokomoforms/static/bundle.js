@@ -188,7 +188,7 @@ module.exports = React.createClass({displayName: "exports",
                     className: "btn btn-link btn-nav pull-left page_nav__prev"}, 
                     React.createElement("span", {className: "icon icon-left-nav"}), " ", React.createElement("span", {className: ""}, "Previous")
                 ), 
-                React.createElement("h1", {className: "title"}, "7 / 11")
+                React.createElement("h1", {className: "title"}, this.props.number, " / ", this.props.total)
                 ), 
             
 
@@ -20328,6 +20328,7 @@ var Application = React.createClass({displayName: "Application",
         var contentClasses = "content";
         var state = this.state.state;
         var nextQuestion = this.state.nextQuestion;
+        var questions = this.props.survey.nodes;
 
         if (state === this.state.states.QUESTION && this.state.showDontKnow) 
             contentClasses += " content-shrunk";
@@ -20336,6 +20337,7 @@ var Application = React.createClass({displayName: "Application",
                 React.createElement("div", {id: "wrapper"}, 
                     React.createElement(Header, {buttonFunction: this.onPrevButton, 
                         number: nextQuestion, 
+                        total: questions.length, 
                         splash: state === this.state.states.SPLASH}), 
                     React.createElement("div", {className: contentClasses}, 
                         React.createElement(Title, {title: this.getTitle(), message: this.getMessage()}), 

@@ -154,6 +154,7 @@ var Application = React.createClass({
         var contentClasses = "content";
         var state = this.state.state;
         var nextQuestion = this.state.nextQuestion;
+        var questions = this.props.survey.nodes;
 
         if (state === this.state.states.QUESTION && this.state.showDontKnow) 
             contentClasses += " content-shrunk";
@@ -162,6 +163,7 @@ var Application = React.createClass({
                 <div id="wrapper">
                     <Header buttonFunction={this.onPrevButton} 
                         number={nextQuestion}
+                        total={questions.length}
                         splash={state === this.state.states.SPLASH}/>
                     <div className={contentClasses}>
                         <Title title={this.getTitle()} message={this.getMessage()} />
