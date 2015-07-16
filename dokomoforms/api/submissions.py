@@ -7,6 +7,7 @@ from dokomoforms.models import (
     construct_submission, construct_answer, Answer,
     SurveyNode, skipped_required
 )
+from dokomoforms.models.answer import ANSWER_TYPES
 from dokomoforms.exc import RequiredQuestionSkipped
 
 
@@ -68,7 +69,16 @@ def _create_submission(self, survey):
         # add the submission
         self.session.add(submission)
         self.session.flush()
-        skipped_question = skipped_required(survey, submission.answers)
+
+        for answer in submission.answers:
+            answer.main_answer = (
+                self.session
+                .query(ANSWER_TYPES[answer.answer_type].main_answer)
+                .filter_by(id=answer.id)
+                .scalar()
+            )
+
+        skipped_question = skipped_required(survey, answers)
         if skipped_question is not None:
             raise RequiredQuestionSkipped(
                 '{} skipped'.format(skipped_question)
