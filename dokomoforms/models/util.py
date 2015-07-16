@@ -13,6 +13,7 @@ import abc
 import datetime
 import json
 from collections import OrderedDict
+from decimal import Decimal
 
 import sqlalchemy as sa
 import sqlalchemy.engine
@@ -143,6 +144,8 @@ class ModelJSONEncoder(json.JSONEncoder):
             return obj._asdict()
         if isinstance(obj, (datetime.date, datetime.time)):
             return obj.isoformat()
+        if isinstance(obj, Decimal):  # might want to return a string instead
+            return float(obj)
         if isinstance(obj, Range):
             left, right = obj._bounds
             return '{}{},{}{}'.format(left, obj.lower, obj.upper, right)

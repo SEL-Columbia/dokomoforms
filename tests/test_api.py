@@ -547,7 +547,7 @@ class TestSurveyApi(DokoHTTPTest):
                                     'node': {
                                         'id': (
                                             self.session
-                                            .query(Node.id)
+                                            .query(models.Question.id)
                                             .first()
                                         )
                                     },
@@ -563,6 +563,119 @@ class TestSurveyApi(DokoHTTPTest):
                     ],
                 }
             ]
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201, msg=response.body)
+
+    def test_create_survey_with_repeatable_sub_survey(self):
+        # url to test
+        url = self.api_root + '/surveys'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_type": "public",
+            "title": {"English": "Test_Survey"},
+            "nodes": [
+                {
+                    'required': True,
+                    'node': {
+                        "title": {"English": "test_time_node"},
+                        "type_constraint": "integer",
+                    },
+                    'sub_surveys': [
+                        {
+                            'repeatable': True,
+                            'nodes': [
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'allow_multiple': True,
+                                        'type_constraint': 'integer',
+                                        'title': {'English': 'a'}
+                                    },
+                                },
+                            ],
+                            'buckets': [
+                                {
+                                    'bucket_type': 'integer',
+                                    'bucket': '[1, 3]',
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ]
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201, msg=response.body)
+
+    def test_create_survey_with_existing_node_and_MC_bucket(self):
+        # url to test
+        url = self.api_root + '/surveys'
+        # http method
+        method = 'POST'
+        # body
+        node = (
+            self.session
+            .query(models.MultipleChoiceQuestion)
+            .first()
+        )
+        with self.session.begin():
+            node.choices = [
+                models.Choice(
+                    choice_text={'English': 'a'},
+                )
+            ]
+            self.session.add(node)
+        body = {
+            "survey_type": "public",
+            "title": {"English": "Test_Survey"},
+            "nodes": [
+                {
+                    'required': True,
+                    'node': {
+                        'id': node.id,
+                        "title": {"English": "test_time_node"},
+                        "type_constraint": "integer",
+                    },
+                    'sub_surveys': [
+                        {
+                            'nodes': [
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'allow_multiple': True,
+                                        'type_constraint': 'integer',
+                                        'title': {'English': 'a'}
+                                    },
+                                },
+                            ],
+                            'buckets': [
+                                {
+                                    'bucket_type': 'multiple_choice',
+                                    'bucket': {
+                                        'choice_id': (
+                                            self.session
+                                            .query(models.Choice.id)
+                                            .filter_by(question_id=node.id)
+                                            .first()[0]
+                                        ),
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
         }
 
         encoded_body = json_encode(body)
@@ -1388,7 +1501,7 @@ class TestSubmissionApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
-        self.assertEqual(response.code, 201)
+        self.assertEqual(response.code, 201, msg=response.body)
 
         submission_dict = json_decode(response.body)
 
@@ -1746,6 +1859,65 @@ class TestSubmissionApi(DokoHTTPTest):
         self.assertEqual(response.code, 400, msg=response.body)
         self.assertIn('skipped', json_decode(response.body)['error'])
 
+    def test_legitimate_question_skip(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.surveys.append(
+                models.construct_survey(
+                    survey_type='public',
+                    title={'English': 'first question required'},
+                    nodes=[
+                        models.construct_survey_node(
+                            required=True,
+                            node=models.construct_node(
+                                type_constraint='integer',
+                                title={'English': 'required first'},
+                            ),
+                        ),
+                        models.construct_survey_node(
+                            node=models.construct_node(
+                                type_constraint='text',
+                                title={'English': 'optional second'},
+                            ),
+                        ),
+                    ],
+                )
+            )
+            self.session.add(user)
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(
+                Survey.title['English'].astext == 'first question required'
+            )
+            .one()
+        )
+
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": survey.id,
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": 'integer',
+                    "answer": 3,
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201, msg=response.body)
+
     def test_cannot_skip_second_required_question_no_sub_surveys(self):
         user = (
             self.session
@@ -1780,6 +1952,67 @@ class TestSubmissionApi(DokoHTTPTest):
             .query(Survey)
             .filter(
                 Survey.title['English'].astext == 'second question required'
+            )
+            .one()
+        )
+
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": survey.id,
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": 'integer',
+                    "answer": 999,
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 400, msg=response.body)
+        self.assertIn('skipped', json_decode(response.body)['error'])
+
+    def test_must_answer_both_required_questions(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.surveys.append(
+                models.construct_survey(
+                    survey_type='public',
+                    title={'English': 'two required questions'},
+                    nodes=[
+                        models.construct_survey_node(
+                            required=True,
+                            node=models.construct_node(
+                                type_constraint='integer',
+                                title={'English': 'required first'},
+                            ),
+                        ),
+                        models.construct_survey_node(
+                            required=True,
+                            node=models.construct_node(
+                                type_constraint='text',
+                                title={'English': 'required second'},
+                            ),
+                        ),
+                    ],
+                )
+            )
+            self.session.add(user)
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(
+                Survey.title['English'].astext == 'two required questions'
             )
             .one()
         )
@@ -2086,7 +2319,7 @@ class TestSubmissionApi(DokoHTTPTest):
         response = self.fetch(url, method=method, body=json_encode(body))
         self.assertEqual(response.code, 201, msg=response.body)
 
-    def test_can_skip_sub_survey_not_traversed(self):
+    def test_can_skip_sub_survey_not_traversed_integer(self):
         survey_url = self.api_root + '/surveys'
         body = {
             'survey_type': 'public',
@@ -2135,15 +2368,6 @@ class TestSubmissionApi(DokoHTTPTest):
                                         'type_constraint': 'integer',
                                         'title': {
                                             'English': 'e',
-                                        },
-                                    },
-                                },
-                                {
-                                    'required': True,
-                                    'node': {
-                                        'type_constraint': 'integer',
-                                        'title': {
-                                            'English': 'f',
                                         },
                                     },
                                 },
@@ -2220,6 +2444,881 @@ class TestSubmissionApi(DokoHTTPTest):
         response = self.fetch(url, method=method, body=json_encode(body))
         self.assertEqual(response.code, 201, msg=response.body)
 
+    def test_can_skip_sub_survey_not_traversed_decimal(self):
+        survey_url = self.api_root + '/surveys'
+        body = {
+            'survey_type': 'public',
+            'title': {'English': 'skip non traversed'},
+            'nodes': [
+                {
+                    'required': True,
+                    'node': {
+                        'title': {'English': 'a'},
+                        'type_constraint': 'decimal',
+                    },
+                    'sub_surveys': [
+                        {
+                            'nodes': [
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {
+                                            'English': 'b',
+                                        },
+                                    },
+                                },
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {
+                                            'English': 'c',
+                                        },
+                                    },
+                                },
+                            ],
+                            'buckets': [
+                                {
+                                    'bucket_type': 'decimal',
+                                    'bucket': '[0.2, 5.2]',
+                                },
+                            ],
+                        },
+                        {
+                            'nodes': [
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {
+                                            'English': 'e',
+                                        },
+                                    },
+                                },
+                            ],
+                            'buckets': [
+                                {
+                                    'bucket_type': 'decimal',
+                                    'bucket': '[7.2, 10.2]',
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    'required': True,
+                    'node': {
+                        'title': {'English': 'd'},
+                        'type_constraint': 'text',
+                    },
+                },
+            ],
+        }
+        survey_response = self.fetch(
+            survey_url, method='POST', body=json_encode(body)
+        )
+        self.assertEqual(survey_response.code, 201, msg=survey_response.body)
+
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(
+                Survey.title['English'].astext == 'skip non traversed'
+            )
+            .one()
+        )
+
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": survey.id,
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": 'decimal',
+                    "answer": 3.2,
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[0].id
+                    ),
+                    "type_constraint": 'integer',
+                    "answer": 3,
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[1].id
+                    ),
+                    "type_constraint": 'integer',
+                    "answer": 3,
+                },
+                {
+                    "survey_node_id": survey.nodes[1].id,
+                    "type_constraint": 'text',
+                    "answer": 'did not skip',
+                },
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201, msg=response.body)
+
+    def test_can_skip_sub_survey_not_traversed_date(self):
+        survey_url = self.api_root + '/surveys'
+        body = {
+            'survey_type': 'public',
+            'title': {'English': 'skip non traversed'},
+            'nodes': [
+                {
+                    'required': True,
+                    'node': {
+                        'title': {'English': 'a'},
+                        'type_constraint': 'date',
+                    },
+                    'sub_surveys': [
+                        {
+                            'nodes': [
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {
+                                            'English': 'b',
+                                        },
+                                    },
+                                },
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {
+                                            'English': 'c',
+                                        },
+                                    },
+                                },
+                            ],
+                            'buckets': [
+                                {
+                                    'bucket_type': 'date',
+                                    'bucket': '[2015-01-01, 2015-02-01]',
+                                },
+                            ],
+                        },
+                        {
+                            'nodes': [
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {
+                                            'English': 'e',
+                                        },
+                                    },
+                                },
+                            ],
+                            'buckets': [
+                                {
+                                    'bucket_type': 'date',
+                                    'bucket': '[2015-03-01, 2015-04-01]',
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    'required': True,
+                    'node': {
+                        'title': {'English': 'd'},
+                        'type_constraint': 'text',
+                    },
+                },
+            ],
+        }
+        survey_response = self.fetch(
+            survey_url, method='POST', body=json_encode(body)
+        )
+        self.assertEqual(survey_response.code, 201, msg=survey_response.body)
+
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(
+                Survey.title['English'].astext == 'skip non traversed'
+            )
+            .one()
+        )
+
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": survey.id,
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": 'date',
+                    "answer": '2015-01-15',
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[0].id
+                    ),
+                    "type_constraint": 'integer',
+                    "answer": 3,
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[1].id
+                    ),
+                    "type_constraint": 'integer',
+                    "answer": 3,
+                },
+                {
+                    "survey_node_id": survey.nodes[1].id,
+                    "type_constraint": 'text',
+                    "answer": 'did not skip',
+                },
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201, msg=response.body)
+
+    def test_can_skip_sub_survey_not_traversed_timestamp(self):
+        survey_url = self.api_root + '/surveys'
+        body = {
+            'survey_type': 'public',
+            'title': {'English': 'skip non traversed'},
+            'nodes': [
+                {
+                    'required': True,
+                    'node': {
+                        'title': {'English': 'a'},
+                        'type_constraint': 'timestamp',
+                    },
+                    'sub_surveys': [
+                        {
+                            'nodes': [
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {
+                                            'English': 'b',
+                                        },
+                                    },
+                                },
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {
+                                            'English': 'c',
+                                        },
+                                    },
+                                },
+                            ],
+                            'buckets': [
+                                {
+                                    'bucket_type': 'timestamp',
+                                    'bucket': (
+                                        '[2015-01-01 1:11, 2015-01-01 2:22]'
+                                    ),
+                                },
+                            ],
+                        },
+                        {
+                            'nodes': [
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {
+                                            'English': 'e',
+                                        },
+                                    },
+                                },
+                            ],
+                            'buckets': [
+                                {
+                                    'bucket_type': 'timestamp',
+                                    'bucket': (
+                                        '[2015-01-01 3:33, 2015-01-01 4:44]'
+                                    ),
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    'required': True,
+                    'node': {
+                        'title': {'English': 'd'},
+                        'type_constraint': 'text',
+                    },
+                },
+            ],
+        }
+        survey_response = self.fetch(
+            survey_url, method='POST', body=json_encode(body)
+        )
+        self.assertEqual(survey_response.code, 201, msg=survey_response.body)
+
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(
+                Survey.title['English'].astext == 'skip non traversed'
+            )
+            .one()
+        )
+
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": survey.id,
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": 'timestamp',
+                    "answer": '2015-01-01 2:00',
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[0].id
+                    ),
+                    "type_constraint": 'integer',
+                    "answer": 3,
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[1].id
+                    ),
+                    "type_constraint": 'integer',
+                    "answer": 3,
+                },
+                {
+                    "survey_node_id": survey.nodes[1].id,
+                    "type_constraint": 'text',
+                    "answer": 'did not skip',
+                },
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201, msg=response.body)
+
+    def test_can_skip_sub_survey_not_traversed_multiple_choice(self):
+        survey_url = self.api_root + '/surveys'
+        body = {
+            'survey_type': 'public',
+            'title': {'English': 'skip non traversed'},
+            'nodes': [
+                {
+                    'required': True,
+                    'node': {
+                        'title': {'English': 'a'},
+                        'type_constraint': 'multiple_choice',
+                        'choices': [
+                            {
+                                'choice_text': {
+                                    'English': 'choice 1',
+                                },
+                            },
+                            {
+                                'choice_text': {
+                                    'English': 'choice 2',
+                                },
+                            },
+                        ],
+                    },
+                    'sub_surveys': [
+                        {
+                            'nodes': [
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {'English': 'b'},
+                                    },
+                                },
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {'English': 'c'},
+                                    },
+                                },
+                            ],
+                            'buckets': [
+                                {
+                                    'bucket_type': 'multiple_choice',
+                                    'bucket': {
+                                        'choice_number': 0,
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            'nodes': [
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {'English': 'd'},
+                                    },
+                                },
+                                {
+                                    'required': True,
+                                    'node': {
+                                        'type_constraint': 'integer',
+                                        'title': {'English': 'e'},
+                                    },
+                                },
+                            ],
+                            'buckets': [
+                                {
+                                    'bucket_type': 'multiple_choice',
+                                    'bucket': {
+                                        'choice_number': 1,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    'required': True,
+                    'node': {
+                        'title': {'English': 'd'},
+                        'type_constraint': 'text',
+                    },
+                },
+            ],
+        }
+        survey_response = self.fetch(
+            survey_url, method='POST', body=json_encode(body)
+        )
+        self.assertEqual(survey_response.code, 201, msg=survey_response.body)
+
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(
+                Survey.title['English'].astext == 'skip non traversed'
+            )
+            .one()
+        )
+
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": survey.id,
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": 'multiple_choice',
+                    "answer": survey.nodes[0].node.choices[0].id,
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[0].id
+                    ),
+                    "type_constraint": 'integer',
+                    "answer": 3,
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[1].id
+                    ),
+                    "type_constraint": 'integer',
+                    "answer": 3,
+                },
+                {
+                    "survey_node_id": survey.nodes[1].id,
+                    "type_constraint": 'text',
+                    "answer": 'did not skip',
+                },
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201, msg=response.body)
+
+    def test_repeatable_required_valid(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.surveys.append(
+                models.construct_survey(
+                    survey_type='public',
+                    title={'English': 'repeatable required'},
+                    nodes=[
+                        models.construct_survey_node(
+                            required=True,
+                            node=models.construct_node(
+                                type_constraint='integer',
+                                title={'English': 'how many?'},
+                            ),
+                            sub_surveys=[
+                                models.SubSurvey(
+                                    repeatable=True,
+                                    buckets=[
+                                        models.construct_bucket(
+                                            bucket_type='integer',
+                                            bucket='[,]',
+                                        ),
+                                    ],
+                                    nodes=[
+                                        models.construct_survey_node(
+                                            repeatable=True,
+                                            required=True,
+                                            node=models.construct_node(
+                                                allow_multiple=True,
+                                                type_constraint='integer',
+                                                title={'English': 'age?'},
+                                            ),
+                                        ),
+                                        models.construct_survey_node(
+                                            repeatable=True,
+                                            required=True,
+                                            node=models.construct_node(
+                                                allow_multiple=True,
+                                                type_constraint='text',
+                                                title={'English': 'name?'},
+                                            ),
+                                        ),
+                                    ],
+                                )
+                            ],
+                        ),
+                        models.construct_survey_node(
+                            required=True,
+                            node=models.construct_node(
+                                type_constraint='integer',
+                                title={'English': 'something else'},
+                            ),
+                        ),
+                    ],
+                )
+            )
+            self.session.add(user)
+
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(
+                Survey.title['English'].astext == 'repeatable required'
+            )
+            .one()
+        )
+
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": survey.id,
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": 'integer',
+                    "answer": 2,
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[0].id
+                    ),
+                    "type_constraint": 'integer',
+                    "answer": 20,
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[1].id
+                    ),
+                    "type_constraint": 'text',
+                    "answer": 'Person',
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[0].id
+                    ),
+                    "type_constraint": 'integer',
+                    "answer": 30,
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[1].id
+                    ),
+                    "type_constraint": 'text',
+                    "answer": 'Other Person',
+                },
+                {
+                    "survey_node_id": survey.nodes[1].id,
+                    "type_constraint": 'integer',
+                    "answer": 12,
+                },
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201, msg=response.body)
+
+    def test_repeatable_required_not_enough_responses(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.surveys.append(
+                models.construct_survey(
+                    survey_type='public',
+                    title={'English': 'repeatable required'},
+                    nodes=[
+                        models.construct_survey_node(
+                            required=True,
+                            node=models.construct_node(
+                                type_constraint='integer',
+                                title={'English': 'how many?'},
+                            ),
+                            sub_surveys=[
+                                models.SubSurvey(
+                                    repeatable=True,
+                                    buckets=[
+                                        models.construct_bucket(
+                                            bucket_type='integer',
+                                            bucket='[,]',
+                                        ),
+                                    ],
+                                    nodes=[
+                                        models.construct_survey_node(
+                                            repeatable=True,
+                                            required=True,
+                                            node=models.construct_node(
+                                                allow_multiple=True,
+                                                type_constraint='integer',
+                                                title={'English': 'age?'},
+                                            ),
+                                        ),
+                                        models.construct_survey_node(
+                                            repeatable=True,
+                                            required=True,
+                                            node=models.construct_node(
+                                                allow_multiple=True,
+                                                type_constraint='text',
+                                                title={'English': 'name?'},
+                                            ),
+                                        ),
+                                    ],
+                                )
+                            ],
+                        ),
+                        models.construct_survey_node(
+                            required=True,
+                            node=models.construct_node(
+                                type_constraint='integer',
+                                title={'English': 'something else'},
+                            ),
+                        ),
+                    ],
+                )
+            )
+            self.session.add(user)
+
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(
+                Survey.title['English'].astext == 'repeatable required'
+            )
+            .one()
+        )
+
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": survey.id,
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": 'integer',
+                    "answer": 2,
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[0].id
+                    ),
+                    "type_constraint": 'integer',
+                    "answer": 20,
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[1].id
+                    ),
+                    "type_constraint": 'text',
+                    "answer": 'Person',
+                },
+                {
+                    "survey_node_id": survey.nodes[1].id,
+                    "type_constraint": 'integer',
+                    "answer": 12,
+                },
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 400, msg=response.body)
+        self.assertIn('skipped', json_decode(response.body)['error'])
+
+    def test_repeatable_required_valid_with_optional_subquestion(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.surveys.append(
+                models.construct_survey(
+                    survey_type='public',
+                    title={'English': 'repeatable required'},
+                    nodes=[
+                        models.construct_survey_node(
+                            required=True,
+                            node=models.construct_node(
+                                type_constraint='integer',
+                                title={'English': 'how many?'},
+                            ),
+                            sub_surveys=[
+                                models.SubSurvey(
+                                    repeatable=True,
+                                    buckets=[
+                                        models.construct_bucket(
+                                            bucket_type='integer',
+                                            bucket='[,]',
+                                        ),
+                                    ],
+                                    nodes=[
+                                        models.construct_survey_node(
+                                            repeatable=True,
+                                            required=True,
+                                            node=models.construct_node(
+                                                allow_multiple=True,
+                                                type_constraint='integer',
+                                                title={'English': 'age?'},
+                                            ),
+                                        ),
+                                        models.construct_survey_node(
+                                            repeatable=True,
+                                            node=models.construct_node(
+                                                allow_multiple=True,
+                                                type_constraint='text',
+                                                title={'English': 'name?'},
+                                            ),
+                                        ),
+                                    ],
+                                )
+                            ],
+                        ),
+                        models.construct_survey_node(
+                            required=True,
+                            node=models.construct_node(
+                                type_constraint='integer',
+                                title={'English': 'something else'},
+                            ),
+                        ),
+                    ],
+                )
+            )
+            self.session.add(user)
+
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(
+                Survey.title['English'].astext == 'repeatable required'
+            )
+            .one()
+        )
+
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": survey.id,
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": 'integer',
+                    "answer": 2,
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[0].id
+                    ),
+                    "type_constraint": 'integer',
+                    "answer": 20,
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[1].id
+                    ),
+                    "type_constraint": 'text',
+                    "answer": 'Person',
+                },
+                {
+                    "survey_node_id": (
+                        survey.nodes[0].sub_surveys[0].nodes[0].id
+                    ),
+                    "type_constraint": 'integer',
+                    "answer": 30,
+                },
+                {
+                    "survey_node_id": survey.nodes[1].id,
+                    "type_constraint": 'integer',
+                    "answer": 12,
+                },
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201, msg=response.body)
+
     def test_create_public_submission_with_integer_answer_alternate_url(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
         # url to test
@@ -2275,7 +3374,7 @@ class TestSubmissionApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
-        self.assertEqual(response.code, 201)
+        self.assertEqual(response.code, 201, msg=response.body)
 
         submission_dict = json_decode(response.body)
 

@@ -131,9 +131,7 @@ var Application = React.createClass({
         var state = this.state.state;
 
         if (state === this.state.states.QUESTION) {
-            var hint = questions[nextQuestion].hint || {}; 
-            return hint[survey.default_language];
-            //return questions[nextQuestion].hint[survey.default_language] 
+            return questions[nextQuestion].hint[survey.default_language] 
         } else if (state === this.state.states.SUBMIT) {
             return "If youre satisfied with the answers to all the questions, you can save the survey now."
         } else {

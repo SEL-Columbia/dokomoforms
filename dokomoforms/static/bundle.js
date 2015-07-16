@@ -20305,9 +20305,7 @@ var Application = React.createClass({displayName: "Application",
         var state = this.state.state;
 
         if (state === this.state.states.QUESTION) {
-            var hint = questions[nextQuestion].hint || {}; 
-            return hint[survey.default_language];
-            //return questions[nextQuestion].hint[survey.default_language] 
+            return questions[nextQuestion].hint[survey.default_language] 
         } else if (state === this.state.states.SUBMIT) {
             return "If youre satisfied with the answers to all the questions, you can save the survey now."
         } else {
@@ -20344,9 +20342,11 @@ var Application = React.createClass({displayName: "Application",
                         this.getContent()
                     ), 
                     React.createElement(Footer, {
-                        showDontKnow: state === this.state.states.QUESTION && this.state.showDontKnow, 
+                        showDontKnow: state === this.state.states.QUESTION 
+                            && this.state.showDontKnow, 
                         buttonFunction: this.onNextButton, 
-                        buttonType: state === this.state.states.QUESTION ? 'btn-primary': 'btn-positive', 
+                        buttonType: state === this.state.states.QUESTION 
+                            ? 'btn-primary': 'btn-positive', 
                         buttonText: this.getButtonText()}
                      )
 

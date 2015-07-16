@@ -40,6 +40,7 @@ class Node(Base):
     id = util.pk()
     languages = util.languages_column('languages')
     title = util.json_column('title')
+    hint = util.json_column('hint', default='{"English": ""}')
     type_constraint = sa.Column(node_type_enum, nullable=False)
     logic = util.json_column('logic', default='{}')
     last_update_time = util.last_update_time()
@@ -49,6 +50,7 @@ class Node(Base):
         sa.UniqueConstraint('id', 'type_constraint'),
         sa.UniqueConstraint('id', 'languages', 'type_constraint'),
         util.languages_constraint('title', 'languages'),
+        util.languages_constraint('hint', 'languages'),
     )
 
 
@@ -74,6 +76,7 @@ class Note(Node):
             ('deleted', self.deleted),
             ('languages', self.languages),
             ('title', self.title),
+            ('hint', self.hint),
             ('type_constraint', self.type_constraint),
             ('logic', self.logic),
             ('last_update_time', self.last_update_time),
@@ -92,11 +95,8 @@ class Question(Node):
     __tablename__ = 'question'
 
     id = util.pk()
-    the_languages = sa.Column(
-        pg.ARRAY(pg.TEXT, as_tuple=True), nullable=False
-    )
+    the_languages = sa.Column(pg.ARRAY(pg.TEXT, as_tuple=True), nullable=False)
     the_type_constraint = sa.Column(node_type_enum, nullable=False)
-    hint = util.json_column('hint', default='{"English": ""}')
     allow_multiple = sa.Column(
         sa.Boolean, nullable=False, server_default='false'
     )
@@ -105,6 +105,7 @@ class Question(Node):
     )
 
     __table_args__ = (
+        sa.UniqueConstraint('id', 'the_languages'),
         sa.UniqueConstraint(
             'id', 'the_languages', 'allow_multiple', 'allow_other'
         ),
@@ -115,7 +116,6 @@ class Question(Node):
             ['id', 'the_languages', 'the_type_constraint'],
             ['node.id', 'node.languages', 'node.type_constraint']
         ),
-        util.languages_constraint('hint', 'the_languages'),
     )
 
     def _default_asdict(self) -> OrderedDict:
@@ -220,6 +220,9 @@ class MultipleChoiceQuestion(_QuestionMixin, Question):
 
     __tablename__ = 'question_multiple_choice'
 
+    id = util.pk('node.id')
+    node_languages = util.languages_column('node_languages')
+
     choices = relationship(
         'Choice',
         order_by='Choice.choice_number',
@@ -230,6 +233,14 @@ class MultipleChoiceQuestion(_QuestionMixin, Question):
     )
 
     __mapper_args__ = {'polymorphic_identity': 'multiple_choice'}
+    __table_args__ = (
+        sa.UniqueConstraint('id', 'node_languages'),
+        sa.ForeignKeyConstraint(
+            ['id', 'node_languages'],
+            ['question.id', 'question.the_languages'],
+            onupdate='CASCADE', ondelete='CASCADE'
+        ),
+    )
 
     def _asdict(self) -> OrderedDict:
         return OrderedDict((
@@ -267,9 +278,8 @@ class Choice(Base):
     id = util.pk()
     choice_text = util.json_column('choice_text')
     choice_number = sa.Column(sa.Integer, nullable=False)
-    question_id = sa.Column(
-        pg.UUID, util.fk('question_multiple_choice.id'), nullable=False
-    )
+    question_id = sa.Column(pg.UUID, nullable=False)
+    question_languages = util.languages_column('question_languages')
     last_update_time = util.last_update_time()
 
     __table_args__ = (
@@ -280,6 +290,13 @@ class Choice(Base):
             'question_id', 'choice_text', name='unique_choice_text'
         ),
         sa.UniqueConstraint('id', 'question_id'),
+        util.languages_constraint('choice_text', 'question_languages'),
+        sa.ForeignKeyConstraint(
+            ['question_id', 'question_languages'],
+            ['question_multiple_choice.id',
+                'question_multiple_choice.node_languages'],
+            onupdate='CASCADE', ondelete='CASCADE'
+        ),
     )
 
     def _asdict(self) -> OrderedDict:
