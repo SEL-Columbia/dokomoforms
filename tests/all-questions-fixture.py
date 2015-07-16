@@ -56,7 +56,11 @@ with session.begin():
                 node=models.construct_node(
                     type_constraint=node_type,
                     title={'English': node_type + ' node'},
-                    hint={'English': 'fill in response for ' + node_type + ' node'},
+                    hint={
+                        'English': (
+                            'fill in response for ' + node_type + ' node'
+                        )
+                    },
                     allow_multiple=True,
                 ),
                 sub_surveys=[
