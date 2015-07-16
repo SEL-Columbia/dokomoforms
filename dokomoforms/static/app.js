@@ -92,7 +92,7 @@ var Application = React.createClass({
         var state = this.state.state;
         if (state === this.state.states.QUESTION) {
             return (
-                   <Question allowMultiple={questions[nextQuestion].allow_multiple} 
+                   <Question key={nextQuestion} allowMultiple={questions[nextQuestion].allow_multiple} 
                             questionType={questions[nextQuestion].type_constraint}
                    />
                )

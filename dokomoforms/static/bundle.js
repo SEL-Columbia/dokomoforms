@@ -20266,7 +20266,7 @@ var Application = React.createClass({displayName: "Application",
         var state = this.state.state;
         if (state === this.state.states.QUESTION) {
             return (
-                   React.createElement(Question, {allowMultiple: questions[nextQuestion].allow_multiple, 
+                   React.createElement(Question, {key: nextQuestion, allowMultiple: questions[nextQuestion].allow_multiple, 
                             questionType: questions[nextQuestion].type_constraint}
                    )
                )
