@@ -9,7 +9,8 @@ module.exports = React.createClass({
             FooterClasses += " bar-footer-extended";
         return (
                 <div className={FooterClasses}>
-                    <BigButton text={'Next Question'} 
+                    <BigButton text={this.props.buttonText} 
+                    type={this.props.buttonType}
                     buttonFunction={this.props.buttonFunction} />
                     { this.props.showDontKnow ? <DontKnow /> : null }
                 </div>

@@ -151,7 +151,8 @@ module.exports = React.createClass({displayName: "exports",
             FooterClasses += " bar-footer-extended";
         return (
                 React.createElement("div", {className: FooterClasses}, 
-                    React.createElement(BigButton, {text: 'Next Question', 
+                    React.createElement(BigButton, {text: this.props.buttonText, 
+                    type: this.props.buttonType, 
                     buttonFunction: this.props.buttonFunction}), 
                      this.props.showDontKnow ? React.createElement(DontKnow, null) : null
                 )
@@ -353,8 +354,8 @@ module.exports = React.createClass({displayName: "exports",
     render: function() {
         return ( 
                 React.createElement("div", {className: "content-padded"}, 
-                    React.createElement("h3", null, "test_survey"), 
-                    React.createElement("p", null, "version 1 | last updated Thu Jul 02 2015")
+                    React.createElement("h3", null, this.props.title), 
+                    React.createElement("p", null, this.props.message)
                 )
                )
     }
@@ -20205,54 +20206,68 @@ var Application = React.createClass({displayName: "Application",
     },
 
     onNextButton: function() {
-        console.log("heyt");
+        var questions = this.props.survey.nodes;
         var nextQuestion = this.state.nextQuestion + 1;
         var nextState = this.state.state;
         var numQuestions = this.props.survey.nodes.length;
+        var showDontKnow = false;
 
-        if (nextQuestion > 0)  
+        if (nextQuestion > 0 && nextQuestion < numQuestions) { 
             nextState = this.state.states.QUESTION;
+            showDontKnow = questions[nextQuestion].allow_dont_know
+        }
 
-        if (nextQuestion >= numQuestions) {
-            nextQuestion = numQuestions
+        if (nextQuestion == numQuestions) {
             nextState = this.state.states.SUBMIT
         }
 
+        if (nextQuestion > numQuestions) {
+            nextQuestion = 0
+            nextState = this.state.states.SPLASH
+        }
+
+
         this.setState({
             nextQuestion: nextQuestion,
+            showDontKnow: showDontKnow,
             state: nextState
         })
 
     },
 
     onPrevButton: function() {
-        console.log("heyt");
+        var questions = this.props.survey.nodes;
         var nextQuestion = this.state.nextQuestion - 1;
         var nextState = this.state.state;
         var numQuestions = this.props.survey.nodes.length;
+        var showDontKnow = false;
         
-        if (nextQuestion < numQuestions)
+        if (nextQuestion < numQuestions && nextQuestion > 0) {
             nextState = this.state.states.QUESTION;
+            showDontKnow = questions[nextQuestion].allow_dont_know
+        }
 
         if (nextQuestion <= 0) { 
             nextState = this.state.states.SPLASH;
             nextQuestion = 0;
         }
 
-
         this.setState({
             nextQuestion: nextQuestion,
+            showDontKnow: showDontKnow,
             state: nextState
         })
 
     },
 
-    getContent: function(question) {
+    getContent: function() {
+        var questions = this.props.survey.nodes;
+        var nextQuestion = this.state.nextQuestion;
         var state = this.state.state;
         if (state === this.state.states.QUESTION) {
-           return (
-                   React.createElement(Question, {allowMultiple: question.allow_multiple, 
-                            questionType: question.type_constraint}
+            return (
+                   React.createElement(Question, {allowMultiple: questions[nextQuestion].allow_multiple, 
+                            questionType: questions[nextQuestion].type_constraint}
                    )
                )
         } else if (state === this.state.states.SUBMIT) {
@@ -20268,9 +20283,51 @@ var Application = React.createClass({displayName: "Application",
         }
     },
 
+    getTitle: function() {
+        var questions = this.props.survey.nodes;
+        var survey = this.props.survey;
+        var nextQuestion = this.state.nextQuestion;
+        var state = this.state.state;
+
+        if (state === this.state.states.QUESTION) {
+            return questions[nextQuestion].title[survey.default_language] 
+        } else if (state === this.state.states.SUBMIT) {
+            return "Ready to Save?"
+        } else {
+            return survey.title[survey.default_language] 
+        }
+    },
+
+    getMessage: function() {
+        var questions = this.props.survey.nodes;
+        var survey = this.props.survey;
+        var nextQuestion = this.state.nextQuestion;
+        var state = this.state.state;
+
+        if (state === this.state.states.QUESTION) {
+            var hint = questions[nextQuestion].hint || {}; 
+            return hint[survey.default_language];
+            //return questions[nextQuestion].hint[survey.default_language] 
+        } else if (state === this.state.states.SUBMIT) {
+            return "If youre satisfied with the answers to all the questions, you can save the survey now."
+        } else {
+            return "version " + survey.version + " | last updated " + survey.last_updated_time;
+        }
+    },
+
+    getButtonText: function() {
+        var state = this.state.state;
+        if (state === this.state.states.QUESTION) {
+            return "Next Question";
+        } else if (state === this.state.states.SUBMIT) {
+            return "Save Survey"
+        } else {
+            return "Begin a New Survey"
+        }
+    },
+
     render: function() {
         var contentClasses = "content";
-        var questions = this.props.survey.nodes;
         var state = this.state.state;
         var nextQuestion = this.state.nextQuestion;
 
@@ -20280,14 +20337,18 @@ var Application = React.createClass({displayName: "Application",
         return (
                 React.createElement("div", {id: "wrapper"}, 
                     React.createElement(Header, {buttonFunction: this.onPrevButton, 
+                        number: nextQuestion, 
                         splash: state === this.state.states.SPLASH}), 
                     React.createElement("div", {className: contentClasses}, 
-                        React.createElement(Title, null), 
-                        this.getContent(questions[nextQuestion])
+                        React.createElement(Title, {title: this.getTitle(), message: this.getMessage()}), 
+                        this.getContent()
                     ), 
-                    React.createElement(Footer, {showDontKnow: 
-                        state == this.state.states.QUESTION && this.state.showDontKnow, 
-                    buttonFunction: this.onNextButton})
+                    React.createElement(Footer, {
+                        showDontKnow: state === this.state.states.QUESTION && this.state.showDontKnow, 
+                        buttonFunction: this.onNextButton, 
+                        buttonType: state === this.state.states.QUESTION ? 'btn-primary': 'btn-positive', 
+                        buttonText: this.getButtonText()}
+                     )
 
                 )
                )
