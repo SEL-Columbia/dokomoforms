@@ -10,7 +10,10 @@ module.exports = React.createClass({
                         value=""
                      >
                      {this.props.showMinus ? 
-                        <span className="icon icon-close question__minus"></span>
+                        <span 
+                            onClick={this.props.buttonFunction} 
+                            className="icon icon-close question__minus">
+                        </span>
                         : null}
                     </input>
                  </div>

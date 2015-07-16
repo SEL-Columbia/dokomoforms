@@ -15,55 +15,115 @@ var Message = require('./components/baseComponents/Message.js');
 var Header = require('./components/baseComponents/Header.js');
 var Footer = require('./components/baseComponents/Footer.js');
 
+var Question = require('./components/Question.js'); 
+
 var Application = React.createClass({
     getInitialState: function() {
-        return { showDontKnow: true }
+        return { 
+            showDontKnow: false,
+            nextQuestion: 0,
+            states : {
+                SPLASH : 1,
+                QUESTION : 2,
+                SUBMIT : 3,
+            },
+            state: 1,
+        }
     },
+
+    onNextButton: function() {
+        console.log("heyt");
+        var nextQuestion = this.state.nextQuestion + 1;
+        var nextState = this.state.state;
+        var numQuestions = this.props.survey.nodes.length;
+
+        if (nextQuestion > 0)  
+            nextState = this.state.states.QUESTION;
+
+        if (nextQuestion >= numQuestions) {
+            nextQuestion = numQuestions
+            nextState = this.state.states.SUBMIT
+        }
+
+        this.setState({
+            nextQuestion: nextQuestion,
+            state: nextState
+        })
+
+    },
+
+    onPrevButton: function() {
+        console.log("heyt");
+        var nextQuestion = this.state.nextQuestion - 1;
+        var nextState = this.state.state;
+        var numQuestions = this.props.survey.nodes.length;
+        
+        if (nextQuestion < numQuestions)
+            nextState = this.state.states.QUESTION;
+
+        if (nextQuestion <= 0) { 
+            nextState = this.state.states.SPLASH;
+            nextQuestion = 0;
+        }
+
+
+        this.setState({
+            nextQuestion: nextQuestion,
+            state: nextState
+        })
+
+    },
+
+    getContent: function(question) {
+        var state = this.state.state;
+        if (state === this.state.states.QUESTION) {
+           return (
+                   <Question allowMultiple={question.allow_multiple} 
+                            questionType={question.type_constraint}
+                   />
+               )
+        } else if (state === this.state.states.SUBMIT) {
+            return (
+                    <Card messages={["hey", "how you doing", 
+                        ["i ", <b>love</b>, " toast"]]} type={"message-error"}/>
+                   )
+        } else {
+            return (
+                    <Card messages={["i guess you do", 
+                        [<b>love</b>], "toast"]} type={"message-primary"}/>
+                   )
+        }
+    },
+
     render: function() {
         var contentClasses = "content";
-        if (this.state.showDontKnow) 
+        var questions = this.props.survey.nodes;
+        var state = this.state.state;
+        var nextQuestion = this.state.nextQuestion;
+
+        if (state === this.state.states.QUESTION && this.state.showDontKnow) 
             contentClasses += " content-shrunk";
 
         return (
                 <div id="wrapper">
-                    <Header splash={true}/>
+                    <Header buttonFunction={this.onPrevButton} 
+                        splash={state === this.state.states.SPLASH}/>
                     <div className={contentClasses}>
                         <Title />
-                        <Card messages={["hey", "how you doing", 
-                            ["i ", <b>love</b>, " toast"]]} type={"message-error"}/>
-                        <Card messages={["cool"]} />
-                        <BigButton text={'Click for toast'} type={'btn-positive'} />
-                        <ResponseFields childCount={3}/>
-                        <LittleButton text={'add another answer'} />
-                        <Select withOther={true} multiSelect={true} choices={[
-                            {'value': 'toast', 'text': 'i love toast'},
-                            {'value': 'hater', 'text': 'i hate toast'}
-                        ]}/>
-                        <ResponseField showMinus={false}/>
-                        <FacilityRadios facilities={[
-                            {'name': 'toast factory', 'distance': 100, 'sector': 'toastustry', 'value': 123456},
-                            {'name': 'toast store', 'distance': 200, 'sector': 'toastomerce', 'value': 77896},
-                            {'name': 'toast park', 'distance': 1000, 'sector': 'toastheme', 'value': 78906},
-                            {'name': 'toast app', 'distance': 50, 'sector': 'Etoast', 'value': 011126}
-                        ]}/>
-                        <Select choices={[
-                            {'value': 'toast', 'text': 'i love toast'},
-                            {'value': 'hater', 'text': 'i hate toast'}
-                        ]}/>
-                        <LittleButton icon={"icon-star"} text={' find me'} />
-                        <Message text={"toast? toast! TOOOOASSTTT!!!"}/>
+                        {this.getContent(questions[nextQuestion])}
                     </div>
-                    <Footer showDontKnow={this.state.showDontKnow}/>
+                    <Footer showDontKnow={
+                        state == this.state.states.QUESTION && this.state.showDontKnow
+                    } buttonFunction={this.onNextButton}/>
+
                 </div>
                )
     }
 });
 
-var ApplicationData = {};
 init = function(survey) {
-    ApplicationData.survey = survey;
     React.render(
-            <Application />,
+            <Application survey={survey}/>,
             document.body
     );
 };
