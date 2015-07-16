@@ -431,10 +431,12 @@ class TestNode(DokoTest):
                 ('deleted', False),
                 ('languages', ('English',)),
                 ('title', {'English': 'a note'}),
+                ('hint', {'English': ''}),
                 ('type_constraint', 'note'),
                 ('logic', {}),
                 ('last_update_time', note.last_update_time),
-            ))
+            )),
+            note._asdict()
         )
 
     def test_multiple_choice_question_asdict(self):
