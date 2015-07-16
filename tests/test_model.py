@@ -612,6 +612,11 @@ class TestChoice(DokoTest):
 
 
 class TestSurvey(DokoTest):
+    def test_construct_survey_wrong_type(self):
+        self.assertRaises(
+            TypeError, models.construct_survey, survey_type='wrong'
+        )
+
     def test_administrators(self):
         with self.session.begin():
             creator = models.SurveyCreator(name='creator')
@@ -836,8 +841,85 @@ class TestSurvey(DokoTest):
                 )
                 self.session.add(creator)
 
+    def test_repeatable_sub_survey(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='a')
+            survey = models.Survey(title={'English': 'a'})
+            survey.nodes = [
+                models.construct_survey_node(
+                    node=models.construct_node(
+                        type_constraint='integer',
+                        title={'English': 'node'},
+                    ),
+                    sub_surveys=[
+                        models.SubSurvey(
+                            repeatable=True,
+                            buckets=[
+                                models.construct_bucket(
+                                    bucket_type='integer',
+                                    bucket='[,]'
+                                ),
+                            ],
+                            nodes=[
+                                models.construct_survey_node(
+                                    repeatable=True,
+                                    node=models.construct_node(
+                                        allow_multiple=True,
+                                        type_constraint='integer',
+                                        title={'English': 'repeatable'},
+                                    ),
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ]
+            creator.surveys = [survey]
+            self.session.add(creator)
+
+        sub_survey = self.session.query(models.SubSurvey).one()
+        self.assertTrue(sub_survey.repeatable)
+
+    def test_repeatable_sub_survey_implies_allow_multiple(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                creator = models.SurveyCreator(name='a')
+                survey = models.Survey(title={'English': 'a'})
+                survey.nodes = [
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            title={'English': 'node'},
+                        ),
+                        sub_surveys=[
+                            models.SubSurvey(
+                                repeatable=True,
+                                buckets=[
+                                    models.construct_bucket(
+                                        bucket_type='integer',
+                                        bucket='[,]'
+                                    ),
+                                ],
+                                nodes=[
+                                    models.construct_survey_node(
+                                        node=models.construct_node(
+                                            type_constraint='integer',
+                                            title={'English': 'repeatable'},
+                                        ),
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                ]
+                creator.surveys = [survey]
+                self.session.add(creator)
+
 
 class TestSurveyNode(DokoTest):
+    def test_factory_function_missing_type_constraint(self):
+        self.assertRaises(ValueError, models.construct_survey_node)
+
     def test_requested_translations_must_exist(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
@@ -2942,13 +3024,14 @@ class TestAnswer(DokoTest):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
                 the_survey = self.session.query(models.Survey).one()
+                choice_id = the_survey.nodes[1].node.choices[0].id
                 submission = models.PublicSubmission(
                     survey=the_survey,
                     answers=[
                         models.construct_answer(
                             survey_node=the_survey.nodes[0],
                             type_constraint='multiple_choice',
-                            answer=the_survey.nodes[1].node.choices[0].id,
+                            answer=choice_id,
                         ),
                     ],
                 )

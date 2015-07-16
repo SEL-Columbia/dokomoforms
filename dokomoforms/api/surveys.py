@@ -21,14 +21,15 @@ def _create_sub_survey(session, sub_survey_dict):
     sub_survey_dict['buckets'] = [
         construct_bucket(**b) for b in sub_survey_dict['buckets']
     ]
+    repeatable = sub_survey_dict.get('repeatable', None)
     _cogsn = _create_or_get_survey_node
     sub_survey_dict['nodes'] = [
-        _cogsn(session, node) for node in sub_survey_dict['nodes']
+        _cogsn(session, node, repeatable) for node in sub_survey_dict['nodes']
     ]
     return SubSurvey(**sub_survey_dict)
 
 
-def _create_or_get_survey_node(session, survey_node_dict):
+def _create_or_get_survey_node(session, survey_node_dict, repeatable=None):
     node_dict = survey_node_dict['node']
     if 'id' in node_dict:
         node = session.query(Node).get(node_dict['id'])
@@ -36,6 +37,8 @@ def _create_or_get_survey_node(session, survey_node_dict):
     else:
         node = construct_node(**node_dict)
     survey_node_dict['node'] = node
+    if repeatable is not None:
+        survey_node_dict['repeatable'] = repeatable
     _css = _create_sub_survey
     sub_survey_data = survey_node_dict.get('sub_surveys', None)
     if sub_survey_data is not None:

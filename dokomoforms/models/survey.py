@@ -213,7 +213,7 @@ class SubSurvey(Base):
     )
 
     __table_args__ = (
-        sa.UniqueConstraint('id', 'root_survey_languages'),
+        sa.UniqueConstraint('id', 'root_survey_languages', 'repeatable'),
         sa.UniqueConstraint(
             'id', 'parent_type_constraint', 'parent_survey_node_id',
             'parent_node_id'
@@ -514,6 +514,11 @@ class SurveyNode(Base):
         pg.ARRAY(pg.TEXT, as_tuple=True), nullable=False
     )
     sub_survey_id = sa.Column(pg.UUID)
+    sub_survey_repeatable = sa.Column(sa.Boolean)
+
+    non_null_repeatable = sa.Column(
+        sa.Boolean, nullable=False, server_default='FALSE'
+    )
     logic = util.json_column('logic', default='{}')
     last_update_time = util.last_update_time()
 
@@ -521,7 +526,13 @@ class SurveyNode(Base):
     __table_args__ = (
         sa.UniqueConstraint('id', 'node_id', 'type_constraint'),
         sa.UniqueConstraint(
-            'id', 'root_survey_languages', 'node_id', 'type_constraint'
+            'id', 'root_survey_languages', 'node_id', 'type_constraint',
+            'non_null_repeatable'
+        ),
+        sa.CheckConstraint(
+            '(sub_survey_repeatable IS NULL) != '
+            '(sub_survey_repeatable = non_null_repeatable)',
+            name='you_must_mark_survey_nodes_repeatable_explicitly'
         ),
         sa.CheckConstraint(
             '(root_survey_id IS NULL) != (sub_survey_id IS NULL)'
@@ -535,8 +546,10 @@ class SurveyNode(Base):
             ['survey.id', 'survey.languages']
         ),
         sa.ForeignKeyConstraint(
-            ['sub_survey_id', 'root_survey_languages'],
-            ['sub_survey.id', 'sub_survey.root_survey_languages']
+            ['sub_survey_id', 'root_survey_languages',
+                'sub_survey_repeatable'],
+            ['sub_survey.id', 'sub_survey.root_survey_languages',
+                'sub_survey.repeatable']
         ),
         sa.ForeignKeyConstraint(
             ['node_id', 'node_languages', 'type_constraint'],
@@ -590,6 +603,7 @@ class AnswerableSurveyNode(SurveyNode):
         pg.ARRAY(pg.TEXT, as_tuple=True), nullable=False
     )
     the_type_constraint = sa.Column(node_type_enum, nullable=False)
+    the_sub_survey_repeatable = sa.Column(sa.Boolean, nullable=False)
     allow_multiple = sa.Column(sa.Boolean, nullable=False)
     allow_other = sa.Column(sa.Boolean, nullable=False)
     node = relationship('Question')
@@ -616,18 +630,24 @@ class AnswerableSurveyNode(SurveyNode):
             'id', 'the_node_id', 'the_type_constraint', 'allow_multiple',
             'allow_other', 'allow_dont_know'
         ),
+        sa.CheckConstraint(
+            '(NOT the_sub_survey_repeatable) OR allow_multiple',
+            name='repeatable_implies_allow_multiple'
+        ),
         sa.ForeignKeyConstraint(
             [
                 'id',
                 'the_root_survey_languages',
                 'the_node_id',
                 'the_type_constraint',
+                'the_sub_survey_repeatable',
             ],
             [
                 'survey_node.id',
                 'survey_node.root_survey_languages',
                 'survey_node.node_id',
                 'survey_node.type_constraint',
+                'survey_node.non_null_repeatable',
             ]
         ),
         sa.ForeignKeyConstraint(
@@ -679,6 +699,8 @@ def construct_survey_node(**kwargs) -> SurveyNode:
     if 'type_constraint' in kwargs:
         type_constraint = kwargs['type_constraint']
 
+    kwargs['non_null_repeatable'] = kwargs.pop('repeatable', False)
+
     survey_node_constructor = (
         NonAnswerableSurveyNode if type_constraint == 'note'
         else AnswerableSurveyNode
@@ -712,7 +734,7 @@ def skipped_required(survey, answers) -> str:
         return None
 
     answer_stack = list(reversed(answers))
-    take_answer = True
+    answer = answer_stack.pop() if answer_stack else None
 
     survey_node_stack = [(0, survey.nodes)]
 
@@ -726,21 +748,15 @@ def skipped_required(survey, answers) -> str:
         answerable = isinstance(survey_node, AnswerableSurveyNode)
         required = survey_node.required if answerable else False
 
-        if not answer_stack:
+        if answer is None:
             if required:
                 return survey_node.id
-            continue
-
-        if take_answer:
-            answer = answer_stack.pop()
+            # See https://bitbucket.org/ned/coveragepy/issues/198/
+            continue  # pragma: no cover
 
         answer_matches_node = survey_node.node_id == answer.question_id
-        if not answer_matches_node:
-            take_answer = False
-            if required:
-                return survey_node.id
-        else:
-            take_answer = True
+        if not answer_matches_node and required:
+            return survey_node.id
 
         survey_node_stack.append((survey_node_index + 1, survey_nodes))
 
@@ -755,5 +771,8 @@ def skipped_required(survey, answers) -> str:
                                 survey_node_stack.append((0, survey_nodes))
                         else:
                             survey_node_stack.append((0, survey_nodes))
+
+        if answer_matches_node:
+            answer = answer_stack.pop() if answer_stack else None
 
     return None
