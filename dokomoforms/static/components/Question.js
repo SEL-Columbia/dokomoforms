@@ -33,13 +33,11 @@ module.exports = React.createClass({
                     type={this.props.questionType}
                     childCount={this.state.questionCount} />
 
-                <div className="content-padded">
-                    {this.props.question.allow_multiple
-                        ? <LittleButton buttonFunction={this.addNewInput}
-                            text={'add another answer'} />
-                        : null 
-                    }
-                </div>
+                {this.props.question.allow_multiple
+                    ? <LittleButton buttonFunction={this.addNewInput}
+                        text={'add another answer'} />
+                    : null 
+                }
                 </span>
                )
     }

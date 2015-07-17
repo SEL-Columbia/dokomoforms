@@ -18,6 +18,7 @@ var Footer = require('./components/baseComponents/Footer.js');
 var Question = require('./components/Question.js'); 
 var MultipleChoice = require('./components/MultipleChoice.js'); 
 var Location = require('./components/Location.js'); 
+var Facility = require('./components/Facility.js'); 
 
 var Application = React.createClass({
     getInitialState: function() {
@@ -119,6 +120,15 @@ var Application = React.createClass({
                 case 'location':
                     return (
                             <Location
+                                key={nextQuestion} 
+                                question={questions[nextQuestion]} 
+                                questionType={questionType}
+                                language={survey.default_language}
+                           />
+                       )
+                case 'facility':
+                    return (
+                            <Facility
                                 key={nextQuestion} 
                                 question={questions[nextQuestion]} 
                                 questionType={questionType}

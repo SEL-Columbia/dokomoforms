@@ -29,22 +29,18 @@ module.exports = React.createClass({
     render: function() {
         return (
                 <span>
-                <div className="content-padded">
-                    <LittleButton buttonFunction={this.addNewInput}
-                        iconClass={'icon-star'}
-                        text={'find my location'} />
-                </div>
+                <LittleButton buttonFunction={this.addNewInput}
+                    iconClass={'icon-star'}
+                    text={'find my location'} />
                 <ResponseFields buttonFunction={this.removeInput}
                     type={this.props.questionType}
                     childCount={this.state.questionCount} />
 
-                <div className="content-padded">
-                    {this.props.question.allow_multiple
-                        ? <LittleButton buttonFunction={this.addNewInput}
-                            text={'add another answer'} />
-                        : null 
-                    }
-                </div>
+                {this.props.question.allow_multiple
+                    ? <LittleButton buttonFunction={this.addNewInput}
+                        text={'add another answer'} />
+                    : null 
+                }
                 </span>
                )
     }
