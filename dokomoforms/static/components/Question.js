@@ -3,7 +3,6 @@ var React = require('react');
 var ResponseField = require('./baseComponents/ResponseField.js');
 var ResponseFields = require('./baseComponents/ResponseFields.js');
 var LittleButton = require('./baseComponents/LittleButton.js');
-var Title = require('./baseComponents/Title.js');
 
 module.exports = React.createClass({
     getInitialState: function() {
@@ -35,7 +34,7 @@ module.exports = React.createClass({
                     childCount={this.state.questionCount} />
 
                 <div className="content-padded">
-                    {this.props.allowMultiple
+                    {this.props.question.allowMultiple
                         ? <LittleButton buttonFunction={this.addNewInput}
                             text={'add another answer'} />
                         : null 

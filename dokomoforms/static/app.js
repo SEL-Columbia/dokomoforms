@@ -16,11 +16,13 @@ var Header = require('./components/baseComponents/Header.js');
 var Footer = require('./components/baseComponents/Footer.js');
 
 var Question = require('./components/Question.js'); 
+var MultipleChoice = require('./components/MultipleChoice.js'); 
 
 var Application = React.createClass({
     getInitialState: function() {
         return { 
             showDontKnow: false,
+            showDontKnowBox: false,
             nextQuestion: 0,
             states : {
                 SPLASH : 1,
@@ -56,6 +58,7 @@ var Application = React.createClass({
         this.setState({
             nextQuestion: nextQuestion,
             showDontKnow: showDontKnow,
+            showDontKnowBox: false,
             state: nextState
         })
 
@@ -81,21 +84,46 @@ var Application = React.createClass({
         this.setState({
             nextQuestion: nextQuestion,
             showDontKnow: showDontKnow,
+            showDontKnowBox: false,
             state: nextState
         })
 
+    },
+
+    onCheckButton: function() {
+        this.setState({
+            showDontKnowBox: this.state.showDontKnowBox ? false: true,
+        });
     },
 
     getContent: function() {
         var questions = this.props.survey.nodes;
         var nextQuestion = this.state.nextQuestion;
         var state = this.state.state;
+        var survey = this.props.survey;
+
         if (state === this.state.states.QUESTION) {
-            return (
-                   <Question key={nextQuestion} allowMultiple={questions[nextQuestion].allow_multiple} 
-                            questionType={questions[nextQuestion].type_constraint}
-                   />
-               )
+            var questionType = questions[nextQuestion].type_constraint;
+            switch(questionType) {
+                case 'multiple_choice':
+                    return (
+                            <MultipleChoice 
+                                key={nextQuestion} 
+                                question={questions[nextQuestion]} 
+                                questionType={questionType}
+                                language={survey.default_language}
+                           />
+                       )
+                default:
+                    return (
+                            <Question 
+                                key={nextQuestion} 
+                                question={questions[nextQuestion]} 
+                                questionType={questionType}
+                                language={survey.default_language}
+                           />
+                       )
+            }
         } else if (state === this.state.states.SUBMIT) {
             return (
                     <Card messages={["hey", "how you doing", 
@@ -155,9 +183,13 @@ var Application = React.createClass({
         var state = this.state.state;
         var nextQuestion = this.state.nextQuestion;
         var questions = this.props.survey.nodes;
+        var questionID = questions[nextQuestion].id || this.state.state
 
-        if (state === this.state.states.QUESTION && this.state.showDontKnow) 
+        if (this.state.showDontKnow) 
             contentClasses += " content-shrunk";
+
+        if (this.state.showDontKnowBox) 
+            contentClasses += " content-shrunk content-super-shrunk";
 
         return (
                 <div id="wrapper">
@@ -170,12 +202,14 @@ var Application = React.createClass({
                         {this.getContent()}
                     </div>
                     <Footer 
-                        showDontKnow={state === this.state.states.QUESTION 
-                            && this.state.showDontKnow} 
+                        showDontKnow={this.state.showDontKnow} 
+                        showDontKnowBox={this.state.showDontKnowBox} 
                         buttonFunction={this.onNextButton}
+                        checkBoxFunction={this.onCheckButton}
                         buttonType={state === this.state.states.QUESTION 
                             ? 'btn-primary': 'btn-positive'}
                         buttonText={this.getButtonText()}
+                        questionID={questionID}
                      />
 
                 </div>
