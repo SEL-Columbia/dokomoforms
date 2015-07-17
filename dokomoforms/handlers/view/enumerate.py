@@ -5,7 +5,7 @@ from urllib.parse import urlencode
 from restless.exceptions import Unauthorized
 
 from dokomoforms.handlers.util import BaseHandler
-from dokomoforms.api import SurveyResource
+from dokomoforms.api import get_survey_for_handler
 
 
 class Enumerate(BaseHandler):
@@ -22,10 +22,8 @@ class Enumerate(BaseHandler):
 
         @survey_id: Requested survey id.
         """
-        survey_resource = SurveyResource()
-        survey_resource.ref_rh = self
         try:
-            survey = survey_resource.detail(survey_id)
+            survey = get_survey_for_handler(self, survey_id)
         except Unauthorized:
             url = self.get_login_url()
             if '?' not in url:
@@ -37,4 +35,4 @@ class Enumerate(BaseHandler):
             self.redirect(url)
             return
 
-        self.render('enumerate.html', survey=survey)
+        self.render('view_enumerate.html', survey=survey)

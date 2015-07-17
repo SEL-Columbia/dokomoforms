@@ -141,7 +141,33 @@ class Application(tornado.web.Application):
             url(r'/user/login/?', handlers.Login, name='login'),
             url(r'/user/logout/?', handlers.Logout, name='logout'),
 
-            # Pages
+            # Views
+            # * Admin views
+            url(r'/view/?', handlers.ViewHandler, name='admin_view'),
+            url(
+                r'/view/({})/?'.format(UUID_REGEX),
+                handlers.ViewSurveyHandler,
+                name='admin_survey_view',
+            ),
+            url(
+                r'/view/data/({})/?'.format(UUID_REGEX),
+                handlers.ViewSurveyDataHandler,
+                name='admin_data_view',
+            ),
+            url(
+                r'/view/submission/({})/?'.format(UUID_REGEX),
+                handlers.ViewSubmissionHandler,
+                name='admin_submission_view',
+            ),
+
+            url(
+                r'/visualize/({})/?'.format(UUID_REGEX),
+                handlers.VisualizationHandler,
+                name='admin_visualize',
+            ),
+
+            # * Regular views
+            # TODO: use survey title?? instead of id
             url(
                 r'/enumerate/({})/?'.format(UUID_REGEX), handlers.Enumerate,
                 name='enumerate'

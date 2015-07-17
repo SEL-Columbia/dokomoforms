@@ -126,3 +126,10 @@ class SubmissionResource(BaseResource):
                 'The survey could not be found: {}'.format(survey_id)
             )
         return _create_submission(self, survey)
+
+
+def get_submission_for_handler(tornado_handler, submission_id):
+    """Maybe a handler needs a submission from the API."""
+    submission_resource = SubmissionResource()
+    submission_resource.ref_rh = tornado_handler
+    return submission_resource.detail(submission_id)

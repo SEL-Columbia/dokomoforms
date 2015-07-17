@@ -262,3 +262,10 @@ class SurveyResource(BaseResource):
     #     be included in the API.
     #     """
     #     return data
+
+
+def get_survey_for_handler(tornado_handler, survey_id):
+    """Maybe a handler needs a survey from the API."""
+    survey_resource = SurveyResource()
+    survey_resource.ref_rh = tornado_handler
+    return survey_resource.detail(survey_id)
