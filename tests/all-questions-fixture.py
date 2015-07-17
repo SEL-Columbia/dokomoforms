@@ -101,7 +101,8 @@ with session.begin():
         required=True,
         node=models.construct_node(
             type_constraint='multiple_choice',
-            title={'English': 'multiple_choice' + ' node'},
+            title={'English': 'multiple choice' + ' node'},
+            hint={'English': 'choose your weapon'},
             allow_other=True,
             choices=[
                 models.Choice(

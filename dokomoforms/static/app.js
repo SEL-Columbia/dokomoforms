@@ -17,6 +17,7 @@ var Footer = require('./components/baseComponents/Footer.js');
 
 var Question = require('./components/Question.js'); 
 var MultipleChoice = require('./components/MultipleChoice.js'); 
+var Location = require('./components/Location.js'); 
 
 var Application = React.createClass({
     getInitialState: function() {
@@ -114,6 +115,16 @@ var Application = React.createClass({
                                 language={survey.default_language}
                            />
                        )
+
+                case 'location':
+                    return (
+                            <Location
+                                key={nextQuestion} 
+                                question={questions[nextQuestion]} 
+                                questionType={questionType}
+                                language={survey.default_language}
+                           />
+                       )
                 default:
                     return (
                             <Question 
@@ -183,7 +194,8 @@ var Application = React.createClass({
         var state = this.state.state;
         var nextQuestion = this.state.nextQuestion;
         var questions = this.props.survey.nodes;
-        var questionID = questions[nextQuestion].id || this.state.state
+        var questionID = questions[nextQuestion] && questions[nextQuestion].id 
+            || this.state.state
 
         if (this.state.showDontKnow) 
             contentClasses += " content-shrunk";

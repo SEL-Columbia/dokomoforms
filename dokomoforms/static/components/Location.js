@@ -29,6 +29,11 @@ module.exports = React.createClass({
     render: function() {
         return (
                 <span>
+                <div className="content-padded">
+                    <LittleButton buttonFunction={this.addNewInput}
+                        iconClass={'icon-star'}
+                        text={'find my location'} />
+                </div>
                 <ResponseFields buttonFunction={this.removeInput}
                     type={this.props.questionType}
                     childCount={this.state.questionCount} />
