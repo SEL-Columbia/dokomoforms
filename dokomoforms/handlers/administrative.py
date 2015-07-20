@@ -15,7 +15,7 @@ class Index(BaseHandler):
     def get(self, msg=''):
         """GET /."""
         surveys = None
-        recent_submissions=None
+        recent_submissions = None
         if self.current_user:
             surveys = (
                 self.session
@@ -29,7 +29,7 @@ class Index(BaseHandler):
                 .query(Submission)
                 .join(Survey)
                 .filter_by(creator_id=self.current_user_model.id)
-                .order_by('save time DESC')
+                .order_by('save_time DESC')
                 .limit(5)
             )
         self.render(

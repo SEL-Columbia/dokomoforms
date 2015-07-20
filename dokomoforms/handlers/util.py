@@ -1,9 +1,22 @@
 """Useful reusable functions for handlers, plus the BaseHandler."""
+import dateutil.parser
 
 import tornado.web
 from tornado.escape import to_unicode, json_decode
 
-from dokomoforms.models import User
+from dokomoforms.models import User, Survey
+
+
+def iso_date_str_to_fmt_str(date, format_str):
+    """Transform an ISO 8601 string.
+
+    TODO: Remove the need for this.
+    @jmwohl
+    """
+    if date is not None:
+        return dateutil.parser.parse(date).strftime(format_str)
+    else:
+        return None
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -63,6 +76,33 @@ class BaseHandler(tornado.web.RequestHandler):
         """
         user = self.get_secure_cookie('user')
         return to_unicode(user) if user else None
+
+    def _get_surveys_for_menu(self):
+        """The menu bar needs access to surveys.
+
+        TODO: Get rid of this
+        @jmwohl
+        """
+        return (
+            self.session
+            .query(Survey)
+            .filter_by(creator_id=self.current_user_model.id)
+            .order_by('created_on DESC')
+            .limit(10)
+        )
+
+    def get_template_namespace(self):
+        """Template functions.
+
+        TODO: Find a way to get rid of this.
+        @jmwohl
+        """
+        namespace = super().get_template_namespace()
+        namespace.update({
+            'iso_date_str_to_fmt_str': iso_date_str_to_fmt_str,
+            'surveys_for_menu': self._get_surveys_for_menu(),
+        })
+        return namespace
 
     # def write_error(self, status_code, **kwargs):
     #     if status_code == 422 and 'exc_info' in kwargs:

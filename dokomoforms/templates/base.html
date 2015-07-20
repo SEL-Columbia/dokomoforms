@@ -1,3 +1,4 @@
+{% from dokomoforms.options import options %}
 <!DOCTYPE html>
 <html>
 
@@ -16,7 +17,7 @@
     <link href="/static/css/admin.css" rel="stylesheet" type="text/css">
     <link rel="icon" href="/static/img/favicon.png">
     
-    <title>DokomoData</title>
+    <title>{{ options.organization}} Surveys -- Powered by DokomoData</title>
     <!--<script src="/static/ratchet-2.0.2/dist/js/ratchet.js"></script> -->
     <!-- RIP <link href="/static/css/style.css" rel="stylesheet" type="text/css">-->
 </head>
@@ -35,7 +36,7 @@
                             <a href="#" class="dropdown-toggle" type="button" id="SurveysDropdown" data-toggle="dropdown" aria-expanded="true">Surveys <span class="caret"></span></a>
                             <ul class="dropdown-menu" role="menu" aria-labelledby="SurveysDropdown">
                                 {% for the_survey in surveys_for_menu %}
-                                    <li role="presentation"><a role="menuitem" tabindex="-1" href="/view/{{ the_survey['survey_id'] }}">{{ the_survey['survey_title'] }}</a></li>
+                                    <li role="presentation"><a role="menuitem" tabindex="-1" href="/view/{{ the_survey.id }}">{{ the_survey.title }}</a></li>
                                 {% end %}
                             </ul>
                         </li>

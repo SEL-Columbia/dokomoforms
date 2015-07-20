@@ -44,11 +44,11 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for submission in recent_submissions['result'] %}
-                                        <tr class="submission-row btn-view-submission" data-id="{{ submission['result']['submission_id'] }}">
-                                            <td>{{ iso_date_str_to_fmt_str(submission['result']['submission_time'], "%b %d, %Y at %H:%M") }}</td>
-                                            <td>{{ submission['result']['submitter'] }}</td>
-                                            <td>{{ submission['result']['survey_id'] }}</td>
+                                    {% for submission in recent_submissions %}
+                                        <tr class="submission-row btn-view-submission" data-id="{{ submission.id }}">
+                                            <td>{{ submission.save_time.strftime("%b %d, %Y at %H:%M") }}</td>
+                                            <td>{{ submission.submitter_name }}</td>
+                                            <td>{{ submission.survey_id }}</td>
                                         </tr>
                                     {% end %}
                                 </tbody>
