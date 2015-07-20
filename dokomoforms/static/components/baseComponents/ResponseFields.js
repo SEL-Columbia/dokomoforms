@@ -11,6 +11,7 @@ module.exports = React.createClass({
                     return (
                             <ResponseField 
                                 buttonFunction={self.props.buttonFunction}
+                                onInput={self.props.onInput}
                                 type={self.props.type}
                                 key={idx + 1} 
                                 showMinus={self.props.childCount > 1}

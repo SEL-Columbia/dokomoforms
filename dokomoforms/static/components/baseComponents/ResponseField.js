@@ -18,12 +18,21 @@ module.exports = React.createClass({
                 return "text"
         }
     }, 
+
+    onChange(event) {
+        var value = event.target.value;
+        console.log(event.target.value);
+        if (this.props.onInput)
+            this.props.onInput(this, value);
+    },
+
     render: function() {
         return (
                 <div className="input_container">
                     <input 
                         type={this.getResponseType()} 
                         placeholder="Please provide a response." 
+                        onChange={this.onChange}
                      >
                      {this.props.showMinus ? 
                         <span 

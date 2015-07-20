@@ -26,11 +26,16 @@ module.exports = React.createClass({
         })
     },
 
+    onInput: function(element, value) {
+        console.log("Got input", element, value);
+    },
+
     render: function() {
         return (
                 <span>
                 <ResponseFields buttonFunction={this.removeInput}
                     type={this.props.questionType}
+                    onInput={this.onInput}
                     childCount={this.state.questionCount} />
 
                 {this.props.question.allow_multiple

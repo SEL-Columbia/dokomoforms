@@ -19,6 +19,8 @@ var Question = require('./components/Question.js');
 var MultipleChoice = require('./components/MultipleChoice.js'); 
 var Location = require('./components/Location.js'); 
 var Facility = require('./components/Facility.js'); 
+var Submit = require('./components/Submit.js'); 
+var Splash = require('./components/Splash.js'); 
 
 var Application = React.createClass({
     getInitialState: function() {
@@ -114,6 +116,7 @@ var Application = React.createClass({
                                 question={questions[nextQuestion]} 
                                 questionType={questionType}
                                 language={survey.default_language}
+                                surveyID={survey.id}
                            />
                        )
 
@@ -124,6 +127,7 @@ var Application = React.createClass({
                                 question={questions[nextQuestion]} 
                                 questionType={questionType}
                                 language={survey.default_language}
+                                surveyID={survey.id}
                            />
                        )
                 case 'facility':
@@ -133,6 +137,7 @@ var Application = React.createClass({
                                 question={questions[nextQuestion]} 
                                 questionType={questionType}
                                 language={survey.default_language}
+                                surveyID={survey.id}
                            />
                        )
                 default:
@@ -142,18 +147,23 @@ var Application = React.createClass({
                                 question={questions[nextQuestion]} 
                                 questionType={questionType}
                                 language={survey.default_language}
+                                surveyID={survey.id}
                            />
                        )
             }
         } else if (state === this.state.states.SUBMIT) {
             return (
-                    <Card messages={["hey", "how you doing", 
-                        ["i ", <b>love</b>, " toast"]]} type={"message-error"}/>
+                    <Submit
+                        surveyID={survey.id}
+                        language={survey.default_language}
+                    />
                    )
         } else {
             return (
-                    <Card messages={["i guess you do", 
-                        [<b>love</b>], "toast"]} type={"message-primary"}/>
+                    <Splash 
+                        surveyID={survey.id}
+                        language={survey.default_language}
+                    />
                    )
         }
     },
