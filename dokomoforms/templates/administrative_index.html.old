@@ -2,11 +2,12 @@
 
 
 {% block header %}
-<div class="header header-account-overview light-shadow">
+<div class="header">
     {% if current_user %}
     <div class="container">
         <div class="row">
-            <div class="col-md-6"><h1>Account Overview</h1></div>
+            <div class="col-md-6"><h1>Account Dashboard</h1></div>
+            <div class="col-md-6 header-controls"><button class="btn btn-primary btn-sm pull-right" data-toggle="tooltip" data-placement="left" title="Coming Soon!"><span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Create New Survey</button></div>
         </div>
     </div>
     {% else %}
@@ -25,7 +26,7 @@
             <div class="col-md-6">
                 <!-- Recent Submissions -->
                 
-                <h4>Recent Submissions <span class="info-icon" data-toggle="tooltip" data-placement="right" title="Quickly view the five latest submissions.">i</span></h4>
+                <h4>Recent Submissions</h4>
                 <div class="recent-submissions" role="tabpanel">
                     <!-- Nav tabs -->
                     <ul class="nav nav-tabs" role="tablist">
@@ -44,8 +45,8 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for submission in recent_submissions['result'] %}
-                                        <tr class="submission-row btn-view-submission" data-id="{{ submission['result']['submission_id'] }}">
+                                    {% for submission in recent_submissions %}
+                                        <tr class="submission-row" data-id="{{ submission['result']['submission_id'] }}">
                                             <td>{{ iso_date_str_to_fmt_str(submission['result']['submission_time'], "%b %d, %Y at %H:%M") }}</td>
                                             <td>{{ submission['result']['submitter'] }}</td>
                                             <td>{{ submission['result']['survey_id'] }}</td>
@@ -62,11 +63,9 @@
             </div>
             <div class="col-md-6">
                 <!-- Activity Graph -->
-                <h4>Activity Graph <span class="info-icon" data-toggle="tooltip" data-placement="right" title="A plot of submissions over the past 30 days.">i</span></h4>
+                <h4>Activity Graph</h4>
                 <div class="activity-graph">
-                    <div class="alert alert-info no-activity-message hide">
-                        <em>There has been no submission activity for any survey in the past 30 days.</em>
-                    </div>
+                    
                 </div>
             </div>
         </div>
@@ -87,10 +86,10 @@
             </div>
         </div>
         {% else %}
-        <div class="welcome-box content-padded">
-            <h3 class="welcome-title">Dokomo<strong>Data</strong></h3>
-            <p class="welcome-blurb">The easiest way to collect and use data for development planning.</p>
-            <a class="btn btn-primary btn-large btn-login">Log In or Sign Up</a>
+        <div class="welcome_box content-padded">
+            <h3 data-ignore="push" class="welcome_title"> Welcome to Dokomoforms</h3>
+            <p data-ignore="push" class="welcome_blurb"> Simple, offline-capable surveys.</p>
+            <p data-ignore="push" class="welcome_blurb"> Sign up or login to create and view forms.</p>
         </div>
         {% end %}
     </div>
@@ -123,7 +122,7 @@
     </script>
 
     <script type="text/template" id="manage-btn-tpl">
-        <a class="btn btn-secondary btn-xs btn-manage" href="/view/<%= survey_id %>" data-id="<%= survey_id %>">Manage Survey</a>
+        <a class="btn btn-secondary btn-xs" href="/view/<%= survey_id %>" data-id="<%= survey_id %>">Manage Survey</a>
     </script>
 
 
@@ -131,7 +130,7 @@
     <script type="text/javascript">
         
         $(function () { 
-
+            
             // Activity Graph
             $.getJSON('/api/submissions/activity', function(data) {
 
@@ -140,7 +139,6 @@
                     data = [];
 
                 if (!results.length) {
-                    $('.no-activity-message').removeClass('hide');
                     return;
                 }
 
@@ -150,6 +148,7 @@
 
                 _.each(sorted, function(result) {
                     var date = moment(result[1], "YYYY-MM-DD").format('MMM D');
+                    console.log(date);
                     data.push(result[0]);
                     cats.push(date);
                 });
@@ -195,6 +194,8 @@
                             map = L.map('recent-map-container', {
                                 dragging: true,
                                 zoom: 14,
+                                zoomControl: false,
+                                doubleClickZoom: false,
                                 attributionControl: false
                             });
 
@@ -207,12 +208,14 @@
                                     location = _.find(answers, function(answer) {
                                         return answer.type_constraint_name == 'location'
                                     });
+                                console.log(location);
                                 if (!location || !location.answer) {
                                     return;
                                 }
                                 location = location.answer;
+                                console.log(location);
 
-                                // console.log('location:', location);
+                                console.log('location:', location);
                                 // stored lon/lat in revisit, switch around
                                 var marker = new L.marker([location[1], location[0]], {
                                     riseOnHover: true
@@ -220,7 +223,7 @@
                                 marker.options.icon = new L.icon({iconUrl: "/static/img/icons/normal_base.png", iconAnchor: [15, 48]});
                                 // marker.bindPopup();
                                 marker.on('click', function() {
-                                    openSubmissionDetailModal(submission.submission_id);
+                                    window.location = '/view/submission/'+submission.submission_id;
                                 });
                                 markers.push(marker);
 
@@ -229,9 +232,7 @@
                             if (markers.length) {
                                 var markers_group = new L.featureGroup(markers);
                                 markers_group.addTo(map);
-                                map.fitBounds(markers_group.getBounds(), {
-                                    padding: [40, 40]
-                                });
+                                map.fitBounds(markers_group.getBounds());
                             } else {
                                 console.log('No submissions include location.');
                             }
@@ -239,6 +240,14 @@
                     });
                 }
             });
+
+            $(document).on('click', '.submission-row', function(e) {
+                var sub_id = $(this).data('id');
+                console.log('sub_id: ', sub_id);
+                window.location = '/view/submission/' + sub_id;
+            });
+
+
 
 
             // DataTables
@@ -264,6 +273,7 @@
                         {
                             "data": 0,
                             "render": function(data, type, row) {
+                                console.log(data);
                                 return data;
                             },
                             "targets": 0
@@ -295,7 +305,7 @@
                         , {
                             "data": 3,
                             "render": function(data, type, row) {
-                                // console.log(data);
+                                console.log(data);
                                 var view = view_btn_tpl({survey_id: data}),
                                     dl = dl_btn_tpl({survey_id: data}),
                                     manage = manage_btn_tpl({survey_id: data});
