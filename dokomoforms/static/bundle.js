@@ -152,23 +152,37 @@ module.exports = React.createClass({displayName: "exports",
 var React = require('react');
 
 var ResponseField = require('./baseComponents/ResponseField.js');
-var ResponseFields = require('./baseComponents/ResponseFields.js');
 var LittleButton = require('./baseComponents/LittleButton.js');
 
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
+        var answers = localStorage[this.props.question.id] || '[{}]';
+        answers = JSON.parse(answers);
+
         return { 
-            questionCount: 1
+            questionCount: answers.length
         }
     },
 
     addNewInput: function() {
-        this.setState({
-            questionCount: this.state.questionCount + 1
-        })
+        var answers = localStorage[this.props.question.id] || '[{}]';
+        answers = JSON.parse(answers);
+
+        if (answers.length == this.state.questionCount) {
+            this.setState({
+                questionCount: this.state.questionCount + 1
+            })
+        }
     },
 
-    removeInput: function() {
+    removeInput: function(index) {
+        console.log("Remove", index);
+
+        var answers = localStorage[this.props.question.id] || '[]';
+        answers = JSON.parse(answers);
+        answers.splice(index, 1);
+        localStorage[this.props.question.id] = JSON.stringify(answers);
+
         if (!(this.state.questionCount > 1))
             return;
 
@@ -177,18 +191,45 @@ module.exports = React.createClass({displayName: "exports",
         })
     },
 
-    onInput: function(element, value) {
-        console.log("Got input", element, value);
+    onInput: function(index, value) {
+        console.log("Hey", index, value);
+        var answers = localStorage[this.props.question.id] || '[]';
+        answers = JSON.parse(answers);
+        answers[index] = {
+            'response': value, 
+            'response_type': this.props.questionType
+        };
+
+        localStorage[this.props.question.id] = JSON.stringify(answers);
+
+    },
+
+    getAnswer: function(index) {
+        console.log("In:", index);
+        var answers = localStorage[this.props.question.id] || '[]';
+        answers = JSON.parse(answers);
+        console.log(answers, index);
+        return answers[index] && answers[index].response || null;
     },
 
     render: function() {
+        var children = Array.apply(null, {length: this.state.questionCount})
+        var self = this;
         return (
                 React.createElement("span", null, 
-                React.createElement(ResponseFields, {buttonFunction: this.removeInput, 
-                    type: this.props.questionType, 
-                    onInput: this.onInput, 
-                    childCount: this.state.questionCount}), 
-
+                children.map(function(child, idx) {
+                    return (
+                            React.createElement(ResponseField, {
+                                buttonFunction: self.removeInput, 
+                                onInput: self.onInput, 
+                                type: self.props.questionType, 
+                                key: idx, 
+                                index: idx, 
+                                initValue: self.getAnswer(idx), 
+                                showMinus: self.state.questionCount > 1}
+                            )
+                           )
+                }), 
                 this.props.question.allow_multiple
                     ? React.createElement(LittleButton, {buttonFunction: this.addNewInput, 
                         text: 'add another answer'})
@@ -199,7 +240,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"./baseComponents/LittleButton.js":13,"./baseComponents/ResponseField.js":16,"./baseComponents/ResponseFields.js":17,"react":174}],5:[function(require,module,exports){
+},{"./baseComponents/LittleButton.js":13,"./baseComponents/ResponseField.js":16,"react":174}],5:[function(require,module,exports){
 var React = require('react');
 var Card = require('./baseComponents/Card.js');
 
@@ -483,11 +524,49 @@ module.exports = React.createClass({displayName: "exports",
         }
     }, 
 
+    validate: function(answer) {
+        var type = this.props.type;
+        var val = null;
+        switch(type) {
+            case "integer":
+                val = parseInt(answer);
+                if (isNaN(val)) {
+                    val = null;
+                }
+                break;
+            case "decimal":
+                val = parseFloat(answer);
+                if (isNaN(val)) {
+                    val = null;
+                }
+                break;
+            case "date":
+                var resp = new Date(answer);
+                var day = ("0" + resp.getDate()).slice(-2);
+                var month = ("0" + (resp.getMonth() + 1)).slice(-2);
+                var year = resp.getFullYear();
+                val = year+"-"+(month)+"-"+(day);
+                if(isNaN(year) || isNaN(month) || isNaN(day))  {
+                    val = null;
+                }
+                break;
+            case "timestamp":
+            case "time":
+            default:
+              if (answer) {
+                  val = answer;
+              }
+        }
+
+        return val;
+
+    }, 
+
     onChange(event) {
-        var value = event.target.value;
+        var value = this.validate(event.target.value);
         console.log(event.target.value);
-        if (this.props.onInput)
-            this.props.onInput(this, value);
+        if (this.props.onInput && value !== null)
+            this.props.onInput(this.props.index, value);
     },
 
     render: function() {
@@ -496,11 +575,12 @@ module.exports = React.createClass({displayName: "exports",
                     React.createElement("input", {
                         type: this.getResponseType(), 
                         placeholder: "Please provide a response.", 
-                        onChange: this.onChange
+                        onChange: this.onChange, 
+                        defaultValue: this.props.initValue
                      }, 
                      this.props.showMinus ? 
                         React.createElement("span", {
-                            onClick: this.props.buttonFunction, 
+                            onClick: this.props.buttonFunction.bind(null, this.props.index), 
                             className: "icon icon-close question__minus"}
                         )
                         : null
@@ -527,6 +607,7 @@ module.exports = React.createClass({displayName: "exports",
                                 onInput: self.props.onInput, 
                                 type: self.props.type, 
                                 key: idx + 1, 
+                                index: idx, 
                                 showMinus: self.props.childCount > 1}
                             )
                            )
