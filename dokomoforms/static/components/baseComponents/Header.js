@@ -1,6 +1,15 @@
 var React = require('react');
 var Menu = require('./Menu.js');
 
+/*
+ * Header component
+ * Displays the top bar of the Application, includes hambaagah menu
+ *
+ * props:
+ *  @splash: Boolean to render splash header instead of the default
+ *  @buttonFunction: What to do on previous button click
+ *  @number: Current number to render in header
+ */
 module.exports = React.createClass({
     getInitialState: function() {
         return { showMenu: false }

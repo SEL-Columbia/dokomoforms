@@ -1,6 +1,15 @@
 var React = require('react');
 var Select = require('./baseComponents/Select.js');
 
+/*
+ * Multiple choice question component
+ *
+ * props:
+ *     @question: node object from survey
+ *     @questionType: type constraint
+ *     @language: current survey language
+ *     @surveyID: current survey id
+ */
 module.exports = React.createClass({
     getInitialState: function() {
         return { 

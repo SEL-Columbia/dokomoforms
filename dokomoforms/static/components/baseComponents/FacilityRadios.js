@@ -1,4 +1,12 @@
 var React = require('react'); 
+
+/*
+ * Facility Radio component
+ * Renders radio's specifically formatted for facility data
+ *
+ * props:
+ *  @facilities: Array of facility objects (revisit format)
+ */ 
 module.exports = React.createClass({
     render: function() {
         return (

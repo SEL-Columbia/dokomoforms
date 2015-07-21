@@ -4,6 +4,15 @@ var ResponseField = require('./baseComponents/ResponseField.js');
 var ResponseFields = require('./baseComponents/ResponseFields.js');
 var LittleButton = require('./baseComponents/LittleButton.js');
 
+/*
+ * Location question component
+ *
+ * props:
+ *     @question: node object from survey
+ *     @questionType: type constraint
+ *     @language: current survey language
+ *     @surveyID: current survey id
+ */
 module.exports = React.createClass({
     getInitialState: function() {
         return { 
