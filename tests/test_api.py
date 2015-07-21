@@ -1117,6 +1117,24 @@ class TestSurveyApi(DokoHTTPTest):
         self.assertTrue('submission_time' in submission_dict)
         self.assertTrue('survey_id' in submission_dict)
 
+    def test_submit_to_enum_only_survey_while_authenticated_with_xsrf(self):
+        survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "authenticated"
+        }
+        # make request
+        response = self.fetch(
+            url, method=method, body=json_encode(body), _disable_xsrf=False,
+        )
+        self.assertEqual(response.code, 403, msg=response.body)
+        self.assertIn('xsrf', response.body.decode())
+
     def test_error_public_submission_to_enum_only_survey(self):
         survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
         # url to test
@@ -1580,6 +1598,28 @@ class TestSubmissionApi(DokoHTTPTest):
         self.assertTrue('survey_id' in submission_dict)
         self.assertNotIn('enumerator_user_id', submission_dict)
 
+    def test_create_public_submission_not_logged_in_with_xsrf(self):
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": "b0816b52-204f-41d4-aaf0-ac6ae2970923",
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated"
+        }
+        # make request
+        response = self.fetch(
+            url,
+            method=method,
+            body=json_encode(body),
+            _logged_in_user=None,
+            _disable_xsrf=False,
+        )
+        self.assertEqual(response.code, 403, msg=response.body)
+        self.assertIn('_xsrf', response.body.decode())
+
     def test_create_public_submission_not_logged_in_alternate_url(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
         # url to test
@@ -1609,6 +1649,28 @@ class TestSubmissionApi(DokoHTTPTest):
         self.assertTrue('submission_time' in submission_dict)
         self.assertTrue('survey_id' in submission_dict)
         self.assertNotIn('enumerator_user_id', submission_dict)
+
+    def test_create_public_submission_not_logged_in_alternate_url_xsrf(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated"
+        }
+        # make request
+        response = self.fetch(
+            url,
+            method=method,
+            body=json_encode(body),
+            _logged_in_user=None,
+            _disable_xsrf=False,
+        )
+        self.assertEqual(response.code, 403, msg=response.body)
+        self.assertIn('xsrf', response.body.decode())
 
     def test_create_public_submission_no_survey_id(self):
         # url to test
@@ -3388,6 +3450,44 @@ class TestSubmissionApi(DokoHTTPTest):
         self.assertTrue('submission_time' in submission_dict)
         self.assertTrue('survey_id' in submission_dict)
 
+    def test_create_enum_only_submission_not_logged_in(self):
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": "c0816b52-204f-41d4-aaf0-ac6ae2970925",
+            "enumerator_user_id": "a7becd02-1a3f-4c1d-a0e1-286ba121aef3",
+            "submitter_name": "regular",
+            "submission_type": "authenticated"
+        }
+        # make request
+        response = self.fetch(
+            url, method=method, body=json_encode(body), _logged_in_user=None,
+        )
+        self.assertEqual(response.code, 401, msg=response.body)
+        self.assertIn('Unauthorized', response.body.decode())
+
+    def test_create_enum_only_submission_xsrf(self):
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": "c0816b52-204f-41d4-aaf0-ac6ae2970925",
+            "enumerator_user_id": "a7becd02-1a3f-4c1d-a0e1-286ba121aef3",
+            "submitter_name": "regular",
+            "submission_type": "authenticated"
+        }
+        # make request
+        response = self.fetch(
+            url, method=method, body=json_encode(body), _disable_xsrf=False,
+        )
+        self.assertEqual(response.code, 403, msg=response.body)
+        self.assertIn('xsrf', response.body.decode())
+
     def test_create_enum_only_submission_alternate_url(self):
         survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
         # url to test
@@ -4464,7 +4564,7 @@ class TestUserApi(DokoHTTPTest):
             (datetime.now() + timedelta(days=60)).date()
         )
 
-    def test_use_api_token(self):
+    def test_use_api_token_to_get(self):
         # url to test
         url = self.api_root + '/user/generate-api-token'
         # http method (just for clarity)
@@ -4475,17 +4575,83 @@ class TestUserApi(DokoHTTPTest):
 
         api_url = self.api_root + '/nodes'
         api_response = self.fetch(
-            api_url, method='GET', _logged_in_user=None,
+            api_url, method='GET', _logged_in_user=None, _disable_xsrf=False,
             headers={'Email': 'test_creator@fixtures.com', 'Token': token},
         )
         self.assertEqual(
             api_response.body, self.fetch(api_url, method='GET').body
         )
 
+    def test_use_api_token_to_post(self):
+        # url to test
+        url = self.api_root + '/user/generate-api-token'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        token = json_decode(response.body)['token']
+
+        api_url = self.api_root + '/nodes'
+        body = {
+            'title': {'English': 'API token POST'},
+            'type_constraint': 'integer',
+        }
+        api_response = self.fetch(
+            api_url,
+            method='POST', body=json_encode(body),
+            _logged_in_user=None, _disable_xsrf=False,
+            headers={'Email': 'test_creator@fixtures.com', 'Token': token},
+        )
+        self.assertEqual(api_response.code, 201, msg=api_response.body)
+
+    def test_missing_api_headers_in_post(self):
+        # url to test
+        url = self.api_root + '/user/generate-api-token'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        token = json_decode(response.body)['token']
+
+        api_url = self.api_root + '/nodes'
+        body = {
+            'title': {'English': 'API token POST'},
+            'type_constraint': 'integer',
+        }
+        api_response = self.fetch(
+            api_url,
+            method='POST', body=json_encode(body),
+            _logged_in_user=None, _disable_xsrf=False,
+        )
+        self.assertEqual(api_response.code, 403, msg=api_response.body)
+        self.assertIn('xsrf', api_response.body.decode())
+
+    def test_missing_api_headers_in_post_logged_in(self):
+        # url to test
+        url = self.api_root + '/user/generate-api-token'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        token = json_decode(response.body)['token']
+
+        api_url = self.api_root + '/nodes'
+        body = {
+            'title': {'English': 'API token POST'},
+            'type_constraint': 'integer',
+        }
+        api_response = self.fetch(
+            api_url,
+            method='POST', body=json_encode(body),
+            _disable_xsrf=False,
+        )
+        self.assertEqual(api_response.code, 403, msg=api_response.body)
+        self.assertIn('xsrf', api_response.body.decode())
+
     def test_use_wrong_api_token(self):
         api_url = self.api_root + '/nodes'
         api_response = self.fetch(
-            api_url, method='GET', _logged_in_user=None,
+            api_url, method='GET', _logged_in_user=None, _disable_xsrf=False,
             headers={'Email': 'test_creator@fixtures.com', 'Token': 'wrong'},
         )
 
@@ -4510,7 +4676,7 @@ class TestUserApi(DokoHTTPTest):
 
         api_url = self.api_root + '/nodes'
         api_response = self.fetch(
-            api_url, method='GET', _logged_in_user=None,
+            api_url, method='GET', _logged_in_user=None, _disable_xsrf=False,
             headers={'Email': 'test_creator@fixtures.com', 'Token': token},
         )
 

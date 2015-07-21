@@ -1,7 +1,4 @@
-"""Exceptions in dokomoforms.
-
-The base exception class is dokomoforms.exc.DokomoError
-"""
+"""The base exception class is :py:class:`DokomoError`."""
 
 
 class DokomoError(Exception):
