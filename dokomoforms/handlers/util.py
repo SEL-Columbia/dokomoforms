@@ -83,6 +83,8 @@ class BaseHandler(tornado.web.RequestHandler):
         TODO: Get rid of this
         @jmwohl
         """
+        if not self.current_user:
+            return None
         return (
             self.session
             .query(Survey)
