@@ -4,7 +4,9 @@ Treat this as a read-only file! It sets the defaults for the configuration
 values.
 
 If you want to use different values, set them as command line arguments:
+
     $ python3 webappy.py --port=8889
+
 or place them in a file called local_config.py (which is in the .gitignore
 file).
 """
