@@ -5,8 +5,8 @@ Also injects the --schema=doko_test option.
 """
 
 import unittest
-from contextlib import contextmanager
 from unittest.mock import patch
+from contextlib import contextmanager
 from urllib.parse import urlencode
 from functools import wraps
 
@@ -22,6 +22,7 @@ parse_options()
 from sqlalchemy import DDL
 from sqlalchemy.orm import sessionmaker
 from dokomoforms.models import create_engine, Base
+from dokomoforms.handlers.util import BaseHandler
 from webapp import Application
 from tests.fixtures import load_fixtures, unload_fixtures
 
@@ -133,7 +134,7 @@ class DokoHTTPTest(DokoTest, LogTrapTestCase, AsyncHTTPTestCase):
         patch_login = dummy_patch()
         if _logged_in_user:
             _logged_in_user = json_encode(_logged_in_user)
-            patch_login = patch.object(RequestHandler, 'get_secure_cookie')
+            patch_login = patch.object(BaseHandler, '_current_user_cookie')
 
         with patch_xsrf as x, patch_login as l:
             x.return_value = None

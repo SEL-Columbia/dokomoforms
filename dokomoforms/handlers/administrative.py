@@ -21,7 +21,7 @@ class Index(BaseHandler):
                 self.session
                 .query(Survey)
                 .filter_by(creator_id=self.current_user_model.id)
-                .order_by('created_on DESC')
+                .order_by(Survey.created_on.desc())
                 .limit(10)
             )
             recent_submissions = (
@@ -29,7 +29,7 @@ class Index(BaseHandler):
                 .query(Submission)
                 .join(Survey)
                 .filter_by(creator_id=self.current_user_model.id)
-                .order_by('save_time DESC')
+                .order_by(Submission.save_time.desc())
                 .limit(5)
             )
         self.render(

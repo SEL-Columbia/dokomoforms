@@ -37,13 +37,11 @@ class BaseHandler(tornado.web.RequestHandler):
     @property
     def current_user_model(self):
         """Return the current logged in User, or None."""
-        try:
-            user = json_decode(self.current_user)
-        except (ValueError, TypeError):
-            return None
-        user_id = user['user_id']
-        user_model = self.session.query(User).get(user_id)
-        return user_model
+        current_user = self._current_user_cookie()
+        if current_user:
+            user_id = json_decode(current_user)['user_id']
+            return self.session.query(User).get(user_id)
+        return None
 
     def prepare(self):
         """Default behavior before any HTTP method.
@@ -64,6 +62,9 @@ class BaseHandler(tornado.web.RequestHandler):
         """
         raise tornado.web.HTTPError(404)
 
+    def _current_user_cookie(self) -> str:
+        return self.get_secure_cookie('user')
+
     def get_current_user(self) -> str:
         """Make current_user accessible.
 
@@ -74,8 +75,10 @@ class BaseHandler(tornado.web.RequestHandler):
         :return: a string containing the dictionary {'user_id': <UUID>,
                  'user_name': <name>}
         """
-        user = self.get_secure_cookie('user')
-        return to_unicode(user) if user else None
+        current_user = self._current_user_cookie()
+        if current_user:
+            return to_unicode(json_decode(current_user)['user_name'])
+        return None
 
     def _get_surveys_for_menu(self):
         """The menu bar needs access to surveys.
@@ -89,7 +92,7 @@ class BaseHandler(tornado.web.RequestHandler):
             self.session
             .query(Survey)
             .filter_by(creator_id=self.current_user_model.id)
-            .order_by('created_on DESC')
+            .order_by(Survey.created_on.desc())
             .limit(10)
         )
 
