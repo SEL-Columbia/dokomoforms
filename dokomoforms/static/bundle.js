@@ -8,6 +8,15 @@ var LittleButton = require('./baseComponents/LittleButton.js');
 var FacilityRadios = require('./baseComponents/FacilityRadios.js');
 var Select = require('./baseComponents/Select.js');
 
+/*
+ * Facilities question component
+ *
+ * props:
+ *     @question: node object from survey
+ *     @questionType: type constraint
+ *     @language: current survey language
+ *     @surveyID: current survey id
+ */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
         return { 
@@ -79,6 +88,15 @@ var ResponseField = require('./baseComponents/ResponseField.js');
 var ResponseFields = require('./baseComponents/ResponseFields.js');
 var LittleButton = require('./baseComponents/LittleButton.js');
 
+/*
+ * Location question component
+ *
+ * props:
+ *     @question: node object from survey
+ *     @questionType: type constraint
+ *     @language: current survey language
+ *     @surveyID: current survey id
+ */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
         return { 
@@ -125,6 +143,15 @@ module.exports = React.createClass({displayName: "exports",
 var React = require('react');
 var Select = require('./baseComponents/Select.js');
 
+/*
+ * Multiple choice question component
+ *
+ * props:
+ *     @question: node object from survey
+ *     @questionType: type constraint
+ *     @language: current survey language
+ *     @surveyID: current survey id
+ */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
         return { 
@@ -154,6 +181,16 @@ var React = require('react');
 var ResponseField = require('./baseComponents/ResponseField.js');
 var LittleButton = require('./baseComponents/LittleButton.js');
 
+/*
+ * Question component
+ * The default question controller-view
+ *
+ * props:
+ *     @question: node object from survey
+ *     @questionType: type constraint
+ *     @language: current survey language
+ *     @surveyID: current survey id
+ */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
         var answers = localStorage[this.props.question.id] || '[{}]';
@@ -165,6 +202,9 @@ module.exports = React.createClass({displayName: "exports",
         }
     },
 
+    /*
+     * Add new input if and only if they've responded to all previous inputs
+     */
     addNewInput: function() {
         var answers = localStorage[this.props.question.id] || '[{}]';
         answers = JSON.parse(answers);
@@ -176,6 +216,9 @@ module.exports = React.createClass({displayName: "exports",
         }
     },
 
+    /*
+     * Remove input and update localStorage
+     */
     removeInput: function(index) {
         console.log("Remove", index);
 
@@ -191,9 +234,13 @@ module.exports = React.createClass({displayName: "exports",
             questionCount: this.state.questionCount - 1
         })
 
-        this.forceUpdate();
+        //this.forceUpdate();
     },
 
+    /*
+     * Record new response into localStorage, response has been validated
+     * if this callback is fired 
+     */
     onInput: function(index, value) {
         console.log("Hey", index, value);
         var answers = localStorage[this.props.question.id] || '[]';
@@ -207,6 +254,11 @@ module.exports = React.createClass({displayName: "exports",
 
     },
 
+    /*
+     * Get default value for an input at a given index from localStorage
+     *
+     * @index: The location in the answer array in localStorage to search
+     */
     getAnswer: function(index) {
         console.log("In:", index);
         var answers = localStorage[this.props.question.id] || '[]';
@@ -247,6 +299,14 @@ module.exports = React.createClass({displayName: "exports",
 var React = require('react');
 var Card = require('./baseComponents/Card.js');
 
+/*
+ * Splash page component
+ * Renders the appropiate card for the main page
+ *
+ * props:
+ *     @language: current survey language
+ *     @surveyID: current survey id
+ */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
         return { 
@@ -265,6 +325,14 @@ module.exports = React.createClass({displayName: "exports",
 var React = require('react');
 var Card = require('./baseComponents/Card.js');
 
+/*
+ * Submit page component
+ * Renders the appropiate card and buttons for the submit page
+ *
+ * props:
+ *     @language: current survey language
+ *     @surveyID: current survey id
+ */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
         return { 
@@ -281,6 +349,15 @@ module.exports = React.createClass({displayName: "exports",
 
 },{"./baseComponents/Card.js":8,"react":174}],7:[function(require,module,exports){
 var React = require('react');
+
+/*
+ * Big 'ol button
+ *
+ * props:
+ *  @type: Type of button (class name from ratchet usually) defaults to btn-primary
+ *  @buttonFunction: What to do on click events
+ *  @text: Text of the button
+ */
 module.exports = React.createClass({displayName: "exports",
     render: function() {
         var buttonClasses = "btn btn-block navigate-right page_nav__next";
@@ -302,6 +379,14 @@ module.exports = React.createClass({displayName: "exports",
 
 },{"react":174}],8:[function(require,module,exports){
 var React = require('react'); 
+
+/*
+ * Card component
+ *
+ * props:
+ *  @type: Card type (class name from ratchet usually) defaults to message-primary
+ *  @msg: Array of messages, each element is placed on a new line. JSX accepted
+ */
 module.exports = React.createClass({displayName: "exports",
     render: function() {
         var messageClass = "message-box";
@@ -328,6 +413,13 @@ module.exports = React.createClass({displayName: "exports",
 
 },{"react":174}],9:[function(require,module,exports){
 var React = require('react'); 
+
+/*
+ * Don't know component
+ *
+ * props:
+ *  @checkBoxFunction: What to do on click event
+ */
 module.exports = React.createClass({displayName: "exports",
     render: function() {
         return (
@@ -348,6 +440,14 @@ module.exports = React.createClass({displayName: "exports",
 
 },{"react":174}],10:[function(require,module,exports){
 var React = require('react'); 
+
+/*
+ * Facility Radio component
+ * Renders radio's specifically formatted for facility data
+ *
+ * props:
+ *  @facilities: Array of facility objects (revisit format)
+ */ 
 module.exports = React.createClass({displayName: "exports",
     render: function() {
         return (
@@ -384,6 +484,17 @@ var BigButton = require('./BigButton.js');
 var DontKnow = require('./DontKnow.js');
 var ResponseField = require('./ResponseField.js'); 
 
+/*
+ * Footer component
+ * Render footer containing a button and possible DontKnow component
+ *
+ * props:
+ *  @showDontKnow: Boolean to activate DontKnow component
+ *  @checkBoxFunction: What do on DontKnow component click event
+ *  @buttonText: Text to show on big button
+ *  @buttonType: Type of big button to render
+ *  @showDontKnowBox: Boolean to extend footer and show input field
+ */
 module.exports = React.createClass({displayName: "exports",
     getDontKnow: function() {
         if (this.props.showDontKnow)
@@ -418,6 +529,15 @@ module.exports = React.createClass({displayName: "exports",
 var React = require('react');
 var Menu = require('./Menu.js');
 
+/*
+ * Header component
+ * Displays the top bar of the Application, includes hambaagah menu
+ *
+ * props:
+ *  @splash: Boolean to render splash header instead of the default
+ *  @buttonFunction: What to do on previous button click
+ *  @number: Current number to render in header
+ */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
         return { showMenu: false }
@@ -457,6 +577,16 @@ module.exports = React.createClass({displayName: "exports",
 
 },{"./Menu.js":14,"react":174}],13:[function(require,module,exports){
 var React = require('react');
+
+/*
+ * Little weeny button
+ *
+ * props:
+ *  @type: Type of button (class name from ratchet usually) defaults to btn-primary
+ *  @buttonFunction: What to do on click events
+ *  @text: Text of the button
+ *  @icon: Icon if any to show before button text
+ */
 module.exports = React.createClass({displayName: "exports",
     render: function() {
         var iconClass = "icon " + this.props.icon;
@@ -474,6 +604,9 @@ module.exports = React.createClass({displayName: "exports",
 },{"react":174}],14:[function(require,module,exports){
 var React = require('react'); 
 
+/*
+ * Header Menu component
+ */
 module.exports = React.createClass({displayName: "exports",
     render: function() {
         return (
@@ -494,6 +627,12 @@ module.exports = React.createClass({displayName: "exports",
 
 },{"react":174}],15:[function(require,module,exports){
 var React = require('react');
+
+/*
+ * Message component
+ *
+ * @text: text to render
+ */
 module.exports = React.createClass({displayName: "exports",
     render: function() {
         var textClass = this.props.classes;
@@ -508,7 +647,20 @@ module.exports = React.createClass({displayName: "exports",
 },{"react":174}],16:[function(require,module,exports){
 var React = require('react');
 
+/*
+ * ResponseField component
+ * Main input field component, handles validation
+ *
+ * props:
+ *  @type: question type constraint, sets the input type to it, defaults to text
+ *  @onInput: What to do on valid input
+ *  @index: What index value to send on valid input (i.e position in array of fields)
+ *  @showMinus: Show the 'X' on the input
+ *  @buttonFunction: What to do on 'X' click event, index value is bound to this function
+ *  @initValue: Initial value for the input field
+ */
 module.exports = React.createClass({displayName: "exports",
+    // Determine the input field type based on props.type
     getResponseType: function() {
         var type = this.props.type;
         console.log(type);
@@ -527,6 +679,11 @@ module.exports = React.createClass({displayName: "exports",
         }
     }, 
 
+    /*
+     * Validate the answer based on props.type
+     * 
+     * @answer: The response to be validated
+     */
     validate: function(answer) {
         var type = this.props.type;
         var val = null;
@@ -565,6 +722,12 @@ module.exports = React.createClass({displayName: "exports",
 
     }, 
 
+    /*
+     * Handle change event, validates on every change
+     * fires props.onInput on validation success
+     *
+     * @event: Change event
+     */
     onChange(event) {
         var value = this.validate(event.target.value);
         console.log(event.target.value);
@@ -597,6 +760,12 @@ module.exports = React.createClass({displayName: "exports",
 var React = require('react');
 var ResponseField = require('./ResponseField.js');
 
+/*
+ * Array of ResponseField
+ *
+ * Refer to ResponseField for use
+ * XXX Remove Component
+ */
 module.exports = React.createClass({displayName: "exports",
     render: function() {
         var children = Array.apply(null, {length: this.props.childCount})
@@ -624,6 +793,16 @@ module.exports = React.createClass({displayName: "exports",
 var React = require('react'); 
 ResponseField = require('./ResponseField.js');
 
+/*
+ * Select component
+ * Handles drop down and other input rendering
+ *
+ * props:
+ *  @multiSelect: Boolean to activate multiselect mode
+ *  @choices: Array of choices in Select, expects a dict with value and text
+ *  @withOther: Allow for other responses, adds it to the choices and renders 
+ *      a ResponseField when selected
+ */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
         return { showOther: false }
@@ -670,6 +849,14 @@ module.exports = React.createClass({displayName: "exports",
 
 },{"./ResponseField.js":16,"react":174}],19:[function(require,module,exports){
 var React = require('react');
+
+/*
+ * Title component
+ *
+ * props:
+ *  @title: Title text to render in content
+ *  @message: 'hint' text to render in content
+ */
 module.exports = React.createClass({displayName: "exports",
     render: function() {
         return ( 
@@ -20516,6 +20703,10 @@ var Facility = require('./components/Facility.js');
 var Submit = require('./components/Submit.js'); 
 var Splash = require('./components/Splash.js'); 
 
+/* 
+ * Create Single Page App with three main components
+ * Header, Content, Footer
+ */
 var Application = React.createClass({displayName: "Application",
     getInitialState: function() {
         return { 
@@ -20531,6 +20722,10 @@ var Application = React.createClass({displayName: "Application",
         }
     },
 
+    /*
+     * Load next question, updates state of the Application
+     * if next question is not found to either SPLASH/SUBMIT
+     */
     onNextButton: function() {
         var questions = this.props.survey.nodes;
         var nextQuestion = this.state.nextQuestion + 1;
@@ -20562,6 +20757,10 @@ var Application = React.createClass({displayName: "Application",
 
     },
 
+    /*
+     * Load prev question, updates state of the Application
+     * if prev question is not found to SPLASH
+     */
     onPrevButton: function() {
         var questions = this.props.survey.nodes;
         var nextQuestion = this.state.nextQuestion - 1;
@@ -20588,12 +20787,21 @@ var Application = React.createClass({displayName: "Application",
 
     },
 
+    /*
+     * Respond to don't know checkbox event, this is listend to by Application
+     * due to app needing to resize for the increased height of the don't know
+     * region
+     */
     onCheckButton: function() {
         this.setState({
             showDontKnowBox: this.state.showDontKnowBox ? false: true,
         });
     },
 
+    /*
+     * Load the appropiate question based on the nextQuestion state
+     * Loads splash or submit content if state is either SPLASH/SUBMIT 
+     */
     getContent: function() {
         var questions = this.props.survey.nodes;
         var nextQuestion = this.state.nextQuestion;
@@ -20662,6 +20870,9 @@ var Application = React.createClass({displayName: "Application",
         }
     },
 
+    /*
+     * Load the appropiate title based on the nextQuestion and state
+     */
     getTitle: function() {
         var questions = this.props.survey.nodes;
         var survey = this.props.survey;
@@ -20677,6 +20888,9 @@ var Application = React.createClass({displayName: "Application",
         }
     },
 
+    /*
+     * Load the appropiate 'hint' based on the nextQuestion and state
+     */
     getMessage: function() {
         var questions = this.props.survey.nodes;
         var survey = this.props.survey;
@@ -20692,6 +20906,9 @@ var Application = React.createClass({displayName: "Application",
         }
     },
 
+    /*
+     * Load the appropiate text in the Footer's button based on state
+     */
     getButtonText: function() {
         var state = this.state.state;
         if (state === this.state.states.QUESTION) {
@@ -20709,8 +20926,10 @@ var Application = React.createClass({displayName: "Application",
         var nextQuestion = this.state.nextQuestion;
         var questions = this.props.survey.nodes;
         var questionID = questions[nextQuestion] && questions[nextQuestion].id 
-            || this.state.state
+            || this.state.state;
 
+
+        // Alter the height of content based on DontKnow state
         if (this.state.showDontKnow) 
             contentClasses += " content-shrunk";
 

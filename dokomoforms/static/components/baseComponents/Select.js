@@ -1,6 +1,16 @@
 var React = require('react'); 
 ResponseField = require('./ResponseField.js');
 
+/*
+ * Select component
+ * Handles drop down and other input rendering
+ *
+ * props:
+ *  @multiSelect: Boolean to activate multiselect mode
+ *  @choices: Array of choices in Select, expects a dict with value and text
+ *  @withOther: Allow for other responses, adds it to the choices and renders 
+ *      a ResponseField when selected
+ */
 module.exports = React.createClass({
     getInitialState: function() {
         return { showOther: false }

@@ -1,4 +1,12 @@
 var React = require('react');
+
+/*
+ * Title component
+ *
+ * props:
+ *  @title: Title text to render in content
+ *  @message: 'hint' text to render in content
+ */
 module.exports = React.createClass({
     render: function() {
         return ( 

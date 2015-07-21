@@ -3,6 +3,17 @@ var BigButton = require('./BigButton.js');
 var DontKnow = require('./DontKnow.js');
 var ResponseField = require('./ResponseField.js'); 
 
+/*
+ * Footer component
+ * Render footer containing a button and possible DontKnow component
+ *
+ * props:
+ *  @showDontKnow: Boolean to activate DontKnow component
+ *  @checkBoxFunction: What do on DontKnow component click event
+ *  @buttonText: Text to show on big button
+ *  @buttonType: Type of big button to render
+ *  @showDontKnowBox: Boolean to extend footer and show input field
+ */
 module.exports = React.createClass({
     getDontKnow: function() {
         if (this.props.showDontKnow)

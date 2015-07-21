@@ -1,6 +1,12 @@
 var React = require('react');
 var ResponseField = require('./ResponseField.js');
 
+/*
+ * Array of ResponseField
+ *
+ * Refer to ResponseField for use
+ * XXX Remove Component
+ */
 module.exports = React.createClass({
     render: function() {
         var children = Array.apply(null, {length: this.props.childCount})

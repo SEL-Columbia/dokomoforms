@@ -3,6 +3,16 @@ var React = require('react');
 var ResponseField = require('./baseComponents/ResponseField.js');
 var LittleButton = require('./baseComponents/LittleButton.js');
 
+/*
+ * Question component
+ * The default question controller-view
+ *
+ * props:
+ *     @question: node object from survey
+ *     @questionType: type constraint
+ *     @language: current survey language
+ *     @surveyID: current survey id
+ */
 module.exports = React.createClass({
     getInitialState: function() {
         var answers = localStorage[this.props.question.id] || '[{}]';
@@ -14,6 +24,9 @@ module.exports = React.createClass({
         }
     },
 
+    /*
+     * Add new input if and only if they've responded to all previous inputs
+     */
     addNewInput: function() {
         var answers = localStorage[this.props.question.id] || '[{}]';
         answers = JSON.parse(answers);
@@ -25,6 +38,9 @@ module.exports = React.createClass({
         }
     },
 
+    /*
+     * Remove input and update localStorage
+     */
     removeInput: function(index) {
         console.log("Remove", index);
 
@@ -40,9 +56,13 @@ module.exports = React.createClass({
             questionCount: this.state.questionCount - 1
         })
 
-        this.forceUpdate();
+        //this.forceUpdate();
     },
 
+    /*
+     * Record new response into localStorage, response has been validated
+     * if this callback is fired 
+     */
     onInput: function(index, value) {
         console.log("Hey", index, value);
         var answers = localStorage[this.props.question.id] || '[]';
@@ -56,6 +76,11 @@ module.exports = React.createClass({
 
     },
 
+    /*
+     * Get default value for an input at a given index from localStorage
+     *
+     * @index: The location in the answer array in localStorage to search
+     */
     getAnswer: function(index) {
         console.log("In:", index);
         var answers = localStorage[this.props.question.id] || '[]';

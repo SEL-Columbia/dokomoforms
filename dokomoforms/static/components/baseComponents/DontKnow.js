@@ -1,4 +1,11 @@
 var React = require('react'); 
+
+/*
+ * Don't know component
+ *
+ * props:
+ *  @checkBoxFunction: What to do on click event
+ */
 module.exports = React.createClass({
     render: function() {
         return (

@@ -22,6 +22,10 @@ var Facility = require('./components/Facility.js');
 var Submit = require('./components/Submit.js'); 
 var Splash = require('./components/Splash.js'); 
 
+/* 
+ * Create Single Page App with three main components
+ * Header, Content, Footer
+ */
 var Application = React.createClass({
     getInitialState: function() {
         return { 
@@ -37,6 +41,10 @@ var Application = React.createClass({
         }
     },
 
+    /*
+     * Load next question, updates state of the Application
+     * if next question is not found to either SPLASH/SUBMIT
+     */
     onNextButton: function() {
         var questions = this.props.survey.nodes;
         var nextQuestion = this.state.nextQuestion + 1;
@@ -68,6 +76,10 @@ var Application = React.createClass({
 
     },
 
+    /*
+     * Load prev question, updates state of the Application
+     * if prev question is not found to SPLASH
+     */
     onPrevButton: function() {
         var questions = this.props.survey.nodes;
         var nextQuestion = this.state.nextQuestion - 1;
@@ -94,12 +106,21 @@ var Application = React.createClass({
 
     },
 
+    /*
+     * Respond to don't know checkbox event, this is listend to by Application
+     * due to app needing to resize for the increased height of the don't know
+     * region
+     */
     onCheckButton: function() {
         this.setState({
             showDontKnowBox: this.state.showDontKnowBox ? false: true,
         });
     },
 
+    /*
+     * Load the appropiate question based on the nextQuestion state
+     * Loads splash or submit content if state is either SPLASH/SUBMIT 
+     */
     getContent: function() {
         var questions = this.props.survey.nodes;
         var nextQuestion = this.state.nextQuestion;
@@ -168,6 +189,9 @@ var Application = React.createClass({
         }
     },
 
+    /*
+     * Load the appropiate title based on the nextQuestion and state
+     */
     getTitle: function() {
         var questions = this.props.survey.nodes;
         var survey = this.props.survey;
@@ -183,6 +207,9 @@ var Application = React.createClass({
         }
     },
 
+    /*
+     * Load the appropiate 'hint' based on the nextQuestion and state
+     */
     getMessage: function() {
         var questions = this.props.survey.nodes;
         var survey = this.props.survey;
@@ -198,6 +225,9 @@ var Application = React.createClass({
         }
     },
 
+    /*
+     * Load the appropiate text in the Footer's button based on state
+     */
     getButtonText: function() {
         var state = this.state.state;
         if (state === this.state.states.QUESTION) {
@@ -215,8 +245,10 @@ var Application = React.createClass({
         var nextQuestion = this.state.nextQuestion;
         var questions = this.props.survey.nodes;
         var questionID = questions[nextQuestion] && questions[nextQuestion].id 
-            || this.state.state
+            || this.state.state;
 
+
+        // Alter the height of content based on DontKnow state
         if (this.state.showDontKnow) 
             contentClasses += " content-shrunk";
 

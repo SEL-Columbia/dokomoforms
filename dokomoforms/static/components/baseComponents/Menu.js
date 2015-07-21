@@ -1,5 +1,8 @@
 var React = require('react'); 
 
+/*
+ * Header Menu component
+ */
 module.exports = React.createClass({
     render: function() {
         return (
