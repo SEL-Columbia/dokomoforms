@@ -7,9 +7,10 @@ module.exports = React.createClass({
     getInitialState: function() {
         var answers = localStorage[this.props.question.id] || '[{}]';
         answers = JSON.parse(answers);
+        console.log("Answer length is:", answers.length, answers);
 
         return { 
-            questionCount: answers.length
+            questionCount: answers.length,
         }
     },
 
@@ -18,26 +19,28 @@ module.exports = React.createClass({
         answers = JSON.parse(answers);
 
         if (answers.length == this.state.questionCount) {
-            this.setState({
-                questionCount: this.state.questionCount + 1
-            })
+          this.setState({
+              questionCount: this.state.questionCount + 1
+          })
         }
     },
 
     removeInput: function(index) {
         console.log("Remove", index);
 
+        if (!(this.state.questionCount > 1))
+            return;
+
         var answers = localStorage[this.props.question.id] || '[]';
         answers = JSON.parse(answers);
         answers.splice(index, 1);
         localStorage[this.props.question.id] = JSON.stringify(answers);
 
-        if (!(this.state.questionCount > 1))
-            return;
-
         this.setState({
             questionCount: this.state.questionCount - 1
         })
+
+        this.forceUpdate();
     },
 
     onInput: function(index, value) {
@@ -72,7 +75,7 @@ module.exports = React.createClass({
                                 buttonFunction={self.removeInput}
                                 onInput={self.onInput}
                                 type={self.props.questionType}
-                                key={idx} 
+                                key={Math.random()} 
                                 index={idx} 
                                 initValue={self.getAnswer(idx)} 
                                 showMinus={self.state.questionCount > 1}
