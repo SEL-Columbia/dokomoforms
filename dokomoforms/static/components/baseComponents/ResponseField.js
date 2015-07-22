@@ -58,9 +58,10 @@ module.exports = React.createClass({
                 var day = ("0" + resp.getDate()).slice(-2);
                 var month = ("0" + (resp.getMonth() + 1)).slice(-2);
                 var year = resp.getFullYear();
-                val = year+"-"+(month)+"-"+(day);
                 if(isNaN(year) || isNaN(month) || isNaN(day))  {
                     val = null;
+                } else {
+                    val = answer; //XXX Keep format?
                 }
                 break;
             case "timestamp":

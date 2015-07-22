@@ -77,7 +77,7 @@ module.exports = React.createClass({
 
         answers[index] = {
             'response': value, 
-            'response_type': this.props.questionType
+            'response_type': 'answer'
         };
 
         survey[this.props.question.id] = answers;

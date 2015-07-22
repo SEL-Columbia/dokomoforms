@@ -1,4 +1,5 @@
 var React = require('react');
+var $ = require('jquery');
 
 var ResponseField = require('./components/baseComponents/ResponseField.js');
 var ResponseFields = require('./components/baseComponents/ResponseFields.js');
@@ -12,9 +13,8 @@ var Select = require('./components/baseComponents/Select.js');
 var FacilityRadios = require('./components/baseComponents/FacilityRadios.js');
 var Message = require('./components/baseComponents/Message.js');
 
-var Header = require('./components/baseComponents/Header.js');
-var Footer = require('./components/baseComponents/Footer.js');
-
+var Header = require('./components/Header.js');
+var Footer = require('./components/Footer.js');
 var Question = require('./components/Question.js'); 
 var MultipleChoice = require('./components/MultipleChoice.js'); 
 var Location = require('./components/Location.js'); 
@@ -142,7 +142,8 @@ var Application = React.createClass({
             submission_type: "unauthenticated", //XXX 
             survey_id: this.props.survey.id,
             answers: answers,
-            save_time: new Date().toISOString()
+            save_time: new Date().toISOString(),
+            submission_time: "" // For comparisions during submit ajax callback
         }
 
         console.log("Submission", submission);
@@ -155,6 +156,59 @@ var Application = React.createClass({
         // Wipe active survey
         localStorage[this.props.survey.id] = JSON.stringify({});
 
+    },
+
+    onSubmit: function() {
+        function getCookie(name) {
+            var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
+            return r ? r[1] : undefined;
+        }
+        
+        var self = this;
+
+        // Get all unsynced surveys
+        var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
+        // Get array of unsynced submissions to this survey
+        var unsynced_submissions = unsynced_surveys[this.props.survey.id] || [];
+
+        unsynced_submissions.forEach(function(survey) {
+            // Update submit time
+            survey.submission_time = new Date().toISOString();
+            $.ajax({
+                url: '/api/v0/surveys/'+survey.survey_id+'/submit',
+                type: 'POST',
+                contentType: 'application/json',
+                processData: false,
+                data: JSON.stringify(survey),
+                headers: {
+                    "X-XSRFToken": getCookie("_xsrf")
+                },
+                dataType: 'json',
+                success: function(survey, anything, hey) {
+                    console.log("success", anything, hey);
+
+                    survey.submission_time = "";
+                    // Get all unsynced surveys
+                    var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
+                    // Get array of unsynced submissions to this survey
+                    var unsynced_submissions = unsynced_surveys[survey.survey_id] || [];
+
+                    //XXX DOES NOT WORK, RESPONSE IS DIFFERENT THEN SUBMISSION
+                    var idx = unsynced_submissions.indexOf(survey);
+                    console.log(idx, unsynced_submissions.length);
+                    unsynced_submissions.splice(idx, 1);
+
+                    unsynced_surveys[survey.survey_id] = unsynced_submissions;
+                    localStorage['unsynced'] = JSON.stringify(unsynced_surveys);
+                },
+                error: function(err) {
+                    console.log("error", err, survey);
+                }
+            });
+
+            console.log('synced submission:', survey);
+            console.log('survey', '/api/v0/surveys/'+survey.survey_id+'/submit');
+        });
     },
 
 
@@ -236,6 +290,7 @@ var Application = React.createClass({
                     <Splash 
                         surveyID={survey.id}
                         language={survey.default_language}
+                        buttonFunction={this.onSubmit}
                     />
                    )
         }

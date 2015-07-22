@@ -98,7 +98,7 @@ with session.begin():
 
     survey.nodes.append(models.construct_survey_node(
         allow_dont_know=True,
-        required=True,
+        required=False,
         node=models.construct_node(
             type_constraint='multiple_choice',
             title={'English': 'multiple choice' + ' node'},
