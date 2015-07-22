@@ -64,6 +64,7 @@ var Application = React.createClass({
         if (nextQuestion > numQuestions) {
             nextQuestion = 0
             nextState = this.state.states.SPLASH
+            this.onSave();
         }
 
 
@@ -110,6 +111,50 @@ var Application = React.createClass({
      * Save active survey into unsynced array 
      */
     onSave: function() {
+        var survey = JSON.parse(localStorage[this.props.survey.id] || '{}');
+        // Get all unsynced surveys
+        var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
+        // Get array of unsynced submissions to this survey
+        var unsynced_submissions = unsynced_surveys[this.props.survey.id] || [];
+
+        // Build new submission
+        var answers = []; 
+        this.props.survey.nodes.forEach(function(question) {
+            var responses = survey[question.id] || [];
+            responses.forEach(function(response) {
+                answers.push({
+                    survey_node_id: question.id,
+                    response: response,
+                    type_constraint: question.type_constraint
+                });
+            });
+
+        });
+
+        // Don't record it if there are no answers, will mess up splash 
+        if (answers.length === 0) {
+            return;
+        }
+
+        var submission = {
+            submitter_name: localStorage['submitter_name'] || "anon",
+            submitter_email: localStorage['submitter_email'] || "anon@anon.org",
+            submission_type: "unauthenticated", //XXX 
+            survey_id: this.props.survey.id,
+            answers: answers,
+            save_time: new Date().toISOString()
+        }
+
+        console.log("Submission", submission);
+
+        // Record new submission into array
+        unsynced_submissions.push(submission);
+        unsynced_surveys[this.props.survey.id] = unsynced_submissions;
+        localStorage['unsynced'] = JSON.stringify(unsynced_surveys);
+
+        // Wipe active survey
+        localStorage[this.props.survey.id] = JSON.stringify({});
+
     },
 
 

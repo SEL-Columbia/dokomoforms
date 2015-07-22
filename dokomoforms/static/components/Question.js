@@ -16,9 +16,7 @@ var LittleButton = require('./baseComponents/LittleButton.js');
 module.exports = React.createClass({
     getInitialState: function() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
-        console.log('survey', survey);
         var answers = survey[this.props.question.id] || [];
-        console.log('answers', answers);
         var length = answers.length === 0 ? 1 : answers.length;
 
         return { 

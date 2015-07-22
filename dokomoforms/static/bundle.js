@@ -194,9 +194,7 @@ var LittleButton = require('./baseComponents/LittleButton.js');
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
-        console.log('survey', survey);
         var answers = survey[this.props.question.id] || [];
-        console.log('answers', answers);
         var length = answers.length === 0 ? 1 : answers.length;
 
         return { 
@@ -323,15 +321,40 @@ var Card = require('./baseComponents/Card.js');
  */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
+        // Get all unsynced surveys
+        var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
+        // Get array of unsynced submissions to this survey
+        var unsynced_submissions = unsynced_surveys[this.props.surveyID] || [];
+
         return { 
+            count: unsynced_submissions.length,
+            online: navigator.onLine,
+        }
+    },
+
+    getCard: function() {
+        if (this.state.count) {
+            if (this.state.online) {
+                return (
+                        React.createElement(Card, {messages: [this.props.surveyID, this.state.count,
+                            [React.createElement("b", null, "love")], "toast", "unsynced and online"], type: "message-warning"})
+                       )
+            } else {
+                return (
+                        React.createElement(Card, {messages: [this.props.surveyID, this.state.count, 
+                            [React.createElement("b", null, "love")], "toast", "unsynced and NOT online"], type: "message-error"})
+                       )
+            }
+        } else {
+            return (
+                    React.createElement(Card, {messages: [this.props.surveyID, this.state.count, 
+                        [React.createElement("b", null, "love")], "toast", "no unsynced"], type: "message-primary"})
+                   )
         }
     },
 
     render: function() {
-        return (
-                React.createElement(Card, {messages: [this.props.surveyID, 
-                    [React.createElement("b", null, "love")], "toast"], type: "message-primary"})
-               )
+        return this.getCard()
     }
 });
 
@@ -20759,6 +20782,7 @@ var Application = React.createClass({displayName: "Application",
         if (nextQuestion > numQuestions) {
             nextQuestion = 0
             nextState = this.state.states.SPLASH
+            this.onSave();
         }
 
 
@@ -20805,6 +20829,50 @@ var Application = React.createClass({displayName: "Application",
      * Save active survey into unsynced array 
      */
     onSave: function() {
+        var survey = JSON.parse(localStorage[this.props.survey.id] || '{}');
+        // Get all unsynced surveys
+        var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
+        // Get array of unsynced submissions to this survey
+        var unsynced_submissions = unsynced_surveys[this.props.survey.id] || [];
+
+        // Build new submission
+        var answers = []; 
+        this.props.survey.nodes.forEach(function(question) {
+            var responses = survey[question.id] || [];
+            responses.forEach(function(response) {
+                answers.push({
+                    survey_node_id: question.id,
+                    response: response,
+                    type_constraint: question.type_constraint
+                });
+            });
+
+        });
+
+        // Don't record it if there are no answers, will mess up splash 
+        if (answers.length === 0) {
+            return;
+        }
+
+        var submission = {
+            submitter_name: localStorage['submitter_name'] || "anon",
+            submitter_email: localStorage['submitter_email'] || "anon@anon.org",
+            submission_type: "unauthenticated", //XXX 
+            survey_id: this.props.survey.id,
+            answers: answers,
+            save_time: new Date().toISOString()
+        }
+
+        console.log("Submission", submission);
+
+        // Record new submission into array
+        unsynced_submissions.push(submission);
+        unsynced_surveys[this.props.survey.id] = unsynced_submissions;
+        localStorage['unsynced'] = JSON.stringify(unsynced_surveys);
+
+        // Wipe active survey
+        localStorage[this.props.survey.id] = JSON.stringify({});
+
     },
 
 
