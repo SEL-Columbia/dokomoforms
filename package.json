@@ -1,0 +1,47 @@
+{
+  "name": "dokomoforms",
+  "version": "1.0.0",
+  "description": "Frontend dependencies for Dokomoforms",
+  "main": "dokomoforms/static/bundle.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "dependencies": {
+    "browserify": "^10.2.3",
+    "coveralls": "^2.11.2",
+    "istanbul": "^0.3.13",
+    "jquery": "^2.1.4",
+    "jsdom": "^5.1.0",
+    "jshint": "^2.7.0",
+    "mocha-istanbul": "^0.2.0",
+    "react": "^0.13.3",
+    "reactify": "^1.1.1",
+    "should": "^6.0.1",
+    "supertest": "^0.15.0"
+  },
+  "devDependencies": {
+    "mocha": "^2.2.4"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SEL-Columbia/dokomoforms.git"
+  },
+  "keywords": [
+    "Dokomoforms",
+    "React",
+    "Browserify",
+    "Survey",
+    "Data",
+    "Collection"
+  ],
+  "author": "Abdi Dahir Viktor Roytman Jon Wohl",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SEL-Columbia/dokomoforms/issues"
+  },
+  "homepage": "https://github.com/SEL-Columbia/dokomoforms#readme"
+}

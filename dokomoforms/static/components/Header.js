@@ -1,5 +1,5 @@
 var React = require('react');
-var Menu = require('./Menu.js');
+var Menu = require('./baseComponents/Menu.js');
 
 /*
  * Header component

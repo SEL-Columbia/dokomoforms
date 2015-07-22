@@ -1,7 +1,7 @@
 var React = require('react'); 
-var BigButton = require('./BigButton.js');
-var DontKnow = require('./DontKnow.js');
-var ResponseField = require('./ResponseField.js'); 
+var BigButton = require('./baseComponents/BigButton.js');
+var DontKnow = require('./baseComponents/DontKnow.js');
+var ResponseField = require('./baseComponents/ResponseField.js'); 
 
 /*
  * Footer component
