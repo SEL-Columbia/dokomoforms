@@ -107,6 +107,13 @@ var Application = React.createClass({
     },
 
     /*
+     * Save active survey into unsynced array 
+     */
+    onSave: function() {
+    },
+
+
+    /*
      * Respond to don't know checkbox event, this is listend to by Application
      * due to app needing to resize for the increased height of the don't know
      * region

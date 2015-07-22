@@ -193,12 +193,14 @@ var LittleButton = require('./baseComponents/LittleButton.js');
  */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
-        var answers = localStorage[this.props.question.id] || '[{}]';
-        answers = JSON.parse(answers);
-        console.log("Answer length is:", answers.length, answers);
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        console.log('survey', survey);
+        var answers = survey[this.props.question.id] || [];
+        console.log('answers', answers);
+        var length = answers.length === 0 ? 1 : answers.length;
 
         return { 
-            questionCount: answers.length,
+            questionCount: length,
         }
     },
 
@@ -206,10 +208,11 @@ module.exports = React.createClass({displayName: "exports",
      * Add new input if and only if they've responded to all previous inputs
      */
     addNewInput: function() {
-        var answers = localStorage[this.props.question.id] || '[{}]';
-        answers = JSON.parse(answers);
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var length = answers.length === 0 ? 1 : answers.length;
 
-        if (answers.length == this.state.questionCount) {
+        if (length == this.state.questionCount) {
           this.setState({
               questionCount: this.state.questionCount + 1
           })
@@ -225,10 +228,14 @@ module.exports = React.createClass({displayName: "exports",
         if (!(this.state.questionCount > 1))
             return;
 
-        var answers = localStorage[this.props.question.id] || '[]';
-        answers = JSON.parse(answers);
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var length = answers.length === 0 ? 1 : answers.length;
+
         answers.splice(index, 1);
-        localStorage[this.props.question.id] = JSON.stringify(answers);
+        survey[this.props.question.id] = answers;
+
+        localStorage[this.props.surveyID] = JSON.stringify(survey);
 
         this.setState({
             questionCount: this.state.questionCount - 1
@@ -242,15 +249,19 @@ module.exports = React.createClass({displayName: "exports",
      * if this callback is fired 
      */
     onInput: function(index, value) {
+
         console.log("Hey", index, value);
-        var answers = localStorage[this.props.question.id] || '[]';
-        answers = JSON.parse(answers);
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var length = answers.length === 0 ? 1 : answers.length;
+
         answers[index] = {
             'response': value, 
             'response_type': this.props.questionType
         };
 
-        localStorage[this.props.question.id] = JSON.stringify(answers);
+        survey[this.props.question.id] = answers;
+        localStorage[this.props.surveyID] = JSON.stringify(survey);
 
     },
 
@@ -261,8 +272,11 @@ module.exports = React.createClass({displayName: "exports",
      */
     getAnswer: function(index) {
         console.log("In:", index);
-        var answers = localStorage[this.props.question.id] || '[]';
-        answers = JSON.parse(answers);
+
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var length = answers.length === 0 ? 1 : answers.length;
+
         console.log(answers, index);
         return answers[index] && answers[index].response || null;
     },
@@ -20786,6 +20800,13 @@ var Application = React.createClass({displayName: "Application",
         })
 
     },
+
+    /*
+     * Save active survey into unsynced array 
+     */
+    onSave: function() {
+    },
+
 
     /*
      * Respond to don't know checkbox event, this is listend to by Application
