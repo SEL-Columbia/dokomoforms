@@ -130,8 +130,8 @@ class Application(tornado.web.Application):
         option), then prepares the database and creates a session.
 
         """
-        self._api_version = 'v0'
-        self._api_root_path = '/api/' + self._api_version
+        self._api_version = API_VERSION
+        self._api_root_path = API_ROOT_PATH
 
         sur = SurveyResource
 

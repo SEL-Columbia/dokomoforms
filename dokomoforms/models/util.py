@@ -354,7 +354,16 @@ def column_search(query, *,
     )
 
 
-def get_asdict_subset(model: Base, fields: list) -> OrderedDict:
-    """Return the given fields for the model's dictionary representation."""
+def _get_field(model, field_name):
     model_dict = model._asdict()
-    return OrderedDict((key, model_dict[key]) for key in fields)
+    try:
+        return model_dict[field_name]
+    except KeyError:
+        return getattr(model, field_name)
+
+
+def get_fields_subset(model: Base, fields: list) -> OrderedDict:
+    """Return the given fields for the model's dictionary representation."""
+    return OrderedDict(
+        (name, _get_field(model, name)) for name in fields if name
+    )

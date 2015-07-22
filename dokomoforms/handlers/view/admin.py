@@ -24,9 +24,9 @@ class ViewSurveyHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self, survey_id: str):
         """GET the admin page."""
-        # TODO: should this be doine in JS?
-        survey_stats = 'some stats?'
-        question_stats = 'some stats?'
+        # TODO: should this be done in JS?
+        survey_stats = 'NOIMPL'
+        question_stats = 'NOIMPL'
         survey = get_survey_for_handler(self, survey_id)
         self.render(
             'view_survey.html',
@@ -44,8 +44,8 @@ class ViewSurveyDataHandler(BaseHandler):
     def get(self, survey_id: str):
         """GET the data page."""
         location_questions = []
-        survey_stats = 'some stats?'
-        question_stats = 'some stats?'
+        survey_stats = 'NOIMPL'
+        question_stats = 'NOIMPL'
         for result in question_stats:
             # question = 'question'
             question_type = 'question_id'

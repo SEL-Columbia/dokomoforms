@@ -17,7 +17,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from dokomoforms.api.serializer import ModelJSONSerializer
 from dokomoforms.handlers.util import BaseAPIHandler
 from dokomoforms.models import SurveyCreator, Email
-from dokomoforms.models.util import column_search, get_asdict_subset
+from dokomoforms.models.util import column_search, get_fields_subset
 from dokomoforms.exc import DokomoError
 
 # TODO: Find out if it is OK to remove these. @jmwohl
@@ -188,9 +188,9 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
 
         if is_detail:
             the_model = model_or_models
-            return get_asdict_subset(the_model, fields)
+            return get_fields_subset(the_model, fields)
         models = model_or_models
-        return [get_asdict_subset(model, fields) for model in models]
+        return [get_fields_subset(model, fields) for model in models]
 
     def detail(self, model_id):
         """Return a single instance of a model."""
@@ -219,7 +219,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         search_lang = self._query_arg('lang')
 
         default_sort = ['{}:DESC'.format(self.default_sort_column_name)]
-        order_by = (
+        order_by_text = (
             element.split(':') for element in self._query_arg(
                 'order_by', list, default=default_sort
             )
@@ -247,11 +247,20 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         if where is not None:
             query = query.filter(where)
 
-        query = query.order_by(text(
-            ', '.join(
-                '{0} {1}'.format(*order) for order in order_by
-            ) + ' NULLS LAST'
-        ))
+        for attribute_name, direction in order_by_text:
+            try:
+                order = getattr(model_cls, attribute_name)
+                direction = direction.lower()
+                if direction == 'asc':
+                    order = order.asc()
+                elif direction == 'desc':
+                    order = order.desc()
+                order = order.nullslast()
+            except AttributeError:
+                order = text(
+                    '{} {} NULLS LAST'.format(attribute_name, direction)
+                )
+            query = query.order_by(order)
 
         if limit is not None:
             query = query.limit(limit)

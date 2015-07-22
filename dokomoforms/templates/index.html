@@ -133,9 +133,9 @@
         $(function () { 
 
             // Activity Graph
-            $.getJSON('/api/submissions/activity', function(data) {
+            $.getJSON('/api/v0/surveys/activity', function(data) {
 
-                var results = data.result,
+                var results = data.activity,
                     cats = [], 
                     data = [];
 
@@ -187,8 +187,8 @@
             // Map
             var map, 
                 limit = 5;
-            $.getJSON('/api/submissions?limit='+limit, function(data) {
-                var submissions = data.result;
+            $.getJSON('/api/v0/submissions?limit='+limit, function(data) {
+                var submissions = data.submissions;
                 if (submissions.length) {
                     $(document).on("shown.bs.tab", 'a[href="#recent-map"]', function() {
                         if (!map) {
@@ -309,24 +309,47 @@
                         }
                     ],
                     "columns": [{
-                         "name": "survey_title"
+                         "name": "title"
                     }, {
                          "name": "num_submissions"
                     }, {
-                         "name": "latest_submission"
+                         "name": "latest_submission_time"
                     }, {
-                         "name": "survey_id"
+                         "name": "id"
                     }],
                     "processing": true,
                     "serverSide": true,
-                    "ajax": {
-                         "url": "/api/index_survey_data_table",
-                         "data": function(d) {
-                             return {
-                                 "args": JSON.stringify(d)
-                             };
-                         }
-                    }
+		    "ajax": function(data, callback, settings) {
+		        $.ajax({
+			    // Missing a few things like search fields...
+		            "url": "/api/v0/surveys",
+			    "data": {
+			        draw: data.draw,
+				offset: data.start,
+				limit: data.length == -1 ? undefined : data.length,
+				order_by: data.order.map(function(ord) {
+		                    return data.columns[ord.column].name + ':' + ord.dir;
+				}).join(','),
+				fields: data.columns.map(function(c) {return c.name}).join(',')
+			    },
+			    "success": function(json) {
+			        var response = {
+		                    draw: json.draw,
+		                    recordsTotal: json.total_entries,
+		                    recordsFiltered: json.filtered_entries,
+		                    data: json.surveys.map(function(survey) {
+		                          return [
+		                            JSON.stringify(survey.title),
+		                            survey.num_submissions,
+		                            survey.latest_submission_time,
+		                            survey.id,
+		                        ];
+		                    })
+				};
+				callback(response);
+			    }
+			});
+		    }
                 });
             }
         });
