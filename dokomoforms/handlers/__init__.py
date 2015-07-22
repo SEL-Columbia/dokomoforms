@@ -1,6 +1,6 @@
 """All the Tornado RequestHandlers used in Dokomo Forms."""
 
-from dokomoforms.handlers.administrative import Index, NotFound
+from dokomoforms.handlers.root import Index, NotFound
 from dokomoforms.handlers.auth import Login, Logout, GenerateToken
 from dokomoforms.handlers.view.admin import (
     ViewHandler, ViewSurveyHandler, ViewSurveyDataHandler,

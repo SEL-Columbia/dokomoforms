@@ -33,7 +33,7 @@ class Index(BaseHandler):
                 .limit(5)
             )
         self.render(
-            'administrative_index.html',
+            'index.html',
             message=msg,
             surveys=surveys,
             recent_submissions=recent_submissions,
@@ -54,4 +54,4 @@ class NotFound(BaseHandler):
 
     def write_error(self, *args, **kwargs):
         """Serve the custom 404 page."""
-        self.render('administrative_404.html')
+        self.render('404.html')

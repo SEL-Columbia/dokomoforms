@@ -4,10 +4,10 @@ dokomoforms.handlers package
 Submodules
 ----------
 
-dokomoforms.handlers.administrative module
+dokomoforms.handlers.root module
 ------------------------------------------
 
-.. automodule:: dokomoforms.handlers.administrative
+.. automodule:: dokomoforms.handlers.root
     :members:
     :undoc-members:
     :show-inheritance:
