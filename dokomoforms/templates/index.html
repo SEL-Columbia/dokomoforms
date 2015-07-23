@@ -115,7 +115,7 @@
                 <span class="glyphicon glyphicon-cloud-download"></span> Download Data <span class="caret"></span>
             </button>
             <ul class="dropdown-menu dropdown-menu-right" role="menu">
-                <li><a target="_blank" href="/api/surveys/<%= survey_id %>/submissions">JSON</a></li>
+                <li><a target="_blank" href="/api/v0/surveys/<%= survey_id %>/submissions">JSON</a></li>
                 <li><a href="#">CSV (coming soon)</a></li>
                 <li><a href="#">KML (maybe someday)</a></li>
             </ul>
@@ -145,13 +145,13 @@
                 }
 
                 var sorted = _.sortBy(results, function(result) {
-                    return result[1];
+		    return result.date;
                 });
 
                 _.each(sorted, function(result) {
-                    var date = moment(result[1], "YYYY-MM-DD").format('MMM D');
-                    data.push(result[0]);
-                    cats.push(date);
+                    var the_date = moment(result.date, "YYYY-MM-DD").format('MMM D');
+                    data.push(result.num_submissions);
+                    cats.push(the_date);
                 });
 
 

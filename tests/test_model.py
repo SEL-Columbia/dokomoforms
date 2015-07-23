@@ -2281,7 +2281,7 @@ class TestAnswer(DokoTest):
                 ('deleted', False),
                 ('answer_number', 0),
                 ('submission_id', answer.submission_id),
-                ('submission_time', answer.submission_time),
+                ('save_time', answer.save_time),
                 ('survey_id', self.session.query(models.Survey.id).scalar()),
                 (
                     'survey_node_id',

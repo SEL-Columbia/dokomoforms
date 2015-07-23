@@ -5,6 +5,7 @@ import datetime
 import restless.exceptions as exc
 from restless.constants import CREATED
 
+from sqlalchemy import cast, Date
 from sqlalchemy.sql.expression import func
 
 from dokomoforms.api import BaseResource
@@ -167,11 +168,17 @@ class SurveyResource(BaseResource):
 
     def list_submissions(self, survey_id):
         """List all submissions for a survey."""
-        response_list = self.list(where=(Survey.id == survey_id))
+        submissions = (
+            self.session
+            .query(Submission)
+            .filter_by(survey_id=survey_id)
+            .order_by(Submission.save_time)
+            .all()
+        )
 
         response = {
             'survey_id': survey_id,
-            'submissions': response_list
+            'submissions': submissions
         }
         response = self._add_meta_props(response)
         return response
@@ -182,8 +189,8 @@ class SurveyResource(BaseResource):
             self.session
             .query(
                 func.max(Survey.created_on),
-                func.min(Submission.submission_time),
-                func.max(Submission.submission_time),
+                func.min(Submission.save_time),
+                func.max(Submission.save_time),
                 func.count(Submission.id),
             )
             .select_from(Submission)
@@ -230,13 +237,13 @@ class SurveyResource(BaseResource):
         from_date = today - datetime.timedelta(days=days - 1)
 
         # truncate the datetime to just the day
-        date_trunc = func.date_trunc('day', Submission.submission_time)
+        submission_date = cast(Submission.save_time, Date)
 
         query = (
             self.session
-            .query(date_trunc, func.count())
+            .query(submission_date, func.count())
             .filter(User.id == user.id)
-            .filter(Submission.submission_time >= from_date)
+            .filter(Submission.save_time >= from_date)
         )
 
         if survey_id is not None:
@@ -244,8 +251,8 @@ class SurveyResource(BaseResource):
 
         query = (
             query
-            .group_by(date_trunc)
-            .order_by(date_trunc.desc())
+            .group_by(submission_date)
+            .order_by(submission_date.desc())
         )
 
         # TODO: Figure out if this should use OrderedDict

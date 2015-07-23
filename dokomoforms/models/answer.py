@@ -29,7 +29,7 @@ class Answer(Base):
     id = util.pk()
     answer_number = sa.Column(sa.Integer, nullable=False)
     submission_id = sa.Column(pg.UUID, nullable=False)
-    submission_time = sa.Column(pg.TIMESTAMP(timezone=True), nullable=False)
+    save_time = sa.Column(pg.TIMESTAMP(timezone=True), nullable=False)
     survey_id = sa.Column(pg.UUID, nullable=False)
     survey_node_id = sa.Column(pg.UUID, nullable=False)
     survey_node = relationship('AnswerableSurveyNode')
@@ -37,6 +37,22 @@ class Answer(Base):
     allow_other = sa.Column(sa.Boolean, nullable=False)
     allow_dont_know = sa.Column(sa.Boolean, nullable=False)
     question_id = sa.Column(pg.UUID, nullable=False)
+
+    @hybrid_property
+    def question_title(self):
+        """The question title (Python)."""
+        return self.survey_node.node.title
+
+    @question_title.expression
+    def question_title(cls):
+        """The question title (SQL)."""
+        question_cls = type(cls.survey_node.node)
+        return (
+            sa.select([question_cls.title])
+            .where(question_cls.id == cls.question_id)
+            .label(question_cls)
+        )
+
     type_constraint = sa.Column(node_type_enum, nullable=False)
     answer_type = sa.Column(
         sa.Enum(
@@ -126,8 +142,8 @@ class Answer(Base):
         ),
         sa.CheckConstraint('type_constraint::TEXT = answer_type::TEXT'),
         sa.ForeignKeyConstraint(
-            ['submission_id', 'submission_time', 'survey_id'],
-            ['submission.id', 'submission.submission_time',
+            ['submission_id', 'save_time', 'survey_id'],
+            ['submission.id', 'submission.save_time',
                 'submission.survey_id']
         ),
         sa.ForeignKeyConstraint(
@@ -162,7 +178,7 @@ class Answer(Base):
             ('deleted', self.deleted),
             ('answer_number', self.answer_number),
             ('submission_id', self.submission_id),
-            ('submission_time', self.submission_time),
+            ('save_time', self.save_time),
             ('survey_id', self.survey_id),
             ('survey_node_id', self.survey_node_id),
             ('question_id', self.question_id),

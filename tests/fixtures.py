@@ -198,7 +198,8 @@ def load_fixtures(engine):
             sub = models.PublicSubmission(
                 survey=single_survey,
                 submitter_name='regular',
-                submission_time=sub_time
+                save_time=sub_time,
+                submission_time=sub_time,
             )
             session.add(sub)
 

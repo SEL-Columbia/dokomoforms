@@ -612,7 +612,7 @@ class AnswerableSurveyNode(SurveyNode):
     allow_dont_know = sa.Column(
         sa.Boolean, nullable=False, server_default='false'
     )
-    answers = relationship('Answer', order_by='Answer.submission_time')
+    answers = relationship('Answer', order_by='Answer.save_time')
 
     __mapper_args__ = {'polymorphic_identity': 'answerable'}
     __table_args__ = (
