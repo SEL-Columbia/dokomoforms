@@ -16,6 +16,13 @@ var Message = require('./components/baseComponents/Message.js');
 var Header = require('./components/Header.js');
 var Footer = require('./components/Footer.js');
 var Question = require('./components/Question.js'); 
+var Note = require('./components/Note.js'); 
+var MultipleChoice = require('./components/MultipleChoice.js'); 
+var Location = require('./components/Location.js'); 
+var Facility = require('./components/Facility.js'); 
+var Submit = require('./components/Submit.js'); 
+var Splash = require('./components/Splash.js'); 
+
 var MultipleChoice = require('./components/MultipleChoice.js'); 
 var Location = require('./components/Location.js'); 
 var Facility = require('./components/Facility.js'); 
@@ -260,6 +267,16 @@ var Application = React.createClass({
                 case 'facility':
                     return (
                             <Facility
+                                key={nextQuestion} 
+                                question={questions[nextQuestion]} 
+                                questionType={questionType}
+                                language={survey.default_language}
+                                surveyID={survey.id}
+                           />
+                       )
+                case 'note':
+                    return (
+                            <Note
                                 key={nextQuestion} 
                                 question={questions[nextQuestion]} 
                                 questionType={questionType}
