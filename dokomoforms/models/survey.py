@@ -93,7 +93,7 @@ class Survey(Base):
         """The time of the latest submission to this survey (Python)."""
         # TODO: test this
         if self.submissions:
-            return max(sub.save_time for sub in self.submissions)
+            return self.submissions[-1].save_time
         return None
 
     @latest_submission_time.expression

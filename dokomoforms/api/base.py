@@ -175,8 +175,8 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
 
         return False
 
-    def _fields_filter(self, model_or_models, is_detail=True):
-        """Filter the fields on the given models.
+    def _specific_fields(self, model_or_models, is_detail=True):
+        """Pick out the specified fields on the given models.
 
         TODO: Confirm that this is not a performance bottleneck.
         """
@@ -197,7 +197,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         model = self.session.query(self.resource_type).get(model_id)
         if model is None:
             raise exc.NotFound()
-        return self._fields_filter(model)
+        return self._specific_fields(model)
 
     def list(self, where=None):
         """Return a list of instances of this model.
@@ -272,7 +272,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         if result:
             num_filtered = result[0][1]
             models = [res[0] for res in result]
-            return num_filtered, self._fields_filter(models, is_detail=False)
+            return num_filtered, self._specific_fields(models, is_detail=False)
         return 0, []
 
     def update(self, model_id):
