@@ -726,6 +726,7 @@ module.exports = React.createClass({displayName: "exports",
         console.log(type);
         switch(type) {
             case "integer":
+                return "number"
             case "decimal":
             case "location":
                 return "number"
@@ -736,6 +737,19 @@ module.exports = React.createClass({displayName: "exports",
                 return "date"
             default:
                 return "text"
+        }
+    }, 
+
+    // Determine the input field step based on props.type
+    getResponseStep: function() {
+        var type = this.props.type;
+        console.log(type);
+        switch(type) {
+            case "decimal":
+            case "location":
+                return "any"
+            default:
+                return ""
         }
     }, 
 
@@ -801,6 +815,7 @@ module.exports = React.createClass({displayName: "exports",
                 React.createElement("div", {className: "input_container"}, 
                     React.createElement("input", {
                         type: this.getResponseType(), 
+                        step: this.getResponseStep(), 
                         placeholder: "Please provide a response.", 
                         onChange: this.onChange, 
                         defaultValue: this.props.initValue
@@ -30147,12 +30162,13 @@ var Application = React.createClass({displayName: "Application",
                     // Get array of unsynced submissions to this survey
                     var unsynced_submissions = unsynced_surveys[survey.survey_id] || [];
 
+                    //XXX DOES NOT WORK, RESPONSE IS DIFFERENT THEN SUBMISSION
                     var idx = unsynced_submissions.indexOf(survey);
                     console.log(idx, unsynced_submissions.length);
                     unsynced_submissions.splice(idx, 1);
 
-                    //unsynced_surveys[survey.survey_id] = unsynced_submissions;
-                    //localStorage['unsynced'] = JSON.stringify(unsynced_surveys);
+                    unsynced_surveys[survey.survey_id] = unsynced_submissions;
+                    localStorage['unsynced'] = JSON.stringify(unsynced_surveys);
                 },
                 error: function(err) {
                     console.log("error", err, survey);

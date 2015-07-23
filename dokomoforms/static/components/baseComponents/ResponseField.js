@@ -19,6 +19,7 @@ module.exports = React.createClass({
         console.log(type);
         switch(type) {
             case "integer":
+                return "number"
             case "decimal":
             case "location":
                 return "number"
@@ -29,6 +30,19 @@ module.exports = React.createClass({
                 return "date"
             default:
                 return "text"
+        }
+    }, 
+
+    // Determine the input field step based on props.type
+    getResponseStep: function() {
+        var type = this.props.type;
+        console.log(type);
+        switch(type) {
+            case "decimal":
+            case "location":
+                return "any"
+            default:
+                return ""
         }
     }, 
 
@@ -94,6 +108,7 @@ module.exports = React.createClass({
                 <div className="input_container">
                     <input 
                         type={this.getResponseType()} 
+                        step={this.getResponseStep()}
                         placeholder="Please provide a response." 
                         onChange={this.onChange}
                         defaultValue={this.props.initValue}
