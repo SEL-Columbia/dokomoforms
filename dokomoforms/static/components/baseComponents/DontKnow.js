@@ -16,7 +16,6 @@ module.exports = React.createClass({
                         id="dont-know" 
                         name="dont-know" 
                         value="selected" 
-                        key={this.props.questionID}
                     />
                     <label htmlFor="dont-know">I don't know the answer</label>
                 </div>

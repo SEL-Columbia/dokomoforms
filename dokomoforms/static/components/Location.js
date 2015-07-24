@@ -12,6 +12,7 @@ var LittleButton = require('./baseComponents/LittleButton.js');
  *     @questionType: type constraint
  *     @language: current survey language
  *     @surveyID: current survey id
+ *     @disabled: boolean for disabling all inputs
  */
 module.exports = React.createClass({
     getInitialState: function() {

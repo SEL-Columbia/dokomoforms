@@ -251,6 +251,7 @@ var Application = React.createClass({
                                 questionType={questionType}
                                 language={survey.default_language}
                                 surveyID={survey.id}
+                                disabled={this.state.showDontKnowBox}
                            />
                        )
 
@@ -262,6 +263,7 @@ var Application = React.createClass({
                                 questionType={questionType}
                                 language={survey.default_language}
                                 surveyID={survey.id}
+                                disabled={this.state.showDontKnowBox}
                            />
                        )
                 case 'facility':
@@ -272,6 +274,7 @@ var Application = React.createClass({
                                 questionType={questionType}
                                 language={survey.default_language}
                                 surveyID={survey.id}
+                                disabled={this.state.showDontKnowBox}
                            />
                        )
                 case 'note':
@@ -282,6 +285,7 @@ var Application = React.createClass({
                                 questionType={questionType}
                                 language={survey.default_language}
                                 surveyID={survey.id}
+                                disabled={this.state.showDontKnowBox}
                            />
                        )
                 default:
@@ -292,6 +296,7 @@ var Application = React.createClass({
                                 questionType={questionType}
                                 language={survey.default_language}
                                 surveyID={survey.id}
+                                disabled={this.state.showDontKnowBox}
                            />
                        )
             }
@@ -368,6 +373,7 @@ var Application = React.createClass({
         var state = this.state.state;
         var nextQuestion = this.state.nextQuestion;
         var questions = this.props.survey.nodes;
+        var surveyID = this.props.survey.id;
         var questionID = questions[nextQuestion] && questions[nextQuestion].id 
             || this.state.state;
 
@@ -398,6 +404,7 @@ var Application = React.createClass({
                             ? 'btn-primary': 'btn-positive'}
                         buttonText={this.getButtonText()}
                         questionID={questionID}
+                        surveyID={surveyID}
                      />
 
                 </div>
