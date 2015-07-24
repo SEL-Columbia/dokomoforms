@@ -47,6 +47,12 @@ module.exports = React.createClass({
 
     },
 
+    /*
+     * Clear localStorage when dont know is checked
+     * Call checkBoxFunction if supplied
+     *
+     * @event: click event on checkbox
+     */ 
     onCheck: function(event) {
         // Clear responses
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');

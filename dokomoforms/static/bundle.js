@@ -136,6 +136,12 @@ module.exports = React.createClass({displayName: "exports",
 
     },
 
+    /*
+     * Clear localStorage when dont know is checked
+     * Call checkBoxFunction if supplied
+     *
+     * @event: click event on checkbox
+     */ 
     onCheck: function(event) {
         // Clear responses
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
@@ -390,8 +396,12 @@ module.exports = React.createClass({displayName: "exports",
         }
     },
 
-    //Overriding React update method
-    update: function(nextProps, nextState) {
+    /*
+     * Hack to force react to update child components
+     * Gets called by parent element through 'refs' when state of something changed 
+     * (usually localStorage)
+     */
+    update: function() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
         var length = answers.length === 0 ? 1 : answers.length;
@@ -30127,7 +30137,7 @@ var Application = React.createClass({displayName: "Application",
         return { 
             showDontKnow: false,
             showDontKnowBox: false,
-            nextQuestion: 0,
+            nextQuestion: -1,
             states : {
                 SPLASH : 1,
                 QUESTION : 2,
@@ -30149,7 +30159,7 @@ var Application = React.createClass({displayName: "Application",
         var showDontKnow = false;
         var showDontKnowBox = false;
 
-        if (nextQuestion > 0 && nextQuestion < numQuestions) { 
+        if (nextQuestion > -1 && nextQuestion < numQuestions) { 
             nextState = this.state.states.QUESTION;
             showDontKnow = questions[nextQuestion].allow_dont_know
         }
@@ -30159,7 +30169,7 @@ var Application = React.createClass({displayName: "Application",
         }
 
         if (nextQuestion > numQuestions) {
-            nextQuestion = 0
+            nextQuestion = -1
             nextState = this.state.states.SPLASH
             this.onSave();
         }
@@ -30197,9 +30207,9 @@ var Application = React.createClass({displayName: "Application",
             showDontKnow = questions[nextQuestion].allow_dont_know
         }
 
-        if (nextQuestion <= 0) { 
+        if (nextQuestion <= -1) { 
             nextState = this.state.states.SPLASH;
-            nextQuestion = 0;
+            nextQuestion = -1;
         }
 
         if (this.state.states.QUESTION === nextState && showDontKnow) {
@@ -30269,6 +30279,10 @@ var Application = React.createClass({displayName: "Application",
 
     },
 
+    /*
+     * Loop through unsynced submissions for active survey and POST
+     * Only modifies localStorage on success
+     */
     onSubmit: function() {
         function getCookie(name) {
             var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
@@ -30304,12 +30318,9 @@ var Application = React.createClass({displayName: "Application",
                     // Get array of unsynced submissions to this survey
                     var unsynced_submissions = unsynced_surveys[survey.survey_id] || [];
 
-                    //XXX DOES NOT WORK, RESPONSE IS DIFFERENT THEN SUBMISSION
-                    //XXX SERIOUSLY DONT FORGET THIS
                     // Find unsynced_submission
                     var idx = -1;
                     unsynced_submissions.forEach(function(usurvey, i) {
-                        console.log(usurvey.save_time, survey.save_time)
                         if (Date(usurvey.save_time) === Date(survey.save_time)) {
                             idx = i;
                             return false;
@@ -30318,6 +30329,10 @@ var Application = React.createClass({displayName: "Application",
                         return true;
                     });
 
+                    // Not sure what happened, do not update localStorage
+                    if (idx === -1) 
+                        return;
+
                     console.log(idx, unsynced_submissions.length);
                     unsynced_submissions.splice(idx, 1);
 
@@ -30325,7 +30340,7 @@ var Application = React.createClass({displayName: "Application",
                     localStorage['unsynced'] = JSON.stringify(unsynced_surveys);
 
                     // Update splash page if still on it
-                    if (self.refs.splash)
+                    if (self.state.state === self.state.states.SPLASH)
                         self.refs.splash.update();
                 },
                 error: function(err) {
@@ -30524,8 +30539,8 @@ var Application = React.createClass({displayName: "Application",
                     React.createElement(Header, {
                         ref: "header", 
                         buttonFunction: this.onPrevButton, 
-                        number: nextQuestion, 
-                        total: questions.length, 
+                        number: nextQuestion + 1, 
+                        total: questions.length + 1, 
                         splash: state === this.state.states.SPLASH}), 
                     React.createElement("div", {
                         className: contentClasses}, 

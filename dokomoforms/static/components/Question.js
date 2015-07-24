@@ -25,8 +25,12 @@ module.exports = React.createClass({
         }
     },
 
-    //Overriding React update method
-    update: function(nextProps, nextState) {
+    /*
+     * Hack to force react to update child components
+     * Gets called by parent element through 'refs' when state of something changed 
+     * (usually localStorage)
+     */
+    update: function() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
         var length = answers.length === 0 ? 1 : answers.length;
