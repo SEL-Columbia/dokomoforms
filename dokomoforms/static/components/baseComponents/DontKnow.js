@@ -15,8 +15,7 @@ module.exports = React.createClass({
                         type="checkbox" 
                         id="dont-know" 
                         name="dont-know" 
-                        value="selected" 
-                        key={this.props.questionID}
+                        defaultChecked={this.props.checked}
                     />
                     <label htmlFor="dont-know">I don't know the answer</label>
                 </div>

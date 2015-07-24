@@ -10,6 +10,10 @@ var React = require('react');
  *     @surveyID: current survey id
  */
 module.exports = React.createClass({
+    // Every question component needs this method
+    update: function() {
+    },
+
     render: function() {
         return (
                 <span></span>

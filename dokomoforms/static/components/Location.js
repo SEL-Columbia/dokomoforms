@@ -12,6 +12,7 @@ var LittleButton = require('./baseComponents/LittleButton.js');
  *     @questionType: type constraint
  *     @language: current survey language
  *     @surveyID: current survey id
+ *     @disabled: boolean for disabling all inputs
  */
 module.exports = React.createClass({
     getInitialState: function() {
@@ -24,6 +25,10 @@ module.exports = React.createClass({
         this.setState({
             questionCount: this.state.questionCount + 1
         })
+    },
+
+    // Every question component needs this method
+    update: function() {
     },
 
     removeInput: function() {

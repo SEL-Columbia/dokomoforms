@@ -112,10 +112,12 @@ module.exports = React.createClass({
                         placeholder="Please provide a response." 
                         onChange={this.onChange}
                         defaultValue={this.props.initValue}
+                        disabled={this.props.disabled}
                      >
                      {this.props.showMinus ? 
                         <span 
                             onClick={this.props.buttonFunction.bind(null, this.props.index)} 
+                            disabled={this.props.disabled}
                             className="icon icon-close question__minus">
                         </span>
                         : null}

@@ -12,6 +12,7 @@ var LittleButton = require('./baseComponents/LittleButton.js');
  *     @questionType: type constraint
  *     @language: current survey language
  *     @surveyID: current survey id
+ *     @disabled: boolean for disabling all inputs
  */
 module.exports = React.createClass({
     getInitialState: function() {
@@ -22,6 +23,16 @@ module.exports = React.createClass({
         return { 
             questionCount: length,
         }
+    },
+
+    //Overriding React update method
+    update: function(nextProps, nextState) {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var length = answers.length === 0 ? 1 : answers.length;
+        this.setState({
+            questionCount: length,
+        });
     },
 
     /*
@@ -114,6 +125,7 @@ module.exports = React.createClass({
                                 type={self.props.questionType}
                                 key={Math.random()} 
                                 index={idx} 
+                                disabled={self.props.disabled}
                                 initValue={self.getAnswer(idx)} 
                                 showMinus={self.state.questionCount > 1}
                             />
@@ -121,6 +133,7 @@ module.exports = React.createClass({
                 })}
                 {this.props.question.allow_multiple
                     ? <LittleButton buttonFunction={this.addNewInput}
+                        disabled={this.props.disabled}
                         text={'add another answer'} />
                     : null 
                 }

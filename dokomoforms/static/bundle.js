@@ -16,6 +16,7 @@ var Select = require('./baseComponents/Select.js');
  *     @questionType: type constraint
  *     @language: current survey language
  *     @surveyID: current survey id
+ *     @disabled: boolean for disabling all inputs
  */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
@@ -23,6 +24,10 @@ module.exports = React.createClass({displayName: "exports",
             facilities: [],
             addFacility: true,
         }
+    },
+
+    // Every question component needs this method
+    update: function() {
     },
 
     addNewInput: function() {
@@ -97,17 +102,60 @@ var ResponseField = require('./baseComponents/ResponseField.js');
  *  @buttonText: Text to show on big button
  *  @buttonType: Type of big button to render
  *  @showDontKnowBox: Boolean to extend footer and show input field
+ *  @questionID: id of active question (if any)
+ *  @surveyID: id of active survey
  */
 module.exports = React.createClass({displayName: "exports",
     getDontKnow: function() {
         if (this.props.showDontKnow)
             return (React.createElement(DontKnow, {
-                        checkBoxFunction: this.props.checkBoxFunction, 
-                        questionID: this.props.questionID}
+                        checkBoxFunction: this.onCheck, 
+                        key: this.props.questionID, 
+                        checked: this.props.showDontKnowBox}
                     ))
 
         return null;
     },
+
+    /*
+     * Record new response into localStorage, response has been validated
+     * if this callback is fired 
+     */
+    onInput: function(index, value) {
+
+        console.log("Hey", index, value);
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+
+        answers = [{
+            'response': value, 
+            'response_type': 'dont_know'
+        }];
+
+        survey[this.props.questionID] = answers;
+        localStorage[this.props.surveyID] = JSON.stringify(survey);
+
+    },
+
+    onCheck: function(event) {
+        // Clear responses
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        survey[this.props.questionID] = [];
+        localStorage[this.props.surveyID] = JSON.stringify(survey);
+
+        if (this.props.checkBoxFunction) {
+            this.props.checkBoxFunction(event);
+        }
+    },
+
+    /*
+     * Get default value for an input at a given index from localStorage
+     */
+    getAnswer: function(questionID) {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[questionID] || [];
+        return answers[0] && answers[0].response_type === 'dont_know' && answers[0].response || null;
+    },
+
 
     render: function() {
         var FooterClasses = "bar bar-standard bar-footer";
@@ -116,13 +164,21 @@ module.exports = React.createClass({displayName: "exports",
         if (this.props.showDontKnowBox) 
             FooterClasses += " bar-footer-extended bar-footer-super-extended";
 
+        var self = this;
         return (
                 React.createElement("div", {className: FooterClasses}, 
                     React.createElement(BigButton, {text: this.props.buttonText, 
                     type: this.props.buttonType, 
                     buttonFunction: this.props.buttonFunction}), 
                      this.getDontKnow(), 
-                     this.props.showDontKnowBox ? React.createElement(ResponseField, null) : null
+                     this.props.showDontKnowBox ? 
+                        React.createElement(ResponseField, {
+                                index: 0, 
+                                onInput: self.onInput, 
+                                initValue: self.getAnswer(self.props.questionID), 
+                                type: 'text'}
+                        ) 
+                    : null
                 )
                )
     }
@@ -193,6 +249,7 @@ var LittleButton = require('./baseComponents/LittleButton.js');
  *     @questionType: type constraint
  *     @language: current survey language
  *     @surveyID: current survey id
+ *     @disabled: boolean for disabling all inputs
  */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
@@ -205,6 +262,10 @@ module.exports = React.createClass({displayName: "exports",
         this.setState({
             questionCount: this.state.questionCount + 1
         })
+    },
+
+    // Every question component needs this method
+    update: function() {
     },
 
     removeInput: function() {
@@ -248,11 +309,16 @@ var Select = require('./baseComponents/Select.js');
  *     @questionType: type constraint
  *     @language: current survey language
  *     @surveyID: current survey id
+ *     @disabled: boolean for disabling all inputs
  */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
         return { 
         }
+    },
+
+    // Every question component needs this method
+    update: function() {
     },
 
     render: function() {
@@ -285,6 +351,10 @@ var React = require('react');
  *     @surveyID: current survey id
  */
 module.exports = React.createClass({displayName: "exports",
+    // Every question component needs this method
+    update: function() {
+    },
+
     render: function() {
         return (
                 React.createElement("span", null)
@@ -307,6 +377,7 @@ var LittleButton = require('./baseComponents/LittleButton.js');
  *     @questionType: type constraint
  *     @language: current survey language
  *     @surveyID: current survey id
+ *     @disabled: boolean for disabling all inputs
  */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
@@ -317,6 +388,16 @@ module.exports = React.createClass({displayName: "exports",
         return { 
             questionCount: length,
         }
+    },
+
+    //Overriding React update method
+    update: function(nextProps, nextState) {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var length = answers.length === 0 ? 1 : answers.length;
+        this.setState({
+            questionCount: length,
+        });
     },
 
     /*
@@ -409,6 +490,7 @@ module.exports = React.createClass({displayName: "exports",
                                 type: self.props.questionType, 
                                 key: Math.random(), 
                                 index: idx, 
+                                disabled: self.props.disabled, 
                                 initValue: self.getAnswer(idx), 
                                 showMinus: self.state.questionCount > 1}
                             )
@@ -416,6 +498,7 @@ module.exports = React.createClass({displayName: "exports",
                 }), 
                 this.props.question.allow_multiple
                     ? React.createElement(LittleButton, {buttonFunction: this.addNewInput, 
+                        disabled: this.props.disabled, 
                         text: 'add another answer'})
                     : null
                 
@@ -450,6 +533,19 @@ module.exports = React.createClass({displayName: "exports",
             count: unsynced_submissions.length,
             online: navigator.onLine,
         }
+    },
+
+    // Force react to update
+    update: function() {
+        // Get all unsynced surveys
+        var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
+        // Get array of unsynced submissions to this survey
+        var unsynced_submissions = unsynced_surveys[this.props.surveyID] || [];
+
+        this.setState({ 
+            count: unsynced_submissions.length,
+            online: navigator.onLine,
+        });
     },
 
     buttonFunction: function(event) {
@@ -606,8 +702,7 @@ module.exports = React.createClass({displayName: "exports",
                         type: "checkbox", 
                         id: "dont-know", 
                         name: "dont-know", 
-                        value: "selected", 
-                        key: this.props.questionID}
+                        defaultChecked: this.props.checked}
                     ), 
                     React.createElement("label", {htmlFor: "dont-know"}, "I don't know the answer")
                 )
@@ -672,7 +767,10 @@ module.exports = React.createClass({displayName: "exports",
         var iconClass = "icon " + this.props.icon;
         return (
                 React.createElement("div", {className: "content-padded"}, 
-                    React.createElement("button", {className: "btn", onClick: this.props.buttonFunction}, 
+                    React.createElement("button", {className: "btn", 
+                        disabled: this.props.disabled, 
+                        onClick: this.props.buttonFunction}, 
+
                         this.props.icon ? React.createElement("span", {className: iconClass}) : null, 
                         this.props.text
                     )
@@ -838,11 +936,13 @@ module.exports = React.createClass({displayName: "exports",
                         step: this.getResponseStep(), 
                         placeholder: "Please provide a response.", 
                         onChange: this.onChange, 
-                        defaultValue: this.props.initValue
+                        defaultValue: this.props.initValue, 
+                        disabled: this.props.disabled
                      }, 
                      this.props.showMinus ? 
                         React.createElement("span", {
                             onClick: this.props.buttonFunction.bind(null, this.props.index), 
+                            disabled: this.props.disabled, 
                             className: "icon icon-close question__minus"}
                         )
                         : null
@@ -30047,6 +30147,7 @@ var Application = React.createClass({displayName: "Application",
         var nextState = this.state.state;
         var numQuestions = this.props.survey.nodes.length;
         var showDontKnow = false;
+        var showDontKnowBox = false;
 
         if (nextQuestion > 0 && nextQuestion < numQuestions) { 
             nextState = this.state.states.QUESTION;
@@ -30063,11 +30164,17 @@ var Application = React.createClass({displayName: "Application",
             this.onSave();
         }
 
+        if (this.state.states.QUESTION === nextState && showDontKnow) {
+            var questionID = questions[nextQuestion].id;
+            var response = this.refs.footer.getAnswer(questionID);
+            console.log("Footer response:", response);
+            showDontKnowBox = Boolean(response);
+        }
 
         this.setState({
             nextQuestion: nextQuestion,
             showDontKnow: showDontKnow,
-            showDontKnowBox: false,
+            showDontKnowBox: showDontKnowBox,
             state: nextState
         })
 
@@ -30083,6 +30190,7 @@ var Application = React.createClass({displayName: "Application",
         var nextState = this.state.state;
         var numQuestions = this.props.survey.nodes.length;
         var showDontKnow = false;
+        var showDontKnowBox = false;
         
         if (nextQuestion < numQuestions && nextQuestion > 0) {
             nextState = this.state.states.QUESTION;
@@ -30094,10 +30202,17 @@ var Application = React.createClass({displayName: "Application",
             nextQuestion = 0;
         }
 
+        if (this.state.states.QUESTION === nextState && showDontKnow) {
+            var questionID = questions[nextQuestion].id;
+            var response = this.refs.footer.getAnswer(questionID);
+            console.log("Footer response:", response);
+            showDontKnowBox = Boolean(response);
+        }
+
         this.setState({
             nextQuestion: nextQuestion,
             showDontKnow: showDontKnow,
-            showDontKnowBox: false,
+            showDontKnowBox: showDontKnowBox,
             state: nextState
         })
 
@@ -30190,12 +30305,28 @@ var Application = React.createClass({displayName: "Application",
                     var unsynced_submissions = unsynced_surveys[survey.survey_id] || [];
 
                     //XXX DOES NOT WORK, RESPONSE IS DIFFERENT THEN SUBMISSION
-                    var idx = unsynced_submissions.indexOf(survey);
+                    //XXX SERIOUSLY DONT FORGET THIS
+                    // Find unsynced_submission
+                    var idx = -1;
+                    unsynced_submissions.forEach(function(usurvey, i) {
+                        console.log(usurvey.save_time, survey.save_time)
+                        if (Date(usurvey.save_time) === Date(survey.save_time)) {
+                            idx = i;
+                            return false;
+                        }
+
+                        return true;
+                    });
+
                     console.log(idx, unsynced_submissions.length);
                     unsynced_submissions.splice(idx, 1);
 
                     unsynced_surveys[survey.survey_id] = unsynced_submissions;
                     localStorage['unsynced'] = JSON.stringify(unsynced_surveys);
+
+                    // Update splash page if still on it
+                    if (self.refs.splash)
+                        self.refs.splash.update();
                 },
                 error: function(err) {
                     console.log("error", err, survey);
@@ -30214,8 +30345,15 @@ var Application = React.createClass({displayName: "Application",
      * region
      */
     onCheckButton: function() {
+        // Force questions to update
+        if (this.state.state = this.state.states.QUESTION)
+            this.refs.question.update();
+
         this.setState({
             showDontKnowBox: this.state.showDontKnowBox ? false: true,
+            showDontKnow: this.state.showDontKnow,
+            state: this.state.state,
+            nextQuestion: this.state.nextQuestion,
         });
     },
 
@@ -30235,58 +30373,69 @@ var Application = React.createClass({displayName: "Application",
                 case 'multiple_choice':
                     return (
                             React.createElement(MultipleChoice, {
+                                ref: "question", 
                                 key: nextQuestion, 
                                 question: questions[nextQuestion], 
                                 questionType: questionType, 
                                 language: survey.default_language, 
-                                surveyID: survey.id}
+                                surveyID: survey.id, 
+                                disabled: this.state.showDontKnowBox}
                            )
                        )
 
                 case 'location':
                     return (
                             React.createElement(Location, {
+                                ref: "question", 
                                 key: nextQuestion, 
                                 question: questions[nextQuestion], 
                                 questionType: questionType, 
                                 language: survey.default_language, 
-                                surveyID: survey.id}
+                                surveyID: survey.id, 
+                                disabled: this.state.showDontKnowBox}
                            )
                        )
                 case 'facility':
                     return (
                             React.createElement(Facility, {
+                                ref: "question", 
                                 key: nextQuestion, 
                                 question: questions[nextQuestion], 
                                 questionType: questionType, 
                                 language: survey.default_language, 
-                                surveyID: survey.id}
+                                surveyID: survey.id, 
+                                disabled: this.state.showDontKnowBox}
                            )
                        )
                 case 'note':
                     return (
                             React.createElement(Note, {
+                                ref: "question", 
                                 key: nextQuestion, 
                                 question: questions[nextQuestion], 
                                 questionType: questionType, 
                                 language: survey.default_language, 
-                                surveyID: survey.id}
+                                surveyID: survey.id, 
+                                disabled: this.state.showDontKnowBox}
                            )
                        )
                 default:
                     return (
                             React.createElement(Question, {
+                                ref: "question", 
                                 key: nextQuestion, 
                                 question: questions[nextQuestion], 
                                 questionType: questionType, 
                                 language: survey.default_language, 
-                                surveyID: survey.id}
+                                surveyID: survey.id, 
+                                disabled: this.state.showDontKnowBox}
                            )
                        )
             }
         } else if (state === this.state.states.SUBMIT) {
             return (
                     React.createElement(Submit, {
+                        ref: "submit", 
                         surveyID: survey.id, 
                         language: survey.default_language}
                     )
@@ -30294,6 +30443,7 @@ var Application = React.createClass({displayName: "Application",
         } else {
             return (
                     React.createElement(Splash, {
+                        ref: "splash", 
                         surveyID: survey.id, 
                         language: survey.default_language, 
                         buttonFunction: this.onSubmit}
@@ -30357,6 +30507,7 @@ var Application = React.createClass({displayName: "Application",
         var state = this.state.state;
         var nextQuestion = this.state.nextQuestion;
         var questions = this.props.survey.nodes;
+        var surveyID = this.props.survey.id;
         var questionID = questions[nextQuestion] && questions[nextQuestion].id 
             || this.state.state;
 
@@ -30370,15 +30521,19 @@ var Application = React.createClass({displayName: "Application",
 
         return (
                 React.createElement("div", {id: "wrapper"}, 
-                    React.createElement(Header, {buttonFunction: this.onPrevButton, 
+                    React.createElement(Header, {
+                        ref: "header", 
+                        buttonFunction: this.onPrevButton, 
                         number: nextQuestion, 
                         total: questions.length, 
                         splash: state === this.state.states.SPLASH}), 
-                    React.createElement("div", {className: contentClasses}, 
+                    React.createElement("div", {
+                        className: contentClasses}, 
                         React.createElement(Title, {title: this.getTitle(), message: this.getMessage()}), 
                         this.getContent()
                     ), 
                     React.createElement(Footer, {
+                        ref: "footer", 
                         showDontKnow: this.state.showDontKnow, 
                         showDontKnowBox: this.state.showDontKnowBox, 
                         buttonFunction: this.onNextButton, 
@@ -30386,7 +30541,8 @@ var Application = React.createClass({displayName: "Application",
                         buttonType: state === this.state.states.QUESTION 
                             ? 'btn-primary': 'btn-positive', 
                         buttonText: this.getButtonText(), 
-                        questionID: questionID}
+                        questionID: questionID, 
+                        surveyID: surveyID}
                      )
 
                 )

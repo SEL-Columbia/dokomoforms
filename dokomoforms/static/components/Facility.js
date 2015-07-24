@@ -15,6 +15,7 @@ var Select = require('./baseComponents/Select.js');
  *     @questionType: type constraint
  *     @language: current survey language
  *     @surveyID: current survey id
+ *     @disabled: boolean for disabling all inputs
  */
 module.exports = React.createClass({
     getInitialState: function() {
@@ -22,6 +23,10 @@ module.exports = React.createClass({
             facilities: [],
             addFacility: true,
         }
+    },
+
+    // Every question component needs this method
+    update: function() {
     },
 
     addNewInput: function() {
