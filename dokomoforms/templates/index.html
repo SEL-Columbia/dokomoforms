@@ -328,7 +328,7 @@
 			    "data": {
 			        draw: data.draw,
 				offset: data.start,
-				limit: data.length == -1 ? undefined : data.length,
+				limit: data.length === -1 ? undefined : data.length,
 				order_by: data.order.map(function(ord) {
 		                    return data.columns[ord.column].name + ':' + ord.dir;
 				}).join(','),

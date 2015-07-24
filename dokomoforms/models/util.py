@@ -308,6 +308,10 @@ def column_search(query, *,
     :return: The modified query.
     """
     column = getattr(model_cls, column_name)
+    if not regex:
+        search_term = search_term.translate(str.maketrans(
+            {'%': '\%', '_': '\_', '\\': r'\\'}
+        ))
     # JSONB column
     if str(column.type) == 'JSONB':
         # Search across languages
