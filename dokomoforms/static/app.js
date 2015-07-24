@@ -38,7 +38,7 @@ var Application = React.createClass({
         return { 
             showDontKnow: false,
             showDontKnowBox: false,
-            nextQuestion: 0,
+            nextQuestion: -1,
             states : {
                 SPLASH : 1,
                 QUESTION : 2,
@@ -60,7 +60,7 @@ var Application = React.createClass({
         var showDontKnow = false;
         var showDontKnowBox = false;
 
-        if (nextQuestion > 0 && nextQuestion < numQuestions) { 
+        if (nextQuestion > -1 && nextQuestion < numQuestions) { 
             nextState = this.state.states.QUESTION;
             showDontKnow = questions[nextQuestion].allow_dont_know
         }
@@ -70,7 +70,7 @@ var Application = React.createClass({
         }
 
         if (nextQuestion > numQuestions) {
-            nextQuestion = 0
+            nextQuestion = -1
             nextState = this.state.states.SPLASH
             this.onSave();
         }
@@ -108,9 +108,9 @@ var Application = React.createClass({
             showDontKnow = questions[nextQuestion].allow_dont_know
         }
 
-        if (nextQuestion <= 0) { 
+        if (nextQuestion <= -1) { 
             nextState = this.state.states.SPLASH;
-            nextQuestion = 0;
+            nextQuestion = -1;
         }
 
         if (this.state.states.QUESTION === nextState && showDontKnow) {
@@ -180,6 +180,10 @@ var Application = React.createClass({
 
     },
 
+    /*
+     * Loop through unsynced submissions for active survey and POST
+     * Only modifies localStorage on success
+     */
     onSubmit: function() {
         function getCookie(name) {
             var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
@@ -237,7 +241,7 @@ var Application = React.createClass({
                     localStorage['unsynced'] = JSON.stringify(unsynced_surveys);
 
                     // Update splash page if still on it
-                    if (self.refs.splash)
+                    if (self.state.state === self.state.states.SPLASH)
                         self.refs.splash.update();
                 },
                 error: function(err) {
@@ -436,8 +440,8 @@ var Application = React.createClass({
                     <Header 
                         ref="header"
                         buttonFunction={this.onPrevButton} 
-                        number={nextQuestion}
-                        total={questions.length}
+                        number={nextQuestion + 1}
+                        total={questions.length + 1}
                         splash={state === this.state.states.SPLASH}/>
                     <div 
                         className={contentClasses}>
