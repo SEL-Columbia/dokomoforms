@@ -4,7 +4,9 @@ from collections import OrderedDict
 
 import sqlalchemy as sa
 from sqlalchemy import func
-from sqlalchemy.sql.functions import current_timestamp, max as sqlmax
+from sqlalchemy.sql.functions import (
+    current_timestamp, max as sqlmax, min as sqlmin
+)
 from sqlalchemy.sql.elements import quoted_name
 from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import relationship
@@ -86,6 +88,25 @@ class Survey(Base):
             sa.select([func.count(sub_cls.id)])
             .where(sub_cls.survey_id == cls.id)
             .label('num_submissions')
+        )
+
+    @hybrid_property
+    def earliest_submission_time(self):
+        """The time of the earliest submission to this survey (Python)."""
+        # TODO: test this
+        if self.submissions:
+            return self.submissions[0].save_time
+        return None
+
+    @earliest_submission_time.expression
+    def earliest_submission_time(cls):
+        """The time of the earliest submission to this survey (SQL)."""
+        # TODO: test this
+        sub_cls = cls.submissions.mapper.class_
+        return (
+            sa.select([sqlmin(sub_cls.save_time)])
+            .where(sub_cls.survey_id == cls.id)
+            .label('earliest_submission_time')
         )
 
     @hybrid_property

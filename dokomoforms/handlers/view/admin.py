@@ -25,14 +25,10 @@ class ViewSurveyHandler(BaseHandler):
     def get(self, survey_id: str):
         """GET the admin page."""
         # TODO: should this be done in JS?
-        survey_stats = 'NOIMPL'
-        question_stats = 'NOIMPL'
         survey = get_survey_for_handler(self, survey_id)
         self.render(
             'view_survey.html',
             survey=survey,
-            question_stats=question_stats,
-            survey_stats=survey_stats
         )
 
 

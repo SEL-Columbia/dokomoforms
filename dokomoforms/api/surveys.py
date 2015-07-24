@@ -9,11 +9,11 @@ from sqlalchemy import cast, Date
 from sqlalchemy.sql.expression import func
 
 from dokomoforms.api import BaseResource
-from dokomoforms.api.submissions import _create_submission
+from dokomoforms.api.submissions import SubmissionResource, _create_submission
 from dokomoforms.models import (
     Survey, Submission, SubSurvey, Choice,
     construct_survey, construct_survey_node, construct_bucket,
-    User,
+    SurveyCreator,
     Node, construct_node
 )
 
@@ -168,19 +168,18 @@ class SurveyResource(BaseResource):
 
     def list_submissions(self, survey_id):
         """List all submissions for a survey."""
-        submissions = (
+        sub_resource = SubmissionResource()
+        sub_resource.ref_rh = self.ref_rh
+        where = Submission.survey_id == survey_id
+        result = sub_resource.list(where=where)
+        response = sub_resource.wrap_list_response(result)
+        response['total_entries'] = (
             self.session
-            .query(Submission)
+            .query(func.count(Submission.id))
             .filter_by(survey_id=survey_id)
-            .order_by(Submission.save_time)
-            .all()
+            .scalar()
         )
-
-        response = {
-            'survey_id': survey_id,
-            'submissions': submissions
-        }
-        response = self._add_meta_props(response)
+        response['survey_id'] = survey_id
         return response
 
     def stats(self, survey_id):
@@ -230,19 +229,21 @@ class SurveyResource(BaseResource):
         If a survey_id is specified, only activity from that
         survey will be returned.
         """
-        user = self.current_user_model
+        user_id = self.current_user_model.id
 
         # number of days prior to return
         today = datetime.date.today()
         from_date = today - datetime.timedelta(days=days - 1)
 
         # truncate the datetime to just the day
-        submission_date = cast(Submission.save_time, Date)
+        submission_date = (
+            cast(Submission.save_time, Date).label('submission_date')
+        )
 
         query = (
             self.session
             .query(submission_date, func.count())
-            .filter(User.id == user.id)
+            .filter(SurveyCreator.id == user_id)
             .filter(Submission.save_time >= from_date)
         )
 
@@ -251,7 +252,7 @@ class SurveyResource(BaseResource):
 
         query = (
             query
-            .group_by(submission_date)
+            .group_by('submission_date')
             .order_by(submission_date.desc())
         )
 
