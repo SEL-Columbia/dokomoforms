@@ -190,6 +190,7 @@
             $.getJSON('/api/v0/submissions?limit='+limit, function(data) {
                 var submissions = data.submissions;
                 if (submissions.length) {
+		    // TODO: do we want a grey empty map if no location data?
                     $(document).on("shown.bs.tab", 'a[href="#recent-map"]', function() {
                         if (!map) {
                             map = L.map('recent-map-container', {
@@ -202,8 +203,7 @@
 
                             var markers = [];
                             _.each(submissions, function(submission) {
-                                var submission = submission.result,
-                                    answers = submission.answers,
+                                var answers = submission.answers,
                                     location = _.find(answers, function(answer) {
                                         return answer.type_constraint_name == 'location'
                                     });
