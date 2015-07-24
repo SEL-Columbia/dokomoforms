@@ -58,6 +58,7 @@ var Application = React.createClass({
         var nextState = this.state.state;
         var numQuestions = this.props.survey.nodes.length;
         var showDontKnow = false;
+        var showDontKnowBox = false;
 
         if (nextQuestion > 0 && nextQuestion < numQuestions) { 
             nextState = this.state.states.QUESTION;
@@ -74,11 +75,17 @@ var Application = React.createClass({
             this.onSave();
         }
 
+        if (this.state.states.QUESTION === nextState && showDontKnow) {
+            var questionID = questions[nextQuestion].id;
+            var response = this.refs.footer.getAnswer(questionID);
+            console.log("Footer response:", response);
+            showDontKnowBox = Boolean(response);
+        }
 
         this.setState({
             nextQuestion: nextQuestion,
             showDontKnow: showDontKnow,
-            showDontKnowBox: false,
+            showDontKnowBox: showDontKnowBox,
             state: nextState
         })
 
@@ -94,6 +101,7 @@ var Application = React.createClass({
         var nextState = this.state.state;
         var numQuestions = this.props.survey.nodes.length;
         var showDontKnow = false;
+        var showDontKnowBox = false;
         
         if (nextQuestion < numQuestions && nextQuestion > 0) {
             nextState = this.state.states.QUESTION;
@@ -105,10 +113,17 @@ var Application = React.createClass({
             nextQuestion = 0;
         }
 
+        if (this.state.states.QUESTION === nextState && showDontKnow) {
+            var questionID = questions[nextQuestion].id;
+            var response = this.refs.footer.getAnswer(questionID);
+            console.log("Footer response:", response);
+            showDontKnowBox = Boolean(response);
+        }
+
         this.setState({
             nextQuestion: nextQuestion,
             showDontKnow: showDontKnow,
-            showDontKnowBox: false,
+            showDontKnowBox: showDontKnowBox,
             state: nextState
         })
 
@@ -200,13 +215,30 @@ var Application = React.createClass({
                     // Get array of unsynced submissions to this survey
                     var unsynced_submissions = unsynced_surveys[survey.survey_id] || [];
 
-                    //XXX DOES NOT WORK, RESPONSE IS DIFFERENT THEN SUBMISSION
-                    var idx = unsynced_submissions.indexOf(survey);
+                    // Find unsynced_submission
+                    var idx = -1;
+                    unsynced_submissions.forEach(function(usurvey, i) {
+                        if (Date(usurvey.save_time) === Date(survey.save_time)) {
+                            idx = i;
+                            return false;
+                        }
+
+                        return true;
+                    });
+
+                    // Not sure what happened, do not update localStorage
+                    if (idx === -1) 
+                        return;
+
                     console.log(idx, unsynced_submissions.length);
                     unsynced_submissions.splice(idx, 1);
 
                     unsynced_surveys[survey.survey_id] = unsynced_submissions;
                     localStorage['unsynced'] = JSON.stringify(unsynced_surveys);
+
+                    // Update splash page if still on it
+                    if (self.refs.splash)
+                        self.refs.splash.update();
                 },
                 error: function(err) {
                     console.log("error", err, survey);
@@ -225,8 +257,15 @@ var Application = React.createClass({
      * region
      */
     onCheckButton: function() {
+        // Force questions to update
+        if (this.state.state = this.state.states.QUESTION)
+            this.refs.question.update();
+
         this.setState({
             showDontKnowBox: this.state.showDontKnowBox ? false: true,
+            showDontKnow: this.state.showDontKnow,
+            state: this.state.state,
+            nextQuestion: this.state.nextQuestion,
         });
     },
 
@@ -246,6 +285,7 @@ var Application = React.createClass({
                 case 'multiple_choice':
                     return (
                             <MultipleChoice 
+                                ref="question"
                                 key={nextQuestion} 
                                 question={questions[nextQuestion]} 
                                 questionType={questionType}
@@ -258,6 +298,7 @@ var Application = React.createClass({
                 case 'location':
                     return (
                             <Location
+                                ref="question"
                                 key={nextQuestion} 
                                 question={questions[nextQuestion]} 
                                 questionType={questionType}
@@ -269,6 +310,7 @@ var Application = React.createClass({
                 case 'facility':
                     return (
                             <Facility
+                                ref="question"
                                 key={nextQuestion} 
                                 question={questions[nextQuestion]} 
                                 questionType={questionType}
@@ -280,6 +322,7 @@ var Application = React.createClass({
                 case 'note':
                     return (
                             <Note
+                                ref="question"
                                 key={nextQuestion} 
                                 question={questions[nextQuestion]} 
                                 questionType={questionType}
@@ -291,6 +334,7 @@ var Application = React.createClass({
                 default:
                     return (
                             <Question 
+                                ref="question"
                                 key={nextQuestion} 
                                 question={questions[nextQuestion]} 
                                 questionType={questionType}
@@ -303,6 +347,7 @@ var Application = React.createClass({
         } else if (state === this.state.states.SUBMIT) {
             return (
                     <Submit
+                        ref="submit"
                         surveyID={survey.id}
                         language={survey.default_language}
                     />
@@ -310,6 +355,7 @@ var Application = React.createClass({
         } else {
             return (
                     <Splash 
+                        ref="splash"
                         surveyID={survey.id}
                         language={survey.default_language}
                         buttonFunction={this.onSubmit}
@@ -387,15 +433,19 @@ var Application = React.createClass({
 
         return (
                 <div id="wrapper">
-                    <Header buttonFunction={this.onPrevButton} 
+                    <Header 
+                        ref="header"
+                        buttonFunction={this.onPrevButton} 
                         number={nextQuestion}
                         total={questions.length}
                         splash={state === this.state.states.SPLASH}/>
-                    <div className={contentClasses}>
+                    <div 
+                        className={contentClasses}>
                         <Title title={this.getTitle()} message={this.getMessage()} />
                         {this.getContent()}
                     </div>
                     <Footer 
+                        ref="footer"
                         showDontKnow={this.state.showDontKnow} 
                         showDontKnowBox={this.state.showDontKnowBox} 
                         buttonFunction={this.onNextButton}

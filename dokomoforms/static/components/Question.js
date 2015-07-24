@@ -25,6 +25,16 @@ module.exports = React.createClass({
         }
     },
 
+    //Overriding React update method
+    update: function(nextProps, nextState) {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var length = answers.length === 0 ? 1 : answers.length;
+        this.setState({
+            questionCount: length,
+        });
+    },
+
     /*
      * Add new input if and only if they've responded to all previous inputs
      */

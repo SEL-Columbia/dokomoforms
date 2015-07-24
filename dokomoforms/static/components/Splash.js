@@ -25,6 +25,19 @@ module.exports = React.createClass({
         }
     },
 
+    // Force react to update
+    update: function() {
+        // Get all unsynced surveys
+        var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
+        // Get array of unsynced submissions to this survey
+        var unsynced_submissions = unsynced_surveys[this.props.surveyID] || [];
+
+        this.setState({ 
+            count: unsynced_submissions.length,
+            online: navigator.onLine,
+        });
+    },
+
     buttonFunction: function(event) {
         if (this.props.buttonFunction)
             this.props.buttonFunction(event);

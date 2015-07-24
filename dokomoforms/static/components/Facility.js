@@ -25,6 +25,10 @@ module.exports = React.createClass({
         }
     },
 
+    // Every question component needs this method
+    update: function() {
+    },
+
     addNewInput: function() {
         this.setState({
             questionCount: this.state.questionCount + 1

@@ -17,6 +17,10 @@ module.exports = React.createClass({
         }
     },
 
+    // Every question component needs this method
+    update: function() {
+    },
+
     render: function() {
         var self = this;
         var choices = this.props.question.choices.map(function(choice) {

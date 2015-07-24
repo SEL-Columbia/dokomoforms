@@ -22,6 +22,7 @@ module.exports = React.createClass({
             return (<DontKnow 
                         checkBoxFunction={this.onCheck} 
                         key={this.props.questionID}
+                        checked={this.props.showDontKnowBox}
                     />)
 
         return null;
@@ -38,7 +39,7 @@ module.exports = React.createClass({
 
         answers = [{
             'response': value, 
-            'response_type': 'dont-know'
+            'response_type': 'dont_know'
         }];
 
         survey[this.props.questionID] = answers;
@@ -60,10 +61,10 @@ module.exports = React.createClass({
     /*
      * Get default value for an input at a given index from localStorage
      */
-    getAnswer: function() {
+    getAnswer: function(questionID) {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
-        var answers = survey[this.props.questionID] || [];
-        return answers[0] && answers[0].response_type === 'dont-know' && answers[0].response || null;
+        var answers = survey[questionID] || [];
+        return answers[0] && answers[0].response_type === 'dont_know' && answers[0].response || null;
     },
 
 
@@ -85,7 +86,7 @@ module.exports = React.createClass({
                         <ResponseField 
                                 index={0}
                                 onInput={self.onInput}
-                                initValue={self.getAnswer(0)} 
+                                initValue={self.getAnswer(self.props.questionID)} 
                                 type={'text'}
                         /> 
                     : null}

@@ -27,6 +27,10 @@ module.exports = React.createClass({
         })
     },
 
+    // Every question component needs this method
+    update: function() {
+    },
+
     removeInput: function() {
         if (!(this.state.questionCount > 1))
             return;
