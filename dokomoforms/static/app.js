@@ -261,16 +261,17 @@ var Application = React.createClass({
      * region
      */
     onCheckButton: function() {
-        // Force questions to update
-        if (this.state.state = this.state.states.QUESTION)
-            this.refs.question.update();
-
         this.setState({
             showDontKnowBox: this.state.showDontKnowBox ? false: true,
             showDontKnow: this.state.showDontKnow,
             state: this.state.state,
             nextQuestion: this.state.nextQuestion,
         });
+
+        // Force questions to update
+        if (this.state.state = this.state.states.QUESTION)
+            this.refs.question.update();
+
     },
 
     /*

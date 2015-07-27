@@ -433,8 +433,6 @@ var Select = require('./baseComponents/Select.js');
  */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
-        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
-        var answers = survey[this.props.question.id] || [];
         return { 
         }
     },
@@ -445,10 +443,6 @@ module.exports = React.createClass({displayName: "exports",
      * (usually localStorage)
      */
     update: function() {
-        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
-        var answers = survey[this.props.question.id] || [];
-        this.setState({
-        });
     },
 
     /*
@@ -541,7 +535,9 @@ module.exports = React.createClass({displayName: "exports",
             }
         });
 
+        // Key is used as hack to rerender select on dontKnow state change
         return (React.createElement(Select, {
+                    key: this.props.disabled, 
                     choices: choices, 
                     withOther: this.props.question.allow_other, 
                     multiSelect: this.props.question.allow_multiple, 
@@ -30587,16 +30583,17 @@ var Application = React.createClass({displayName: "Application",
      * region
      */
     onCheckButton: function() {
-        // Force questions to update
-        if (this.state.state = this.state.states.QUESTION)
-            this.refs.question.update();
-
         this.setState({
             showDontKnowBox: this.state.showDontKnowBox ? false: true,
             showDontKnow: this.state.showDontKnow,
             state: this.state.state,
             nextQuestion: this.state.nextQuestion,
         });
+
+        // Force questions to update
+        if (this.state.state = this.state.states.QUESTION)
+            this.refs.question.update();
+
     },
 
     /*

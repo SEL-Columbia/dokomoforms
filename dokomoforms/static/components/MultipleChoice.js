@@ -13,8 +13,6 @@ var Select = require('./baseComponents/Select.js');
  */
 module.exports = React.createClass({
     getInitialState: function() {
-        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
-        var answers = survey[this.props.question.id] || [];
         return { 
         }
     },
@@ -25,10 +23,6 @@ module.exports = React.createClass({
      * (usually localStorage)
      */
     update: function() {
-        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
-        var answers = survey[this.props.question.id] || [];
-        this.setState({
-        });
     },
 
     /*
@@ -121,7 +115,9 @@ module.exports = React.createClass({
             }
         });
 
+        // Key is used as hack to rerender select on dontKnow state change
         return (<Select 
+                    key={this.props.disabled}
                     choices={choices}
                     withOther={this.props.question.allow_other}
                     multiSelect={this.props.question.allow_multiple}
