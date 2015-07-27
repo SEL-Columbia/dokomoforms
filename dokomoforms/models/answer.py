@@ -10,6 +10,8 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql import func
 # from sqlalchemy.sql.type_api import UserDefinedType
 
+from tornado.escape import json_decode
+
 from geoalchemy2 import Geometry
 
 from dokomoforms.models import util, Base, node_type_enum
@@ -118,6 +120,14 @@ class Answer(Base):
         if response_type == 'answer':
             if self.type_constraint == 'multiple_choice':
                 response = self.choice
+            elif self.type_constraint == 'location':
+                lng, lat = json_decode(self.geo_json)['coordinates']
+                response = {'lng': lng, 'lat': lat}
+            elif self.type_constraint == 'facility':
+                geo_json = json_decode(response['facility_location'])
+                lng, lat = geo_json['coordinates']
+                response['facility_location'] = {'lng': lng, 'lat': lat}
+
             else:
                 response = self.answer
         return OrderedDict((

@@ -205,22 +205,21 @@
                             _.each(submissions, function(submission) {
                                 var answers = submission.answers,
                                     location = _.find(answers, function(answer) {
-                                        return answer.type_constraint_name == 'location'
+				        return ('lng' in answer.response) && ('lat' in answer.response);
                                     });
-                                if (!location || !location.answer) {
+                                if (!location) {
                                     return;
                                 }
-                                location = location.answer;
 
-                                // console.log('location:', location);
-                                // stored lon/lat in revisit, switch around
-                                var marker = new L.marker([location[1], location[0]], {
+                                coords = location.response;
+
+                                var marker = new L.marker([coords.lat, coords.lng], {
                                     riseOnHover: true
                                 });
-                                marker.options.icon = new L.icon({iconUrl: "/static/img/icons/normal_base.png", iconAnchor: [15, 48]});
+                                marker.options.icon = new L.icon({iconUrl: "/static/img/icons/normal_base.png", iconAnchor: [13, 30]});
                                 // marker.bindPopup();
                                 marker.on('click', function() {
-                                    openSubmissionDetailModal(submission.submission_id);
+                                    openSubmissionDetailModal(submission.id);
                                 });
                                 markers.push(marker);
 

@@ -2078,7 +2078,7 @@ class TestSubmission(DokoTest):
                             ('response_type', 'answer'),
                             (
                                 'response',
-                                '{"type":"Point","coordinates":[5,3]}'
+                                {'lng': 5, 'lat': 3}
                             ),
                         )),
                     ]
