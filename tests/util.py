@@ -16,7 +16,7 @@ from tornado.escape import json_encode
 
 from dokomoforms.options import inject_options, parse_options
 
-inject_options(schema='doko_test')
+inject_options(schema='doko_test', debug='True')
 parse_options()
 
 from sqlalchemy import DDL

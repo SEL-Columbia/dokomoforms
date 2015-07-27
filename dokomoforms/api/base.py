@@ -116,7 +116,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         )
 
         if isinstance(err, tornado.web.HTTPError):
-            restless_error = exc.HttpError(err.reason)
+            restless_error = exc.HttpError(err.log_message)
             restless_error.status = err.status_code
             err = restless_error
         elif isinstance(err, understood):
