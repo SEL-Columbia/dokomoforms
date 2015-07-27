@@ -121,7 +121,7 @@ module.exports = React.createClass({displayName: "exports",
      * Record new response into localStorage, response has been validated
      * if this callback is fired 
      */
-    onInput: function(index, value) {
+    onInput: function(value, index) {
 
         console.log("Hey", index, value);
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
@@ -317,13 +317,14 @@ module.exports = React.createClass({displayName: "exports",
         this.setState({
             questionCount: this.state.questionCount - 1
         })
-
-        //this.forceUpdate();
     },
 
     /*
-     * Record new response into localStorage, response has been validated
-     * if this callback is fired 
+     * Retrieve location and record into localStorage on success.
+     * Updates questionCount on success, triggering rerender of page
+     * causing input fields to have values reloaded.
+     *
+     * Only updates the LAST active input field.
      */
     onLocate: function() {
         var self = this;
@@ -432,14 +433,106 @@ var Select = require('./baseComponents/Select.js');
  */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
         return { 
         }
     },
 
-    // Every question component needs this method
+    /*
+     * Hack to force react to update child components
+     * Gets called by parent element through 'refs' when state of something changed 
+     * (usually localStorage)
+     */
     update: function() {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        this.setState({
+        });
     },
 
+    /*
+     * Record all selected options into localStorage
+     */
+    onSelect: function(values) {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        answers = [];
+        values.forEach(function(value, index) {
+            if (value == 'null')
+                return;
+
+            answers[index] = {
+                'response': value === 'other' ? '' : value, 
+                'response_type': value === 'other' ? 'other' : 'answer'
+            }
+        });
+
+        console.log("values", values, answers)
+        survey[this.props.question.id] = answers;
+        localStorage[this.props.surveyID] = JSON.stringify(survey);
+
+    },
+
+    /*
+     * Record other response into existing slot of answer object in localStorage
+     * Callback is only called on validated input
+     */
+    onInput: function(value) {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+
+        answers.forEach(function(answer, index) {
+            if (answer.response_type === 'other') {
+                answer.response = value;
+                return false;
+            }
+            return true;
+        });
+
+        survey[this.props.question.id] = answers;
+        localStorage[this.props.surveyID] = JSON.stringify(survey);
+
+    },
+
+    /*
+     * Get all selected options from localStorage
+     */
+    getSelection: function() {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+
+        var values = [];
+        answers.forEach(function(answer, index) {
+            values[index] = answer.response;
+            if (answer.response_type === 'other')
+                values[index] = 'other';
+        });
+
+        console.log("values", values)
+        return values;
+    },
+
+    /*
+     * Get other response if any from localStorage 
+     */
+    getAnswer: function() {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+
+        var response = null;
+        answers.forEach(function(answer, index) {
+            if (answer.response_type === 'other') {
+                response = answer.response;
+                return false;
+            }
+
+            return true;
+        });
+
+        console.log("response", response);
+        return response;
+    },
+    
     render: function() {
         var self = this;
         var choices = this.props.question.choices.map(function(choice) {
@@ -452,7 +545,12 @@ module.exports = React.createClass({displayName: "exports",
         return (React.createElement(Select, {
                     choices: choices, 
                     withOther: this.props.question.allow_other, 
-                    multiSelect: this.props.question.allow_multiple}
+                    multiSelect: this.props.question.allow_multiple, 
+                    disabled: this.props.disabled, 
+                    initValue: this.getAnswer(), 
+                    initSelect: this.getSelection(), 
+                    onSelect: this.onSelect, 
+                    onInput: this.onInput}
                 ))
     }
 });
@@ -567,7 +665,7 @@ module.exports = React.createClass({displayName: "exports",
      * Record new response into localStorage, response has been validated
      * if this callback is fired 
      */
-    onInput: function(index, value) {
+    onInput: function(value, index) {
 
         console.log("Hey", index, value);
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
@@ -1046,7 +1144,7 @@ module.exports = React.createClass({displayName: "exports",
         var value = this.validate(event.target.value);
         console.log(event.target.value);
         if (this.props.onInput && value !== null)
-            this.props.onInput(this.props.index, value);
+            this.props.onInput(value, this.props.index);
     },
 
     render: function() {
@@ -1119,19 +1217,26 @@ ResponseField = require('./ResponseField.js');
  *  @choices: Array of choices in Select, expects a dict with value and text
  *  @withOther: Allow for other responses, adds it to the choices and renders 
  *      a ResponseField when selected
+ *  @onInput: What to do on valid other input
+ *  @onSelect: What to do on selection
  */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
-        return { showOther: false }
+        return { 
+            showOther: this.props.initSelect.indexOf('other') > -1
+        }
     },
 
     onChange: function(e) {
         var foundOther = false;
+        var options = [];
         for (var i = 0; i < e.target.selectedOptions.length; i++) {
             option = e.target.selectedOptions[i]; 
             foundOther = foundOther | option.value === "other";
+            options[i] = option.value;
         }
 
+        this.props.onSelect(options);
         this.setState({showOther: foundOther})
     },
 
@@ -1142,7 +1247,11 @@ module.exports = React.createClass({displayName: "exports",
                 React.createElement("div", {className: "content-padded"}, 
                     React.createElement("select", {className: "noselect", onChange: this.onChange, 
                             multiple: this.props.multiSelect, 
-                            size: size
+                            size: size, 
+                            defaultValue: this.props.multiSelect 
+                                ? this.props.initSelect
+                                : this.props.initSelect[0]
+                            
                     }, 
 
                     React.createElement("option", {key: "null", value: "null"}, "Please choose an option"), 
@@ -1157,7 +1266,13 @@ module.exports = React.createClass({displayName: "exports",
                         React.createElement("option", {key: "other", value: "other"}, " Other ") 
                         : null
                     ), 
-                    this.state.showOther ? React.createElement(ResponseField, null): null
+                    this.state.showOther 
+                        ?   React.createElement(ResponseField, {
+                                onInput: this.props.onInput, 
+                                initValue: this.props.initValue}
+                            )
+                        :   null
+                    
                 )
                )
 
