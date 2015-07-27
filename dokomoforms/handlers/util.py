@@ -131,7 +131,5 @@ class BaseAPIHandler(BaseHandler):
         return self.application._api_root_path
 
     def check_xsrf_cookie(self):
-        """Do not check XSRF for an API request."""
-        headers = self.request.headers
-        if 'Token' not in headers or 'Email' not in headers:
-            super().check_xsrf_cookie()
+        """Do not check XSRF for an API request (usually)."""
+        return None

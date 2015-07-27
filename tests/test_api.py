@@ -86,13 +86,6 @@ class TestAuthentication(DokoHTTPTest):
         response = self.fetch(url, method='GET', _logged_in_user=None)
         self.assertEqual(response.code, 401, msg=response.body)
 
-    def test_is_authenticated_logged_in(self):
-        fake_resource = lambda: None
-        fake_r_handler = lambda: None
-        fake_r_handler.current_user = object()
-        fake_resource.r_handler = fake_r_handler
-        self.assertTrue(BaseResource.is_authenticated(fake_resource))
-
     def test_is_authenticated_api_token(self):
         user = (
             self.session
@@ -4615,8 +4608,7 @@ class TestUserApi(DokoHTTPTest):
             method='POST', body=json_encode(body),
             _logged_in_user=None, _disable_xsrf=False,
         )
-        self.assertEqual(api_response.code, 403, msg=api_response.body)
-        self.assertIn('xsrf', api_response.body.decode())
+        self.assertEqual(api_response.code, 401, msg=api_response.body)
 
     def test_missing_api_headers_in_post_logged_in(self):
         api_url = self.api_root + '/nodes'

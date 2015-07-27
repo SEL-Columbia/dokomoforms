@@ -14,8 +14,10 @@ from sqlalchemy.sql.functions import count
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
 
+import tornado.web
+
 from dokomoforms.api.serializer import ModelJSONSerializer
-from dokomoforms.handlers.util import BaseAPIHandler
+from dokomoforms.handlers.util import BaseHandler, BaseAPIHandler
 from dokomoforms.models import SurveyCreator, Email
 from dokomoforms.models.util import column_search, get_fields_subset
 from dokomoforms.exc import DokomoError
@@ -104,14 +106,20 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
     def handle_error(self, err):
         """Generate a serialized error message.
 
-        This turns expected errors into 400 BAD REQUEST instead of 500
-        INTERNAL SERVER ERROR.
+        If the error came from Tornado, pass it along as such.
+        Otherwise, turn certain expected errors into 400 BAD REQUEST instead
+        of 500 INTERNAL SERVER ERROR.
         """
         understood = (
             KeyError, ValueError, TypeError, AttributeError,
             SQLAlchemyError, DokomoError
         )
-        if isinstance(err, understood):
+
+        if isinstance(err, tornado.web.HTTPError):
+            restless_error = exc.HttpError(err.reason)
+            restless_error.status = err.status_code
+            err = restless_error
+        elif isinstance(err, understood):
             err = exc.BadRequest(err)
         return super().handle_error(err)
 
@@ -145,10 +153,14 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
 
         return full_response
 
+    def _check_xsrf_cookie(self):
+        return BaseHandler.check_xsrf_cookie(self.r_handler)
+
     def is_authenticated(self):
         """Return whether the request has been authenticated."""
         # A logged-in user has already authenticated.
         if self.r_handler.current_user is not None:
+            self._check_xsrf_cookie()
             return True
 
         # A SurveyCreator can log in with a token.

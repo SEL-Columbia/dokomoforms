@@ -30,8 +30,11 @@ def _create_submission(self, survey):
     # Unauthenticated submissions are only allowed if the survey_type is
     # 'public'.
     authenticated = super(self.__class__, self).is_authenticated()
-    if not authenticated and survey.survey_type != 'public':
-        raise exc.Unauthorized()
+    if not authenticated:
+        if survey.survey_type == 'public':
+            self._check_xsrf_cookie()
+        else:
+            raise exc.Unauthorized()
 
     # If logged in, add enumerator
     if self.current_user_model is not None:
