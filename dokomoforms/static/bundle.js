@@ -460,11 +460,10 @@ module.exports = React.createClass({displayName: "exports",
         values.forEach(function(value, index) {
             if (value == 'null')
                 return;
-
-            answers[index] = {
+            answers.push({
                 'response': value === 'other' ? '' : value, 
                 'response_type': value === 'other' ? 'other' : 'answer'
-            }
+            });
         });
 
         console.log("values", values, answers)
@@ -1250,8 +1249,9 @@ module.exports = React.createClass({displayName: "exports",
                             size: size, 
                             defaultValue: this.props.multiSelect 
                                 ? this.props.initSelect
-                                : this.props.initSelect[0]
+                                : this.props.initSelect[0], 
                             
+                            disabled: this.props.disabled
                     }, 
 
                     React.createElement("option", {key: "null", value: "null"}, "Please choose an option"), 
@@ -1268,6 +1268,7 @@ module.exports = React.createClass({displayName: "exports",
                     ), 
                     this.state.showOther 
                         ?   React.createElement(ResponseField, {
+                                disabled: this.props.disabled, 
                                 onInput: this.props.onInput, 
                                 initValue: this.props.initValue}
                             )

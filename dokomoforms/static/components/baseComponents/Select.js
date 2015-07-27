@@ -45,6 +45,7 @@ module.exports = React.createClass({
                                 ? this.props.initSelect
                                 : this.props.initSelect[0]
                             }
+                            disabled={this.props.disabled}
                     >
 
                     <option key="null" value="null">Please choose an option</option>
@@ -61,6 +62,7 @@ module.exports = React.createClass({
                     </select>
                     {this.state.showOther 
                         ?   <ResponseField 
+                                disabled={this.props.disabled}
                                 onInput={this.props.onInput}
                                 initValue={this.props.initValue}
                             />

@@ -40,11 +40,10 @@ module.exports = React.createClass({
         values.forEach(function(value, index) {
             if (value == 'null')
                 return;
-
-            answers[index] = {
+            answers.push({
                 'response': value === 'other' ? '' : value, 
                 'response_type': value === 'other' ? 'other' : 'answer'
-            }
+            });
         });
 
         console.log("values", values, answers)

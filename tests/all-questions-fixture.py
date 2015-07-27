@@ -115,6 +115,25 @@ with session.begin():
     ))
 
     survey.nodes.append(models.construct_survey_node(
+        allow_dont_know=True,
+        required=False,
+        node=models.construct_node(
+            type_constraint='multiple_choice',
+            title={'English': 'multiple choice' + ' node'},
+            hint={'English': 'choose your toast'},
+            allow_other=True,
+            allow_multiple=True,
+            choices=[
+                models.Choice(
+                    choice_text={
+                        'English': 'hey ' + str(i),
+                    },
+                ) for i in range(3)
+            ],
+        ),
+    ))
+
+    survey.nodes.append(models.construct_survey_node(
         node=models.construct_node(
             type_constraint='note',
             title={'English': 'note' + ' node'},
