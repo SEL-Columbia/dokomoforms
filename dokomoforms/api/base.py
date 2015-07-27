@@ -160,7 +160,8 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         """Return whether the request has been authenticated."""
         # A logged-in user has already authenticated.
         if self.r_handler.current_user is not None:
-            self._check_xsrf_cookie()
+            if self.request_method() not in {'GET', 'HEAD', 'OPTIONS'}:
+                self._check_xsrf_cookie()
             return True
 
         # A SurveyCreator can log in with a token.

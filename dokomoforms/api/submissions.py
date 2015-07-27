@@ -135,4 +135,6 @@ def get_submission_for_handler(tornado_handler, submission_id):
     """Maybe a handler needs a submission from the API."""
     submission_resource = SubmissionResource()
     submission_resource.ref_rh = tornado_handler
+    submission_resource.request = tornado_handler.request
+    submission_resource.application = tornado_handler.application
     return submission_resource.detail(submission_id)
