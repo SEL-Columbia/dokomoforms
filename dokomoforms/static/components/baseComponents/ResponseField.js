@@ -19,9 +19,7 @@ module.exports = React.createClass({
         console.log(type);
         switch(type) {
             case "integer":
-                return "number"
             case "decimal":
-            case "location":
                 return "number"
             case "timestamp":
             case "time":

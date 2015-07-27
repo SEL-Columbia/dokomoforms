@@ -244,7 +244,6 @@ module.exports = React.createClass({displayName: "exports",
 var React = require('react');
 
 var ResponseField = require('./baseComponents/ResponseField.js');
-var ResponseFields = require('./baseComponents/ResponseFields.js');
 var LittleButton = require('./baseComponents/LittleButton.js');
 
 /*
@@ -259,42 +258,156 @@ var LittleButton = require('./baseComponents/LittleButton.js');
  */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var length = answers.length === 0 ? 1 : answers.length;
+
         return { 
-            questionCount: 1
+            questionCount: length,
         }
     },
 
-    addNewInput: function() {
-        this.setState({
-            questionCount: this.state.questionCount + 1
-        })
-    },
-
-    // Every question component needs this method
+    /*
+     * Hack to force react to update child components
+     * Gets called by parent element through 'refs' when state of something changed 
+     * (usually localStorage)
+     */
     update: function() {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var length = answers.length === 0 ? 1 : answers.length;
+        this.setState({
+            questionCount: length,
+        });
     },
 
-    removeInput: function() {
+    /*
+     * Add new input if and only if they've responded to all previous inputs
+     */
+    addNewInput: function() {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var length = answers.length === 0 ? 1 : answers.length;
+
+        if (length == this.state.questionCount) {
+          this.setState({
+              questionCount: this.state.questionCount + 1
+          })
+        }
+    },
+
+    /*
+     * Remove input and update localStorage
+     */
+    removeInput: function(index) {
+        console.log("Remove", index);
+
         if (!(this.state.questionCount > 1))
             return;
+
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var length = answers.length === 0 ? 1 : answers.length;
+
+        answers.splice(index, 1);
+        survey[this.props.question.id] = answers;
+
+        localStorage[this.props.surveyID] = JSON.stringify(survey);
 
         this.setState({
             questionCount: this.state.questionCount - 1
         })
+
+        //this.forceUpdate();
+    },
+
+    /*
+     * Record new response into localStorage, response has been validated
+     * if this callback is fired 
+     */
+    onLocate: function() {
+        var self = this;
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var index = answers.length === 0 ? 0 : this.refs[answers.length] ? answers.length : answers.length - 1; // So sorry
+
+        navigator.geolocation.getCurrentPosition(
+            function success(position) {
+                var loc = {
+                    'lat': position.coords.latitude,
+                    'lng': position.coords.longitude, 
+                }
+
+                answers[index] = {
+                    'response': loc, 
+                    'response_type': 'answer'
+                };
+
+                survey[self.props.question.id] = answers; // Update localstorage
+                localStorage[self.props.surveyID] = JSON.stringify(survey);
+
+                var length = answers.length === 0 ? 1 : answers.length;
+                self.setState({
+                    questionCount: length
+                });
+            }, 
+            
+            function error() {
+                console.log("Location could not be grabbed");
+            }, 
+            
+            {
+                enableHighAccuracy: true,
+                timeout: 20000,
+                maximumAge: 0
+            }
+        );
+
+
+    },
+
+    /*
+     * Get default value for an input at a given index from localStorage
+     *
+     * @index: The location in the answer array in localStorage to search
+     */
+    getAnswer: function(index) {
+        console.log("In:", index);
+
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var length = answers.length === 0 ? 1 : answers.length;
+
+        console.log(answers, index);
+        return answers[index] && JSON.stringify(answers[index].response) || null;
     },
 
     render: function() {
+        var children = Array.apply(null, {length: this.state.questionCount})
+        var self = this;
         return (
                 React.createElement("span", null, 
-                React.createElement(LittleButton, {buttonFunction: this.addNewInput, 
+                React.createElement(LittleButton, {
+                buttonFunction: this.onLocate, 
                     iconClass: 'icon-star', 
                     text: 'find my location'}), 
-                React.createElement(ResponseFields, {buttonFunction: this.removeInput, 
-                    type: this.props.questionType, 
-                    childCount: this.state.questionCount}), 
-
+                children.map(function(child, idx) {
+                    return (
+                            React.createElement(ResponseField, {
+                                buttonFunction: self.removeInput, 
+                                type: self.props.questionType, 
+                                key: Math.random(), 
+                                index: idx, 
+                                ref: idx, 
+                                disabled: true, 
+                                initValue: self.getAnswer(idx), 
+                                showMinus: self.state.questionCount > 1}
+                            )
+                           )
+                }), 
                 this.props.question.allow_multiple
                     ? React.createElement(LittleButton, {buttonFunction: this.addNewInput, 
+                        disabled: this.props.disabled, 
                         text: 'add another answer'})
                     : null
                 
@@ -303,7 +416,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"./baseComponents/LittleButton.js":14,"./baseComponents/ResponseField.js":17,"./baseComponents/ResponseFields.js":18,"react":176}],5:[function(require,module,exports){
+},{"./baseComponents/LittleButton.js":14,"./baseComponents/ResponseField.js":17,"react":176}],5:[function(require,module,exports){
 var React = require('react');
 var Select = require('./baseComponents/Select.js');
 
@@ -854,9 +967,7 @@ module.exports = React.createClass({displayName: "exports",
         console.log(type);
         switch(type) {
             case "integer":
-                return "number"
             case "decimal":
-            case "location":
                 return "number"
             case "timestamp":
             case "time":
