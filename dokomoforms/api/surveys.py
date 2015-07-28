@@ -6,7 +6,7 @@ import restless.exceptions as exc
 from restless.constants import CREATED
 
 from sqlalchemy import cast, Date
-from sqlalchemy.sql.expression import func
+from sqlalchemy.sql import func
 
 from dokomoforms.api import BaseResource
 from dokomoforms.api.submissions import SubmissionResource, _create_submission

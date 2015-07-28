@@ -3,15 +3,11 @@ import abc
 from collections import OrderedDict
 
 import sqlalchemy as sa
-from sqlalchemy import func
-from sqlalchemy.sql.functions import (
-    current_timestamp, max as sqlmax, min as sqlmin
-)
+from sqlalchemy.sql.functions import current_timestamp
 from sqlalchemy.sql.elements import quoted_name
 from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.orderinglist import ordering_list
 
 from dokomoforms.models import util, Base, node_type_enum
@@ -74,59 +70,10 @@ class Survey(Base):
         passive_deletes=True,
     )
 
-    @hybrid_property
-    def num_submissions(self):
-        """The number of submissions to this survey (Python)."""
-        # TODO: test this
-        return len(self.submissions)
-
-    @num_submissions.expression
-    def num_submissions(cls):
-        """The number of submissions to this survey (SQL)."""
-        sub_cls = cls.submissions.mapper.class_
-        return (
-            sa.select([func.count(sub_cls.id)])
-            .where(sub_cls.survey_id == cls.id)
-            .label('num_submissions')
-        )
-
-    @hybrid_property
-    def earliest_submission_time(self):
-        """The time of the earliest submission to this survey (Python)."""
-        # TODO: test this
-        if self.submissions:
-            return self.submissions[0].save_time
-        return None
-
-    @earliest_submission_time.expression
-    def earliest_submission_time(cls):
-        """The time of the earliest submission to this survey (SQL)."""
-        # TODO: test this
-        sub_cls = cls.submissions.mapper.class_
-        return (
-            sa.select([sqlmin(sub_cls.save_time)])
-            .where(sub_cls.survey_id == cls.id)
-            .label('earliest_submission_time')
-        )
-
-    @hybrid_property
-    def latest_submission_time(self):
-        """The time of the latest submission to this survey (Python)."""
-        # TODO: test this
-        if self.submissions:
-            return self.submissions[-1].save_time
-        return None
-
-    @latest_submission_time.expression
-    def latest_submission_time(cls):
-        """The time of the latest submission to this survey (SQL)."""
-        # TODO: test this
-        sub_cls = cls.submissions.mapper.class_
-        return (
-            sa.select([sqlmax(sub_cls.save_time)])
-            .where(sub_cls.survey_id == cls.id)
-            .label('latest_submission_time')
-        )
+    # dokomoforms.models.column_properties
+    # num_submissions
+    # earliest_submission_time
+    # latest_submission_time
 
     # TODO: expand upon this
     version = sa.Column(sa.Integer, nullable=False, server_default='1')
@@ -634,6 +581,18 @@ class AnswerableSurveyNode(SurveyNode):
         sa.Boolean, nullable=False, server_default='false'
     )
     answers = relationship('Answer', order_by='Answer.save_time')
+
+    # dokomoforms.models.column_properties
+    # count
+
+    # other functions defined in that module
+    # min
+    # max
+    # sum
+    # avg
+    # mode
+    # stddev_pop
+    # stddev_samp
 
     __mapper_args__ = {'polymorphic_identity': 'answerable'}
     __table_args__ = (

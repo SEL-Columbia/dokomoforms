@@ -40,7 +40,6 @@ class ViewSurveyDataHandler(BaseHandler):
     def get(self, survey_id: str):
         """GET the data page."""
         location_questions = []
-        survey_stats = 'NOIMPL'
         question_stats = 'NOIMPL'
         for result in question_stats:
             # question = 'question'
@@ -59,7 +58,6 @@ class ViewSurveyDataHandler(BaseHandler):
             'view_data.html',
             survey=survey,
             question_stats=question_stats,
-            survey_stats=survey_stats,
             location_questions=location_questions
         )
 

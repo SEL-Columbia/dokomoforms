@@ -39,21 +39,8 @@ class Answer(Base):
     allow_other = sa.Column(sa.Boolean, nullable=False)
     allow_dont_know = sa.Column(sa.Boolean, nullable=False)
     question_id = sa.Column(pg.UUID, nullable=False)
-
-    @hybrid_property
-    def question_title(self):
-        """The question title (Python)."""
-        return self.survey_node.node.title
-
-    @question_title.expression
-    def question_title(cls):
-        """The question title (SQL)."""
-        question_cls = type(cls.survey_node.node)
-        return (
-            sa.select([question_cls.title])
-            .where(question_cls.id == cls.question_id)
-            .label(question_cls)
-        )
+    # dokomoforms.models.column_properties
+    # question title
 
     type_constraint = sa.Column(node_type_enum, nullable=False)
     answer_type = sa.Column(

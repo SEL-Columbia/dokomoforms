@@ -67,3 +67,11 @@ class NoSuchBucketTypeError(DokomoError):
     The valid type_constraints are the keys of
     dokomoforms.models.survey.BUCKET_TYPES.
     """
+
+
+class InvalidTypeForOperation(DokomoError):
+
+    """Invalid type for the selected aggregation function.
+
+    For instance, you can't find the maximum of a text answer.
+    """

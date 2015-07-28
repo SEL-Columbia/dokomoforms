@@ -20,6 +20,7 @@ from dokomoforms.models.submission import (
     construct_submission
 )
 from dokomoforms.models.answer import Answer, Photo, construct_answer
+import dokomoforms.models.column_properties
 
 __all__ = (
     # Util
@@ -43,4 +44,6 @@ __all__ = (
     'construct_submission',
     # Answer
     'Answer', 'Photo', 'construct_answer',
+    # column_properties
+    'dokomoforms',
 )
