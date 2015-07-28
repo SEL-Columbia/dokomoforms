@@ -83,7 +83,7 @@ module.exports = React.createClass({
      * Record new response into localStorage, response has been validated
      * if this callback is fired 
      */
-    onInput: function(index, value) {
+    onInput: function(value, index) {
 
         console.log("Hey", index, value);
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');

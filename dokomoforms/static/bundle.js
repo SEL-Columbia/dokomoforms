@@ -121,7 +121,7 @@ module.exports = React.createClass({displayName: "exports",
      * Record new response into localStorage, response has been validated
      * if this callback is fired 
      */
-    onInput: function(index, value) {
+    onInput: function(value, index) {
 
         console.log("Hey", index, value);
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
@@ -244,7 +244,6 @@ module.exports = React.createClass({displayName: "exports",
 var React = require('react');
 
 var ResponseField = require('./baseComponents/ResponseField.js');
-var ResponseFields = require('./baseComponents/ResponseFields.js');
 var LittleButton = require('./baseComponents/LittleButton.js');
 
 /*
@@ -259,42 +258,157 @@ var LittleButton = require('./baseComponents/LittleButton.js');
  */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var length = answers.length === 0 ? 1 : answers.length;
+
         return { 
-            questionCount: 1
+            questionCount: length,
         }
     },
 
-    addNewInput: function() {
-        this.setState({
-            questionCount: this.state.questionCount + 1
-        })
-    },
-
-    // Every question component needs this method
+    /*
+     * Hack to force react to update child components
+     * Gets called by parent element through 'refs' when state of something changed 
+     * (usually localStorage)
+     */
     update: function() {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var length = answers.length === 0 ? 1 : answers.length;
+        this.setState({
+            questionCount: length,
+        });
     },
 
-    removeInput: function() {
+    /*
+     * Add new input if and only if they've responded to all previous inputs
+     */
+    addNewInput: function() {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var length = answers.length === 0 ? 1 : answers.length;
+
+        if (length == this.state.questionCount) {
+          this.setState({
+              questionCount: this.state.questionCount + 1
+          })
+        }
+    },
+
+    /*
+     * Remove input and update localStorage
+     */
+    removeInput: function(index) {
+        console.log("Remove", index);
+
         if (!(this.state.questionCount > 1))
             return;
+
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var length = answers.length === 0 ? 1 : answers.length;
+
+        answers.splice(index, 1);
+        survey[this.props.question.id] = answers;
+
+        localStorage[this.props.surveyID] = JSON.stringify(survey);
 
         this.setState({
             questionCount: this.state.questionCount - 1
         })
     },
 
+    /*
+     * Retrieve location and record into localStorage on success.
+     * Updates questionCount on success, triggering rerender of page
+     * causing input fields to have values reloaded.
+     *
+     * Only updates the LAST active input field.
+     */
+    onLocate: function() {
+        var self = this;
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var index = answers.length === 0 ? 0 : this.refs[answers.length] ? answers.length : answers.length - 1; // So sorry
+
+        navigator.geolocation.getCurrentPosition(
+            function success(position) {
+                var loc = {
+                    'lat': position.coords.latitude,
+                    'lng': position.coords.longitude, 
+                }
+
+                answers[index] = {
+                    'response': loc, 
+                    'response_type': 'answer'
+                };
+
+                survey[self.props.question.id] = answers; // Update localstorage
+                localStorage[self.props.surveyID] = JSON.stringify(survey);
+
+                var length = answers.length === 0 ? 1 : answers.length;
+                self.setState({
+                    questionCount: length
+                });
+            }, 
+            
+            function error() {
+                console.log("Location could not be grabbed");
+            }, 
+            
+            {
+                enableHighAccuracy: true,
+                timeout: 20000,
+                maximumAge: 0
+            }
+        );
+
+
+    },
+
+    /*
+     * Get default value for an input at a given index from localStorage
+     *
+     * @index: The location in the answer array in localStorage to search
+     */
+    getAnswer: function(index) {
+        console.log("In:", index);
+
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var length = answers.length === 0 ? 1 : answers.length;
+
+        console.log(answers, index);
+        return answers[index] && JSON.stringify(answers[index].response) || null;
+    },
+
     render: function() {
+        var children = Array.apply(null, {length: this.state.questionCount})
+        var self = this;
         return (
                 React.createElement("span", null, 
-                React.createElement(LittleButton, {buttonFunction: this.addNewInput, 
+                React.createElement(LittleButton, {
+                buttonFunction: this.onLocate, 
                     iconClass: 'icon-star', 
                     text: 'find my location'}), 
-                React.createElement(ResponseFields, {buttonFunction: this.removeInput, 
-                    type: this.props.questionType, 
-                    childCount: this.state.questionCount}), 
-
+                children.map(function(child, idx) {
+                    return (
+                            React.createElement(ResponseField, {
+                                buttonFunction: self.removeInput, 
+                                type: self.props.questionType, 
+                                key: Math.random(), 
+                                index: idx, 
+                                ref: idx, 
+                                disabled: true, 
+                                initValue: self.getAnswer(idx), 
+                                showMinus: self.state.questionCount > 1}
+                            )
+                           )
+                }), 
                 this.props.question.allow_multiple
                     ? React.createElement(LittleButton, {buttonFunction: this.addNewInput, 
+                        disabled: this.props.disabled, 
                         text: 'add another answer'})
                     : null
                 
@@ -303,7 +417,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"./baseComponents/LittleButton.js":14,"./baseComponents/ResponseField.js":17,"./baseComponents/ResponseFields.js":18,"react":176}],5:[function(require,module,exports){
+},{"./baseComponents/LittleButton.js":14,"./baseComponents/ResponseField.js":17,"react":176}],5:[function(require,module,exports){
 var React = require('react');
 var Select = require('./baseComponents/Select.js');
 
@@ -323,10 +437,95 @@ module.exports = React.createClass({displayName: "exports",
         }
     },
 
-    // Every question component needs this method
+    /*
+     * Hack to force react to update child components
+     * Gets called by parent element through 'refs' when state of something changed 
+     * (usually localStorage)
+     */
     update: function() {
     },
 
+    /*
+     * Record all selected options into localStorage
+     */
+    onSelect: function(values) {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        answers = [];
+        values.forEach(function(value, index) {
+            if (value == 'null')
+                return;
+            answers.push({
+                'response': value === 'other' ? '' : value, 
+                'response_type': value === 'other' ? 'other' : 'answer'
+            });
+        });
+
+        console.log("values", values, answers)
+        survey[this.props.question.id] = answers;
+        localStorage[this.props.surveyID] = JSON.stringify(survey);
+
+    },
+
+    /*
+     * Record other response into existing slot of answer object in localStorage
+     * Callback is only called on validated input
+     */
+    onInput: function(value) {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+
+        answers.forEach(function(answer, index) {
+            if (answer.response_type === 'other') {
+                answer.response = value;
+                return false;
+            }
+            return true;
+        });
+
+        survey[this.props.question.id] = answers;
+        localStorage[this.props.surveyID] = JSON.stringify(survey);
+
+    },
+
+    /*
+     * Get all selected options from localStorage
+     */
+    getSelection: function() {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+
+        var values = [];
+        answers.forEach(function(answer, index) {
+            values[index] = answer.response;
+            if (answer.response_type === 'other')
+                values[index] = 'other';
+        });
+
+        console.log("values", values)
+        return values;
+    },
+
+    /*
+     * Get other response if any from localStorage 
+     */
+    getAnswer: function() {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+
+        var response = null;
+        answers.forEach(function(answer, index) {
+            if (answer.response_type === 'other') {
+                response = answer.response;
+                return false;
+            }
+
+            return true;
+        });
+
+        console.log("response", response);
+        return response;
+    },
+    
     render: function() {
         var self = this;
         var choices = this.props.question.choices.map(function(choice) {
@@ -336,10 +535,17 @@ module.exports = React.createClass({displayName: "exports",
             }
         });
 
+        // Key is used as hack to rerender select on dontKnow state change
         return (React.createElement(Select, {
+                    key: this.props.disabled, 
                     choices: choices, 
                     withOther: this.props.question.allow_other, 
-                    multiSelect: this.props.question.allow_multiple}
+                    multiSelect: this.props.question.allow_multiple, 
+                    disabled: this.props.disabled, 
+                    initValue: this.getAnswer(), 
+                    initSelect: this.getSelection(), 
+                    onSelect: this.onSelect, 
+                    onInput: this.onInput}
                 ))
     }
 });
@@ -454,7 +660,7 @@ module.exports = React.createClass({displayName: "exports",
      * Record new response into localStorage, response has been validated
      * if this callback is fired 
      */
-    onInput: function(index, value) {
+    onInput: function(value, index) {
 
         console.log("Hey", index, value);
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
@@ -854,9 +1060,7 @@ module.exports = React.createClass({displayName: "exports",
         console.log(type);
         switch(type) {
             case "integer":
-                return "number"
             case "decimal":
-            case "location":
                 return "number"
             case "timestamp":
             case "time":
@@ -935,7 +1139,7 @@ module.exports = React.createClass({displayName: "exports",
         var value = this.validate(event.target.value);
         console.log(event.target.value);
         if (this.props.onInput && value !== null)
-            this.props.onInput(this.props.index, value);
+            this.props.onInput(value, this.props.index);
     },
 
     render: function() {
@@ -1008,19 +1212,26 @@ ResponseField = require('./ResponseField.js');
  *  @choices: Array of choices in Select, expects a dict with value and text
  *  @withOther: Allow for other responses, adds it to the choices and renders 
  *      a ResponseField when selected
+ *  @onInput: What to do on valid other input
+ *  @onSelect: What to do on selection
  */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
-        return { showOther: false }
+        return { 
+            showOther: this.props.initSelect.indexOf('other') > -1
+        }
     },
 
     onChange: function(e) {
         var foundOther = false;
+        var options = [];
         for (var i = 0; i < e.target.selectedOptions.length; i++) {
             option = e.target.selectedOptions[i]; 
             foundOther = foundOther | option.value === "other";
+            options[i] = option.value;
         }
 
+        this.props.onSelect(options);
         this.setState({showOther: foundOther})
     },
 
@@ -1031,7 +1242,12 @@ module.exports = React.createClass({displayName: "exports",
                 React.createElement("div", {className: "content-padded"}, 
                     React.createElement("select", {className: "noselect", onChange: this.onChange, 
                             multiple: this.props.multiSelect, 
-                            size: size
+                            size: size, 
+                            defaultValue: this.props.multiSelect 
+                                ? this.props.initSelect
+                                : this.props.initSelect[0], 
+                            
+                            disabled: this.props.disabled
                     }, 
 
                     React.createElement("option", {key: "null", value: "null"}, "Please choose an option"), 
@@ -1046,7 +1262,14 @@ module.exports = React.createClass({displayName: "exports",
                         React.createElement("option", {key: "other", value: "other"}, " Other ") 
                         : null
                     ), 
-                    this.state.showOther ? React.createElement(ResponseField, null): null
+                    this.state.showOther 
+                        ?   React.createElement(ResponseField, {
+                                disabled: this.props.disabled, 
+                                onInput: this.props.onInput, 
+                                initValue: this.props.initValue}
+                            )
+                        :   null
+                    
                 )
                )
 
@@ -30360,16 +30583,17 @@ var Application = React.createClass({displayName: "Application",
      * region
      */
     onCheckButton: function() {
-        // Force questions to update
-        if (this.state.state = this.state.states.QUESTION)
-            this.refs.question.update();
-
         this.setState({
             showDontKnowBox: this.state.showDontKnowBox ? false: true,
             showDontKnow: this.state.showDontKnow,
             state: this.state.state,
             nextQuestion: this.state.nextQuestion,
         });
+
+        // Force questions to update
+        if (this.state.state = this.state.states.QUESTION)
+            this.refs.question.update();
+
     },
 
     /*

@@ -10,19 +10,26 @@ ResponseField = require('./ResponseField.js');
  *  @choices: Array of choices in Select, expects a dict with value and text
  *  @withOther: Allow for other responses, adds it to the choices and renders 
  *      a ResponseField when selected
+ *  @onInput: What to do on valid other input
+ *  @onSelect: What to do on selection
  */
 module.exports = React.createClass({
     getInitialState: function() {
-        return { showOther: false }
+        return { 
+            showOther: this.props.initSelect.indexOf('other') > -1
+        }
     },
 
     onChange: function(e) {
         var foundOther = false;
+        var options = [];
         for (var i = 0; i < e.target.selectedOptions.length; i++) {
             option = e.target.selectedOptions[i]; 
             foundOther = foundOther | option.value === "other";
+            options[i] = option.value;
         }
 
+        this.props.onSelect(options);
         this.setState({showOther: foundOther})
     },
 
@@ -34,6 +41,11 @@ module.exports = React.createClass({
                     <select className="noselect" onChange={this.onChange} 
                             multiple={this.props.multiSelect}
                             size={size}
+                            defaultValue={this.props.multiSelect 
+                                ? this.props.initSelect
+                                : this.props.initSelect[0]
+                            }
+                            disabled={this.props.disabled}
                     >
 
                     <option key="null" value="null">Please choose an option</option>
@@ -48,7 +60,14 @@ module.exports = React.createClass({
                         <option key="other" value="other"> Other </option> 
                         : null}
                     </select>
-                    {this.state.showOther ? <ResponseField />: null}
+                    {this.state.showOther 
+                        ?   <ResponseField 
+                                disabled={this.props.disabled}
+                                onInput={this.props.onInput}
+                                initValue={this.props.initValue}
+                            />
+                        :   null
+                    }
                 </div>
                )
 

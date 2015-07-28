@@ -19,9 +19,7 @@ module.exports = React.createClass({
         console.log(type);
         switch(type) {
             case "integer":
-                return "number"
             case "decimal":
-            case "location":
                 return "number"
             case "timestamp":
             case "time":
@@ -100,7 +98,7 @@ module.exports = React.createClass({
         var value = this.validate(event.target.value);
         console.log(event.target.value);
         if (this.props.onInput && value !== null)
-            this.props.onInput(this.props.index, value);
+            this.props.onInput(value, this.props.index);
     },
 
     render: function() {
