@@ -162,44 +162,6 @@
             }
         });
 
-        $('#submissions').dataTable( {
-            language: {
-                search: "Search by submitter name:"
-            },
-            "lengthMenu": [[20, 50, 100], [20, 50, 100]],
-            "pagingType": "full_numbers",
-            "order": [[2, 'desc']],
-            "columnDefs": [
-                {
-                    "render": function (data, type, row) {
-                        return '<a data-ignore="push" href="/view/submission/' + data + '">' + data + '</a>';
-                    },
-                    "targets": 0
-                },
-                {
-                    "render": function (data, type, row) {
-                        var datetime = new Date(data);
-                        return datetime.toDateString() + '<br />' + datetime.toTimeString();
-                    },
-                    "targets": 2
-                }
-            ],
-            "columns": [
-                {"name": "submission_id"},
-                {"name": "submitter"},
-                {"name": "submission_time"}
-            ],
-            "processing": true,
-            "serverSide": true,
-            "ajax": {
-                "url": "/api/submission_data_table/{{ survey.id }}",
-                "data": function(d) {
-                    return {"args": JSON.stringify(d)};
-                }
-            }
-        } );
-
-
         var maps = {},
             map_data = {};
 
