@@ -41,6 +41,8 @@ class ViewSurveyDataHandler(BaseHandler):
 
     def _get_map_data(self, survey_nodes):
         for survey_node in survey_nodes:
+            if survey_node.type_constraint not in {'location', 'facility'}:
+                continue
             answer_cls = ANSWER_TYPES[survey_node.type_constraint]
             answers = (
                 self.session

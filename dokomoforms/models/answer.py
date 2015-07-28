@@ -106,7 +106,11 @@ class Answer(Base):
         )
         if response_type == 'answer':
             if self.type_constraint == 'multiple_choice':
-                response = self.choice
+                response = {
+                    'id': self.choice.id,
+                    'choice_number': self.choice.choice_number,
+                    'choice_text': self.choice.choice_text,
+                }
             elif self.type_constraint == 'location':
                 lng, lat = json_decode(self.geo_json)['coordinates']
                 response = {'lng': lng, 'lat': lat}
