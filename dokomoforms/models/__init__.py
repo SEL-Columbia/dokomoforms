@@ -20,7 +20,11 @@ from dokomoforms.models.submission import (
     construct_submission
 )
 from dokomoforms.models.answer import Answer, Photo, construct_answer
-import dokomoforms.models.column_properties
+from dokomoforms.models.column_properties import (
+    answer_min, answer_max, answer_sum, answer_avg, answer_mode,
+    answer_stddev_pop, answer_stddev_samp
+)
+
 
 __all__ = (
     # Util
@@ -45,5 +49,6 @@ __all__ = (
     # Answer
     'Answer', 'Photo', 'construct_answer',
     # column_properties
-    'dokomoforms',
+    'answer_min', 'answer_max', 'answer_sum', 'answer_avg', 'answer_mode',
+    'answer_stddev_pop', 'answer_stddev_samp',
 )

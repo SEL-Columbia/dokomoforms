@@ -7,6 +7,7 @@ http://docs.sqlalchemy.org/en/rel_1_0/orm/mapped_sql_expr.html
 """
 import sqlalchemy as sa
 from sqlalchemy.orm import column_property, object_session
+from sqlalchemy.sql.functions import Function
 
 from dokomoforms.models import (
     Answer, Node, Survey, Submission, AnswerableSurveyNode
@@ -53,17 +54,99 @@ AnswerableSurveyNode.count = column_property(
 )
 
 
-def answer_min(survey_node: AnswerableSurveyNode):
-    """Get the minimum answer."""
+def _answer_stat(survey_node: AnswerableSurveyNode,
+                 allowable_types: set,
+                 func: Function) -> object:
     type_constraint = survey_node.the_type_constraint
-    allowable_types = {'integer', 'decimal', 'date', 'time', 'timestamp'}
     if type_constraint not in allowable_types:
-        raise InvalidTypeForOperation((type_constraint, 'min'))
+        raise InvalidTypeForOperation(
+            (type_constraint, func._FunctionGenerator__names[0])
+        )
     answer_cls = ANSWER_TYPES[survey_node.the_type_constraint]
     return (
         object_session(survey_node)
         .scalar(
-            sa.select([sa.func.min(answer_cls.main_answer)])
+            sa.select([func(answer_cls.main_answer)])
             .where(answer_cls.survey_node_id == survey_node.id)
         )
+    )
+
+
+def answer_min(survey_node: AnswerableSurveyNode):
+    """Get the minimum answer."""
+    return _answer_stat(
+        survey_node,
+        {'integer', 'decimal', 'date', 'time', 'timestamp'},
+        sa.func.min,
+    )
+
+
+def answer_max(survey_node: AnswerableSurveyNode):
+    """Get the maximum answer."""
+    return _answer_stat(
+        survey_node,
+        {'integer', 'decimal', 'date', 'time', 'timestamp'},
+        sa.func.max,
+    )
+
+
+def answer_sum(survey_node: AnswerableSurveyNode):
+    """Get the sum of the answers."""
+    return _answer_stat(
+        survey_node,
+        {'integer', 'decimal'},
+        sa.func.sum,
+    )
+
+
+def answer_avg(survey_node: AnswerableSurveyNode):
+    """Get the average of the answers."""
+    return _answer_stat(
+        survey_node,
+        {'integer', 'decimal'},
+        sa.func.avg,
+    )
+
+
+def answer_mode(survey_node: AnswerableSurveyNode):
+    """Get the mode of the answers."""
+    type_constraint = survey_node.the_type_constraint
+    allowable_types = {
+        'text', 'integer', 'decimal', 'date', 'time', 'timestamp', 'location',
+        'facility', 'multiple_choice'
+    }
+    if type_constraint not in allowable_types:
+        raise InvalidTypeForOperation((type_constraint, 'mode'))
+    answer_cls = ANSWER_TYPES[survey_node.the_type_constraint]
+    return (
+        object_session(survey_node)
+        .execute(sa.text(
+            "SELECT MODE() WITHIN GROUP (ORDER BY main_answer) AS answer_mode"
+            " FROM {table} JOIN {answer_table} ON"
+            " {table}.id = {answer_table}.id"
+            " WHERE {answer_table}.survey_node_id = '{survey_node_id}'".format(
+                table=str(answer_cls.__table__),
+                answer_table=str(Answer.__table__),
+                survey_node_id=survey_node.id,
+            )
+        ))
+        .scalar()
+    )
+
+
+def answer_stddev_pop(survey_node: AnswerableSurveyNode):
+    """Get the population standard deviation of the answers."""
+    return _answer_stat(
+        survey_node,
+        {'integer', 'decimal'},
+        sa.func.stddev_pop,
+    )
+
+
+def answer_stddev_samp(survey_node: AnswerableSurveyNode):
+    """Get the sample standard deviation of the answers."""
+    return _answer_stat(
+        survey_node,
+        {'integer', 'decimal'},
+        sa.func.stddev_samp,
     )
