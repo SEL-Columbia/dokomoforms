@@ -170,6 +170,12 @@ a, .icon {
     margin-top: 20px;
 }
 
+.question__canvas {
+    display: none;
+    width: 320px;
+    height: 240px;
+}
+
 .question__video {
     border: 1px solid #DDD;
     border-left: 0px solid #DDD;
