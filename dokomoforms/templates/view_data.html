@@ -93,22 +93,22 @@
             <div class="col-md-12">
                 <!-- <h4>Survey Questions</h4> -->
                 <ul class="survey-questions">
-                    {% for stats in question_stats['result'] %}
+                    {% for index, stats in enumerate(question_stats) %}
                         <li>
                         
-                            <div class="question-title-bar question-type-{{ stats['question'].type_constraint_name }} {% if stats['question'].type_constraint_name == "location" %} question-location {% end %}" 
-                            {% if stats['question'].type_constraint_name == "location" %} rel="location-map-{{ stats['question'].question_id }}" {% end %}>
+                            <div class="question-title-bar question-type-{{ stats['survey_node'].type_constraint }} {% if stats['survey_node'].type_constraint == "location" %} question-location {% end %}" 
+                            {% if stats['survey_node'].type_constraint == "location" %} rel="location-map-{{ stats['survey_node'].id }}" {% end %}>
                                 
-                                {{ stats['question'].sequence_number }}. {{ stats['question'].question_title }} 
-                                <span class="question-type pull-right">{{ stats['question'].type_constraint_name }}</span>
+                                {{ index }}. {{ stats['survey_node'].node.title }} 
+                                <span class="question-type pull-right">{{ stats['survey_node'].type_constraint }}</span>
                             </div>
 
                             <div class="question-stats">
                                 <div class="row">
-                                    {% if stats['question'].type_constraint_name == "location" %}
+                                    {% if stats['survey_node'].type_constraint == "location" %}
                                         <!-- This is a location question, show the map -->
                                         <div class="col-md-12">
-                                            <div class="location-map" id="location-map-{{ stats['question'].question_id }}"></div>
+                                            <div class="location-map" id="location-map-{{ stats['survey_node'].id }}"></div>
                                         </div>
 
                                     {% else %}
@@ -126,8 +126,8 @@
                                 </div>
                             </div>
                             
-                            <!--<p>{{ stats['question'].sequence_number }}. {{ stats['question'].question_title }} - {{ stats['question'].question_id }}</p>-->
-                            <!-- <p><a href="/visualize/{{ stats['question'].question_id }}">{{ stats['question'].sequence_number }}. {{ stats['question'].question_title }}</a></p> -->
+                            <!--<p>{{ index }}. {{ stats['survey_node'].node.title }} - {{ stats['survey_node'].id }}</p>-->
+                            <!-- <p><a href="/visualize/{{ stats['survey_node'].id }}">{{ index }}. {{ stats['survey_node'].node.title }}</a></p> -->
                             
                         </li>
                     {% end %}
@@ -192,7 +192,7 @@
             "processing": true,
             "serverSide": true,
             "ajax": {
-                "url": "/api/submission_data_table/{{ survey.survey_id }}",
+                "url": "/api/submission_data_table/{{ survey.id }}",
                 "data": function(d) {
                     return {"args": JSON.stringify(d)};
                 }
@@ -203,8 +203,8 @@
         var maps = {},
             map_data = {};
 
-        {% for question in location_questions %}
-            map_data['location-map-{{ question["question_id"] }}'] = {% raw question["map_data"] %};
+        {% for survey_node_data in location_stats %}
+	    map_data['location-map-{{ survey_node_data["survey_node_id"] }}'] = {% raw survey_node_data %};
         {% end %}
 
         function drawMap(element_id, map_data) {
@@ -223,25 +223,18 @@
 
             L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
 
-            var markers = [];
-            _.each(map_data, function(location) {
-                var lng = parseFloat(location[0]),
-                    lat = parseFloat(location[1]),
-                    submission = JSON.parse(location[2]),
-                    answers = submission.answers,
-                    submission_text;
-                // stored lon/lat in revisit, switch around
-                var marker = new L.marker([lat, lng], {
-                    riseOnHover: true
-                });
-                marker.options.icon = new L.icon({iconUrl: "/static/img/icons/normal_base.png", iconAnchor: [15, 48]});
-                
+	    var markers = [];
+	    _.each(map_data.map_data, function(answer) {
+	        var coordinates = answer.coordinates,
+		    marker = new L.marker([coordinates.lat, coordinates.lng], {
+		        riseOnHover: true
+		});
+                marker.options.icon = new L.icon({iconUrl: "/static/img/icons/normal_base.png", iconAnchor: [13, 30]});
                 marker.on('click', function() {
-                    openSubmissionDetailModal(submission.submission_id);
+                    openSubmissionDetailModal(answer.submission_id);
                 });
                 markers.push(marker);
-
-            });
+	    });
             
             if (markers.length) {
                 var markers_group = new L.featureGroup(markers);

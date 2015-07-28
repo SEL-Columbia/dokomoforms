@@ -10,7 +10,8 @@ from sqlalchemy.orm import column_property, object_session
 from sqlalchemy.sql.functions import Function
 
 from dokomoforms.models import (
-    Answer, Node, Survey, Submission, AnswerableSurveyNode
+    Answer, Node, Survey, Submission, AnswerableSurveyNode,
+    survey_sequentialization
 )
 from dokomoforms.models.answer import ANSWER_TYPES
 from dokomoforms.exc import InvalidTypeForOperation
@@ -47,7 +48,7 @@ Survey.latest_submission_time = column_property(
 
 
 # AnswerableSurveyNode
-AnswerableSurveyNode.count = column_property(
+AnswerableSurveyNode.answer_count = column_property(
     sa.select([sa.func.count(Answer.id)])
     .where(Answer.survey_node_id == AnswerableSurveyNode.id)
     .label('answer_count')
@@ -150,3 +151,31 @@ def answer_stddev_samp(survey_node: AnswerableSurveyNode):
         {'integer', 'decimal'},
         sa.func.stddev_samp,
     )
+
+
+def _question_stats(survey_node):
+    yield {'query': 'count', 'result': survey_node.answer_count}
+    aggregators = (
+        (answer_min, 'min'),
+        (answer_max, 'max'),
+        (answer_sum, 'sum'),
+        (answer_avg, 'avg'),
+        (answer_mode, 'mode'),
+        (answer_stddev_pop, 'stddev_pop'),
+        (answer_stddev_samp, 'stddev_samp'),
+    )
+    for func, name in aggregators:
+        try:
+            yield {'query': name, 'result': func(survey_node)}
+        except InvalidTypeForOperation:
+            pass
+
+
+def generate_question_stats(survey):
+    """Get answer statistics for the nodes in a survey."""
+    answerable_survey_nodes = survey_sequentialization(
+        survey, include_non_answerable=False
+    )
+    for survey_node in answerable_survey_nodes:
+        stats = list(_question_stats(survey_node))
+        yield {'survey_node': survey_node, 'stats': stats}

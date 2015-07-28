@@ -2,7 +2,10 @@
 
 import tornado.web
 
-from dokomoforms.models import Answer, Question, SurveyNode
+from dokomoforms.models import (
+    Answer, Question, SurveyNode, generate_question_stats
+)
+from dokomoforms.models.answer import ANSWER_TYPES
 from dokomoforms.handlers.util import BaseHandler
 from dokomoforms.api import get_survey_for_handler, get_submission_for_handler
 
@@ -36,29 +39,38 @@ class ViewSurveyDataHandler(BaseHandler):
 
     """The endpoint for getting a single survey's data page."""
 
+    def _get_map_data(self, survey_nodes):
+        for survey_node in survey_nodes:
+            answer_cls = ANSWER_TYPES[survey_node.type_constraint]
+            answers = (
+                self.session
+                .query(answer_cls)
+                .filter_by(survey_node_id=survey_node.id)
+                .filter(answer_cls.main_answer.isnot(None))
+            )
+            yield {
+                'survey_node_id': survey_node.id,
+                'map_data': [
+                    {
+                        'submission_id': answer.submission_id,
+                        'coordinates': answer.response['response'],
+                    } for answer in answers
+                ],
+            }
+
     @tornado.web.authenticated
     def get(self, survey_id: str):
         """GET the data page."""
-        location_questions = []
-        question_stats = 'NOIMPL'
-        for result in question_stats:
-            # question = 'question'
-            question_type = 'question_id'
-            if question_type == 'location':
-                question_id = 'question_id'
-                # answers = 'answers'
-                map_data = 'coord[0] coord[1] json_encode(submission)'
-                location_questions.append({
-                    'question_id': question_id,
-                    'map_data': map_data,
-                })
-
         survey = get_survey_for_handler(self, survey_id)
+        question_stats = list(generate_question_stats(survey))
+        location_stats = self._get_map_data(
+            stat['survey_node'] for stat in question_stats
+        )
         self.render(
             'view_data.html',
             survey=survey,
             question_stats=question_stats,
-            location_questions=location_questions
+            location_stats=location_stats,
         )
 
 
