@@ -24,6 +24,7 @@ from psycopg2.extras import NumericRange, DateRange, DateTimeRange
 import dokomoforms.models as models
 import dokomoforms.exc as exc
 from dokomoforms.models.survey import Bucket
+from dokomoforms.models.util import column_search
 from dokomoforms.api.serializer import ModelJSONSerializer
 
 
@@ -61,6 +62,95 @@ class TestBase(unittest.TestCase):
 
         engine3 = models.create_engine(False)
         self.assertEqual(engine3.echo, False)
+
+
+class TestUtil(DokoTest):
+    def test_column_search_like_percent_escaping(self):
+        with self.session.begin():
+            self.session.add_all((
+                models.construct_node(
+                    title={'English': 'a%a'},
+                    type_constraint='integer',
+                ),
+                models.construct_node(
+                    title={'English': 'aa'},
+                    type_constraint='integer',
+                ),
+            ))
+
+        like_search = column_search(
+            self.session.query(models.Node),
+            model_cls=models.Node, column_name='title', search_term='%'
+        ).all()
+        self.assertEqual(len(like_search), 1, msg=like_search)
+        found_node = like_search[0]
+        self.assertIs(
+            (
+                self.session
+                .query(models.Node)
+                .filter(models.Node.title['English'].astext == 'a%a')
+                .one()
+            ),
+            found_node
+        )
+
+    def test_column_search_like_underscore_escaping(self):
+        with self.session.begin():
+            self.session.add_all((
+                models.construct_node(
+                    title={'English': 'a_a'},
+                    type_constraint='integer',
+                ),
+                models.construct_node(
+                    title={'English': 'aa'},
+                    type_constraint='integer',
+                ),
+            ))
+
+        like_search = column_search(
+            self.session.query(models.Node),
+            model_cls=models.Node, column_name='title', search_term='_'
+        ).all()
+        self.assertEqual(len(like_search), 1, msg=like_search)
+        found_node = like_search[0]
+        self.assertIs(
+            (
+                self.session
+                .query(models.Node)
+                .filter(models.Node.title['English'].astext == 'a_a')
+                .one()
+            ),
+            found_node
+        )
+
+    def test_column_search_like_backslash_escaping(self):
+        with self.session.begin():
+            self.session.add_all((
+                models.construct_node(
+                    title={'English': r'a\a'},
+                    type_constraint='integer',
+                ),
+                models.construct_node(
+                    title={'English': 'aa'},
+                    type_constraint='integer',
+                ),
+            ))
+
+        like_search = column_search(
+            self.session.query(models.Node),
+            model_cls=models.Node, column_name='title', search_term='\\'
+        ).all()
+        self.assertEqual(len(like_search), 1, msg=like_search)
+        found_node = like_search[0]
+        self.assertIs(
+            (
+                self.session
+                .query(models.Node)
+                .filter(models.Node.title['English'].astext == r'a\a')
+                .one()
+            ),
+            found_node
+        )
 
 
 class TestUser(DokoTest):
@@ -1988,7 +2078,7 @@ class TestSubmission(DokoTest):
                             ('response_type', 'answer'),
                             (
                                 'response',
-                                '{"type":"Point","coordinates":[5,3]}'
+                                {'lng': 5, 'lat': 3}
                             ),
                         )),
                     ]
@@ -2281,7 +2371,7 @@ class TestAnswer(DokoTest):
                 ('deleted', False),
                 ('answer_number', 0),
                 ('submission_id', answer.submission_id),
-                ('submission_time', answer.submission_time),
+                ('save_time', answer.save_time),
                 ('survey_id', self.session.query(models.Survey.id).scalar()),
                 (
                     'survey_node_id',

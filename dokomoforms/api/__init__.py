@@ -2,8 +2,10 @@
 from dokomoforms.api.serializer import ModelJSONSerializer
 
 from dokomoforms.api.base import BaseResource
-from dokomoforms.api.surveys import SurveyResource
-from dokomoforms.api.submissions import SubmissionResource
+from dokomoforms.api.surveys import SurveyResource, get_survey_for_handler
+from dokomoforms.api.submissions import (
+    SubmissionResource, get_submission_for_handler
+)
 from dokomoforms.api.nodes import NodeResource
 
 
@@ -12,8 +14,8 @@ __all__ = (
 
     'BaseResource',
 
-    'SurveyResource',
-    'SubmissionResource',
+    'SurveyResource', 'get_survey_for_handler',
+    'SubmissionResource', 'get_submission_for_handler',
     'NodeResource',
 
 )

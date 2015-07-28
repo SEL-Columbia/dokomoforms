@@ -84,14 +84,7 @@ class TestAuthentication(DokoHTTPTest):
     def test_bounce(self):
         url = self.api_root + '/nodes'
         response = self.fetch(url, method='GET', _logged_in_user=None)
-        self.assertEqual(response.code, 401)
-
-    def test_is_authenticated_logged_in(self):
-        fake_resource = lambda: None
-        fake_r_handler = lambda: None
-        fake_r_handler.current_user = object()
-        fake_resource.r_handler = fake_r_handler
-        self.assertTrue(BaseResource.is_authenticated(fake_resource))
+        self.assertEqual(response.code, 401, msg=response.body)
 
     def test_is_authenticated_api_token(self):
         user = (
@@ -4605,14 +4598,6 @@ class TestUserApi(DokoHTTPTest):
         self.assertEqual(api_response.code, 201, msg=api_response.body)
 
     def test_missing_api_headers_in_post(self):
-        # url to test
-        url = self.api_root + '/user/generate-api-token'
-        # http method (just for clarity)
-        method = 'GET'
-        # make request
-        response = self.fetch(url, method=method)
-        token = json_decode(response.body)['token']
-
         api_url = self.api_root + '/nodes'
         body = {
             'title': {'English': 'API token POST'},
@@ -4623,18 +4608,9 @@ class TestUserApi(DokoHTTPTest):
             method='POST', body=json_encode(body),
             _logged_in_user=None, _disable_xsrf=False,
         )
-        self.assertEqual(api_response.code, 403, msg=api_response.body)
-        self.assertIn('xsrf', api_response.body.decode())
+        self.assertEqual(api_response.code, 401, msg=api_response.body)
 
     def test_missing_api_headers_in_post_logged_in(self):
-        # url to test
-        url = self.api_root + '/user/generate-api-token'
-        # http method (just for clarity)
-        method = 'GET'
-        # make request
-        response = self.fetch(url, method=method)
-        token = json_decode(response.body)['token']
-
         api_url = self.api_root + '/nodes'
         body = {
             'title': {'English': 'API token POST'},

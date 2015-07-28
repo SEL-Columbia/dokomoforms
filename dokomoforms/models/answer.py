@@ -10,6 +10,8 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql import func
 # from sqlalchemy.sql.type_api import UserDefinedType
 
+from tornado.escape import json_decode
+
 from geoalchemy2 import Geometry
 
 from dokomoforms.models import util, Base, node_type_enum
@@ -29,7 +31,7 @@ class Answer(Base):
     id = util.pk()
     answer_number = sa.Column(sa.Integer, nullable=False)
     submission_id = sa.Column(pg.UUID, nullable=False)
-    submission_time = sa.Column(pg.TIMESTAMP(timezone=True), nullable=False)
+    save_time = sa.Column(pg.TIMESTAMP(timezone=True), nullable=False)
     survey_id = sa.Column(pg.UUID, nullable=False)
     survey_node_id = sa.Column(pg.UUID, nullable=False)
     survey_node = relationship('AnswerableSurveyNode')
@@ -37,6 +39,9 @@ class Answer(Base):
     allow_other = sa.Column(sa.Boolean, nullable=False)
     allow_dont_know = sa.Column(sa.Boolean, nullable=False)
     question_id = sa.Column(pg.UUID, nullable=False)
+    # dokomoforms.models.column_properties
+    # question title
+
     type_constraint = sa.Column(node_type_enum, nullable=False)
     answer_type = sa.Column(
         sa.Enum(
@@ -101,7 +106,19 @@ class Answer(Base):
         )
         if response_type == 'answer':
             if self.type_constraint == 'multiple_choice':
-                response = self.choice
+                response = {
+                    'id': self.choice.id,
+                    'choice_number': self.choice.choice_number,
+                    'choice_text': self.choice.choice_text,
+                }
+            elif self.type_constraint == 'location':
+                lng, lat = json_decode(self.geo_json)['coordinates']
+                response = {'lng': lng, 'lat': lat}
+            elif self.type_constraint == 'facility':
+                geo_json = json_decode(response['facility_location'])
+                lng, lat = geo_json['coordinates']
+                response['facility_location'] = {'lng': lng, 'lat': lat}
+
             else:
                 response = self.answer
         return OrderedDict((
@@ -126,8 +143,8 @@ class Answer(Base):
         ),
         sa.CheckConstraint('type_constraint::TEXT = answer_type::TEXT'),
         sa.ForeignKeyConstraint(
-            ['submission_id', 'submission_time', 'survey_id'],
-            ['submission.id', 'submission.submission_time',
+            ['submission_id', 'save_time', 'survey_id'],
+            ['submission.id', 'submission.save_time',
                 'submission.survey_id']
         ),
         sa.ForeignKeyConstraint(
@@ -162,7 +179,7 @@ class Answer(Base):
             ('deleted', self.deleted),
             ('answer_number', self.answer_number),
             ('submission_id', self.submission_id),
-            ('submission_time', self.submission_time),
+            ('save_time', self.save_time),
             ('survey_id', self.survey_id),
             ('survey_node_id', self.survey_node_id),
             ('question_id', self.question_id),

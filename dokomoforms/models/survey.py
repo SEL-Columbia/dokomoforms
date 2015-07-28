@@ -69,6 +69,12 @@ class Survey(Base):
         cascade='all, delete-orphan',
         passive_deletes=True,
     )
+
+    # dokomoforms.models.column_properties
+    # num_submissions
+    # earliest_submission_time
+    # latest_submission_time
+
     # TODO: expand upon this
     version = sa.Column(sa.Integer, nullable=False, server_default='1')
     # ODOT
@@ -574,7 +580,19 @@ class AnswerableSurveyNode(SurveyNode):
     allow_dont_know = sa.Column(
         sa.Boolean, nullable=False, server_default='false'
     )
-    answers = relationship('Answer', order_by='Answer.submission_time')
+    answers = relationship('Answer', order_by='Answer.save_time')
+
+    # dokomoforms.models.column_properties
+    # count
+
+    # other functions defined in that module
+    # min
+    # max
+    # sum
+    # avg
+    # mode
+    # stddev_pop
+    # stddev_samp
 
     __mapper_args__ = {'polymorphic_identity': 'answerable'}
     __table_args__ = (
@@ -737,3 +755,22 @@ def skipped_required(survey, answers) -> str:
             answer = answer_stack.pop() if answer_stack else None
 
     return None
+
+
+def survey_sequentialization(survey, *, include_non_answerable=True):
+    """Generate a pre-order traversal of the survey's nodes.
+
+    https://en.wikipedia.org/wiki/Tree_traversal#Depth-first
+    """
+    for node in survey.nodes:
+        if isinstance(node, NonAnswerableSurveyNode):
+            if include_non_answerable:
+                yield node
+            else:
+                continue
+        else:
+            yield node
+            for sub_survey in node.sub_surveys:
+                yield from survey_sequentialization(
+                    sub_survey, include_non_answerable=include_non_answerable
+                )

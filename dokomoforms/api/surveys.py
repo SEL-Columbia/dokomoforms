@@ -5,14 +5,15 @@ import datetime
 import restless.exceptions as exc
 from restless.constants import CREATED
 
-from sqlalchemy.sql.expression import func
+from sqlalchemy import cast, Date
+from sqlalchemy.sql import func
 
 from dokomoforms.api import BaseResource
-from dokomoforms.api.submissions import _create_submission
+from dokomoforms.api.submissions import SubmissionResource, _create_submission
 from dokomoforms.models import (
     Survey, Submission, SubSurvey, Choice,
     construct_survey, construct_survey_node, construct_bucket,
-    User,
+    SurveyCreator,
     Node, construct_node
 )
 
@@ -167,13 +168,18 @@ class SurveyResource(BaseResource):
 
     def list_submissions(self, survey_id):
         """List all submissions for a survey."""
-        response_list = self.list(where=(Survey.id == survey_id))
-
-        response = {
-            'survey_id': survey_id,
-            'submissions': response_list
-        }
-        response = self._add_meta_props(response)
+        sub_resource = SubmissionResource()
+        sub_resource.ref_rh = self.ref_rh
+        where = Submission.survey_id == survey_id
+        result = sub_resource.list(where=where)
+        response = sub_resource.wrap_list_response(result)
+        response['total_entries'] = (
+            self.session
+            .query(func.count(Submission.id))
+            .filter_by(survey_id=survey_id)
+            .scalar()
+        )
+        response['survey_id'] = survey_id
         return response
 
     def stats(self, survey_id):
@@ -182,8 +188,8 @@ class SurveyResource(BaseResource):
             self.session
             .query(
                 func.max(Survey.created_on),
-                func.min(Submission.submission_time),
-                func.max(Submission.submission_time),
+                func.min(Submission.save_time),
+                func.max(Submission.save_time),
                 func.count(Submission.id),
             )
             .select_from(Submission)
@@ -223,20 +229,22 @@ class SurveyResource(BaseResource):
         If a survey_id is specified, only activity from that
         survey will be returned.
         """
-        user = self.current_user_model
+        user_id = self.current_user_model.id
 
         # number of days prior to return
         today = datetime.date.today()
         from_date = today - datetime.timedelta(days=days - 1)
 
         # truncate the datetime to just the day
-        date_trunc = func.date_trunc('day', Submission.submission_time)
+        submission_date = (
+            cast(Submission.save_time, Date).label('submission_date')
+        )
 
         query = (
             self.session
-            .query(date_trunc, func.count())
-            .filter(User.id == user.id)
-            .filter(Submission.submission_time >= from_date)
+            .query(submission_date, func.count())
+            .filter(SurveyCreator.id == user_id)
+            .filter(Submission.save_time >= from_date)
         )
 
         if survey_id is not None:
@@ -244,8 +252,8 @@ class SurveyResource(BaseResource):
 
         query = (
             query
-            .group_by(date_trunc)
-            .order_by(date_trunc.desc())
+            .group_by('submission_date')
+            .order_by(submission_date.desc())
         )
 
         # TODO: Figure out if this should use OrderedDict
@@ -262,3 +270,12 @@ class SurveyResource(BaseResource):
     #     be included in the API.
     #     """
     #     return data
+
+
+def get_survey_for_handler(tornado_handler, survey_id):
+    """Maybe a handler needs a survey from the API."""
+    survey_resource = SurveyResource()
+    survey_resource.ref_rh = tornado_handler
+    survey_resource.request = tornado_handler.request
+    survey_resource.application = tornado_handler.application
+    return survey_resource.detail(survey_id)

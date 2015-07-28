@@ -8,6 +8,23 @@ from tests.util import DokoHTTPTest, setUpModule, tearDownModule
 utils = (setUpModule, tearDownModule)
 
 
+class TestIndex(DokoHTTPTest):
+    def test_get_not_logged_in(self):
+        response = self.fetch('/', method='GET', _logged_in_user=None)
+        response_soup = BeautifulSoup(response.body, 'html.parser')
+        links = response_soup.select('a.btn-login.btn-large')
+        self.assertEqual(len(links), 1, msg=response.body)
+
+    def test_get_logged_in(self):
+        response = self.fetch('/', method='GET')
+        response_soup = BeautifulSoup(response.body, 'html.parser')
+        links = response_soup.select('a.btn-login.btn-large')
+        self.assertEqual(len(links), 0, msg=response.body)
+        self.assertIn(
+            'Account Overview', response.body.decode(), msg=response.body
+        )
+
+
 class TestEnumerate(DokoHTTPTest):
     def test_get_public_survey_not_logged_in(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'

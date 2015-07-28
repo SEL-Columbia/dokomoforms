@@ -1,0 +1,420 @@
+{% extends "base.html" %}
+
+{% block header %}
+<div class="header light-shadow">
+    {% if current_user %}
+    <div class="row header-main-nav">
+        <div class="container">
+            <div class="col-md-6"><h1>{{ survey.title }}</h1></div>
+            <div class="col-md-6">
+                <ul class="pull-right">
+                    <li>
+                        <a class="active" href="/view/{{ survey.id }}">Manage Survey</a>
+                    </li>
+                    <li>
+                        <a href="/view/data/{{ survey.id }}">View Data</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="row header-sub-nav">
+            <!-- Additional sub-navigation here in next version. -->
+        </div>
+    </div>
+    {% end %}
+</div>
+{% end %} 
+
+{% block content %}
+<div class="content">
+    <div class="container" role="main">
+        
+        <div class="message"></div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <h4>Survey Info</h4>
+                <div class="survey-info">
+                    <div class="row row-stat">
+                        <div class="col-md-4">
+                            <div class="stat-label">
+                                created on
+                            </div>
+                            <div class="stat-value stat-created-on">
+			        {{ survey.created_on.strftime("%b %d, %Y") }}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-label">
+                                first submission
+                            </div>
+                            <div class="stat-value stat-first-submission">
+			        {% if survey.earliest_submission_time %}
+			            {{ survey.earliest_submission_time.strftime("%b %d, %Y") }}
+				{% else %}
+				    {{ survey.earliest_submission_time }}
+				{% end %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-label">
+                                latest submission
+                            </div>
+                            <div class="stat-value stat-latest-submission">
+			        {% if survey.latest_submission_time %}
+			            {{ survey.latest_submission_time.strftime("%b %d, %Y") }}
+				{% else %}
+				    {{ survey.latest_submission_time }}
+				{% end %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row row-stat">
+                        <div class="col-md-4">
+                        <div class="stat-label">
+                                total submissions
+                            </div>
+                            <div class="stat-value stat-total-submissions">
+			        {{ survey.num_submissions }}
+                            </div>
+                        </div>
+                        <!-- <div class="col-md-4">
+                            <div class="stat-label">
+                                target submissions
+                            </div>
+                            <div class="stat-value stat-target-submissions">
+                                NA
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-label">
+                                percent complete
+                            </div>
+                            <div class="stat-value stat-percent-complete">
+                                NA
+                            </div>
+                        </div> -->
+                    </div>
+                    <div class="row row-stat">
+                        <div class="col-md-12">
+                            <div class="stat-label">
+                                <span class="glyphicon glyphicon-phone"></span> mobile survey link
+                            </div>
+                            <div class="">
+                                <div class="input-group">
+				    <!-- TODO: make this a different element, highlight all on click, and set readonly without crazy styling. -->
+                                    <input spellcheck="false" type="text" class="form-control" id="shareable-link" aria-describedby="shareable-link" value="http://dokomoforms.org/enumerate/{{ survey.id }}">
+                                    <div class="input-group-addon"><a target="_blank" href="/enumerate/{{ survey.id }}"><span class="glyphicon glyphicon-new-window"></span></a></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row row-stat">
+                        <!-- <div class="col-md-4"></div> -->
+                        <div class="col-md-12">
+                            <div class="pull-left">
+                                
+                            </div>
+                            
+                            <div class="pull-right">
+                                <!-- <a href="/view/data/{{ survey.id }}" class="btn btn-sm btn-secondary"><span class="glyphicon glyphicon-stats"></span>&nbsp;&nbsp; View Data</a> -->
+                            <!-- </div>
+                            <div class="col-md-4"> -->
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                                        <span class="glyphicon glyphicon-cloud-download"></span>&nbsp;&nbsp; Download Data <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                                        <!-- <li><a href="#">CSV (.csv)</a></li>
+                                        <li><a href="#">KML (.kml)</a></li> -->
+                                        <li><a target="_blank" href="/api/v0/surveys/{{ survey.id }}/submissions">JSON (.json)</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <!-- Activity Graph -->
+                <h4>Activity Graph <span class="info-icon" data-toggle="tooltip" data-placement="right" title="A plot of submissions over the past 30 days.">i</span></h4>
+                <div class="activity-graph">
+                    <div class="alert alert-info no-activity-message hide">
+                        <em>There has been no submission activity for this survey in the past 30 days.</em>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+
+
+            <div class="col-md-12">
+                <h4>Submissions</h4>
+
+                <table id="submissions" class="display table table-striped table-bordered table-submissions" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Conducted By</th>
+                            <th>Conducted On</th>
+                            <th>Submitted On</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                </table>
+
+                {# Tabs between list/map commented out for now until we figure out a better way to do the map.
+
+                <div class="submissions" role="tabpanel">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li role="presentation" class="active"><a href="#submissions-list" aria-controls="submissions-list" role="tab" data-toggle="tab">List</a></li>
+                        <li role="presentation"><a href="#submissions-map" aria-controls="submissions-map" role="tab" data-toggle="tab">Map</a></li>
+                    </ul>
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane active tab-pane-submissions-list" id="submissions-list">
+                            <table id="submissions" class="display table table-striped table-bordered table-submissions" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Conducted By</th>
+                                        <th>Conducted On</th>
+                                        <th>Submitted On</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                        <div role="tabpanel" class="tab-pane submissions-block submissions-map" id="submissions-map">
+                            <div id="submissions-map-container"></div>
+                        </div>
+                    </div>
+                </div>
+
+                #}
+
+            </div>
+        </div>
+        
+    </div>
+</div>
+{% end %}
+
+
+{% block extra_scripts %}
+
+<!-- Templates -->
+<script type="text/template" id="view-submission-btn-tpl">
+    <button class="btn btn-default btn-xs btn-view-submission" data-id="<%= submission_id %>"><span class="glyphicon glyphicon-list-alt"></span> View Submission Details</button>
+</script>
+
+<script type="text/javascript">
+    
+    $(function () {
+
+        // Map
+        var map;
+
+        function createMap() {
+            if (!map) {
+                map = L.map('submissions-map-container', {
+                    dragging: true,
+                    zoom: 14,
+                    zoomControl: false,
+                    doubleClickZoom: false,
+                    attributionControl: false
+                });
+
+                L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
+            }
+        }
+
+        function drawMapData(submissions) {
+            if (!map) return;
+
+            var markers = [];
+
+            _.each(submissions, function(submission) {
+
+                var submission = submission.result,
+                    answers = submission.answers,
+                    location = _.find(answers, function(answer) {
+                        return answer.type_constraint_name == 'location'
+                    });
+                console.log(location);
+                if (!location || !location.answer) {
+                    return;
+                }
+                location = location.answer;
+                console.log(location);
+
+                console.log('location:', location);
+                // stored lon/lat in revisit, switch around
+                var marker = new L.marker([location[1], location[0]], {
+                    riseOnHover: true
+                });
+                marker.options.icon = new L.icon({iconUrl: "/static/img/icons/normal_base.png", iconAnchor: [15, 48]});
+                // marker.bindPopup();
+                marker.on('click', function() {
+                    window.location = '/view/submission/'+submission.submission_id;
+                });
+                markers.push(marker);
+
+            });
+            
+            if (markers.length) {
+                var markers_group = new L.featureGroup(markers);
+                markers_group.addTo(map);
+                map.fitBounds(markers_group.getBounds());
+            } else {
+                // TODO: do something user-facing.
+                console.log('No submissions include location.');
+            }
+        }
+
+        
+
+
+        $.getJSON('/api/v0/surveys/{{ survey.id }}/activity', function(data) {
+
+            var results = data.activity,
+                cats = [], 
+                data = [];
+
+            if (!results.length) {
+                $('.no-activity-message').removeClass('hide');
+                return;
+            }
+
+	    var sorted = _.sortBy(results, function(result) {
+	        return result.date;
+	    });
+
+            _.each(sorted, function(result) {
+	        var the_date = moment(result.date, "YYYY-MM-DD").format('MMM D');
+
+                console.log(the_date);
+
+                data.push(result.num_submissions);
+                cats.push(the_date);
+            });
+
+
+            $('.activity-graph').highcharts({
+                chart: {
+                    type: 'line'
+                },
+                title: {
+                    text: null
+                },
+                colors: [
+                    '#666'
+                ],
+                xAxis: {
+                    categories: cats
+                },
+                yAxis: {
+                    title: {
+                        text: '# of submissions'
+                    }
+                },
+                series: [{
+                    name: 'Submissions',
+                    data: data
+                }],
+                credits: {
+                    enabled: false
+                }
+            });
+        });
+
+    
+        var view_sub_btn_tpl = _.template($("#view-submission-btn-tpl").html());
+
+        $('#submissions').dataTable( {
+            language: {
+                search: "Search by submitter name:"
+            },
+            "lengthMenu": [[5, 20, 50], [5, 20, 50]],
+            "pagingType": "full_numbers",
+            "order": [[1, 'desc']],
+            "columnDefs": [
+                {
+                    data: 0,
+                    targets: 0    
+                },
+                {
+                    "data": 1,
+                    "render": function (data, type, row) {
+                        var datetime = moment(data);
+                        return datetime.format('MMM D, YYYY [at] HH:mm:ss');
+                    },
+                    "targets": 1
+                },
+                {
+                    "data": 2,
+                    "render": function (data, type, row) {
+                        var datetime = moment(data);
+                        return datetime.format('MMM D, YYYY [at] HH:mm:ss');
+                    },
+                    "targets": 2
+                },
+                {
+                    data: 3,
+                    "render": function (data, type, row) {
+                        return view_sub_btn_tpl({submission_id: data});
+                    },
+                    "targets": 3,
+		    "sortable": false,
+                }
+            ],
+            "columns": [
+                {"name": "submitter_name"},
+                {"name": "save_time"},
+                {"name": "submission_time"},
+                {"name": "id"}
+            ],
+            "processing": true,
+            "serverSide": true,
+	    "ajax": function(data, callback, settings) {
+	        $.ajax({
+		  "url": "/api/v0/surveys/{{ survey.id }}/submissions",
+		    "data": {
+		        draw: data.draw,
+			offset: data.start,
+			limit: data.length === -1 ? undefined : data.length,
+			order_by: data.order.map(function(ord) {
+			    return data.columns[ord.column].name + ':' + ord.dir;
+			}).join(','),
+			fields: data.columns.map(function(c) {return c.name}).join(','),
+			search: data.search.value,
+			regex: data.search.regex,
+			search_fields: 'submitter_name',
+		    },
+		    "success": function(json) {
+		        var response = {
+			    draw: json.draw,
+			    recordsTotal: json.total_entries,
+			    recordsFiltered: json.filtered_entries,
+			    data: json.submissions.map(function(submission) {
+			        return [
+				    submission.submitter_name,
+				    submission.save_time,
+				    submission.submission_time,
+				    submission.id,
+				];
+			    }),
+			};
+			callback(response);
+		    }
+		});
+	    }
+        }).on('xhr.dt', function ( e, settings, json ) {
+            console.log('data returned: ', json);
+            // for ( var i=0, ien=json.aaData.length ; i<ien ; i++ ) {
+            //     json.aaData[i].sum = json.aaData[i].one + json.aaData[i].two;
+            // }
+            // Note no return - manipulate the data directly in the JSON object.
+        });
+    } );
+</script>
+{% end %}

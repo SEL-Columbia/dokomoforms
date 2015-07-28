@@ -15,7 +15,7 @@ from webapp import main
 
 print('FOR TESTING PURPOSES ONLY!')
 print('--------------------------')
-with patch.object(BaseHandler, 'get_current_user') as p:
+with patch.object(BaseHandler, '_current_user_cookie') as p:
     print('Logging in as:')
     print(options.TEST_USER)
     p.return_value = options.TEST_USER
