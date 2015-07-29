@@ -145,6 +145,11 @@ var Application = React.createClass({
         this.props.survey.nodes.forEach(function(question) {
             var responses = survey[question.id] || [];
             responses.forEach(function(response) {
+
+                //XXX Figure out photo submission
+                if (question.type_constraint === 'photo')
+                    return;
+
                 answers.push({
                     survey_node_id: question.id,
                     response: response,
