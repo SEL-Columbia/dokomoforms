@@ -324,6 +324,48 @@ class TestSurveyApi(DokoHTTPTest):
         # check the number of surveys matches the limit
         self.assertEqual(len(survey_dict['surveys']), 1)
 
+    def test_list_surveys_order_by_num_submissions_ASC(self):
+        # url to test
+        url = self.api_root + '/surveys'
+        query_params = {
+            'order_by': "num_submissions:ASC",
+            'fields': 'num_submissions',
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        response_body = json_decode(response.body)
+        self.assertIn('surveys', response_body, msg=response_body)
+        surveys = response_body['surveys']
+
+        num_subs = [s['num_submissions'] for s in surveys]
+        self.assertListEqual(num_subs, sorted(num_subs))
+
+    def test_list_surveys_order_by_num_submissions_DESC(self):
+        # url to test
+        url = self.api_root + '/surveys'
+        query_params = {
+            'order_by': "num_submissions:DESC",
+            'fields': 'num_submissions',
+        }
+        # append query params
+        url = self.append_query_params(url, query_params)
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        response_body = json_decode(response.body)
+        self.assertIn('surveys', response_body, msg=response_body)
+        surveys = response_body['surveys']
+
+        num_subs = [s['num_submissions'] for s in surveys]
+        self.assertListEqual(num_subs, list(reversed(sorted(num_subs))))
+
     def test_get_single_survey(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
         # url to tests

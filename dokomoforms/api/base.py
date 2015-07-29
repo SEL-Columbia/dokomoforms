@@ -231,7 +231,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         )
         search_lang = self._query_arg('lang')
 
-        default_sort = ['{}:DESC'.format(self.default_sort_column_name)]
+        default_sort = ['{}:ASC'.format(self.default_sort_column_name)]
         order_by_text = (
             element.split(':') for element in self._query_arg(
                 'order_by', list, default=default_sort
@@ -263,12 +263,8 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         for attribute_name, direction in order_by_text:
             try:
                 order = getattr(model_cls, attribute_name)
-                direction = direction.lower()
-                if direction == 'asc':
-                    order = order.asc()
-                elif direction == 'desc':
-                    order = order.desc()
-                order = order.nullslast()
+                directions = {'asc': order.asc, 'desc': order.desc}
+                order = directions[direction.lower()]().nullslast()
             except AttributeError:
                 order = text(
                     '{} {} NULLS LAST'.format(attribute_name, direction)

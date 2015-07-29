@@ -5,5 +5,3 @@ psycopg2==2.6.1
 py-bcrypt==0.4
 passlib==1.6.2
 restless==2.0.1
-# Find a way to remove this dependency
-# @jmwohl
