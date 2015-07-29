@@ -264,10 +264,7 @@ a, .icon {
     position: relative;
     margin: 0px auto;
     width: 320px;
-}
-
-.photo_container: span {
-    color: white;
+    font-color: white;
 }
 
 .photo_input {

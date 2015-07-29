@@ -86,11 +86,12 @@ module.exports = React.createClass({
         var length = answers.length;
 
         console.log("Length:", length, "Count", this.state.questionCount);
-        if (answers[length] && answers[length].response
+        if (answers[length] && answers[length].response_type
                 || length > 0 && length == this.state.questionCount) {
-          this.setState({
-              questionCount: this.state.questionCount + 1
-          })
+
+            this.setState({
+                questionCount: this.state.questionCount + 1
+            })
         }
     },
 
@@ -127,6 +128,7 @@ module.exports = React.createClass({
         var answers = survey[this.props.question.id] || [];
         var index = answers.length === 0 ? 0 : this.refs[answers.length] ? answers.length : answers.length - 1; // So sorry
 
+        //XXX Delete canvas? canvas;
         var canvas = document.createElement('canvas');
         var video = React.findDOMNode(this.refs.video);
         canvas.height = video.clientHeight;
@@ -135,7 +137,6 @@ module.exports = React.createClass({
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         var photo = canvas.toDataURL('image/webp');
         console.log(photo);
-        window.cdel = canvas;
 
         answers[index] = {
             'response': photo, 
@@ -184,8 +185,6 @@ module.exports = React.createClass({
                     ref='video' 
                     className="question__video" 
                     src={this.state.src}
-                    width={640}
-                    height={480}
                 />
 
                 {children.map(function(child, idx) {

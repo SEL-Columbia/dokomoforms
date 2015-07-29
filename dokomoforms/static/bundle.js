@@ -287,12 +287,15 @@ module.exports = React.createClass({displayName: "exports",
     addNewInput: function() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
-        var length = answers.length === 0 ? 1 : answers.length;
+        var length = answers.length;
 
-        if (length == this.state.questionCount) {
-          this.setState({
-              questionCount: this.state.questionCount + 1
-          })
+        console.log("Length:", length, "Count", this.state.questionCount);
+        if (answers[length] && answers[length].response_type
+                || length > 0 && length == this.state.questionCount) {
+
+            this.setState({
+                questionCount: this.state.questionCount + 1
+            })
         }
     },
 
@@ -302,21 +305,25 @@ module.exports = React.createClass({displayName: "exports",
     removeInput: function(index) {
         console.log("Remove", index);
 
-        if (!(this.state.questionCount > 1))
-            return;
-
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
-        var length = answers.length === 0 ? 1 : answers.length;
+        var length = answers.length;
 
         answers.splice(index, 1);
         survey[this.props.question.id] = answers;
 
         localStorage[this.props.surveyID] = JSON.stringify(survey);
 
+
+        var count = this.state.questionCount;
+        if (this.state.questionCount > 1)
+            count = count - 1;
+
         this.setState({
-            questionCount: this.state.questionCount - 1
+            questionCount: count
         })
+
+        this.forceUpdate();
     },
 
     /*
@@ -402,7 +409,7 @@ module.exports = React.createClass({displayName: "exports",
                                 ref: idx, 
                                 disabled: true, 
                                 initValue: self.getAnswer(idx), 
-                                showMinus: self.state.questionCount > 1}
+                                showMinus: true}
                             )
                            )
                 }), 
@@ -663,11 +670,12 @@ module.exports = React.createClass({displayName: "exports",
         var length = answers.length;
 
         console.log("Length:", length, "Count", this.state.questionCount);
-        if (answers[length] && answers[length].response
+        if (answers[length] && answers[length].response_type
                 || length > 0 && length == this.state.questionCount) {
-          this.setState({
-              questionCount: this.state.questionCount + 1
-          })
+
+            this.setState({
+                questionCount: this.state.questionCount + 1
+            })
         }
     },
 
@@ -704,6 +712,7 @@ module.exports = React.createClass({displayName: "exports",
         var answers = survey[this.props.question.id] || [];
         var index = answers.length === 0 ? 0 : this.refs[answers.length] ? answers.length : answers.length - 1; // So sorry
 
+        //XXX Delete canvas? canvas;
         var canvas = document.createElement('canvas');
         var video = React.findDOMNode(this.refs.video);
         canvas.height = video.clientHeight;
@@ -712,7 +721,6 @@ module.exports = React.createClass({displayName: "exports",
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         var photo = canvas.toDataURL('image/webp');
         console.log(photo);
-        window.cdel = canvas;
 
         answers[index] = {
             'response': photo, 
@@ -760,9 +768,7 @@ module.exports = React.createClass({displayName: "exports",
                     autoPlay: true, 
                     ref: "video", 
                     className: "question__video", 
-                    src: this.state.src, 
-                    width: 640, 
-                    height: 480}
+                    src: this.state.src}
                 ), 
 
                 children.map(function(child, idx) {
@@ -839,12 +845,15 @@ module.exports = React.createClass({displayName: "exports",
     addNewInput: function() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
-        var length = answers.length === 0 ? 1 : answers.length;
+        var length = answers.length;
 
-        if (length == this.state.questionCount) {
-          this.setState({
-              questionCount: this.state.questionCount + 1
-          })
+        console.log("Length:", length, "Count", this.state.questionCount);
+        if (answers[length] && answers[length].response_type
+                || length > 0 && length == this.state.questionCount) {
+
+            this.setState({
+                questionCount: this.state.questionCount + 1
+            })
         }
     },
 

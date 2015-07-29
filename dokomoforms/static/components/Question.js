@@ -45,12 +45,15 @@ module.exports = React.createClass({
     addNewInput: function() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
-        var length = answers.length === 0 ? 1 : answers.length;
+        var length = answers.length;
 
-        if (length == this.state.questionCount) {
-          this.setState({
-              questionCount: this.state.questionCount + 1
-          })
+        console.log("Length:", length, "Count", this.state.questionCount);
+        if (answers[length] && answers[length].response_type
+                || length > 0 && length == this.state.questionCount) {
+
+            this.setState({
+                questionCount: this.state.questionCount + 1
+            })
         }
     },
 
