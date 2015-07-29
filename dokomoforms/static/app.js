@@ -1,5 +1,6 @@
 var React = require('react');
 var $ = require('jquery');
+var PouchDB  = require('pouchdb');
 
 var ResponseField = require('./components/baseComponents/ResponseField.js');
 var ResponseFields = require('./components/baseComponents/ResponseFields.js');
@@ -36,6 +37,7 @@ var Splash = require('./components/Splash.js');
  */
 var Application = React.createClass({
     getInitialState: function() {
+        var surveyDB = new PouchDB(this.props.survey.id);
         return { 
             showDontKnow: false,
             showDontKnowBox: false,
@@ -46,6 +48,7 @@ var Application = React.createClass({
                 SUBMIT : 3,
             },
             state: 1,
+            db: surveyDB
         }
     },
 
