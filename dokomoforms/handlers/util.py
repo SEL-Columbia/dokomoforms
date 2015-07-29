@@ -1,22 +1,8 @@
 """Useful reusable functions for handlers, plus the BaseHandler."""
-import dateutil.parser
-
 import tornado.web
 from tornado.escape import to_unicode, json_decode
 
 from dokomoforms.models import User, Survey
-
-
-def iso_date_str_to_fmt_str(date, format_str):
-    """Transform an ISO 8601 string.
-
-    TODO: Remove the need for this.
-    @jmwohl
-    """
-    if date is not None:
-        return dateutil.parser.parse(date).strftime(format_str)
-    else:
-        return None
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -103,7 +89,6 @@ class BaseHandler(tornado.web.RequestHandler):
         """
         namespace = super().get_template_namespace()
         namespace.update({
-            'iso_date_str_to_fmt_str': iso_date_str_to_fmt_str,
             'surveys_for_menu': self._get_surveys_for_menu(),
         })
         return namespace

@@ -1,5 +1,5 @@
-tornado==4.2
-SQLAlchemy==1.0.6
+tornado==4.2.1
+SQLAlchemy==1.0.8
 geoalchemy2==0.2.5
 psycopg2==2.6.1
 py-bcrypt==0.4
@@ -7,4 +7,3 @@ passlib==1.6.2
 restless==2.0.1
 # Find a way to remove this dependency
 # @jmwohl
-py-dateutil
