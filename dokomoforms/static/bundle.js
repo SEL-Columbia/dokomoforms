@@ -600,28 +600,30 @@ module.exports = React.createClass({displayName: "exports",
 
         var camera = null;
         var src = null;
-        //if (window.MediaStreamTrack){
-        //    // Save the last camera id. It's likely the outward facing one.
-        //    MediaStreamTrack.getSources(function(sources) {
-        //        sources.forEach(function(source) {
-        //            if (source.kind == 'video') {
-        //                camera = source.id;
-        //            }
-        //        });
-        //    });
-
-        //}
 
         return { 
             questionCount: length,
             requested: false,
             camera: camera,
+            src: src
         }
+    },
+
+    componentDidMount: function() {
+        console.log("WHAT");
+        console.log("WHAT");
+        console.log("WHAT");
+        this.getStream();
+    },
+
+    componentWillMount: function() {
+        console.log("WHT");
+        console.log("WHT");
+        console.log("WHT");
     },
 
     getStream: function() {
         var self = this;
-        var src = null;
         // Browser implementations
         navigator.getUserMedia = navigator.getUserMedia ||
             navigator.webkitGetUserMedia ||
@@ -629,15 +631,20 @@ module.exports = React.createClass({displayName: "exports",
             navigator.msGetUserMedia;
 
         navigator.getUserMedia ({
-            video: true
-            //video: {optional: [{sourceId: self.state.camera}]}
+            video: {optional: [{sourceId: self.state.camera}]}
         }, function(stream) {
-            src = window.URL.createObjectURL(stream);
+            var src = window.URL.createObjectURL(stream);
+            console.log(src);
+            //var video = React.findDOMNode(this.refs.video);
+            //video.src = src;
+            //video.play();
+            self.setState({
+                src: src
+            });
         }, function(err) {
             console.log("Video failed:", err);
         });
 
-        return src;
     },
 
     /*
@@ -775,7 +782,9 @@ module.exports = React.createClass({displayName: "exports",
                     autoPlay: true, 
                     ref: "video", 
                     className: "question__video", 
-                    src: this.getStream()}
+                    src: this.state.src, 
+                    width: 640, 
+                    height: 480}
                 ), 
 
                 children.map(function(child, idx) {
