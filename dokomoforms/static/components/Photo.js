@@ -19,7 +19,7 @@ module.exports = React.createClass({
     getInitialState: function() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
-        var length = answers.length === 0 ? 1 : answers.length;
+        var length = answers.length;
 
         var camera = null;
         var src = null;
@@ -32,17 +32,13 @@ module.exports = React.createClass({
         }
     },
 
+    // This is how you react to the render call back. Once video is mounted I can attach a source
+    // and re-render the page with it using the autoPlay feature. No DOM manipulation required!!
     componentDidMount: function() {
-        console.log("WHAT");
-        console.log("WHAT");
-        console.log("WHAT");
         this.getStream();
     },
 
     componentWillMount: function() {
-        console.log("WHT");
-        console.log("WHT");
-        console.log("WHT");
     },
 
     getStream: function() {
@@ -58,9 +54,6 @@ module.exports = React.createClass({
         }, function(stream) {
             var src = window.URL.createObjectURL(stream);
             console.log(src);
-            //var video = React.findDOMNode(this.refs.video);
-            //video.src = src;
-            //video.play();
             self.setState({
                 src: src
             });
@@ -78,7 +71,7 @@ module.exports = React.createClass({
     update: function() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
-        var length = answers.length === 0 ? 1 : answers.length;
+        var length = answers.length;
         this.setState({
             questionCount: length,
         });
@@ -90,9 +83,11 @@ module.exports = React.createClass({
     addNewInput: function() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
-        var length = answers.length === 0 ? 1 : answers.length;
+        var length = answers.length;
 
-        if (length == this.state.questionCount) {
+        console.log("Length:", length, "Count", this.state.questionCount);
+        if (answers[length] && answers[length].response
+                || length > 0 && length == this.state.questionCount) {
           this.setState({
               questionCount: this.state.questionCount + 1
           })
@@ -105,12 +100,9 @@ module.exports = React.createClass({
     removeInput: function(index) {
         console.log("Remove", index);
 
-        if (!(this.state.questionCount > 1))
-            return;
-
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
-        var length = answers.length === 0 ? 1 : answers.length;
+        var length = answers.length;
 
         answers.splice(index, 1);
         survey[this.props.question.id] = answers;
@@ -139,38 +131,24 @@ module.exports = React.createClass({
         var video = React.findDOMNode(this.refs.video);
         canvas.height = video.clientHeight;
         canvas.width = video.clientWidth;
-
         var ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        console.log(canvas.toDataURL('image/webp'));
+        var photo = canvas.toDataURL('image/webp');
+        console.log(photo);
+        window.cdel = canvas;
 
-        navigator.geolocation.getCurrentPosition(
-            function success(position) {
-                //answers[index] = {
-                //    'response': loc, 
-                //    'response_type': 'answer'
-                //};
+        answers[index] = {
+            'response': photo, 
+            'response_type': 'answer'
+        };
 
-                //survey[self.props.question.id] = answers; // Update localstorage
-                //localStorage[self.props.surveyID] = JSON.stringify(survey);
+        survey[self.props.question.id] = answers; // Update localstorage
+        localStorage[self.props.surveyID] = JSON.stringify(survey);
 
-                //var length = answers.length === 0 ? 1 : answers.length;
-                //self.setState({
-                //    questionCount: length
-                //});
-            }, 
-            
-            function error() {
-                console.log("Location could not be grabbed");
-            }, 
-            
-            {
-                enableHighAccuracy: true,
-                timeout: 20000,
-                maximumAge: 0
-            }
-        );
-
+        var length = answers.length === 0 ? 1 : answers.length;
+        self.setState({
+            questionCount: length
+        });
 
     },
 
@@ -187,7 +165,7 @@ module.exports = React.createClass({
         var length = answers.length === 0 ? 1 : answers.length;
 
         console.log(answers, index);
-        return answers[index] && JSON.stringify(answers[index].response) || null;
+        return answers[index] && answers[index].response || null;
     },
 
     render: function() {
@@ -220,10 +198,11 @@ module.exports = React.createClass({
                                 ref={idx}
                                 disabled={true}
                                 initValue={self.getAnswer(idx)} 
-                                showMinus={self.state.questionCount > 1}
+                                showMinus={true}
                             />
                            )
                 })}
+
                 {this.props.question.allow_multiple
                     ? <LittleButton buttonFunction={this.addNewInput}
                         disabled={this.props.disabled}

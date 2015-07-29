@@ -34,8 +34,9 @@ module.exports = React.createClass({
 
     render: function() {
         return (
-                <div className="input_container">
-                    <img 
+                <div className="photo_container">
+                    <img
+                        className="photo_input" 
                         src={this.props.initValue}
                         disabled={this.props.disabled}
                      >
