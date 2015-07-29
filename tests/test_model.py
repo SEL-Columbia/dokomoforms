@@ -156,7 +156,6 @@ class TestUtil(DokoTest):
         )
 
 
-
 class TestColumnProperties(DokoTest):
     def _create_survey_node(self):
         with self.session.begin():
@@ -240,7 +239,7 @@ class TestColumnProperties(DokoTest):
             )
 
             self.session.add(submission)
-        
+
         sn = self.session.query(models.SurveyNode).one()
         self.assertEqual(models.answer_mode(sn), 2)
 
@@ -1502,7 +1501,7 @@ class TestSurveyNode(DokoTest):
             ),
             0
         )
-        
+
         with self.session.begin():
             survey = self.session.query(models.Survey).one()
             survey.submissions.append(
