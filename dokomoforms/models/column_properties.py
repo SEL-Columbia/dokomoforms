@@ -11,7 +11,6 @@ from sqlalchemy.sql.functions import Function
 
 from dokomoforms.models import (
     Answer, Node, Survey, Submission, AnswerableSurveyNode,
-    survey_sequentialization
 )
 from dokomoforms.models.answer import ANSWER_TYPES
 from dokomoforms.exc import InvalidTypeForOperation
@@ -68,7 +67,10 @@ def _answer_stat(survey_node: AnswerableSurveyNode,
         object_session(survey_node)
         .scalar(
             sa.select([func(answer_cls.main_answer)])
-            .where(answer_cls.survey_node_id == survey_node.id)
+            .select_from(Answer.__table__.join(
+                answer_cls.__table__, Answer.id == answer_cls.id
+            ))
+            .where(Answer.survey_node_id == survey_node.id)
         )
     )
 
@@ -121,16 +123,18 @@ def answer_mode(survey_node: AnswerableSurveyNode):
     answer_cls = ANSWER_TYPES[survey_node.the_type_constraint]
     return (
         object_session(survey_node)
-        .execute(sa.text(
-            "SELECT MODE() WITHIN GROUP (ORDER BY main_answer) AS answer_mode"
-            " FROM {table} JOIN {answer_table} ON"
-            " {table}.id = {answer_table}.id"
-            " WHERE {answer_table}.survey_node_id = '{survey_node_id}'".format(
-                table=str(answer_cls.__table__),
-                answer_table=str(Answer.__table__),
-                survey_node_id=survey_node.id,
-            )
-        ))
+        .execute(
+            sa.text(
+                'SELECT MODE() WITHIN GROUP (ORDER BY main_answer)'
+                ' FROM {table} JOIN {answer_table} ON'
+                ' {table}.id = {answer_table}.id'
+                ' WHERE {answer_table}.survey_node_id = :sn_id'.format(
+                    table=answer_cls.__table__,
+                    answer_table=Answer.__table__,
+                )
+            ),
+            {'sn_id': survey_node.id}
+        )
         .scalar()
     )
 
@@ -173,8 +177,8 @@ def _question_stats(survey_node):
 
 def generate_question_stats(survey):
     """Get answer statistics for the nodes in a survey."""
-    answerable_survey_nodes = survey_sequentialization(
-        survey, include_non_answerable=False
+    answerable_survey_nodes = survey._sequentialize(
+        include_non_answerable=False
     )
     for survey_node in answerable_survey_nodes:
         stats = list(_question_stats(survey_node))

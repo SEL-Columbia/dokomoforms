@@ -140,6 +140,25 @@ class Survey(Base):
             ('nodes', self.nodes),
         ))
 
+    def _sequentialize(self, *, include_non_answerable=True):
+        """Generate a pre-order traversal of this survey's nodes.
+
+        https://en.wikipedia.org/wiki/Tree_traversal#Depth-first
+        """
+        for node in self.nodes:
+            if isinstance(node, NonAnswerableSurveyNode):
+                if include_non_answerable:
+                    yield node
+                else:
+                    continue
+            else:
+                yield node
+                for sub_survey in node.sub_surveys:
+                    yield from Survey._sequentialize(
+                        sub_survey,
+                        include_non_answerable=include_non_answerable
+                    )
+
 
 _enumerator_table = sa.Table(
     'enumerator',
@@ -755,22 +774,3 @@ def skipped_required(survey, answers) -> str:
             answer = answer_stack.pop() if answer_stack else None
 
     return None
-
-
-def survey_sequentialization(survey, *, include_non_answerable=True):
-    """Generate a pre-order traversal of the survey's nodes.
-
-    https://en.wikipedia.org/wiki/Tree_traversal#Depth-first
-    """
-    for node in survey.nodes:
-        if isinstance(node, NonAnswerableSurveyNode):
-            if include_non_answerable:
-                yield node
-            else:
-                continue
-        else:
-            yield node
-            for sub_survey in node.sub_surveys:
-                yield from survey_sequentialization(
-                    sub_survey, include_non_answerable=include_non_answerable
-                )
