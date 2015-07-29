@@ -1,9 +1,22 @@
 """Useful reusable functions for handlers, plus the BaseHandler."""
+import dateutil.parser
 
 import tornado.web
 from tornado.escape import to_unicode, json_decode
 
-from dokomoforms.models import User
+from dokomoforms.models import User, Survey
+
+
+def iso_date_str_to_fmt_str(date, format_str):
+    """Transform an ISO 8601 string.
+
+    TODO: Remove the need for this.
+    @jmwohl
+    """
+    if date is not None:
+        return dateutil.parser.parse(date).strftime(format_str)
+    else:
+        return None
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -24,13 +37,11 @@ class BaseHandler(tornado.web.RequestHandler):
     @property
     def current_user_model(self):
         """Return the current logged in User, or None."""
-        try:
-            user = json_decode(self.current_user)
-        except (ValueError, TypeError):
-            return None
-        user_id = user['user_id']
-        user_model = self.session.query(User).get(user_id)
-        return user_model
+        current_user = self._current_user_cookie()
+        if current_user:
+            user_id = json_decode(current_user)['user_id']
+            return self.session.query(User).get(user_id)
+        return None
 
     def prepare(self):
         """Default behavior before any HTTP method.
@@ -51,6 +62,9 @@ class BaseHandler(tornado.web.RequestHandler):
         """
         raise tornado.web.HTTPError(404)
 
+    def _current_user_cookie(self) -> str:
+        return self.get_secure_cookie('user')
+
     def get_current_user(self) -> str:
         """Make current_user accessible.
 
@@ -58,11 +72,41 @@ class BaseHandler(tornado.web.RequestHandler):
         {{ current_user }} accessible to templates and self.current_user
         accessible to handlers.
 
-        :return: a string containing the dictionary {'user_id': <UUID>,
-                 'user_name': <name>}
+        :return: a string containing the user name.
         """
-        user = self.get_secure_cookie('user')
-        return to_unicode(user) if user else None
+        current_user = self._current_user_cookie()
+        if current_user:
+            return to_unicode(json_decode(current_user)['user_name'])
+        return None
+
+    def _get_surveys_for_menu(self):
+        """The menu bar needs access to surveys.
+
+        TODO: Get rid of this
+        @jmwohl
+        """
+        if not self.current_user:
+            return None
+        return (
+            self.session
+            .query(Survey)
+            .filter_by(creator_id=self.current_user_model.id)
+            .order_by(Survey.created_on.desc())
+            .limit(10)
+        )
+
+    def get_template_namespace(self):
+        """Template functions.
+
+        TODO: Find a way to get rid of this.
+        @jmwohl
+        """
+        namespace = super().get_template_namespace()
+        namespace.update({
+            'iso_date_str_to_fmt_str': iso_date_str_to_fmt_str,
+            'surveys_for_menu': self._get_surveys_for_menu(),
+        })
+        return namespace
 
     # def write_error(self, status_code, **kwargs):
     #     if status_code == 422 and 'exc_info' in kwargs:
@@ -87,7 +131,5 @@ class BaseAPIHandler(BaseHandler):
         return self.application._api_root_path
 
     def check_xsrf_cookie(self):
-        """Do not check XSRF for an API request."""
-        headers = self.request.headers
-        if 'Token' not in headers or 'Email' not in headers:
-            super().check_xsrf_cookie()
+        """Do not check XSRF for an API request (usually)."""
+        return None

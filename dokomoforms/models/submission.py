@@ -62,7 +62,7 @@ class Submission(Base):
         ),
         sa.UniqueConstraint('id', 'survey_type'),
         sa.UniqueConstraint('id', 'survey_id'),
-        sa.UniqueConstraint('id', 'submission_time', 'survey_id'),
+        sa.UniqueConstraint('id', 'save_time', 'survey_id'),
     )
 
     def _default_asdict(self) -> OrderedDict:

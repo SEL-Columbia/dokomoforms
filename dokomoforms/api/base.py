@@ -14,10 +14,12 @@ from sqlalchemy.sql.functions import count
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
 
+import tornado.web
+
 from dokomoforms.api.serializer import ModelJSONSerializer
-from dokomoforms.handlers.util import BaseAPIHandler
+from dokomoforms.handlers.util import BaseHandler, BaseAPIHandler
 from dokomoforms.models import SurveyCreator, Email
-from dokomoforms.models.util import column_search, get_asdict_subset
+from dokomoforms.models.util import column_search, get_fields_subset
 from dokomoforms.exc import DokomoError
 
 # TODO: Find out if it is OK to remove these. @jmwohl
@@ -104,14 +106,20 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
     def handle_error(self, err):
         """Generate a serialized error message.
 
-        This turns expected errors into 400 BAD REQUEST instead of 500
-        INTERNAL SERVER ERROR.
+        If the error came from Tornado, pass it along as such.
+        Otherwise, turn certain expected errors into 400 BAD REQUEST instead
+        of 500 INTERNAL SERVER ERROR.
         """
         understood = (
             KeyError, ValueError, TypeError, AttributeError,
             SQLAlchemyError, DokomoError
         )
-        if isinstance(err, understood):
+
+        if isinstance(err, tornado.web.HTTPError):
+            restless_error = exc.HttpError(err.log_message)
+            restless_error.status = err.status_code
+            err = restless_error
+        elif isinstance(err, understood):
             err = exc.BadRequest(err)
         return super().handle_error(err)
 
@@ -145,10 +153,15 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
 
         return full_response
 
+    def _check_xsrf_cookie(self):
+        return BaseHandler.check_xsrf_cookie(self.r_handler)
+
     def is_authenticated(self):
         """Return whether the request has been authenticated."""
         # A logged-in user has already authenticated.
         if self.r_handler.current_user is not None:
+            if self.request_method() not in {'GET', 'HEAD', 'OPTIONS'}:
+                self._check_xsrf_cookie()
             return True
 
         # A SurveyCreator can log in with a token.
@@ -175,8 +188,8 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
 
         return False
 
-    def _fields_filter(self, model_or_models, is_detail=True):
-        """Filter the fields on the given models.
+    def _specific_fields(self, model_or_models, is_detail=True):
+        """Pick out the specified fields on the given models.
 
         TODO: Confirm that this is not a performance bottleneck.
         """
@@ -188,16 +201,16 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
 
         if is_detail:
             the_model = model_or_models
-            return get_asdict_subset(the_model, fields)
+            return get_fields_subset(the_model, fields)
         models = model_or_models
-        return [get_asdict_subset(model, fields) for model in models]
+        return [get_fields_subset(model, fields) for model in models]
 
     def detail(self, model_id):
         """Return a single instance of a model."""
         model = self.session.query(self.resource_type).get(model_id)
         if model is None:
             raise exc.NotFound()
-        return self._fields_filter(model)
+        return self._specific_fields(model)
 
     def list(self, where=None):
         """Return a list of instances of this model.
@@ -219,7 +232,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         search_lang = self._query_arg('lang')
 
         default_sort = ['{}:DESC'.format(self.default_sort_column_name)]
-        order_by = (
+        order_by_text = (
             element.split(':') for element in self._query_arg(
                 'order_by', list, default=default_sort
             )
@@ -247,11 +260,20 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         if where is not None:
             query = query.filter(where)
 
-        query = query.order_by(text(
-            ', '.join(
-                '{0} {1}'.format(*order) for order in order_by
-            ) + ' NULLS LAST'
-        ))
+        for attribute_name, direction in order_by_text:
+            try:
+                order = getattr(model_cls, attribute_name)
+                direction = direction.lower()
+                if direction == 'asc':
+                    order = order.asc()
+                elif direction == 'desc':
+                    order = order.desc()
+                order = order.nullslast()
+            except AttributeError:
+                order = text(
+                    '{} {} NULLS LAST'.format(attribute_name, direction)
+                )
+            query = query.order_by(order)
 
         if limit is not None:
             query = query.limit(limit)
@@ -263,7 +285,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         if result:
             num_filtered = result[0][1]
             models = [res[0] for res in result]
-            return num_filtered, self._fields_filter(models, is_detail=False)
+            return num_filtered, self._specific_fields(models, is_detail=False)
         return 0, []
 
     def update(self, model_id):

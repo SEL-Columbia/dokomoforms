@@ -1,0 +1,85 @@
+{% block subheader %}
+<div class="subheader submission-detail-header">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <h3>Submission Detail</h3>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-2">
+                <div class="stat-label">
+                    conducted by
+                </div>
+                <div class="stat-value stat-created-on">
+                    {{ submission.submitter_name }}
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="stat-label">
+                    conducted on
+                </div>
+                <div class="stat-value stat-created-on">
+                    {{ submission.save_time.strftime("%b %d, %Y at %H:%M:%S") }}
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="stat-label">
+                    submitted on
+                </div>
+                <div class="stat-value stat-created-on">
+                    {{ submission.submission_time.strftime("%b %d, %Y at %H:%M:%S") }}
+                </div>
+            </div>
+            <!-- <div class="col-md-2">
+                <div class="stat-label">
+                    survey
+                </div>
+                <div class="stat-value stat-created-on">
+                    {{ survey.title }}
+                </div>
+            </div> -->
+        </div>
+    </div>
+</div>
+{% end %}
+
+
+{% block content %}
+    <div class="content">
+        <div class="container-fluid" role="main">
+            
+            <div class="message">
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <ul class="survey-responses">
+		        <!-- TODO: make this prettier -->
+                        {% for answer in submission.answers %}
+                            <li>
+                            
+                                <div class="response-title-bar">
+				    {{ answer.question_title }}
+                                    <span class="question-type pull-right">{{ answer.type_constraint }}</span>
+                                </div>
+
+                                <div class="response-data">
+				    {{ json_encode(answer.response) }}
+                                </div>
+                                
+                            </li>
+                        {% end %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+{% end %}
+
+
+
+{% block extra_scripts %}
+
+    
+{% end %}
