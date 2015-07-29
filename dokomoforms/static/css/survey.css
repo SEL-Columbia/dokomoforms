@@ -185,7 +185,7 @@ a, .icon {
     margin: auto;
     margin-bottom: 20px;
     height: 240px;
-    width: 340px;
+    width: 320px;
 }
 
 .question__btn__other {
@@ -260,8 +260,16 @@ a, .icon {
     position: relative;
 }
 
-.location_input {
+.photo_container {
+    position: relative;
+    margin: 0px auto;
+    width: 320px;
+    font-color: white;
+}
+
+.photo_input {
     text-align: center;
+    margin: 0px auto;
 }
 
 .text_input {
