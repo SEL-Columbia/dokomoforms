@@ -2,9 +2,10 @@ var React = require('react');
 
 var PhotoField = require('./baseComponents/PhotoField.js');
 var LittleButton = require('./baseComponents/LittleButton.js');
-var $ = require('jquery');
+var uuid = require('node-uuid');
 
-                //XXX use this: navigator.vibrate(50);
+//XXX use this: navigator.vibrate(50);
+
 /*
  * Location question component
  *
@@ -14,6 +15,7 @@ var $ = require('jquery');
  *     @language: current survey language
  *     @surveyID: current survey id
  *     @disabled: boolean for disabling all inputs
+ *     @db: pouchdb database 
  */
 module.exports = React.createClass({
     getInitialState: function() {
@@ -28,6 +30,7 @@ module.exports = React.createClass({
             questionCount: length,
             requested: false,
             camera: camera,
+            photos: [],
             src: src
         }
     },
@@ -36,6 +39,7 @@ module.exports = React.createClass({
     // and re-render the page with it using the autoPlay feature. No DOM manipulation required!!
     componentDidMount: function() {
         this.getStream();
+        this.getPhotos();
     },
 
     componentWillMount: function() {
@@ -61,6 +65,47 @@ module.exports = React.createClass({
             console.log("Video failed:", err);
         });
 
+    },
+
+    /*
+     * Get default value for an input at a given index from localStorage
+     * Use this value to query pouchDB and update state asynchronously
+     */
+    getPhotos: function() {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var self = this;
+
+        answers.forEach(function(answer, idx) {
+            self.getPhoto(answer.response, function(err, photo) {
+                if (err) {
+                    console.log("DB query failed:", err);
+                    return;
+                }
+
+                self.state.photos[idx] = photo;
+                self.setState({
+                    photos: self.state.photos
+                });
+            });
+        });
+    },
+
+    /*
+     * Get photo with uuid, id from pouchDB
+     */
+    getPhoto: function(id, callback) {
+        this.props.db.getAttachment(id, 'photo').then(function(photo) {
+            callback(null, URL.createObjectURL(photo));
+        }).catch(function(err) {
+            callback(err);
+        });
+
+        //this.props.db.get(id, {'attachments': true}).then(function(photoDoc) {
+        //    callback(null, photoDoc._attachments.photo.data);
+        //}).catch(function(err) {
+        //    callback(err);
+        //});
     },
 
     /*
@@ -104,15 +149,42 @@ module.exports = React.createClass({
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
         var length = answers.length;
+        var photoID = answers[index] && answers[index].response || 0;
+        var self = this;
 
+        // Remove from localStorage;
         answers.splice(index, 1);
         survey[this.props.question.id] = answers;
-
         localStorage[this.props.surveyID] = JSON.stringify(survey);
 
+        // Remove from pouchDB
+        console.log("removing", photoID);
+        this.state.photos.splice(index, 1);
+        this.removePhoto(photoID, function(err, result) {
+            if (err) {
+                console.log("Could not remove attachment?:", err);
+                return;
+            }
+            console.log("Removed attachement:", result);
+        });
+
         this.setState({
+            photos: this.state.photos,
             questionCount: this.state.questionCount - 1
         })
+    },
+
+    removePhoto: function(photoID, callback) {
+        var self = this;
+        this.props.db.get(photoID).then(function (photoDoc) {
+            self.props.db.removeAttachment(photoID, 'photo', photoDoc._rev)
+                .then(function(result) {
+                    self.props.db.remove(photoID, result.rev);
+                    callback(null, result)
+                }).catch(function(err) {
+                    callback(err)
+                });
+        });
     },
 
     /*
@@ -128,6 +200,7 @@ module.exports = React.createClass({
         var answers = survey[this.props.question.id] || [];
         var index = answers.length === 0 ? 0 : this.refs[answers.length] ? answers.length : answers.length - 1; // So sorry
 
+        // Capture still from video element and write into new canvas
         //XXX Delete canvas? canvas;
         var canvas = document.createElement('canvas');
         var video = React.findDOMNode(this.refs.video);
@@ -135,38 +208,41 @@ module.exports = React.createClass({
         canvas.width = video.clientWidth;
         var ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        var photo = canvas.toDataURL('image/webp');
-        console.log(photo);
 
+        // Extract photo from canvas and write it into pouchDB
+        var photo = canvas.toDataURL('image/png');
+        var photo64 = photo.substring(photo.indexOf(',')+1)
+        var photoID = uuid.v4();
+
+        console.log(photo);
+        console.log(photoID);
+        this.props.db.put({
+            '_id': photoID,
+            '_attachments': {
+                'photo': {
+                    "content_type": "image/png",
+                    "data": photo64
+                }
+            }
+        });
+
+        // Record the ID into localStorage
         answers[index] = {
-            'response': photo, 
+            'response': photoID, 
             'response_type': 'answer'
         };
 
         survey[self.props.question.id] = answers; // Update localstorage
         localStorage[self.props.surveyID] = JSON.stringify(survey);
 
+        // Update state for count and in memory photos array
         var length = answers.length === 0 ? 1 : answers.length;
+        self.state.photos[index] = photo;
         self.setState({
+            photos: self.state.photos,
             questionCount: length
         });
 
-    },
-
-    /*
-     * Get default value for an input at a given index from localStorage
-     *
-     * @index: The location in the answer array in localStorage to search
-     */
-    getAnswer: function(index) {
-        console.log("In:", index);
-
-        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
-        var answers = survey[this.props.question.id] || [];
-        var length = answers.length === 0 ? 1 : answers.length;
-
-        console.log(answers, index);
-        return answers[index] && answers[index].response || null;
     },
 
     render: function() {
@@ -196,7 +272,7 @@ module.exports = React.createClass({
                                 index={idx} 
                                 ref={idx}
                                 disabled={true}
-                                initValue={self.getAnswer(idx)} 
+                                initValue={self.state.photos[idx]} 
                                 showMinus={true}
                             />
                            )

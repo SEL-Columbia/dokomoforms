@@ -16,6 +16,7 @@ var Select = require('./baseComponents/Select.js');
  *     @language: current survey language
  *     @surveyID: current survey id
  *     @disabled: boolean for disabling all inputs
+ *     @db: pouchdb database 
  */
 module.exports = React.createClass({
     getInitialState: function() {

@@ -37,7 +37,11 @@ var Splash = require('./components/Splash.js');
  */
 var Application = React.createClass({
     getInitialState: function() {
-        var surveyDB = new PouchDB(this.props.survey.id);
+        var surveyDB = new PouchDB(this.props.survey.id,
+                {
+                    'auto_compation': true,
+                });
+        window.surveyDB = surveyDB;
         return { 
             showDontKnow: false,
             showDontKnowBox: false,
@@ -318,6 +322,7 @@ var Application = React.createClass({
                                 language={survey.default_language}
                                 surveyID={survey.id}
                                 disabled={this.state.showDontKnowBox}
+                                db={this.state.db}
                            />
                        )
 
@@ -343,6 +348,7 @@ var Application = React.createClass({
                                 language={survey.default_language}
                                 surveyID={survey.id}
                                 disabled={this.state.showDontKnowBox}
+                                db={this.state.db}
                            />
                        )
                 case 'note':
