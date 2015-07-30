@@ -13,22 +13,26 @@ module.exports = {
     },
     
     /*
-     * Get photo with uuid, id from pouchDB as blob
+     * Get photo with uuid, id from pouchDB as base64 string
      */
-    getBlob: function(db, id, callback) {
+    getBase64: function(db, id, callback) {
         db.getAttachment(id, 'photo').then(function(photoBlob) {
-            var photo = URL.createObjectURL(photoBlob);
-            var photo64 = photo.substring(photo.indexOf(',')+1)
-            callback(null, photo64);
+            var reader = new window.FileReader();
+            reader.readAsDataURL(photoBlob); 
+            reader.onloadend = function() {
+                var photoURI = reader.result;                
+                var photo64 = photoURI.substring(photoURI.indexOf(',')+1)
+                callback(null, photo64);
+            }
         }).catch(function(err) {
             callback(err);
         });
     },
 
     /*
-     * Get photo with uuid, id from pouchDB as base64 string
+     * Get photo with uuid, id from pouchDB as blob
      */
-    getBase64: function(db, id, callback) {
+    getBlob: function(db, id, callback) {
         db.getAttachment(id, 'photo').then(function(photo) {
             callback(null, photo);
         }).catch(function(err) {
@@ -44709,6 +44713,8 @@ var Application = React.createClass({displayName: "Application",
             if (photo.surveyID === self.props.survey.id) {
                 console.log("went through");
                 PhotoAPI.getBase64(self.state.db, photo.photoID, function(err, base64){
+                    console.log("BASE", base64);
+                    console.log("BASE", JSON.stringify(base64));
                     $.ajax({
                         url: '/api/v0/photos',
                         type: 'POST',
