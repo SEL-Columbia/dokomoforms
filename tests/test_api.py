@@ -1,7 +1,9 @@
 """API tests"""
+from base64 import b64encode
 from collections import OrderedDict
 from datetime import datetime, date, timedelta
 import json
+import os
 import uuid
 import unittest
 
@@ -15,6 +17,7 @@ from tests.util import DokoHTTPTest, setUpModule, tearDownModule
 
 from dokomoforms.models import Submission, Survey, Node, SurveyCreator
 import dokomoforms.models as models
+from dokomoforms.models.answer import PhotoAnswer
 from dokomoforms.api.base import BaseResource
 from dokomoforms.api.nodes import NodeResource
 
@@ -963,6 +966,205 @@ class TestSurveyApi(DokoHTTPTest):
         self.assertEqual(
             submission_dict['answers'][0]['response_type'], 'answer')
         self.assertEqual(submission_dict['answers'][0]['response'], 3)
+
+    def test_submit_to_survey_with_photo_answer_response_no_photo(self):
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(Survey.title['English'].astext == 'photo_survey')
+            .one()
+        )
+        # url to test
+        url = self.api_root + '/surveys/' + survey.id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": "photo",
+                    "response": {
+                        "response_type": "answer",
+                        "response": str(uuid.uuid4()),
+                    }
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+
+        self.assertEqual(
+            submission_dict['answers'][0]['response_type'], 'answer')
+        self.assertEqual(
+            submission_dict['answers'][0]['response'],
+            None,
+            msg=submission_dict['answers']
+        )
+
+    def test_submit_to_survey_with_photo_answer_response_plus_photo(self):
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(Survey.title['English'].astext == 'photo_survey')
+            .one()
+        )
+        # url to test
+        url = self.api_root + '/surveys/' + survey.id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        desired_id = str(uuid.uuid4())
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": "photo",
+                    "response": {
+                        "response_type": "answer",
+                        "response": desired_id,
+                    }
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+
+        self.assertEqual(
+            submission_dict['answers'][0]['response_type'], 'answer')
+        self.assertEqual(
+            submission_dict['answers'][0]['response'],
+            None,
+            msg=submission_dict['answers']
+        )
+
+        photo_url = self.api_root + '/photos'
+        photo_path = os.path.join(
+            os.path.abspath('.'), 'dokomoforms/static/img/favicon.png'
+        )
+        with open(photo_path, 'rb') as photo_file:
+            b64photo = b64encode(photo_file.read())
+        body = {
+            'id': desired_id,
+            'mime_type': 'png',
+            'image': b64photo.decode(),
+        }
+
+        photo_response = self.fetch(
+            photo_url, method='POST', body=json_encode(body),
+            _logged_in_user=None
+        )
+        self.assertEqual(photo_response.code, 201, msg=photo_response.body)
+        self.assertEqual(
+            json_decode(photo_response.body)['image'].encode(),
+            b64photo
+        )
+
+        self.assertEqual(
+            self.session.query(PhotoAnswer).one().response['response'],
+            desired_id
+        )
+
+    def test_submit_to_survey_bogus_id_photo(self):
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(Survey.title['English'].astext == 'photo_survey')
+            .one()
+        )
+        # url to test
+        url = self.api_root + '/surveys/' + survey.id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        desired_id = str(uuid.uuid4())
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": "photo",
+                    "response": {
+                        "response_type": "answer",
+                        "response": desired_id,
+                    }
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+
+        self.assertEqual(
+            submission_dict['answers'][0]['response_type'], 'answer')
+        self.assertEqual(
+            submission_dict['answers'][0]['response'],
+            None,
+            msg=submission_dict['answers']
+        )
+
+        photo_url = self.api_root + '/photos'
+        photo_path = os.path.join(
+            os.path.abspath('.'), 'dokomoforms/static/img/favicon.png'
+        )
+        with open(photo_path, 'rb') as photo_file:
+            b64photo = b64encode(photo_file.read())
+        bogus_id = str(uuid.uuid4())
+        body = {
+            'id': bogus_id,
+            'mime_type': 'png',
+            'image': b64photo.decode(),
+        }
+
+        photo_response = self.fetch(
+            photo_url, method='POST', body=json_encode(body),
+            _logged_in_user=None
+        )
+        self.assertEqual(photo_response.code, 400, msg=photo_response.body)
+        self.assertIn(bogus_id, json_decode(photo_response.body)['error'])
 
     def test_submit_to_survey_with_multiple_choice_answer_response(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'

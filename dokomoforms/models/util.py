@@ -142,6 +142,8 @@ class ModelJSONEncoder(json.JSONEncoder):
         """
         if isinstance(obj, Base):
             return obj._asdict()
+        if isinstance(obj, bytes):
+            return obj.decode()
         if isinstance(obj, (datetime.date, datetime.time)):
             return obj.isoformat()
         if isinstance(obj, Decimal):  # might want to return a string instead

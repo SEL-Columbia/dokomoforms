@@ -45,6 +45,11 @@ class Survey(Base):
     __tablename__ = 'survey'
 
     id = util.pk()
+    containing_id = sa.Column(
+        pg.UUID,
+        unique=True,
+        server_default=sa.func.uuid_generate_v4()
+    )
     languages = util.languages_column('languages')
     title = util.json_column('title')
     default_language = sa.Column(
@@ -111,8 +116,8 @@ class Survey(Base):
             'creator_id',
             unique=True,
         ),
-        sa.UniqueConstraint('id', 'survey_type'),
-        sa.UniqueConstraint('id', 'languages'),
+        sa.UniqueConstraint('id', 'containing_id', 'survey_type'),
+        sa.UniqueConstraint('id', 'containing_id', 'languages'),
         util.languages_constraint('title', 'languages'),
         sa.CheckConstraint(
             "languages @> ARRAY[default_language]",
@@ -213,6 +218,7 @@ class SubSurvey(Base):
 
     id = util.pk()
     sub_survey_number = sa.Column(sa.Integer, nullable=False)
+    containing_survey_id = sa.Column(pg.UUID, nullable=False)
     root_survey_languages = sa.Column(
         pg.ARRAY(pg.TEXT, as_tuple=False), nullable=False
     )
@@ -234,7 +240,9 @@ class SubSurvey(Base):
     )
 
     __table_args__ = (
-        sa.UniqueConstraint('id', 'root_survey_languages', 'repeatable'),
+        sa.UniqueConstraint(
+            'id', 'containing_survey_id', 'root_survey_languages', 'repeatable'
+        ),
         sa.UniqueConstraint(
             'id', 'parent_type_constraint', 'parent_survey_node_id',
             'parent_node_id'
@@ -242,12 +250,14 @@ class SubSurvey(Base):
         sa.ForeignKeyConstraint(
             [
                 'parent_survey_node_id',
+                'containing_survey_id',
                 'root_survey_languages',
                 'parent_type_constraint',
                 'parent_node_id',
             ],
             [
                 'survey_node_answerable.id',
+                'survey_node_answerable.the_containing_survey_id',
                 'survey_node_answerable.the_root_survey_languages',
                 'survey_node_answerable.the_type_constraint',
                 'survey_node_answerable.the_node_id',
@@ -491,6 +501,7 @@ class SurveyNode(Base):
         """The Node instance."""
 
     root_survey_id = sa.Column(pg.UUID)
+    containing_survey_id = sa.Column(pg.UUID, nullable=False)
     root_survey_languages = sa.Column(
         pg.ARRAY(pg.TEXT, as_tuple=True), nullable=False
     )
@@ -507,8 +518,8 @@ class SurveyNode(Base):
     __table_args__ = (
         sa.UniqueConstraint('id', 'node_id', 'type_constraint'),
         sa.UniqueConstraint(
-            'id', 'root_survey_languages', 'node_id', 'type_constraint',
-            'non_null_repeatable'
+            'id', 'containing_survey_id', 'root_survey_languages', 'node_id',
+            'type_constraint', 'non_null_repeatable'
         ),
         sa.CheckConstraint(
             '(sub_survey_repeatable IS NULL) != '
@@ -523,14 +534,16 @@ class SurveyNode(Base):
             name='all_survey_languages_present_in_node_languages'
         ),
         sa.ForeignKeyConstraint(
-            ['root_survey_id', 'root_survey_languages'],
-            ['survey.id', 'survey.languages']
+            ['root_survey_id', 'containing_survey_id',
+                'root_survey_languages'],
+            ['survey.id', 'survey.containing_id',
+                'survey.languages']
         ),
         sa.ForeignKeyConstraint(
             ['sub_survey_id', 'root_survey_languages',
-                'sub_survey_repeatable'],
+                'containing_survey_id', 'sub_survey_repeatable'],
             ['sub_survey.id', 'sub_survey.root_survey_languages',
-                'sub_survey.repeatable']
+                'sub_survey.containing_survey_id', 'sub_survey.repeatable']
         ),
         sa.ForeignKeyConstraint(
             ['node_id', 'node_languages', 'type_constraint'],
@@ -540,7 +553,8 @@ class SurveyNode(Base):
 
     def _asdict(self) -> OrderedDict:
         result = self.node._asdict()
-        result['logic'].update(self.logic)
+        if result['logic']:
+            result['logic'].update(self.logic)
         result['node_id'] = result.pop('id')
         result['id'] = self.id
         result['deleted'] = self.deleted
@@ -576,6 +590,7 @@ class AnswerableSurveyNode(SurveyNode):
     __tablename__ = 'survey_node_answerable'
 
     id = util.pk()
+    the_containing_survey_id = sa.Column(pg.UUID, nullable=False)
     the_root_survey_languages = sa.Column(
         pg.ARRAY(pg.TEXT, as_tuple=True), nullable=False
     )
@@ -616,12 +631,13 @@ class AnswerableSurveyNode(SurveyNode):
     __mapper_args__ = {'polymorphic_identity': 'answerable'}
     __table_args__ = (
         sa.UniqueConstraint(
-            'id', 'the_root_survey_languages', 'the_type_constraint',
-            'the_node_id'
+            'id', 'the_containing_survey_id', 'the_root_survey_languages',
+            'the_type_constraint', 'the_node_id'
         ),
         sa.UniqueConstraint(
-            'id', 'the_node_id', 'the_type_constraint', 'allow_multiple',
-            'allow_other', 'allow_dont_know'
+            'id', 'the_containing_survey_id', 'the_node_id',
+            'the_type_constraint', 'allow_multiple', 'allow_other',
+            'allow_dont_know'
         ),
         sa.CheckConstraint(
             '(NOT the_sub_survey_repeatable) OR allow_multiple',
@@ -630,6 +646,7 @@ class AnswerableSurveyNode(SurveyNode):
         sa.ForeignKeyConstraint(
             [
                 'id',
+                'the_containing_survey_id',
                 'the_root_survey_languages',
                 'the_node_id',
                 'the_type_constraint',
@@ -637,6 +654,7 @@ class AnswerableSurveyNode(SurveyNode):
             ],
             [
                 'survey_node.id',
+                'survey_node.containing_survey_id',
                 'survey_node.root_survey_languages',
                 'survey_node.node_id',
                 'survey_node.type_constraint',
