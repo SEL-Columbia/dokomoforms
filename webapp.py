@@ -32,7 +32,7 @@ if __name__ == '__main__':  # pragma: no cover
 import dokomoforms.handlers as handlers
 from dokomoforms.models import create_engine, Base
 from dokomoforms.api import (
-    SurveyResource, SubmissionResource, NodeResource
+    SurveyResource, SubmissionResource, PhotoResource, NodeResource
 )
 
 
@@ -207,6 +207,10 @@ class Application(tornado.web.Application):
             api_url(
                 '/submissions/({uuid})/?', SubmissionResource.as_detail(),
                 name='submission'
+            ),
+            api_url('/photos/?', PhotoResource.as_list(), name='photos'),
+            api_url(
+                '/photos/({uuid})/?', PhotoResource.as_detail(), name='photo'
             ),
 
             # * Nodes

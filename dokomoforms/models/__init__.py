@@ -19,7 +19,9 @@ from dokomoforms.models.submission import (
     Submission, EnumeratorOnlySubmission, PublicSubmission,
     construct_submission
 )
-from dokomoforms.models.answer import Answer, Photo, construct_answer
+from dokomoforms.models.answer import (
+    Answer, Photo, construct_answer, add_new_photo_to_session
+)
 from dokomoforms.models.column_properties import (
     answer_min, answer_max, answer_sum, answer_avg, answer_mode,
     answer_stddev_pop, answer_stddev_samp,
@@ -48,7 +50,7 @@ __all__ = (
     'Submission', 'EnumeratorOnlySubmission', 'PublicSubmission',
     'construct_submission',
     # Answer
-    'Answer', 'Photo', 'construct_answer',
+    'Answer', 'Photo', 'construct_answer', 'add_new_photo_to_session',
     # column_properties
     'answer_min', 'answer_max', 'answer_sum', 'answer_avg', 'answer_mode',
     'answer_stddev_pop', 'answer_stddev_samp',

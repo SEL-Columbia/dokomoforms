@@ -7,6 +7,7 @@ from dokomoforms.api.submissions import (
     SubmissionResource, get_submission_for_handler
 )
 from dokomoforms.api.nodes import NodeResource
+from dokomoforms.api.photo import PhotoResource
 
 
 __all__ = (
@@ -17,5 +18,5 @@ __all__ = (
     'SurveyResource', 'get_survey_for_handler',
     'SubmissionResource', 'get_submission_for_handler',
     'NodeResource',
-
+    'PhotoResource',
 )

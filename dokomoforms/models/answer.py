@@ -8,6 +8,7 @@ from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import relationship, synonym, column_property
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql import func
+from sqlalchemy.sql.functions import current_timestamp
 # from sqlalchemy.sql.type_api import UserDefinedType
 
 from tornado.escape import json_decode
@@ -118,7 +119,8 @@ class Answer(Base):
                 geo_json = json_decode(response['facility_location'])
                 lng, lat = geo_json['coordinates']
                 response['facility_location'] = {'lng': lng, 'lat': lat}
-
+            elif self.type_constraint == 'photo':
+                response = self.actual_photo_id
             else:
                 response = self.answer
         return OrderedDict((
@@ -251,16 +253,18 @@ class PhotoAnswer(_AnswerMixin, Answer):
     """A photo answer (the id of a Photo)."""
 
     __tablename__ = 'answer_photo'
-    main_answer = sa.Column(pg.UUID, util.fk('photo.id'))
+    main_answer = sa.Column(pg.UUID, unique=True)
+    actual_photo_id = sa.Column(pg.UUID, util.fk('photo.id'))
     answer = synonym('main_answer')
     photo = relationship('Photo')
     __mapper_args__ = {'polymorphic_identity': 'photo'}
-    __table_args__ = _answer_mixin_table_args()
-
-    def _asdict(self) -> OrderedDict:
-        result = super()._asdict()
-        result['photo'] = self.photo
-        return result
+    __table_args__ = (
+        _answer_mixin_table_args() + (
+            sa.CheckConstraint(
+                '(actual_photo_id IS NULL) != (main_answer = actual_photo_id)'
+            ),
+        )
+    )
 
 
 # class LObject(UserDefinedType):
@@ -276,14 +280,37 @@ class Photo(Base):
 
     id = util.pk()
     image = sa.Column(pg.BYTEA, nullable=False)
+    mime_type = sa.Column(pg.TEXT, nullable=False)
     # image = sa.Column(LObject)
+    created_on = sa.Column(
+        pg.TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=current_timestamp(),
+    )
 
     def _asdict(self) -> OrderedDict:
         return OrderedDict((
             ('id', self.id),
             ('deleted', self.deleted),
             ('image', self.image),
+            ('mime_type', self.mime_type),
+            ('created_on', self.created_on),
         ))
+
+
+def add_new_photo_to_session(session, *, id, **kwargs):
+    """Create a new Photo and update the referenced PhotoAnswer."""
+    with session.begin():
+        answer = (
+            session
+            .query(PhotoAnswer)
+            .filter_by(main_answer=id)
+            .one()
+        )
+        answer.photo = Photo(id=id, **kwargs)
+        answer.actual_photo_id = answer.main_answer
+        session.add(answer)
+    return answer.photo
 
 
 # sa.event.listen(

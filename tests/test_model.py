@@ -1,10 +1,12 @@
 """Model tests"""
-
+from base64 import b64encode
 from collections import OrderedDict
 import json
 import datetime
 from decimal import Decimal
+import os
 from statistics import pstdev, stdev
+import uuid
 import unittest
 
 from tests.util import (
@@ -19,7 +21,7 @@ import dateutil.parser
 
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError, DataError
-from sqlalchemy.orm.exc import FlushError
+from sqlalchemy.orm.exc import FlushError, NoResultFound
 
 from psycopg2.extras import NumericRange, DateRange, DateTimeRange
 
@@ -3106,8 +3108,253 @@ class TestAnswer(DokoTest):
             'I can put anything here ಠ_ಠ 你好世界！'
         )
 
-    def test_photo_answer(self):
-        pass  # TODO...
+    def test_photo_answer_no_photo(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title={'English': 'survey'},
+                nodes=[
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            type_constraint='photo',
+                            title={'English': 'photo_question'},
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        desired_id = str(uuid.uuid4())
+
+        with self.session.begin():
+            the_survey = self.session.query(models.Survey).one()
+            submission = models.PublicSubmission(
+                survey=the_survey,
+                answers=[
+                    models.construct_answer(
+                        survey_node=the_survey.nodes[0],
+                        type_constraint='photo',
+                        answer=desired_id,
+                    ),
+                ],
+            )
+
+            self.session.add(submission)
+
+        self.assertEqual(
+            self.session.query(models.Answer).one().answer,
+            desired_id
+        )
+
+    def test_photo_answer_unique(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title={'English': 'survey'},
+                nodes=[
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            allow_multiple=True,
+                            type_constraint='photo',
+                            title={'English': 'photo_question'},
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        desired_id = str(uuid.uuid4())
+
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                the_survey = self.session.query(models.Survey).one()
+                submission = models.PublicSubmission(
+                    survey=the_survey,
+                    answers=[
+                        models.construct_answer(
+                            survey_node=the_survey.nodes[0],
+                            type_constraint='photo',
+                            answer=desired_id,
+                        ),
+                        models.construct_answer(
+                            survey_node=the_survey.nodes[0],
+                            type_constraint='photo',
+                            answer=desired_id,
+                        ),
+                    ],
+                )
+
+                self.session.add(submission)
+
+    def test_photo_answer_with_photo(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title={'English': 'survey'},
+                nodes=[
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            type_constraint='photo',
+                            title={'English': 'photo_question'},
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        desired_id = str(uuid.uuid4())
+
+        with self.session.begin():
+            the_survey = self.session.query(models.Survey).one()
+            submission = models.PublicSubmission(
+                survey=the_survey,
+                answers=[
+                    models.construct_answer(
+                        survey_node=the_survey.nodes[0],
+                        type_constraint='photo',
+                        answer=desired_id,
+                    ),
+                ],
+            )
+
+            self.session.add(submission)
+
+        with self.session.begin():
+            answer = self.session.query(models.Answer).one()
+            photo_path = os.path.join(
+                os.path.abspath('.'), 'dokomoforms/static/img/favicon.png'
+            )
+            with open(photo_path, 'rb') as photo_file:
+                b64photo = b64encode(photo_file.read())
+                answer.photo = models.Photo(
+                    id=desired_id,
+                    mime_type='png',
+                    image=b64photo,
+                )
+            self.session.add(answer)
+
+        self.assertEqual(
+            self.session.query(models.Photo.image).scalar(),
+            b64photo
+        )
+        updated_answer = self.session.query(models.Answer).one()
+        self.assertEqual(
+            updated_answer.main_answer,
+            updated_answer.actual_photo_id
+        )
+
+    def test_add_new_photo_to_session(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title={'English': 'survey'},
+                nodes=[
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            type_constraint='photo',
+                            title={'English': 'photo_question'},
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        desired_id = str(uuid.uuid4())
+
+        with self.session.begin():
+            the_survey = self.session.query(models.Survey).one()
+            submission = models.PublicSubmission(
+                survey=the_survey,
+                answers=[
+                    models.construct_answer(
+                        survey_node=the_survey.nodes[0],
+                        type_constraint='photo',
+                        answer=desired_id,
+                    ),
+                ],
+            )
+
+            self.session.add(submission)
+
+        photo_path = os.path.join(
+            os.path.abspath('.'), 'dokomoforms/static/img/favicon.png'
+        )
+        with open(photo_path, 'rb') as photo_file:
+            b64photo = b64encode(photo_file.read())
+
+        models.add_new_photo_to_session(
+            self.session,
+            id=desired_id,
+            mime_type='png',
+            image=b64photo,
+        )
+
+        self.assertEqual(
+            self.session.query(models.Photo.image).scalar(),
+            b64photo
+        )
+        updated_answer = self.session.query(models.Answer).one()
+        self.assertEqual(
+            updated_answer.main_answer,
+            updated_answer.actual_photo_id
+        )
+
+    def test_add_new_photo_to_session_bogus_id(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey = models.Survey(
+                title={'English': 'survey'},
+                nodes=[
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            type_constraint='photo',
+                            title={'English': 'photo_question'},
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey]
+
+            self.session.add(creator)
+
+        desired_id = str(uuid.uuid4())
+
+        with self.session.begin():
+            the_survey = self.session.query(models.Survey).one()
+            submission = models.PublicSubmission(
+                survey=the_survey,
+                answers=[
+                    models.construct_answer(
+                        survey_node=the_survey.nodes[0],
+                        type_constraint='photo',
+                        answer=desired_id,
+                    ),
+                ],
+            )
+
+            self.session.add(submission)
+
+        photo_path = os.path.join(
+            os.path.abspath('.'), 'dokomoforms/static/img/favicon.png'
+        )
+        with open(photo_path, 'rb') as photo_file:
+            b64photo = b64encode(photo_file.read())
+
+        with self.assertRaises(NoResultFound):
+            models.add_new_photo_to_session(
+                self.session,
+                id=str(uuid.uuid4()),
+                mime_type='png',
+                image=b64photo,
+            )
 
     def test_integer_answer(self):
         with self.session.begin():
