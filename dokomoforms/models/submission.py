@@ -27,6 +27,7 @@ class Submission(Base):
         nullable=False,
     )
     survey_id = sa.Column(pg.UUID, nullable=False)
+    survey_containing_id = sa.Column(pg.UUID, nullable=False)
     survey_type = sa.Column(survey_type_enum, nullable=False)
     save_time = sa.Column(
         pg.TIMESTAMP(timezone=True),
@@ -57,12 +58,14 @@ class Submission(Base):
     }
     __table_args__ = (
         sa.ForeignKeyConstraint(
-            ['survey_id', 'survey_type'],
-            ['survey.id', 'survey.survey_type']
+            ['survey_id', 'survey_containing_id', 'survey_type'],
+            ['survey.id', 'survey.containing_id', 'survey.survey_type']
         ),
         sa.UniqueConstraint('id', 'survey_type'),
         sa.UniqueConstraint('id', 'survey_id'),
-        sa.UniqueConstraint('id', 'save_time', 'survey_id'),
+        sa.UniqueConstraint(
+            'id', 'survey_containing_id', 'save_time', 'survey_id'
+        ),
     )
 
     def _default_asdict(self) -> OrderedDict:

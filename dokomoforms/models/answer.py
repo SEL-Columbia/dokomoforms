@@ -6,6 +6,7 @@ from collections import OrderedDict
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import relationship, synonym, column_property
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql import func
 from sqlalchemy.sql.functions import current_timestamp
@@ -16,7 +17,9 @@ from tornado.escape import json_decode
 from geoalchemy2 import Geometry
 
 from dokomoforms.models import util, Base, node_type_enum
-from dokomoforms.exc import NotAnAnswerTypeError, NotAResponseTypeError
+from dokomoforms.exc import (
+    NotAnAnswerTypeError, NotAResponseTypeError, PhotoIdDoesNotExistError
+)
 
 
 class Answer(Base):
@@ -34,6 +37,8 @@ class Answer(Base):
     submission_id = sa.Column(pg.UUID, nullable=False)
     save_time = sa.Column(pg.TIMESTAMP(timezone=True), nullable=False)
     survey_id = sa.Column(pg.UUID, nullable=False)
+    survey_containing_id = sa.Column(pg.UUID, nullable=False)
+    survey_node_containing_survey_id = sa.Column(pg.UUID, nullable=False)
     survey_node_id = sa.Column(pg.UUID, nullable=False)
     survey_node = relationship('AnswerableSurveyNode')
     allow_multiple = sa.Column(sa.Boolean, nullable=False)
@@ -143,15 +148,20 @@ class Answer(Base):
             'id', 'allow_other', 'allow_dont_know', 'survey_node_id',
             'question_id', 'submission_id',
         ),
+        sa.CheckConstraint(
+            'survey_containing_id = survey_node_containing_survey_id'
+        ),
         sa.CheckConstraint('type_constraint::TEXT = answer_type::TEXT'),
         sa.ForeignKeyConstraint(
-            ['submission_id', 'save_time', 'survey_id'],
-            ['submission.id', 'submission.save_time',
-                'submission.survey_id']
+            ['submission_id', 'survey_containing_id',
+                'save_time', 'survey_id'],
+            ['submission.id', 'submission.survey_containing_id',
+                'submission.save_time', 'submission.survey_id']
         ),
         sa.ForeignKeyConstraint(
             [
                 'survey_node_id',
+                'survey_node_containing_survey_id',
                 'question_id',
                 'type_constraint',
                 'allow_multiple',
@@ -160,6 +170,7 @@ class Answer(Base):
             ],
             [
                 'survey_node_answerable.id',
+                'survey_node_answerable.the_containing_survey_id',
                 'survey_node_answerable.the_node_id',
                 'survey_node_answerable.the_type_constraint',
                 'survey_node_answerable.allow_multiple',
@@ -301,12 +312,15 @@ class Photo(Base):
 def add_new_photo_to_session(session, *, id, **kwargs):
     """Create a new Photo and update the referenced PhotoAnswer."""
     with session.begin():
-        answer = (
-            session
-            .query(PhotoAnswer)
-            .filter_by(main_answer=id)
-            .one()
-        )
+        try:
+            answer = (
+                session
+                .query(PhotoAnswer)
+                .filter_by(main_answer=id)
+                .one()
+            )
+        except NoResultFound:
+            raise PhotoIdDoesNotExistError(id)
         answer.photo = Photo(id=id, **kwargs)
         answer.actual_photo_id = answer.main_answer
         session.add(answer)

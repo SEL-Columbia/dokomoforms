@@ -41,6 +41,11 @@ class NotAnAnswerTypeError(DokomoError):
     """
 
 
+class PhotoIdDoesNotExistError(DokomoError):
+
+    """The submitted photo ID does not exist in the database."""
+
+
 class RequiredQuestionSkipped(DokomoError):
 
     """A submission has no answer for a required question."""

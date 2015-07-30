@@ -21,7 +21,7 @@ import dateutil.parser
 
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError, DataError
-from sqlalchemy.orm.exc import FlushError, NoResultFound
+from sqlalchemy.orm.exc import FlushError
 
 from psycopg2.extras import NumericRange, DateRange, DateTimeRange
 
@@ -3070,6 +3070,52 @@ class TestAnswer(DokoTest):
 
                 self.session.add(submission)
 
+    def test_cannot_answer_survey_node_from_another_survey(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='creator')
+            survey1 = models.construct_survey(
+                survey_type='public',
+                title={'English': '1'},
+                nodes=[
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            title={'English': 'node 1'},
+                            type_constraint='integer',
+                        ),
+                    ),
+                ],
+            )
+            survey2 = models.construct_survey(
+                survey_type='public',
+                title={'English': '2'},
+                nodes=[
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            title={'English': 'node 2'},
+                            type_constraint='integer',
+                        ),
+                    ),
+                ],
+            )
+            creator.surveys = [survey1, survey2]
+            self.session.add(creator)
+
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                survey1.submissions.append(
+                    models.construct_submission(
+                        submission_type='unauthenticated',
+                        answers=[
+                            models.construct_answer(
+                                survey_node=survey2.nodes[0],
+                                type_constraint='integer',
+                                answer=1,
+                            ),
+                        ],
+                    )
+                )
+                self.session.add(survey1)
+
     def test_text_answer(self):
         with self.session.begin():
             creator = models.SurveyCreator(name='creator')
@@ -3348,7 +3394,7 @@ class TestAnswer(DokoTest):
         with open(photo_path, 'rb') as photo_file:
             b64photo = b64encode(photo_file.read())
 
-        with self.assertRaises(NoResultFound):
+        with self.assertRaises(exc.PhotoIdDoesNotExistError):
             models.add_new_photo_to_session(
                 self.session,
                 id=str(uuid.uuid4()),
