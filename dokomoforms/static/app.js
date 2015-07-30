@@ -283,7 +283,7 @@ var Application = React.createClass({
             console.log(photo, idx, "Trying photo");
             if (photo.surveyID === self.props.survey.id) {
                 console.log("went through");
-                PhotoAPI.getBase64(this.props.photoID, function(err, base64){
+                PhotoAPI.getBase64(self.state.db, photo.photoID, function(err, base64){
                     $.ajax({
                         url: '/api/v0/photos',
                         type: 'POST',
