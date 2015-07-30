@@ -280,7 +280,9 @@ var Application = React.createClass({
 
         var altered_unsynced_photos = unsynced_photos;
         unsynced_photos.forEach(function(photo, idx) {
-            if (photo.surveyID === self.props.surveyID) {
+            console.log(photo, idx, "Trying photo");
+            if (photo.surveyID === self.props.survey.id) {
+                console.log("went through");
                 PhotoAPI.getBase64(this.props.photoID, function(err, base64){
                     $.ajax({
                         url: '/api/v0/photos',
@@ -296,8 +298,8 @@ var Application = React.createClass({
                             "X-XSRFToken": getCookie("_xsrf")
                         },
                         dataType: 'json',
-                        success: function(survey) {
-                            console.log(photo);
+                        success: function(photo, anything) {
+                            console.log("Photo success:", photo, anything);
                             //XXX 
                         },
                         error: function(err) {

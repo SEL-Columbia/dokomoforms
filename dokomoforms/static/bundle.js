@@ -44644,6 +44644,8 @@ var Application = React.createClass({displayName: "Application",
         var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
         // Get array of unsynced submissions to this survey
         var unsynced_submissions = unsynced_surveys[this.props.survey.id] || [];
+        // Get all unsynced photos.
+        var unsynced_photos = JSON.parse(localStorage['unsynced_photos'] || '[]');
 
         unsynced_submissions.forEach(function(survey) {
             // Update submit time
@@ -44703,7 +44705,9 @@ var Application = React.createClass({displayName: "Application",
 
         var altered_unsynced_photos = unsynced_photos;
         unsynced_photos.forEach(function(photo, idx) {
+            console.log(photo, idx, "Trying photo");
             if (photo.surveyID === self.props.surveyID) {
+                console.log("went through");
                 PhotoAPI.getBase64(this.props.photoID, function(err, base64){
                     $.ajax({
                         url: '/api/v0/photos',
@@ -44719,8 +44723,8 @@ var Application = React.createClass({displayName: "Application",
                             "X-XSRFToken": getCookie("_xsrf")
                         },
                         dataType: 'json',
-                        success: function(survey) {
-                            console.log(photo);
+                        success: function(photo, anything) {
+                            console.log("Photo success:", photo, anything);
                             //XXX 
                         },
                         error: function(err) {
