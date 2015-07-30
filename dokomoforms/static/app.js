@@ -30,6 +30,7 @@ var Location = require('./components/Location.js');
 var Facility = require('./components/Facility.js'); 
 var Submit = require('./components/Submit.js'); 
 var Splash = require('./components/Splash.js'); 
+var PhotoAPI = require('./PhotoAPI.js');
 
 /* 
  * Create Single Page App with three main components
@@ -146,16 +147,23 @@ var Application = React.createClass({
         var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
         // Get array of unsynced submissions to this survey
         var unsynced_submissions = unsynced_surveys[this.props.survey.id] || [];
+        // Get array of unsynced photo id's for given survey
+        var unsynced_photos = JSON.parse(localStorage['unsynced_photos'] || '[]');
 
         // Build new submission
         var answers = []; 
+        var self = this;
         this.props.survey.nodes.forEach(function(question) {
             var responses = survey[question.id] || [];
             responses.forEach(function(response) {
 
-                //XXX Figure out photo submission
-                if (question.type_constraint === 'photo')
-                    return;
+                if (question.type_constraint === 'photo') {
+                   unsynced_photos.push({
+                       'surveyID': self.props.survey.id,
+                       'photoID': response.response,
+                       'questionID': question.id
+                   });
+                }
 
                 answers.push({
                     survey_node_id: question.id,
@@ -188,9 +196,11 @@ var Application = React.createClass({
         unsynced_surveys[this.props.survey.id] = unsynced_submissions;
         localStorage['unsynced'] = JSON.stringify(unsynced_surveys);
 
+        // Store photos 
+        localStorage['unsynced_photos'] = JSON.stringify(unsynced_photos);
+
         // Wipe active survey
         localStorage[this.props.survey.id] = JSON.stringify({});
-
     },
 
     /*
@@ -209,6 +219,8 @@ var Application = React.createClass({
         var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
         // Get array of unsynced submissions to this survey
         var unsynced_submissions = unsynced_surveys[this.props.survey.id] || [];
+        // Get all unsynced photos.
+        var unsynced_photos = JSON.parse(localStorage['unsynced_photos'] || '[]');
 
         unsynced_submissions.forEach(function(survey) {
             // Update submit time
@@ -264,6 +276,37 @@ var Application = React.createClass({
 
             console.log('synced submission:', survey);
             console.log('survey', '/api/v0/surveys/'+survey.survey_id+'/submit');
+        });
+
+        var altered_unsynced_photos = unsynced_photos;
+        unsynced_photos.forEach(function(photo, idx) {
+            if (photo.surveyID === self.props.surveyID) {
+                PhotoAPI.getBase64(this.props.photoID, function(err, base64){
+                    $.ajax({
+                        url: '/api/v0/photos',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        processData: false,
+                        data: {
+                            'id' : photo.photoID,
+                            'mime_type': 'image/png',
+                            'image': base64
+                        },
+                        headers: {
+                            "X-XSRFToken": getCookie("_xsrf")
+                        },
+                        dataType: 'json',
+                        success: function(survey) {
+                            console.log(photo);
+                            //XXX 
+                        },
+                        error: function(err) {
+                            console.log(photo);
+                            console.log("Fuck up:", err);
+                        }
+                    });
+                });
+            }
         });
     },
 

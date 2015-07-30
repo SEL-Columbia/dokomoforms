@@ -2,6 +2,7 @@ var React = require('react');
 
 var PhotoField = require('./baseComponents/PhotoField.js');
 var LittleButton = require('./baseComponents/LittleButton.js');
+var PhotoAPI = require('../PhotoAPI.js');
 var uuid = require('node-uuid');
 
 //XXX use this: navigator.vibrate(50);
@@ -77,7 +78,7 @@ module.exports = React.createClass({
         var self = this;
 
         answers.forEach(function(answer, idx) {
-            self.getPhoto(answer.response, function(err, photo) {
+            PhotoAPI.getPhoto(self.props.db, answer.response, function(err, photo) {
                 if (err) {
                     console.log("DB query failed:", err);
                     return;
@@ -89,23 +90,6 @@ module.exports = React.createClass({
                 });
             });
         });
-    },
-
-    /*
-     * Get photo with uuid, id from pouchDB
-     */
-    getPhoto: function(id, callback) {
-        this.props.db.getAttachment(id, 'photo').then(function(photo) {
-            callback(null, URL.createObjectURL(photo));
-        }).catch(function(err) {
-            callback(err);
-        });
-
-        //this.props.db.get(id, {'attachments': true}).then(function(photoDoc) {
-        //    callback(null, photoDoc._attachments.photo.data);
-        //}).catch(function(err) {
-        //    callback(err);
-        //});
     },
 
     /*
@@ -160,7 +144,7 @@ module.exports = React.createClass({
         // Remove from pouchDB
         console.log("removing", photoID);
         this.state.photos.splice(index, 1);
-        this.removePhoto(photoID, function(err, result) {
+        PhotoAPI.removePhoto(this.props.db, photoID, function(err, result) {
             if (err) {
                 console.log("Could not remove attachment?:", err);
                 return;
@@ -172,19 +156,6 @@ module.exports = React.createClass({
             photos: this.state.photos,
             questionCount: this.state.questionCount - 1
         })
-    },
-
-    removePhoto: function(photoID, callback) {
-        var self = this;
-        this.props.db.get(photoID).then(function (photoDoc) {
-            self.props.db.removeAttachment(photoID, 'photo', photoDoc._rev)
-                .then(function(result) {
-                    self.props.db.remove(photoID, result.rev);
-                    callback(null, result)
-                }).catch(function(err) {
-                    callback(err)
-                });
-        });
     },
 
     /*
@@ -211,20 +182,8 @@ module.exports = React.createClass({
 
         // Extract photo from canvas and write it into pouchDB
         var photo = canvas.toDataURL('image/png');
-        var photo64 = photo.substring(photo.indexOf(',')+1)
         var photoID = uuid.v4();
-
-        console.log(photo);
-        console.log(photoID);
-        this.props.db.put({
-            '_id': photoID,
-            '_attachments': {
-                'photo': {
-                    "content_type": "image/png",
-                    "data": photo64
-                }
-            }
-        });
+        PhotoAPI.addPhoto(this.props.db, photoID, photo)
 
         // Record the ID into localStorage
         answers[index] = {
