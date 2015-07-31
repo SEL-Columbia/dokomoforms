@@ -7,7 +7,7 @@ from dokomoforms.api.submissions import (
     SubmissionResource, get_submission_for_handler
 )
 from dokomoforms.api.nodes import NodeResource
-from dokomoforms.api.photo import PhotoResource
+from dokomoforms.api.photos import PhotoResource
 
 
 __all__ = (
