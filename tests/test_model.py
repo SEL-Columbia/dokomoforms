@@ -599,10 +599,22 @@ class TestNode(DokoTest):
     def test_construct_node_all_types(self):
         with self.session.begin():
             for node_type in models.NODE_TYPES:
-                self.session.add(models.construct_node(
-                    type_constraint=node_type,
-                    title={'English': 'test_' + node_type},
-                ))
+                if node_type == 'facility':
+                    self.session.add(models.construct_node(
+                        type_constraint=node_type,
+                        title={'English': 'test_' + node_type},
+                        logic={
+                            'nlat': 0,
+                            'slat': 0,
+                            'wlng': 0,
+                            'elng': 0,
+                        },
+                    ))
+                else:
+                    self.session.add(models.construct_node(
+                        type_constraint=node_type,
+                        title={'English': 'test_' + node_type},
+                    ))
         self.assertEqual(
             self.session.query(func.count(models.Node.id)).scalar(),
             11,
@@ -615,6 +627,19 @@ class TestNode(DokoTest):
             self.session.query(func.count(models.Question.id)).scalar(),
             10,
         )
+
+    def test_facility_question_requires_bounds(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                self.session.add(models.construct_node(
+                    type_constraint='facility',
+                    title={'English': 'missing_bound'},
+                    logic={
+                        'slat': 0,
+                        'wlng': 0,
+                        'elng': 0,
+                    },
+                ))
 
     def test_construct_survey_node_with_the_node(self):
         with self.session.begin():
@@ -1224,17 +1249,36 @@ class TestSurvey(DokoTest):
             )
             node_types = list(models.NODE_TYPES)
             for node_type in node_types:
-                survey = models.Survey(
-                    title={'English': node_type + '_survey'},
-                    nodes=[
-                        models.construct_survey_node(
-                            node=models.construct_node(
-                                type_constraint=node_type,
-                                title={'English': node_type + '_node'},
-                            )
-                        ),
-                    ],
-                )
+                if node_type == 'facility':
+                    survey = models.Survey(
+                        title={'English': node_type + '_survey'},
+                        nodes=[
+                            models.construct_survey_node(
+                                node=models.construct_node(
+                                    type_constraint=node_type,
+                                    title={'English': node_type + '_node'},
+                                    logic={
+                                        'nlat': 0,
+                                        'slat': 0,
+                                        'wlng': 0,
+                                        'elng': 0,
+                                    },
+                                )
+                            ),
+                        ],
+                    )
+                else:
+                    survey = models.Survey(
+                        title={'English': node_type + '_survey'},
+                        nodes=[
+                            models.construct_survey_node(
+                                node=models.construct_node(
+                                    type_constraint=node_type,
+                                    title={'English': node_type + '_node'},
+                                )
+                            ),
+                        ],
+                    )
                 creator.surveys.append(survey)
             self.session.add(creator)
 
@@ -3656,6 +3700,12 @@ class TestAnswer(DokoTest):
                         node=models.construct_node(
                             type_constraint='facility',
                             title={'English': 'facility_question'},
+                            logic={
+                                'nlat': 0,
+                                'slat': 0,
+                                'wlng': 0,
+                                'elng': 0,
+                            },
                         ),
                     ),
                 ],

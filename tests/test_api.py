@@ -4599,14 +4599,19 @@ class TestNodeApi(DokoHTTPTest):
             "allow_multiple": False,
             "allow_other": False,
             "type_constraint": type_constraint,
-            "logic": {},
+            "logic": {
+                'slat': 0,
+                'nlat': 0,
+                'wlng': 0,
+                'elng': 0,
+            },
         }
 
         encoded_body = json_encode(body)
 
         # make request
         response = self.fetch(url, method=method, body=encoded_body)
-        self.assertEqual(response.code, 201)
+        self.assertEqual(response.code, 201, msg=response.body)
 
         # test response
         # check that response is valid parseable json

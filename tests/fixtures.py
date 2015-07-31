@@ -43,14 +43,22 @@ def load_fixtures(engine):
         )
         node_types = list(models.NODE_TYPES)
         for node_type in node_types:
+            node_dict = {
+                'title': {'English': node_type + '_node'},
+                'type_constraint': node_type,
+            }
+            if node_type == 'facility':
+                node_dict['logic'] = {
+                    'slat': 0,
+                    'nlat': 1,
+                    'wlng': 0,
+                    'elng': 1,
+                }
             survey = models.Survey(
                 title={'English': node_type + '_survey'},
                 nodes=[
                     models.construct_survey_node(
-                        node=models.construct_node(
-                            title={'English': node_type + '_node'},
-                            type_constraint=node_type,
-                        ),
+                        node=models.construct_node(**node_dict),
                     ),
                 ],
             )

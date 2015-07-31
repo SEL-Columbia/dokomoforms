@@ -47,6 +47,15 @@ class Node(Base):
 
     __mapper_args__ = {'polymorphic_on': type_constraint}
     __table_args__ = (
+        sa.CheckConstraint(
+            "(type_constraint::TEXT != 'facility') OR ("
+            " ((logic->>'nlat')) IS NOT NULL AND "
+            " ((logic->>'slat')) IS NOT NULL AND "
+            " ((logic->>'wlng')) IS NOT NULL AND "
+            " ((logic->>'elng')) IS NOT NULL"
+            ")",
+            name='facility_questions_must_have_bounds'
+        ),
         sa.UniqueConstraint('id', 'type_constraint'),
         sa.UniqueConstraint('id', 'languages', 'type_constraint'),
         util.languages_constraint('title', 'languages'),
