@@ -24,4 +24,7 @@ class PhotoResource(BaseResource):
             self._check_xsrf_cookie()
 
         self.data['image'] = self.data['image'].encode()
-        return add_new_photo_to_session(self.session, **self.data)
+        photo = add_new_photo_to_session(self.session, **self.data)
+        photo_dict = photo._asdict()
+        del photo_dict['image']
+        return photo_dict

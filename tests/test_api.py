@@ -1086,9 +1086,10 @@ class TestSurveyApi(DokoHTTPTest):
         )
         self.assertEqual(photo_response.code, 201, msg=photo_response.body)
         self.assertEqual(
-            json_decode(photo_response.body)['image'].encode(),
-            b64photo
+            json_decode(photo_response.body)['id'],
+            desired_id
         )
+        self.assertNotIn('image', json_decode(photo_response.body))
 
         self.assertEqual(
             self.session.query(PhotoAnswer).one().response['response'],
