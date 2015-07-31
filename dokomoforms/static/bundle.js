@@ -44666,8 +44666,6 @@ var Application = React.createClass({displayName: "Application",
                 dataType: 'json',
                 success: function(survey, anything, hey) {
                     console.log("success", anything, hey);
-
-                    survey.submission_time = "";
                     // Get all unsynced surveys
                     var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
                     // Get array of unsynced submissions to this survey
@@ -44680,7 +44678,6 @@ var Application = React.createClass({displayName: "Application",
                             idx = i;
                             return false;
                         }
-
                         return true;
                     });
 
@@ -44698,8 +44695,9 @@ var Application = React.createClass({displayName: "Application",
                     if (self.state.state === self.state.states.SPLASH)
                         self.refs.splash.update();
                 },
+
                 error: function(err) {
-                    console.log("error", err, survey);
+                    console.log("Failed to post survey", err, survey);
                 }
             });
 
@@ -44707,11 +44705,8 @@ var Application = React.createClass({displayName: "Application",
             console.log('survey', '/api/v0/surveys/'+survey.survey_id+'/submit');
         });
 
-        var altered_unsynced_photos = unsynced_photos;
         unsynced_photos.forEach(function(photo, idx) {
-            console.log(photo, idx, "Trying photo");
             if (photo.surveyID === self.props.survey.id) {
-                console.log("went through");
                 PhotoAPI.getBase64(self.state.db, photo.photoID, function(err, base64){
                     $.ajax({
                         url: '/api/v0/photos',
@@ -44727,13 +44722,40 @@ var Application = React.createClass({displayName: "Application",
                             "X-XSRFToken": getCookie("_xsrf")
                         },
                         dataType: 'json',
-                        success: function(photo, anything) {
-                            console.log("Photo success:", photo, anything);
-                            //XXX 
+                        success: function(photo) {
+                            console.log("Photo success:", photo);
+                            var unsynced_photos = JSON.parse(localStorage['unsynced_photos'] || '[]');
+
+                            // Find photo
+                            var idx = -1;
+                            unsynced_photos.forEach(function(uphoto, i) {
+                                if (uphoto.photoID === photo.id) {
+                                    idx = i;
+                                    PhotoAPI.removePhoto(self.state.db, uphoto.photoID, function(err, result) {
+                                        if (err) {
+                                            console.log("Couldnt remove from db:", err);
+                                            return;
+                                        }
+
+                                        console.log("Removed:", result);
+                                    });
+                                    return false;
+                                }
+                                return true;
+                            });
+
+                            // What??
+                            if (idx === -1)
+                                return;
+
+                            console.log(idx, unsynced_photos.length);
+                            unsynced_photos.splice(idx, 1);
+
+                            localStorage['unsynced_photos'] = JSON.stringify(unsynced_photos);
                         },
+
                         error: function(err) {
-                            console.log(photo);
-                            console.log("Fuck up:", err);
+                            console.log("Failed to post photo:", err, photo);
                         }
                     });
                 });
