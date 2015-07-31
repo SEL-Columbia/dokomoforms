@@ -56,6 +56,12 @@ with session.begin():
                 node=models.construct_node(
                     type_constraint=node_type,
                     title={'English': node_type + ' node'},
+                    logic={
+                        'wlng':-72, 
+                        'elng':-74, 
+                        'nlat':85, 
+                        'slat':-85, 
+                    },
                     hint={
                         'English': (
                             'fill in response for ' + node_type + ' node'

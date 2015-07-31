@@ -40,28 +40,22 @@ var FacilityTree = require('./Facilities.js');
  */
 var Application = React.createClass({
     getInitialState: function() {
-        //Nigeria
-        //var nlat = 8;
-        //var wlng = -8;
-        //var slat = -22;
-        //var elng = 40;
-        
-        // NYC
-        var nlat = 85; 
-        var wlng = -72;
-        var slat = -85
-        var elng = -74;
-        
-        // World
-        //var nlat = 85;
-        //var wlng = -180;
-        //var slat = -85;
-        //var elng = 180;
-        
-        var tree = new FacilityTree(nlat, wlng, slat, elng);
-        window.tree = tree;
+        var trees = {};
+        window.trees = trees;
         var nyc = {lat: 40.80690, lng:-73.96536}
         window.nyc = nyc;
+
+        this.props.survey.nodes.forEach(function(node) {
+            if (node.type_constraint === 'facility') {
+                console.log(node.logic);
+                console.log(node);
+                trees[node.id] = new FacilityTree(
+                        parseFloat(node.logic.nlat), 
+                        parseFloat(node.logic.wlng), 
+                        parseFloat(node.logic.slat), 
+                        parseFloat(node.logic.elng));
+            }
+        });
 
         var surveyDB = new PouchDB(this.props.survey.id, {
                     'auto_compation': true,
@@ -79,7 +73,7 @@ var Application = React.createClass({
                 SUBMIT : 3,
             },
             state: 1,
-            tree: tree,
+            trees: trees,
             db: surveyDB
         }
     },
@@ -443,7 +437,7 @@ var Application = React.createClass({
                                 surveyID={survey.id}
                                 disabled={this.state.showDontKnowBox}
                                 db={this.state.db}
-                                tree={this.state.tree}
+                                tree={this.state.trees[questions[nextQuestion].id]}
                            />
                        )
                 case 'note':

@@ -1,5 +1,5 @@
-bundle.js: app.js Facilities.js PhotoAPI.js $(wildcard components/baseComponents/*.js) $(wildcard components/*.js)
-	browserify -t reactify app.js -o bundle.js
+bundle.js: Application.js Facilities.js PhotoAPI.js $(wildcard components/baseComponents/*.js) $(wildcard components/*.js)
+	browserify -t reactify Application.js -o bundle.js
 	sed -i "s/^# Version.*/# Version `date +%s`/" cache.appcache
 
 clean:
