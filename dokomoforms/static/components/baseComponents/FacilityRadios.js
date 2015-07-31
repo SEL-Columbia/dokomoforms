@@ -12,23 +12,23 @@ module.exports = React.createClass({
         return (
                 <div className='question__radios'>
                 {this.props.facilities.map(function(facility) {
-                    return (<div key={facility.value} className='question__radio'>
+                    return (<div key={facility.uuid} className='question__radio'>
                             <input 
                                 type='radio' 
-                                id={facility.value} 
+                                id={facility.uuid} 
                                 name='facility' 
-                                value={facility.value}> 
+                                value={facility.uuid}> 
                             </input>
-                            <label htmlFor={facility.value} >
+                            <label htmlFor={facility.uuid} >
                             <span className="question__radio__span__btn"><span></span></span>
                                 <strong>{facility.name}</strong>
                             </label>
                             <br/>
                             <span className='question__radio__span__meta'>
-                                {facility.sector}
+                                {facility.properties.sector}
                             </span>
                             <span className='question__radio__span__meta'>
-                                <em>{facility.distance}m</em>
+                                <em>{facility.coordinates}m</em>
                             </span>
                             </div>) 
                 })}

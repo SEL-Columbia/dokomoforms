@@ -8,22 +8,23 @@
     "test": "tests"
   },
   "dependencies": {
-    "browserify": "^10.2.3",
-    "coveralls": "^2.11.2",
-    "istanbul": "^0.3.13",
     "jquery": "^2.1.4",
-    "jsdom": "^5.1.0",
-    "jshint": "^2.7.0",
-    "mocha-istanbul": "^0.2.0",
+    "lz-string": "^1.4.4",
     "node-uuid": "^1.4.3",
     "pouchdb": "^3.6.0",
-    "react": "^0.13.3",
-    "reactify": "^1.1.1",
-    "should": "^6.0.1",
-    "supertest": "^0.15.0"
+    "react": "^0.13.3"
   },
   "devDependencies": {
-    "mocha": "^2.2.4"
+    "mocha": "^2.2.4",
+    "coveralls": "^2.11.2",
+    "istanbul": "^0.3.13",
+    "mocha-istanbul": "^0.2.0",
+    "jsdom": "^5.1.0",
+    "jshint": "^2.7.0",
+    "reactify": "^1.1.1",
+    "should": "^6.0.1",
+    "supertest": "^0.15.0",
+    "browserify": "^10.2.3"
   },
   "scripts": {
     "test": "mocha"
