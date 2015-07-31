@@ -153,9 +153,10 @@ module.exports = React.createClass({
         return (
                 <span>
                 <LittleButton 
-                buttonFunction={this.onLocate}
+                    buttonFunction={this.onLocate}
                     iconClass={'icon-star'}
-                    text={'find my location'} />
+                    text={'find my location'} 
+                />
                 {children.map(function(child, idx) {
                     return (
                             <ResponseField 

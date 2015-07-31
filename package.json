@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "jquery": "^2.1.4",
+    "lz-string": "^1.4.4",
     "node-uuid": "^1.4.3",
     "pouchdb": "^3.6.0",
     "react": "^0.13.3"

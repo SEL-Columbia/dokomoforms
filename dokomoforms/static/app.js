@@ -30,7 +30,9 @@ var Location = require('./components/Location.js');
 var Facility = require('./components/Facility.js'); 
 var Submit = require('./components/Submit.js'); 
 var Splash = require('./components/Splash.js'); 
+
 var PhotoAPI = require('./PhotoAPI.js');
+var FacilityTree = require('./Facilities.js');
 
 /* 
  * Create Single Page App with three main components
@@ -38,11 +40,35 @@ var PhotoAPI = require('./PhotoAPI.js');
  */
 var Application = React.createClass({
     getInitialState: function() {
-        var surveyDB = new PouchDB(this.props.survey.id,
-                {
+        //Nigeria
+        //var nlat = 8;
+        //var wlng = -8;
+        //var slat = -22;
+        //var elng = 40;
+        
+        // NYC
+        var nlat = 85; 
+        var wlng = -72;
+        var slat = -85
+        var elng = -74;
+        
+        // World
+        //var nlat = 85;
+        //var wlng = -180;
+        //var slat = -85;
+        //var elng = 180;
+        
+        var tree = new FacilityTree(nlat, wlng, slat, elng);
+        window.tree = tree;
+        var nyc = {lat: 40.80690, lng:-73.96536}
+        window.nyc = nyc;
+
+        var surveyDB = new PouchDB(this.props.survey.id, {
                     'auto_compation': true,
-                });
+        });
+
         window.surveyDB = surveyDB;
+
         return { 
             showDontKnow: false,
             showDontKnowBox: false,
@@ -53,6 +79,7 @@ var Application = React.createClass({
                 SUBMIT : 3,
             },
             state: 1,
+            tree: tree,
             db: surveyDB
         }
     },
@@ -416,6 +443,7 @@ var Application = React.createClass({
                                 surveyID={survey.id}
                                 disabled={this.state.showDontKnowBox}
                                 db={this.state.db}
+                                tree={this.state.tree}
                            />
                        )
                 case 'note':
