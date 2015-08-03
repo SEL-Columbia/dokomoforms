@@ -641,25 +641,35 @@ module.exports = React.createClass({displayName: "exports",
 
     },
     render: function() {
+        var hasLocation = this.state.loc && this.state.loc.lat && this.state.loc.lng;
         return (
                 React.createElement("span", null, 
-                 React.createElement(LittleButton, {buttonFunction: this.onLocate, 
-                    icon: 'icon-star', 
-                    text: 'find my location and show nearby facilities'}), 
                 this.state.selectFacility ?
                     React.createElement("span", null, 
+                    React.createElement(LittleButton, {buttonFunction: this.onLocate, 
+                       icon: 'icon-star', 
+                       text: 'find my location and show nearby facilities'}
+                    ), 
                     React.createElement(FacilityRadios, {
                         selectFunction: this.selectFacility, 
                         facilities: this.state.facilities, 
                         initValue: this.getAnswer()}
                     ), 
-                    React.createElement(LittleButton, {buttonFunction: this.toggleAddFacility, 
-                            text: 'add new facility'})
+
+                     hasLocation  ?
+                        React.createElement(LittleButton, {buttonFunction: this.toggleAddFacility, 
+                                text: 'add new facility'})
+                        : null
+                    
                     )
                 :
                     React.createElement("span", null, 
                     React.createElement(ResponseField, {type: 'text'}), 
-                    React.createElement(ResponseField, {type: 'location'}), 
+                    React.createElement(ResponseField, {
+                        initValue: JSON.stringify(this.state.loc), 
+                        type: 'location', 
+                        disabled: true}
+                    ), 
                     React.createElement(Select, {
                         choices: this.state.choices, 
                         withOther: true, 
