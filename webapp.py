@@ -128,7 +128,6 @@ class Application(tornado.web.Application):
         Defines the URLs (with associated handlers) and settings for the
         application, drops the database schema (if the user selected that
         option), then prepares the database and creates a session.
-
         """
         self._api_version = API_VERSION
         self._api_root_path = API_ROOT_PATH

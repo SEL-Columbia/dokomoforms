@@ -57,10 +57,10 @@ with session.begin():
                     type_constraint=node_type,
                     title={'English': node_type + ' node'},
                     logic={
-                        'wlng':-72, 
-                        'elng':-74, 
-                        'nlat':85, 
-                        'slat':-85, 
+                        'wlng': -72,
+                        'elng': -74,
+                        'nlat': 85,
+                        'slat': -85,
                     },
                     hint={
                         'English': (
