@@ -527,9 +527,12 @@ var Select = require('./baseComponents/Select.js');
  */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
+        var self = this;
+        var loc = JSON.parse(localStorage['location'] || '{}');
         return { 
-            loc: null,
+            loc: loc,
             selectFacility: true,
+            facilities: self.getFacilities(loc),
             choices: [
                 {'value': 'water', 'text': 'Water'}, 
                 {'value': 'energy', 'text': 'Energy'}, 
@@ -559,12 +562,47 @@ module.exports = React.createClass({displayName: "exports",
         })
     },
 
-    getFacilities: function() {
-        if (!this.state.loc)
+    selectFacility: function(option, data) {
+        console.log("Selected facility");
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        answers = [];
+
+        this.state.facilities.forEach(function(facility) {
+            if (facility.uuid === option) {
+                answers = [{
+                    'response': {
+                        'facility_id': facility.uuid,
+                        'facility_name': facility.name,
+                        'facility_sector': facility.properties.sector,
+                        'lat': facility.coordinates[1],
+                        'lng': facility.coordinates[0],
+                    }, 
+                    'response_type': 'answer'
+                }];
+                return false;
+            }
+            return true;
+        });
+
+        survey[this.props.question.id] = answers;
+        localStorage[this.props.surveyID] = JSON.stringify(survey);
+        
+    },
+
+    getFacilities: function(loc) {
+        if (!loc || !loc.lat || !loc.lng)
           return [];  
 
         console.log("Getting facilities ...");
-        return this.props.tree.getNNearestFacilities(this.state.loc.lat, this.state.loc.lng, 1000, 10);
+        return this.props.tree.getNNearestFacilities(loc.lat, loc.lng, 1000, 10);
+    },
+
+    getAnswer: function() {
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        console.log("Selected facility", answers[0]);
+        return answers[0] && answers[0].response;
     },
 
     /*
@@ -579,8 +617,13 @@ module.exports = React.createClass({displayName: "exports",
                     'lng': position.coords.longitude, 
                 }
 
+                // Record location for survey
+                localStorage['location'] = JSON.stringify(loc);
+
+                var facilities = self.getFacilities(loc);
                 self.setState({
-                    loc: loc 
+                    loc: loc,
+                    facilities: facilities
                 });
             }, 
             
@@ -605,7 +648,11 @@ module.exports = React.createClass({displayName: "exports",
                     text: 'find my location and show nearby facilities'}), 
                 this.state.selectFacility ?
                     React.createElement("span", null, 
-                    React.createElement(FacilityRadios, {facilities: this.getFacilities()}), 
+                    React.createElement(FacilityRadios, {
+                        selectFunction: this.selectFacility, 
+                        facilities: this.state.facilities, 
+                        initValue: this.getAnswer()}
+                    ), 
                     React.createElement(LittleButton, {buttonFunction: this.toggleAddFacility, 
                             text: 'add new facility'})
                     )
@@ -890,6 +937,9 @@ module.exports = React.createClass({displayName: "exports",
                     'lat': position.coords.latitude,
                     'lng': position.coords.longitude, 
                 }
+
+                // Record location for survey
+                localStorage['location'] = JSON.stringify(loc);
 
                 answers[index] = {
                     'response': loc, 
@@ -1742,6 +1792,8 @@ var React = require('react');
  *
  * props:
  *  @facilities: Array of facility objects (revisit format)
+ *  @selectFunction: What to do when facility is selected
+ *  @initValue: Default selected facility
  */ 
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
@@ -1765,8 +1817,8 @@ module.exports = React.createClass({displayName: "exports",
         //e.cancelBubble = true;
 
         console.log('selected', option, checked);
-        if (this.props.onSelect)
-            this.props.onSelect(option);
+        if (this.props.selectFunction)
+            this.props.selectFunction(option);
 
         this.setState({
             selected: selected
@@ -1785,6 +1837,8 @@ module.exports = React.createClass({displayName: "exports",
                                 id: facility.uuid, 
                                 name: "facility", 
                                 onClick: self.onClick, 
+                                defaultChecked: self.props.initValue && facility.uuid 
+                                    === self.props.initValue.facility_id, 
                                 value: facility.uuid}
                             ), 
                             React.createElement("label", {
@@ -45665,6 +45719,9 @@ var Application = React.createClass({displayName: "Application",
 
         // Wipe active survey
         localStorage[this.props.survey.id] = JSON.stringify({});
+
+        // Wipe location info
+        localStorage['location'] = JSON.stringify({});
     },
 
     /*

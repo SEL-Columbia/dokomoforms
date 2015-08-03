@@ -222,6 +222,9 @@ var Application = React.createClass({
 
         // Wipe active survey
         localStorage[this.props.survey.id] = JSON.stringify({});
+
+        // Wipe location info
+        localStorage['location'] = JSON.stringify({});
     },
 
     /*
