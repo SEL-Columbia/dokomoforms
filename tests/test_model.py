@@ -2646,6 +2646,10 @@ class TestSubmission(DokoTest):
                                 'response',
                                 {'lng': 5, 'lat': 3}
                             ),
+                            (
+                                'survey_node_id',
+                                creator.surveys[0].nodes[0].id
+                            ),
                         )),
                     ]
                 ),
