@@ -6,6 +6,8 @@ var React = require('react');
  *
  * props:
  *  @facilities: Array of facility objects (revisit format)
+ *  @selectFunction: What to do when facility is selected
+ *  @initValue: Default selected facility
  */ 
 module.exports = React.createClass({
     getInitialState: function() {
@@ -29,8 +31,8 @@ module.exports = React.createClass({
         //e.cancelBubble = true;
 
         console.log('selected', option, checked);
-        if (this.props.onSelect)
-            this.props.onSelect(option);
+        if (this.props.selectFunction)
+            this.props.selectFunction(option);
 
         this.setState({
             selected: selected
@@ -49,6 +51,8 @@ module.exports = React.createClass({
                                 id={facility.uuid} 
                                 name='facility' 
                                 onClick={self.onClick} 
+                                defaultChecked={self.props.initValue && facility.uuid 
+                                    === self.props.initValue.facility_id}
                                 value={facility.uuid}> 
                             </input>
                             <label 
