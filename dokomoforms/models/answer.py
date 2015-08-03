@@ -107,8 +107,10 @@ class Answer(Base):
             ('other', self.other),
             ('dont_know', self.dont_know),
         ]
-        response_type, response = next(
-            p_r for p_r in possible_responses if p_r[1] is not None
+        response_type = next(
+            possible_response
+            for possible_response, response in possible_responses
+            if response is not None
         )
         if response_type == 'answer':
             if self.type_constraint == 'multiple_choice':
@@ -121,9 +123,10 @@ class Answer(Base):
                 lng, lat = json_decode(self.geo_json)['coordinates']
                 response = {'lng': lng, 'lat': lat}
             elif self.type_constraint == 'facility':
+                response = self.answer
                 geo_json = json_decode(response['facility_location'])
-                lng, lat = geo_json['coordinates']
-                response['facility_location'] = {'lng': lng, 'lat': lat}
+                response['lng'], response['lat'] = geo_json['coordinates']
+                del response['facility_location']
             elif self.type_constraint == 'photo':
                 response = self.actual_photo_id
             else:

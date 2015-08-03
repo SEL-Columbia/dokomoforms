@@ -13,6 +13,9 @@ from passlib.hash import bcrypt_sha256
 
 from tornado.escape import json_decode, json_encode
 
+import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql as pg
+
 from tests.util import DokoHTTPTest, setUpModule, tearDownModule
 
 from dokomoforms.models import Submission, Survey, Node, SurveyCreator
@@ -966,6 +969,115 @@ class TestSurveyApi(DokoHTTPTest):
         self.assertEqual(
             submission_dict['answers'][0]['response_type'], 'answer')
         self.assertEqual(submission_dict['answers'][0]['response'], 3)
+
+    def test_submit_to_survey_with_location_answer_response(self):
+        survey_node = (
+            self.session
+            .query(models.SurveyNode)
+            .filter(
+                sa.cast(
+                    models.SurveyNode.type_constraint, pg.TEXT
+                ) == 'location'
+            )
+            .one()
+        )
+        survey_id = survey_node.root_survey_id
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey_node.id,
+                    "type_constraint": "location",
+                    "response": {
+                        "response_type": "answer",
+                        "response": {'lat': 0, 'lng': 1},
+                    }
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+
+        self.assertEqual(
+            submission_dict['answers'][0]['response_type'], 'answer')
+        self.assertEqual(submission_dict['answers'][0]['response']['lat'], 0)
+        self.assertEqual(submission_dict['answers'][0]['response']['lng'], 1)
+
+    def test_submit_to_survey_with_facility_answer_response(self):
+        survey_node = (
+            self.session
+            .query(models.SurveyNode)
+            .filter(
+                sa.cast(
+                    models.SurveyNode.type_constraint, pg.TEXT
+                ) == 'location'
+            )
+        )
+        survey_id = survey_node.root_survey_id
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey_node.id,
+                    "type_constraint": "facility",
+                    "response": {
+                        "response_type": "answer",
+                        "response": {
+                            'lat': 0,
+                            'lng': 1,
+                            'facility_id': 'blah',
+                            'facility_sector': 'bleh',
+                            'facility_name': 'blue',
+                        },
+                    }
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201, msg=response.body)
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+
+        self.assertEqual(
+            submission_dict['answers'][0]['response_type'], 'answer')
+        self.assertEqual(submission_dict['answers'][0]['response']['lat'], 0)
+        self.assertEqual(submission_dict['answers'][0]['response']['lng'], 1)
 
     def test_get_photos_without_logging_in(self):
         url = self.api_root + '/photos'
