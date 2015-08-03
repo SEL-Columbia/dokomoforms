@@ -135,6 +135,7 @@ module.exports = React.createClass({
 
     },
     render: function() {
+        var hasLocation = this.state.loc && this.state.loc.lat && this.state.loc.lng;
         return (
                 <span>
                 {this.state.selectFacility ?
@@ -148,13 +149,21 @@ module.exports = React.createClass({
                         facilities={this.state.facilities}
                         initValue={this.getAnswer()}
                     />
-                    <LittleButton buttonFunction={this.toggleAddFacility}
-                            text={'add new facility'} />
+
+                    { hasLocation  ?
+                        <LittleButton buttonFunction={this.toggleAddFacility}
+                                text={'add new facility'} />
+                        : null
+                    }
                     </span>
                 :
                     <span>
                     <ResponseField type={'text'}/>
-                    <ResponseField type={'location'}/>
+                    <ResponseField 
+                        initValue={JSON.stringify(this.state.loc)} 
+                        type={'location'}
+                        disabled={true}
+                    />
                     <Select 
                         choices={this.state.choices} 
                         withOther={true} 
