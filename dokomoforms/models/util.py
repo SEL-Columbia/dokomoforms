@@ -25,6 +25,7 @@ from sqlalchemy.sql.functions import current_timestamp
 from psycopg2.extras import Range
 
 from dokomoforms.options import options
+from dokomoforms.exc import NotJSONifiableError
 
 
 metadata = sa.MetaData(schema=options.schema)
@@ -112,6 +113,25 @@ sa.event.listen(
 )
 
 
+def jsonify(obj, *, raise_exception=False) -> object:
+    """Convert the given object to something JSON can handle."""
+    if isinstance(obj, Base):
+        return obj._asdict()
+    if isinstance(obj, bytes):
+        return obj.decode()
+    if isinstance(obj, (datetime.date, datetime.time)):
+        return obj.isoformat()
+    if isinstance(obj, Decimal):  # might want to return a string instead
+        return float(obj)
+    if isinstance(obj, Range):
+        left, right = obj._bounds
+        return '{}{},{}{}'.format(left, obj.lower, obj.upper, right)
+
+    if raise_exception:
+        raise NotJSONifiableError(obj)
+    return obj
+
+
 # Might want to use restless.utils.MoreTypesJSONEncoder as base class
 class ModelJSONEncoder(json.JSONEncoder):
 
@@ -140,18 +160,10 @@ class ModelJSONEncoder(json.JSONEncoder):
         See
         https://docs.python.org/3/library/json.html#json.JSONEncoder.default
         """
-        if isinstance(obj, Base):
-            return obj._asdict()
-        if isinstance(obj, bytes):
-            return obj.decode()
-        if isinstance(obj, (datetime.date, datetime.time)):
-            return obj.isoformat()
-        if isinstance(obj, Decimal):  # might want to return a string instead
-            return float(obj)
-        if isinstance(obj, Range):
-            left, right = obj._bounds
-            return '{}{},{}{}'.format(left, obj.lower, obj.upper, right)
-        return super().default(obj)
+        try:
+            return jsonify(obj, raise_exception=True)
+        except NotJSONifiableError:
+            return super().default(obj)
 
 
 def create_engine(echo: bool=None) -> sqlalchemy.engine.Engine:

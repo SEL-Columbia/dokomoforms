@@ -205,15 +205,16 @@
                             _.each(submissions, function(submission) {
                                 var answers = submission.answers,
                                     location = _.find(answers, function(answer) {
-				        return ('lng' in answer.response) && ('lat' in answer.response);
+				      if ((typeof answer.response === 'object') && answer.response) {
+				          return ('lng' in answer.response) && ('lat' in answer.response);
+			              }
+				      return false;
                                     });
                                 if (!location) {
                                     return;
                                 }
 
-                                coords = location.response;
-
-                                var marker = new L.marker([coords.lat, coords.lng], {
+                                var marker = new L.marker([location.response.lat, location.response.lng], {
                                     riseOnHover: true
                                 });
                                 marker.options.icon = new L.icon({iconUrl: "/static/img/icons/normal_base.png", iconAnchor: [13, 30]});

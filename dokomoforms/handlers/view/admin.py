@@ -1,9 +1,10 @@
 """Admin view handlers."""
-
 import tornado.web
 
+import sqlalchemy as sa
+
 from dokomoforms.models import (
-    Answer, Question, SurveyNode, generate_question_stats
+    Answer, Question, SurveyNode, generate_question_stats, jsonify
 )
 from dokomoforms.models.answer import ANSWER_TYPES
 from dokomoforms.handlers.util import BaseHandler
@@ -94,37 +95,74 @@ class VisualizationHandler(BaseHandler):
 
     """Visualize answers to a SurveyNode or Question."""
 
+    @tornado.web.authenticated
     def get(self, question_or_survey_node_id: str):
         """GET data visualizations for a SurveyNode or Question."""
-        mystery_id = question_or_survey_node_id
-        is_question = True
-        node = self.session.query(Question).get(mystery_id)
+        mystery = question_or_survey_node_id
+        question = self.session.query(Question).get(mystery)
+        survey_node = self.session.query(SurveyNode).get(mystery)
+        node = question or survey_node
+
         if node is None:
-            is_question = False
-            node = self.session.query(SurveyNode).get(mystery_id)
+            raise tornado.web.HTTPError(404)
 
-        answers = self.session.query(Answer)
-        if is_question:
-            answers = answers.filter_by(question_id=mystery_id)
+        if isinstance(node, Question):
+            where_id = Answer.question_id == mystery
+            type_constraint = node.type_constraint
         else:
-            answers = answers.filter_by(survey_node_id=mystery_id)
-        answers = answers.all()
+            where_id = Answer.survey_node_id == mystery
+            type_constraint = node.the_type_constraint
 
-        time_data = None
-        if node.type_constraint in {'integer', 'decimal'}:
-            time_data = 'time series'
+        answer_cls = ANSWER_TYPES[type_constraint]
+        where = sa.and_(where_id, answer_cls.main_answer.isnot(None))
 
-        bar_data = None
-        bar_data_types = {
+        time_data, bar_data, map_data = None, None, None
+        if type_constraint in {'integer', 'decimal'}:
+            time_data = [
+                [save_time.isoformat(), jsonify(value)]
+                for save_time, value in self.session.execute(
+                    sa.select([Answer.save_time, answer_cls.main_answer])
+                    .select_from(Answer.__table__.join(
+                        answer_cls.__table__, Answer.id == answer_cls.id
+                    ))
+                    .where(where)
+                    .order_by(Answer.save_time.asc())
+                )
+            ]
+
+        bar_graph_types = {
             'text', 'integer', 'decimal', 'date', 'time', 'timestamp',
-            'location', 'multiple_choice'  # facility?
+            'multiple_choice'
         }
-        if node.type_constraint in bar_data_types:
-            bar_data = 'bar data'
+        if type_constraint in bar_graph_types:
+            bar_data = [
+                [jsonify(value), count]
+                for value, count in self.session.execute(
+                    sa.select([
+                        answer_cls.main_answer,
+                        sa.func.count(answer_cls.main_answer)
+                    ])
+                    .select_from(Answer.__table__.join(
+                        answer_cls.__table__, Answer.id == answer_cls.id
+                    ))
+                    .where(where)
+                    .group_by(answer_cls.main_answer)
+                    .order_by(answer_cls.main_answer)
+                )
+            ]
 
-        map_data = None
-        if node.type_constraint in {'location', 'facility'}:
-            map_data = 'map_data'
+        if type_constraint in {'location', 'facility'}:
+            map_data = [
+                {
+                    'submission_id': answer.submission_id,
+                    'coordinates': answer.response['response']
+                }
+                for answer in (
+                    self.session
+                    .query(answer_cls)
+                    .filter(where)
+                )
+            ]
 
         self.render(
             'view_visualize.html',

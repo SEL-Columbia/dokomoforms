@@ -78,7 +78,11 @@ class Submission(Base):
             ('last_update_time', self.last_update_time),
             ('submitter_name', self.submitter_name),
             ('submitter_email', self.submitter_email),
-            ('answers', [answer.response for answer in self.answers]),
+            ('answers', [
+                OrderedDict(
+                    answer.response, survey_node_id=answer.survey_node_id
+                ) for answer in self.answers
+            ]),
         ))
 
 

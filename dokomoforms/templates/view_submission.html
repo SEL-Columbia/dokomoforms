@@ -65,7 +65,13 @@
                                 </div>
 
                                 <div class="response-data">
-				    {{ json_encode(answer.response) }}
+				    {% if answer.type_constraint in {'date', 'time', 'timestamp'} %}
+				        {"response_type": {{ answer.response['response_type'] }}, "response": {{ answer.response['response'].isoformat() }} }
+				    {% elif answer.type_constraint == 'decimal' %}
+				        {"response_type": {{ answer.response['response_type'] }}, "response": {{ float(answer.response['response']) }} }
+				    {% else %}
+				        {{ json_encode(answer.response) }}
+				    {% end %}
                                 </div>
                                 
                             </li>

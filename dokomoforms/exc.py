@@ -6,6 +6,11 @@ class DokomoError(Exception):
     """The base class for all exceptions used in Dokomo Forms."""
 
 
+class NotJSONifiableError(DokomoError):
+
+    """The jsonify function encountered a strange object."""
+
+
 class NoSuchNodeTypeError(DokomoError):
 
     """Invalid type_constraint for construct_node.

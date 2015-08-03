@@ -164,50 +164,75 @@ function drawMap(map_data) {
 
     L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
 
-    var sw_lat = parseFloat(map_data[0][1]);
-    var sw_lng = parseFloat(map_data[0][0]);
-    var ne_lat = parseFloat(map_data[0][1]);
-    var ne_lng = parseFloat(map_data[0][0]);
 
-    for (i = 0; i < map_data.length; i++) {
-        var location = map_data[i];
-        var lng = parseFloat(location[0]);
-        if (lng < sw_lng) {
-            sw_lng = lng;
-        } else if (lng > ne_lng) {
-            ne_lng = lng;
-        }
-        var lat = parseFloat(location[1]);
-        if (lat < sw_lat) {
-            sw_lat = lat;
-        } else if (lat > ne_lat) {
-            ne_lat = lat;
-        }
-        // stored lon/lat in revisit, switch around
-        var marker = new L.marker([lat, lng], {
+    var markers = [];
+    _.each(map_data, function(map_datum) {
+        var marker = new L.marker([map_datum.coordinates.lat, map_datum.coordinates.lng], {
             riseOnHover: true
         });
-        marker.options.icon = new L.icon({iconUrl: "/static/img/icons/selected-point.png", iconAnchor: [15, 48]});
+        marker.options.icon = new L.icon({iconUrl: "/static/img/icons/normal_base.png", iconAnchor: [13, 30]});
+        // marker.bindPopup();
+        marker.on('click', function() {
+            openSubmissionDetailModal(map_datum.submission_id);
+        });
+        markers.push(marker);
 
-        var answers = JSON.parse(map_data[i][2]).answers;
-        var submission_text = "<ul>";
-        for (j = 0; j < answers.length; j++) {
-            var ans = answers[j];
-            var metadata = "";
-            if (ans.answer_metadata) {
-                metadata += "<br />" + JSON.stringify(ans.answer_metadata);
-            }
-            submission_text += "<li><strong>" + ans.sequence_number + ". " + ans.question_title + "</strong><br />" + ans.answer + metadata + "</li>";
-        }
-        submission_text += "</ul";
-
-        marker.bindPopup(submission_text);
-
-        marker.addTo(map);
+    });
+    
+    if (markers.length) {
+        var markers_group = new L.featureGroup(markers);
+        markers_group.addTo(map);
+        map.fitBounds(markers_group.getBounds(), {
+            padding: [40, 40]
+        });
+    } else {
+        console.log('No submissions include location.');
     }
 
-    map.fitBounds([
-        [sw_lat, sw_lng],
-        [ne_lat, ne_lng]
-    ]);
+    //var sw_lat = parseFloat(map_data[0][1]);
+    //var sw_lng = parseFloat(map_data[0][0]);
+    //var ne_lat = parseFloat(map_data[0][1]);
+    //var ne_lng = parseFloat(map_data[0][0]);
+
+    //for (i = 0; i < map_data.length; i++) {
+    //    var location = map_data[i];
+    //    var lng = parseFloat(location[0]);
+    //    if (lng < sw_lng) {
+    //        sw_lng = lng;
+    //    } else if (lng > ne_lng) {
+    //        ne_lng = lng;
+    //    }
+    //    var lat = parseFloat(location[1]);
+    //    if (lat < sw_lat) {
+    //        sw_lat = lat;
+    //    } else if (lat > ne_lat) {
+    //        ne_lat = lat;
+    //    }
+    //    // stored lon/lat in revisit, switch around
+    //    var marker = new L.marker([lat, lng], {
+    //        riseOnHover: true
+    //    });
+    //    marker.options.icon = new L.icon({iconUrl: "/static/img/icons/selected-point.png", iconAnchor: [15, 48]});
+
+    //    var answers = JSON.parse(map_data[i][2]).answers;
+    //    var submission_text = "<ul>";
+    //    for (j = 0; j < answers.length; j++) {
+    //        var ans = answers[j];
+    //        var metadata = "";
+    //        if (ans.answer_metadata) {
+    //            metadata += "<br />" + JSON.stringify(ans.answer_metadata);
+    //        }
+    //        submission_text += "<li><strong>" + ans.sequence_number + ". " + ans.question_title + "</strong><br />" + ans.answer + metadata + "</li>";
+    //    }
+    //    submission_text += "</ul";
+
+    //    marker.bindPopup(submission_text);
+
+    //    marker.addTo(map);
+    //}
+
+    //map.fitBounds([
+    //    [sw_lat, sw_lng],
+    //    [ne_lat, ne_lng]
+    //]);
 }
