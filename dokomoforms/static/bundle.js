@@ -643,11 +643,12 @@ module.exports = React.createClass({displayName: "exports",
     render: function() {
         return (
                 React.createElement("span", null, 
-                 React.createElement(LittleButton, {buttonFunction: this.onLocate, 
-                    icon: 'icon-star', 
-                    text: 'find my location and show nearby facilities'}), 
                 this.state.selectFacility ?
                     React.createElement("span", null, 
+                    React.createElement(LittleButton, {buttonFunction: this.onLocate, 
+                       icon: 'icon-star', 
+                       text: 'find my location and show nearby facilities'}
+                    ), 
                     React.createElement(FacilityRadios, {
                         selectFunction: this.selectFacility, 
                         facilities: this.state.facilities, 

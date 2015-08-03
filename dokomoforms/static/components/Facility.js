@@ -137,11 +137,12 @@ module.exports = React.createClass({
     render: function() {
         return (
                 <span>
-                 <LittleButton buttonFunction={this.onLocate}
-                    icon={'icon-star'}
-                    text={'find my location and show nearby facilities'} />
                 {this.state.selectFacility ?
                     <span>
+                    <LittleButton buttonFunction={this.onLocate}
+                       icon={'icon-star'}
+                       text={'find my location and show nearby facilities'} 
+                    />
                     <FacilityRadios 
                         selectFunction={this.selectFacility} 
                         facilities={this.state.facilities}
