@@ -529,7 +529,13 @@ module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
         return { 
             loc: null,
-            addFacility: true,
+            selectFacility: true,
+            choices: [
+                {'value': 'water', 'text': 'Water'}, 
+                {'value': 'energy', 'text': 'Energy'}, 
+                {'value': 'education', 'text': 'Education'}, 
+                {'value': 'health', 'text': 'Health'}, 
+            ],
         }
     },
 
@@ -549,7 +555,7 @@ module.exports = React.createClass({displayName: "exports",
 
     toggleAddFacility: function() {
         this.setState({
-            addFacility : this.state.addFacility ? false : true
+            selectFacility : this.state.selectFacility ? false : true
         })
     },
 
@@ -597,18 +603,18 @@ module.exports = React.createClass({displayName: "exports",
                  React.createElement(LittleButton, {buttonFunction: this.onLocate, 
                     icon: 'icon-star', 
                     text: 'find my location and show nearby facilities'}), 
-                this.state.addFacility ?
+                this.state.selectFacility ?
                     React.createElement("span", null, 
                     React.createElement(FacilityRadios, {facilities: this.getFacilities()}), 
                     React.createElement(LittleButton, {buttonFunction: this.toggleAddFacility, 
-                            text: 'add another answer'})
+                            text: 'add new facility'})
                     )
                 :
                     React.createElement("span", null, 
                     React.createElement(ResponseField, {type: 'text'}), 
                     React.createElement(ResponseField, {type: 'location'}), 
                     React.createElement(Select, {
-                        choices: choices, 
+                        choices: this.state.choices, 
                         withOther: true, 
                         multiSelect: false}
                     ), 
@@ -1738,21 +1744,60 @@ var React = require('react');
  *  @facilities: Array of facility objects (revisit format)
  */ 
 module.exports = React.createClass({displayName: "exports",
+    getInitialState: function() {
+        return {
+            selected: null,
+        }
+    },
+    onClick: function(e) {
+        var option = e.target.value;
+        var checked = e.target.checked;
+        var selected = option;
+
+        if (option === this.state.selected) {
+            selected = null;
+            checked = false;
+        }
+
+        e.target.checked = checked;
+        window.etarget = e.target;
+        //e.stopPropagation();
+        //e.cancelBubble = true;
+
+        console.log('selected', option, checked);
+        if (this.props.onSelect)
+            this.props.onSelect(option);
+
+        this.setState({
+            selected: selected
+        });
+    },
+
     render: function() {
+        var self = this;
         return (
                 React.createElement("div", {className: "question__radios"}, 
                 this.props.facilities.map(function(facility) {
-                    return (React.createElement("div", {key: facility.uuid, className: "question__radio"}, 
+                    return (
+                        React.createElement("div", {className: "question__radio noselect"}, 
                             React.createElement("input", {
                                 type: "radio", 
                                 id: facility.uuid, 
                                 name: "facility", 
+                                onClick: self.onClick, 
                                 value: facility.uuid}
                             ), 
-                            React.createElement("label", {htmlFor: facility.uuid}, 
-                            React.createElement("span", {className: "question__radio__span__btn"}, React.createElement("span", null)), 
-                                React.createElement("strong", null, facility.name)
-                            ), 
+                            React.createElement("label", {
+                                key: facility.uuid, 
+                                htmlFor: facility.uuid, 
+                                className: "question__radio__label"
+                            }, 
+                                React.createElement("span", {className: "radio__span"}, 
+                                    React.createElement("span", null)
+                                ), 
+                                React.createElement("strong", {className: "question__radio__strong__meta"}, 
+                                    facility.name
+                                ), 
                             React.createElement("br", null), 
                             React.createElement("span", {className: "question__radio__span__meta"}, 
                                 facility.properties.sector
@@ -1760,7 +1805,9 @@ module.exports = React.createClass({displayName: "exports",
                             React.createElement("span", {className: "question__radio__span__meta"}, 
                                 React.createElement("em", null, facility.coordinates, "m")
                             )
-                            )) 
+                            )
+                        )
+                    ) 
                 })
                 )
                )
@@ -2075,7 +2122,7 @@ ResponseField = require('./ResponseField.js');
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
         return { 
-            showOther: this.props.initSelect.indexOf('other') > -1
+            showOther: this.props.initSelect && this.props.initSelect.indexOf('other') > -1
         }
     },
 
@@ -2088,7 +2135,9 @@ module.exports = React.createClass({displayName: "exports",
             options[i] = option.value;
         }
 
-        this.props.onSelect(options);
+        if (this.props.onSelect)
+            this.props.onSelect(options);
+
         this.setState({showOther: foundOther})
     },
 
@@ -2102,7 +2151,9 @@ module.exports = React.createClass({displayName: "exports",
                             size: size, 
                             defaultValue: this.props.multiSelect 
                                 ? this.props.initSelect
-                                : this.props.initSelect[0], 
+                                : this.props.initSelect 
+                                    ? this.props.initSelect[0]
+                                    : null, 
                             
                             disabled: this.props.disabled
                     }, 

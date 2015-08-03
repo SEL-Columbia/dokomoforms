@@ -63,18 +63,21 @@ input[type=radio]:not(old) {
     font-size : 1em;
     opacity   : 0;
     min-height: 0px;
+    display: none;
 }
 
 
 input[type=radio]:not(old) + label {
     display      : inline-block;
+    /*
     margin-left  : -2em;
     line-height  : 1.5em;
     margin-top: 10px;
+    */
 }
 
 
-input[type=radio]:not(old) + label > span {
+input[type=radio]:not(old) + label > .radio__span {
     display          : inline-block;
     width            : 2em;
     height           : 2em;
@@ -85,7 +88,7 @@ input[type=radio]:not(old) + label > span {
     margin-right: 20px;
 }
 
-input[type=radio]:not(old):checked + label > span > span {
+input[type=radio]:not(old):checked + label > .radio__span > span {
     display          : block;
     width            : 1em;
     height           : 1em;
@@ -96,7 +99,7 @@ input[type=radio]:not(old):checked + label > span > span {
     margin-left: 5px;
 }
 
-input[type=radio]:not(old):checked + label > span {
+input[type=radio]:not(old):checked + label > .radio__span {
     border: 0.15em solid #000;
 }
 
@@ -346,14 +349,24 @@ a, .icon {
     height: 61.6px;
 }
 
+.question__radio__label {
+    cursor: pointer !important;
+    display: block !important;
+    font-weight: 500;
+    padding-bottom: 10px;
+    padding-top: 10px;
+    padding-left: 20px;
+    height: 100%;
+}
+
 .question__radio {
     border: 1px solid #DDD;
-    padding: 0px 0px 14px 20px;
     text-align: left;
     min-height: 50px;
     background-color: white;
     font-size: 14px;
     cursor: pointer !important;
+    display: block;
 }
 
 .question__radio__selected {
@@ -361,17 +374,13 @@ a, .icon {
     background-color: #DDD;
 }
 
-.question__radio label {
-    font-weight: 500;
-    cursor: pointer !important;
+.radio__span {
 }
 
-.question__radio__span__btn {
-    float: left;
-    margin-top: 4px;
-    cursor: pointer !important;
+.question__radio__strong__meta {
+    position: relative;
+    top: -10px;
 }
-
 .question__radio__span__meta {
     padding-left: 49px;
     margin-top: -12px;

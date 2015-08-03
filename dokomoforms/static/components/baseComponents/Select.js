@@ -16,7 +16,7 @@ ResponseField = require('./ResponseField.js');
 module.exports = React.createClass({
     getInitialState: function() {
         return { 
-            showOther: this.props.initSelect.indexOf('other') > -1
+            showOther: this.props.initSelect && this.props.initSelect.indexOf('other') > -1
         }
     },
 
@@ -29,7 +29,9 @@ module.exports = React.createClass({
             options[i] = option.value;
         }
 
-        this.props.onSelect(options);
+        if (this.props.onSelect)
+            this.props.onSelect(options);
+
         this.setState({showOther: foundOther})
     },
 
@@ -43,7 +45,9 @@ module.exports = React.createClass({
                             size={size}
                             defaultValue={this.props.multiSelect 
                                 ? this.props.initSelect
-                                : this.props.initSelect[0]
+                                : this.props.initSelect 
+                                    ? this.props.initSelect[0]
+                                    : null
                             }
                             disabled={this.props.disabled}
                     >
