@@ -967,6 +967,20 @@ class TestSurveyApi(DokoHTTPTest):
             submission_dict['answers'][0]['response_type'], 'answer')
         self.assertEqual(submission_dict['answers'][0]['response'], 3)
 
+    def test_get_photos_without_logging_in(self):
+        url = self.api_root + '/photos'
+        response = self.fetch(url, method='GET', _logged_in_user=None)
+        self.assertEqual(response.code, 401, msg=response.body)
+
+    def test_post_photo_without_logging_in_or_xsrf(self):
+        url = self.api_root + '/photos'
+        response = self.fetch(
+            url, method='POST',
+            body=json_encode({'a': 'b'}),
+            _logged_in_user=None, _disable_xsrf=False
+        )
+        self.assertEqual(response.code, 403, msg=response.body)
+
     def test_submit_to_survey_with_photo_answer_response_no_photo(self):
         survey = (
             self.session
@@ -995,6 +1009,59 @@ class TestSurveyApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+
+        self.assertEqual(
+            submission_dict['answers'][0]['response_type'], 'answer')
+        self.assertEqual(
+            submission_dict['answers'][0]['response'],
+            None,
+            msg=submission_dict['answers']
+        )
+
+    def test_submit_photo_answer_response_no_photo_not_logged_in(self):
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(Survey.title['English'].astext == 'photo_survey')
+            .one()
+        )
+        # url to test
+        url = self.api_root + '/surveys/' + survey.id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": "photo",
+                    "response": {
+                        "response_type": "answer",
+                        "response": str(uuid.uuid4()),
+                    }
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(
+            url, method=method, body=json_encode(body),
+            _logged_in_user=None
+        )
         self.assertEqual(response.code, 201)
 
         submission_dict = json_decode(response.body)
@@ -1083,6 +1150,84 @@ class TestSurveyApi(DokoHTTPTest):
         photo_response = self.fetch(
             photo_url, method='POST', body=json_encode(body),
             _logged_in_user=None
+        )
+        self.assertEqual(photo_response.code, 201, msg=photo_response.body)
+        self.assertEqual(
+            json_decode(photo_response.body)['id'],
+            desired_id
+        )
+        self.assertNotIn('image', json_decode(photo_response.body))
+
+        self.assertEqual(
+            self.session.query(PhotoAnswer).one().response['response'],
+            desired_id
+        )
+
+    def test_submit_photo_answer_response_plus_photo_logged_in(self):
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(Survey.title['English'].astext == 'photo_survey')
+            .one()
+        )
+        # url to test
+        url = self.api_root + '/surveys/' + survey.id + '/submit'
+        # http method
+        method = 'POST'
+        # body
+        desired_id = str(uuid.uuid4())
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": survey.nodes[0].id,
+                    "type_constraint": "photo",
+                    "response": {
+                        "response_type": "answer",
+                        "response": desired_id,
+                    }
+                }
+            ]
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201)
+
+        submission_dict = json_decode(response.body)
+
+        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('deleted' in submission_dict)
+        self.assertTrue('id' in submission_dict)
+        self.assertTrue('submitter_email' in submission_dict)
+        self.assertTrue('answers' in submission_dict)
+        self.assertTrue('submitter_name' in submission_dict)
+        self.assertTrue('last_update_time' in submission_dict)
+        self.assertTrue('submission_time' in submission_dict)
+        self.assertTrue('survey_id' in submission_dict)
+
+        self.assertEqual(
+            submission_dict['answers'][0]['response_type'], 'answer')
+        self.assertEqual(
+            submission_dict['answers'][0]['response'],
+            None,
+            msg=submission_dict['answers']
+        )
+
+        photo_url = self.api_root + '/photos'
+        photo_path = os.path.join(
+            os.path.abspath('.'), 'dokomoforms/static/img/favicon.png'
+        )
+        with open(photo_path, 'rb') as photo_file:
+            b64photo = b64encode(photo_file.read())
+        body = {
+            'id': desired_id,
+            'mime_type': 'png',
+            'image': b64photo.decode(),
+        }
+
+        photo_response = self.fetch(
+            photo_url, method='POST', body=json_encode(body)
         )
         self.assertEqual(photo_response.code, 201, msg=photo_response.body)
         self.assertEqual(
