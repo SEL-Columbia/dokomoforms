@@ -103,6 +103,9 @@ module.exports = React.createClass({
                     'lng': position.coords.longitude, 
                 }
 
+                // Record location for survey
+                localStorage['location'] = JSON.stringify(loc);
+
                 answers[index] = {
                     'response': loc, 
                     'response_type': 'answer'

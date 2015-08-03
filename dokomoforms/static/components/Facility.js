@@ -22,7 +22,7 @@ var Select = require('./baseComponents/Select.js');
 module.exports = React.createClass({
     getInitialState: function() {
         var self = this;
-        var loc = null;
+        var loc = JSON.parse(localStorage['location'] || '{}');
         return { 
             loc: loc,
             selectFacility: true,
@@ -85,7 +85,7 @@ module.exports = React.createClass({
     },
 
     getFacilities: function(loc) {
-        if (!loc)
+        if (!loc || !loc.lat || !loc.lng)
           return [];  
 
         console.log("Getting facilities ...");
@@ -110,6 +110,9 @@ module.exports = React.createClass({
                     'lat': position.coords.latitude,
                     'lng': position.coords.longitude, 
                 }
+
+                // Record location for survey
+                localStorage['location'] = JSON.stringify(loc);
 
                 var facilities = self.getFacilities(loc);
                 self.setState({
