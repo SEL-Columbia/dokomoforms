@@ -23,7 +23,13 @@ module.exports = React.createClass({
     getInitialState: function() {
         return { 
             loc: null,
-            addFacility: true,
+            selectFacility: true,
+            choices: [
+                {'value': 'water', 'text': 'Water'}, 
+                {'value': 'energy', 'text': 'Energy'}, 
+                {'value': 'education', 'text': 'Education'}, 
+                {'value': 'health', 'text': 'Health'}, 
+            ],
         }
     },
 
@@ -43,7 +49,7 @@ module.exports = React.createClass({
 
     toggleAddFacility: function() {
         this.setState({
-            addFacility : this.state.addFacility ? false : true
+            selectFacility : this.state.selectFacility ? false : true
         })
     },
 
@@ -91,18 +97,18 @@ module.exports = React.createClass({
                  <LittleButton buttonFunction={this.onLocate}
                     icon={'icon-star'}
                     text={'find my location and show nearby facilities'} />
-                {this.state.addFacility ?
+                {this.state.selectFacility ?
                     <span>
                     <FacilityRadios facilities={this.getFacilities()}/>
                     <LittleButton buttonFunction={this.toggleAddFacility}
-                            text={'add another answer'} />
+                            text={'add new facility'} />
                     </span>
                 :
                     <span>
                     <ResponseField type={'text'}/>
                     <ResponseField type={'location'}/>
                     <Select 
-                        choices={choices} 
+                        choices={this.state.choices} 
                         withOther={true} 
                         multiSelect={false}
                     />
