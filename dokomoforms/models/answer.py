@@ -107,8 +107,8 @@ class Answer(Base):
             ('other', self.other),
             ('dont_know', self.dont_know),
         ]
-        response_type = next(
-            possible_response
+        response_type, response = next(
+            (possible_response, response)
             for possible_response, response in possible_responses
             if response is not None
         )
