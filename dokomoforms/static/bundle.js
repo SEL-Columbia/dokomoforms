@@ -529,9 +529,11 @@ module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
         var self = this;
         var loc = JSON.parse(localStorage['location'] || '{}');
+        var answer = this.getAnswer();
+        var selectOff = answer && answer.metadata && answer.metadata.is_new;
         return { 
             loc: loc,
-            selectFacility: true,
+            selectFacility: !selectOff,
             facilities: self.getFacilities(loc),
             choices: [
                 {'value': 'water', 'text': 'Water'}, 
@@ -602,8 +604,56 @@ module.exports = React.createClass({displayName: "exports",
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
         console.log("Selected facility", answers[0]);
-        return answers[0] && answers[0].response;
+        if (answers[0]) 
+            return answers[0]
     },
+
+    onInput: function(type, value) {
+        console.log("Dealing with input", value, type);
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var self = this;
+        if (answers[0] && (!answers[0].metadata || !answers[0].metadata.is_new)) {
+            answers = [];
+        }
+
+        // Load up previous response, update values
+        var response = (answers[0] && answers[0].response) || {}; 
+        var uuid = response.facility_id || '1122334455667788';
+        response.facility_id = uuid;
+        // XXX This kind of assumes that current lat/lng is correct at the time of last field update
+        response.lat = this.state.loc.lat; 
+        response.lng = this.state.loc.lng; 
+
+        switch(type) {
+            case 'text':
+                response.facility_name = value;
+                break;
+            case 'select':
+                var v = value[0]; // Only one ever
+                console.log('Selected v', v);
+                response.facility_sector = v;
+                break;
+            case 'other':
+                console.log('Other v', value);
+                response.facility_sector = value;
+                break;
+        }
+
+        answers = [{
+            'response': response,
+            'response_type': 'answer',
+            'metadata': {
+                'is_new': true
+            }
+        }];
+
+        console.log("Built response", answers);
+
+        survey[this.props.question.id] = answers;
+        localStorage[this.props.surveyID] = JSON.stringify(survey);
+    },
+
 
     /*
      * Retrieve location and record into state on success.
@@ -641,7 +691,18 @@ module.exports = React.createClass({displayName: "exports",
 
     },
     render: function() {
+        var answer = this.getAnswer();
+
         var hasLocation = this.state.loc && this.state.loc.lat && this.state.loc.lng;
+        var isNew = answer && answer.metadata && answer.metadata.is_new;
+
+        var choiceOptions = this.state.choices.map(function(choice) { return choice.value });
+        console.log("Choice options", choiceOptions);
+        var sector = answer && answer.response.facility_sector;
+        var isOther = choiceOptions.indexOf(sector) === -1;
+        console.log("isOther", sector, isOther);
+        sector = isOther ? sector && 'other' : sector; 
+
         return (
                 React.createElement("span", null, 
                 this.state.selectFacility ?
@@ -653,7 +714,7 @@ module.exports = React.createClass({displayName: "exports",
                     React.createElement(FacilityRadios, {
                         selectFunction: this.selectFacility, 
                         facilities: this.state.facilities, 
-                        initValue: this.getAnswer()}
+                        initValue: answer && !isNew && answer.response.facility_id}
                     ), 
 
                      hasLocation  ?
@@ -664,7 +725,11 @@ module.exports = React.createClass({displayName: "exports",
                     )
                 :
                     React.createElement("span", null, 
-                    React.createElement(ResponseField, {type: 'text'}), 
+                    React.createElement(ResponseField, {
+                        onInput: this.onInput.bind(null, 'text'), 
+                        initValue: isNew && answer.response.facility_name, 
+                        type: 'text'}
+                    ), 
                     React.createElement(ResponseField, {
                         initValue: JSON.stringify(this.state.loc), 
                         type: 'location', 
@@ -672,8 +737,12 @@ module.exports = React.createClass({displayName: "exports",
                     ), 
                     React.createElement(Select, {
                         choices: this.state.choices, 
+                        initValue: isNew && isOther ? answer.response.facility_sector : null, 
+                        initSelect: isNew && [sector], 
                         withOther: true, 
-                        multiSelect: false}
+                        multiSelect: false, 
+                        onInput: this.onInput.bind(null, 'other'), 
+                        onSelect: this.onInput.bind(null, 'select')}
                     ), 
 
                     React.createElement(LittleButton, {
@@ -1854,8 +1923,7 @@ module.exports = React.createClass({displayName: "exports",
                                 id: facility.uuid, 
                                 name: "facility", 
                                 onClick: self.onClick, 
-                                defaultChecked: self.props.initValue && facility.uuid 
-                                    === self.props.initValue.facility_id, 
+                                defaultChecked: facility.uuid === self.props.initValue, 
                                 value: facility.uuid}
                             ), 
                             React.createElement("label", {

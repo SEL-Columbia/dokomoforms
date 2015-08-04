@@ -51,8 +51,7 @@ module.exports = React.createClass({
                                 id={facility.uuid} 
                                 name='facility' 
                                 onClick={self.onClick} 
-                                defaultChecked={self.props.initValue && facility.uuid 
-                                    === self.props.initValue.facility_id}
+                                defaultChecked={facility.uuid === self.props.initValue}
                                 value={facility.uuid}> 
                             </input>
                             <label 
