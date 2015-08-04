@@ -1894,11 +1894,22 @@ var React = require('react');
  *  @initValue: Default selected facility
  */ 
 module.exports = React.createClass({displayName: "exports",
+    /*
+     * Keep track of wich option is selected
+     */
     getInitialState: function() {
         return {
-            selected: null,
+            selected: this.props.initValue,
         }
     },
+
+    /*
+     * Make radio behave like single option checkbox
+     * 
+     * Calls selectFunction with option (passes null when option unchecked)
+     *
+     * @e: click event
+     */
     onClick: function(e) {
         var option = e.target.value;
         var checked = e.target.checked;
@@ -1916,7 +1927,7 @@ module.exports = React.createClass({displayName: "exports",
 
         console.log('selected', option, checked);
         if (this.props.selectFunction)
-            this.props.selectFunction(option);
+            this.props.selectFunction(selected);
 
         this.setState({
             selected: selected
@@ -1935,7 +1946,7 @@ module.exports = React.createClass({displayName: "exports",
                                 id: facility.uuid, 
                                 name: "facility", 
                                 onClick: self.onClick, 
-                                defaultChecked: facility.uuid === self.props.initValue, 
+                                defaultChecked: facility.uuid === self.state.selected, 
                                 value: facility.uuid}
                             ), 
                             React.createElement("label", {
