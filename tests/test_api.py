@@ -1029,8 +1029,9 @@ class TestSurveyApi(DokoHTTPTest):
             .filter(
                 sa.cast(
                     models.SurveyNode.type_constraint, pg.TEXT
-                ) == 'location'
+                ) == 'facility'
             )
+            .one()
         )
         survey_id = survey_node.root_survey_id
         # url to test

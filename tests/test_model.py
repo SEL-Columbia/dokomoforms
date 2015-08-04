@@ -2927,6 +2927,7 @@ class TestAnswer(DokoTest):
                         survey_node=the_survey.nodes[0],
                         type_constraint='integer',
                         answer=3,
+                        answer_metadata={'a': 'b'},
                     ),
                 ],
             )
@@ -2959,6 +2960,7 @@ class TestAnswer(DokoTest):
                         ('response_type', 'answer'), ('response', 3)
                     ))
                 ),
+                ('metadata', {'a': 'b'}),
             ))
         )
 

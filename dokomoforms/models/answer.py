@@ -61,6 +61,8 @@ class Answer(Base):
     )
     last_update_time = util.last_update_time()
 
+    answer_metadata = util.json_column('answer_metadata', default='{}')
+
     @property
     @abc.abstractmethod
     def main_answer(self):
@@ -107,8 +109,8 @@ class Answer(Base):
             ('other', self.other),
             ('dont_know', self.dont_know),
         ]
-        response_type = next(
-            possible_response
+        response_type, response = next(
+            (possible_response, response)
             for possible_response, response in possible_responses
             if response is not None
         )
@@ -202,6 +204,7 @@ class Answer(Base):
             ('type_constraint', self.type_constraint),
             ('last_update_time', self.last_update_time),
             ('response', self.response),
+            ('metadata', self.answer_metadata),
         ))
 
 
