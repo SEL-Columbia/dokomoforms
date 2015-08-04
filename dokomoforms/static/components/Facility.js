@@ -52,12 +52,21 @@ module.exports = React.createClass({
         });
     },
 
+    /*
+     * Switch view to new Facility View
+     */
     toggleAddFacility: function() {
         this.setState({
             selectFacility : this.state.selectFacility ? false : true
         })
     },
 
+    /*
+     * Record newly chosen facility into localStorage
+     *
+     * @option: The facility uuid chosen
+     * @data: I have no idea why i have this?
+     */
     selectFacility: function(option, data) {
         console.log("Selected facility");
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
@@ -86,6 +95,11 @@ module.exports = React.createClass({
         
     },
 
+    /* 
+     * Query the tree for nearby facilities near given location when possible
+     *
+     * @loc: The location ({lat: NUM, lng: NUM}) to query around
+     */
     getFacilities: function(loc) {
         if (!loc || !loc.lat || !loc.lng || !this.props.tree || !this.props.tree.root)
           return [];  
@@ -94,6 +108,9 @@ module.exports = React.createClass({
         return this.props.tree.getNNearestFacilities(loc.lat, loc.lng, 1000, 10);
     },
 
+    /*
+     * Get response from localStorage
+     */ 
     getAnswer: function() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
@@ -114,6 +131,12 @@ module.exports = React.createClass({
        });
     },
 
+    /*
+     * Deal with all new facility input fields, type is bound to function call
+     *
+     * @type: Type of input that was updated
+     * @value: newly supplied input
+     */
     onInput: function(type, value) {
         console.log("Dealing with input", value, type);
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
@@ -196,17 +219,18 @@ module.exports = React.createClass({
 
 
     },
+
     render: function() {
+        // Retrieve respone for initValues
         var answer = this.getAnswer();
+        var choiceOptions = this.state.choices.map(function(choice) { return choice.value });
 
         var hasLocation = this.state.loc && this.state.loc.lat && this.state.loc.lng;
         var isNew = answer && answer.metadata && answer.metadata.is_new;
 
-        var choiceOptions = this.state.choices.map(function(choice) { return choice.value });
-        console.log("Choice options", choiceOptions);
+        // Update sector field to match initSelect expected value
         var sector = answer && answer.response.facility_sector;
         var isOther = choiceOptions.indexOf(sector) === -1;
-        console.log("isOther", sector, isOther);
         sector = isOther ? sector && 'other' : sector; 
 
         return (
