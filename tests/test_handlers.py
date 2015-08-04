@@ -64,7 +64,7 @@ class TestAuth(DokoHTTPTest):
                 _logged_in_user=None
             )
         self.assertEqual(response.code, 200, msg=response.body)
-        self.assertNotIn('Secure', response.headers['Set-Cookie'])
+        self.assertNotIn('secure', response.headers['Set-Cookie'].lower())
 
     def test_login_success_secure_cookie(self):
         dokomoforms.handlers.auth.options.https = True
@@ -81,7 +81,7 @@ class TestAuth(DokoHTTPTest):
                 _logged_in_user=None
             )
         self.assertEqual(response.code, 200, msg=response.body)
-        self.assertIn('Secure', response.headers['Set-Cookie'])
+        self.assertIn('secure', response.headers['Set-Cookie'].lower())
 
     def test_login_email_does_not_exist(self):
         with patch.object(handlers.Login, '_async_post') as p:
