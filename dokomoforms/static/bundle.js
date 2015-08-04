@@ -529,9 +529,11 @@ module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
         var self = this;
         var loc = JSON.parse(localStorage['location'] || '{}');
+        var answer = this.getAnswer();
+        var selectOff = answer && answer.metadata && answer.metadata.is_new;
         return { 
             loc: loc,
-            selectFacility: true,
+            selectFacility: !selectOff,
             facilities: self.getFacilities(loc),
             choices: [
                 {'value': 'water', 'text': 'Water'}, 
@@ -591,7 +593,7 @@ module.exports = React.createClass({displayName: "exports",
     },
 
     getFacilities: function(loc) {
-        if (!loc || !loc.lat || !loc.lng)
+        if (!loc || !loc.lat || !loc.lng || !this.props.tree || !this.props.tree.root)
           return [];  
 
         console.log("Getting facilities ...");
@@ -602,8 +604,68 @@ module.exports = React.createClass({displayName: "exports",
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
         console.log("Selected facility", answers[0]);
-        return answers[0] && answers[0].response;
+        if (answers[0]) 
+            return answers[0]
     },
+
+    /*
+     * Generate objectID compatitable with Mongo for the Revisit API
+     *
+     * Returns an objectID string
+     */
+    createObjectID: function() {
+       return 'xxxxxxxxxxxxxxxxxxxxxxxx'.replace(/[x]/g, function() {
+           var r = Math.random()*16|0;
+           return r.toString(16);
+       });
+    },
+
+    onInput: function(type, value) {
+        console.log("Dealing with input", value, type);
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var self = this;
+        if (answers[0] && (!answers[0].metadata || !answers[0].metadata.is_new)) {
+            answers = [];
+        }
+
+        // Load up previous response, update values
+        var response = (answers[0] && answers[0].response) || {}; 
+        var uuid = response.facility_id || this.createObjectID();
+        response.facility_id = uuid;
+        // XXX This kind of assumes that current lat/lng is correct at the time of last field update
+        response.lat = this.state.loc.lat; 
+        response.lng = this.state.loc.lng; 
+
+        switch(type) {
+            case 'text':
+                response.facility_name = value;
+                break;
+            case 'select':
+                var v = value[0]; // Only one ever
+                console.log('Selected v', v);
+                response.facility_sector = v;
+                break;
+            case 'other':
+                console.log('Other v', value);
+                response.facility_sector = value;
+                break;
+        }
+
+        answers = [{
+            'response': response,
+            'response_type': 'answer',
+            'metadata': {
+                'is_new': true
+            }
+        }];
+
+        console.log("Built response", answers);
+
+        survey[this.props.question.id] = answers;
+        localStorage[this.props.surveyID] = JSON.stringify(survey);
+    },
+
 
     /*
      * Retrieve location and record into state on success.
@@ -641,30 +703,52 @@ module.exports = React.createClass({displayName: "exports",
 
     },
     render: function() {
+        var answer = this.getAnswer();
+
         var hasLocation = this.state.loc && this.state.loc.lat && this.state.loc.lng;
+        var isNew = answer && answer.metadata && answer.metadata.is_new;
+
+        var choiceOptions = this.state.choices.map(function(choice) { return choice.value });
+        console.log("Choice options", choiceOptions);
+        var sector = answer && answer.response.facility_sector;
+        var isOther = choiceOptions.indexOf(sector) === -1;
+        console.log("isOther", sector, isOther);
+        sector = isOther ? sector && 'other' : sector; 
+
         return (
                 React.createElement("span", null, 
                 this.state.selectFacility ?
                     React.createElement("span", null, 
                     React.createElement(LittleButton, {buttonFunction: this.onLocate, 
-                       icon: 'icon-star', 
-                       text: 'find my location and show nearby facilities'}
+                        icon: 'icon-star', 
+                        text: 'find my location and show nearby facilities', 
+                        disabled: this.props.disabled}
                     ), 
+
                     React.createElement(FacilityRadios, {
+                        key: this.props.disabled, 
                         selectFunction: this.selectFacility, 
                         facilities: this.state.facilities, 
-                        initValue: this.getAnswer()}
+                        initValue: answer && !isNew && answer.response.facility_id, 
+                        disabled: this.props.disabled}
                     ), 
 
                      hasLocation  ?
                         React.createElement(LittleButton, {buttonFunction: this.toggleAddFacility, 
-                                text: 'add new facility'})
+                            disabled: this.props.disabled, 
+                            text: 'add new facility'}
+                        )
                         : null
                     
                     )
                 :
                     React.createElement("span", null, 
-                    React.createElement(ResponseField, {type: 'text'}), 
+                    React.createElement(ResponseField, {
+                        onInput: this.onInput.bind(null, 'text'), 
+                        initValue: isNew && answer.response.facility_name, 
+                        type: 'text', 
+                        disabled: this.props.disabled}
+                    ), 
                     React.createElement(ResponseField, {
                         initValue: JSON.stringify(this.state.loc), 
                         type: 'location', 
@@ -672,13 +756,19 @@ module.exports = React.createClass({displayName: "exports",
                     ), 
                     React.createElement(Select, {
                         choices: this.state.choices, 
+                        initValue: isNew && isOther ? answer.response.facility_sector : null, 
+                        initSelect: isNew && [sector], 
                         withOther: true, 
-                        multiSelect: false}
+                        multiSelect: false, 
+                        onInput: this.onInput.bind(null, 'other'), 
+                        onSelect: this.onInput.bind(null, 'select'), 
+                        disabled: this.props.disabled}
                     ), 
 
                     React.createElement(LittleButton, {
                         buttonFunction: this.toggleAddFacility, 
-                            text: 'cancel'}
+                            text: 'cancel', 
+                            disabled: this.props.disabled}
                      )
 
                     )
@@ -1212,7 +1302,7 @@ module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
-        var length = answers.length;
+        var length = answers.length ? answers.length : 1;
 
         var camera = null;
         var src = null;
@@ -1326,6 +1416,11 @@ module.exports = React.createClass({displayName: "exports",
         var photoID = answers[index] && answers[index].response || 0;
         var self = this;
 
+        // Removing an empty input
+        if (photoID === 0) {
+            return;
+        }
+
         // Remove from localStorage;
         answers.splice(index, 1);
         survey[this.props.question.id] = answers;
@@ -1342,9 +1437,11 @@ module.exports = React.createClass({displayName: "exports",
             console.log("Removed attachement:", result);
         });
 
+        var count = this.state.questionCount - 1;
+        count = count ? count : 1;
         this.setState({
             photos: this.state.photos,
-            questionCount: this.state.questionCount - 1
+            questionCount: count
         })
     },
 
@@ -1400,9 +1497,11 @@ module.exports = React.createClass({displayName: "exports",
         return (
                 React.createElement("span", null, 
                 React.createElement(LittleButton, {
-                buttonFunction: this.onCapture, 
+                    buttonFunction: this.onCapture, 
+                    disabled: this.props.disabled, 
                     iconClass: 'icon-star', 
-                    text: 'take a photo'}), 
+                    text: 'take a photo'}
+                ), 
 
                 React.createElement("canvas", {ref: "canvas", className: "question__canvas"}), 
                 React.createElement("video", {
@@ -1806,11 +1905,22 @@ var React = require('react');
  *  @initValue: Default selected facility
  */ 
 module.exports = React.createClass({displayName: "exports",
+    /*
+     * Keep track of which option is selected
+     */
     getInitialState: function() {
         return {
-            selected: null,
+            selected: this.props.initValue,
         }
     },
+
+    /*
+     * Make radio behave like single option checkbox
+     * 
+     * Calls selectFunction with option (passes null when option unchecked)
+     *
+     * @e: click event
+     */
     onClick: function(e) {
         var option = e.target.value;
         var checked = e.target.checked;
@@ -1828,7 +1938,7 @@ module.exports = React.createClass({displayName: "exports",
 
         console.log('selected', option, checked);
         if (this.props.selectFunction)
-            this.props.selectFunction(option);
+            this.props.selectFunction(selected);
 
         this.setState({
             selected: selected
@@ -1841,18 +1951,21 @@ module.exports = React.createClass({displayName: "exports",
                 React.createElement("div", {className: "question__radios"}, 
                 this.props.facilities.map(function(facility) {
                     return (
-                        React.createElement("div", {className: "question__radio noselect"}, 
+                        React.createElement("div", {
+                                key: facility.uuid, 
+                                className: "question__radio noselect"
+                        }, 
+
                             React.createElement("input", {
                                 type: "radio", 
                                 id: facility.uuid, 
                                 name: "facility", 
                                 onClick: self.onClick, 
-                                defaultChecked: self.props.initValue && facility.uuid 
-                                    === self.props.initValue.facility_id, 
+                                disabled: self.props.disabled, 
+                                defaultChecked: facility.uuid === self.state.selected, 
                                 value: facility.uuid}
                             ), 
                             React.createElement("label", {
-                                key: facility.uuid, 
                                 htmlFor: facility.uuid, 
                                 className: "question__radio__label"
                             }, 

@@ -23,9 +23,11 @@ module.exports = React.createClass({
     getInitialState: function() {
         var self = this;
         var loc = JSON.parse(localStorage['location'] || '{}');
+        var answer = this.getAnswer();
+        var selectOff = answer && answer.metadata && answer.metadata.is_new;
         return { 
             loc: loc,
-            selectFacility: true,
+            selectFacility: !selectOff,
             facilities: self.getFacilities(loc),
             choices: [
                 {'value': 'water', 'text': 'Water'}, 
@@ -50,12 +52,21 @@ module.exports = React.createClass({
         });
     },
 
+    /*
+     * Switch view to new Facility View
+     */
     toggleAddFacility: function() {
         this.setState({
             selectFacility : this.state.selectFacility ? false : true
         })
     },
 
+    /*
+     * Record newly chosen facility into localStorage
+     *
+     * @option: The facility uuid chosen
+     * @data: I have no idea why i have this?
+     */
     selectFacility: function(option, data) {
         console.log("Selected facility");
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
@@ -84,20 +95,94 @@ module.exports = React.createClass({
         
     },
 
+    /* 
+     * Query the tree for nearby facilities near given location when possible
+     *
+     * @loc: The location ({lat: NUM, lng: NUM}) to query around
+     */
     getFacilities: function(loc) {
-        if (!loc || !loc.lat || !loc.lng)
+        if (!loc || !loc.lat || !loc.lng || !this.props.tree || !this.props.tree.root)
           return [];  
 
         console.log("Getting facilities ...");
         return this.props.tree.getNNearestFacilities(loc.lat, loc.lng, 1000, 10);
     },
 
+    /*
+     * Get response from localStorage
+     */ 
     getAnswer: function() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
         console.log("Selected facility", answers[0]);
-        return answers[0] && answers[0].response;
+        if (answers[0]) 
+            return answers[0]
     },
+
+    /*
+     * Generate objectID compatitable with Mongo for the Revisit API
+     *
+     * Returns an objectID string
+     */
+    createObjectID: function() {
+       return 'xxxxxxxxxxxxxxxxxxxxxxxx'.replace(/[x]/g, function() {
+           var r = Math.random()*16|0;
+           return r.toString(16);
+       });
+    },
+
+    /*
+     * Deal with all new facility input fields, type is bound to function call
+     *
+     * @type: Type of input that was updated
+     * @value: newly supplied input
+     */
+    onInput: function(type, value) {
+        console.log("Dealing with input", value, type);
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var answers = survey[this.props.question.id] || [];
+        var self = this;
+        if (answers[0] && (!answers[0].metadata || !answers[0].metadata.is_new)) {
+            answers = [];
+        }
+
+        // Load up previous response, update values
+        var response = (answers[0] && answers[0].response) || {}; 
+        var uuid = response.facility_id || this.createObjectID();
+        response.facility_id = uuid;
+        // XXX This kind of assumes that current lat/lng is correct at the time of last field update
+        response.lat = this.state.loc.lat; 
+        response.lng = this.state.loc.lng; 
+
+        switch(type) {
+            case 'text':
+                response.facility_name = value;
+                break;
+            case 'select':
+                var v = value[0]; // Only one ever
+                console.log('Selected v', v);
+                response.facility_sector = v;
+                break;
+            case 'other':
+                console.log('Other v', value);
+                response.facility_sector = value;
+                break;
+        }
+
+        answers = [{
+            'response': response,
+            'response_type': 'answer',
+            'metadata': {
+                'is_new': true
+            }
+        }];
+
+        console.log("Built response", answers);
+
+        survey[this.props.question.id] = answers;
+        localStorage[this.props.surveyID] = JSON.stringify(survey);
+    },
+
 
     /*
      * Retrieve location and record into state on success.
@@ -134,31 +219,54 @@ module.exports = React.createClass({
 
 
     },
+
     render: function() {
+        // Retrieve respone for initValues
+        var answer = this.getAnswer();
+        var choiceOptions = this.state.choices.map(function(choice) { return choice.value });
+
         var hasLocation = this.state.loc && this.state.loc.lat && this.state.loc.lng;
+        var isNew = answer && answer.metadata && answer.metadata.is_new;
+
+        // Update sector field to match initSelect expected value
+        var sector = answer && answer.response.facility_sector;
+        var isOther = choiceOptions.indexOf(sector) === -1;
+        sector = isOther ? sector && 'other' : sector; 
+
         return (
                 <span>
                 {this.state.selectFacility ?
                     <span>
                     <LittleButton buttonFunction={this.onLocate}
-                       icon={'icon-star'}
-                       text={'find my location and show nearby facilities'} 
+                        icon={'icon-star'}
+                        text={'find my location and show nearby facilities'} 
+                        disabled={this.props.disabled}
                     />
+
                     <FacilityRadios 
+                        key={this.props.disabled}
                         selectFunction={this.selectFacility} 
                         facilities={this.state.facilities}
-                        initValue={this.getAnswer()}
+                        initValue={answer && !isNew && answer.response.facility_id}
+                        disabled={this.props.disabled}
                     />
 
                     { hasLocation  ?
                         <LittleButton buttonFunction={this.toggleAddFacility}
-                                text={'add new facility'} />
+                            disabled={this.props.disabled}
+                            text={'add new facility'} 
+                        />
                         : null
                     }
                     </span>
                 :
                     <span>
-                    <ResponseField type={'text'}/>
+                    <ResponseField 
+                        onInput={this.onInput.bind(null, 'text')}
+                        initValue={isNew && answer.response.facility_name}
+                        type={'text'}
+                        disabled={this.props.disabled}
+                    />
                     <ResponseField 
                         initValue={JSON.stringify(this.state.loc)} 
                         type={'location'}
@@ -166,13 +274,19 @@ module.exports = React.createClass({
                     />
                     <Select 
                         choices={this.state.choices} 
+                        initValue={isNew && isOther ? answer.response.facility_sector : null}
+                        initSelect={isNew && [sector]} 
                         withOther={true} 
                         multiSelect={false}
+                        onInput={this.onInput.bind(null, 'other')}
+                        onSelect={this.onInput.bind(null, 'select')}
+                        disabled={this.props.disabled}
                     />
 
                     <LittleButton 
                         buttonFunction={this.toggleAddFacility} 
                             text={'cancel'} 
+                            disabled={this.props.disabled}
                      />
 
                     </span>

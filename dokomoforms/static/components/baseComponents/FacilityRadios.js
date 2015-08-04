@@ -10,11 +10,22 @@ var React = require('react');
  *  @initValue: Default selected facility
  */ 
 module.exports = React.createClass({
+    /*
+     * Keep track of which option is selected
+     */
     getInitialState: function() {
         return {
-            selected: null,
+            selected: this.props.initValue,
         }
     },
+
+    /*
+     * Make radio behave like single option checkbox
+     * 
+     * Calls selectFunction with option (passes null when option unchecked)
+     *
+     * @e: click event
+     */
     onClick: function(e) {
         var option = e.target.value;
         var checked = e.target.checked;
@@ -32,7 +43,7 @@ module.exports = React.createClass({
 
         console.log('selected', option, checked);
         if (this.props.selectFunction)
-            this.props.selectFunction(option);
+            this.props.selectFunction(selected);
 
         this.setState({
             selected: selected
@@ -45,18 +56,21 @@ module.exports = React.createClass({
                 <div className='question__radios'>
                 {this.props.facilities.map(function(facility) {
                     return (
-                        <div className='question__radio noselect'>
+                        <div
+                                key={facility.uuid} 
+                                className='question__radio noselect'
+                        >
+
                             <input
                                 type='radio' 
                                 id={facility.uuid} 
                                 name='facility' 
                                 onClick={self.onClick} 
-                                defaultChecked={self.props.initValue && facility.uuid 
-                                    === self.props.initValue.facility_id}
-                                value={facility.uuid}> 
-                            </input>
+                                disabled={self.props.disabled}
+                                defaultChecked={facility.uuid === self.state.selected}
+                                value={facility.uuid}
+                            />
                             <label 
-                                key={facility.uuid} 
                                 htmlFor={facility.uuid} 
                                 className='question__radio__label'
                             >
