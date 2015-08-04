@@ -11,7 +11,7 @@ var React = require('react');
  */ 
 module.exports = React.createClass({
     /*
-     * Keep track of wich option is selected
+     * Keep track of which option is selected
      */
     getInitialState: function() {
         return {
@@ -56,17 +56,21 @@ module.exports = React.createClass({
                 <div className='question__radios'>
                 {this.props.facilities.map(function(facility) {
                     return (
-                        <div className='question__radio noselect'>
+                        <div
+                                key={facility.uuid} 
+                                className='question__radio noselect'
+                        >
+
                             <input
                                 type='radio' 
                                 id={facility.uuid} 
                                 name='facility' 
                                 onClick={self.onClick} 
+                                disabled={self.props.disabled}
                                 defaultChecked={facility.uuid === self.state.selected}
-                                value={facility.uuid}> 
-                            </input>
+                                value={facility.uuid}
+                            />
                             <label 
-                                key={facility.uuid} 
                                 htmlFor={facility.uuid} 
                                 className='question__radio__label'
                             >

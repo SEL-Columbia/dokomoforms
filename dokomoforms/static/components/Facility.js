@@ -214,18 +214,24 @@ module.exports = React.createClass({
                 {this.state.selectFacility ?
                     <span>
                     <LittleButton buttonFunction={this.onLocate}
-                       icon={'icon-star'}
-                       text={'find my location and show nearby facilities'} 
+                        icon={'icon-star'}
+                        text={'find my location and show nearby facilities'} 
+                        disabled={this.props.disabled}
                     />
+
                     <FacilityRadios 
+                        key={this.props.disabled}
                         selectFunction={this.selectFacility} 
                         facilities={this.state.facilities}
                         initValue={answer && !isNew && answer.response.facility_id}
+                        disabled={this.props.disabled}
                     />
 
                     { hasLocation  ?
                         <LittleButton buttonFunction={this.toggleAddFacility}
-                                text={'add new facility'} />
+                            disabled={this.props.disabled}
+                            text={'add new facility'} 
+                        />
                         : null
                     }
                     </span>
@@ -235,6 +241,7 @@ module.exports = React.createClass({
                         onInput={this.onInput.bind(null, 'text')}
                         initValue={isNew && answer.response.facility_name}
                         type={'text'}
+                        disabled={this.props.disabled}
                     />
                     <ResponseField 
                         initValue={JSON.stringify(this.state.loc)} 
@@ -249,11 +256,13 @@ module.exports = React.createClass({
                         multiSelect={false}
                         onInput={this.onInput.bind(null, 'other')}
                         onSelect={this.onInput.bind(null, 'select')}
+                        disabled={this.props.disabled}
                     />
 
                     <LittleButton 
                         buttonFunction={this.toggleAddFacility} 
                             text={'cancel'} 
+                            disabled={this.props.disabled}
                      />
 
                     </span>

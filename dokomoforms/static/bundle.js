@@ -720,18 +720,24 @@ module.exports = React.createClass({displayName: "exports",
                 this.state.selectFacility ?
                     React.createElement("span", null, 
                     React.createElement(LittleButton, {buttonFunction: this.onLocate, 
-                       icon: 'icon-star', 
-                       text: 'find my location and show nearby facilities'}
+                        icon: 'icon-star', 
+                        text: 'find my location and show nearby facilities', 
+                        disabled: this.props.disabled}
                     ), 
+
                     React.createElement(FacilityRadios, {
+                        key: this.props.disabled, 
                         selectFunction: this.selectFacility, 
                         facilities: this.state.facilities, 
-                        initValue: answer && !isNew && answer.response.facility_id}
+                        initValue: answer && !isNew && answer.response.facility_id, 
+                        disabled: this.props.disabled}
                     ), 
 
                      hasLocation  ?
                         React.createElement(LittleButton, {buttonFunction: this.toggleAddFacility, 
-                                text: 'add new facility'})
+                            disabled: this.props.disabled, 
+                            text: 'add new facility'}
+                        )
                         : null
                     
                     )
@@ -740,7 +746,8 @@ module.exports = React.createClass({displayName: "exports",
                     React.createElement(ResponseField, {
                         onInput: this.onInput.bind(null, 'text'), 
                         initValue: isNew && answer.response.facility_name, 
-                        type: 'text'}
+                        type: 'text', 
+                        disabled: this.props.disabled}
                     ), 
                     React.createElement(ResponseField, {
                         initValue: JSON.stringify(this.state.loc), 
@@ -754,12 +761,14 @@ module.exports = React.createClass({displayName: "exports",
                         withOther: true, 
                         multiSelect: false, 
                         onInput: this.onInput.bind(null, 'other'), 
-                        onSelect: this.onInput.bind(null, 'select')}
+                        onSelect: this.onInput.bind(null, 'select'), 
+                        disabled: this.props.disabled}
                     ), 
 
                     React.createElement(LittleButton, {
                         buttonFunction: this.toggleAddFacility, 
-                            text: 'cancel'}
+                            text: 'cancel', 
+                            disabled: this.props.disabled}
                      )
 
                     )
@@ -1488,9 +1497,11 @@ module.exports = React.createClass({displayName: "exports",
         return (
                 React.createElement("span", null, 
                 React.createElement(LittleButton, {
-                buttonFunction: this.onCapture, 
+                    buttonFunction: this.onCapture, 
+                    disabled: this.props.disabled, 
                     iconClass: 'icon-star', 
-                    text: 'take a photo'}), 
+                    text: 'take a photo'}
+                ), 
 
                 React.createElement("canvas", {ref: "canvas", className: "question__canvas"}), 
                 React.createElement("video", {
@@ -1895,7 +1906,7 @@ var React = require('react');
  */ 
 module.exports = React.createClass({displayName: "exports",
     /*
-     * Keep track of wich option is selected
+     * Keep track of which option is selected
      */
     getInitialState: function() {
         return {
@@ -1940,17 +1951,21 @@ module.exports = React.createClass({displayName: "exports",
                 React.createElement("div", {className: "question__radios"}, 
                 this.props.facilities.map(function(facility) {
                     return (
-                        React.createElement("div", {className: "question__radio noselect"}, 
+                        React.createElement("div", {
+                                key: facility.uuid, 
+                                className: "question__radio noselect"
+                        }, 
+
                             React.createElement("input", {
                                 type: "radio", 
                                 id: facility.uuid, 
                                 name: "facility", 
                                 onClick: self.onClick, 
+                                disabled: self.props.disabled, 
                                 defaultChecked: facility.uuid === self.state.selected, 
                                 value: facility.uuid}
                             ), 
                             React.createElement("label", {
-                                key: facility.uuid, 
                                 htmlFor: facility.uuid, 
                                 className: "question__radio__label"
                             }, 

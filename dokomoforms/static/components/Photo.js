@@ -217,9 +217,11 @@ module.exports = React.createClass({
         return (
                 <span>
                 <LittleButton 
-                buttonFunction={this.onCapture}
+                    buttonFunction={this.onCapture}
+                    disabled={this.props.disabled}
                     iconClass={'icon-star'}
-                    text={'take a photo'} />
+                    text={'take a photo'} 
+                />
 
                 <canvas ref='canvas' className="question__canvas" />
                 <video  
