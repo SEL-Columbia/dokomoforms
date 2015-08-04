@@ -102,6 +102,18 @@ module.exports = React.createClass({
             return answers[0]
     },
 
+    /*
+     * Generate objectID compatitable with Mongo for the Revisit API
+     *
+     * Returns an objectID string
+     */
+    createObjectID: function() {
+       return 'xxxxxxxxxxxxxxxxxxxxxxxx'.replace(/[x]/g, function() {
+           var r = Math.random()*16|0;
+           return r.toString(16);
+       });
+    },
+
     onInput: function(type, value) {
         console.log("Dealing with input", value, type);
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
@@ -113,7 +125,7 @@ module.exports = React.createClass({
 
         // Load up previous response, update values
         var response = (answers[0] && answers[0].response) || {}; 
-        var uuid = response.facility_id || '1122334455667788';
+        var uuid = response.facility_id || this.createObjectID();
         response.facility_id = uuid;
         // XXX This kind of assumes that current lat/lng is correct at the time of last field update
         response.lat = this.state.loc.lat; 
