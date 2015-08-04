@@ -15,7 +15,7 @@ function getCookie(name) {
             if (user === null){
               $.ajax({
                 type: 'POST',
-                url: '/user/login/persona',
+                url: '/user/login',
                 data: {assertion:assertion},
                 headers: {
                   "X-XSRFToken": getCookie("_xsrf")
@@ -40,7 +40,7 @@ function getCookie(name) {
         // (That's a literal JavaScript null. Not false, 0, or undefined. null.)
         $.ajax({
           type: 'POST',
-          url: '/', // This is a URL on your website.
+          url: '/user/logout', // This is a URL on your website.
           headers: {
             "X-XSRFToken": getCookie("_xsrf")
           },
