@@ -155,7 +155,8 @@ class Survey(Base):
                 if include_non_answerable:
                     yield node
                 else:
-                    continue
+                    # See https://bitbucket.org/ned/coveragepy/issues/198/
+                    continue  # pragma: no cover
             else:
                 yield node
                 for sub_survey in node.sub_surveys:

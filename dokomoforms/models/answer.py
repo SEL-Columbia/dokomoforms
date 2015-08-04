@@ -63,7 +63,7 @@ class Answer(Base):
 
     answer_metadata = util.json_column('answer_metadata', default='{}')
 
-    @property
+    @property  # pragma: no cover
     @abc.abstractmethod
     def main_answer(self):
         """The representative part of a provided answer.
@@ -75,7 +75,7 @@ class Answer(Base):
         for the response property.
         """
 
-    @property
+    @property  # pragma: no cover
     @abc.abstractmethod
     def answer(self):
         """The answer. Could be the same as main_answer in simple cases.
@@ -85,12 +85,12 @@ class Answer(Base):
         It could otherwise be a dictionary or another model.
         """
 
-    @property
+    @property  # pragma: no cover
     @abc.abstractmethod
     def other(self):
         """A text field containing "other" responses."""
 
-    @property
+    @property  # pragma: no cover
     @abc.abstractmethod
     def dont_know(self):
         """A text field containing "don't know" responses."""

@@ -181,7 +181,7 @@ class TestUtil(DokoTest):
 
 
 class TestColumnProperties(DokoTest):
-    def _create_survey_node(self):
+    def _create_survey_node(self, type_constraint='integer'):
         with self.session.begin():
             survey = models.construct_survey(
                 survey_type='public',
@@ -190,8 +190,8 @@ class TestColumnProperties(DokoTest):
                 nodes=[
                     models.construct_survey_node(
                         node=models.construct_node(
-                            type_constraint='integer',
-                            title={'English': 'integer'},
+                            type_constraint=type_constraint,
+                            title={'English': 'title'},
                             allow_multiple=True,
                         ),
                     ),
@@ -309,11 +309,19 @@ class TestColumnProperties(DokoTest):
         sn = self.session.query(models.SurveyNode).one()
         self.assertEqual(models.answer_mode(sn), 3)
 
+    def test_answer_mode_wrong_type(self):
+        sn = self._create_survey_node('photo')
+        self.assertRaises(exc.InvalidTypeForOperation, models.answer_mode, sn)
+
     def test_answer_min(self):
         sn = self._create_survey_node()
         self.assertEqual(models.answer_min(sn), None)
         self._create_ten_answers()
         self.assertEqual(models.answer_min(sn), -2)
+
+    def test_answer_min_wrong_type(self):
+        sn = self._create_survey_node('text')
+        self.assertRaises(exc.InvalidTypeForOperation, models.answer_min, sn)
 
     def test_answer_max(self):
         sn = self._create_survey_node()
@@ -352,6 +360,56 @@ class TestColumnProperties(DokoTest):
         self.assertEqual(
             float(models.answer_stddev_samp(sn)),
             stdev(r for r, in self.session.query(IntegerAnswer.main_answer)),
+        )
+
+    def test_question_stats(self):
+        survey_id = self._create_survey_node().root_survey_id
+        survey = self.session.query(models.Survey).get(survey_id)
+        blank_stats = next(models.generate_question_stats(survey))['stats']
+        self.assertCountEqual(
+            blank_stats,
+            [
+                {'query': 'count', 'result': 0},
+                {'query': 'min', 'result': None},
+                {'query': 'max', 'result': None},
+                {'query': 'sum', 'result': None},
+                {'query': 'avg', 'result': None},
+                {'query': 'mode', 'result': None},
+                {'query': 'stddev_pop', 'result': None},
+                {'query': 'stddev_samp', 'result': None},
+            ]
+        )
+        self._create_ten_answers()
+        stats = next(models.generate_question_stats(survey))['stats']
+        self.assertCountEqual(
+            stats,
+            [
+                {'query': 'count', 'result': 10},
+                {'query': 'min', 'result': -2},
+                {'query': 'max', 'result': 7},
+                {'query': 'sum', 'result': 25},
+                {'query': 'avg', 'result': 2.5},
+                {'query': 'mode', 'result': -2},
+                {
+                    'query': 'stddev_pop',
+                    'result': models.answer_stddev_pop(survey.nodes[0])
+                },
+                {
+                    'query': 'stddev_samp',
+                    'result': models.answer_stddev_samp(survey.nodes[0])
+                },
+            ]
+        )
+
+    def test_question_stats_weird_type(self):
+        survey_id = self._create_survey_node('photo').root_survey_id
+        survey = self.session.query(models.Survey).get(survey_id)
+        blank_stats = next(models.generate_question_stats(survey))['stats']
+        self.assertCountEqual(
+            blank_stats,
+            [
+                {'query': 'count', 'result': 0},
+            ]
         )
 
 
