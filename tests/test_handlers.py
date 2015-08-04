@@ -14,6 +14,7 @@ utils = (setUpModule, tearDownModule)
 
 import dokomoforms.handlers as handlers
 import dokomoforms.handlers.auth
+from dokomoforms.handlers.util import BaseAPIHandler
 
 
 class TestIndex(DokoHTTPTest):
@@ -34,8 +35,14 @@ class TestIndex(DokoHTTPTest):
 
 
 class TestNotFound(DokoHTTPTest):
-    def test_404(self):
+    def test_bogus_url(self):
         response = self.fetch('/🍤')
+        self.assertEqual(response.code, 404, msg=response)
+
+    def test_bogus_GET(self):
+        response = self.fetch(
+            '/user/login', method='GET', _logged_in_user=None
+        )
         self.assertEqual(response.code, 404, msg=response)
 
 
@@ -144,6 +151,26 @@ class TestAuth(DokoHTTPTest):
                 _logged_in_user=None
             )
         self.assertEqual(response.code, 400, msg=response.body)
+
+
+class TestBaseAPIHandler(DokoHTTPTest):
+    def test_api_version(self):
+        dummy_request = lambda: None
+        dummy_connection = lambda: None
+        dummy_close_callback = lambda _: None
+        dummy_connection.set_close_callback = dummy_close_callback
+        dummy_request.connection = dummy_connection
+        handler = BaseAPIHandler(self.app, dummy_request)
+        self.assertEqual(handler.api_version, 'v0')
+
+    def test_api_root_path(self):
+        dummy_request = lambda: None
+        dummy_connection = lambda: None
+        dummy_close_callback = lambda _: None
+        dummy_connection.set_close_callback = dummy_close_callback
+        dummy_request.connection = dummy_connection
+        handler = BaseAPIHandler(self.app, dummy_request)
+        self.assertEqual(handler.api_root_path, '/api/v0')
 
 
 class TestEnumerate(DokoHTTPTest):
