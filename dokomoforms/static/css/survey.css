@@ -181,8 +181,6 @@ a, .icon {
 
 .question__video {
     border: 1px solid #DDD;
-    border-left: 0px solid #DDD;
-    border-right: 0px solid #DDD;
     background: white;
     display: block;
     margin: auto;
@@ -264,15 +262,15 @@ a, .icon {
 }
 
 .photo_container {
+    border: 1px solid #DDD;
     position: relative;
     margin: 0px auto;
     width: 320px;
-    font-color: white;
-}
-
-.photo_input {
-    text-align: center;
+    height: 240px;
+    background-color: white;
     margin: 0px auto;
+    margin-bottom: 20px;
+    font-weight: 700;
 }
 
 .text_input {

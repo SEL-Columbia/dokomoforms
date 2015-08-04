@@ -22,7 +22,7 @@ module.exports = React.createClass({
     getInitialState: function() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
-        var length = answers.length;
+        var length = answers.length ? answers.length : 1;
 
         var camera = null;
         var src = null;
@@ -136,6 +136,11 @@ module.exports = React.createClass({
         var photoID = answers[index] && answers[index].response || 0;
         var self = this;
 
+        // Removing an empty input
+        if (photoID === 0) {
+            return;
+        }
+
         // Remove from localStorage;
         answers.splice(index, 1);
         survey[this.props.question.id] = answers;
@@ -152,9 +157,11 @@ module.exports = React.createClass({
             console.log("Removed attachement:", result);
         });
 
+        var count = this.state.questionCount - 1;
+        count = count ? count : 1;
         this.setState({
             photos: this.state.photos,
-            questionCount: this.state.questionCount - 1
+            questionCount: count
         })
     },
 

@@ -85,7 +85,7 @@ module.exports = React.createClass({
     },
 
     getFacilities: function(loc) {
-        if (!loc || !loc.lat || !loc.lng)
+        if (!loc || !loc.lat || !loc.lng || !this.props.tree || !this.props.tree.root)
           return [];  
 
         console.log("Getting facilities ...");
