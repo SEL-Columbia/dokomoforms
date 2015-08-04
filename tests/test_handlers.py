@@ -33,6 +33,12 @@ class TestIndex(DokoHTTPTest):
         )
 
 
+class TestNotFound(DokoHTTPTest):
+    def test_404(self):
+        response = self.fetch('/🍤')
+        self.assertEqual(response.code, 404, msg=response)
+
+
 class TestDebug(DokoHTTPTest):
     def test_debug_create(self):
         response = self.fetch(
