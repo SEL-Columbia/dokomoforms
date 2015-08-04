@@ -8,7 +8,6 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from dokomoforms.models import User, SurveyCreator, Email
 from dokomoforms.handlers.util import BaseHandler
-from dokomoforms.options import options
 
 
 class DebugUserCreationHandler(BaseHandler):
@@ -52,8 +51,6 @@ class DebugLoginHandler(BaseHandler):
                 'expires_days': None,
                 'httponly': True,
             }
-            if options.https:
-                cookie_options['secure'] = True
             self.set_secure_cookie(
                 'user',
                 json_encode({'user_id': user.id, 'user_name': user.name}),

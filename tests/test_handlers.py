@@ -33,6 +33,33 @@ class TestIndex(DokoHTTPTest):
         )
 
 
+class TestDebug(DokoHTTPTest):
+    def test_debug_create(self):
+        response = self.fetch(
+            '/debug/create/a@a', method='GET', _logged_in_user=None
+        )
+        self.assertEqual(response.code, 201, msg=response)
+
+    def test_debug_create_email_exists(self):
+        response = self.fetch(
+            '/debug/create/test_creator@fixtures.com', method='GET',
+            _logged_in_user=None
+        )
+        self.assertEqual(response.code, 200, msg=response)
+
+    def test_login_email_does_not_exist(self):
+        response = self.fetch(
+            '/debug/login/a@a', method='GET', _logged_in_user=None
+        )
+        self.assertEqual(response.code, 422, msg=response)
+
+    def test_logout(self):
+        response = self.fetch(
+            '/debug/logout', method='GET', _logged_in_user=None
+        )
+        self.assertEqual(response.code, 200, msg=response)
+
+
 class TestAuth(DokoHTTPTest):
     @tornado.testing.gen_test
     def test_async_post(self):
