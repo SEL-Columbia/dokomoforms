@@ -70,6 +70,28 @@ class TestBase(unittest.TestCase):
 
 
 class TestUtil(DokoTest):
+    def test_jsonify(self):
+        freaky_things = (
+            (
+                'model',
+                models.construct_node(
+                    title={'English': 'a'},
+                    type_constraint='integer',
+                )
+            ),
+            ('bytes', b'a'),
+            ('datetime', datetime.datetime.now()),
+            ('decimal', Decimal('2.3')),
+            ('range', psycopg2.extras.Range()),
+            ('not actually', 'freaky'),
+        )
+        for k, v in freaky_things[:-1]:
+            self.assertRaises(TypeError, json.dumps, {k: v})
+
+        self.assertIsNotNone(
+            json.dumps({k: models.jsonify(v) for k, v in freaky_things})
+        )
+
     def test_column_search_like_percent_escaping(self):
         with self.session.begin():
             self.session.add_all((
