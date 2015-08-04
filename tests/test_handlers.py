@@ -51,6 +51,7 @@ class TestAuth(DokoHTTPTest):
         self.assertEqual(response.code, 200, msg=response.body)
 
     def test_login_success(self):
+        dokomoforms.handlers.auth.options.https = False
         with patch.object(handlers.Login, '_async_post') as p:
             dummy = lambda: None
             dummy.body = json_encode(
