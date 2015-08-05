@@ -18,7 +18,10 @@ class ViewHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self):
         """GET a dashboard-like view."""
-        self.render('view_view.html')
+        # TODO: remove this?
+        self.render(
+            'view_view.html', current_user_id=self.current_user_model.id
+        )
 
 
 class ViewSurveyHandler(BaseHandler):

@@ -26,7 +26,12 @@ function getCookie(name) {
                             success: function(res, status, xhr) {
                                 localStorage['email'] = res.email;
                                 // Pick where to go from ?next=
-                                location.href = decodeURIComponent(window.location.search.substring(6));
+				var next_url = decodeURIComponent(window.location.search.substring(6));
+				if (next_url) {
+				    location.href = next_url;
+				} else {
+				    location.reload();
+				}
                             },
                             error: function(xhr, status, err) {
                                 localStorage['login_error'] = err;
@@ -62,6 +67,6 @@ function getCookie(name) {
         navigator.id.request();
     });
     $(document).on('click', '.btn-logout', function() {
-        navigator.id.request();
+        navigator.id.logout();
     });
 })();

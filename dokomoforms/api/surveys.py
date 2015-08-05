@@ -13,9 +13,10 @@ from dokomoforms.api.submissions import SubmissionResource, _create_submission
 from dokomoforms.models import (
     Survey, Submission, SubSurvey, Choice,
     construct_survey, construct_survey_node, construct_bucket,
-    SurveyCreator,
+    administrator_filter,
     Node, construct_node
 )
+from dokomoforms.models.survey import _administrator_table
 
 
 # TODO: clean up this mess
@@ -170,6 +171,8 @@ class SurveyResource(BaseResource):
         """List all submissions for a survey."""
         sub_resource = SubmissionResource()
         sub_resource.ref_rh = self.ref_rh
+        sub_resource.request = self.request
+        sub_resource.application = self.application
         where = Submission.survey_id == survey_id
         result = sub_resource.list(where=where)
         response = sub_resource.wrap_list_response(result)
@@ -211,16 +214,18 @@ class SurveyResource(BaseResource):
     def activity_all(self):
         """Get activity for all surveys."""
         days = int(self.r_handler.get_argument('days', 30))
-        response = self._generate_activity_response(days)
+        user_id = self.r_handler.get_argument('user_id', None)
+        response = self._generate_activity_response(days, user_id=user_id)
         return response
 
     def activity(self, survey_id):
         """Get activity for a single survey."""
         days = int(self.r_handler.get_argument('days', 30))
-        response = self._generate_activity_response(days, survey_id)
+        response = self._generate_activity_response(days, survey_id=survey_id)
         return response
 
-    def _generate_activity_response(self, days=30, survey_id=None):
+    def _generate_activity_response(self,
+                                    days=30, user_id=None, survey_id=None):
         """Get the activity response.
 
         Build and execute the query for activity, specifying the number of days
@@ -229,8 +234,6 @@ class SurveyResource(BaseResource):
         If a survey_id is specified, only activity from that
         survey will be returned.
         """
-        user_id = self.current_user_model.id
-
         # number of days prior to return
         today = datetime.date.today()
         from_date = today - datetime.timedelta(days=days - 1)
@@ -240,12 +243,18 @@ class SurveyResource(BaseResource):
             cast(Submission.save_time, Date).label('submission_date')
         )
 
-        query = (
-            self.session
-            .query(submission_date, func.count())
-            .filter(SurveyCreator.id == user_id)
-            .filter(Submission.save_time >= from_date)
-        )
+        query = self.session.query(submission_date, func.count())
+
+        if user_id is not None:
+            query = (
+                query
+                .select_from(Survey)
+                .join(Survey.submissions)
+                .outerjoin(_administrator_table)
+                .filter(administrator_filter(user_id))
+            )
+
+        query = query.filter(Submission.save_time >= from_date)
 
         if survey_id is not None:
             query = query.filter(Submission.survey_id == survey_id)

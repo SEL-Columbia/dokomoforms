@@ -82,7 +82,7 @@
             "serverSide": true,
 	    "ajax": function(data, callback, settings) {
 	        $.ajax({
-	            "url": "/api/v0/surveys",
+		  "url": "/api/v0/surveys?user_id={{ current_user_id }}",
 		    "data": {
 		        draw: data.draw,
 		        offset: data.start,

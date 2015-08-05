@@ -18,7 +18,10 @@ import tornado.web
 
 from dokomoforms.api.serializer import ModelJSONSerializer
 from dokomoforms.handlers.util import BaseHandler, BaseAPIHandler
-from dokomoforms.models import SurveyCreator, Email
+from dokomoforms.models import SurveyCreator, Email, Survey, Submission
+from dokomoforms.models.survey import (
+    administrator_filter, _administrator_table
+)
 from dokomoforms.models.util import column_search, get_fields_subset
 from dokomoforms.exc import DokomoError
 
@@ -239,17 +242,32 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         )
 
         type_constraint = self._query_arg('type')
+        user_id = self._query_arg('user_id')
+
+        select_from = None
+        if user_id is not None and model_cls is Submission:
+            select_from = Survey
 
         if search_term is not None:
             for search_field in search_fields:
                 query = column_search(
                     query,
                     model_cls=model_cls,
+                    select_from=select_from,
                     column_name=search_field,
                     search_term=search_term,
                     language=search_lang,
                     regex=regex,
                 )
+
+        if user_id is not None:
+            if model_cls is Submission:
+                query = query.join(Survey.submissions)
+            query = (
+                query
+                .outerjoin(_administrator_table)
+                .filter(administrator_filter(user_id))
+            )
 
         if not deleted:
             query = query.filter(model_cls.deleted == false())

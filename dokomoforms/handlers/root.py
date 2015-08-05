@@ -16,18 +16,21 @@ class Index(BaseHandler):
         """GET /."""
         surveys = None
         recent_submissions = None
+        current_user_id = None
         if self.current_user:
+            current_user_id = self.current_user_model.id
             surveys = most_recent_surveys(
-                self.session, self.current_user_model.id, 10
+                self.session, current_user_id, 10
             )
             recent_submissions = most_recent_submissions(
-                self.session, self.current_user_model.id, 5
+                self.session, current_user_id, 5
             )
         self.render(
             'index.html',
             message=msg,
             surveys=surveys,
             recent_submissions=recent_submissions,
+            current_user_id=current_user_id,
         )
 
 
