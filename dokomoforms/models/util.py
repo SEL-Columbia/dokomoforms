@@ -308,7 +308,7 @@ def last_update_time() -> sa.Column:
 
 def column_search(query, *,
                   model_cls, column_name, search_term,
-                  select_from=None, language=None, regex=False) -> 'query':
+                  language=None, regex=False) -> 'query':
     """Modify a query to search a column's values (JSONB or TEXT).
 
     TODO: document this
@@ -330,10 +330,12 @@ def column_search(query, *,
     if str(column.type) == 'JSONB':
         # Search across languages
         if language is None:
-            selects = [model_cls, func.jsonb_each_text(column).alias('search')]
-            if select_from is not None:
-                selects.append(select_from)
-            query = query.select_from(*selects)
+            query = (
+                query
+                .select_from(
+                    model_cls, func.jsonb_each_text(column).alias('search')
+                )
+            )
             if regex:
                 return (
                     query.

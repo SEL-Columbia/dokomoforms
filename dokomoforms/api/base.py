@@ -144,11 +144,8 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         :rtype: dict
         """
         response = OrderedDict((
-            (self.objects_key, data[1]),
-            (
-                'total_entries',
-                self.session.query(func.count(self.resource_type.id)).scalar()
-            ),
+            (self.objects_key, data[2]),
+            ('total_entries', data[1]),
             ('filtered_entries', data[0]),
         ))
         # add additional properties to the response object
@@ -244,16 +241,22 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         type_constraint = self._query_arg('type')
         user_id = self._query_arg('user_id')
 
-        select_from = None
-        if user_id is not None and model_cls is Submission:
-            select_from = Survey
+        num_total = self.session.query(func.count(self.resource_type.id))
+        if user_id is not None:
+            if model_cls is Submission:
+                num_total = num_total.join(Survey.submissions)
+            num_total = (
+                num_total
+                .outerjoin(_administrator_table)
+                .filter(administrator_filter(user_id))
+            )
+        num_total = num_total.scalar()
 
         if search_term is not None:
             for search_field in search_fields:
                 query = column_search(
                     query,
                     model_cls=model_cls,
-                    select_from=select_from,
                     column_name=search_field,
                     search_term=search_term,
                     language=search_lang,
@@ -299,8 +302,9 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         if result:
             num_filtered = result[0][1]
             models = [res[0] for res in result]
-            return num_filtered, self._specific_fields(models, is_detail=False)
-        return 0, []
+            result = self._specific_fields(models, is_detail=False)
+            return num_filtered, num_total, result
+        return 0, num_total, []
 
     def update(self, model_id):
         """Update a model."""

@@ -248,7 +248,6 @@ class SurveyResource(BaseResource):
         if user_id is not None:
             query = (
                 query
-                .select_from(Survey)
                 .join(Survey.submissions)
                 .outerjoin(_administrator_table)
                 .filter(administrator_filter(user_id))

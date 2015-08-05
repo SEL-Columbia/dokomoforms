@@ -185,7 +185,6 @@ def most_recent_submissions(session, user_id, limit=None):
     return (
         session
         .query(Submission)
-        .select_from(Survey)
         .join(Survey.submissions)
         .outerjoin(_administrator_table)
         .filter(administrator_filter(user_id))

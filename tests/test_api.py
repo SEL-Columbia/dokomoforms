@@ -1728,6 +1728,40 @@ class TestSurveyApi(DokoHTTPTest):
             act['num_submissions'] == 1 for act in activity_list[1:]
         ))
 
+    def test_submission_activity_for_user_surveys(self):
+        # url to test
+        url = self.api_root + '/surveys/activity'
+        query_params = {'user_id': 'e7becd02-1a3f-4c1d-a0e1-286ba121aef1'}
+        url = self.append_query_params(url, query_params)
+        # http method
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        activity = json_decode(response.body)
+        self.assertIn('activity', activity, msg=activity)
+        self.assertEqual(len(activity['activity']), 0)
+
+        survey = (
+            self.session
+            .query(Survey)
+            .filter_by(creator_id=query_params['user_id'])
+            .one()
+        )
+        with self.session.begin():
+            survey.submissions.append(
+                models.construct_submission(
+                    submission_type='unauthenticated'
+                )
+            )
+            self.session.add(survey)
+
+        new_response = self.fetch(url, method=method)
+
+        new_activity = json_decode(new_response.body)
+        self.assertIn('activity', new_activity, msg=new_activity)
+        self.assertEqual(len(new_activity['activity']), 1)
+
     def test_get_all_submission_activity(self):
         url = self.api_root + '/surveys/activity'
         query_params = {
@@ -1855,6 +1889,44 @@ class TestSurveyApi(DokoHTTPTest):
             )),
             msg=survey_dict
         )
+
+    def test_list_surveys_by_user_id(self):
+        url = self.api_root + '/surveys'
+        query_params = {'user_id': 'e7becd02-1a3f-4c1d-a0e1-286ba121aef1'}
+        url = self.append_query_params(url, query_params)
+        response = self.fetch(url, method='GET')
+        json_response = json_decode(response.body)
+        self.assertEqual(json_response['total_entries'], 1)
+        self.assertEqual(
+            json_response['surveys'][0]['creator_id'],
+            query_params['user_id']
+        )
+
+    def test_list_submissions_by_user_id(self):
+        url = self.api_root + '/submissions'
+        query_params = {'user_id': 'e7becd02-1a3f-4c1d-a0e1-286ba121aef1'}
+        url = self.append_query_params(url, query_params)
+        response = self.fetch(url, method='GET')
+        json_response = json_decode(response.body)
+        self.assertEqual(json_response['total_entries'], 0)
+
+        survey = (
+            self.session
+            .query(Survey)
+            .filter_by(creator_id=query_params['user_id'])
+            .one()
+        )
+        with self.session.begin():
+            survey.submissions.append(
+                models.construct_submission(
+                    submission_type='unauthenticated'
+                )
+            )
+            self.session.add(survey)
+
+        new_response = self.fetch(url, method='GET')
+        new_json_response = json_decode(new_response.body)
+        self.assertEqual(new_json_response['total_entries'], 1)
 
     def test_list_surveys_with_specific_fields_and_filter(self):
         # url to tests
