@@ -1,4 +1,5 @@
 var React = require('react');
+var Promise = require('mpromise');
 
 var ResponseField = require('./baseComponents/ResponseField.js');
 var ResponseFields = require('./baseComponents/ResponseFields.js');
@@ -22,13 +23,12 @@ var Select = require('./baseComponents/Select.js');
 module.exports = React.createClass({
     getInitialState: function() {
         var self = this;
-        var loc = JSON.parse(localStorage['location'] || '{}');
         var answer = this.getAnswer();
         var selectOff = answer && answer.metadata && answer.metadata.is_new;
         return { 
-            loc: loc,
+            loc: null,
             selectFacility: !selectOff,
-            facilities: self.getFacilities(loc),
+            facilities: [],
             choices: [
                 {'value': 'water', 'text': 'Water'}, 
                 {'value': 'energy', 'text': 'Energy'}, 
@@ -38,6 +38,19 @@ module.exports = React.createClass({
         }
     },
 
+    /* 
+     * Deal with async call to getFacilities
+     */
+    componentWillMount: function() {
+        var loc = JSON.parse(localStorage['location'] || '{}');
+        var self = this;
+        self.getFacilities(loc).onResolve(function(err, facilities) {
+            self.setState({
+                loc: loc,
+                facilities: facilities
+            });
+        });
+    },
     /*
      * Hack to force react to update child components
      * Gets called by parent element through 'refs' when state of something changed 
@@ -101,8 +114,11 @@ module.exports = React.createClass({
      * @loc: The location ({lat: NUM, lng: NUM}) to query around
      */
     getFacilities: function(loc) {
-        if (!loc || !loc.lat || !loc.lng || !this.props.tree || !this.props.tree.root)
-          return [];  
+        if (!loc || !loc.lat || !loc.lng || !this.props.tree || !this.props.tree.root) {
+            var p = new Promise;
+            p.fulfill([]);
+            return p;
+        }
 
         console.log("Getting facilities ...");
         return this.props.tree.getNNearestFacilities(loc.lat, loc.lng, 1000, 10);
@@ -199,10 +215,11 @@ module.exports = React.createClass({
                 // Record location for survey
                 localStorage['location'] = JSON.stringify(loc);
 
-                var facilities = self.getFacilities(loc);
-                self.setState({
-                    loc: loc,
-                    facilities: facilities
+                self.getFacilities(loc).onResolve(function(err, facilities) {
+                    self.setState({
+                        loc: loc,
+                        facilities: facilities
+                    });
                 });
             }, 
             

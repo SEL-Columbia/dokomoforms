@@ -1,6 +1,7 @@
 var React = require('react');
 var $ = require('jquery');
 var PouchDB  = require('pouchdb');
+PouchDB.plugin(require('pouchdb-upsert'));
 
 var ResponseField = require('./components/baseComponents/ResponseField.js');
 var ResponseFields = require('./components/baseComponents/ResponseFields.js');
@@ -44,6 +45,10 @@ var Application = React.createClass({
         window.trees = trees;
         var nyc = {lat: 40.80690, lng:-73.96536}
         window.nyc = nyc;
+        
+        var surveyDB = new PouchDB(this.props.survey.id, {
+                    'auto_compation': true,
+        });
 
         this.props.survey.nodes.forEach(function(node) {
             if (node.type_constraint === 'facility') {
@@ -53,12 +58,9 @@ var Application = React.createClass({
                         parseFloat(node.logic.nlat), 
                         parseFloat(node.logic.wlng), 
                         parseFloat(node.logic.slat), 
-                        parseFloat(node.logic.elng));
+                        parseFloat(node.logic.elng),
+                        surveyDB);
             }
-        });
-
-        var surveyDB = new PouchDB(this.props.survey.id, {
-                    'auto_compation': true,
         });
 
         window.surveyDB = surveyDB;
