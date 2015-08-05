@@ -166,6 +166,26 @@ class Survey(Base):
                     )
 
 
+def administrator_filter(user_id):
+    """Filter a query by administrator id."""
+    return (sa.or_(
+        Survey.creator_id == user_id,
+        _administrator_table.c.user_id == user_id
+    ))
+
+
+def most_recent_surveys(session, user_id, limit=None):
+    """Get an administrator's most recent surveys."""
+    return (
+        session
+        .query(Survey)
+        .outerjoin(_administrator_table)
+        .filter(administrator_filter(user_id))
+        .order_by(Survey.created_on.desc())
+        .limit(limit)
+    )
+
+
 _enumerator_table = sa.Table(
     'enumerator',
     Base.metadata,

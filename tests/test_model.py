@@ -19,7 +19,7 @@ import psycopg2
 import dateutil.tz
 import dateutil.parser
 
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError, DataError
 from sqlalchemy.orm.exc import FlushError
 
@@ -523,6 +523,194 @@ class TestUser(DokoTest):
                 user_b = models.User(name='b')
                 user_b.emails = [models.Email(address='@')]
                 self.session.add(user_b)
+
+    def test_most_recent_surveys(self):
+        with self.session.begin():
+            self.session.add_all((
+                models.SurveyCreator(
+                    name='this one',
+                    surveys=[
+                        models.construct_survey(
+                            survey_type='enumerator_only',
+                            title={'English': 'survey'},
+                            administrators=[models.User(name='admin')],
+                            enumerators=[models.User(name='enumerator')],
+                        ),
+                        models.construct_survey(
+                            survey_type='public',
+                            title={'English': 'public survey'},
+                        ),
+                    ],
+                ),
+                models.SurveyCreator(
+                    name='not this one',
+                    surveys=[
+                        models.construct_survey(
+                            survey_type='enumerator_only',
+                            title={'English': 'not this survey'},
+                            administrators=[models.User(name='no admin')],
+                            enumerators=[models.User(name='no enumerator')],
+                        ),
+                    ],
+                ),
+            ))
+
+        user = (
+            self.session.query(models.User).filter_by(name='this one').one()
+        )
+        recent_surveys = models.most_recent_surveys(
+            self.session, user.id
+        )
+        self.assertCountEqual(recent_surveys, user.surveys)
+
+        self.assertEqual(
+            len(models.most_recent_surveys(self.session, user.id, 1).all()),
+            1
+        )
+
+        admin_id = (
+            self.session
+            .query(models.User.id)
+            .filter_by(name='admin')
+            .scalar()
+        )
+        self.assertEqual(
+            len(models.most_recent_surveys(self.session, admin_id).all()),
+            1
+        )
+        self.assertIs(
+            models.most_recent_surveys(self.session, admin_id).first(),
+            (
+                self.session
+                .query(models.Survey)
+                .filter(models.Survey.title['English'].astext == 'survey')
+                .first()
+            )
+        )
+
+        enumerator_id = (
+            self.session
+            .query(models.User.id)
+            .filter_by(name='enumerator')
+            .scalar()
+        )
+        self.assertEqual(
+            len(models.most_recent_surveys(self.session, enumerator_id).all()),
+            0
+        )
+
+    def test_most_recent_submissions(self):
+        with self.session.begin():
+            self.session.add_all((
+                models.SurveyCreator(
+                    name='this one',
+                    surveys=[
+                        models.construct_survey(
+                            survey_type='public',
+                            title={'English': 'survey'},
+                            administrators=[models.User(name='admin')],
+                            submissions=[
+                                models.construct_submission(
+                                    submission_type='unauthenticated',
+                                    submitter_name='sub1',
+                                ),
+                                models.construct_submission(
+                                    submission_type='unauthenticated',
+                                    submitter_name='sub2',
+                                ),
+                            ],
+                        ),
+                        models.construct_survey(
+                            survey_type='public',
+                            title={'English': 'public survey too'},
+                            submissions=[
+                                models.construct_submission(
+                                    submission_type='unauthenticated',
+                                    submitter_name='sub3',
+                                ),
+                                models.construct_submission(
+                                    submission_type='unauthenticated',
+                                    submitter_name='sub4',
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                models.SurveyCreator(
+                    name='not this one',
+                    surveys=[
+                        models.construct_survey(
+                            survey_type='public',
+                            title={'English': 'not this survey'},
+                            submissions=[
+                                models.construct_submission(
+                                    submission_type='unauthenticated',
+                                    submitter_name='sub5',
+                                ),
+                                models.construct_submission(
+                                    submission_type='unauthenticated',
+                                    submitter_name='sub6',
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                models.User(name='nobody'),
+            ))
+
+        user = (
+            self.session.query(models.User).filter_by(name='this one').one()
+        )
+        recent_submissions = models.most_recent_submissions(
+            self.session, user.id
+        )
+        self.assertCountEqual(
+            recent_submissions,
+            user.surveys[0].submissions + user.surveys[1].submissions
+        )
+
+        self.assertEqual(
+            len(
+                models
+                .most_recent_submissions(self.session, user.id, 3)
+                .all()
+            ),
+            3
+        )
+
+        admin_id = (
+            self.session
+            .query(models.User.id)
+            .filter_by(name='admin')
+            .scalar()
+        )
+        self.assertEqual(
+            len(models.most_recent_submissions(self.session, admin_id).all()),
+            2
+        )
+        self.assertCountEqual(
+            models.most_recent_submissions(self.session, admin_id).all(),
+            (
+                self.session
+                .query(models.Submission)
+                .filter(or_(
+                    models.Submission.submitter_name == 'sub1',
+                    models.Submission.submitter_name == 'sub2'
+                ))
+                .all()
+            )
+        )
+
+        nobody_id = (
+            self.session
+            .query(models.User.id)
+            .filter_by(name='nobody')
+            .scalar()
+        )
+        self.assertEqual(
+            len(models.most_recent_submissions(self.session, nobody_id).all()),
+            0
+        )
 
 
 class TestNode(DokoTest):
@@ -1140,6 +1328,52 @@ class TestSurvey(DokoTest):
         self.assertListEqual(
             [sn.node.title['English'] for sn in seq_answerable],
             list('ACDE')
+        )
+
+    def test_administrator_filter(self):
+        with self.session.begin():
+            self.session.add(
+                models.SurveyCreator(
+                    name='creator',
+                    surveys=[
+                        models.construct_survey(
+                            survey_type='enumerator_only',
+                            title={'English': 'survey'},
+                            administrators=[models.User(name='admin')],
+                            enumerators=[models.User(name='enumerator')],
+                        ),
+                    ],
+                )
+            )
+
+        survey_query = self.session.query(func.count(models.Survey.id))
+        creator_id = self.session.query(models.SurveyCreator.id).scalar()
+        admin_id = (
+            self.session
+            .query(models.User.id)
+            .filter_by(name='admin')
+            .scalar()
+        )
+        enumerator_id = (
+            self.session
+            .query(models.User.id)
+            .filter_by(name='enumerator')
+            .scalar()
+        )
+        admin_filter = models.administrator_filter
+
+        self.assertEqual(survey_query.scalar(), 1)
+        self.assertEqual(
+            survey_query.filter(admin_filter(creator_id)).scalar(),
+            1
+        )
+        self.assertEqual(
+            survey_query.filter(admin_filter(admin_id)).scalar(),
+            1
+        )
+        self.assertEqual(
+            survey_query.filter(admin_filter(enumerator_id)).scalar(),
+            0
         )
 
     def test_num_submissions(self):

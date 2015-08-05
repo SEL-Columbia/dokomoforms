@@ -37,6 +37,10 @@ class TestIndex(DokoHTTPTest):
         self.assertIn(
             'Account Overview', response.body.decode(), msg=response.body
         )
+        survey_dropdown = (
+            response_soup.find('ul', {'aria-labelledby': 'SurveysDropdown'})
+        )
+        self.assertEqual(len(survey_dropdown.findAll('li')), 10)
 
 
 class TestNotFound(DokoHTTPTest):

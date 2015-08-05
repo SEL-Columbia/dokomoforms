@@ -15,10 +15,11 @@ from dokomoforms.models.survey import (
     Survey, EnumeratorOnlySurvey, SubSurvey, SurveyNode, construct_survey,
     NonAnswerableSurveyNode, AnswerableSurveyNode, construct_survey_node,
     construct_bucket, survey_type_enum, skipped_required,
+    administrator_filter, most_recent_surveys
 )
 from dokomoforms.models.submission import (
     Submission, EnumeratorOnlySubmission, PublicSubmission,
-    construct_submission
+    construct_submission, most_recent_submissions
 )
 from dokomoforms.models.answer import (
     Answer, Photo, construct_answer, add_new_photo_to_session
@@ -47,9 +48,10 @@ __all__ = (
     'construct_survey',
     'NonAnswerableSurveyNode', 'AnswerableSurveyNode', 'construct_survey_node',
     'construct_bucket', 'survey_type_enum', 'skipped_required',
+    'administrator_filter', 'most_recent_surveys',
     # Submission
     'Submission', 'EnumeratorOnlySubmission', 'PublicSubmission',
-    'construct_submission',
+    'construct_submission', 'most_recent_submissions',
     # Answer
     'Answer', 'Photo', 'construct_answer', 'add_new_photo_to_session',
     # column_properties

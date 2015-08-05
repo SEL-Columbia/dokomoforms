@@ -5,7 +5,7 @@ import tornado.gen
 import tornado.httpclient
 
 from dokomoforms.handlers.util import BaseHandler
-from dokomoforms.models import Survey, Submission
+from dokomoforms.models import most_recent_surveys, most_recent_submissions
 
 
 class Index(BaseHandler):
@@ -17,20 +17,11 @@ class Index(BaseHandler):
         surveys = None
         recent_submissions = None
         if self.current_user:
-            surveys = (
-                self.session
-                .query(Survey)
-                .filter_by(creator_id=self.current_user_model.id)
-                .order_by(Survey.created_on.desc())
-                .limit(10)
+            surveys = most_recent_surveys(
+                self.session, self.current_user_model.id, 10
             )
-            recent_submissions = (
-                self.session
-                .query(Submission)
-                .join(Survey)
-                .filter_by(creator_id=self.current_user_model.id)
-                .order_by(Submission.save_time.desc())
-                .limit(5)
+            recent_submissions = most_recent_submissions(
+                self.session, self.current_user_model.id, 5
             )
         self.render(
             'index.html',
