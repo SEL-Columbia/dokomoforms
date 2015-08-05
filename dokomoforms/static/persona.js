@@ -58,10 +58,10 @@ function getCookie(name) {
         }
     });
 
-    $('#login').click(function() {
+    $(document).on('click', '.btn-login', function() {
         navigator.id.request();
     });
-    $('#logout').click(function() {
-        navigator.id.logout();
+    $(document).on('click', '.btn-logout', function() {
+        navigator.id.request();
     });
 })();
