@@ -9,6 +9,9 @@ from sqlalchemy.sql.functions import current_timestamp
 from sqlalchemy.ext.orderinglist import ordering_list
 
 from dokomoforms.models import util, Base, survey_type_enum
+from dokomoforms.models.survey import (
+    Survey, _administrator_table, administrator_filter
+)
 from dokomoforms.exc import NoSuchSubmissionTypeError
 
 
@@ -175,3 +178,17 @@ def construct_submission(*, submission_type: str, **kwargs) -> Submission:
         raise NoSuchSubmissionTypeError(submission_type)
 
     return submission_constructor(**kwargs)
+
+
+def most_recent_submissions(session, user_id, limit=None):
+    """Get an administrator's surveys' most recent submissions."""
+    return (
+        session
+        .query(Submission)
+        .select_from(Survey)
+        .join(Survey.submissions)
+        .outerjoin(_administrator_table)
+        .filter(administrator_filter(user_id))
+        .order_by(Submission.save_time.desc())
+        .limit(limit)
+    )

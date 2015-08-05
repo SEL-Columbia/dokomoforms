@@ -27,7 +27,7 @@ class Enumerate(BaseHandler):
         except Unauthorized:
             url = self.get_login_url()
             if '?' not in url:
-                if urlparse.urlsplit(url).scheme:
+                if urlparse.urlsplit(url).scheme:  # pragma: no cover
                     next_url = self.request.full_url()
                 else:
                     next_url = self.request.uri

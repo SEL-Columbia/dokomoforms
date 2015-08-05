@@ -155,7 +155,8 @@ class Survey(Base):
                 if include_non_answerable:
                     yield node
                 else:
-                    continue
+                    # See https://bitbucket.org/ned/coveragepy/issues/198/
+                    continue  # pragma: no cover
             else:
                 yield node
                 for sub_survey in node.sub_surveys:
@@ -163,6 +164,26 @@ class Survey(Base):
                         sub_survey,
                         include_non_answerable=include_non_answerable
                     )
+
+
+def administrator_filter(user_id):
+    """Filter a query by administrator id."""
+    return (sa.or_(
+        Survey.creator_id == user_id,
+        _administrator_table.c.user_id == user_id
+    ))
+
+
+def most_recent_surveys(session, user_id, limit=None):
+    """Get an administrator's most recent surveys."""
+    return (
+        session
+        .query(Survey)
+        .outerjoin(_administrator_table)
+        .filter(administrator_filter(user_id))
+        .order_by(Survey.created_on.desc())
+        .limit(limit)
+    )
 
 
 _enumerator_table = sa.Table(

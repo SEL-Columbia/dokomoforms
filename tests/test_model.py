@@ -19,7 +19,7 @@ import psycopg2
 import dateutil.tz
 import dateutil.parser
 
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError, DataError
 from sqlalchemy.orm.exc import FlushError
 
@@ -70,6 +70,28 @@ class TestBase(unittest.TestCase):
 
 
 class TestUtil(DokoTest):
+    def test_jsonify(self):
+        freaky_things = (
+            (
+                'model',
+                models.construct_node(
+                    title={'English': 'a'},
+                    type_constraint='integer',
+                )
+            ),
+            ('bytes', b'a'),
+            ('datetime', datetime.datetime.now()),
+            ('decimal', Decimal('2.3')),
+            ('range', psycopg2.extras.Range()),
+            ('not actually', 'freaky'),
+        )
+        for k, v in freaky_things[:-1]:
+            self.assertRaises(TypeError, json.dumps, {k: v})
+
+        self.assertIsNotNone(
+            json.dumps({k: models.jsonify(v) for k, v in freaky_things})
+        )
+
     def test_column_search_like_percent_escaping(self):
         with self.session.begin():
             self.session.add_all((
@@ -159,7 +181,7 @@ class TestUtil(DokoTest):
 
 
 class TestColumnProperties(DokoTest):
-    def _create_survey_node(self):
+    def _create_survey_node(self, type_constraint='integer'):
         with self.session.begin():
             survey = models.construct_survey(
                 survey_type='public',
@@ -168,8 +190,8 @@ class TestColumnProperties(DokoTest):
                 nodes=[
                     models.construct_survey_node(
                         node=models.construct_node(
-                            type_constraint='integer',
-                            title={'English': 'integer'},
+                            type_constraint=type_constraint,
+                            title={'English': 'title'},
                             allow_multiple=True,
                         ),
                     ),
@@ -287,11 +309,19 @@ class TestColumnProperties(DokoTest):
         sn = self.session.query(models.SurveyNode).one()
         self.assertEqual(models.answer_mode(sn), 3)
 
+    def test_answer_mode_wrong_type(self):
+        sn = self._create_survey_node('photo')
+        self.assertRaises(exc.InvalidTypeForOperation, models.answer_mode, sn)
+
     def test_answer_min(self):
         sn = self._create_survey_node()
         self.assertEqual(models.answer_min(sn), None)
         self._create_ten_answers()
         self.assertEqual(models.answer_min(sn), -2)
+
+    def test_answer_min_wrong_type(self):
+        sn = self._create_survey_node('text')
+        self.assertRaises(exc.InvalidTypeForOperation, models.answer_min, sn)
 
     def test_answer_max(self):
         sn = self._create_survey_node()
@@ -330,6 +360,56 @@ class TestColumnProperties(DokoTest):
         self.assertEqual(
             float(models.answer_stddev_samp(sn)),
             stdev(r for r, in self.session.query(IntegerAnswer.main_answer)),
+        )
+
+    def test_question_stats(self):
+        survey_id = self._create_survey_node().root_survey_id
+        survey = self.session.query(models.Survey).get(survey_id)
+        blank_stats = next(models.generate_question_stats(survey))['stats']
+        self.assertCountEqual(
+            blank_stats,
+            [
+                {'query': 'count', 'result': 0},
+                {'query': 'min', 'result': None},
+                {'query': 'max', 'result': None},
+                {'query': 'sum', 'result': None},
+                {'query': 'avg', 'result': None},
+                {'query': 'mode', 'result': None},
+                {'query': 'stddev_pop', 'result': None},
+                {'query': 'stddev_samp', 'result': None},
+            ]
+        )
+        self._create_ten_answers()
+        stats = next(models.generate_question_stats(survey))['stats']
+        self.assertCountEqual(
+            stats,
+            [
+                {'query': 'count', 'result': 10},
+                {'query': 'min', 'result': -2},
+                {'query': 'max', 'result': 7},
+                {'query': 'sum', 'result': 25},
+                {'query': 'avg', 'result': 2.5},
+                {'query': 'mode', 'result': -2},
+                {
+                    'query': 'stddev_pop',
+                    'result': models.answer_stddev_pop(survey.nodes[0])
+                },
+                {
+                    'query': 'stddev_samp',
+                    'result': models.answer_stddev_samp(survey.nodes[0])
+                },
+            ]
+        )
+
+    def test_question_stats_weird_type(self):
+        survey_id = self._create_survey_node('photo').root_survey_id
+        survey = self.session.query(models.Survey).get(survey_id)
+        blank_stats = next(models.generate_question_stats(survey))['stats']
+        self.assertCountEqual(
+            blank_stats,
+            [
+                {'query': 'count', 'result': 0},
+            ]
         )
 
 
@@ -443,6 +523,194 @@ class TestUser(DokoTest):
                 user_b = models.User(name='b')
                 user_b.emails = [models.Email(address='@')]
                 self.session.add(user_b)
+
+    def test_most_recent_surveys(self):
+        with self.session.begin():
+            self.session.add_all((
+                models.SurveyCreator(
+                    name='this one',
+                    surveys=[
+                        models.construct_survey(
+                            survey_type='enumerator_only',
+                            title={'English': 'survey'},
+                            administrators=[models.User(name='admin')],
+                            enumerators=[models.User(name='enumerator')],
+                        ),
+                        models.construct_survey(
+                            survey_type='public',
+                            title={'English': 'public survey'},
+                        ),
+                    ],
+                ),
+                models.SurveyCreator(
+                    name='not this one',
+                    surveys=[
+                        models.construct_survey(
+                            survey_type='enumerator_only',
+                            title={'English': 'not this survey'},
+                            administrators=[models.User(name='no admin')],
+                            enumerators=[models.User(name='no enumerator')],
+                        ),
+                    ],
+                ),
+            ))
+
+        user = (
+            self.session.query(models.User).filter_by(name='this one').one()
+        )
+        recent_surveys = models.most_recent_surveys(
+            self.session, user.id
+        )
+        self.assertCountEqual(recent_surveys, user.surveys)
+
+        self.assertEqual(
+            len(models.most_recent_surveys(self.session, user.id, 1).all()),
+            1
+        )
+
+        admin_id = (
+            self.session
+            .query(models.User.id)
+            .filter_by(name='admin')
+            .scalar()
+        )
+        self.assertEqual(
+            len(models.most_recent_surveys(self.session, admin_id).all()),
+            1
+        )
+        self.assertIs(
+            models.most_recent_surveys(self.session, admin_id).first(),
+            (
+                self.session
+                .query(models.Survey)
+                .filter(models.Survey.title['English'].astext == 'survey')
+                .first()
+            )
+        )
+
+        enumerator_id = (
+            self.session
+            .query(models.User.id)
+            .filter_by(name='enumerator')
+            .scalar()
+        )
+        self.assertEqual(
+            len(models.most_recent_surveys(self.session, enumerator_id).all()),
+            0
+        )
+
+    def test_most_recent_submissions(self):
+        with self.session.begin():
+            self.session.add_all((
+                models.SurveyCreator(
+                    name='this one',
+                    surveys=[
+                        models.construct_survey(
+                            survey_type='public',
+                            title={'English': 'survey'},
+                            administrators=[models.User(name='admin')],
+                            submissions=[
+                                models.construct_submission(
+                                    submission_type='unauthenticated',
+                                    submitter_name='sub1',
+                                ),
+                                models.construct_submission(
+                                    submission_type='unauthenticated',
+                                    submitter_name='sub2',
+                                ),
+                            ],
+                        ),
+                        models.construct_survey(
+                            survey_type='public',
+                            title={'English': 'public survey too'},
+                            submissions=[
+                                models.construct_submission(
+                                    submission_type='unauthenticated',
+                                    submitter_name='sub3',
+                                ),
+                                models.construct_submission(
+                                    submission_type='unauthenticated',
+                                    submitter_name='sub4',
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                models.SurveyCreator(
+                    name='not this one',
+                    surveys=[
+                        models.construct_survey(
+                            survey_type='public',
+                            title={'English': 'not this survey'},
+                            submissions=[
+                                models.construct_submission(
+                                    submission_type='unauthenticated',
+                                    submitter_name='sub5',
+                                ),
+                                models.construct_submission(
+                                    submission_type='unauthenticated',
+                                    submitter_name='sub6',
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                models.User(name='nobody'),
+            ))
+
+        user = (
+            self.session.query(models.User).filter_by(name='this one').one()
+        )
+        recent_submissions = models.most_recent_submissions(
+            self.session, user.id
+        )
+        self.assertCountEqual(
+            recent_submissions,
+            user.surveys[0].submissions + user.surveys[1].submissions
+        )
+
+        self.assertEqual(
+            len(
+                models
+                .most_recent_submissions(self.session, user.id, 3)
+                .all()
+            ),
+            3
+        )
+
+        admin_id = (
+            self.session
+            .query(models.User.id)
+            .filter_by(name='admin')
+            .scalar()
+        )
+        self.assertEqual(
+            len(models.most_recent_submissions(self.session, admin_id).all()),
+            2
+        )
+        self.assertCountEqual(
+            models.most_recent_submissions(self.session, admin_id).all(),
+            (
+                self.session
+                .query(models.Submission)
+                .filter(or_(
+                    models.Submission.submitter_name == 'sub1',
+                    models.Submission.submitter_name == 'sub2'
+                ))
+                .all()
+            )
+        )
+
+        nobody_id = (
+            self.session
+            .query(models.User.id)
+            .filter_by(name='nobody')
+            .scalar()
+        )
+        self.assertEqual(
+            len(models.most_recent_submissions(self.session, nobody_id).all()),
+            0
+        )
 
 
 class TestNode(DokoTest):
@@ -1060,6 +1328,52 @@ class TestSurvey(DokoTest):
         self.assertListEqual(
             [sn.node.title['English'] for sn in seq_answerable],
             list('ACDE')
+        )
+
+    def test_administrator_filter(self):
+        with self.session.begin():
+            self.session.add(
+                models.SurveyCreator(
+                    name='creator',
+                    surveys=[
+                        models.construct_survey(
+                            survey_type='enumerator_only',
+                            title={'English': 'survey'},
+                            administrators=[models.User(name='admin')],
+                            enumerators=[models.User(name='enumerator')],
+                        ),
+                    ],
+                )
+            )
+
+        survey_query = self.session.query(func.count(models.Survey.id))
+        creator_id = self.session.query(models.SurveyCreator.id).scalar()
+        admin_id = (
+            self.session
+            .query(models.User.id)
+            .filter_by(name='admin')
+            .scalar()
+        )
+        enumerator_id = (
+            self.session
+            .query(models.User.id)
+            .filter_by(name='enumerator')
+            .scalar()
+        )
+        admin_filter = models.administrator_filter
+
+        self.assertEqual(survey_query.scalar(), 1)
+        self.assertEqual(
+            survey_query.filter(admin_filter(creator_id)).scalar(),
+            1
+        )
+        self.assertEqual(
+            survey_query.filter(admin_filter(admin_id)).scalar(),
+            1
+        )
+        self.assertEqual(
+            survey_query.filter(admin_filter(enumerator_id)).scalar(),
+            0
         )
 
     def test_num_submissions(self):

@@ -180,6 +180,6 @@ def generate_question_stats(survey):
     answerable_survey_nodes = survey._sequentialize(
         include_non_answerable=False
     )
-    for survey_node in answerable_survey_nodes:
+    for survey_node in answerable_survey_nodes:  # pragma: no branch
         stats = list(_question_stats(survey_node))
         yield {'survey_node': survey_node, 'stats': stats}

@@ -51,7 +51,7 @@ class ViewSurveyDataHandler(BaseHandler):
                 .filter_by(survey_node_id=survey_node.id)
                 .filter(answer_cls.main_answer.isnot(None))
             )
-            yield {
+            result = {
                 'survey_node_id': survey_node.id,
                 'map_data': [
                     {
@@ -60,6 +60,7 @@ class ViewSurveyDataHandler(BaseHandler):
                     } for answer in answers
                 ],
             }
+            yield result  # pragma: no branch
 
     @tornado.web.authenticated
     def get(self, survey_id: str):
