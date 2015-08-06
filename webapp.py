@@ -261,7 +261,7 @@ class Application(tornado.web.Application):
             self.session = session
 
 
-def main():  # pragma: no cover
+def main(msg=None):  # pragma: no cover
     """Start the Tornado web server."""
     if options.kill:
         ensure_that_user_wants_to_drop_schema()
@@ -280,6 +280,8 @@ def main():  # pragma: no cover
         )
     )
     http_server.listen(options.port)
+    if msg is not None:
+        print(msg)
     tornado.ioloop.IOLoop.current().start()
 
 

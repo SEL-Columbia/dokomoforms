@@ -1,31 +1,18 @@
 #!/usr/bin/env python3
 """Strange fixture."""
-
 import sys
 import os
 sys.path.insert(0, os.path.abspath('.'))
+from dokomoforms.options import parse_options, options
+parse_options()
 
 from sqlalchemy import DDL
 from sqlalchemy.orm import sessionmaker
-from dokomoforms.options import options, inject_options, parse_options
-
-inject_options(
-    schema='doko',
-    # fake logged in user with ID from fixture
-    TEST_USER="""
-        {
-            "user_id": "b7becd02-1a3f-4c1d-a0e1-286ba121aef4",
-            "user_name": "test_user"
-        }
-    """
-)
-# inject_options(schema='doko_test')
-parse_options()
 
 from dokomoforms.models import create_engine, Base
 import dokomoforms.models as models
 
-engine = create_engine(echo=True)
+engine = create_engine(echo=options.debug)
 Session = sessionmaker()
 
 engine.execute(DDL('DROP SCHEMA IF EXISTS ' + options.schema + ' CASCADE'))
