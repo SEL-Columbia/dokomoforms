@@ -13,7 +13,7 @@ from unittest.mock import patch
 from webapp import main, modify_text, green
 
 try:
-    from config import TEST_USER
+    from local_config import TEST_USER
 except ImportError:
     print('''
     You have not specified a TEST_USER in local_config.py
@@ -21,7 +21,7 @@ except ImportError:
     If you wish to auto-login as a certain user, set TEST_USER in
     local_config.py
 
-    Otherwise run webapp.py as opposed to test/webapp.py
+    Otherwise run webapp.py as opposed to tests/webapp.py
     ''')
     sys.exit(1)
 
