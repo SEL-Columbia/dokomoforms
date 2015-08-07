@@ -1,10 +1,14 @@
 """Front end tests."""
+import base64
+from distutils.version import StrictVersion
 import functools
+import json
+from http.client import HTTPConnection
 import os
 from subprocess import Popen, DEVNULL
 import signal
 import sys
-from unittest.mock import patch
+import urllib.error
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -13,8 +17,6 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 import tests.util
-
-from dokomoforms.handlers import Login
 
 import config
 SAUCE_CONNECT = getattr(config, 'SAUCE_CONNECT', False)
@@ -98,7 +100,8 @@ class DriverTest(tests.util.DokoHTTPTest):
         if any(v is None for v in values):
             self.fail(
                 'You have specified SAUCE_CONNECT = True but you have not'
-                ' specified SAUCE_USERNAME, SAUCE_ACCESS_KEY, and BROWSER'
+                ' specified SAUCE_USERNAME, SAUCE_ACCESS_KEY,'
+                ' and DEFAULT_BROWSER'
             )
         configs = browser_config.split(':')
         self.browser, self.version, self.platform, *other = configs
@@ -108,6 +111,7 @@ class DriverTest(tests.util.DokoHTTPTest):
             caps['device-orientation'] = 'portrait'
         if self.version:
             caps['version'] = self.version
+        self.version = StrictVersion(self.version)
         if 'TRAVIS_JOB_NUMBER' in os.environ:
             caps['tunnel-identifier'] = os.environ['TRAVIS_JOB_NUMBER']
             caps['build'] = os.environ['TRAVIS_BUILD_NUMBER']
@@ -125,11 +129,13 @@ class DriverTest(tests.util.DokoHTTPTest):
             ))
         hub_url = '{}:{}@localhost:4445'.format(self.username, self.access_key)
         cmd_executor = 'http://{}/wd/hub'.format(hub_url)
-        self.drv = webdriver.Remote(
-            desired_capabilities=caps, command_executor=cmd_executor
-        )
-        self.drv.implicitly_wait(5)
-        self.version = StrictVersion(self.version)
+        try:
+            self.drv = webdriver.Remote(
+                desired_capabilities=caps, command_executor=cmd_executor
+            )
+        except urllib.error.URLError:
+            self.fail('Sauce Connect failure. Did you start Sauce Connect?')
+        self.drv.implicitly_wait(10)
 
     def _set_sauce_status(self):
         credentials = '{}:{}'.format(self.username, self.access_key).encode()
@@ -178,5 +184,5 @@ class TestAuth(DriverTest):
             .send_keys('test@mockmyid.com', Keys.RETURN)
         )
         self.switch_window(go_back=True)
-        self.wait_for_element('UserDropdown', timeout=5)
+        self.wait_for_element('UserDropdown', timeout=10)
         self.assertIn('Recent Submissions', self.drv.page_source)
