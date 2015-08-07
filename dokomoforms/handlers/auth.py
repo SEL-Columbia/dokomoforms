@@ -78,18 +78,6 @@ class Login(BaseHandler):
                 .filter(Email.address == data['email'])
                 .one()
             )
-            cookie_options = {
-                'httponly': True,
-            }
-            if options.https:
-                cookie_options['secure'] = True
-            self.set_secure_cookie(
-                'user',
-                json_encode({'user_id': user.id, 'user_name': user.name}),
-                **cookie_options
-            )
-            self.write({'email': data['email']})
-            self.finish()
         except NoResultFound:
             _ = self.locale.translate
             raise tornado.web.HTTPError(
@@ -99,6 +87,18 @@ class Login(BaseHandler):
                     ' address {}'.format(data['email'])
                 ),
             )
+        cookie_options = {
+            'httponly': True,
+        }
+        if options.https:
+            cookie_options['secure'] = True
+        self.set_secure_cookie(
+            'user',
+            json_encode({'user_id': user.id, 'user_name': user.name}),
+            **cookie_options
+        )
+        self.write({'email': data['email']})
+        self.finish()
 
 
 class Logout(BaseHandler):
