@@ -81,6 +81,13 @@ class TestDebug(DokoHTTPTest):
         )
         self.assertEqual(response.code, 200, msg=response)
 
+    def test_persona_verifier(self):
+        response = self.fetch(
+            '/debug/persona_verify', method='POST', body='',
+            _logged_in_user=None, _disable_xsrf=False,
+        )
+        self.assertEqual(response.code, 200, msg=response)
+
 
 class TestAuth(DokoHTTPTest):
     @tornado.testing.gen_test
