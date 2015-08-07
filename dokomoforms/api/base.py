@@ -165,28 +165,27 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
             return True
 
         # A SurveyCreator can log in with a token.
-        token = self.r_handler.request.headers.get('Token', None)
-        email = self.r_handler.request.headers.get('Email', None)
-        if (token is not None) and (email is not None):
-            # Get the user's token hash and expiration time.
-            try:
-                user = (
-                    self.session
-                    .query(SurveyCreator.token, SurveyCreator.token_expiration)
-                    .join(Email)
-                    .filter(Email.address == email)
-                    .one()
-                )
-            except NoResultFound:
-                return False
-            # Check that the token has not expired
-            if user.token_expiration.timetuple() < localtime():
-                return False
-            # Check the token
-            token_exists = user.token is not None
-            return token_exists and bcrypt_sha256.verify(token, user.token)
-
-        return False
+        try:
+            token = self.r_handler.request.headers['Token']
+            email = self.r_handler.request.headers['Email']
+        except KeyError:
+            return False
+        # Get the user's token hash and expiration time.
+        try:
+            user = (
+                self.session
+                .query(SurveyCreator.token, SurveyCreator.token_expiration)
+                .join(Email)
+                .filter(Email.address == email)
+                .one()
+            )
+        except NoResultFound:
+            return False
+        if user.token is None:
+            return False
+        if user.token_expiration.timetuple() < localtime():
+            return False
+        return bcrypt_sha256.verify(token, user.token)
 
     def _specific_fields(self, model_or_models, is_detail=True):
         """Pick out the specified fields on the given models.
