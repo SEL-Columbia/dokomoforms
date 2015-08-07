@@ -1,29 +1,29 @@
 """TornadoResource class for dokomoforms.models.submission.Submission."""
 import restless.exceptions as exc
 
+from sqlalchemy.orm.exc import NoResultFound
+
 from dokomoforms.api import BaseResource
 from dokomoforms.models import (
     Survey, Submission, User,
     construct_submission, construct_answer, Answer,
-    SurveyNode, skipped_required
+    SurveyNode, skipped_required,
+    get_model
 )
 from dokomoforms.models.answer import ANSWER_TYPES
 from dokomoforms.exc import RequiredQuestionSkipped
 
 
 def _create_answer(session, answer_dict) -> Answer:
-    survey_node_id = answer_dict.get('survey_node_id', None)
-    if survey_node_id is None:
-        raise exc.BadRequest("'survey_node_id' property is required.")
-    survey_node = (
-        session
-        .query(SurveyNode)
-        .get(survey_node_id)
-    )
-    if survey_node is not None:
-        answer_dict['survey_node'] = survey_node
-        return construct_answer(**answer_dict)
-    raise exc.BadRequest('survey_node not found: {}'.format(survey_node_id))
+    try:
+        survey_node_id = answer_dict['survey_node_id']
+        survey_node = get_model(session, SurveyNode, survey_node_id)
+    except NoResultFound:
+        raise exc.BadRequest(
+            'survey_node not found: {}'.format(survey_node_id)
+        )
+    answer_dict['survey_node'] = survey_node
+    return construct_answer(**answer_dict)
 
 
 def _create_submission(self, survey):
@@ -38,14 +38,14 @@ def _create_submission(self, survey):
 
     # If logged in, add enumerator
     if self.current_user_model is not None:
-        if 'enumerator_user_id' in self.data:
-            # if enumerator_user_id is provided, use that user
-            enumerator = self.session.query(
-                User).get(self.data['enumerator_user_id'])
-            self.data['enumerator'] = enumerator
-        else:
-            # otherwise the currently logged in user
+        try:
+            enumerator = self.get_model(
+                self.data['enumerator_user_id'], model_cls=User
+            )
+        except KeyError:
             self.data['enumerator'] = self.current_user_model
+        else:
+            self.data['enumerator'] = enumerator
 
     self.data['survey'] = survey
 
@@ -118,13 +118,10 @@ class SubmissionResource(BaseResource):
 
         Uses the current_user_model (i.e. logged-in user) as creator.
         """
-        survey_id = self.data.pop('survey_id', None)
-        if survey_id is None:
-            raise exc.BadRequest(
-                "'survey_id' property is required."
-            )
-        survey = self.session.query(Survey).get(survey_id)
-        if survey is None:
+        survey_id = self.data.pop('survey_id')
+        try:
+            survey = self.get_model(survey_id, model_cls=Survey)
+        except NoResultFound:
             raise exc.BadRequest(
                 'The survey could not be found: {}'.format(survey_id)
             )

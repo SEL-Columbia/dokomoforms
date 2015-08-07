@@ -4,6 +4,7 @@ from collections import OrderedDict
 from datetime import datetime, date, timedelta
 import json
 import os
+import signal
 import uuid
 import unittest
 
@@ -16,7 +17,9 @@ from tornado.escape import json_decode, json_encode
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as pg
 
-from tests.util import DokoHTTPTest, setUpModule, tearDownModule
+from tests.util import (
+    DokoHTTPTest, setUpModule, tearDownModule, keyboard_interrupt_handler
+)
 
 from dokomoforms.models import Submission, Survey, Node, SurveyCreator
 import dokomoforms.models as models
@@ -25,6 +28,7 @@ from dokomoforms.api.base import BaseResource
 from dokomoforms.api.nodes import NodeResource
 
 utils = (setUpModule, tearDownModule)
+signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
 
 """
@@ -72,7 +76,7 @@ class TestErrorHandling(DokoHTTPTest):
         # make request
         response = self.fetch(url, method=method)
         # test response
-        self.assertEqual(response.code, 404)
+        self.assertEqual(response.code, 404, msg=response.body)
         self.assertIn('not found', json_decode(response.body)['error'])
 
 
@@ -850,9 +854,9 @@ class TestSurveyApi(DokoHTTPTest):
 
     def test_update_survey(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
-        self.assertFalse(
-            self.session.query(Survey.deleted).filter_by(id=survey_id).scalar()
-        )
+        survey = self.session.query(Survey).get(survey_id)
+        self.assertFalse(survey.deleted)
+        old_update_time = survey.last_update_time
         # url to test
         url = self.api_root + '/surveys/' + survey_id
         # http method
@@ -870,6 +874,13 @@ class TestSurveyApi(DokoHTTPTest):
         self.assertTrue(
             self.session.query(Survey.deleted).filter_by(id=survey_id).scalar()
         )
+        new_update_time = (
+            self.session
+            .query(Survey.last_update_time)
+            .filter_by(id=survey_id)
+            .scalar()
+        )
+        self.assertGreater(new_update_time, old_update_time)
 
     def test_delete_survey(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
@@ -2254,9 +2265,6 @@ class TestSubmissionApi(DokoHTTPTest):
         response = self.fetch(url, method=method, body=json_encode(body))
         self.assertEqual(response.code, 400, response.body)
 
-        submission_dict = json_decode(response.body)
-        self.assertIn('property is required', submission_dict['error'])
-
     def test_create_public_submission_survey_does_not_exist(self):
         # url to test
         url = self.api_root + '/submissions'
@@ -2311,9 +2319,6 @@ class TestSubmissionApi(DokoHTTPTest):
         response = self.fetch(url, method=method, body=json_encode(body))
         self.assertEqual(response.code, 400)
 
-        submission_dict = json_decode(response.body)
-        self.assertIn('property is required', submission_dict['error'])
-
     def test_submit_public_no_survey_node_id_alternate_url(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
         # url to test
@@ -2335,9 +2340,6 @@ class TestSubmissionApi(DokoHTTPTest):
         response = self.fetch(url, method=method, body=json_encode(body))
         self.assertEqual(response.code, 400)
 
-        submission_dict = json_decode(response.body)
-        self.assertIn('property is required', submission_dict['error'])
-
     def test_create_public_submission_with_bogus_survey_node_id(self):
         # url to test
         url = self.api_root + '/submissions'
@@ -2358,7 +2360,7 @@ class TestSubmissionApi(DokoHTTPTest):
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
-        self.assertEqual(response.code, 400)
+        self.assertEqual(response.code, 400, msg=response.body)
 
         submission_dict = json_decode(response.body)
         self.assertIn('survey_node not found', submission_dict['error'])
@@ -4532,7 +4534,10 @@ class TestNodeApi(DokoHTTPTest):
         response = self.fetch(url, method=method)
         # test response
         # check that response is valid parseable json
-        node_dict = json_decode(response.body)
+        try:
+            node_dict = json_decode(response.body)
+        except ValueError:
+            self.fail(response.body)
 
         # check that expected keys are present
         self.assertIn('id', node_dict, msg=node_dict)

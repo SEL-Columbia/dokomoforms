@@ -5,14 +5,17 @@ import json
 import datetime
 from decimal import Decimal
 import os
+import signal
 from statistics import pstdev, stdev
 import uuid
 import unittest
 
 from tests.util import (
-    DokoTest, setUpModule, tearDownModule, test_continues_after_rollback
+    DokoTest, setUpModule, tearDownModule, test_continues_after_rollback,
+    keyboard_interrupt_handler
 )
 utils = (setUpModule, tearDownModule)
+signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
 import psycopg2
 

@@ -1,5 +1,5 @@
 """Webapp script tests"""
-
+import signal
 import unittest
 from contextlib import contextmanager
 
@@ -9,6 +9,7 @@ import webapp
 
 
 __all__ = (tests.util,)
+signal.signal(signal.SIGINT, tests.util.keyboard_interrupt_handler)
 
 
 class FakeFile:

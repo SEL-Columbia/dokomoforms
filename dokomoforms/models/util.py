@@ -19,6 +19,7 @@ import sqlalchemy as sa
 import sqlalchemy.engine
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 from sqlalchemy.dialects import postgresql as pg
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 from sqlalchemy.sql.functions import current_timestamp
 
@@ -304,6 +305,14 @@ def last_update_time() -> sa.Column:
         server_default=current_timestamp(),
         onupdate=current_timestamp(),
     )
+
+
+def get_model(session, model_cls, model_id):
+    """Throw an error if session.query.get(model_id) returns None."""
+    model = session.query(model_cls).get(model_id)
+    if model is None:
+        raise NoResultFound((model_cls, model_id))
+    return model
 
 
 def column_search(query, *,

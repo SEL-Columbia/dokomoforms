@@ -22,7 +22,7 @@ from dokomoforms.models import SurveyCreator, Email, Survey, Submission
 from dokomoforms.models.survey import (
     administrator_filter, _administrator_table
 )
-from dokomoforms.models.util import column_search, get_fields_subset
+from dokomoforms.models.util import column_search, get_fields_subset, get_model
 from dokomoforms.exc import DokomoError
 
 # TODO: Find out if it is OK to remove these. @jmwohl
@@ -84,6 +84,12 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         """The handler's current_user."""
         return self.r_handler.current_user
 
+    def get_model(self, model_id, model_cls=None):
+        """Get an instance of this model class by id."""
+        if model_cls is None:
+            model_cls = self.resource_type
+        return get_model(self.session, model_cls, model_id)
+
     def _query_arg(self, argument_name, output=None, default=None):
         """Get a useful query parameter argument."""
         arg = self.r_handler.get_query_argument(argument_name, None)
@@ -122,6 +128,8 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
             restless_error = exc.HttpError(err.log_message)
             restless_error.status = err.status_code
             err = restless_error
+        elif isinstance(err, NoResultFound):
+            err = exc.NotFound()
         elif isinstance(err, understood):
             err = exc.BadRequest(err)
         return super().handle_error(err)
@@ -206,10 +214,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
 
     def detail(self, model_id):
         """Return a single instance of a model."""
-        model = self.session.query(self.resource_type).get(model_id)
-        if model is None:
-            raise exc.NotFound()
-        return self._specific_fields(model)
+        return self._specific_fields(self.get_model(model_id))
 
     def list(self, where=None):
         """Return a list of instances of this model.
@@ -307,23 +312,16 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
 
     def update(self, model_id):
         """Update a model."""
-        model = self.session.query(self.resource_type).get(model_id)
-
-        if model is None:
-            raise exc.NotFound()
-
+        model = self.get_model(model_id)
         with self.session.begin():
             for attribute, value in self.data.items():
                 setattr(model, attribute, value)
-            self.session.add(model)
         return model
 
     def delete(self, model_id):
         """Set the deleted attribute to True. Does not destroy the instance."""
+        model = self.get_model(model_id)
         with self.session.begin():
-            model = self.session.query(self.resource_type).get(model_id)
-            if model is None:
-                raise exc.NotFound()
             model.deleted = True
 
     def _add_meta_props(self, response):
