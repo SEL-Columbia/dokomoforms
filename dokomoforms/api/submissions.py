@@ -39,7 +39,7 @@ def _create_submission(self, survey):
     # If logged in, add enumerator
     if self.current_user_model is not None:
         try:
-            enumerator = self.get_model(
+            enumerator = self._get_model(
                 self.data['enumerator_user_id'], model_cls=User
             )
         except KeyError:
@@ -120,7 +120,7 @@ class SubmissionResource(BaseResource):
         """
         survey_id = self.data.pop('survey_id')
         try:
-            survey = self.get_model(survey_id, model_cls=Survey)
+            survey = self._get_model(survey_id, model_cls=Survey)
         except NoResultFound:
             raise exc.BadRequest(
                 'The survey could not be found: {}'.format(survey_id)

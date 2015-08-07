@@ -84,7 +84,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         """The handler's current_user."""
         return self.r_handler.current_user
 
-    def get_model(self, model_id, model_cls=None):
+    def _get_model(self, model_id, model_cls=None):
         """Get an instance of this model class by id."""
         if model_cls is None:
             model_cls = self.resource_type
@@ -214,7 +214,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
 
     def detail(self, model_id):
         """Return a single instance of a model."""
-        return self._specific_fields(self.get_model(model_id))
+        return self._specific_fields(self._get_model(model_id))
 
     def list(self, where=None):
         """Return a list of instances of this model.
@@ -312,7 +312,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
 
     def update(self, model_id):
         """Update a model."""
-        model = self.get_model(model_id)
+        model = self._get_model(model_id)
         with self.session.begin():
             for attribute, value in self.data.items():
                 setattr(model, attribute, value)
@@ -320,7 +320,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
 
     def delete(self, model_id):
         """Set the deleted attribute to True. Does not destroy the instance."""
-        model = self.get_model(model_id)
+        model = self._get_model(model_id)
         with self.session.begin():
             model.deleted = True
 

@@ -161,7 +161,7 @@ class SurveyResource(BaseResource):
 
     def submit(self, survey_id):
         """Submit to a survey."""
-        return _create_submission(self, self.get_model(survey_id))
+        return _create_submission(self, self._get_model(survey_id))
 
     def list_submissions(self, survey_id):
         """List all submissions for a survey."""
