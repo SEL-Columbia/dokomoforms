@@ -8,6 +8,7 @@ import os
 from subprocess import Popen, DEVNULL
 import signal
 import sys
+import unittest
 import urllib.error
 
 from selenium import webdriver
@@ -165,19 +166,26 @@ class DriverTest(tests.util.DokoHTTPTest):
             self.drv.switch_to.window(handle)
             return
 
-    def wait_for_element(self, identifier, by=By.ID, timeout=1):
-        load = EC.presence_of_element_located((by, identifier))
+    def wait_for_element(self, identifier, by=By.ID, timeout=1, visible=False):
+        visibility = EC.visibility_of_element_located
+        presence = EC.presence_of_element_located
+        loader = visibility if visible else presence
+        load = loader((by, identifier))
         WebDriverWait(self.drv, timeout).until(load)
 
 
 class TestAuth(DriverTest):
+    @unittest.skipIf(
+        (not SAUCE_CONNECT) and (os.environ.get('TRAVIS', 'false') == 'true'),
+        'This test just refuses to work with xvfb on Travis.'
+    )
+    @report_success_status
     def test_login(self):
         self.get('/')
         self.wait_for_element('btn-login', By.CLASS_NAME)
         self.drv.find_elements_by_class_name('btn-login')[-1].click()
         self.switch_window()
-        self.wait_for_element('authentication_email')
-        self.drv.implicitly_wait(1)
+        self.wait_for_element('authentication_email', visible=True)
         (
             self.drv
             .find_element_by_id('authentication_email')

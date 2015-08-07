@@ -8,10 +8,6 @@ cache:
 addons:
   postgresql: "9.4"
 
-before_install:
-  - export DISPLAY=:99.0
-  - sh -e /etc/init.d/xvfb start
-
 install:
   - pip install coveralls flake8 tox
 
@@ -21,7 +17,7 @@ before_script:
   - head -c 24 /dev/urandom > cookie_secret
 
 script:
-  - tox -e cover
+  - xvfb-run tox -e cover
 
 after_success: coveralls
 
