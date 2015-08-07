@@ -39,6 +39,7 @@ def setUpModule():
             '--port=9999',
             '--debug=True',
             '--https=False',
+            '--persona_verification_url={}/debug/persona_verify'.format(base),
         ],
         stdout=DEVNULL, stderr=DEVNULL, preexec_fn=os.setsid
     )
@@ -150,8 +151,11 @@ class DriverTest(tests.util.DokoHTTPTest):
     def get(self, path):
         self.drv.get(base + path)
 
-    def switch_window(self):
-        for handle in reversed(self.drv.window_handles):
+    def switch_window(self, go_back=False):
+        window_handles = self.drv.window_handles
+        if not go_back:
+            window_handles = reversed(window_handles)
+        for handle in window_handles:
             self.drv.switch_to.window(handle)
             return
 
@@ -167,17 +171,12 @@ class TestAuth(DriverTest):
         self.drv.find_elements_by_class_name('btn-login')[-1].click()
         self.switch_window()
         self.wait_for_element('authentication_email')
+        self.drv.implicitly_wait(1)
         (
             self.drv
             .find_element_by_id('authentication_email')
-            .send_keys('test_creator@fixtures.com', Keys.RETURN)
+            .send_keys('test@mockmyid.com', Keys.RETURN)
         )
-        assert False, 'use fake persona verifier'
-        with patch.object(Login) as p:
-            dummy = lambda: None
-            dummy.body = json_encode(
-                {'status': 'okay', 'email': 'test_creator@fixtures.com'}
-            )
-            p.return_value = tornado.gen.Task(
-                lambda callback=None: callback(dummy)
-            )
+        self.switch_window(go_back=True)
+        self.wait_for_element('UserDropdown', timeout=5)
+        self.assertIn('Recent Submissions', self.drv.page_source)

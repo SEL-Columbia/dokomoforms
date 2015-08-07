@@ -19,17 +19,20 @@ define('port', help='run on the given port', type=int)
 define('cookie_secret', help='string used to create session cookies')
 define('debug', default=False, help='whether to enable debug mode', type=bool)
 define('autoreload', default=False, help='whether to autoreload', type=bool)
-define('dev',
-       default=False,
-       help='turn on autoreload and debug, maybe some other dev options',
-       type=bool,
-       )
 
-define('https',
-       help='whether the application accepts https traffic',
-       type=bool,
-       )
+dev_help = 'turn on autoreload and debug, maybe some other dev options'
+define('dev', default=False, help=dev_help, type=bool)
+
+https_help = 'whether the application accepts https traffic'
+define('https', help=dev_help, type=bool)
+
 define('organization', help='the name of your organization')
+
+persona_help = (
+    'the URL for login verification. Do not change this without a good reason'
+)
+persona_url = 'https://verifier.login.persona.org/verify'
+define('persona_verification_url', default=persona_url, help=persona_help)
 
 # Database options
 define('schema', help='database schema name')
@@ -37,11 +40,9 @@ define('db_host', help='database host')
 define('db_database', help='database name')
 define('db_user', help='database user')
 define('db_password', help='database password')
-define('kill',
-       default=False,
-       help='whether to drop the existing schema before starting',
-       type=bool,
-       )
+
+kill_help = 'whether to drop the existing schema before starting'
+define('kill', default=False, help=kill_help, type=bool)
 
 
 def inject_options(**kwargs):

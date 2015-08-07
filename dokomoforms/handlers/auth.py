@@ -63,7 +63,7 @@ class Login(BaseHandler):
         """
         assertion = self.get_argument('assertion')
         http_client = tornado.httpclient.AsyncHTTPClient()
-        url = 'https://verifier.login.persona.org/verify'
+        url = options.persona_verification_url
         input_data = {'assertion': assertion, 'audience': self.request.host}
         response = yield self._async_post(http_client, url, input_data)
         data = json_decode(response.body)

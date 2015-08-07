@@ -81,3 +81,14 @@ class DebugLogoutHandler(BaseHandler):
         """Clear the 'user' cookie."""
         self.clear_cookie('user')
         self.write('You have logged out.')
+
+
+class DebugPersonaHandler(BaseHandler):
+
+    """For testing purposes there's no need to hit the real URL."""
+
+    def check_xsrf_cookie(self):
+        pass
+
+    def post(self):
+        self.write({'status': 'okay', 'email': 'test_creator@fixtures.com'})
