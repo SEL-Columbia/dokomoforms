@@ -176,7 +176,7 @@ class DriverTest(tests.util.DokoHTTPTest):
 
 class TestAuth(DriverTest):
     @unittest.skipIf(
-        (not SAUCE_CONNECT) and (os.environ.get('TRAVIS', 'false') == 'true'),
+        (not SAUCE_CONNECT) and (os.environ.get('TRAVIS', False)),
         'This test just refuses to work with xvfb on Travis.'
     )
     @report_success_status
