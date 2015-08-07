@@ -96,7 +96,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
 
         # Return default if the argument was not given.
         if not arg:
-            return default
+            return arg if arg == 0 else default
 
         # Convert 'true'/'false' argument into True or False
         if output is bool:
