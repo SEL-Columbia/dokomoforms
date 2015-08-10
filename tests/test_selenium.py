@@ -5,7 +5,7 @@ import functools
 import json
 from http.client import HTTPConnection
 import os
-from subprocess import Popen, DEVNULL
+from subprocess import check_output, Popen, STDOUT, DEVNULL, CalledProcessError
 import signal
 import sys
 import unittest
@@ -36,20 +36,32 @@ def setUpModule():
     """Start the webapp in the background on port 9999."""
     global webapp
     tests.util.setUpModule()
-    webapp = Popen(
-        [
-            'python', 'webapp.py',
-            '--port=9999',
-            '--debug=True',
-            '--https=False',
-            '--persona_verification_url={}/debug/persona_verify'.format(base),
-        ],
-        stdout=DEVNULL, stderr=DEVNULL, preexec_fn=os.setsid
-    )
+    try:
+        already_running = (
+            check_output(['lsof', '-t', '-i:9999'], stderr=STDOUT)
+            .decode()
+            .strip()
+        ) is not None
+    except CalledProcessError:
+        already_running = None
+    if not already_running:
+        webapp = Popen(
+            [
+                'python', 'webapp.py',
+                '--port=9999',
+                '--debug=True',
+                '--https=False',
+                '--persona_verification_url='
+                '{}/debug/persona_verify'.format(base),
+            ],
+            stdout=DEVNULL, stderr=DEVNULL, preexec_fn=os.setsid
+        )
 
 
 def kill_webapp():
     """Kill the webapp cleanly."""
+    if not webapp:
+        return
     if webapp.stdout:
         webapp.stdout.close()
     if webapp.stderr:
@@ -136,7 +148,7 @@ class DriverTest(tests.util.DokoHTTPTest):
             )
         except urllib.error.URLError:
             self.fail('Sauce Connect failure. Did you start Sauce Connect?')
-        self.drv.implicitly_wait(15)
+        self.drv.implicitly_wait(10)
 
     def _set_sauce_status(self):
         credentials = '{}:{}'.format(self.username, self.access_key).encode()
