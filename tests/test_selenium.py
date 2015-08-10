@@ -94,7 +94,7 @@ class DriverTest(tests.util.DokoHTTPTest):
             self.platform = 'Linux'
             return
 
-        self.username = os.environ.get('SAUCE_USERAME', SAUCE_USERNAME)
+        self.username = os.environ.get('SAUCE_USERNAME', SAUCE_USERNAME)
         self.access_key = os.environ.get('SAUCE_ACCESS_KEY', SAUCE_ACCESS_KEY)
         browser_config = os.environ.get('BROWSER', DEFAULT_BROWSER)
         values = (self.username, self.access_key, browser_config)
@@ -136,7 +136,7 @@ class DriverTest(tests.util.DokoHTTPTest):
             )
         except urllib.error.URLError:
             self.fail('Sauce Connect failure. Did you start Sauce Connect?')
-        self.drv.implicitly_wait(10)
+        self.drv.implicitly_wait(15)
 
     def _set_sauce_status(self):
         credentials = '{}:{}'.format(self.username, self.access_key).encode()
@@ -166,7 +166,7 @@ class DriverTest(tests.util.DokoHTTPTest):
             self.drv.switch_to.window(handle)
             return
 
-    def wait_for_element(self, identifier, by=By.ID, timeout=1, visible=False):
+    def wait_for_element(self, identifier, by=By.ID, timeout=5, visible=False):
         visibility = EC.visibility_of_element_located
         presence = EC.presence_of_element_located
         loader = visibility if visible else presence
