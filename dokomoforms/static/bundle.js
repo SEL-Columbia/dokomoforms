@@ -1,5 +1,5 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var revisit_url = 'http://localhost:1000/api/v0/facilities.json';
+var revisit_url = 'http://localhost:3000/api/v0/facilities.json';
 
 var $ = require('jquery');
 var LZString = require('lz-string');
@@ -979,6 +979,7 @@ var Menu = require('./baseComponents/Menu.js');
  *  @splash: Boolean to render splash header instead of the default
  *  @buttonFunction: What to do on previous button click
  *  @number: Current number to render in header
+ *  @db: Active pouch db // XXX rather not pass this to header
  */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
@@ -1010,7 +1011,7 @@ module.exports = React.createClass({displayName: "exports",
 
             React.createElement("a", {className: "icon icon-bars pull-right menu", onClick: this.onClick}), 
 
-             this.state.showMenu ? React.createElement(Menu, null) : null
+             this.state.showMenu ? React.createElement(Menu, {db: this.props.db}) : null
             )
         )
     }
@@ -2151,21 +2152,38 @@ module.exports = React.createClass({displayName: "exports",
 
 },{"react":288}],18:[function(require,module,exports){
 var React = require('react'); 
+var PhotoAPI = require('../../PhotoAPI.js');
 
 /*
  * Header Menu component
+ *
+ * XXX In works, must sort out way to properly clear active survey 
+ * (Could have active survey data that references photos in pouchdb that would 
+ * be left orphaned if not submitted).
+ *
+ * @db: active pouch db
  */
 module.exports = React.createClass({displayName: "exports",
     render: function() {
+        var self = this;
         return (
             React.createElement("div", {className: "title_menu"}, 
-                React.createElement("div", {className: "title_menu_option menu_restart"}, 
+                React.createElement("div", {className: "title_menu_option menu_restart", 
+                    onClick: function() {
+                        localStorage.clear();
+                        location.reload();
+                    }
+                }, 
                     "Cancel survey"
                 ), 
-                React.createElement("div", {className: "title_menu_option menu_save"}, 
-                    "Save current state and exit"
-                ), 
-                React.createElement("div", {className: "title_menu_option menu_clear"}, 
+                React.createElement("div", {className: "title_menu_option menu_clear", 
+                    onClick: function() {
+                        localStorage.clear();
+                        self.props.db.destroy().then(function() {
+                            location.reload();
+                        });
+                    }
+                }, 
                     "Clear all saved surveys"
                 )
             )
@@ -2173,7 +2191,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"react":288}],19:[function(require,module,exports){
+},{"../../PhotoAPI.js":2,"react":288}],19:[function(require,module,exports){
 var React = require('react');
 
 /*
@@ -47398,6 +47416,7 @@ var Application = React.createClass({displayName: "Application",
                         buttonFunction: this.onPrevButton, 
                         number: nextQuestion + 1, 
                         total: questions.length + 1, 
+                        db: this.state.db, 
                         splash: state === this.state.states.SPLASH}), 
                     React.createElement("div", {
                         className: contentClasses}, 

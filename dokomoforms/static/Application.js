@@ -560,6 +560,7 @@ var Application = React.createClass({
                         buttonFunction={this.onPrevButton} 
                         number={nextQuestion + 1}
                         total={questions.length + 1}
+                        db={this.state.db}
                         splash={state === this.state.states.SPLASH}/>
                     <div 
                         className={contentClasses}>

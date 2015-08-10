@@ -9,6 +9,7 @@ var Menu = require('./baseComponents/Menu.js');
  *  @splash: Boolean to render splash header instead of the default
  *  @buttonFunction: What to do on previous button click
  *  @number: Current number to render in header
+ *  @db: Active pouch db // XXX rather not pass this to header
  */
 module.exports = React.createClass({
     getInitialState: function() {
@@ -40,7 +41,7 @@ module.exports = React.createClass({
 
             <a className="icon icon-bars pull-right menu" onClick = {this.onClick} ></a>
 
-            { this.state.showMenu ? <Menu /> : null }
+            { this.state.showMenu ? <Menu db={this.props.db}/> : null }
             </header>
         )
     }

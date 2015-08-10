@@ -1,4 +1,4 @@
-var revisit_url = 'http://localhost:1000/api/v0/facilities.json';
+var revisit_url = 'http://localhost:3000/api/v0/facilities.json';
 
 var $ = require('jquery');
 var LZString = require('lz-string');
