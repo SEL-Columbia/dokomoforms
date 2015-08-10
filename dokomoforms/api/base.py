@@ -9,7 +9,6 @@ from restless.tnd import TornadoResource
 import restless.exceptions as exc
 
 from sqlalchemy import text, func
-from sqlalchemy.sql.expression import false
 from sqlalchemy.sql.functions import count
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
@@ -22,7 +21,7 @@ from dokomoforms.models import SurveyCreator, Email, Survey, Submission
 from dokomoforms.models.survey import (
     administrator_filter, _administrator_table
 )
-from dokomoforms.models.util import column_search, get_fields_subset
+from dokomoforms.models.util import column_search, get_fields_subset, get_model
 from dokomoforms.exc import DokomoError
 
 # TODO: Find out if it is OK to remove these. @jmwohl
@@ -84,13 +83,19 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         """The handler's current_user."""
         return self.r_handler.current_user
 
+    def _get_model(self, model_id, model_cls=None, exception=None):
+        """Get an instance of this model class by id."""
+        if model_cls is None:
+            model_cls = self.resource_type
+        return get_model(self.session, model_cls, model_id, exception)
+
     def _query_arg(self, argument_name, output=None, default=None):
         """Get a useful query parameter argument."""
         arg = self.r_handler.get_query_argument(argument_name, None)
 
         # Return default if the argument was not given.
         if not arg:
-            return default
+            return arg if arg == 0 else default
 
         # Convert 'true'/'false' argument into True or False
         if output is bool:
@@ -122,6 +127,8 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
             restless_error = exc.HttpError(err.log_message)
             restless_error.status = err.status_code
             err = restless_error
+        elif isinstance(err, NoResultFound):
+            err = exc.NotFound()
         elif isinstance(err, understood):
             err = exc.BadRequest(err)
         return super().handle_error(err)
@@ -165,28 +172,27 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
             return True
 
         # A SurveyCreator can log in with a token.
-        token = self.r_handler.request.headers.get('Token', None)
-        email = self.r_handler.request.headers.get('Email', None)
-        if (token is not None) and (email is not None):
-            # Get the user's token hash and expiration time.
-            try:
-                user = (
-                    self.session
-                    .query(SurveyCreator.token, SurveyCreator.token_expiration)
-                    .join(Email)
-                    .filter(Email.address == email)
-                    .one()
-                )
-            except NoResultFound:
-                return False
-            # Check that the token has not expired
-            if user.token_expiration.timetuple() < localtime():
-                return False
-            # Check the token
-            token_exists = user.token is not None
-            return token_exists and bcrypt_sha256.verify(token, user.token)
-
-        return False
+        try:
+            token = self.r_handler.request.headers['Token']
+            email = self.r_handler.request.headers['Email']
+        except KeyError:
+            return False
+        # Get the user's token hash and expiration time.
+        try:
+            user = (
+                self.session
+                .query(SurveyCreator.token, SurveyCreator.token_expiration)
+                .join(Email)
+                .filter(Email.address == email)
+                .one()
+            )
+        except NoResultFound:
+            return False
+        if user.token is None:
+            return False
+        if user.token_expiration.timetuple() < localtime():
+            return False
+        return bcrypt_sha256.verify(token, user.token)
 
     def _specific_fields(self, model_or_models, is_detail=True):
         """Pick out the specified fields on the given models.
@@ -207,10 +213,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
 
     def detail(self, model_id):
         """Return a single instance of a model."""
-        model = self.session.query(self.resource_type).get(model_id)
-        if model is None:
-            raise exc.NotFound()
-        return self._specific_fields(model)
+        return self._specific_fields(self._get_model(model_id))
 
     def list(self, where=None):
         """Return a list of instances of this model.
@@ -273,7 +276,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
             )
 
         if not deleted:
-            query = query.filter(model_cls.deleted == false())
+            query = query.filter(~model_cls.deleted)
 
         if type_constraint is not None:
             query = query.filter(model_cls.type_constraint == type_constraint)
@@ -284,12 +287,13 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         for attribute_name, direction in order_by_text:
             try:
                 order = getattr(model_cls, attribute_name)
-                directions = {'asc': order.asc, 'desc': order.desc}
-                order = directions[direction.lower()]().nullslast()
             except AttributeError:
                 order = text(
                     '{} {} NULLS LAST'.format(attribute_name, direction)
                 )
+            else:
+                directions = {'asc': order.asc, 'desc': order.desc}
+                order = directions[direction.lower()]().nullslast()
             query = query.order_by(order)
 
         if limit is not None:
@@ -308,23 +312,16 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
 
     def update(self, model_id):
         """Update a model."""
-        model = self.session.query(self.resource_type).get(model_id)
-
-        if model is None:
-            raise exc.NotFound()
-
+        model = self._get_model(model_id)
         with self.session.begin():
             for attribute, value in self.data.items():
                 setattr(model, attribute, value)
-            self.session.add(model)
         return model
 
     def delete(self, model_id):
         """Set the deleted attribute to True. Does not destroy the instance."""
+        model = self._get_model(model_id)
         with self.session.begin():
-            model = self.session.query(self.resource_type).get(model_id)
-            if model is None:
-                raise exc.NotFound()
             model.deleted = True
 
     def _add_meta_props(self, response):

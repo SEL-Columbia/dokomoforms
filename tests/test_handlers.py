@@ -1,4 +1,5 @@
 """Handler tests"""
+import signal
 import uuid
 from unittest.mock import patch
 
@@ -12,9 +13,12 @@ import tornado.gen
 import tornado.httpclient
 import tornado.testing
 
-from tests.util import DokoHTTPTest, setUpModule, tearDownModule
+from tests.util import (
+    DokoHTTPTest, setUpModule, tearDownModule, keyboard_interrupt_handler
+)
 
 utils = (setUpModule, tearDownModule)
+signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
 import dokomoforms.handlers as handlers
 import dokomoforms.handlers.auth
@@ -78,6 +82,13 @@ class TestDebug(DokoHTTPTest):
     def test_logout(self):
         response = self.fetch(
             '/debug/logout', method='GET', _logged_in_user=None
+        )
+        self.assertEqual(response.code, 200, msg=response)
+
+    def test_persona_verifier(self):
+        response = self.fetch(
+            '/debug/persona_verify', method='POST', body='',
+            _logged_in_user=None, _disable_xsrf=False,
         )
         self.assertEqual(response.code, 200, msg=response)
 

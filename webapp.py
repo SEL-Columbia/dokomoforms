@@ -9,9 +9,12 @@ of the PostgreSQL database.
 The application looks for gettext translation files like
 locale/{locale}/LC_MESSAGES/dokomoforms.mo
 """
-import os.path
+import os
 import textwrap
+import signal
+import subprocess
 import sys
+from time import sleep
 import logging
 
 from sqlalchemy import DDL
@@ -232,6 +235,7 @@ class Application(tornado.web.Application):
                     handlers.DebugUserCreationHandler),
                 url(r'/debug/login/(.+)/?', handlers.DebugLoginHandler),
                 url(r'/debug/logout/?', handlers.DebugLogoutHandler),
+                url(r'/debug/persona_verify/?', handlers.DebugPersonaHandler)
             ]
 
         settings = {
@@ -261,6 +265,38 @@ class Application(tornado.web.Application):
             self.session = session
 
 
+def start_http_server(http_server, port):  # pragma: no cover
+    """Start the server, with the option to kill anything using the port."""
+    try:
+        http_server.listen(options.port)
+    except OSError:
+        pid = (
+            subprocess
+            .check_output(['lsof', '-t', '-i:{}'.format(options.port)])
+            .decode()
+            .strip()
+        )
+        cmd = (
+            subprocess
+            .check_output(['ps', '-o', 'cmd', '-fp', pid, '--no-header'])
+            .decode()
+            .strip()
+        )
+        msg = (
+            'A process (ID: {} CMD: {})'
+            ' is currently using port {}'.format(pid, cmd, port)
+        )
+        print(msg)
+        replace = input('Do you want to kill it? y/n (default n) ')
+        if replace.lower().startswith('y'):
+            os.killpg(int(pid), signal.SIGTERM)
+            sleep(1)
+            print('Killed process {}'.format(pid))
+            http_server.listen(options.port)
+        else:
+            raise
+
+
 def main(msg=None):  # pragma: no cover
     """Start the Tornado web server."""
     if options.kill:
@@ -269,6 +305,7 @@ def main(msg=None):  # pragma: no cover
     tornado.locale.load_gettext_translations(
         os.path.join(_pwd, 'locale'), 'dokomoforms'
     )
+    start_http_server(http_server, options.port)
     logging.info(
         '{dokomo}{starting}'.format(
             dokomo=modify_text(
@@ -279,7 +316,6 @@ def main(msg=None):  # pragma: no cover
             ),
         )
     )
-    http_server.listen(options.port)
     if msg is not None:
         print(msg)
     tornado.ioloop.IOLoop.current().start()

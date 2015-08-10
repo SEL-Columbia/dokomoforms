@@ -8,10 +8,6 @@ cache:
 addons:
   postgresql: "9.4"
 
-before_install:
-  - export DISPLAY=:99.0
-  - sh -e /etc/init.d/xvfb start
-
 install:
   - pip install coveralls flake8 tox
 
@@ -19,11 +15,9 @@ before_script:
   - python3 -m flake8 .
   - psql -c 'create database doko;' -U postgres
   - head -c 24 /dev/urandom > cookie_secret
-  # other things...
-  #- python3 webapp.py --cookie_secret=c --debug=True --https=False &
 
 script:
-  - tox -e cover
+  - xvfb-run tox -e cover
 
 after_success: coveralls
 

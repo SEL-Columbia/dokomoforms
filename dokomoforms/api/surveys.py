@@ -13,7 +13,7 @@ from dokomoforms.api.submissions import SubmissionResource, _create_submission
 from dokomoforms.models import (
     Survey, Submission, SubSurvey, Choice,
     construct_survey, construct_survey_node, construct_bucket,
-    administrator_filter,
+    administrator_filter, get_model,
     Node, construct_node
 )
 from dokomoforms.models.survey import _administrator_table
@@ -44,8 +44,7 @@ def _create_sub_survey(session, sub_survey_dict, parent_node):
 def _create_or_get_survey_node(session, survey_node_dict, repeatable=None):
     node_dict = survey_node_dict['node']
     if 'id' in node_dict:
-        node = session.query(Node).get(node_dict['id'])
-        # TODO: raise an exception if node is None
+        node = get_model(session, Node, node_dict['id'])
     else:
         choices = node_dict.get('choices', None)
         if choices is not None:
@@ -161,11 +160,8 @@ class SurveyResource(BaseResource):
         return survey
 
     def submit(self, survey_id):
-        """List all submissions for a survey."""
-        survey = self.session.query(Survey).get(survey_id)
-        if survey is None:
-            raise exc.NotFound()
-        return _create_submission(self, survey)
+        """Submit to a survey."""
+        return _create_submission(self, self._get_model(survey_id))
 
     def list_submissions(self, survey_id):
         """List all submissions for a survey."""
