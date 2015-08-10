@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Default configuration file.
 
 Treat this as a read-only file! It sets the defaults for the configuration
@@ -25,3 +26,31 @@ try:
     from local_config import *  # NOQA
 except ImportError:
     pass
+
+if __name__ == '__main__':
+    options = {k: v for k, v in locals().items() if not k.startswith('__')}
+
+    import argparse
+
+    description = '''Output the configurations specified in config.py and
+    local_config.py'''
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument(
+        'configs',
+        metavar='config',
+        nargs='*',
+        help='configuration option name (default: display all)'
+    )
+    args = parser.parse_args()
+
+    if args.configs:
+        options = {k: options.get(k, None) for k in args.configs}
+
+    for config, value in sorted(options.items()):
+        if value is not None:
+            print('{} = {!r}'.format(config, value))
+        else:
+            print(
+                '{} = (possibly not a valid configuration'
+                ' option.)'.format(config)
+            )

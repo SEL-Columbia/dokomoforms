@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """Main Dokomo Forms entry point.
 
 Execute this script to start the Tornado server and WSGI container. It will
