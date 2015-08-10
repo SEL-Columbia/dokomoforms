@@ -980,6 +980,7 @@ var Menu = require('./baseComponents/Menu.js');
  *  @buttonFunction: What to do on previous button click
  *  @number: Current number to render in header
  *  @db: Active pouch db // XXX rather not pass this to header
+ *  @surveyID: active surveyID
  */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
@@ -1011,7 +1012,7 @@ module.exports = React.createClass({displayName: "exports",
 
             React.createElement("a", {className: "icon icon-bars pull-right menu", onClick: this.onClick}), 
 
-             this.state.showMenu ? React.createElement(Menu, {db: this.props.db}) : null
+             this.state.showMenu ? React.createElement(Menu, {surveyID: this.props.surveyID, db: this.props.db}) : null
             )
         )
     }
@@ -2162,16 +2163,51 @@ var PhotoAPI = require('../../PhotoAPI.js');
  * be left orphaned if not submitted).
  *
  * @db: active pouch db
+ * @surveyID: active surveyID
  */
 module.exports = React.createClass({displayName: "exports",
+
+    wipeActive: function() {
+        var self = this;
+        var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+        var questionIDs = Object.keys(survey);
+        console.log('questionIDs', questionIDs);
+        questionIDs.forEach(function(questionID) {
+            var responses = survey[questionID] || [];
+            console.log('responses', responses);
+            responses.forEach(function(response) {
+                console.log('response', response);
+                //XXX response object does not contain type_constraint, would need to pass in question nodes
+                //if (response.type_constraint === 'photo') {
+                //XXX hack for now
+                if (response.response.length === 36) {
+                    PhotoAPI.removePhoto(self.props.db, response.response, function(err, result) {
+                        if (err) {
+                            //XXX should fail often as it tries to clear every response
+                            console.log("Couldnt remove from db:", err);
+                            return;
+                        }
+
+                        console.log("Removed:", result);
+                    });
+                }
+            });
+        });
+
+        // Wipe active survey
+        localStorage[this.props.surveyID] = JSON.stringify({});
+        // Wipe location info
+        localStorage['location'] = JSON.stringify({});
+        location.reload();
+    },
+
     render: function() {
         var self = this;
         return (
             React.createElement("div", {className: "title_menu"}, 
                 React.createElement("div", {className: "title_menu_option menu_restart", 
                     onClick: function() {
-                        localStorage.clear();
-                        location.reload();
+                        self.wipeActive();
                     }
                 }, 
                     "Cancel survey"
@@ -47417,6 +47453,7 @@ var Application = React.createClass({displayName: "Application",
                         number: nextQuestion + 1, 
                         total: questions.length + 1, 
                         db: this.state.db, 
+                        surveyID: surveyID, 
                         splash: state === this.state.states.SPLASH}), 
                     React.createElement("div", {
                         className: contentClasses}, 

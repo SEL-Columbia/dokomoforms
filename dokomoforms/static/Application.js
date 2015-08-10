@@ -561,6 +561,7 @@ var Application = React.createClass({
                         number={nextQuestion + 1}
                         total={questions.length + 1}
                         db={this.state.db}
+                        surveyID={surveyID}
                         splash={state === this.state.states.SPLASH}/>
                     <div 
                         className={contentClasses}>

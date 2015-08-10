@@ -10,6 +10,7 @@ var Menu = require('./baseComponents/Menu.js');
  *  @buttonFunction: What to do on previous button click
  *  @number: Current number to render in header
  *  @db: Active pouch db // XXX rather not pass this to header
+ *  @surveyID: active surveyID
  */
 module.exports = React.createClass({
     getInitialState: function() {
@@ -41,7 +42,7 @@ module.exports = React.createClass({
 
             <a className="icon icon-bars pull-right menu" onClick = {this.onClick} ></a>
 
-            { this.state.showMenu ? <Menu db={this.props.db}/> : null }
+            { this.state.showMenu ? <Menu surveyID={this.props.surveyID} db={this.props.db}/> : null }
             </header>
         )
     }
