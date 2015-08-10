@@ -166,7 +166,7 @@ class DriverTest(tests.util.DokoHTTPTest):
             self.drv.switch_to.window(handle)
             return
 
-    def wait_for_element(self, identifier, by=By.ID, timeout=1, visible=False):
+    def wait_for_element(self, identifier, by=By.ID, timeout=5, visible=False):
         visibility = EC.visibility_of_element_located
         presence = EC.presence_of_element_located
         loader = visibility if visible else presence
