@@ -10,6 +10,7 @@ var React = require('react');
  *  @index: What index value to send on valid input (i.e position in array of fields)
  *  @showMinus: Show the 'X' on the input
  *  @buttonFunction: What to do on 'X' click event, index value is bound to this function
+ *  @placeholder: Placeholder text for input, defaults to 'Please provide a response'
  *  @initValue: Initial value for the input field
  */
 module.exports = React.createClass({
@@ -26,6 +27,8 @@ module.exports = React.createClass({
                 return "time"
             case "date":
                 return "date"
+            case "email":
+                return "email"
             default:
                 return "text"
         }
@@ -107,7 +110,7 @@ module.exports = React.createClass({
                     <input 
                         type={this.getResponseType()} 
                         step={this.getResponseStep()}
-                        placeholder="Please provide a response." 
+                        placeholder={this.props.placeholder || "Please provide a response."}
                         onChange={this.onChange}
                         defaultValue={this.props.initValue}
                         disabled={this.props.disabled}

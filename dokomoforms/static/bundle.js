@@ -1830,26 +1830,33 @@ module.exports = React.createClass({displayName: "exports",
     },
 
     getCard: function() {
+        var email = localStorage['submitter_email'] || "anon@anon.org";
+        var title = this.props.surveyTitle[this.props.language];
         if (this.state.count) {
             if (this.state.online) {
+                // Unsynced and online
                 return (
                         React.createElement("span", null, 
-                        React.createElement(Card, {messages: [this.props.surveyID, this.state.count,
-                            [React.createElement("b", null, "love")], "toast", "unsynced and online"], type: "message-warning"}), 
-
+                        React.createElement(Card, {messages: [['You have ',  React.createElement("b", null, this.state.count), ' unsynced surveys.', ' Please submit them now.'], 
+                            ], type: "message-warning"}), 
                         React.createElement(BigButton, {text: "Submit Completed Surveys", buttonFunction: this.buttonFunction})
                         )
                        )
             } else {
+                // Unsynced and offline
                 return (
-                        React.createElement(Card, {messages: [this.props.surveyID, this.state.count, 
-                            [React.createElement("b", null, "love")], "toast", "unsynced and NOT online"], type: "message-error"})
+                        React.createElement(Card, {messages: [['You have ',  React.createElement("b", null, this.state.count), ' unsynced surveys.'], 
+                            'At present, you do not have a network connection — please remember to submit' 
+                                + ' these surveys the next time you do have access to the internet.'
+                        ], type: "message-warning"})
                        )
             }
         } else {
+            // No unsynced surveys
             return (
-                    React.createElement(Card, {messages: [this.props.surveyID, this.state.count, 
-                        [React.createElement("b", null, "love")], "toast", "no unsynced"], type: "message-primary"})
+                    React.createElement(Card, {messages: [['Hi ', React.createElement("b", null, email), ' and welcome to the ', {title}, React.createElement("br", null)], 
+                        ['If you have any questions regarding the survey, please ', React.createElement("u", null, "contact the survey adminstrator")]], 
+                    type: "message-primary"})
                    )
         }
     },
@@ -1862,6 +1869,8 @@ module.exports = React.createClass({displayName: "exports",
 },{"./baseComponents/BigButton.js":13,"./baseComponents/Card.js":14,"react":288}],12:[function(require,module,exports){
 var React = require('react');
 var Card = require('./baseComponents/Card.js');
+var Message = require('./baseComponents/Message.js');
+var ResponseField = require('./baseComponents/ResponseField.js');
 
 /*
  * Submit page component
@@ -1877,15 +1886,50 @@ module.exports = React.createClass({displayName: "exports",
         }
     },
 
+    onInput: function(value, index) {
+        if (index === 0) {
+            localStorage['submitter_name'] = value;
+        } else {
+            localStorage['submitter_email'] = value;
+        }
+
+    },
+
     render: function() {
+        var self = this;
         return (
-                React.createElement(Card, {messages: ["hey", "how you doing", 
-                    ["i ", React.createElement("b", null, "love"), " toast"]], type: "message-error"})
+                React.createElement("span", null, 
+                
+                React.createElement(Message, {text: 'Enter your name and email id'}), 
+                React.createElement(ResponseField, {
+                    onInput: self.onInput, 
+                    type: 'text', 
+                    key: 'name', 
+                    placeholder: "Enumerator Name", 
+                    index: 0, 
+                    initValue: localStorage['submitter_name'], 
+                    showMinus: false}
+                ), 
+
+                React.createElement(ResponseField, {
+                    onInput: self.onInput, 
+                    type: 'email', 
+                    key: 'email', 
+                    placeholder: "Enumerator Email", 
+                    index: 1, 
+                    initValue: localStorage['submitter_email'], 
+                    showMinus: false}
+                ), 
+
+                React.createElement(Card, {messages: ["Saved surveys must be uploaded when you next have network connectivity."], 
+                    type: "message-primary"})
+
+                )
                )
     }
 });
 
-},{"./baseComponents/Card.js":14,"react":288}],13:[function(require,module,exports){
+},{"./baseComponents/Card.js":14,"./baseComponents/Message.js":19,"./baseComponents/ResponseField.js":21,"react":288}],13:[function(require,module,exports){
 var React = require('react');
 
 /*
@@ -2215,6 +2259,7 @@ var React = require('react');
  *  @index: What index value to send on valid input (i.e position in array of fields)
  *  @showMinus: Show the 'X' on the input
  *  @buttonFunction: What to do on 'X' click event, index value is bound to this function
+ *  @placeholder: Placeholder text for input, defaults to 'Please provide a response'
  *  @initValue: Initial value for the input field
  */
 module.exports = React.createClass({displayName: "exports",
@@ -2231,6 +2276,8 @@ module.exports = React.createClass({displayName: "exports",
                 return "time"
             case "date":
                 return "date"
+            case "email":
+                return "email"
             default:
                 return "text"
         }
@@ -2312,7 +2359,7 @@ module.exports = React.createClass({displayName: "exports",
                     React.createElement("input", {
                         type: this.getResponseType(), 
                         step: this.getResponseStep(), 
-                        placeholder: "Please provide a response.", 
+                        placeholder: this.props.placeholder || "Please provide a response.", 
                         onChange: this.onChange, 
                         defaultValue: this.props.initValue, 
                         disabled: this.props.disabled
@@ -46808,11 +46855,6 @@ var Header = require('./components/Header.js');
 var Footer = require('./components/Footer.js');
 var Question = require('./components/Question.js'); 
 var Note = require('./components/Note.js'); 
-var MultipleChoice = require('./components/MultipleChoice.js'); 
-var Location = require('./components/Location.js'); 
-var Facility = require('./components/Facility.js'); 
-var Submit = require('./components/Submit.js'); 
-var Splash = require('./components/Splash.js'); 
 
 var MultipleChoice = require('./components/MultipleChoice.js'); 
 var Photo = require('./components/Photo.js'); 
@@ -47272,6 +47314,7 @@ var Application = React.createClass({displayName: "Application",
                     React.createElement(Splash, {
                         ref: "splash", 
                         surveyID: survey.id, 
+                        surveyTitle: survey.title, 
                         language: survey.default_language, 
                         buttonFunction: this.onSubmit}
                     )

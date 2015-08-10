@@ -19,11 +19,6 @@ var Header = require('./components/Header.js');
 var Footer = require('./components/Footer.js');
 var Question = require('./components/Question.js'); 
 var Note = require('./components/Note.js'); 
-var MultipleChoice = require('./components/MultipleChoice.js'); 
-var Location = require('./components/Location.js'); 
-var Facility = require('./components/Facility.js'); 
-var Submit = require('./components/Submit.js'); 
-var Splash = require('./components/Splash.js'); 
 
 var MultipleChoice = require('./components/MultipleChoice.js'); 
 var Photo = require('./components/Photo.js'); 
@@ -483,6 +478,7 @@ var Application = React.createClass({
                     <Splash 
                         ref="splash"
                         surveyID={survey.id}
+                        surveyTitle={survey.title}
                         language={survey.default_language}
                         buttonFunction={this.onSubmit}
                     />

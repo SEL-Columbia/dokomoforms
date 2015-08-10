@@ -55,26 +55,33 @@ module.exports = React.createClass({
     },
 
     getCard: function() {
+        var email = localStorage['submitter_email'] || "anon@anon.org";
+        var title = this.props.surveyTitle[this.props.language];
         if (this.state.count) {
             if (this.state.online) {
+                // Unsynced and online
                 return (
                         <span>
-                        <Card messages={[this.props.surveyID, this.state.count,
-                            [<b>love</b>], "toast", "unsynced and online"]} type={"message-warning"}/>
-
+                        <Card messages={[['You have ',  <b>{this.state.count}</b>, ' unsynced surveys.', ' Please submit them now.'], 
+                            ]} type={"message-warning"}/>
                         <BigButton text={"Submit Completed Surveys"} buttonFunction={this.buttonFunction} /> 
                         </span>
                        )
             } else {
+                // Unsynced and offline
                 return (
-                        <Card messages={[this.props.surveyID, this.state.count, 
-                            [<b>love</b>], "toast", "unsynced and NOT online"]} type={"message-error"}/>
+                        <Card messages={[['You have ',  <b>{this.state.count}</b>, ' unsynced surveys.'], 
+                            'At present, you do not have a network connection — please remember to submit' 
+                                + ' these surveys the next time you do have access to the internet.'
+                        ]} type={"message-warning"}/>
                        )
             }
         } else {
+            // No unsynced surveys
             return (
-                    <Card messages={[this.props.surveyID, this.state.count, 
-                        [<b>love</b>], "toast", "no unsynced"]} type={"message-primary"}/>
+                    <Card messages={[['Hi ', <b>{email}</b>, ' and welcome to the ', {title}, <br/>], 
+                        ['If you have any questions regarding the survey, please ', <u>contact the survey adminstrator</u>]]} 
+                    type={"message-primary"}/>
                    )
         }
     },
