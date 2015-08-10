@@ -128,7 +128,6 @@ class GenerateToken(BaseHandler):  # We should probably do this in JS
         with self.session.begin():
             user.token = bcrypt_sha256.encrypt(token).encode()
             user.token_expiration = datetime.now() + timedelta(days=60)
-            self.session.add(user)
         self.write(OrderedDict((
             ('token', token),
             ('expires_on', user.token_expiration.isoformat()),

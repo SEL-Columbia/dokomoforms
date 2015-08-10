@@ -317,19 +317,18 @@ class Photo(Base):
 
 def add_new_photo_to_session(session, *, id, **kwargs):
     """Create a new Photo and update the referenced PhotoAnswer."""
+    try:
+        answer = (
+            session
+            .query(PhotoAnswer)
+            .filter_by(main_answer=id)
+            .one()
+        )
+    except NoResultFound:
+        raise PhotoIdDoesNotExistError(id)
     with session.begin():
-        try:
-            answer = (
-                session
-                .query(PhotoAnswer)
-                .filter_by(main_answer=id)
-                .one()
-            )
-        except NoResultFound:
-            raise PhotoIdDoesNotExistError(id)
         answer.photo = Photo(id=id, **kwargs)
         answer.actual_photo_id = answer.main_answer
-        session.add(answer)
     return answer.photo
 
 
