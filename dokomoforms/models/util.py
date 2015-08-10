@@ -307,11 +307,13 @@ def last_update_time() -> sa.Column:
     )
 
 
-def get_model(session, model_cls, model_id):
+def get_model(session, model_cls, model_id, exception=None):
     """Throw an error if session.query.get(model_id) returns None."""
     model = session.query(model_cls).get(model_id)
     if model is None:
-        raise NoResultFound((model_cls, model_id))
+        if exception is None:
+            exception = NoResultFound((model_cls, model_id))
+        raise exception
     return model
 
 

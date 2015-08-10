@@ -1,8 +1,6 @@
 """TornadoResource class for dokomoforms.models.submission.Submission."""
 import restless.exceptions as exc
 
-from sqlalchemy.orm.exc import NoResultFound
-
 from dokomoforms.api import BaseResource
 from dokomoforms.models import (
     Survey, Submission, User,
@@ -15,13 +13,9 @@ from dokomoforms.exc import RequiredQuestionSkipped
 
 
 def _create_answer(session, answer_dict) -> Answer:
-    try:
-        survey_node_id = answer_dict['survey_node_id']
-        survey_node = get_model(session, SurveyNode, survey_node_id)
-    except NoResultFound:
-        raise exc.BadRequest(
-            'survey_node not found: {}'.format(survey_node_id)
-        )
+    survey_node_id = answer_dict['survey_node_id']
+    error = exc.BadRequest('survey_node not found: {}'.format(survey_node_id))
+    survey_node = get_model(session, SurveyNode, survey_node_id, error)
     answer_dict['survey_node'] = survey_node
     return construct_answer(**answer_dict)
 
@@ -119,12 +113,10 @@ class SubmissionResource(BaseResource):
         Uses the current_user_model (i.e. logged-in user) as creator.
         """
         survey_id = self.data.pop('survey_id')
-        try:
-            survey = self._get_model(survey_id, model_cls=Survey)
-        except NoResultFound:
-            raise exc.BadRequest(
-                'The survey could not be found: {}'.format(survey_id)
-            )
+        error = exc.BadRequest(
+            'The survey could not be found: {}'.format(survey_id)
+        )
+        survey = self._get_model(survey_id, model_cls=Survey, exception=error)
         return _create_submission(self, survey)
 
 

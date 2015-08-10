@@ -83,11 +83,11 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         """The handler's current_user."""
         return self.r_handler.current_user
 
-    def _get_model(self, model_id, model_cls=None):
+    def _get_model(self, model_id, model_cls=None, exception=None):
         """Get an instance of this model class by id."""
         if model_cls is None:
             model_cls = self.resource_type
-        return get_model(self.session, model_cls, model_id)
+        return get_model(self.session, model_cls, model_id, exception)
 
     def _query_arg(self, argument_name, output=None, default=None):
         """Get a useful query parameter argument."""
