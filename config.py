@@ -19,6 +19,7 @@ db_database = 'doko'
 db_user = 'postgres'
 db_password = 'whatever your password is'
 organization = 'unconfigured organization'
+revisit_url = 'http://localhost:3000/api/v0/facilities.json'
 
 https = True
 

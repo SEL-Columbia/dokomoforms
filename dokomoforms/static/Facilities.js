@@ -1,4 +1,4 @@
-var REVISIT_URL = "http://localhost:3000/api/v0/facilities.json";
+var revisit_url = 'http://localhost:1000/api/v0/facilities.json';
 
 var $ = require('jquery');
 var LZString = require('lz-string');
@@ -144,7 +144,7 @@ var FacilityTree = function(nlat, wlng, slat, elng, db) {
 
     // Revisit ajax req
     $.ajax({
-        url: REVISIT_URL,
+        url: revisit_url,
         data: {
             within: self.nlat + "," + self.wlng + "," + self.slat + "," + self.elng,
             compressed: 'anything can be here',
@@ -160,7 +160,7 @@ var FacilityTree = function(nlat, wlng, slat, elng, db) {
         },
     });
 
-    console.log(REVISIT_URL, "?within=", 
+    console.log(revisit_url, "?within=", 
             self.nlat + "," + self.wlng + "," + self.slat + "," + self.elng, 
             "&compressed");
 
