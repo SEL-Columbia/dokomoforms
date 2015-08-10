@@ -203,6 +203,7 @@ class TestAuth(DriverTest):
             .find_element_by_id('authentication_email')
             .send_keys('test@mockmyid.com', Keys.RETURN)
         )
+        self.drv.implicitly_wait(5)
         self.switch_window(go_back=True)
         self.wait_for_element('UserDropdown', timeout=10)
         self.assertIn('Recent Submissions', self.drv.page_source)
