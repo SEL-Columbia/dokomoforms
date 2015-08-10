@@ -19,6 +19,9 @@ db_database = 'doko'
 db_user = 'postgres'
 db_password = 'whatever your password is'
 organization = 'unconfigured organization'
+
+# To override this value you must specify it in local_config.py
+# You cannot specify it as a command line argument to webapp.py
 revisit_url = 'http://localhost:3000/api/v0/facilities.json'
 
 https = True
