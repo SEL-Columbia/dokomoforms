@@ -136,7 +136,7 @@ class DriverTest(tests.util.DokoHTTPTest):
             )
         except urllib.error.URLError:
             self.fail('Sauce Connect failure. Did you start Sauce Connect?')
-        self.drv.implicitly_wait(10)
+        self.drv.implicitly_wait(15)
 
     def _set_sauce_status(self):
         credentials = '{}:{}'.format(self.username, self.access_key).encode()
