@@ -94,7 +94,7 @@ class DriverTest(tests.util.DokoHTTPTest):
             self.platform = 'Linux'
             return
 
-        self.username = os.environ.get('SAUCE_USERAME', SAUCE_USERNAME)
+        self.username = os.environ.get('SAUCE_USERNAME', SAUCE_USERNAME)
         self.access_key = os.environ.get('SAUCE_ACCESS_KEY', SAUCE_ACCESS_KEY)
         browser_config = os.environ.get('BROWSER', DEFAULT_BROWSER)
         values = (self.username, self.access_key, browser_config)
