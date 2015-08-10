@@ -9,7 +9,6 @@ from restless.tnd import TornadoResource
 import restless.exceptions as exc
 
 from sqlalchemy import text, func
-from sqlalchemy.sql.expression import false
 from sqlalchemy.sql.functions import count
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
@@ -277,7 +276,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
             )
 
         if not deleted:
-            query = query.filter(model_cls.deleted == false())
+            query = query.filter(~model_cls.deleted)
 
         if type_constraint is not None:
             query = query.filter(model_cls.type_constraint == type_constraint)
