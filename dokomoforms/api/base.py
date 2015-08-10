@@ -287,12 +287,13 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         for attribute_name, direction in order_by_text:
             try:
                 order = getattr(model_cls, attribute_name)
-                directions = {'asc': order.asc, 'desc': order.desc}
-                order = directions[direction.lower()]().nullslast()
             except AttributeError:
                 order = text(
                     '{} {} NULLS LAST'.format(attribute_name, direction)
                 )
+            else:
+                directions = {'asc': order.asc, 'desc': order.desc}
+                order = directions[direction.lower()]().nullslast()
             query = query.order_by(order)
 
         if limit is not None:
