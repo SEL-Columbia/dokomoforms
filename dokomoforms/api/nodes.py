@@ -19,11 +19,11 @@ class NodeResource(BaseResource):
 
     def create(self):
         """Create a new node."""
+        is_mc = self.data['type_constraint'] == 'multiple_choice'
         with self.session.begin():
             # create a list of Node models
             # - if the node is a multiple_choice, create Choice models
             # first creating the node.
-            is_mc = self.data['type_constraint'] == 'multiple_choice'
             if is_mc and 'choices' in self.data:
                 self.data['choices'] = [
                     Choice(**choice) for choice in self.data['choices']
