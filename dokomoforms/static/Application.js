@@ -587,6 +587,13 @@ var Application = React.createClass({
 });
 
 init = function(survey) {
+
+    // Listen to appcache updates, reload JS.
+    window.applicationCache.addEventListener('updateready', function() {
+        alert("Application updated, reloading ...");
+        window.location.reload();
+    });
+
     React.render(
             <Application survey={survey}/>,
             document.body
