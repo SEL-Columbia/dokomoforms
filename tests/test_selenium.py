@@ -58,9 +58,11 @@ def setUpModule():
                 '--https=False',
                 '--persona_verification_url='
                 '{}/debug/persona_verify'.format(base),
+                '--revisit_url={}/debug/facilities'.format(base),
             ],
             stdout=DEVNULL, stderr=DEVNULL, preexec_fn=os.setsid
         )
+        time.sleep(1)
 
 
 def kill_webapp():

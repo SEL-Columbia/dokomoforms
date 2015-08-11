@@ -94,3 +94,28 @@ class DebugPersonaHandler(BaseHandler):
     def post(self):
         """The test user has logged in."""
         self.write({'status': 'okay', 'email': 'test_creator@fixtures.com'})
+
+
+class DebugRevisitHandler(BaseHandler):
+
+    """For testing purposes there's no need to hit Revisit proper."""
+
+    def get(self):
+        """Get the same fake facility (always)."""
+        self.write({
+            'facilities': [
+                {
+                    'name': 'cool facility',
+                    'active': True,
+                    'coordinates': [-70, 40],
+                    'properties': {
+                        'sector': 'education',
+                        'type': 'test facility',
+                    },
+                    'uuid': '5a80d81daecfcfa9084a19c5',
+                },
+            ],
+            'offset': 0,
+            'limit': 25,
+            'total': 1,
+        })

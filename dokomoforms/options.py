@@ -29,10 +29,16 @@ define('https', help=dev_help, type=bool)
 define('organization', help='the name of your organization')
 
 persona_help = (
-    'the URL for login verification. Do not change this without a good reason'
+    'the URL for login verification. Do not change this without a good reason.'
 )
 persona_url = 'https://verifier.login.persona.org/verify'
 define('persona_verification_url', default=persona_url, help=persona_help)
+
+revisit_url = 'http://revisit.global/api/v0/facilities.json'
+revisit_help = (
+    'the URL for facility data. Do not change this without a good reason.'
+)
+define('revisit_url', default=revisit_url, help=revisit_help)
 
 # Database options
 define('schema', help='database schema name')

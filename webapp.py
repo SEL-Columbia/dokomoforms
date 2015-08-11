@@ -234,7 +234,8 @@ class Application(tornado.web.Application):
                     handlers.DebugUserCreationHandler),
                 url(r'/debug/login/(.+)/?', handlers.DebugLoginHandler),
                 url(r'/debug/logout/?', handlers.DebugLogoutHandler),
-                url(r'/debug/persona_verify/?', handlers.DebugPersonaHandler)
+                url(r'/debug/persona_verify/?', handlers.DebugPersonaHandler),
+                url(r'/debug/facilities/?', handlers.DebugRevisitHandler),
             ]
 
         settings = {

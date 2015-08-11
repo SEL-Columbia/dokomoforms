@@ -10,7 +10,7 @@ from dokomoforms.handlers.view.admin import (
 from dokomoforms.handlers.view.enumerate import Enumerate
 from dokomoforms.handlers.debug import (
     DebugUserCreationHandler, DebugLoginHandler, DebugLogoutHandler,
-    DebugPersonaHandler
+    DebugPersonaHandler, DebugRevisitHandler
 )
 
 __all__ = (
@@ -20,5 +20,5 @@ __all__ = (
     'ViewSubmissionHandler', 'VisualizationHandler',
     'Enumerate',
     'DebugUserCreationHandler', 'DebugLoginHandler', 'DebugLogoutHandler',
-    'DebugPersonaHandler',
+    'DebugPersonaHandler', 'DebugRevisitHandler',
 )
