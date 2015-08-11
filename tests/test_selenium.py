@@ -1,5 +1,6 @@
 """Front end tests."""
 import base64
+from decimal import Decimal
 from distutils.version import StrictVersion
 import functools
 import json
@@ -8,6 +9,7 @@ import os
 from subprocess import check_output, Popen, STDOUT, DEVNULL, CalledProcessError
 import signal
 import sys
+import time
 import unittest
 import urllib.error
 
@@ -26,6 +28,8 @@ if not SAUCE_CONNECT:
 SAUCE_USERNAME = getattr(config, 'SAUCE_USERNAME', None)
 SAUCE_ACCESS_KEY = getattr(config, 'SAUCE_ACCESS_KEY', None)
 DEFAULT_BROWSER = getattr(config, 'DEFAULT_BROWSER', None)
+
+from dokomoforms.models import Survey, Submission, Photo
 
 
 base = 'http://localhost:9999'
@@ -49,6 +53,7 @@ def setUpModule():
             [
                 'python', 'webapp.py',
                 '--port=9999',
+                '--schema=doko_test',
                 '--debug=True',
                 '--https=False',
                 '--persona_verification_url='
@@ -100,9 +105,13 @@ class DriverTest(tests.util.DokoHTTPTest):
 
         self.passed = False
 
+        f_profile = webdriver.FirefoxProfile()
+        f_profile.set_preference('media.navigator.permission.disabled', True)
+        f_profile.update_preferences()
+
         if not SAUCE_CONNECT:
-            self.drv = webdriver.Firefox()
-            self.browser = 'Firefox'
+            self.drv = webdriver.Firefox(firefox_profile=f_profile)
+            self.browser = 'firefox'
             self.platform = 'Linux'
             return
 
@@ -119,7 +128,7 @@ class DriverTest(tests.util.DokoHTTPTest):
         configs = browser_config.split(':')
         self.browser, self.version, self.platform, *other = configs
         caps = {'browserName': self.browser, 'platform': self.platform}
-        if self.browser in {'android': 'iPhone'}:
+        if self.browser in {'android', 'iPhone'}:
             caps['deviceName'] = other[0]
             caps['device-orientation'] = 'portrait'
         if self.version:
@@ -142,9 +151,16 @@ class DriverTest(tests.util.DokoHTTPTest):
             ))
         hub_url = '{}:{}@localhost:4445'.format(self.username, self.access_key)
         cmd_executor = 'http://{}/wd/hub'.format(hub_url)
+        browser_profile = None
+        if self.browser == 'firefox':
+            browser_profile = f_profile
+        elif self.browser == 'chrome':
+            caps['disable-user-media-security'] = True
         try:
             self.drv = webdriver.Remote(
-                desired_capabilities=caps, command_executor=cmd_executor
+                desired_capabilities=caps,
+                command_executor=cmd_executor,
+                browser_profile=browser_profile,
             )
         except urllib.error.URLError:
             self.fail('Sauce Connect failure. Did you start Sauce Connect?')
@@ -185,6 +201,19 @@ class DriverTest(tests.util.DokoHTTPTest):
         load = loader((by, identifier))
         WebDriverWait(self.drv, timeout).until(load)
 
+    def set_geolocation(self, lat=40, lng=-70):
+        self.drv.execute_script(
+            '''
+            window.navigator.geolocation.getCurrentPosition =
+              function (success) {{
+                var position = {{
+                  "coords": {{"latitude": "{}", "longitude": "{}"}}
+                }};
+                success(position);
+              }};
+            '''.format(lat, lng)
+        )
+
 
 class TestAuth(DriverTest):
     @unittest.skipIf(
@@ -205,3 +234,262 @@ class TestAuth(DriverTest):
         self.switch_window(go_back=True)
         self.wait_for_element('UserDropdown', timeout=10)
         self.assertIn('Recent Submissions', self.drv.page_source)
+
+
+class TestEnumerate(DriverTest):
+    def get_single_node_survey_id(self, question_type):
+        title = question_type + '_survey'
+        return (
+            self.session
+            .query(Survey.id)
+            .filter(Survey.title['English'].astext == title)
+            .scalar()
+        )
+
+    def get_last_submission(self, survey_id):
+        return (
+            self.session
+            .query(Submission)
+            .filter_by(survey_id=survey_id)
+            .order_by(Submission.save_time.desc())
+            .limit(1)
+            .one()
+        )
+
+    @report_success_status
+    def test_single_integer_question(self):
+        survey_id = self.get_single_node_survey_id('integer')
+        existing_submission = self.get_last_submission(survey_id)
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.drv.find_element_by_class_name('navigate-right').click()
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3')
+        )
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.drv.find_elements_by_tag_name('button')[0].click()
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertIsNot(existing_submission, new_submission)
+        self.assertEqual(new_submission.answers[0].answer, 3)
+
+    @report_success_status
+    def test_single_decimal_question(self):
+        survey_id = self.get_single_node_survey_id('decimal')
+        existing_submission = self.get_last_submission(survey_id)
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.drv.find_element_by_class_name('navigate-right').click()
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3.3')
+        )
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.drv.find_elements_by_tag_name('button')[0].click()
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertIsNot(existing_submission, new_submission)
+        self.assertEqual(new_submission.answers[0].answer, Decimal('3.3'))
+
+    @report_success_status
+    def test_single_text_question(self):
+        survey_id = self.get_single_node_survey_id('text')
+        existing_submission = self.get_last_submission(survey_id)
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.drv.find_element_by_class_name('navigate-right').click()
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('some text')
+        )
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.drv.find_elements_by_tag_name('button')[0].click()
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertIsNot(existing_submission, new_submission)
+        self.assertEqual(new_submission.answers[0].answer, 'some text')
+
+    @report_success_status
+    def test_single_photo_question(self):
+        survey_id = self.get_single_node_survey_id('photo')
+        existing_submission = self.get_last_submission(survey_id)
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.wait_for_element('video', by=By.TAG_NAME, visible=True)
+        time.sleep(1)
+        (
+            self.drv
+            .find_element_by_css_selector(
+                '.content > span:nth-child(2) > div:nth-child(1)'
+                ' > button:nth-child(1)'
+            )
+            .click()
+        )
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.drv.find_elements_by_tag_name('button')[0].click()
+
+        time.sleep(1)
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertIsNot(existing_submission, new_submission)
+        answer = new_submission.answers[0]
+        response = answer.response
+        self.assertIsNotNone(response['response'])
+        self.assertIs(type(response['response']), str)
+
+        photo = self.session.query(Photo).filter_by(id=answer.answer).one()
+        self.assertIsNotNone(photo)
+
+    @report_success_status
+    def test_single_date_question(self):
+        survey_id = self.get_single_node_survey_id('date')
+        existing_submission = self.get_last_submission(survey_id)
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.drv.find_element_by_class_name('navigate-right').click()
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('2015/08/11')
+        )
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.drv.find_elements_by_tag_name('button')[0].click()
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertIsNot(existing_submission, new_submission)
+        self.assertEqual(
+            new_submission.answers[0].answer.isoformat(),
+            '2015-08-11'
+        )
+
+    @report_success_status
+    def test_single_time_question(self):
+        survey_id = self.get_single_node_survey_id('time')
+        existing_submission = self.get_last_submission(survey_id)
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.drv.find_element_by_class_name('navigate-right').click()
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3:33 PM')
+        )
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.drv.find_elements_by_tag_name('button')[0].click()
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertIsNot(existing_submission, new_submission)
+        answer = new_submission.answers[0].answer.isoformat()
+        answer_parts = answer.split('-')
+        self.assertEqual(len(answer_parts), 2)
+        self.assertEqual(answer_parts[0], '15:33:00')
+
+    @report_success_status
+    def test_single_timestamp_question(self):
+        survey_id = self.get_single_node_survey_id('timestamp')
+        existing_submission = self.get_last_submission(survey_id)
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.drv.find_element_by_class_name('navigate-right').click()
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('2015/08/11 3:33 PM')
+        )
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.drv.find_elements_by_tag_name('button')[0].click()
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertIsNot(existing_submission, new_submission)
+        answer = new_submission.answers[0].answer
+        date_answer = answer.date()
+        self.assertEqual(date_answer.isoformat(), '2015-08-11')
+        time_answer = answer.timetz()
+        answer_parts = time_answer.isoformat().split('-')
+        self.assertEqual(len(answer_parts), 2, msg=answer_parts)
+        self.assertEqual(answer_parts[0], '15:33:00')
+
+    @report_success_status
+    def test_single_location_question(self):
+        survey_id = self.get_single_node_survey_id('location')
+        existing_submission = self.get_last_submission(survey_id)
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.set_geolocation()
+        (
+            self.drv
+            .find_element_by_css_selector(
+                '.content > span:nth-child(2) > div:nth-child(1)'
+                ' > button:nth-child(1)'
+            )
+            .click()
+        )
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.drv.find_elements_by_tag_name('button')[0].click()
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertIsNot(existing_submission, new_submission)
+        self.assertEqual(
+            new_submission.answers[0].response['response'],
+            {'lat': 40, 'lng': -70}
+        )
+
+    # @report_success_status
+    # def test_single_facility_question(self):
+    #     survey_id = self.get_single_node_survey_id('facility')
+    #     existing_submission = self.get_last_submission(survey_id)
+
+    #     self.get('/enumerate/{}'.format(survey_id))
+    #     self.wait_for_element('navigate-right', By.CLASS_NAME)
+    #     self.drv.find_element_by_class_name('navigate-right').click()
+    #     self.set_geolocation()
+    #     while 1:pass
+    #     (
+    #         self.drv
+    #         .find_element_by_css_selector(
+    #             '.content > span:nth-child(2) > div:nth-child(1)'
+    #             ' > button:nth-child(1)'
+    #         )
+    #         .click()
+    #     )
+    #     self.drv.find_element_by_class_name('navigate-right').click()
+    #     self.drv.find_element_by_class_name('navigate-right').click()
+    #     self.drv.find_elements_by_tag_name('button')[0].click()
+
+    #     new_submission = self.get_last_submission(survey_id)
+
+    #     self.assertIsNot(existing_submission, new_submission)
+    #     self.assertEqual(
+    #         new_submission.answers[0].response['response'],
+    #         {'lat': 40, 'lng': -70}
+    #     )

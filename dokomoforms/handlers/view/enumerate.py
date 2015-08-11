@@ -35,4 +35,5 @@ class Enumerate(BaseHandler):
             self.redirect(url)
             return
 
+        # pass in the revisit url
         self.render('view_enumerate.html', survey=survey)
