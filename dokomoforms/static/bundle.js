@@ -1,5 +1,5 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var revisit_url = 'http://localhost:3000/api/v0/facilities.json';
+//var revisit_url = 'http://localhost:3000/api/v0/facilities.json';
 
 var $ = require('jquery');
 var LZString = require('lz-string');
@@ -46903,6 +46903,9 @@ function hasOwnProperty(obj, prop) {
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./support/isBuffer":293,"_process":292,"inherits":291}],295:[function(require,module,exports){
+//XXX Set on init
+revisit_url = "";
+
 var React = require('react');
 var $ = require('jquery');
 var PouchDB  = require('pouchdb');
@@ -47491,7 +47494,9 @@ var Application = React.createClass({displayName: "Application",
     }
 });
 
-init = function(survey) {
+init = function(survey, url) {
+    // Set revisit url
+    revisit_url = url;
 
     // Listen to appcache updates, reload JS.
     window.applicationCache.addEventListener('updateready', function() {
