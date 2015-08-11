@@ -14,6 +14,11 @@ var PhotoAPI = require('../../PhotoAPI.js');
 module.exports = React.createClass({
 
     wipeActive: function() {
+        // Confirm their intent
+        var nuke = confirm("Warning: Active survey and photos will be lost.");
+        if (!nuke) 
+            return;
+
         var self = this;
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var questionIDs = Object.keys(survey);
@@ -44,7 +49,21 @@ module.exports = React.createClass({
         localStorage[this.props.surveyID] = JSON.stringify({});
         // Wipe location info
         localStorage['location'] = JSON.stringify({});
-        location.reload();
+        window.location.reload();
+    },
+
+    
+    wipeAll: function() {
+        var self = this;
+        // Confirm their intent
+        var nuke = confirm("Warning: All stored surveys and photos will be lost.");
+        if (!nuke) 
+            return;
+
+        localStorage.clear();
+        self.props.db.destroy().then(function() {
+            window.location.reload();
+        });
     },
 
     render: function() {
@@ -52,19 +71,12 @@ module.exports = React.createClass({
         return (
             <div className="title_menu">
                 <div className="title_menu_option menu_restart"
-                    onClick={function() {
-                        self.wipeActive();
-                    }}
+                    onClick={self.wipeActive}
                 >
                     Cancel survey
                 </div>
                 <div className="title_menu_option menu_clear"
-                    onClick={function() {
-                        localStorage.clear();
-                        self.props.db.destroy().then(function() {
-                            location.reload();
-                        });
-                    }}
+                    onClick={self.wipeAll}
                 >
                     Clear all saved surveys
                 </div>

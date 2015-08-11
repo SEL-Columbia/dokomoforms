@@ -2168,6 +2168,11 @@ var PhotoAPI = require('../../PhotoAPI.js');
 module.exports = React.createClass({displayName: "exports",
 
     wipeActive: function() {
+        // Confirm their intent
+        var nuke = confirm("Warning: Active survey and photos will be lost.");
+        if (!nuke) 
+            return;
+
         var self = this;
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var questionIDs = Object.keys(survey);
@@ -2198,7 +2203,21 @@ module.exports = React.createClass({displayName: "exports",
         localStorage[this.props.surveyID] = JSON.stringify({});
         // Wipe location info
         localStorage['location'] = JSON.stringify({});
-        location.reload();
+        window.location.reload();
+    },
+
+    
+    wipeAll: function() {
+        var self = this;
+        // Confirm their intent
+        var nuke = confirm("Warning: All stored surveys and photos will be lost.");
+        if (!nuke) 
+            return;
+
+        localStorage.clear();
+        self.props.db.destroy().then(function() {
+            window.location.reload();
+        });
     },
 
     render: function() {
@@ -2206,19 +2225,12 @@ module.exports = React.createClass({displayName: "exports",
         return (
             React.createElement("div", {className: "title_menu"}, 
                 React.createElement("div", {className: "title_menu_option menu_restart", 
-                    onClick: function() {
-                        self.wipeActive();
-                    }
+                    onClick: self.wipeActive
                 }, 
                     "Cancel survey"
                 ), 
                 React.createElement("div", {className: "title_menu_option menu_clear", 
-                    onClick: function() {
-                        localStorage.clear();
-                        self.props.db.destroy().then(function() {
-                            location.reload();
-                        });
-                    }
+                    onClick: self.wipeAll
                 }, 
                     "Clear all saved surveys"
                 )
@@ -47479,6 +47491,13 @@ var Application = React.createClass({displayName: "Application",
 });
 
 init = function(survey) {
+
+    // Listen to appcache updates, reload JS.
+    window.applicationCache.addEventListener('updateready', function() {
+        alert("Application updated, reloading ...");
+        window.location.reload();
+    });
+
     React.render(
             React.createElement(Application, {survey: survey}),
             document.body
