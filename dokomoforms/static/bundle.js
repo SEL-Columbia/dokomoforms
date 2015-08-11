@@ -1850,6 +1850,7 @@ module.exports = React.createClass({displayName: "exports",
                 // Unsynced and offline
                 return (
                         React.createElement(Card, {messages: [['You have ',  React.createElement("b", null, this.state.count), ' unsynced surveys.'], 
+                            '',
                             'At present, you do not have a network connection — please remember to submit' 
                                 + ' these surveys the next time you do have access to the internet.'
                         ], type: "message-warning"})

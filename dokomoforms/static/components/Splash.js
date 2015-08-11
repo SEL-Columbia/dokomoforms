@@ -71,6 +71,7 @@ module.exports = React.createClass({
                 // Unsynced and offline
                 return (
                         <Card messages={[['You have ',  <b>{this.state.count}</b>, ' unsynced surveys.'], 
+                            '',
                             'At present, you do not have a network connection — please remember to submit' 
                                 + ' these surveys the next time you do have access to the internet.'
                         ]} type={"message-warning"}/>
