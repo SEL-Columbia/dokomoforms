@@ -188,10 +188,9 @@ class DriverTest(tests.util.DokoHTTPTest):
 
 class TestAuth(DriverTest):
     @unittest.skipIf(
-        (not SAUCE_CONNECT) and (os.environ.get('TRAVIS', False)),
-        'This test just refuses to work with xvfb on Travis.'
+        os.environ.get('TRAVIS', False),
+        'This test just refuses to work on Travis.'
     )
-    @report_success_status
     def test_login(self):
         self.get('/')
         self.wait_for_element('btn-login', By.CLASS_NAME)
