@@ -1,5 +1,4 @@
 """Pages pertaining to debug-specific functionality."""
-
 from tornado.escape import json_encode
 import tornado.web
 
@@ -102,20 +101,7 @@ class DebugRevisitHandler(BaseHandler):
 
     def get(self):
         """Get the same fake facility (always)."""
-        self.write({
-            'facilities': [
-                {
-                    'name': 'cool facility',
-                    'active': True,
-                    'coordinates': [-70, 40],
-                    'properties': {
-                        'sector': 'education',
-                        'type': 'test facility',
-                    },
-                    'uuid': '5a80d81daecfcfa9084a19c5',
-                },
-            ],
-            'offset': 0,
-            'limit': 25,
-            'total': 1,
-        })
+        with open('tests/fake_revisit_facilities.json') as facilities:
+            result = facilities.read()
+        self.write(result)
+        self.set_header('Content-Type', 'application/json')
