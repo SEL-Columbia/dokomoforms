@@ -85,7 +85,7 @@ with session.begin():
                     ) for i in range(1) if node_type == 'integer'],
 
             ) for node_type in node_types
-            if node_type != 'note' and node_type != 'multiple_choice'
+            if node_type != 'note' and node_type != 'multiple_choice' and node_type != 'decimal'
         ],
     )
 
@@ -109,7 +109,7 @@ with session.begin():
 
     survey.nodes.append(models.construct_survey_node(
         allow_dont_know=True,
-        required=False,
+        required=True,
         node=models.construct_node(
             type_constraint='multiple_choice',
             title={'English': 'multiple choice' + ' node'},
@@ -123,6 +123,36 @@ with session.begin():
                     },
                 ) for i in range(3)
             ],
+        ),
+    ))
+
+    survey.nodes.append(models.construct_survey_node(
+        allow_dont_know=True,
+        required=True,
+        node=models.construct_node(
+            type_constraint='decimal',
+            title={'English': 'decimal' + ' node'},
+            hint={'English': '(1 to 10.0] only'},
+            allow_multiple=True,
+            logic={
+                'min': 1.0,
+                'max': 10.0,
+            }
+        ),
+    ))
+
+    survey.nodes.append(models.construct_survey_node(
+        allow_dont_know=True,
+        required=False,
+        node=models.construct_node(
+            type_constraint='date',
+            title={'English': 'date' + ' node'},
+            hint={'English': '(Jan 1 2011 to Dec 31 2014] only'},
+            allow_multiple=True,
+            logic={
+                'min': 'Jan 1 2011',
+                'max': 'Dec 31 2014',
+            }
         ),
     ))
 
