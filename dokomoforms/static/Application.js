@@ -31,7 +31,7 @@ var Submit = require('./components/Submit.js');
 var Splash = require('./components/Splash.js'); 
 
 var PhotoAPI = require('./PhotoAPI.js');
-var FacilityTree = require('./Facilities.js');
+var FacilityTree = require('./FacilityAPI.js');
 
 /* 
  * Create Single Page App with three main components
@@ -103,6 +103,7 @@ var Application = React.createClass({
             nextQuestion = -1
             nextState = this.state.states.SPLASH
             this.onSave();
+            //XXX Fire Modal for submitting here
         }
 
         if (this.state.states.QUESTION === nextState && showDontKnow) {
@@ -168,8 +169,10 @@ var Application = React.createClass({
         var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
         // Get array of unsynced submissions to this survey
         var unsynced_submissions = unsynced_surveys[this.props.survey.id] || [];
-        // Get array of unsynced photo id's for given survey
+        // Get array of unsynced photo id's
         var unsynced_photos = JSON.parse(localStorage['unsynced_photos'] || '[]');
+        // Get array of unsynced facilities
+        var unsynced_facilities = JSON.parse(localStorage['unsynced_facilities'] || '[]');
 
         // Build new submission
         var answers = []; 
@@ -178,12 +181,30 @@ var Application = React.createClass({
             var responses = survey[question.id] || [];
             responses.forEach(function(response) {
 
+                // Photos need to synced independantly from survey
                 if (question.type_constraint === 'photo') {
                    unsynced_photos.push({
                        'surveyID': self.props.survey.id,
                        'photoID': response.response,
                        'questionID': question.id
                    });
+                }
+
+                // New facilities need to be stored seperatly from survey
+                if (question.type_constraint === 'facility') {
+                    console.log("Facility:", response);
+                    if (response.metadata && response.metadata.is_new) {
+                        console.log("Adding new facility data");
+                        self.state.trees[question.id]
+                            .addFacility(response.response.lat, response.response.lng, response.response);
+
+                        console.log("Storing facility in unsynced array");
+                        unsynced_facilities.push({
+                            'surveyID': self.props.survey.id,
+                            'facilityData': response.response,
+                            'questionID': question.id
+                        });
+                    } 
                 }
 
                 answers.push({
@@ -220,6 +241,9 @@ var Application = React.createClass({
         // Store photos 
         localStorage['unsynced_photos'] = JSON.stringify(unsynced_photos);
 
+        // Store facilities
+        localStorage['unsynced_facilities'] = JSON.stringify(unsynced_facilities);
+
         // Wipe active survey
         localStorage[this.props.survey.id] = JSON.stringify({});
 
@@ -245,7 +269,10 @@ var Application = React.createClass({
         var unsynced_submissions = unsynced_surveys[this.props.survey.id] || [];
         // Get all unsynced photos.
         var unsynced_photos = JSON.parse(localStorage['unsynced_photos'] || '[]');
+        // Get all unsynced facilities
+        var unsynced_facilities = JSON.parse(localStorage['unsynced_facilities'] || '[]');
 
+        // Post surveys to Dokomoforms
         unsynced_submissions.forEach(function(survey) {
             // Update submit time
             survey.submission_time = new Date().toISOString();
@@ -300,6 +327,7 @@ var Application = React.createClass({
             console.log('survey', '/api/v0/surveys/'+survey.survey_id+'/submit');
         });
 
+        // Post photos to dokomoforms
         unsynced_photos.forEach(function(photo, idx) {
             if (photo.surveyID === self.props.survey.id) {
                 PhotoAPI.getBase64(self.state.db, photo.photoID, function(err, base64){
@@ -320,7 +348,6 @@ var Application = React.createClass({
                         success: function(photo) {
                             console.log("Photo success:", photo);
                             var unsynced_photos = JSON.parse(localStorage['unsynced_photos'] || '[]');
-
                             // Find photo
                             var idx = -1;
                             unsynced_photos.forEach(function(uphoto, i) {
@@ -331,7 +358,6 @@ var Application = React.createClass({
                                             console.log("Couldnt remove from db:", err);
                                             return;
                                         }
-
                                         console.log("Removed:", result);
                                     });
                                     return false;
@@ -354,6 +380,46 @@ var Application = React.createClass({
                         }
                     });
                 });
+            }
+        });
+        
+        // Post facilities to Revisit
+        unsynced_facilities.forEach(function(facility, idx) {
+            if (facility.surveyID === self.props.survey.id) {
+                self.state.trees[facility.questionID].postFacility(facility.facilityData, 
+                    // Success
+                    function(revisitFacility) {
+                        console.log("Successfully posted facility", revisitFacility, facility); 
+                        var unsynced_facilities = JSON.parse(localStorage['unsynced_facilities'] || '[]');
+
+                        // Find facility
+                        var idx = -1;
+                        console.log(idx, unsynced_facilities.length);
+                        unsynced_facilities.forEach(function(ufacility, i) {
+                            var ufacilityID = ufacility.facilityData.facility_id;
+                            var facilityID = facility.facilityData.facility_id;
+                            if (ufacilityID === facilityID) {
+                                idx = i;
+                                return false;
+                            }
+                            return true;
+                        });
+
+                        // What??
+                        if (idx === -1)
+                            return;
+
+                        console.log(idx, unsynced_facilities.length);
+                        unsynced_facilities.splice(idx, 1);
+
+                        localStorage['unsynced_facilities'] = JSON.stringify(unsynced_facilities);
+                    },
+
+                    // Error
+                    function(revisitFacility) {
+                        console.log("Failed to post facility", err, facility); 
+                    }
+                );
             }
         });
     },

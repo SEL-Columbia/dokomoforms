@@ -1,4 +1,5 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+//XXX set globally on init in application
 //var revisit_url = 'http://localhost:3000/api/v0/facilities.json';
 
 var $ = require('jquery');
@@ -111,7 +112,7 @@ var FacilityTree = function(nlat, wlng, slat, elng, db) {
     facilityNode.prototype.within = function(lat, lng) {
         var self = this;
         return ((lat < self.en[1] && lat >= self.ws[1]) 
-               && (lng > self.ws[0] && lng <= self.es[0]));
+               && (lng > self.ws[0] && lng <= self.en[0]));
     }
 
     facilityNode.prototype.crossesBound = function(nlat, wlng, slat, elng) {
@@ -368,6 +369,7 @@ FacilityTree.prototype.print = function() {
     this.root.print();
 }
 
+
 FacilityTree.prototype._getLeaves = function(node) {
     var self = this;
 
@@ -427,15 +429,66 @@ FacilityTree.prototype.getCount = function() {
     }, 0);
 };
 
+FacilityTree.prototype.formatFacility = function(facilityData) {
+    var facility = {};
+    facility.uuid = facilityData.facility_id; 
+    facility.name = facilityData.facility_name; 
+    facility.properties = {sector: facilityData.facility_sector};
+    facility.coordinates = [facilityData.lng, facilityData.lat];
+    return facility;
+};
 
-// Helper get localStorage size
-window.ls = function() {
-    return Object.keys(localStorage).reduce(function(sum, key) {
-        return localStorage[key].length + sum
-    }, 0);
+FacilityTree.prototype.addFacility = function(lat, lng, facilityData, format) {
+    var self = this;
+    var leaf = self.getNNode(lat, lng);
+
+    format = Boolean(format) || true;
+    console.log("formating?", format);
+    var facility = format ? self.formatFacility(facilityData) : facilityData;
+
+    console.log("Before", leaf.count, leaf.uncompressedSize, leaf.compressedSize);
+    leaf.getFacilities().onResolve(function(err, facilities) {
+        if (err) {
+            console.log("Failed to add facility", err);
+            return;
+        }
+
+        console.log("Got facilities:", facilities.length);
+        facilities.push(facility);
+        var facilitiesStr = JSON.stringify(facilities);
+        var facilitiesLZ = [LZString.compressToUTF16(facilitiesStr)] // mongoose_quadtree does this in [] for a reason i do not remember 
+        leaf.setFacilities(facilitiesLZ);
+
+        leaf.count++;
+        leaf.uncompressedSize = facilitiesStr.length || 0;
+        leaf.compressedSize = facilitiesLZ.length || 0;
+        console.log("After", leaf.count, leaf.uncompressedSize, leaf.compressedSize);
+
+    });
 }
 
-console.log("Initilizing ... (wait for request to complete");
+FacilityTree.prototype.postFacility = function(facilityData, successCB, errorCB, format) {
+    var self = this;
+    format = Boolean(format) || true;
+    console.log("formating?", format);
+    var facility = format ? self.formatFacility(facilityData) : facilityData;
+    $.ajax({
+        url: revisit_url,
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(facility),
+        processData: false,
+        dataType: 'json',
+        success: successCB,
+
+        headers: {
+            "Authorization": "Basic " + btoa("dokomoforms" + ":" + "password")
+             //XXX Obsecure basic auth in bundlejs somehow? Force https after?
+        },
+
+        error: errorCB,
+    });
+}
 
 //Nigeria
 //var nlat = 8;
@@ -460,13 +513,13 @@ console.log("Initilizing ... (wait for request to complete");
 //var nyc = {lat: 40.80690, lng:-73.96536}
 //window.nyc = nyc;
 
-module.exports = FacilityTree;
-
 //tree.getCompressedSize() / 1048576
 //tree.getNNearestFacilities(7.353078, 5.118915, 500, 10)
 //tree.getNNearestFacilities(40.80690, -73.96536, 500, 10)
 //tree.getCompressedSize()/tree.getUncompressedSize()
 //tree.getRNodesRad(40.80690, -73.96536, 500)
+
+module.exports = FacilityTree;
 
 },{"jquery":25,"lz-string":26,"mpromise":27}],2:[function(require,module,exports){
 var PouchDB  = require('pouchdb');
@@ -46938,7 +46991,7 @@ var Submit = require('./components/Submit.js');
 var Splash = require('./components/Splash.js'); 
 
 var PhotoAPI = require('./PhotoAPI.js');
-var FacilityTree = require('./Facilities.js');
+var FacilityTree = require('./FacilityAPI.js');
 
 /* 
  * Create Single Page App with three main components
@@ -47010,6 +47063,7 @@ var Application = React.createClass({displayName: "Application",
             nextQuestion = -1
             nextState = this.state.states.SPLASH
             this.onSave();
+            //XXX Fire Modal for submitting here
         }
 
         if (this.state.states.QUESTION === nextState && showDontKnow) {
@@ -47075,8 +47129,10 @@ var Application = React.createClass({displayName: "Application",
         var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
         // Get array of unsynced submissions to this survey
         var unsynced_submissions = unsynced_surveys[this.props.survey.id] || [];
-        // Get array of unsynced photo id's for given survey
+        // Get array of unsynced photo id's
         var unsynced_photos = JSON.parse(localStorage['unsynced_photos'] || '[]');
+        // Get array of unsynced facilities
+        var unsynced_facilities = JSON.parse(localStorage['unsynced_facilities'] || '[]');
 
         // Build new submission
         var answers = []; 
@@ -47085,12 +47141,30 @@ var Application = React.createClass({displayName: "Application",
             var responses = survey[question.id] || [];
             responses.forEach(function(response) {
 
+                // Photos need to synced independantly from survey
                 if (question.type_constraint === 'photo') {
                    unsynced_photos.push({
                        'surveyID': self.props.survey.id,
                        'photoID': response.response,
                        'questionID': question.id
                    });
+                }
+
+                // New facilities need to be stored seperatly from survey
+                if (question.type_constraint === 'facility') {
+                    console.log("Facility:", response);
+                    if (response.metadata && response.metadata.is_new) {
+                        console.log("Adding new facility data");
+                        self.state.trees[question.id]
+                            .addFacility(response.response.lat, response.response.lng, response.response);
+
+                        console.log("Storing facility in unsynced array");
+                        unsynced_facilities.push({
+                            'surveyID': self.props.survey.id,
+                            'facilityData': response.response,
+                            'questionID': question.id
+                        });
+                    } 
                 }
 
                 answers.push({
@@ -47127,6 +47201,9 @@ var Application = React.createClass({displayName: "Application",
         // Store photos 
         localStorage['unsynced_photos'] = JSON.stringify(unsynced_photos);
 
+        // Store facilities
+        localStorage['unsynced_facilities'] = JSON.stringify(unsynced_facilities);
+
         // Wipe active survey
         localStorage[this.props.survey.id] = JSON.stringify({});
 
@@ -47152,7 +47229,10 @@ var Application = React.createClass({displayName: "Application",
         var unsynced_submissions = unsynced_surveys[this.props.survey.id] || [];
         // Get all unsynced photos.
         var unsynced_photos = JSON.parse(localStorage['unsynced_photos'] || '[]');
+        // Get all unsynced facilities
+        var unsynced_facilities = JSON.parse(localStorage['unsynced_facilities'] || '[]');
 
+        // Post surveys to Dokomoforms
         unsynced_submissions.forEach(function(survey) {
             // Update submit time
             survey.submission_time = new Date().toISOString();
@@ -47207,6 +47287,7 @@ var Application = React.createClass({displayName: "Application",
             console.log('survey', '/api/v0/surveys/'+survey.survey_id+'/submit');
         });
 
+        // Post photos to dokomoforms
         unsynced_photos.forEach(function(photo, idx) {
             if (photo.surveyID === self.props.survey.id) {
                 PhotoAPI.getBase64(self.state.db, photo.photoID, function(err, base64){
@@ -47227,7 +47308,6 @@ var Application = React.createClass({displayName: "Application",
                         success: function(photo) {
                             console.log("Photo success:", photo);
                             var unsynced_photos = JSON.parse(localStorage['unsynced_photos'] || '[]');
-
                             // Find photo
                             var idx = -1;
                             unsynced_photos.forEach(function(uphoto, i) {
@@ -47238,7 +47318,6 @@ var Application = React.createClass({displayName: "Application",
                                             console.log("Couldnt remove from db:", err);
                                             return;
                                         }
-
                                         console.log("Removed:", result);
                                     });
                                     return false;
@@ -47261,6 +47340,46 @@ var Application = React.createClass({displayName: "Application",
                         }
                     });
                 });
+            }
+        });
+        
+        // Post facilities to Revisit
+        unsynced_facilities.forEach(function(facility, idx) {
+            if (facility.surveyID === self.props.survey.id) {
+                self.state.trees[facility.questionID].postFacility(facility.facilityData, 
+                    // Success
+                    function(revisitFacility) {
+                        console.log("Successfully posted facility", revisitFacility, facility); 
+                        var unsynced_facilities = JSON.parse(localStorage['unsynced_facilities'] || '[]');
+
+                        // Find facility
+                        var idx = -1;
+                        console.log(idx, unsynced_facilities.length);
+                        unsynced_facilities.forEach(function(ufacility, i) {
+                            var ufacilityID = ufacility.facilityData.facility_id;
+                            var facilityID = facility.facilityData.facility_id;
+                            if (ufacilityID === facilityID) {
+                                idx = i;
+                                return false;
+                            }
+                            return true;
+                        });
+
+                        // What??
+                        if (idx === -1)
+                            return;
+
+                        console.log(idx, unsynced_facilities.length);
+                        unsynced_facilities.splice(idx, 1);
+
+                        localStorage['unsynced_facilities'] = JSON.stringify(unsynced_facilities);
+                    },
+
+                    // Error
+                    function(revisitFacility) {
+                        console.log("Failed to post facility", err, facility); 
+                    }
+                );
             }
         });
     },
@@ -47512,4 +47631,4 @@ init = function(survey, url) {
     );
 };
 
-},{"./Facilities.js":1,"./PhotoAPI.js":2,"./components/Facility.js":3,"./components/Footer.js":4,"./components/Header.js":5,"./components/Location.js":6,"./components/MultipleChoice.js":7,"./components/Note.js":8,"./components/Photo.js":9,"./components/Question.js":10,"./components/Splash.js":11,"./components/Submit.js":12,"./components/baseComponents/BigButton.js":13,"./components/baseComponents/Card.js":14,"./components/baseComponents/DontKnow.js":15,"./components/baseComponents/FacilityRadios.js":16,"./components/baseComponents/LittleButton.js":17,"./components/baseComponents/Message.js":19,"./components/baseComponents/ResponseField.js":21,"./components/baseComponents/ResponseFields.js":22,"./components/baseComponents/Select.js":23,"./components/baseComponents/Title.js":24,"jquery":25,"pouchdb":84,"pouchdb-upsert":29,"react":288}]},{},[295]);
+},{"./FacilityAPI.js":1,"./PhotoAPI.js":2,"./components/Facility.js":3,"./components/Footer.js":4,"./components/Header.js":5,"./components/Location.js":6,"./components/MultipleChoice.js":7,"./components/Note.js":8,"./components/Photo.js":9,"./components/Question.js":10,"./components/Splash.js":11,"./components/Submit.js":12,"./components/baseComponents/BigButton.js":13,"./components/baseComponents/Card.js":14,"./components/baseComponents/DontKnow.js":15,"./components/baseComponents/FacilityRadios.js":16,"./components/baseComponents/LittleButton.js":17,"./components/baseComponents/Message.js":19,"./components/baseComponents/ResponseField.js":21,"./components/baseComponents/ResponseFields.js":22,"./components/baseComponents/Select.js":23,"./components/baseComponents/Title.js":24,"jquery":25,"pouchdb":84,"pouchdb-upsert":29,"react":288}]},{},[295]);
