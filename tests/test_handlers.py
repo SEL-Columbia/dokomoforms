@@ -92,6 +92,13 @@ class TestDebug(DokoHTTPTest):
         )
         self.assertEqual(response.code, 200, msg=response)
 
+    def test_debug_revisit(self):
+        response = self.fetch(
+            '/debug/facilities', method='GET',
+            _logged_in_user=None, _disable_xsrf=False,
+        )
+        self.assertEqual(response.code, 200, msg=response)
+
 
 class TestAuth(DokoHTTPTest):
     @tornado.testing.gen_test
@@ -201,7 +208,9 @@ class TestEnumerate(DokoHTTPTest):
         response_soup = BeautifulSoup(response.body, 'html.parser')
         scripts = response_soup.findAll('script')
         self.assertGreater(len(scripts), 0, msg=response.body)
-        survey = response_soup.findAll('script')[-1].text[6:-3]
+        # find the last script, right split on first comma, take the first
+        # element from the 7th character onward
+        survey = response_soup.findAll('script')[-1].text.rsplit(',', 1)[0][6:]
         try:
             survey = json_decode(survey)
         except ValueError:
@@ -221,7 +230,9 @@ class TestEnumerate(DokoHTTPTest):
         response_soup = BeautifulSoup(response.body, 'html.parser')
         scripts = response_soup.findAll('script')
         self.assertGreater(len(scripts), 0, msg=response.body)
-        survey = response_soup.findAll('script')[-1].text[6:-3]
+        # find the last script, right split on first comma, take the first
+        # element from the 7th character onward
+        survey = response_soup.findAll('script')[-1].text.rsplit(',', 1)[0][6:]
         try:
             survey = json_decode(survey)
         except ValueError:
@@ -252,7 +263,9 @@ class TestEnumerate(DokoHTTPTest):
         response_soup = BeautifulSoup(response.body, 'html.parser')
         scripts = response_soup.findAll('script')
         self.assertGreater(len(scripts), 0, msg=response.body)
-        survey = response_soup.findAll('script')[-1].text[6:-3]
+        # find the last script, right split on first comma, take the first
+        # element from the 7th character onward
+        survey = response_soup.findAll('script')[-1].text.rsplit(',', 1)[0][6:]
         try:
             survey = json_decode(survey)
         except ValueError:

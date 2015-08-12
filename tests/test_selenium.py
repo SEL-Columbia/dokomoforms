@@ -25,7 +25,7 @@ import tests.util
 import config
 SAUCE_CONNECT = getattr(config, 'SAUCE_CONNECT', False)
 if not SAUCE_CONNECT:
-    SAUCE_CONNECT = os.environ.get('SAUCE_CONNECT', False)
+    SAUCE_CONNECT = os.environ.get('SAUCE_CONNECT', 'f').startswith('t')
 SAUCE_USERNAME = getattr(config, 'SAUCE_USERNAME', None)
 SAUCE_ACCESS_KEY = getattr(config, 'SAUCE_ACCESS_KEY', None)
 DEFAULT_BROWSER = getattr(config, 'DEFAULT_BROWSER', None)
@@ -124,7 +124,7 @@ class DriverTest(tests.util.DokoHTTPTest):
         values = (self.username, self.access_key, browser_config)
         if any(v is None for v in values):
             self.fail(
-                'You have specified SAUCE_CONNECT = True but you have not'
+                'You have specified SAUCE_CONNECT=true but you have not'
                 ' specified SAUCE_USERNAME, SAUCE_ACCESS_KEY,'
                 ' and DEFAULT_BROWSER'
             )
