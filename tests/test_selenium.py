@@ -217,6 +217,10 @@ class DriverTest(tests.util.DokoHTTPTest):
             '''.format(lat, lng)
         )
 
+    def click(self, element):
+        element.click()
+        time.sleep(1)
+
 
 class TestAuth(DriverTest):
     @unittest.skipIf(
@@ -226,7 +230,7 @@ class TestAuth(DriverTest):
     def test_login(self):
         self.get('/')
         self.wait_for_element('btn-login', By.CLASS_NAME)
-        self.drv.find_elements_by_class_name('btn-login')[-1].click()
+        self.click(self.drv.find_elements_by_class_name('btn-login')[-1])
         self.switch_window()
         self.wait_for_element('authentication_email', visible=True)
         (
@@ -266,15 +270,15 @@ class TestEnumerate(DriverTest):
 
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
-        self.drv.find_element_by_class_name('navigate-right').click()
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
         (
             self.drv
             .find_element_by_tag_name('input')
             .send_keys('3')
         )
-        self.drv.find_element_by_class_name('navigate-right').click()
-        self.drv.find_element_by_class_name('navigate-right').click()
-        self.drv.find_elements_by_tag_name('button')[0].click()
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
 
         new_submission = self.get_last_submission(survey_id)
 
@@ -288,15 +292,15 @@ class TestEnumerate(DriverTest):
 
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
-        self.drv.find_element_by_class_name('navigate-right').click()
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
         (
             self.drv
             .find_element_by_tag_name('input')
             .send_keys('3.3')
         )
-        self.drv.find_element_by_class_name('navigate-right').click()
-        self.drv.find_element_by_class_name('navigate-right').click()
-        self.drv.find_elements_by_tag_name('button')[0].click()
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
 
         new_submission = self.get_last_submission(survey_id)
 
@@ -310,15 +314,15 @@ class TestEnumerate(DriverTest):
 
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
-        self.drv.find_element_by_class_name('navigate-right').click()
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
         (
             self.drv
             .find_element_by_tag_name('input')
             .send_keys('some text')
         )
-        self.drv.find_element_by_class_name('navigate-right').click()
-        self.drv.find_element_by_class_name('navigate-right').click()
-        self.drv.find_elements_by_tag_name('button')[0].click()
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
 
         new_submission = self.get_last_submission(survey_id)
 
@@ -332,20 +336,19 @@ class TestEnumerate(DriverTest):
 
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
-        self.drv.find_element_by_class_name('navigate-right').click()
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.wait_for_element('video', by=By.TAG_NAME, visible=True)
         time.sleep(1)
-        (
+        self.click(
             self.drv
             .find_element_by_css_selector(
                 '.content > span:nth-child(2) > div:nth-child(1)'
                 ' > button:nth-child(1)'
             )
-            .click()
         )
-        self.drv.find_element_by_class_name('navigate-right').click()
-        self.drv.find_element_by_class_name('navigate-right').click()
-        self.drv.find_elements_by_tag_name('button')[0].click()
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
 
         time.sleep(1)
 
@@ -367,15 +370,15 @@ class TestEnumerate(DriverTest):
 
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
-        self.drv.find_element_by_class_name('navigate-right').click()
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
         (
             self.drv
             .find_element_by_tag_name('input')
             .send_keys('2015/08/11')
         )
-        self.drv.find_element_by_class_name('navigate-right').click()
-        self.drv.find_element_by_class_name('navigate-right').click()
-        self.drv.find_elements_by_tag_name('button')[0].click()
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
 
         new_submission = self.get_last_submission(survey_id)
 
@@ -392,15 +395,15 @@ class TestEnumerate(DriverTest):
 
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
-        self.drv.find_element_by_class_name('navigate-right').click()
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
         (
             self.drv
             .find_element_by_tag_name('input')
             .send_keys('3:33 PM')
         )
-        self.drv.find_element_by_class_name('navigate-right').click()
-        self.drv.find_element_by_class_name('navigate-right').click()
-        self.drv.find_elements_by_tag_name('button')[0].click()
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
 
         new_submission = self.get_last_submission(survey_id)
 
@@ -417,15 +420,15 @@ class TestEnumerate(DriverTest):
 
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
-        self.drv.find_element_by_class_name('navigate-right').click()
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
         (
             self.drv
             .find_element_by_tag_name('input')
             .send_keys('2015/08/11 3:33 PM')
         )
-        self.drv.find_element_by_class_name('navigate-right').click()
-        self.drv.find_element_by_class_name('navigate-right').click()
-        self.drv.find_elements_by_tag_name('button')[0].click()
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
 
         new_submission = self.get_last_submission(survey_id)
 
@@ -445,19 +448,18 @@ class TestEnumerate(DriverTest):
 
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
-        self.drv.find_element_by_class_name('navigate-right').click()
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.set_geolocation()
-        (
+        self.click(
             self.drv
             .find_element_by_css_selector(
                 '.content > span:nth-child(2) > div:nth-child(1)'
                 ' > button:nth-child(1)'
             )
-            .click()
         )
-        self.drv.find_element_by_class_name('navigate-right').click()
-        self.drv.find_element_by_class_name('navigate-right').click()
-        self.drv.find_elements_by_tag_name('button')[0].click()
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
 
         new_submission = self.get_last_submission(survey_id)
 
@@ -474,27 +476,25 @@ class TestEnumerate(DriverTest):
 
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
-        self.drv.find_element_by_class_name('navigate-right').click()
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
         time.sleep(1)
         self.set_geolocation()
         time.sleep(1)
-        (
+        self.click(
             self.drv
             .find_element_by_css_selector(
                 '.content > span:nth-child(2) > span:nth-child(1)'
                 ' > div:nth-child(1) > button:nth-child(1)'
             )
-            .click()
         )
         time.sleep(1)
-        (
+        self.click(
             self.drv
             .find_elements_by_class_name('question__radio__label')[0]
-            .click()
         )
-        self.drv.find_element_by_class_name('navigate-right').click()
-        self.drv.find_element_by_class_name('navigate-right').click()
-        self.drv.find_elements_by_tag_name('button')[0].click()
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
 
         new_submission = self.get_last_submission(survey_id)
 
