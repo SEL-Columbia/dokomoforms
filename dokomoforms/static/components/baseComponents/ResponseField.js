@@ -23,6 +23,7 @@ module.exports = React.createClass({
             case "decimal":
                 return "number"
             case "timestamp":
+                return "datetime-local"
             case "time":
                 return "time"
             case "date":
@@ -40,8 +41,9 @@ module.exports = React.createClass({
         console.log(type);
         switch(type) {
             case "decimal":
-            case "location":
                 return "any"
+            case "timestamp":
+                return "1"
             default:
                 return ""
         }
