@@ -177,6 +177,7 @@ class DriverTest(tests.util.DokoHTTPTest):
         path = '/rest/v1/{}/jobs/{}'.format(self.username, self.drv.session_id)
         headers = {'Authorization': 'Basic {}'.format(auth)}
         connection.request('PUT', path, body, headers=headers)
+        connection.close()
 
     def tearDown(self):
         super().tearDown()
