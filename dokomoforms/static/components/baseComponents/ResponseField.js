@@ -63,6 +63,7 @@ module.exports = React.createClass({
     validate: function(answer) {
         var type = this.props.type;
         var logic = this.props.logic;
+        console.log("Enforcing: ", logic);
         var val = null;
         switch(type) {
             case "integer":
@@ -116,15 +117,15 @@ module.exports = React.createClass({
                     val = null;
                 }
                
-                if (logic && logic.min && Date(logic.min)) {
-                    if (val < Date(logic.min)) {
+                if (logic && logic.min && !isNaN((new Date(logic.min)).getDate())) {
+                    if (resp < new Date(logic.min)) {
                         console.log("Failed logic");
                         val = null;
                     }
                 }
 
-                if (logic && logic.max && Date(logic.max)) {
-                    if (val > Date(logic.max)) {
+                if (logic && logic.max && !isNaN((new Date(logic.max)).getDate())) {
+                    if (resp > new Date(logic.max)) {
                         console.log("Failed logic");
                         val = null;
                     }

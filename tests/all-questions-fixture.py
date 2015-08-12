@@ -142,6 +142,21 @@ with session.begin():
     ))
 
     survey.nodes.append(models.construct_survey_node(
+        allow_dont_know=True,
+        required=False,
+        node=models.construct_node(
+            type_constraint='date',
+            title={'English': 'date' + ' node'},
+            hint={'English': '(Jan 1 2011 to Dec 31 2014] only'},
+            allow_multiple=True,
+            logic={
+                'min': 'Jan 1 2011',
+                'max': 'Dec 31 2014',
+            }
+        ),
+    ))
+
+    survey.nodes.append(models.construct_survey_node(
         node=models.construct_node(
             type_constraint='note',
             title={'English': 'note' + ' node'},
