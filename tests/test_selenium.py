@@ -209,7 +209,7 @@ class DriverTest(tests.util.DokoHTTPTest):
             window.navigator.geolocation.getCurrentPosition =
               function (success) {{
                 var position = {{
-                  "coords": {{"latitude": "{}", "longitude": "{}"}}
+                  "coords": {{"latitude": {}, "longitude": {}}}
                 }};
                 success(position);
               }};
@@ -466,32 +466,36 @@ class TestEnumerate(DriverTest):
             {'lat': 40, 'lng': -70}
         )
 
-    # @report_success_status
-    # def test_single_facility_question(self):
-    #     survey_id = self.get_single_node_survey_id('facility')
-    #     existing_submission = self.get_last_submission(survey_id)
+    @report_success_status
+    def test_single_facility_question(self):
+        survey_id = self.get_single_node_survey_id('facility')
+        existing_submission = self.get_last_submission(survey_id)
 
-    #     self.get('/enumerate/{}'.format(survey_id))
-    #     self.wait_for_element('navigate-right', By.CLASS_NAME)
-    #     self.drv.find_element_by_class_name('navigate-right').click()
-    #     self.set_geolocation()
-    #     while 1:pass
-    #     (
-    #         self.drv
-    #         .find_element_by_css_selector(
-    #             '.content > span:nth-child(2) > div:nth-child(1)'
-    #             ' > button:nth-child(1)'
-    #         )
-    #         .click()
-    #     )
-    #     self.drv.find_element_by_class_name('navigate-right').click()
-    #     self.drv.find_element_by_class_name('navigate-right').click()
-    #     self.drv.find_elements_by_tag_name('button')[0].click()
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.set_geolocation()
+        (
+            self.drv
+            .find_element_by_css_selector(
+                '.content > span:nth-child(2) > span:nth-child(1)'
+                ' > div:nth-child(1) > button:nth-child(1)'
+            )
+            .click()
+        )
+        (
+            self.drv
+            .find_elements_by_class_name('question__radio__label')[0]
+            .click()
+        )
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.drv.find_element_by_class_name('navigate-right').click()
+        self.drv.find_elements_by_tag_name('button')[0].click()
 
-    #     new_submission = self.get_last_submission(survey_id)
+        new_submission = self.get_last_submission(survey_id)
 
-    #     self.assertIsNot(existing_submission, new_submission)
-    #     self.assertEqual(
-    #         new_submission.answers[0].response['response'],
-    #         {'lat': 40, 'lng': -70}
-    #     )
+        self.assertIsNot(existing_submission, new_submission)
+        self.assertEqual(
+            new_submission.answers[0].response['response']['facility_name'],
+            'Queensborough Community College - City University of New York'
+        )

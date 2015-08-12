@@ -49,10 +49,10 @@ def load_fixtures(engine):
             }
             if node_type == 'facility':
                 node_dict['logic'] = {
-                    'slat': 0,
-                    'nlat': 1,
-                    'wlng': 0,
-                    'elng': 1,
+                    'slat': 39,
+                    'nlat': 41,
+                    'wlng': -71,
+                    'elng': -69,
                 }
             survey = models.Survey(
                 title={'English': node_type + '_survey'},
