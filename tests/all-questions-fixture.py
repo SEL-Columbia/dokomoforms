@@ -109,7 +109,7 @@ with session.begin():
 
     survey.nodes.append(models.construct_survey_node(
         allow_dont_know=True,
-        required=False,
+        required=True,
         node=models.construct_node(
             type_constraint='multiple_choice',
             title={'English': 'multiple choice' + ' node'},
@@ -128,7 +128,7 @@ with session.begin():
 
     survey.nodes.append(models.construct_survey_node(
         allow_dont_know=True,
-        required=False,
+        required=True,
         node=models.construct_node(
             type_constraint='decimal',
             title={'English': 'decimal' + ' node'},
