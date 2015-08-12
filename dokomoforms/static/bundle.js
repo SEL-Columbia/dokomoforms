@@ -1810,6 +1810,7 @@ module.exports = React.createClass({displayName: "exports",
                                 buttonFunction: self.removeInput, 
                                 onInput: self.onInput, 
                                 type: self.props.questionType, 
+                                logic: self.props.question.logic, 
                                 key: Math.random(), 
                                 index: idx, 
                                 disabled: self.props.disabled, 
@@ -2377,6 +2378,7 @@ var React = require('react');
  *
  * props:
  *  @type: question type constraint, sets the input type to it, defaults to text
+ *  @logic: dictionary containing logic to enforce
  *  @onInput: What to do on valid input
  *  @index: What index value to send on valid input (i.e position in array of fields)
  *  @showMinus: Show the 'X' on the input
@@ -2385,6 +2387,11 @@ var React = require('react');
  *  @initValue: Initial value for the input field
  */
 module.exports = React.createClass({displayName: "exports",
+    getInitialState: function() {
+        return { 
+        }
+    },
+
     // Determine the input field type based on props.type
     getResponseType: function() {
         var type = this.props.type;
@@ -2416,7 +2423,7 @@ module.exports = React.createClass({displayName: "exports",
             case "timestamp":
                 return "1"
             default:
-                return ""
+                return null
         }
     }, 
 
@@ -2427,30 +2434,74 @@ module.exports = React.createClass({displayName: "exports",
      */
     validate: function(answer) {
         var type = this.props.type;
+        var logic = this.props.logic;
         var val = null;
         switch(type) {
             case "integer":
                 val = parseInt(answer);
                 if (isNaN(val)) {
                     val = null;
+                    break;
                 }
+
+                if (logic && logic.min && typeof logic.min === 'number') {
+                    if (val < logic.min) {
+                        val = null;
+                    }
+                }
+
+                if (logic && logic.max && typeof logic.max === 'number') {
+                    if (val > logic.max) {
+                        val = null;
+                    }
+                }
+
                 break;
             case "decimal":
                 val = parseFloat(answer);
                 if (isNaN(val)) {
                     val = null;
                 }
+
+                if (logic && logic.min && typeof logic.min === 'number') {
+                    if (val < logic.min) {
+                        console.log("Failed logic");
+                        val = null;
+                    }
+                }
+
+                if (logic && logic.max && typeof logic.max === 'number') {
+                    if (val > logic.max) {
+                        console.log("Failed logic");
+                        val = null;
+                    }
+                }
+
                 break;
             case "date":
                 var resp = new Date(answer);
                 var day = ("0" + resp.getDate()).slice(-2);
                 var month = ("0" + (resp.getMonth() + 1)).slice(-2);
                 var year = resp.getFullYear();
+                val = answer; //XXX Keep format?
                 if(isNaN(year) || isNaN(month) || isNaN(day))  {
                     val = null;
-                } else {
-                    val = answer; //XXX Keep format?
                 }
+               
+                if (logic && logic.min && Date(logic.min)) {
+                    if (val < Date(logic.min)) {
+                        console.log("Failed logic");
+                        val = null;
+                    }
+                }
+
+                if (logic && logic.max && Date(logic.max)) {
+                    if (val > Date(logic.max)) {
+                        console.log("Failed logic");
+                        val = null;
+                    }
+                }
+               
                 break;
             case "timestamp":
             case "time":
@@ -2472,8 +2523,15 @@ module.exports = React.createClass({displayName: "exports",
      */
     onChange(event) {
         var value = this.validate(event.target.value);
-        console.log(event.target.value);
-        if (this.props.onInput && value !== null)
+        var input = event.target;
+        if (value === null) {
+            window.target = event.target
+            input.setCustomValidity("Invalid field."); 
+            return;
+        }
+
+        input.setCustomValidity("");
+        if (this.props.onInput)
             this.props.onInput(value, this.props.index);
     },
 

@@ -130,6 +130,7 @@ module.exports = React.createClass({
                                 buttonFunction={self.removeInput}
                                 onInput={self.onInput}
                                 type={self.props.questionType}
+                                logic={self.props.question.logic}
                                 key={Math.random()} 
                                 index={idx} 
                                 disabled={self.props.disabled}

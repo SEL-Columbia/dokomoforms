@@ -85,7 +85,7 @@ with session.begin():
                     ) for i in range(1) if node_type == 'integer'],
 
             ) for node_type in node_types
-            if node_type != 'note' and node_type != 'multiple_choice'
+            if node_type != 'note' and node_type != 'multiple_choice' and node_type != 'decimal'
         ],
     )
 
@@ -123,6 +123,21 @@ with session.begin():
                     },
                 ) for i in range(3)
             ],
+        ),
+    ))
+
+    survey.nodes.append(models.construct_survey_node(
+        allow_dont_know=True,
+        required=False,
+        node=models.construct_node(
+            type_constraint='decimal',
+            title={'English': 'decimal' + ' node'},
+            hint={'English': '(1 to 10.0] only'},
+            allow_multiple=True,
+            logic={
+                'min': 1.0,
+                'max': 10.0,
+            }
         ),
     ))
 
