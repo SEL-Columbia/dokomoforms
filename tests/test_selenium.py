@@ -144,7 +144,7 @@ class DriverTest(tests.util.DokoHTTPTest):
             caps['name'] = ' -- '.join((
                 os.environ['TRAVIS_BUILD_NUMBER'],
                 browser_config,
-                self.__class__.__name__
+                '{}.{}'.format(self.__class__.__name__, self._testMethodName)
             ))
         else:
             caps['name'] = ' -- '.join((
@@ -475,7 +475,9 @@ class TestEnumerate(DriverTest):
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.drv.find_element_by_class_name('navigate-right').click()
+        time.sleep(1)
         self.set_geolocation()
+        time.sleep(1)
         (
             self.drv
             .find_element_by_css_selector(
@@ -484,6 +486,7 @@ class TestEnumerate(DriverTest):
             )
             .click()
         )
+        time.sleep(1)
         (
             self.drv
             .find_elements_by_class_name('question__radio__label')[0]
