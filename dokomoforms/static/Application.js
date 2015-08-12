@@ -85,18 +85,21 @@ var Application = React.createClass({
     onNextButton: function() {
         var questions = this.props.survey.nodes;
         var nextQuestion = this.state.nextQuestion + 1;
+        var currentQuestion = this.state.nextQuestion;
         var nextState = this.state.state;
         var numQuestions = this.props.survey.nodes.length;
         var showDontKnow = false;
         var showDontKnowBox = false;
+        var required = false;
 
         if (nextQuestion > -1 && nextQuestion < numQuestions) { 
             nextState = this.state.states.QUESTION;
-            showDontKnow = questions[nextQuestion].allow_dont_know
+            showDontKnow = questions[nextQuestion].allow_dont_know;
+            // Record if this was a required question
         }
 
-        if (nextQuestion == numQuestions) {
-            nextState = this.state.states.SUBMIT
+        if (currentQuestion > -1 && currentQuestion < numQuestions) { 
+            required = questions[currentQuestion].required || false;
         }
 
         if (nextQuestion > numQuestions) {
@@ -106,11 +109,34 @@ var Application = React.createClass({
             //XXX Fire Modal for submitting here
         }
 
+        // Look into footer, retrieve dontKnow value if any
         if (this.state.states.QUESTION === nextState && showDontKnow) {
             var questionID = questions[nextQuestion].id;
             var response = this.refs.footer.getAnswer(questionID);
             console.log("Footer response:", response);
             showDontKnowBox = Boolean(response);
+        }
+
+        // Look into footer, retrieve dontKnow value if any
+        if (this.state.states.QUESTION === nextState && required) {
+            var questionID = questions[currentQuestion].id;
+            //XXX getAnswer must be available in every question type
+            //XXX not available in photo or note currently
+            var qResponse = true;
+            if (this.refs.question.getAnswer) {
+                qResponse = this.refs.question.getAnswer(0);
+            };
+
+            var dkResponse = this.refs.footer.getAnswer(questionID);
+            console.log("Footer response:", dkResponse);
+            console.log("Question response:", qResponse);
+
+            // XXX Something less annoying?
+            if (qResponse === null && dkResponse === null) {
+                alert("Valid response is required.");
+                return;
+            }
+
         }
 
         this.setState({
