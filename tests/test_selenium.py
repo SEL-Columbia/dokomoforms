@@ -6,6 +6,7 @@ import functools
 import json
 from http.client import HTTPConnection
 import os
+import re
 from subprocess import check_output, Popen, STDOUT, DEVNULL, CalledProcessError
 import signal
 import sys
@@ -24,7 +25,7 @@ import tests.util
 import config
 SAUCE_CONNECT = getattr(config, 'SAUCE_CONNECT', False)
 if not SAUCE_CONNECT:
-    SAUCE_CONNECT = os.environ.get('SAUCE_CONNECT', False)
+    SAUCE_CONNECT = os.environ.get('SAUCE_CONNECT', 'f').startswith('t')
 SAUCE_USERNAME = getattr(config, 'SAUCE_USERNAME', None)
 SAUCE_ACCESS_KEY = getattr(config, 'SAUCE_ACCESS_KEY', None)
 DEFAULT_BROWSER = getattr(config, 'DEFAULT_BROWSER', None)
@@ -123,7 +124,7 @@ class DriverTest(tests.util.DokoHTTPTest):
         values = (self.username, self.access_key, browser_config)
         if any(v is None for v in values):
             self.fail(
-                'You have specified SAUCE_CONNECT = True but you have not'
+                'You have specified SAUCE_CONNECT=true but you have not'
                 ' specified SAUCE_USERNAME, SAUCE_ACCESS_KEY,'
                 ' and DEFAULT_BROWSER'
             )
@@ -143,7 +144,7 @@ class DriverTest(tests.util.DokoHTTPTest):
             caps['name'] = ' -- '.join((
                 os.environ['TRAVIS_BUILD_NUMBER'],
                 browser_config,
-                self.__class__.__name__
+                '{}.{}'.format(self.__class__.__name__, self._testMethodName)
             ))
         else:
             caps['name'] = ' -- '.join((
@@ -405,7 +406,7 @@ class TestEnumerate(DriverTest):
 
         self.assertIsNot(existing_submission, new_submission)
         answer = new_submission.answers[0].answer.isoformat()
-        answer_parts = answer.split('-')
+        answer_parts = re.split('[-+]', answer)
         self.assertEqual(len(answer_parts), 2)
         self.assertEqual(answer_parts[0], '15:33:00')
 
@@ -433,7 +434,7 @@ class TestEnumerate(DriverTest):
         date_answer = answer.date()
         self.assertEqual(date_answer.isoformat(), '2015-08-11')
         time_answer = answer.timetz()
-        answer_parts = time_answer.isoformat().split('-')
+        answer_parts = re.split('[-+]', time_answer.isoformat())
         self.assertEqual(len(answer_parts), 2, msg=answer_parts)
         self.assertEqual(answer_parts[0], '15:33:00')
 
@@ -474,7 +475,9 @@ class TestEnumerate(DriverTest):
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.drv.find_element_by_class_name('navigate-right').click()
+        time.sleep(1)
         self.set_geolocation()
+        time.sleep(1)
         (
             self.drv
             .find_element_by_css_selector(
@@ -483,6 +486,7 @@ class TestEnumerate(DriverTest):
             )
             .click()
         )
+        time.sleep(1)
         (
             self.drv
             .find_elements_by_class_name('question__radio__label')[0]
