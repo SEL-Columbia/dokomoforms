@@ -6,6 +6,7 @@ import functools
 import json
 from http.client import HTTPConnection
 import os
+import re
 from subprocess import check_output, Popen, STDOUT, DEVNULL, CalledProcessError
 import signal
 import sys
@@ -405,7 +406,7 @@ class TestEnumerate(DriverTest):
 
         self.assertIsNot(existing_submission, new_submission)
         answer = new_submission.answers[0].answer.isoformat()
-        answer_parts = answer.split('-')
+        answer_parts = re.split('[-+]', answer)
         self.assertEqual(len(answer_parts), 2)
         self.assertEqual(answer_parts[0], '15:33:00')
 
@@ -433,7 +434,7 @@ class TestEnumerate(DriverTest):
         date_answer = answer.date()
         self.assertEqual(date_answer.isoformat(), '2015-08-11')
         time_answer = answer.timetz()
-        answer_parts = time_answer.isoformat().split('-')
+        answer_parts = re.split('[-+]', time_answer.isoformat())
         self.assertEqual(len(answer_parts), 2, msg=answer_parts)
         self.assertEqual(answer_parts[0], '15:33:00')
 
