@@ -161,7 +161,8 @@ class DriverTest(tests.util.DokoHTTPTest):
             caps['disable-user-media-security'] = True
         # Try to start the remote webdriver a few times... For some reason
         # it fails sometimes with a ValueError.
-        for _ in range(5):
+        number_of_attempts = 10
+        for attempt in range(number_of_attempts):
             try:
                 self.drv = webdriver.Remote(
                     desired_capabilities=caps,
@@ -174,6 +175,8 @@ class DriverTest(tests.util.DokoHTTPTest):
                     'Sauce Connect failure. Did you start Sauce Connect?'
                 )
             except ValueError:
+                if attempt == number_of_attempts - 1:
+                    raise
                 continue
         self.drv.implicitly_wait(10)
 
