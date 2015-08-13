@@ -107,6 +107,7 @@ class DriverTest(tests.util.DokoHTTPTest):
         super().setUp()
 
         self.passed = False
+        self.online = True
 
         f_profile = webdriver.FirefoxProfile()
         f_profile.set_preference('media.navigator.permission.disabled', True)
@@ -234,6 +235,13 @@ class DriverTest(tests.util.DokoHTTPTest):
     def click(self, element):
         element.click()
         time.sleep(1)
+
+    def toggle_online(self):
+        self.online = not self.online
+        self.drv.execute_script(
+            "navigator.__defineGetter__('onLine', function()"
+            " {{return {}}});".format(str(self.online).lower())
+        )
 
 
 class TestAuth(DriverTest):
@@ -515,3 +523,84 @@ class TestEnumerate(DriverTest):
             new_submission.answers[0].response['response']['facility_name'],
             'Queensborough Community College - City University of New York'
         )
+
+    @report_success_status
+    def test_connectivity_cuts_out(self):
+        survey_id = self.get_single_node_survey_id('integer')
+        existing_submission = self.get_last_submission(survey_id)
+
+        self.get('/enumerate/{}'.format(survey_id))
+
+        self.toggle_online()
+
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        self.toggle_online()  # TODO: have a js listener for this
+        # so that the next two lines can go away
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertIsNot(existing_submission, new_submission)
+        self.assertEqual(new_submission.answers[0].answer, 3)
+
+    @report_success_status
+    def test_offline_no_submit_button(self):
+        survey_id = self.get_single_node_survey_id('integer')
+
+        self.get('/enumerate/{}'.format(survey_id))
+
+        self.toggle_online()
+
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        self.assertEqual(len(self.drv.find_elements_by_tag_name('button')), 1)
+
+    @report_success_status
+    def test_offline_work_is_saved(self):
+        survey_id = self.get_single_node_survey_id('integer')
+        existing_submission = self.get_last_submission(survey_id)
+
+        enumerate_url = '/enumerate/{}'.format(survey_id)
+        self.get(enumerate_url)
+
+        self.toggle_online()
+
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        self.drv.get('')  # unload the page
+        self.get(enumerate_url)
+
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertIsNot(existing_submission, new_submission)
+        self.assertEqual(new_submission.answers[0].answer, 3)
