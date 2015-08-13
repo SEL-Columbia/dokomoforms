@@ -85,7 +85,11 @@ with session.begin():
                     ) for i in range(1) if node_type == 'integer'],
 
             ) for node_type in node_types
-            if node_type != 'note' and node_type != 'multiple_choice' and node_type != 'decimal'
+            if (
+                node_type != 'note' and
+                node_type != 'multiple_choice' and
+                node_type != 'decimal'
+            )
         ],
     )
 
