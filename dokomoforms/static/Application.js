@@ -83,6 +83,7 @@ var Application = React.createClass({
      * if next question is not found to either SPLASH/SUBMIT
      */
     onNextButton: function() {
+        var surveyID = this.props.survey.id;
         var questions = this.props.survey.nodes;
         var nextQuestion = this.state.nextQuestion + 1;
         var currentQuestion = this.state.nextQuestion;
@@ -90,18 +91,38 @@ var Application = React.createClass({
         var numQuestions = this.props.survey.nodes.length;
         var showDontKnow = false;
         var showDontKnowBox = false;
-        var required = false;
 
+        // Look into active answers, check if any filled out if question is REQUIRED
+        if (this.state.states.QUESTION === this.state.state) { 
+            var required = questions[currentQuestion].required || false;
+            if (required) {
+                var questionID = questions[currentQuestion].id;
+                var survey = JSON.parse(localStorage[surveyID] || '{}');
+                var answers = (survey[questionID] || []).filter(function(response) {
+                    return (response && response.response !== null);
+                });
+
+                console.log("Responses to required question:", answers);
+
+                if (!answers.length) {
+                    alert("Valid response is required.");
+                    return;
+                }
+            }
+        }
+
+        // Set the state to QUESTION if were moving into question range 
         if (nextQuestion > -1 && nextQuestion < numQuestions) { 
             nextState = this.state.states.QUESTION;
             showDontKnow = questions[nextQuestion].allow_dont_know;
-            // Record if this was a required question
         }
 
-        if (currentQuestion > -1 && currentQuestion < numQuestions) { 
-            required = questions[currentQuestion].required || false;
+        // Set the state to SUBMIT when reach the end of questions
+        if (nextQuestion == numQuestions) {
+            nextState = this.state.states.SUBMIT
         }
 
+        // Moving past the end returns us to the splash page
         if (nextQuestion > numQuestions) {
             nextQuestion = -1
             nextState = this.state.states.SPLASH
@@ -115,28 +136,6 @@ var Application = React.createClass({
             var response = this.refs.footer.getAnswer(questionID);
             console.log("Footer response:", response);
             showDontKnowBox = Boolean(response);
-        }
-
-        // Look into footer, retrieve dontKnow value if any
-        if (this.state.states.QUESTION === nextState && required) {
-            var questionID = questions[currentQuestion].id;
-            //XXX getAnswer must be available in every question type
-            //XXX not available in photo or note currently
-            var qResponse = true;
-            if (this.refs.question.getAnswer) {
-                qResponse = this.refs.question.getAnswer(0);
-            };
-
-            var dkResponse = this.refs.footer.getAnswer(questionID);
-            console.log("Footer response:", dkResponse);
-            console.log("Question response:", qResponse);
-
-            // XXX Something less annoying?
-            if (qResponse === null && dkResponse === null) {
-                alert("Valid response is required.");
-                return;
-            }
-
         }
 
         this.setState({
@@ -206,6 +205,10 @@ var Application = React.createClass({
         this.props.survey.nodes.forEach(function(question) {
             var responses = survey[question.id] || [];
             responses.forEach(function(response) {
+                // Ignore empty responses
+                if (!response || response.response === null) {
+                    return true; // continue;
+                }
 
                 // Photos need to synced independantly from survey
                 if (question.type_constraint === 'photo') {

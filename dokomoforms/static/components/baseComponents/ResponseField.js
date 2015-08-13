@@ -146,20 +146,20 @@ module.exports = React.createClass({
 
     /*
      * Handle change event, validates on every change
-     * fires props.onInput on validation success
+     * fires props.onInput with validated value OR null
      *
      * @event: Change event
      */
     onChange(event) {
         var value = this.validate(event.target.value);
         var input = event.target;
+        input.setCustomValidity("");
+
         if (value === null) {
             window.target = event.target
             input.setCustomValidity("Invalid field."); 
-            return;
         }
 
-        input.setCustomValidity("");
         if (this.props.onInput)
             this.props.onInput(value, this.props.index);
     },

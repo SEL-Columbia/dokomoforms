@@ -185,6 +185,9 @@ module.exports = React.createClass({
                 break;
         }
 
+        //XXX Failed validation messes up facility question
+        //TODO: Properly handle null values
+       
         answers = [{
             'response': response,
             'response_type': 'answer',

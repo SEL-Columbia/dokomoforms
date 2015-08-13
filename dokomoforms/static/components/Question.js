@@ -93,6 +93,7 @@ module.exports = React.createClass({
         var answers = survey[this.props.question.id] || [];
         var length = answers.length === 0 ? 1 : answers.length;
 
+        //XXX Null value implies failed validation
         answers[index] = {
             'response': value, 
             'response_type': 'answer'
@@ -101,6 +102,9 @@ module.exports = React.createClass({
         survey[this.props.question.id] = answers;
         localStorage[this.props.surveyID] = JSON.stringify(survey);
 
+        //if (value === null) {
+        //    this.removeInput(index);
+        //}
     },
 
     /*
