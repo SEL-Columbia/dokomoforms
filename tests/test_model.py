@@ -11,7 +11,7 @@ import uuid
 import unittest
 
 from tests.util import (
-    DokoTest, setUpModule, tearDownModule, test_continues_after_rollback,
+    DokoTest, setUpModule, tearDownModule, dont_run_in_a_transaction,
     keyboard_interrupt_handler
 )
 utils = (setUpModule, tearDownModule)
@@ -1616,6 +1616,58 @@ class TestSurvey(DokoTest):
                 for n in range(number_of_questions)],
             [1] * number_of_questions,
             msg='there is a survey with more than one node'
+        )
+
+    def test_two_surveys_same_node(self):
+        with self.session.begin():
+            node = models.construct_node(
+                title={'English': 'some node'},
+                type_constraint='integer',
+            )
+            creator = models.SurveyCreator(
+                name='creator',
+            )
+            self.session.add_all((node, creator))
+
+        with self.session.begin():
+            self.session.add(
+                models.construct_survey(
+                    title={'English': 'first survey'},
+                    creator=creator,
+                    survey_type='public',
+                    nodes=[
+                        models.construct_survey_node(
+                            node=node,
+                        ),
+                    ],
+                )
+            )
+
+        with self.session.begin():
+            self.session.add(
+                models.construct_survey(
+                    title={'English': 'second survey'},
+                    creator=creator,
+                    survey_type='public',
+                    nodes=[
+                        models.construct_survey_node(
+                            node=node,
+                        ),
+                    ],
+                )
+            )
+
+        self.assertEqual(
+            self.session.query(func.count(models.Survey.id)).scalar(),
+            2
+        )
+        self.assertEqual(
+            (
+                self.session
+                .execute('select count(id) from doko_test.survey')
+                .scalar()
+            ),
+            2
         )
 
     def test_asdict(self):
@@ -3319,7 +3371,7 @@ class TestAnswer(DokoTest):
             {'English': 'integer question'}
         )
 
-    @test_continues_after_rollback
+    @dont_run_in_a_transaction
     def test_cannot_answer_a_note(self):
         with self.session.begin():
             creator = models.SurveyCreator(

@@ -30,7 +30,10 @@ SAUCE_USERNAME = getattr(config, 'SAUCE_USERNAME', None)
 SAUCE_ACCESS_KEY = getattr(config, 'SAUCE_ACCESS_KEY', None)
 DEFAULT_BROWSER = getattr(config, 'DEFAULT_BROWSER', None)
 
-from dokomoforms.models import Survey, Submission, Photo
+from dokomoforms.models import (
+    Survey, Submission, Photo, SurveyCreator, Node,
+    construct_survey, construct_survey_node
+)
 
 
 base = 'http://localhost:9999'
@@ -102,7 +105,7 @@ def report_success_status(method):
     return set_passed
 
 
-class DriverTest(tests.util.DokoHTTPTest):
+class DriverTest(tests.util.DokoFixtureTest):
     def setUp(self):
         super().setUp()
 
@@ -603,4 +606,59 @@ class TestEnumerate(DriverTest):
         new_submission = self.get_last_submission(survey_id)
 
         self.assertIsNot(existing_submission, new_submission)
+        self.assertEqual(new_submission.answers[0].answer, 3)
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_required_question(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        node = (
+            self.session
+            .query(Node)
+            .filter(Node.title['English'].astext == 'integer_node')
+            .one()
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'required question'},
+                nodes=[
+                    construct_survey_node(
+                        required=True,
+                        node=node,
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        # Try to move on without answering the question
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        # An alert pops up
+        # TODO: change this behavior
+        alert = self.drv.switch_to.alert
+        alert.accept()
+
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
         self.assertEqual(new_submission.answers[0].answer, 3)

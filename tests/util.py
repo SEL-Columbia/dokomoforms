@@ -60,7 +60,7 @@ class DokoTest(unittest.TestCase):
 
     Since subtransactions don't exactly work under this scheme, if you need
     to access the database after a rollback (e.g., an exception happens),
-    you need to use the test_continues_after_rollback decorator.
+    you need to use the dont_run_in_a_transaction decorator.
     """
 
     def setUp(self):
@@ -87,7 +87,22 @@ def dummy_patch():
     yield lambda: None
 
 
-class DokoHTTPTest(DokoTest, LogTrapTestCase, AsyncHTTPTestCase):
+class DokoFixtureTest(DokoTest):
+
+    """Tests with fixtures."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Load the fixtures."""
+        load_fixtures(engine)
+
+    @classmethod
+    def tearDownClass(cls):
+        """Truncate all the tables."""
+        unload_fixtures(engine, 'doko_test')
+
+
+class DokoHTTPTest(DokoFixtureTest, LogTrapTestCase, AsyncHTTPTestCase):
 
     """Base class for HTTP (i.e. API [and handler?]) test cases.
 
@@ -101,16 +116,6 @@ class DokoHTTPTest(DokoTest, LogTrapTestCase, AsyncHTTPTestCase):
     def api_root(self):
         """The API URL up to the version."""
         return '/api/' + self.get_app()._api_version
-
-    @classmethod
-    def setUpClass(cls):
-        """Load the fixtures."""
-        load_fixtures(engine)
-
-    @classmethod
-    def tearDownClass(cls):
-        """Truncate all the tables."""
-        unload_fixtures(engine, 'doko_test')
 
     def get_app(self):
         """Return an instance of the application to be tested."""
@@ -151,8 +156,12 @@ class DokoHTTPTest(DokoTest, LogTrapTestCase, AsyncHTTPTestCase):
             return super().fetch(*args, **kwargs)
 
 
-def test_continues_after_rollback(doko_test):
-    """Use this if a test needs to access the database after a rollback."""
+def dont_run_in_a_transaction(doko_test):
+    """Use this to perform a test without a surrounding transaction.
+
+    Use this if a test needs to access the database after a rollback, for
+    instance.
+    """
     @wraps(doko_test)
     def wrapper(self):
         self.session.close()
