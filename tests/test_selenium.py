@@ -262,6 +262,28 @@ class DriverTest(tests.util.DokoFixtureTest):
         is_osx = self.platform.startswith('OS X')
         return Keys.COMMAND if is_osx else Keys.CONTROL
 
+    def enter_date(self, element, year, month, day):
+        if self.browser == 'chrome':
+            element.send_keys(month)
+            self.sleep()
+            element.send_keys(day)
+            self.sleep()
+            element.send_keys(year)
+            self.sleep()
+        else:
+            element.send_keys('/'.join((year, month, day)))
+
+    def enter_time(self, element, hour, minute, am_pm):
+        if self.browser == 'chrome':
+            element.send_keys(hour)
+            self.sleep()
+            element.send_keys(minute)
+            self.sleep()
+            element.send_keys(am_pm)
+            self.sleep()
+        else:
+            element.send_keys('{}:{} {}'.format(hour, minute, am_pm))
+
 
 class TestAuth(DriverTest):
     @unittest.skipIf(
@@ -433,10 +455,9 @@ class TestEnumerate(DriverTest):
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
-        (
-            self.drv
-            .find_element_by_tag_name('input')
-            .send_keys('2015/08/11')
+        self.enter_date(
+            self.drv.find_element_by_tag_name('input'),
+            '2015', '08', '11'
         )
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
@@ -458,10 +479,9 @@ class TestEnumerate(DriverTest):
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
-        (
-            self.drv
-            .find_element_by_tag_name('input')
-            .send_keys('3:33 PM')
+        self.enter_time(
+            self.drv.find_element_by_tag_name('input'),
+            '3', '33', 'PM'
         )
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
