@@ -157,7 +157,7 @@ class DriverTest(tests.util.DokoFixtureTest):
             caps['name'] = ' -- '.join((
                 'Manual run',
                 browser_config,
-                self.__class__.__name__
+                '{}.{}'.format(self.__class__.__name__, self._testMethodName)
             ))
         hub_url = '{}:{}@localhost:4445'.format(self.username, self.access_key)
         cmd_executor = 'http://{}/wd/hub'.format(hub_url)
