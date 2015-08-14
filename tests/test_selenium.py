@@ -15,6 +15,7 @@ import unittest
 import urllib.error
 
 from selenium import webdriver
+from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
@@ -64,14 +65,17 @@ def setUpModule():
                 '{}/debug/persona_verify'.format(base),
                 '--revisit_url={}/debug/facilities'.format(base),
             ],
-            stdout=DEVNULL, stderr=DEVNULL, preexec_fn=os.setsid
+            stdout=DEVNULL,
+            stderr=DEVNULL,
+            preexec_fn=os.setsid,
+            close_fds=True
         )
-        time.sleep(1)
+        time.sleep(0.5)
 
 
 def kill_webapp():
     """Kill the webapp cleanly."""
-    if not webapp:
+    if webapp is None:
         return
     if webapp.stdout:
         webapp.stdout.close()
@@ -88,7 +92,7 @@ def tearDownModule():
 
 
 def keyboard_interrupt_handler(signal, frame):
-    """This handler allows you to hit Ctrl-C without worry."""
+    """This handler allows you to hit Ctrl-C without worry... more or less."""
     kill_webapp()
     sys.exit()
 
@@ -197,7 +201,10 @@ class DriverTest(tests.util.DokoFixtureTest):
     def tearDown(self):
         super().tearDown()
 
-        self.drv.quit()
+        try:
+            self.drv.quit()
+        except ProcessLookupError:
+            pass
 
         if SAUCE_CONNECT:
             self._set_sauce_status()
@@ -245,6 +252,11 @@ class DriverTest(tests.util.DokoFixtureTest):
             "navigator.__defineGetter__('onLine', function()"
             " {{return {}}});".format(str(self.online).lower())
         )
+
+    @property
+    def control_key(self):
+        is_osx = self.platform.startswith('OS X')
+        return Keys.COMMAND if is_osx else Keys.CONTROL
 
 
 class TestAuth(DriverTest):
@@ -309,6 +321,27 @@ class TestEnumerate(DriverTest):
 
         self.assertIsNot(existing_submission, new_submission)
         self.assertEqual(new_submission.answers[0].answer, 3)
+
+    @report_success_status
+    def test_single_integer_question_bad_input(self):
+        survey_id = self.get_single_node_survey_id('integer')
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('so not an integer')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        # No submit button.
+        self.assertEqual(
+            len(self.drv.find_elements_by_tag_name('button')),
+            1
+        )
 
     @report_success_status
     def test_single_decimal_question(self):
@@ -610,7 +643,7 @@ class TestEnumerate(DriverTest):
 
     @report_success_status
     @tests.util.dont_run_in_a_transaction
-    def test_required_question(self):
+    def test_required_question_no_answer(self):
         user = (
             self.session
             .query(SurveyCreator)
@@ -655,6 +688,72 @@ class TestEnumerate(DriverTest):
             .find_element_by_tag_name('input')
             .send_keys('3')
         )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertEqual(new_submission.answers[0].answer, 3)
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_required_question_bad_answer(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        node = (
+            self.session
+            .query(Node)
+            .filter(Node.title['English'].astext == 'integer_node')
+            .one()
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'required question'},
+                nodes=[
+                    construct_survey_node(
+                        required=True,
+                        node=node,
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('not an integer')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        # An alert pops up
+        # TODO: change this behavior
+        alert = self.drv.switch_to.alert
+        alert.accept()
+
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('3')
+            .perform()
+        )
+
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_elements_by_tag_name('button')[0])

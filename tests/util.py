@@ -96,6 +96,19 @@ class DokoFixtureTest(DokoTest):
         """Load the fixtures."""
         load_fixtures(engine)
 
+    def setUp(self):
+        """Load the fixtures if necessary."""
+        connection = engine.connect()
+        with connection.begin():
+            anything = (
+                connection
+                .execute('select count(id) from doko_test.survey;')
+                .scalar()
+            )
+        if not anything:
+            self.__class__.setUpClass()
+        super().setUp()
+
     @classmethod
     def tearDownClass(cls):
         """Truncate all the tables."""
@@ -169,25 +182,6 @@ def dont_run_in_a_transaction(doko_test):
         try:
             return doko_test(self)
         finally:
-            connection = engine.connect()
-            with connection.begin():
-                connection.execute(
-                    """
-                    DO
-                    $func$
-                    BEGIN
-                      EXECUTE (
-                        SELECT 'TRUNCATE TABLE '
-                          || string_agg(
-                               'doko_test.' || quote_ident(t.tablename), ', '
-                             )
-                          || ' CASCADE'
-                        FROM   pg_tables t
-                        WHERE  t.schemaname = 'doko_test'
-                      );
-                    END
-                    $func$;
-                    """
-                )
+            unload_fixtures(engine, 'doko_test')
             self.session.close()
     return wrapper
