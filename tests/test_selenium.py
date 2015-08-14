@@ -284,6 +284,14 @@ class DriverTest(tests.util.DokoFixtureTest):
         else:
             element.send_keys('{}:{} {}'.format(hour, minute, am_pm))
 
+    def enter_timestamp(self, element, year, month, day, hour, minute, am_pm):
+        self.enter_date(element, year, month, day)
+        if self.browser == 'chrome':
+            element.send_keys(Keys.TAB)
+        else:
+            element.send_keys(' ')
+        self.enter_time(element, hour, minute, am_pm)
+
 
 class TestAuth(DriverTest):
     @unittest.skipIf(
@@ -503,10 +511,9 @@ class TestEnumerate(DriverTest):
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
-        (
-            self.drv
-            .find_element_by_tag_name('input')
-            .send_keys('2015/08/11 3:33 PM')
+        self.enter_timestamp(
+            self.drv.find_element_by_tag_name('input'),
+            '2015', '08', '11', '3', '33', 'PM'
         )
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
