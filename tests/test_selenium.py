@@ -69,7 +69,7 @@ def setUpModule():
             stderr=DEVNULL,
             preexec_fn=os.setsid,
         )
-        time.sleep(0.5)
+        time.sleep(2)
 
 
 def kill_webapp():
@@ -226,8 +226,13 @@ class DriverTest(tests.util.DokoFixtureTest):
         load = loader((by, identifier))
         WebDriverWait(self.drv, timeout).until(load)
 
+    def sleep(self, duration=None):
+        if duration is None:
+            duration = 1.25 if SAUCE_CONNECT else 0.25
+        time.sleep(duration)
+
     def set_geolocation(self, lat=40, lng=-70):
-        time.sleep(1)
+        self.sleep()
         self.drv.execute_script(
             '''
             window.navigator.geolocation.getCurrentPosition =
@@ -239,11 +244,11 @@ class DriverTest(tests.util.DokoFixtureTest):
               }};
             '''.format(lat, lng)
         )
-        time.sleep(1)
+        self.sleep()
 
     def click(self, element):
         element.click()
-        time.sleep(1)
+        self.sleep()
 
     def toggle_online(self):
         self.online = not self.online
@@ -395,7 +400,7 @@ class TestEnumerate(DriverTest):
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.wait_for_element('video', by=By.TAG_NAME, visible=True)
-        time.sleep(1)
+        self.sleep()
         self.click(
             self.drv
             .find_element_by_css_selector(
@@ -407,7 +412,7 @@ class TestEnumerate(DriverTest):
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_elements_by_tag_name('button')[0])
 
-        time.sleep(1)
+        self.sleep()
 
         new_submission = self.get_last_submission(survey_id)
 
@@ -542,7 +547,7 @@ class TestEnumerate(DriverTest):
                 ' > div:nth-child(1) > button:nth-child(1)'
             )
         )
-        time.sleep(1)
+        self.sleep()
         self.click(
             self.drv
             .find_elements_by_class_name('question__radio__label')[0]
