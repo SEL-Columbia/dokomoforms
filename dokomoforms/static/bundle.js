@@ -47010,7 +47010,26 @@ var Application = React.createClass({displayName: "Application",
                     'auto_compation': true,
         });
 
-        this.props.survey.nodes.forEach(function(node) {
+        // Build initial linked list and dictionary of facility trees
+        //TODO: Facility trees for sub surveys!!
+        var questions = this.props.survey.nodes;
+        var first_question = null;
+        questions.forEach(function(node, idx) {
+            var question = node;
+            question.prev = null;
+            question.next = null;
+            if (idx > 0) {
+                question.prev = questions[idx - 1];
+            }
+
+            if (idx < questions.length - 1) {
+                question.next = questions[idx + 1];
+            }
+
+            if (idx === 0) {
+                first_question = question;
+            }
+
             if (node.type_constraint === 'facility') {
                 console.log(node.logic);
                 console.log(node);
@@ -47028,7 +47047,8 @@ var Application = React.createClass({displayName: "Application",
         return { 
             showDontKnow: false,
             showDontKnowBox: false,
-            nextQuestion: -1,
+            head: first_question,
+            question: null,
             states : {
                 SPLASH : 1,
                 QUESTION : 2,
@@ -47042,70 +47062,99 @@ var Application = React.createClass({displayName: "Application",
 
     /*
      * Load next question, updates state of the Application
-     * if next question is not found to either SPLASH/SUBMIT
+     * if next question is not found move to either SPLASH/SUBMIT
      */
     onNextButton: function() {
         var surveyID = this.props.survey.id;
-        var questions = this.props.survey.nodes;
-        var nextQuestion = this.state.nextQuestion + 1;
-        var currentQuestion = this.state.nextQuestion;
-        var nextState = this.state.state;
-        var numQuestions = this.props.survey.nodes.length;
+        var currentState = this.state.state;
+        var currentQuestion = this.state.question;
+
+        // Set up next state
+        var nextQuestion = null;
         var showDontKnow = false;
         var showDontKnowBox = false;
+        var state = this.state.states.SPLASH;
 
-        // Look into active answers, check if any filled out if question is REQUIRED
-        if (this.state.states.QUESTION === this.state.state) { 
-            var required = questions[currentQuestion].required || false;
-            if (required) {
-                var questionID = questions[currentQuestion].id;
-                var survey = JSON.parse(localStorage[surveyID] || '{}');
-                var answers = (survey[questionID] || []).filter(function(response) {
-                    return (response && response.response !== null);
-                });
+        switch(currentState) {
+            // On Submit page and next was pressed
+            case this.state.states.SUBMIT:
+                nextQuestion = null;
+                showDontKnow = false;
+                showDontKnowBox = false;
+                state = this.state.states.SPLASH
+                //XXX Fire Modal for submitting here
+                this.onSave();
+                break;
 
-                console.log("Responses to required question:", answers);
+            // On Splash page and next was pressed
+            case this.state.states.SPLASH:
+                nextQuestion = this.state.head;
+                showDontKnow = nextQuestion.allow_dont_know || false;
+                showDontKnowBox = false;
+                state = this.state.states.QUESTION
 
-                if (!answers.length) {
-                    alert("Valid response is required.");
-                    return;
+                var questionID = nextQuestion.id;
+                if (showDontKnow) { 
+                    var response = this.refs.footer.getAnswer(questionID);
+                    console.log("Footer response:", response);
+                    showDontKnowBox = Boolean(response);
                 }
-            }
-        }
 
-        // Set the state to QUESTION if were moving into question range 
-        if (nextQuestion > -1 && nextQuestion < numQuestions) { 
-            nextState = this.state.states.QUESTION;
-            showDontKnow = questions[nextQuestion].allow_dont_know;
-        }
+                break;
 
-        // Set the state to SUBMIT when reach the end of questions
-        if (nextQuestion == numQuestions) {
-            nextState = this.state.states.SUBMIT
-        }
+            case this.state.states.QUESTION:
+                // Look into active answers, check if any filled out if question is REQUIRED
+                var required = currentQuestion.required || false;
+                if (required) {
+                    var questionID = currentQuestion.id;
+                    var survey = JSON.parse(localStorage[surveyID] || '{}');
+                    var answers = (survey[questionID] || []).filter(function(response) {
+                        return (response && response.response !== null);
+                    });
 
-        // Moving past the end returns us to the splash page
-        if (nextQuestion > numQuestions) {
-            nextQuestion = -1
-            nextState = this.state.states.SPLASH
-            this.onSave();
-            //XXX Fire Modal for submitting here
-        }
+                    console.log("Responses to required question:", answers);
 
-        // Look into footer, retrieve dontKnow value if any
-        if (this.state.states.QUESTION === nextState && showDontKnow) {
-            var questionID = questions[nextQuestion].id;
-            var response = this.refs.footer.getAnswer(questionID);
-            console.log("Footer response:", response);
-            showDontKnowBox = Boolean(response);
+                    if (!answers.length) {
+                        alert("Valid response is required.");
+                        return;
+                    }
+                }
+
+                nextQuestion = currentQuestion.next;
+                state = this.state.states.QUESTION
+
+                // Set the state to SUBMIT when reach the end of questions
+                if (nextQuestion === null) {
+                    nextQuestion = currentQuestion; //Keep track of tail
+                    showDontKnow = false;
+                    showDontKnowBox = false;
+                    state = this.state.states.SUBMIT;
+                    break;
+                }
+
+                // Moving into a valid question
+                showDontKnow = nextQuestion.allow_dont_know || false;
+                showDontKnowBox = false;
+                var questionID = nextQuestion.id;
+
+                if (showDontKnow) { 
+                    var response = this.refs.footer.getAnswer(questionID);
+                    console.log("Footer response:", response);
+                    showDontKnowBox = Boolean(response);
+                }
+
+                break;
+
         }
 
         this.setState({
-            nextQuestion: nextQuestion,
+            question: nextQuestion,
             showDontKnow: showDontKnow,
             showDontKnowBox: showDontKnowBox,
-            state: nextState
+            state: state
         })
+
+        return;
 
     },
 
@@ -47114,36 +47163,76 @@ var Application = React.createClass({displayName: "Application",
      * if prev question is not found to SPLASH
      */
     onPrevButton: function() {
-        var questions = this.props.survey.nodes;
-        var nextQuestion = this.state.nextQuestion - 1;
-        var nextState = this.state.state;
-        var numQuestions = this.props.survey.nodes.length;
+        var surveyID = this.props.survey.id;
+        var currentState = this.state.state;
+        var currentQuestion = this.state.question;
+
+        // Set up next state
+        var nextQuestion = null;
         var showDontKnow = false;
         var showDontKnowBox = false;
-        
-        if (nextQuestion < numQuestions && nextQuestion > 0) {
-            nextState = this.state.states.QUESTION;
-            showDontKnow = questions[nextQuestion].allow_dont_know
-        }
+        var state = this.state.states.SPLASH;
 
-        if (nextQuestion <= -1) { 
-            nextState = this.state.states.SPLASH;
-            nextQuestion = -1;
-        }
+        switch(currentState) {
+            // On Submit page and prev was pressed
+            case this.state.states.SUBMIT:
+                nextQuestion = currentQuestion; // Tail was saved in current question
+                showDontKnow = currentQuestion.allow_dont_know || false;
+                showDontKnowBox = false;
+                state = this.state.states.QUESTION
 
-        if (this.state.states.QUESTION === nextState && showDontKnow) {
-            var questionID = questions[nextQuestion].id;
-            var response = this.refs.footer.getAnswer(questionID);
-            console.log("Footer response:", response);
-            showDontKnowBox = Boolean(response);
+                var questionID = currentQuestion.id;
+                if (showDontKnow) { 
+                    var response = this.refs.footer.getAnswer(questionID);
+                    console.log("Footer response:", response);
+                    showDontKnowBox = Boolean(response);
+                }
+                break;
+
+            // On Splash page and prev was pressed (IMPOSSIBLE)
+            case this.state.states.SPLASH:
+                nextQuestion = null;
+                showDontKnowBox = false;
+                showDontKnow = false;
+                state = this.state.states.SPLASH
+                break;
+
+            case this.state.states.QUESTION:
+                nextQuestion = currentQuestion.prev;
+                state = this.state.states.QUESTION
+
+                // Set the state to SUBMIT when reach the end of questions
+                if (nextQuestion === null) {
+                    nextQuestion = currentQuestion;
+                    showDontKnow = false;
+                    showDontKnowBox = false;
+                    state = this.state.states.SPLASH;
+                    break;
+                }
+
+                // Moving into a valid question
+                showDontKnow = nextQuestion.allow_dont_know || false;
+                showDontKnowBox = false;
+                var questionID = nextQuestion.id;
+
+                if (showDontKnow) { 
+                    var response = this.refs.footer.getAnswer(questionID);
+                    console.log("Footer response:", response);
+                    showDontKnowBox = Boolean(response);
+                }
+
+                break;
+
         }
 
         this.setState({
-            nextQuestion: nextQuestion,
+            question: nextQuestion,
             showDontKnow: showDontKnow,
             showDontKnowBox: showDontKnowBox,
-            state: nextState
+            state: state
         })
+
+        return;
 
     },
 
@@ -47425,8 +47514,6 @@ var Application = React.createClass({displayName: "Application",
         this.setState({
             showDontKnowBox: this.state.showDontKnowBox ? false: true,
             showDontKnow: this.state.showDontKnow,
-            state: this.state.state,
-            nextQuestion: this.state.nextQuestion,
         });
 
         // Force questions to update
@@ -47441,19 +47528,20 @@ var Application = React.createClass({displayName: "Application",
      */
     getContent: function() {
         var questions = this.props.survey.nodes;
-        var nextQuestion = this.state.nextQuestion;
+        var question = this.state.question;
         var state = this.state.state;
         var survey = this.props.survey;
 
         if (state === this.state.states.QUESTION) {
-            var questionType = questions[nextQuestion].type_constraint;
+            var questionID = question.id;
+            var questionType = question.type_constraint;
             switch(questionType) {
                 case 'multiple_choice':
                     return (
                             React.createElement(MultipleChoice, {
                                 ref: "question", 
-                                key: nextQuestion, 
-                                question: questions[nextQuestion], 
+                                key: questionID, 
+                                question: question, 
                                 questionType: questionType, 
                                 language: survey.default_language, 
                                 surveyID: survey.id, 
@@ -47464,8 +47552,8 @@ var Application = React.createClass({displayName: "Application",
                     return (
                             React.createElement(Photo, {
                                 ref: "question", 
-                                key: nextQuestion, 
-                                question: questions[nextQuestion], 
+                                key: questionID, 
+                                question: question, 
                                 questionType: questionType, 
                                 language: survey.default_language, 
                                 surveyID: survey.id, 
@@ -47478,8 +47566,8 @@ var Application = React.createClass({displayName: "Application",
                     return (
                             React.createElement(Location, {
                                 ref: "question", 
-                                key: nextQuestion, 
-                                question: questions[nextQuestion], 
+                                key: questionID, 
+                                question: question, 
                                 questionType: questionType, 
                                 language: survey.default_language, 
                                 surveyID: survey.id, 
@@ -47490,22 +47578,22 @@ var Application = React.createClass({displayName: "Application",
                     return (
                             React.createElement(Facility, {
                                 ref: "question", 
-                                key: nextQuestion, 
-                                question: questions[nextQuestion], 
+                                key: questionID, 
+                                question: question, 
                                 questionType: questionType, 
                                 language: survey.default_language, 
                                 surveyID: survey.id, 
                                 disabled: this.state.showDontKnowBox, 
                                 db: this.state.db, 
-                                tree: this.state.trees[questions[nextQuestion].id]}
+                                tree: this.state.trees[questionID]}
                            )
                        )
                 case 'note':
                     return (
                             React.createElement(Note, {
                                 ref: "question", 
-                                key: nextQuestion, 
-                                question: questions[nextQuestion], 
+                                key: questionID, 
+                                question: questions, 
                                 questionType: questionType, 
                                 language: survey.default_language, 
                                 surveyID: survey.id, 
@@ -47516,8 +47604,8 @@ var Application = React.createClass({displayName: "Application",
                     return (
                             React.createElement(Question, {
                                 ref: "question", 
-                                key: nextQuestion, 
-                                question: questions[nextQuestion], 
+                                key: questionID, 
+                                question: question, 
                                 questionType: questionType, 
                                 language: survey.default_language, 
                                 surveyID: survey.id, 
@@ -47547,16 +47635,16 @@ var Application = React.createClass({displayName: "Application",
     },
 
     /*
-     * Load the appropiate title based on the nextQuestion and state
+     * Load the appropiate title based on the question and state
      */
     getTitle: function() {
         var questions = this.props.survey.nodes;
         var survey = this.props.survey;
-        var nextQuestion = this.state.nextQuestion;
+        var question = this.state.question;
         var state = this.state.state;
 
         if (state === this.state.states.QUESTION) {
-            return questions[nextQuestion].title[survey.default_language] 
+            return question.title[survey.default_language] 
         } else if (state === this.state.states.SUBMIT) {
             return "Ready to Save?"
         } else {
@@ -47565,16 +47653,16 @@ var Application = React.createClass({displayName: "Application",
     },
 
     /*
-     * Load the appropiate 'hint' based on the nextQuestion and state
+     * Load the appropiate 'hint' based on the question and state
      */
     getMessage: function() {
         var questions = this.props.survey.nodes;
         var survey = this.props.survey;
-        var nextQuestion = this.state.nextQuestion;
+        var question = this.state.question;
         var state = this.state.state;
 
         if (state === this.state.states.QUESTION) {
-            return questions[nextQuestion].hint[survey.default_language] 
+            return question.hint[survey.default_language] 
         } else if (state === this.state.states.SUBMIT) {
             return "If youre satisfied with the answers to all the questions, you can save the survey now."
         } else {
@@ -47599,11 +47687,22 @@ var Application = React.createClass({displayName: "Application",
     render: function() {
         var contentClasses = "content";
         var state = this.state.state;
-        var nextQuestion = this.state.nextQuestion;
-        var questions = this.props.survey.nodes;
+        var question = this.state.question;
+        var questionID = question && question.id || -1;
         var surveyID = this.props.survey.id;
-        var questionID = questions[nextQuestion] && questions[nextQuestion].id 
-            || this.state.state;
+
+        // Get current length of survey and question number
+        var number = -1;
+        var length = 0;
+        var head = this.state.head;
+        while(head) {
+            if (head.id === questionID) {
+                number = length;
+            }
+
+            head = head.next;
+            length++;
+        } 
 
 
         // Alter the height of content based on DontKnow state
@@ -47618,8 +47717,8 @@ var Application = React.createClass({displayName: "Application",
                     React.createElement(Header, {
                         ref: "header", 
                         buttonFunction: this.onPrevButton, 
-                        number: nextQuestion + 1, 
-                        total: questions.length + 1, 
+                        number: number + 1, 
+                        total: length + 1, 
                         db: this.state.db, 
                         surveyID: surveyID, 
                         splash: state === this.state.states.SPLASH}), 
