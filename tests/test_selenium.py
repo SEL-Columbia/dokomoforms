@@ -33,7 +33,7 @@ DEFAULT_BROWSER = getattr(config, 'DEFAULT_BROWSER', None)
 
 from dokomoforms.models import (
     Survey, Submission, Photo, SurveyCreator, Node,
-    construct_survey, construct_survey_node
+    construct_survey, construct_survey_node, construct_node
 )
 
 
@@ -68,7 +68,6 @@ def setUpModule():
             stdout=DEVNULL,
             stderr=DEVNULL,
             preexec_fn=os.setsid,
-            close_fds=True
         )
         time.sleep(0.5)
 
@@ -643,6 +642,188 @@ class TestEnumerate(DriverTest):
 
     @report_success_status
     @tests.util.dont_run_in_a_transaction
+    def test_allow_multiple(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'allow multiple'},
+                nodes=[
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'am_integer'},
+                            type_constraint='integer',
+                            allow_multiple=True,
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3')
+        )
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                'div.content-padded:last-child > button:nth-child(1)'
+            )
+        )
+        (
+            self.drv
+            .find_elements_by_tag_name('input')[-1]
+            .send_keys('4')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertEqual(new_submission.answers[0].answer, 3)
+        self.assertEqual(new_submission.answers[1].answer, 4)
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_allow_multiple_remove_an_answer(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'allow multiple'},
+                nodes=[
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'am_integer'},
+                            type_constraint='integer',
+                            allow_multiple=True,
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3')
+        )
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                'div.content-padded:last-child > button:nth-child(1)'
+            )
+        )
+        (
+            self.drv
+            .find_elements_by_tag_name('input')[-1]
+            .send_keys('4')
+        )
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                'div.content-padded:last-child > button:nth-child(1)'
+            )
+        )
+        (
+            self.drv
+            .find_elements_by_tag_name('input')[-1]
+            .send_keys('5')
+        )
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                'div.input_container:nth-child(2) > span:nth-child(2)'
+            )
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertEqual(new_submission.answers[0].answer, 3)
+        self.assertEqual(new_submission.answers[1].answer, 5)
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_allow_multiple_bad_input(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'allow multiple'},
+                nodes=[
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'am_integer'},
+                            type_constraint='integer',
+                            allow_multiple=True,
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3')
+        )
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                'div.content-padded:last-child > button:nth-child(1)'
+            )
+        )
+        (
+            self.drv
+            .find_elements_by_tag_name('input')[-1]
+            .send_keys('not an integer')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertEqual(new_submission.answers[0].answer, 3)
+        self.assertEqual(len(new_submission.answers), 1)
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
     def test_required_question_no_answer(self):
         user = (
             self.session
@@ -761,3 +942,94 @@ class TestEnumerate(DriverTest):
         new_submission = self.get_last_submission(survey_id)
 
         self.assertEqual(new_submission.answers[0].answer, 3)
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_allow_multiple_cant_fool_required(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'allow multiple'},
+                nodes=[
+                    construct_survey_node(
+                        required=True,
+                        node=construct_node(
+                            title={'English': 'am_integer'},
+                            type_constraint='integer',
+                            allow_multiple=True,
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3')
+        )
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                'div.content-padded:last-child > button:nth-child(1)'
+            )
+        )
+        (
+            self.drv
+            .find_elements_by_tag_name('input')[-1]
+            .send_keys('not an integer')
+        )
+        (
+            self.drv
+            .find_elements_by_tag_name('input')[0]
+            .send_keys('not an integer')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        # An alert pops up
+        # TODO: change this behavior
+        alert = self.drv.switch_to.alert
+        alert.accept()
+
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_elements_by_tag_name('input')[0]
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('3')
+            .perform()
+        )
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_elements_by_tag_name('input')[-1]
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('4')
+            .perform()
+        )
+
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertEqual(new_submission.answers[0].answer, 3)
+        self.assertEqual(new_submission.answers[1].answer, 4)
