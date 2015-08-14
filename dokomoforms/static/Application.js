@@ -87,6 +87,7 @@ var Application = React.createClass({
             showDontKnowBox: false,
             head: first_question,
             question: null,
+            headStack: [first_question], //XXX Stack of linked list heads
             states : {
                 SPLASH : 1,
                 QUESTION : 2,
@@ -157,6 +158,26 @@ var Application = React.createClass({
                         return;
                     }
                 }
+               
+                // Branching question
+                var questionID = currentQuestion.id;
+                var survey = JSON.parse(localStorage[surveyID] || '{}');
+                var answers = (survey[questionID] || []).filter(function(response) {
+                    return (response && response.response !== null);
+                });
+                // XXX Confirm response type is answer
+                var answer = answers.length && answers[0].response || null;
+
+                var sub_surveys = currentQuestion.sub_surveys;
+                if (sub_surveys && answer) {
+                    console.log("Subsurveys:", currentQuestion.id, sub_surveys);
+                    console.log("Answer:", answer);
+
+                    sub_surveys.forEach(function(sub) {
+                        console.log("Bucket:", sub.buckets, "Type:", currentQuestion.type_constraint);
+                    });
+                }
+
 
                 nextQuestion = currentQuestion.next;
                 state = this.state.states.QUESTION
