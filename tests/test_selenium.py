@@ -635,7 +635,7 @@ class TestEnumerate(DriverTest):
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
 
-        self.drv.get('')  # unload the page
+        self.drv.get('about:blank')  # unload the page
         self.get(enumerate_url)
 
         self.click(self.drv.find_elements_by_tag_name('button')[0])
