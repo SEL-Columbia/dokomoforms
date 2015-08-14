@@ -42,6 +42,7 @@ class Answer(Base):
     survey_node_id = sa.Column(pg.UUID, nullable=False)
     survey_node = relationship('AnswerableSurveyNode')
     allow_multiple = sa.Column(sa.Boolean, nullable=False)
+    repeatable = sa.Column(sa.Boolean, nullable=False)
     allow_other = sa.Column(sa.Boolean, nullable=False)
     allow_dont_know = sa.Column(sa.Boolean, nullable=False)
     question_id = sa.Column(pg.UUID, nullable=False)
@@ -170,6 +171,7 @@ class Answer(Base):
                 'question_id',
                 'type_constraint',
                 'allow_multiple',
+                'repeatable',
                 'allow_other',
                 'allow_dont_know',
             ],
@@ -179,6 +181,7 @@ class Answer(Base):
                 'survey_node_answerable.the_node_id',
                 'survey_node_answerable.the_type_constraint',
                 'survey_node_answerable.allow_multiple',
+                'survey_node_answerable.the_sub_survey_repeatable',
                 'survey_node_answerable.allow_other',
                 'survey_node_answerable.allow_dont_know',
             ]
@@ -187,7 +190,7 @@ class Answer(Base):
             'only_one_answer_allowed',
             'survey_node_id', 'submission_id',
             unique=True,
-            postgresql_where=sa.not_(allow_multiple),
+            postgresql_where=sa.not_(sa.or_(allow_multiple, repeatable)),
         ),
     )
 

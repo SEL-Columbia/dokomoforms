@@ -246,6 +246,7 @@ class SubSurvey(Base):
     parent_survey_node_id = sa.Column(pg.UUID, nullable=False)
     parent_node_id = sa.Column(pg.UUID, nullable=False)
     parent_type_constraint = sa.Column(node_type_enum, nullable=False)
+    parent_allow_multiple = sa.Column(sa.Boolean, nullable=False)
     buckets = relationship(
         'Bucket',
         cascade='all, delete-orphan',
@@ -268,6 +269,10 @@ class SubSurvey(Base):
             'id', 'parent_type_constraint', 'parent_survey_node_id',
             'parent_node_id'
         ),
+        sa.CheckConstraint(
+            'NOT parent_allow_multiple',
+            name='allow_multiple_question_cannot_have_sub_surveys'
+        ),
         sa.ForeignKeyConstraint(
             [
                 'parent_survey_node_id',
@@ -275,6 +280,7 @@ class SubSurvey(Base):
                 'root_survey_languages',
                 'parent_type_constraint',
                 'parent_node_id',
+                'parent_allow_multiple',
             ],
             [
                 'survey_node_answerable.id',
@@ -282,6 +288,7 @@ class SubSurvey(Base):
                 'survey_node_answerable.the_root_survey_languages',
                 'survey_node_answerable.the_type_constraint',
                 'survey_node_answerable.the_node_id',
+                'survey_node_answerable.allow_multiple',
             ],
             onupdate='CASCADE', ondelete='CASCADE'
         ),
@@ -653,16 +660,12 @@ class AnswerableSurveyNode(SurveyNode):
     __table_args__ = (
         sa.UniqueConstraint(
             'id', 'the_containing_survey_id', 'the_root_survey_languages',
-            'the_type_constraint', 'the_node_id'
+            'the_type_constraint', 'the_node_id', 'allow_multiple'
         ),
         sa.UniqueConstraint(
             'id', 'the_containing_survey_id', 'the_node_id',
-            'the_type_constraint', 'allow_multiple', 'allow_other',
-            'allow_dont_know'
-        ),
-        sa.CheckConstraint(
-            '(NOT the_sub_survey_repeatable) OR allow_multiple',
-            name='repeatable_implies_allow_multiple'
+            'the_type_constraint', 'allow_multiple',
+            'the_sub_survey_repeatable', 'allow_other', 'allow_dont_know'
         ),
         sa.ForeignKeyConstraint(
             [
