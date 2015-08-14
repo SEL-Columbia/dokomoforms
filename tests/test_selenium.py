@@ -184,7 +184,7 @@ class DriverTest(tests.util.DokoFixtureTest):
             except ValueError:
                 if attempt == number_of_attempts - 1:
                     raise
-                continue
+                time.sleep(5)
         self.drv.implicitly_wait(10)
 
     def _set_sauce_status(self):
