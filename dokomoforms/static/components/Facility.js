@@ -45,6 +45,14 @@ module.exports = React.createClass({
         var loc = JSON.parse(localStorage['location'] || '{}');
         var self = this;
         self.getFacilities(loc).onResolve(function(err, facilities) {
+            facilities.forEach(function(facility) {
+                facility.distance = self.props.tree.distance(
+                        facility.coordinates[1], 
+                        facility.coordinates[0], 
+                        loc);
+            });
+
+
             self.setState({
                 loc: loc,
                 facilities: facilities

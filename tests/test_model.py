@@ -1829,7 +1829,6 @@ class TestSurvey(DokoTest):
                                 models.construct_survey_node(
                                     repeatable=True,
                                     node=models.construct_node(
-                                        allow_multiple=True,
                                         type_constraint='integer',
                                         title={'English': 'repeatable'},
                                     ),
@@ -1845,7 +1844,7 @@ class TestSurvey(DokoTest):
         sub_survey = self.session.query(models.SubSurvey).one()
         self.assertTrue(sub_survey.repeatable)
 
-    def test_repeatable_sub_survey_implies_allow_multiple(self):
+    def test_survey_nodes_in_a_repeatable_sub_survey_must_be_repeatable(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
                 creator = models.SurveyCreator(name='a')
@@ -1879,6 +1878,143 @@ class TestSurvey(DokoTest):
                 ]
                 creator.surveys = [survey]
                 self.session.add(creator)
+
+    def test_answer_repeatable_but_not_allow_multiple(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='a')
+            survey = models.Survey(title={'English': 'a'})
+            survey.nodes = [
+                models.construct_survey_node(
+                    node=models.construct_node(
+                        type_constraint='integer',
+                        title={'English': 'node'},
+                    ),
+                    sub_surveys=[
+                        models.SubSurvey(
+                            repeatable=True,
+                            buckets=[
+                                models.construct_bucket(
+                                    bucket_type='integer',
+                                    bucket='[,]'
+                                ),
+                            ],
+                            nodes=[
+                                models.construct_survey_node(
+                                    repeatable=True,
+                                    node=models.construct_node(
+                                        type_constraint='integer',
+                                        title={'English': 'repeatable'},
+                                    ),
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ]
+            creator.surveys = [survey]
+            self.session.add(creator)
+
+        self.assertEqual(
+            self.session.query(func.count(models.Survey.id)).scalar(),
+            1
+        )
+
+        with self.session.begin():
+            survey.submissions.append(
+                models.construct_submission(
+                    submission_type='unauthenticated',
+                    answers=[
+                        models.construct_answer(
+                            type_constraint='integer',
+                            survey_node=(
+                                survey.nodes[0].sub_surveys[0].nodes[0]
+                            ),
+                            answer=3,
+                        ),
+                        models.construct_answer(
+                            type_constraint='integer',
+                            survey_node=(
+                                survey.nodes[0].sub_surveys[0].nodes[0]
+                            ),
+                            answer=4,
+                        ),
+                    ],
+                )
+            )
+
+        self.assertEqual(
+            self.session.query(func.count(models.Answer.id)).scalar(),
+            2
+        )
+
+    def test_answer_repeatable_but_allow_multiple(self):
+        with self.session.begin():
+            creator = models.SurveyCreator(name='a')
+            survey = models.Survey(title={'English': 'a'})
+            survey.nodes = [
+                models.construct_survey_node(
+                    node=models.construct_node(
+                        type_constraint='integer',
+                        title={'English': 'node'},
+                    ),
+                    sub_surveys=[
+                        models.SubSurvey(
+                            repeatable=True,
+                            buckets=[
+                                models.construct_bucket(
+                                    bucket_type='integer',
+                                    bucket='[,]'
+                                ),
+                            ],
+                            nodes=[
+                                models.construct_survey_node(
+                                    repeatable=True,
+                                    node=models.construct_node(
+                                        allow_multiple=True,
+                                        type_constraint='integer',
+                                        title={'English': 'repeatable'},
+                                    ),
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ]
+            creator.surveys = [survey]
+            self.session.add(creator)
+
+        self.assertEqual(
+            self.session.query(func.count(models.Survey.id)).scalar(),
+            1
+        )
+
+        with self.session.begin():
+            survey.submissions.append(
+                models.construct_submission(
+                    submission_type='unauthenticated',
+                    answers=[
+                        models.construct_answer(
+                            type_constraint='integer',
+                            survey_node=(
+                                survey.nodes[0].sub_surveys[0].nodes[0]
+                            ),
+                            answer=3,
+                        ),
+                        models.construct_answer(
+                            type_constraint='integer',
+                            survey_node=(
+                                survey.nodes[0].sub_surveys[0].nodes[0]
+                            ),
+                            answer=4,
+                        ),
+                    ],
+                )
+            )
+
+        self.assertEqual(
+            self.session.query(func.count(models.Answer.id)).scalar(),
+            2
+        )
 
 
 class TestSurveyNode(DokoTest):
@@ -2417,6 +2553,31 @@ class TestBucket(DokoTest):
                 ('nodes', []),
             ))
         )
+
+    def test_allow_multiple_means_no_sub_surveys(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                creator, survey = self._create_blank_survey()
+                survey.nodes = [
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            type_constraint='integer',
+                            allow_multiple=True,
+                            title={'English': 'node'},
+                        ),
+                        sub_surveys=[
+                            models.SubSurvey(
+                                buckets=[
+                                    models.construct_bucket(
+                                        bucket_type='integer',
+                                        bucket='(1, 2]'
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                ]
+                self.session.add(creator)
 
     def test_bucket_asdict(self):
         with self.session.begin():

@@ -54,7 +54,7 @@ with session.begin():
                             'fill in response for ' + node_type + ' node'
                         )
                     },
-                    allow_multiple=True,
+                    allow_multiple=node_type != 'integer',
                 ),
                 sub_surveys=[
                     models.SubSurvey(

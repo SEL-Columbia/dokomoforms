@@ -881,6 +881,7 @@ init = function(survey, url) {
     // Listen to appcache updates, reload JS.
     window.applicationCache.addEventListener('updateready', function() {
         alert("Application updated, reloading ...");
+        window.applicationCache.swapCache()
         window.location.reload();
     });
 

@@ -15,6 +15,7 @@ import unittest
 import urllib.error
 
 from selenium import webdriver
+from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
@@ -32,7 +33,7 @@ DEFAULT_BROWSER = getattr(config, 'DEFAULT_BROWSER', None)
 
 from dokomoforms.models import (
     Survey, Submission, Photo, SurveyCreator, Node,
-    construct_survey, construct_survey_node
+    construct_survey, construct_survey_node, construct_node
 )
 
 
@@ -64,14 +65,16 @@ def setUpModule():
                 '{}/debug/persona_verify'.format(base),
                 '--revisit_url={}/debug/facilities'.format(base),
             ],
-            stdout=DEVNULL, stderr=DEVNULL, preexec_fn=os.setsid
+            stdout=DEVNULL,
+            stderr=DEVNULL,
+            preexec_fn=os.setsid,
         )
-        time.sleep(1)
+        time.sleep(2)
 
 
 def kill_webapp():
     """Kill the webapp cleanly."""
-    if not webapp:
+    if webapp is None:
         return
     if webapp.stdout:
         webapp.stdout.close()
@@ -88,7 +91,7 @@ def tearDownModule():
 
 
 def keyboard_interrupt_handler(signal, frame):
-    """This handler allows you to hit Ctrl-C without worry."""
+    """This handler allows you to hit Ctrl-C without worry... more or less."""
     kill_webapp()
     sys.exit()
 
@@ -154,7 +157,7 @@ class DriverTest(tests.util.DokoFixtureTest):
             caps['name'] = ' -- '.join((
                 'Manual run',
                 browser_config,
-                self.__class__.__name__
+                '{}.{}'.format(self.__class__.__name__, self._testMethodName)
             ))
         hub_url = '{}:{}@localhost:4445'.format(self.username, self.access_key)
         cmd_executor = 'http://{}/wd/hub'.format(hub_url)
@@ -181,7 +184,7 @@ class DriverTest(tests.util.DokoFixtureTest):
             except ValueError:
                 if attempt == number_of_attempts - 1:
                     raise
-                continue
+                time.sleep(5)
         self.drv.implicitly_wait(10)
 
     def _set_sauce_status(self):
@@ -197,7 +200,10 @@ class DriverTest(tests.util.DokoFixtureTest):
     def tearDown(self):
         super().tearDown()
 
-        self.drv.quit()
+        try:
+            self.drv.quit()
+        except ProcessLookupError:
+            pass
 
         if SAUCE_CONNECT:
             self._set_sauce_status()
@@ -220,8 +226,13 @@ class DriverTest(tests.util.DokoFixtureTest):
         load = loader((by, identifier))
         WebDriverWait(self.drv, timeout).until(load)
 
+    def sleep(self, duration=None):
+        if duration is None:
+            duration = 1.25 if SAUCE_CONNECT else 0.25
+        time.sleep(duration)
+
     def set_geolocation(self, lat=40, lng=-70):
-        time.sleep(1)
+        self.sleep()
         self.drv.execute_script(
             '''
             window.navigator.geolocation.getCurrentPosition =
@@ -233,11 +244,11 @@ class DriverTest(tests.util.DokoFixtureTest):
               }};
             '''.format(lat, lng)
         )
-        time.sleep(1)
+        self.sleep()
 
     def click(self, element):
         element.click()
-        time.sleep(1)
+        self.sleep()
 
     def toggle_online(self):
         self.online = not self.online
@@ -245,6 +256,33 @@ class DriverTest(tests.util.DokoFixtureTest):
             "navigator.__defineGetter__('onLine', function()"
             " {{return {}}});".format(str(self.online).lower())
         )
+
+    @property
+    def control_key(self):
+        is_osx = self.platform.startswith('OS X')
+        return Keys.COMMAND if is_osx else Keys.CONTROL
+
+    def enter_date(self, element, year, month, day):
+        if self.browser == 'chrome':
+            element.send_keys(month)
+            self.sleep()
+            element.send_keys(day)
+            self.sleep()
+            element.send_keys(year)
+            self.sleep()
+        else:
+            element.send_keys('/'.join((year, month, day)))
+
+    def enter_time(self, element, hour, minute, am_pm):
+        if self.browser == 'chrome':
+            element.send_keys(hour)
+            self.sleep()
+            element.send_keys(minute)
+            self.sleep()
+            element.send_keys(am_pm)
+            self.sleep()
+        else:
+            element.send_keys('{}:{} {}'.format(hour, minute, am_pm))
 
 
 class TestAuth(DriverTest):
@@ -311,6 +349,27 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[0].answer, 3)
 
     @report_success_status
+    def test_single_integer_question_bad_input(self):
+        survey_id = self.get_single_node_survey_id('integer')
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('so not an integer')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        # No submit button.
+        self.assertEqual(
+            len(self.drv.find_elements_by_tag_name('button')),
+            1
+        )
+
+    @report_success_status
     def test_single_decimal_question(self):
         survey_id = self.get_single_node_survey_id('decimal')
         existing_submission = self.get_last_submission(survey_id)
@@ -363,7 +422,7 @@ class TestEnumerate(DriverTest):
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.wait_for_element('video', by=By.TAG_NAME, visible=True)
-        time.sleep(1)
+        self.sleep()
         self.click(
             self.drv
             .find_element_by_css_selector(
@@ -375,7 +434,7 @@ class TestEnumerate(DriverTest):
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_elements_by_tag_name('button')[0])
 
-        time.sleep(1)
+        self.sleep()
 
         new_submission = self.get_last_submission(survey_id)
 
@@ -396,10 +455,9 @@ class TestEnumerate(DriverTest):
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
-        (
-            self.drv
-            .find_element_by_tag_name('input')
-            .send_keys('2015/08/11')
+        self.enter_date(
+            self.drv.find_element_by_tag_name('input'),
+            '2015', '08', '11'
         )
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
@@ -421,10 +479,9 @@ class TestEnumerate(DriverTest):
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
-        (
-            self.drv
-            .find_element_by_tag_name('input')
-            .send_keys('3:33 PM')
+        self.enter_time(
+            self.drv.find_element_by_tag_name('input'),
+            '3', '33', 'PM'
         )
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
@@ -510,7 +567,7 @@ class TestEnumerate(DriverTest):
                 ' > div:nth-child(1) > button:nth-child(1)'
             )
         )
-        time.sleep(1)
+        self.sleep()
         self.click(
             self.drv
             .find_elements_by_class_name('question__radio__label')[0]
@@ -598,7 +655,7 @@ class TestEnumerate(DriverTest):
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
 
-        self.drv.get('')  # unload the page
+        self.drv.get('about:blank')  # unload the page
         self.get(enumerate_url)
 
         self.click(self.drv.find_elements_by_tag_name('button')[0])
@@ -610,7 +667,189 @@ class TestEnumerate(DriverTest):
 
     @report_success_status
     @tests.util.dont_run_in_a_transaction
-    def test_required_question(self):
+    def test_allow_multiple(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'allow multiple'},
+                nodes=[
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'am_integer'},
+                            type_constraint='integer',
+                            allow_multiple=True,
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3')
+        )
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                'div.content-padded:last-child > button:nth-child(1)'
+            )
+        )
+        (
+            self.drv
+            .find_elements_by_tag_name('input')[-1]
+            .send_keys('4')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertEqual(new_submission.answers[0].answer, 3)
+        self.assertEqual(new_submission.answers[1].answer, 4)
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_allow_multiple_remove_an_answer(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'allow multiple'},
+                nodes=[
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'am_integer'},
+                            type_constraint='integer',
+                            allow_multiple=True,
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3')
+        )
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                'div.content-padded:last-child > button:nth-child(1)'
+            )
+        )
+        (
+            self.drv
+            .find_elements_by_tag_name('input')[-1]
+            .send_keys('4')
+        )
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                'div.content-padded:last-child > button:nth-child(1)'
+            )
+        )
+        (
+            self.drv
+            .find_elements_by_tag_name('input')[-1]
+            .send_keys('5')
+        )
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                'div.input_container:nth-child(2) > span:nth-child(2)'
+            )
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertEqual(new_submission.answers[0].answer, 3)
+        self.assertEqual(new_submission.answers[1].answer, 5)
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_allow_multiple_bad_input(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'allow multiple'},
+                nodes=[
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'am_integer'},
+                            type_constraint='integer',
+                            allow_multiple=True,
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3')
+        )
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                'div.content-padded:last-child > button:nth-child(1)'
+            )
+        )
+        (
+            self.drv
+            .find_elements_by_tag_name('input')[-1]
+            .send_keys('not an integer')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertEqual(new_submission.answers[0].answer, 3)
+        self.assertEqual(len(new_submission.answers), 1)
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_required_question_no_answer(self):
         user = (
             self.session
             .query(SurveyCreator)
@@ -662,3 +901,160 @@ class TestEnumerate(DriverTest):
         new_submission = self.get_last_submission(survey_id)
 
         self.assertEqual(new_submission.answers[0].answer, 3)
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_required_question_bad_answer(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        node = (
+            self.session
+            .query(Node)
+            .filter(Node.title['English'].astext == 'integer_node')
+            .one()
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'required question'},
+                nodes=[
+                    construct_survey_node(
+                        required=True,
+                        node=node,
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('not an integer')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        # An alert pops up
+        # TODO: change this behavior
+        alert = self.drv.switch_to.alert
+        alert.accept()
+
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('3')
+            .perform()
+        )
+
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertEqual(new_submission.answers[0].answer, 3)
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_allow_multiple_cant_fool_required(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'allow multiple'},
+                nodes=[
+                    construct_survey_node(
+                        required=True,
+                        node=construct_node(
+                            title={'English': 'am_integer'},
+                            type_constraint='integer',
+                            allow_multiple=True,
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3')
+        )
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                'div.content-padded:last-child > button:nth-child(1)'
+            )
+        )
+        (
+            self.drv
+            .find_elements_by_tag_name('input')[-1]
+            .send_keys('not an integer')
+        )
+        (
+            self.drv
+            .find_elements_by_tag_name('input')[0]
+            .send_keys('not an integer')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        # An alert pops up
+        # TODO: change this behavior
+        alert = self.drv.switch_to.alert
+        alert.accept()
+
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_elements_by_tag_name('input')[0]
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('3')
+            .perform()
+        )
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_elements_by_tag_name('input')[-1]
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('4')
+            .perform()
+        )
+
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertEqual(new_submission.answers[0].answer, 3)
+        self.assertEqual(new_submission.answers[1].answer, 4)
