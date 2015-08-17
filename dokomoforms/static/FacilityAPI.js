@@ -489,6 +489,23 @@ FacilityTree.prototype.postFacility = function(facilityData, successCB, errorCB,
     });
 }
 
+FacilityTree.prototype.distance = function(lat, lng, center) {
+    var self = this;
+    var R = 6371000; // metres
+    var e = center.lat * Math.PI/180;
+    var f = lat * Math.PI/180;
+    var g = (lat - center.lat) * Math.PI/180;
+    var h = (lng - center.lng) * Math.PI/180;
+
+    var a = Math.sin(g/2) * Math.sin(g/2) +
+            Math.cos(e) * Math.cos(f) *
+            Math.sin(h/2) * Math.sin(h/2);
+
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c;
+}
+
 //Nigeria
 //var nlat = 8;
 //var wlng = -8;
