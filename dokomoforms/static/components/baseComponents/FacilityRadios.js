@@ -85,7 +85,7 @@ module.exports = React.createClass({
                                 {facility.properties.sector}
                             </span>
                             <span className='question__radio__span__meta'>
-                                <em>{facility.coordinates}m</em>
+                                <em>{facility.distance && facility.distance.toFixed(2)}m</em>
                             </span>
                             </label>
                         </div>
