@@ -61,13 +61,13 @@ with session.begin():
                         buckets=[
                             models.construct_bucket(
                                 bucket_type='integer',
-                                bucket='(1, 2]'
+                                bucket='(1, 3]'
                             ),
                         ],
                         nodes=[
                             models.construct_survey_node(
                                 node=models.construct_node(
-                                    title={'English': 'integer sub node'},
+                                    title={'English': 'integer sub node (nested)'},
                                     type_constraint='integer',
                                 ),
                                 sub_surveys=[
@@ -75,9 +75,18 @@ with session.begin():
                                         buckets=[
                                             models.construct_bucket(
                                                 bucket_type='integer',
-                                                bucket='(1, 2]'
+                                                bucket='(3, 5]'
                                             ),
-                                        ]
+                                        ],
+
+                                        nodes=[
+                                            models.construct_survey_node(
+                                                node=models.construct_node(
+                                                    title={'English': 'integer sub suuubb node'},
+                                                    type_constraint='integer',
+                                                ),
+                                            )
+                                        ],
                                     ),
                                 ],
                             )

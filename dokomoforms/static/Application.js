@@ -87,7 +87,7 @@ var Application = React.createClass({
             showDontKnowBox: false,
             head: first_question,
             question: null,
-            headStack: [first_question], //XXX Stack of linked list heads
+            headStack: [], //XXX Stack of linked list heads
             states : {
                 SPLASH : 1,
                 QUESTION : 2,
@@ -116,6 +116,8 @@ var Application = React.createClass({
         var state = this.state.states.SPLASH;
         var head = this.state.head;
         var headStack = this.state.headStack;
+
+        console.log("Current Question", currentQuestion);
 
         switch(currentState) {
             // On Submit page and next was pressed
@@ -162,30 +164,37 @@ var Application = React.createClass({
                     }
                 }
                 
-                // Branching question
+                /* Branching question */
+
+                // Get answer
                 var questionID = currentQuestion.id;
                 var survey = JSON.parse(localStorage[surveyID] || '{}');
                 var answers = (survey[questionID] || []).filter(function(response) {
                     return (response && response.response !== null);
                 });
-                // XXX Confirm response type is answer
-                var answer = answers.length && answers[0].response || null;
 
+                // XXX Confirm response type is answer (instead of dont-know/other)
+                var answer = answers.length && answers[0].response || null;
                 var sub_surveys = currentQuestion.sub_surveys;
-                if (sub_surveys && answer) {
+
+                // If has subsurveys then it can branch
+                if (sub_surveys) {
                     console.log("Subsurveys:", currentQuestion.id, sub_surveys);
                     console.log("Answer:", answer);
+
+                    // Check which subsurvey this answer buckets into
                     sub_surveys.forEach(function(sub) {
                         console.log("Bucket:", sub.buckets, "Type:", currentQuestion.type_constraint);
                         console.log("currentQuestion:", currentQuestion.next.id);
                         console.log("currentQuestion:", currentQuestion.prev.id);
 
-
+                        // Append all subsurveys to clone of current question, update head, update headStack if in bucket
                         var inBee = self.inBucket(sub.buckets, currentQuestion.type_constraint, answer);
                         if (inBee) {
-                            // clone current element
+                            // Clone current element
                             var clone = self.cloneNode(currentQuestion);
                             var temp = clone.next;
+
                             // link sub nodes
                             for (var i = 0; i < sub.nodes.length; i++) {
                                 if (i == 0) {
@@ -203,12 +212,25 @@ var Application = React.createClass({
                                 }
                             }
 
+                            // Always add branchable questions previous state into headStack
+                            headStack.push(currentQuestion);
+
+                            // Find the head
+                            var newHead = clone;
+                            while(newHead.prev) {
+                                newHead = newHead.prev;
+                            }
+                            head = newHead;
+
+                            // Set current question to CLONE always
                             currentQuestion = clone;
+
+                            return false; // break
                         }
 
                     });
-                }
 
+                }
 
                 nextQuestion = currentQuestion.next;
                 state = this.state.states.QUESTION
@@ -255,6 +277,7 @@ var Application = React.createClass({
      * if prev question is not found to SPLASH
      */
     onPrevButton: function() {
+        var self = this;
         var surveyID = this.props.survey.id;
         var currentState = this.state.state;
         var currentQuestion = this.state.question;
@@ -264,11 +287,34 @@ var Application = React.createClass({
         var showDontKnow = false;
         var showDontKnowBox = false;
         var state = this.state.states.SPLASH;
+        var head = this.state.head;
+        var headStack = this.state.headStack;
 
         switch(currentState) {
             // On Submit page and prev was pressed
             case this.state.states.SUBMIT:
                 nextQuestion = currentQuestion; // Tail was saved in current question
+
+                // Branching ONLY happens when moving BACK into branchable question
+                // Rare but can happen on question that either leads to submit or more questions
+                var sub_surveys = nextQuestion.sub_surveys;
+                if (sub_surveys && headStack.length) {
+                    // If he's in the branched stack, pop em off
+                    if (headStack[headStack.length - 1].id === nextQuestion.id) {
+                        console.log("RESETING", nextQuestion.id, headStack.length);
+                        // Reset the nextQuestion to previously unbranched state
+                        nextQuestion = headStack.pop();
+                        console.log("RESET", nextQuestion.id, headStack.length);
+                        // Find the head
+                        var newHead = nextQuestion;
+                        while(newHead.prev) {
+                            newHead = newHead.prev;
+                        }
+                        head = newHead;
+                    }
+                }
+
+
                 showDontKnow = currentQuestion.allow_dont_know || false;
                 showDontKnowBox = false;
                 state = this.state.states.QUESTION
@@ -302,6 +348,25 @@ var Application = React.createClass({
                     break;
                 }
 
+                // Branching ONLY happens when moving BACK into branchable question
+                var sub_surveys = nextQuestion.sub_surveys;
+                if (sub_surveys && headStack.length) {
+                    // If he's in the branched stack, pop em off
+                    if (headStack[headStack.length - 1].id === nextQuestion.id) {
+                        console.log("RESETING", nextQuestion.id, headStack.length);
+                        // Reset the nextQuestion to previously unbranched state
+                        nextQuestion = headStack.pop();
+                        console.log("RESET", nextQuestion.id, headStack.length);
+                        // Find the head
+                        var newHead = nextQuestion;
+                        while(newHead.prev) {
+                            newHead = newHead.prev;
+                        }
+                        head = newHead;
+                    }
+                }
+
+
                 // Moving into a valid question
                 showDontKnow = nextQuestion.allow_dont_know || false;
                 showDontKnowBox = false;
@@ -321,6 +386,8 @@ var Application = React.createClass({
             question: nextQuestion,
             showDontKnow: showDontKnow,
             showDontKnowBox: showDontKnowBox,
+            head: head,
+            headStack: headStack,
             state: state
         })
 
@@ -329,8 +396,56 @@ var Application = React.createClass({
     },
 
     // Check if response is in bucket
-    inBucket: function(bucket, type, response) {
-        return true;
+    inBucket: function(buckets, type, response) {
+        if (response === null) 
+            return false;
+
+        switch(type) {
+            case "integer":
+            case "decimal":
+                var inBee = 1; // Innocent untill proven guilty
+                buckets.forEach(function(bucket) {
+                    var left = bucket.split(',')[0];
+                    var right = bucket.split(',')[1];
+                    console.log(response, inBee);
+                    if (left[0] === "[") {
+                        console.log("Inclusive Left");
+                        inBee &= (response >= parseFloat(left.split("[")[1]));
+                        console.log(response, inBee, left.split("[")[1]);
+                    } else if (left[0] === "(") {
+                        console.log("Exclusive Left");
+                        inBee &= (response > parseFloat(left.split("(")[1]))
+                    } else {
+                        inBee = 0;
+                    }
+
+                    if (right[right.length - 1] === "]") {
+                        inBee &= (response <= parseFloat(right.split("]")[0]))
+                        console.log("Inclusive Right");
+                    } else if (right[right.length - 1] === ")") {
+                        inBee &= (response < parseFloat(right.split(")")[0]))
+                        console.log("Exclusive Right");
+                        console.log(response, inBee, right.split(")")[0]);
+                    } else {
+                        inBee = 0; // unknown
+                    }
+
+                    if (inBee) 
+                        return false; //break
+                });
+
+                console.log(response, inBee);
+                return inBee;
+            case "date":
+                return false;
+            case 'timestamp': 
+                return false;
+            case 'multiple_choice': 
+                return false;
+            default:
+                return false;
+
+        }
     },
 
     // Clone linked list node, arrays don't need to be cloned, only next/prev ptrs
@@ -345,7 +460,7 @@ var Application = React.createClass({
 
         Object.keys(node).forEach(function(key) {
             if (key != 'next' && key != 'prev') {
-                clone.key = node.key;
+                clone[key] = node[key]
             }
         });
 
