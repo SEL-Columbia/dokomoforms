@@ -340,6 +340,11 @@ FacilityTree.prototype.getNNearestFacilities = function(lat, lng, r, n) {
             n--;
         }
 
+        // Append distance to each facility
+        facilities.forEach(function(facility) {
+            facility.distance = dist(facility.coordinates, lat, lng);
+        });
+
         return p.fulfill(facilities);
     });
 
