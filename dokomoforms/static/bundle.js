@@ -341,6 +341,11 @@ FacilityTree.prototype.getNNearestFacilities = function(lat, lng, r, n) {
             n--;
         }
 
+        // Append distance to each facility
+        facilities.forEach(function(facility) {
+            facility.distance = dist(facility.coordinates, lat, lng);
+        });
+
         return p.fulfill(facilities);
     });
 
@@ -665,14 +670,6 @@ module.exports = React.createClass({displayName: "exports",
         var loc = JSON.parse(localStorage['location'] || '{}');
         var self = this;
         self.getFacilities(loc).onResolve(function(err, facilities) {
-            facilities.forEach(function(facility) {
-                facility.distance = self.props.tree.distance(
-                        facility.coordinates[1], 
-                        facility.coordinates[0], 
-                        loc);
-            });
-
-
             self.setState({
                 loc: loc,
                 facilities: facilities
@@ -2198,7 +2195,7 @@ module.exports = React.createClass({displayName: "exports",
                                 facility.properties.sector
                             ), 
                             React.createElement("span", {className: "question__radio__span__meta"}, 
-                                React.createElement("em", null, facility.distance.toFixed(2), "m")
+                                React.createElement("em", null, facility.distance && facility.distance.toFixed(2), "m")
                             )
                             )
                         )
