@@ -47066,6 +47066,7 @@ var Application = React.createClass({displayName: "Application",
      * if next question is not found move to either SPLASH/SUBMIT
      */
     onNextButton: function() {
+        var self = this;
         var surveyID = this.props.survey.id;
         var currentState = this.state.state;
         var currentQuestion = this.state.question;
@@ -47075,6 +47076,8 @@ var Application = React.createClass({displayName: "Application",
         var showDontKnow = false;
         var showDontKnowBox = false;
         var state = this.state.states.SPLASH;
+        var head = this.state.head;
+        var headStack = this.state.headStack;
 
         switch(currentState) {
             // On Submit page and next was pressed
@@ -47120,7 +47123,7 @@ var Application = React.createClass({displayName: "Application",
                         return;
                     }
                 }
-               
+                
                 // Branching question
                 var questionID = currentQuestion.id;
                 var survey = JSON.parse(localStorage[surveyID] || '{}');
@@ -47134,9 +47137,37 @@ var Application = React.createClass({displayName: "Application",
                 if (sub_surveys && answer) {
                     console.log("Subsurveys:", currentQuestion.id, sub_surveys);
                     console.log("Answer:", answer);
-
                     sub_surveys.forEach(function(sub) {
                         console.log("Bucket:", sub.buckets, "Type:", currentQuestion.type_constraint);
+                        console.log("currentQuestion:", currentQuestion.next.id);
+                        console.log("currentQuestion:", currentQuestion.prev.id);
+
+
+                        var inBee = self.inBucket(sub.buckets, currentQuestion.type_constraint, answer);
+                        if (inBee) {
+                            // clone current element
+                            var clone = self.cloneNode(currentQuestion);
+                            var temp = clone.next;
+                            // link sub nodes
+                            for (var i = 0; i < sub.nodes.length; i++) {
+                                if (i == 0) {
+                                    clone.next = sub.nodes[i];
+                                    sub.nodes[i].prev = clone;
+                                } else {
+                                    sub.nodes[i].prev = sub.nodes[i - 1];;
+                                }
+
+                                if (i === sub.nodes.length - 1) {
+                                    sub.nodes[i].next = temp;
+                                    temp.prev = sub.nodes[i];
+                                } else { 
+                                    sub.nodes[i].next = sub.nodes[i + 1];
+                                }
+                            }
+
+                            currentQuestion = clone;
+                        }
+
                     });
                 }
 
@@ -47172,6 +47203,8 @@ var Application = React.createClass({displayName: "Application",
             question: nextQuestion,
             showDontKnow: showDontKnow,
             showDontKnowBox: showDontKnowBox,
+            head: head,
+            headStack: headStack,
             state: state
         })
 
@@ -47255,6 +47288,43 @@ var Application = React.createClass({displayName: "Application",
 
         return;
 
+    },
+
+    // Check if response is in bucket
+    inBucket: function(bucket, type, response) {
+        return true;
+    },
+
+    // Clone linked list node, arrays don't need to be cloned, only next/prev ptrs
+    cloneNode: function(node, ids) {
+        var self = this;
+        var clone = {
+            next: null,
+            prev: null
+        };
+
+        ids = ids || {};
+
+        Object.keys(node).forEach(function(key) {
+            if (key != 'next' && key != 'prev') {
+                clone.key = node.key;
+            }
+        });
+
+       // Should be mutable ...
+       ids[node.id] = clone;
+
+       if (node.next) {
+           var next = ids[node.next.id];
+           clone.next = next || self.cloneNode(node.next, ids);
+       }
+
+       if (node.prev) {
+           var prev = ids[node.prev.id];
+           clone.prev = prev || self.cloneNode(node.prev, ids);
+       }
+
+        return clone;
     },
 
     /*
