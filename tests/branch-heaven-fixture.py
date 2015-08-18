@@ -203,13 +203,6 @@ with session.begin():
             ]
     ))
 
-    survey.nodes.append(models.construct_survey_node(
-        node=models.construct_node(
-            type_constraint='note',
-            title={'English': 'End note' + ' node'},
-        ),
-    ))
-
     # Add survey to creator
     creator.surveys.append(survey)
 

@@ -213,7 +213,8 @@ var Application = React.createClass({
 
                                 if (i === sub.nodes.length - 1) {
                                     sub.nodes[i].next = temp;
-                                    temp.prev = sub.nodes[i];
+                                    if (temp)
+                                        temp.prev = sub.nodes[i];
                                 } else { 
                                     sub.nodes[i].next = sub.nodes[i + 1];
                                 }
