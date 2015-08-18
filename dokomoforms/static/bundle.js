@@ -47481,7 +47481,16 @@ var Application = React.createClass({displayName: "Application",
         // Build new submission
         var answers = []; 
         var self = this;
-        this.props.survey.nodes.forEach(function(question) {
+
+        // Copy active questions into simple list; 
+        var questions = [];
+        var head = this.state.head;
+        while(head) {
+            questions.push(head);
+            head = head.next;
+        }
+
+        questions.forEach(function(question) {
             var responses = survey[question.id] || [];
             responses.forEach(function(response) {
                 // Ignore empty responses
@@ -47755,7 +47764,6 @@ var Application = React.createClass({displayName: "Application",
      * Loads splash or submit content if state is either SPLASH/SUBMIT 
      */
     getContent: function() {
-        var questions = this.props.survey.nodes;
         var question = this.state.question;
         var state = this.state.state;
         var survey = this.props.survey;
@@ -47821,7 +47829,7 @@ var Application = React.createClass({displayName: "Application",
                             React.createElement(Note, {
                                 ref: "question", 
                                 key: questionID, 
-                                question: questions, 
+                                question: question, 
                                 questionType: questionType, 
                                 language: survey.default_language, 
                                 surveyID: survey.id, 
@@ -47866,7 +47874,6 @@ var Application = React.createClass({displayName: "Application",
      * Load the appropiate title based on the question and state
      */
     getTitle: function() {
-        var questions = this.props.survey.nodes;
         var survey = this.props.survey;
         var question = this.state.question;
         var state = this.state.state;
@@ -47884,7 +47891,6 @@ var Application = React.createClass({displayName: "Application",
      * Load the appropiate 'hint' based on the question and state
      */
     getMessage: function() {
-        var questions = this.props.survey.nodes;
         var survey = this.props.survey;
         var question = this.state.question;
         var state = this.state.state;
