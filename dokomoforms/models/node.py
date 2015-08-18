@@ -119,7 +119,8 @@ class Question(Node):
             'id', 'the_languages', 'allow_multiple', 'allow_other'
         ),
         sa.CheckConstraint(
-            "(the_type_constraint = 'multiple_choice') OR (NOT allow_other)"
+            "(the_type_constraint = 'multiple_choice') OR (NOT allow_other)",
+            name='only_multiple_choice_can_allow_other'
         ),
         sa.ForeignKeyConstraint(
             ['id', 'the_languages', 'the_type_constraint'],
