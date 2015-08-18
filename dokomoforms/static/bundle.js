@@ -47032,8 +47032,7 @@ var Application = React.createClass({displayName: "Application",
                     'auto_compation': true,
         });
 
-        // Build initial linked list and dictionary of facility trees
-        //TODO: Facility trees for sub surveys!!
+        // Build initial linked list
         var questions = this.props.survey.nodes;
         var first_question = null;
         questions.forEach(function(node, idx) {
@@ -47052,17 +47051,11 @@ var Application = React.createClass({displayName: "Application",
                 first_question = question;
             }
 
-            if (node.type_constraint === 'facility') {
-                console.log(node.logic);
-                console.log(node);
-                trees[node.id] = new FacilityTree(
-                        parseFloat(node.logic.nlat), 
-                        parseFloat(node.logic.wlng), 
-                        parseFloat(node.logic.slat), 
-                        parseFloat(node.logic.elng),
-                        surveyDB);
-            }
         });
+
+
+        // Recursively construct trees
+        self.buildTrees(questions, trees); 
 
         window.surveyDB = surveyDB;
 
@@ -47081,6 +47074,32 @@ var Application = React.createClass({displayName: "Application",
             trees: trees,
             db: surveyDB
         }
+    },
+
+    /*
+     * Create Facility Tree object at node id for every facility tree question
+     * Recurse into subnodes if found
+     */
+    buildTrees: function(questions, trees) {
+        var self = this;
+        questions = questions || [];
+
+        questions.forEach(function(node, idx) {
+            if (node.type_constraint === 'facility') {
+                trees[node.id] = new FacilityTree(
+                        parseFloat(node.logic.nlat), 
+                        parseFloat(node.logic.wlng), 
+                        parseFloat(node.logic.slat), 
+                        parseFloat(node.logic.elng),
+                        surveyDB);
+            }
+
+            if (node.sub_surveys) {
+                node.sub_surveys.forEach(function(subs) {
+                    self.buildTrees(subs.nodes, trees);
+                });
+            }
+        });
     },
 
     /*
