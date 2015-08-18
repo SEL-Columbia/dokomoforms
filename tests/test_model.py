@@ -2650,7 +2650,7 @@ class TestBucket(DokoTest):
             OrderedDict((
                 ('id', bucket.id),
                 ('bucket_type', 'multiple_choice'),
-                ('bucket', node.choices[0].id),
+                ('bucket', node.choices[0]),
             ))
         )
 
