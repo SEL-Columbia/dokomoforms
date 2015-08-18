@@ -2612,6 +2612,48 @@ class TestBucket(DokoTest):
             ))
         )
 
+    def test_multiple_choice_bucket_asdict(self):
+        with self.session.begin():
+            creator, survey = self._create_blank_survey()
+            node = models.construct_node(
+                type_constraint='multiple_choice',
+                title={'English': 'node'},
+                choices=[
+                    models.Choice(
+                        choice_text={'English': 'choice 1'},
+                    ),
+                    models.Choice(
+                        choice_text={'English': 'choice 2'},
+                    ),
+                ],
+            )
+            survey.nodes = [
+                models.construct_survey_node(
+                    node=node,
+                    sub_surveys=[
+                        models.SubSurvey(
+                            buckets=[
+                                models.construct_bucket(
+                                    bucket_type='multiple_choice',
+                                    bucket=node.choices[0],
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ]
+            self.session.add(creator)
+
+        bucket = self.session.query(Bucket).one()
+        self.assertEqual(
+            bucket._asdict(),
+            OrderedDict((
+                ('id', bucket.id),
+                ('bucket_type', 'multiple_choice'),
+                ('bucket', node.choices[0].id),
+            ))
+        )
+
     def test_integer_incorrect_bucket_type(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
