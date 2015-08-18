@@ -56,7 +56,7 @@ with session.begin():
                         buckets=[
                             models.construct_bucket(
                                 bucket_type='integer',
-                                bucket='(1, 2]'
+                                bucket='(, 2]'
                             ),
                         ],
 
@@ -64,16 +64,18 @@ with session.begin():
                             models.construct_survey_node(
                                 node=models.construct_node(
                                     title={
-                                        'English': 'integer sub node (nested)'
+                                        'English': 'date sub node (nested)'
                                     },
-                                    type_constraint='integer',
+                                    type_constraint='date',
                                 ),
                                 sub_surveys=[
                                     models.SubSurvey(
                                         buckets=[
                                             models.construct_bucket(
-                                                bucket_type='integer',
-                                                bucket='(3, 5]'
+                                                bucket_type='date',
+                                                bucket=(
+                                                    '(2011-01-01, 2014-01-02]'
+                                                )
                                             ),
                                         ],
 
