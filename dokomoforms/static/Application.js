@@ -185,8 +185,8 @@ var Application = React.createClass({
                     // Check which subsurvey this answer buckets into
                     sub_surveys.forEach(function(sub) {
                         console.log("Bucket:", sub.buckets, "Type:", currentQuestion.type_constraint);
-                        console.log("currentQuestion:", currentQuestion.next.id);
-                        console.log("currentQuestion:", currentQuestion.prev.id);
+                        console.log("currentQuestion:", currentQuestion.next && currentQuestion.next.id);
+                        console.log("currentQuestion:", currentQuestion.prev && currentQuestion.prev.id);
 
                         // Append all subsurveys to clone of current question, update head, update headStack if in bucket
                         var inBee = self.inBucket(sub.buckets, currentQuestion.type_constraint, answer);
