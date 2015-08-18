@@ -67,7 +67,9 @@ with session.begin():
                         nodes=[
                             models.construct_survey_node(
                                 node=models.construct_node(
-                                    title={'English': 'integer sub node (nested)'},
+                                    title={
+                                        'English': 'integer sub node (nested)'
+                                    },
                                     type_constraint='integer',
                                 ),
                                 sub_surveys=[
@@ -82,7 +84,12 @@ with session.begin():
                                         nodes=[
                                             models.construct_survey_node(
                                                 node=models.construct_node(
-                                                    title={'English': 'integer sub suuubb node'},
+                                                    title={
+                                                        'English': (
+                                                            'integer sub'
+                                                            ' suuubb node'
+                                                        )
+                                                    },
                                                     type_constraint='integer',
                                                 ),
                                             )
