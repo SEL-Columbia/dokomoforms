@@ -47394,22 +47394,28 @@ var Application = React.createClass({displayName: "Application",
                     console.log(response, inBee);
                     if (left[0] === "[") {
                         console.log("Inclusive Left");
-                        inBee &= (response >= parseFloat(left.split("[")[1]));
-                        console.log(response, inBee, left.split("[")[1]);
+                        var leftLim = parseFloat(left.split("[")[1]);
+                        if (!isNaN(leftLim)) // Infinity doesnt need to be checked
+                            inBee &= (response >= leftLim);
                     } else if (left[0] === "(") {
                         console.log("Exclusive Left");
-                        inBee &= (response > parseFloat(left.split("(")[1]))
+                        var leftLim = parseFloat(left.split("(")[1]);
+                        if (!isNaN(leftLim)) // Infinity doesnt need to be checked
+                            inBee &= (response > leftLim)
                     } else {
                         inBee = 0;
                     }
 
                     if (right[right.length - 1] === "]") {
-                        inBee &= (response <= parseFloat(right.split("]")[0]))
                         console.log("Inclusive Right");
+                        var rightLim = parseFloat(right.split("]")[0]);
+                        if (!isNaN(rightLim)) // Infinity doesnt need to be checked
+                            inBee &= (response <= rightLim)
                     } else if (right[right.length - 1] === ")") {
-                        inBee &= (response < parseFloat(right.split(")")[0]))
                         console.log("Exclusive Right");
-                        console.log(response, inBee, right.split(")")[0]);
+                        var rightLim = parseFloat(right.split(")")[0]);
+                        if (!isNaN(rightLim)) // Infinity doesnt need to be checked
+                            inBee &= (response < rightLim)
                     } else {
                         inBee = 0; // unknown
                     }
@@ -47421,11 +47427,55 @@ var Application = React.createClass({displayName: "Application",
                 console.log(response, inBee);
                 return inBee;
             case "date":
-                return false;
+                var inBee = 1; // Innocent untill proven guilty
+                response = new Date(response); // Convert to date object for comparisons
+                buckets.forEach(function(bucket) {
+                    var left = bucket.split(',')[0];
+                    var right = bucket.split(',')[1];
+                    console.log(response, inBee);
+                    if (left[0] === "[") {
+                        console.log("Inclusive Left");
+                        var leftLim = new Date(left.split("[")[1]);
+                        if (!isNaN(leftLim)) // Infinity doesnt need to be checked
+                            inBee &= (response >= leftLim);
+                    } else if (left[0] === "(") {
+                        console.log("Exclusive Left");
+                        var leftLim = new Date(left.split("(")[1]);
+                        if (!isNaN(leftLim)) // Infinity doesnt need to be checked
+                            inBee &= (response > leftLim)
+                    } else {
+                        inBee = 0;
+                    }
+
+                    if (right[right.length - 1] === "]") {
+                        console.log("Inclusive Right");
+                        var rightLim = new Date(right.split("]")[0]);
+                        if (!isNaN(rightLim)) // Infinity doesnt need to be checked
+                            inBee &= (response <= rightLim)
+                    } else if (right[right.length - 1] === ")") {
+                        console.log("Exclusive Right");
+                        var rightLim = new Date(right.split(")")[0]);
+                        if (!isNaN(rightLim)) // Infinity doesnt need to be checked
+                            inBee &= (response < rightLim)
+                    } else {
+                        inBee = 0; // unknown
+                    }
+
+                    if (inBee) 
+                        return false; //break
+                });
+
+                console.log(response, inBee);
+                return inBee;
             case 'timestamp': 
                 return false;
             case 'multiple_choice': 
-                return false;
+                var inBee = 0;
+                buckets.forEach(function(bucket) {
+                    inBee |= (bucket === response);
+                });
+                console.log(response, inBee);
+                return inBee;
             default:
                 return false;
 
