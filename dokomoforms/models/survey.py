@@ -342,7 +342,8 @@ class Bucket(Base):
     __mapper_args__ = {'polymorphic_on': bucket_type}
     __table_args__ = (
         sa.CheckConstraint(
-            'bucket_type::TEXT = sub_survey_parent_type_constraint::TEXT'
+            'bucket_type::TEXT = sub_survey_parent_type_constraint::TEXT',
+            name='bucket_type_matches_question_type'
         ),
         sa.ForeignKeyConstraint(
             [
@@ -466,6 +467,13 @@ class MultipleChoiceBucket(Bucket):
             onupdate='CASCADE', ondelete='CASCADE'
         ),
     )
+
+    def _asdict(self) -> OrderedDict:
+        return OrderedDict((
+            ('id', self.id),
+            ('bucket_type', self.bucket_type),
+            ('bucket', self.choice_id),
+        ))
 
 
 BUCKET_TYPES = {
