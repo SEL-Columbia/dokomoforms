@@ -368,10 +368,12 @@ class Bucket(Base):
     )
 
     def _asdict(self) -> OrderedDict:
+        is_mc = self.bucket_type == 'multiple_choice'
+        bucket = self.choice_id if is_mc else self.bucket
         return OrderedDict((
             ('id', self.id),
             ('bucket_type', self.bucket_type),
-            ('bucket', self.bucket),
+            ('bucket', bucket),
         ))
 
 
@@ -467,13 +469,6 @@ class MultipleChoiceBucket(Bucket):
             onupdate='CASCADE', ondelete='CASCADE'
         ),
     )
-
-    def _asdict(self) -> OrderedDict:
-        return OrderedDict((
-            ('id', self.id),
-            ('bucket_type', self.bucket_type),
-            ('bucket', self.choice_id),
-        ))
 
 
 BUCKET_TYPES = {
