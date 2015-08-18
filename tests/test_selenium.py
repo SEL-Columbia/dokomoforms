@@ -32,7 +32,7 @@ SAUCE_ACCESS_KEY = getattr(config, 'SAUCE_ACCESS_KEY', None)
 DEFAULT_BROWSER = getattr(config, 'DEFAULT_BROWSER', None)
 
 from dokomoforms.models import (
-    Survey, Submission, Photo, SurveyCreator, Node,
+    Survey, Submission, Photo, SurveyCreator, Node, Choice,
     construct_survey, construct_survey_node, construct_node
 )
 
@@ -284,12 +284,17 @@ class DriverTest(tests.util.DokoFixtureTest):
         else:
             element.send_keys('{}:{} {}'.format(hour, minute, am_pm))
 
+    def enter_timestamp(self, element, year, month, day, hour, minute, am_pm):
+        self.enter_date(element, year, month, day)
+        if self.browser == 'chrome':
+            # For some reason this doesn't work...
+            element.send_keys(Keys.TAB)
+        else:
+            element.send_keys(' ')
+        self.enter_time(element, hour, minute, am_pm)
+
 
 class TestAuth(DriverTest):
-    @unittest.skipIf(
-        os.environ.get('TRAVIS', False),
-        'This test just refuses to work on Travis.'
-    )
     def test_login(self):
         self.get('/')
         self.wait_for_element('btn-login', By.CLASS_NAME)
@@ -349,6 +354,74 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[0].answer, 3)
 
     @report_success_status
+    def test_previous_and_next(self):
+        survey_id = self.get_single_node_survey_id('integer')
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3')
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('input').get_attribute('value'),
+            '3'
+        )
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_dont_know(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'allow multiple'},
+                nodes=[
+                    construct_survey_node(
+                        allow_dont_know=True,
+                        node=construct_node(
+                            title={'English': 'am_integer'},
+                            type_constraint='integer',
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        self.click(self.drv.find_element_by_tag_name('label'))
+        (
+            self.drv
+            .find_elements_by_tag_name('input')[-1]
+            .send_keys("Don't know reason")
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertEqual(
+            new_submission.answers[0].dont_know,
+            "Don't know reason"
+        )
+
+    @report_success_status
     def test_single_integer_question_bad_input(self):
         survey_id = self.get_single_node_survey_id('integer')
 
@@ -390,6 +463,27 @@ class TestEnumerate(DriverTest):
 
         self.assertIsNot(existing_submission, new_submission)
         self.assertEqual(new_submission.answers[0].answer, Decimal('3.3'))
+
+    @report_success_status
+    def test_single_decimal_question_bad_input(self):
+        survey_id = self.get_single_node_survey_id('decimal')
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3.3.3')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        # No submit button.
+        self.assertEqual(
+            len(self.drv.find_elements_by_tag_name('button')),
+            1
+        )
 
     @report_success_status
     def test_single_text_question(self):
@@ -497,16 +591,17 @@ class TestEnumerate(DriverTest):
 
     @report_success_status
     def test_single_timestamp_question(self):
+        if self.browser == 'chrome':
+            raise unittest.SkipTest('Selenium + Chrome + timestamp == 😢')
         survey_id = self.get_single_node_survey_id('timestamp')
         existing_submission = self.get_last_submission(survey_id)
 
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
-        (
-            self.drv
-            .find_element_by_tag_name('input')
-            .send_keys('2015/08/11 3:33 PM')
+        self.enter_timestamp(
+            self.drv.find_element_by_tag_name('input'),
+            '2015', '08', '11', '3', '33', 'PM'
         )
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
@@ -582,6 +677,159 @@ class TestEnumerate(DriverTest):
         self.assertEqual(
             new_submission.answers[0].response['response']['facility_name'],
             'Queensborough Community College - City University of New York'
+        )
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_single_multiple_choice_question(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'allow multiple'},
+                nodes=[
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'other_mc'},
+                            type_constraint='multiple_choice',
+                            choices=[
+                                Choice(choice_text={'English': 'one'}),
+                                Choice(choice_text={'English': 'two'}),
+                            ],
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        self.click(self.drv.find_elements_by_tag_name('option')[1])
+
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertEqual(
+            new_submission.answers[0].choice.choice_text,
+            {'English': 'one'}
+        )
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_select_multiple(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'allow multiple'},
+                nodes=[
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'other_mc'},
+                            type_constraint='multiple_choice',
+                            allow_multiple=True,
+                            choices=[
+                                Choice(choice_text={'English': 'one'}),
+                                Choice(choice_text={'English': 'two'}),
+                            ],
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        self.click(self.drv.find_elements_by_tag_name('option')[1])
+        self.click(self.drv.find_elements_by_tag_name('option')[2])
+
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertEqual(
+            new_submission.answers[0].choice.choice_text,
+            {'English': 'one'}
+        )
+        self.assertEqual(
+            new_submission.answers[1].choice.choice_text,
+            {'English': 'two'}
+        )
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_other(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'allow multiple'},
+                nodes=[
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'other_mc'},
+                            type_constraint='multiple_choice',
+                            choices=[
+                                Choice(choice_text={'English': 'one'}),
+                                Choice(choice_text={'English': 'two'}),
+                            ],
+                            allow_other=True,
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        self.click(self.drv.find_elements_by_tag_name('option')[-1])
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('other choice not listed')
+        )
+
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertEqual(
+            new_submission.answers[0].other,
+            'other choice not listed'
         )
 
     @report_success_status
