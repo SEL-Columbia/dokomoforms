@@ -14,14 +14,23 @@ var BigButton = require('./baseComponents/BigButton.js');
  */
 module.exports = React.createClass({
     getInitialState: function() {
+        var self = this;
         // Get all unsynced surveys
         var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
         // Get array of unsynced submissions to this survey
         var unsynced_submissions = unsynced_surveys[this.props.surveyID] || [];
 
+        // Update navigator.onLine
+        var interval = window.setInterval(function() {
+            self.setState({
+                online: navigator.onLine,
+            });
+        }, 1000);
+
         return { 
             count: unsynced_submissions.length,
             online: navigator.onLine,
+            interval: interval,
         }
     },
 
@@ -52,6 +61,10 @@ module.exports = React.createClass({
             online: navigator.onLine,
         });
 
+    },
+
+    componentWillUnmount: function() {
+       window.clearInterval(this.state.interval);
     },
 
     getCard: function() {

@@ -1876,14 +1876,23 @@ var BigButton = require('./baseComponents/BigButton.js');
  */
 module.exports = React.createClass({displayName: "exports",
     getInitialState: function() {
+        var self = this;
         // Get all unsynced surveys
         var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
         // Get array of unsynced submissions to this survey
         var unsynced_submissions = unsynced_surveys[this.props.surveyID] || [];
 
+        // Update navigator.onLine
+        var interval = window.setInterval(function() {
+            self.setState({
+                online: navigator.onLine,
+            });
+        }, 1000);
+
         return { 
             count: unsynced_submissions.length,
             online: navigator.onLine,
+            interval: interval,
         }
     },
 
@@ -1914,6 +1923,10 @@ module.exports = React.createClass({displayName: "exports",
             online: navigator.onLine,
         });
 
+    },
+
+    componentWillUnmount: function() {
+       window.clearInterval(this.state.interval);
     },
 
     getCard: function() {
@@ -47024,13 +47037,10 @@ var FacilityTree = require('./FacilityAPI.js');
 var Application = React.createClass({displayName: "Application",
     getInitialState: function() {
         var trees = {};
-        window.trees = trees;
-        var nyc = {lat: 40.80690, lng:-73.96536}
-        window.nyc = nyc;
-        
         var surveyDB = new PouchDB(this.props.survey.id, {
-                    'auto_compation': true,
+                    'auto_compaction': true,
         });
+        window.surveyDB = surveyDB;
 
         // Build initial linked list
         var questions = this.props.survey.nodes;
@@ -47053,11 +47063,8 @@ var Application = React.createClass({displayName: "Application",
 
         });
 
-
         // Recursively construct trees
-        self.buildTrees(questions, trees); 
-
-        window.surveyDB = surveyDB;
+        this.buildTrees(questions, trees); 
 
         return { 
             showDontKnow: false,
@@ -47216,7 +47223,8 @@ var Application = React.createClass({displayName: "Application",
 
                                 if (i === sub.nodes.length - 1) {
                                     sub.nodes[i].next = temp;
-                                    temp.prev = sub.nodes[i];
+                                    if (temp)
+                                        temp.prev = sub.nodes[i];
                                 } else { 
                                     sub.nodes[i].next = sub.nodes[i + 1];
                                 }

@@ -295,9 +295,14 @@ class SubSurvey(Base):
     )
 
     def _asdict(self) -> OrderedDict:
+        is_mc = self.parent_type_constraint == 'multiple_choice'
+        bucket_name = 'choice_id' if is_mc else 'bucket'
         return OrderedDict((
             ('deleted', self.deleted),
-            ('buckets', [bucket.bucket for bucket in self.buckets]),
+            (
+                'buckets',
+                [getattr(bucket, bucket_name) for bucket in self.buckets]
+            ),
             ('repeatable', self.repeatable),
             ('nodes', self.nodes),
         ))
@@ -368,12 +373,10 @@ class Bucket(Base):
     )
 
     def _asdict(self) -> OrderedDict:
-        is_mc = self.bucket_type == 'multiple_choice'
-        bucket = self.choice_id if is_mc else self.bucket
         return OrderedDict((
             ('id', self.id),
             ('bucket_type', self.bucket_type),
-            ('bucket', bucket),
+            ('bucket', self.bucket),
         ))
 
 

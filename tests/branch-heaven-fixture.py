@@ -39,13 +39,6 @@ with session.begin():
         id='b0816b52-204f-41d4-aaf0-ac6ae2970923',
         title={'English': 'test_survey'},
         nodes=[
-#            models.construct_survey_node(
-#                node=models.construct_node(
-#                    type_constraint='note',
-#                    title={'English': 'Start note' + ' node'},
-#                ),
-#            ),
-
             models.construct_survey_node(
                 allow_dont_know=True,
                 node=models.construct_node(
@@ -70,7 +63,9 @@ with session.begin():
                         nodes=[
                             models.construct_survey_node(
                                 node=models.construct_node(
-                                    title={'English': 'date sub node (nested)'},
+                                    title={
+                                        'English': 'date sub node (nested)'
+                                    },
                                     type_constraint='date',
                                 ),
                                 sub_surveys=[
@@ -78,7 +73,9 @@ with session.begin():
                                         buckets=[
                                             models.construct_bucket(
                                                 bucket_type='date',
-                                                bucket='(2011-01-01, 2014-01-02]'
+                                                bucket=(
+                                                    '(2011-01-01, 2014-01-02]'
+                                                )
                                             ),
                                         ],
 
@@ -86,21 +83,37 @@ with session.begin():
                                             models.construct_survey_node(
                                                 required=True,
                                                 node=models.construct_node(
-                                                    title={'English': 'integer sub suuubb node (required)'},
+                                                    title={
+                                                        'English': (
+                                                            'integer sub'
+                                                            ' suuubb node'
+                                                            ' (required)'
+                                                        )
+                                                    },
                                                     type_constraint='integer',
                                                 ),
                                             ),
 
                                             models.construct_survey_node(
                                                 node=models.construct_node(
-                                                    title={'English': 'date sub suuubb node'},
+                                                    title={
+                                                        'English': (
+                                                            'date sub suuubb '
+                                                            'node'
+                                                        )
+                                                    },
                                                     type_constraint='date',
                                                 ),
 
                                             ),
                                             models.construct_survey_node(
                                                 node=models.construct_node(
-                                                    title={'English': 'text sub suuubb node'},
+                                                    title={
+                                                        'English': (
+                                                            'text sub suuubb'
+                                                            ' node'
+                                                        )
+                                                    },
                                                     type_constraint='text',
                                                 ),
                                             )
@@ -144,20 +157,20 @@ with session.begin():
             ),
         ],
     )
-    
+
     node = models.construct_node(
-            type_constraint='multiple_choice',
-            title={'English': 'multiple choice' + ' node'},
-            hint={'English': 'choose your weapon'},
-            allow_other=True,
-            choices=[
-                models.Choice(
-                    choice_text={
-                        'English': 'choice ' + str(i),
-                        },
-                    ) for i in range(3)
-                ],
-            )
+        type_constraint='multiple_choice',
+        title={'English': 'multiple choice' + ' node'},
+        hint={'English': 'choose your weapon'},
+        allow_other=True,
+        choices=[
+            models.Choice(
+                choice_text={
+                    'English': 'choice ' + str(i),
+                },
+            ) for i in range(3)
+        ],
+    )
 
     survey.nodes.append(models.construct_survey_node(
         allow_dont_know=True,
@@ -188,13 +201,6 @@ with session.begin():
                     ]
                 )
             ]
-    ))
-
-    survey.nodes.append(models.construct_survey_node(
-        node=models.construct_node(
-            type_constraint='note',
-            title={'English': 'End note' + ' node'},
-        ),
     ))
 
     # Add survey to creator
