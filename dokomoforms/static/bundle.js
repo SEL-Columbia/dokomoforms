@@ -47112,6 +47112,13 @@ var Application = React.createClass({displayName: "Application",
                 state = this.state.states.SPLASH
                 //XXX Fire Modal for submitting here
                 this.onSave();
+
+                // Reset Survey Linked List
+                head = this.state.headStack[0] || head; 
+                while(head.prev) {
+                    head = head.prev;
+                };
+                headStack = [];
                 break;
 
             // On Splash page and next was pressed
@@ -47616,6 +47623,7 @@ var Application = React.createClass({displayName: "Application",
 
         // Wipe location info
         localStorage['location'] = JSON.stringify({});
+
     },
 
     /*
