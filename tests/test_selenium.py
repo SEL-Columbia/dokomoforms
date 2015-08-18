@@ -1408,3 +1408,92 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[1].answer, 15)
         self.assertEqual(new_submission.answers[2].answer, 'in a branch')
         self.assertEqual(new_submission.answers[3].answer, 4)
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_first_question_branching(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'basic branching'},
+                nodes=[
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'integer_0'},
+                            type_constraint='integer',
+                        ),
+                        sub_surveys=[
+                            SubSurvey(
+                                buckets=[
+                                    construct_bucket(
+                                        bucket_type='integer',
+                                        bucket='[10,20]',
+                                    ),
+                                ],
+                                nodes=[
+                                    construct_survey_node(
+                                        node=construct_node(
+                                            title={
+                                                'English': 'branch',
+                                            },
+                                            type_constraint='text',
+                                        ),
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'integer_1'},
+                            type_constraint='integer',
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('15')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'branch'
+        )
+
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('in a branch')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('4')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertEqual(new_submission.answers[0].answer, 15)
+        self.assertEqual(new_submission.answers[1].answer, 'in a branch')
+        self.assertEqual(new_submission.answers[2].answer, 4)
