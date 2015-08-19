@@ -39,6 +39,7 @@ var FacilityTree = require('./FacilityAPI.js');
  */
 var Application = React.createClass({
     getInitialState: function() {
+        // Set up db for photos and facility tree
         var trees = {};
         var surveyDB = new PouchDB(this.props.survey.id, {
                     'auto_compaction': true,
@@ -89,6 +90,12 @@ var Application = React.createClass({
     /*
      * Create Facility Tree object at node id for every facility tree question
      * Recurse into subnodes if found
+     *
+     * @questions: all nodes at current sub level
+     * @trees: dictionary of question ids and facility trees
+     *
+     * NOTE: facility trees update exact same location in pouchdb (based on bounds of coordinates)
+     * i.e: Multiple trees with same bounds do not increase memory usage (network usage does increase though)
      */
     buildTrees: function(questions, trees) {
         var self = this;
@@ -115,6 +122,9 @@ var Application = React.createClass({
     /*
      * Load next question, updates state of the Application
      * if next question is not found move to either SPLASH/SUBMIT
+     * 
+     * Deals with branching, required and setting up dontknow footer state
+     * Uses refs! (Could be removed)
      */
     onNextButton: function() {
         var self = this;
@@ -176,16 +186,12 @@ var Application = React.createClass({
                         return (response && response.response !== null);
                     });
 
-                    console.log("Responses to required question:", answers);
-
                     if (!answers.length) {
                         alert("Valid response is required.");
                         return;
                     }
                 }
                 
-                /* Branching question */
-
                 // Get answer
                 var questionID = currentQuestion.id;
                 var survey = JSON.parse(localStorage[surveyID] || '{}');
@@ -205,8 +211,6 @@ var Application = React.createClass({
                     // Check which subsurvey this answer buckets into
                     sub_surveys.forEach(function(sub) {
                         console.log("Bucket:", sub.buckets, "Type:", currentQuestion.type_constraint);
-                        console.log("currentQuestion:", currentQuestion.next && currentQuestion.next.id);
-                        console.log("currentQuestion:", currentQuestion.prev && currentQuestion.prev.id);
 
                         // Append all subsurveys to clone of current question, update head, update headStack if in bucket
                         var inBee = self.inBucket(sub.buckets, currentQuestion.type_constraint, answer);
@@ -216,6 +220,9 @@ var Application = React.createClass({
                             var temp = clone.next;
 
                             // link sub nodes
+                            // TODO: Deal with repeatable flag here!
+                            // XXX: When adding repeat questions make sure to augment the question.id in a repeatable and unique way
+                            // XXX: QuestionIDs are used to distinguish/remember questions everywhere, do not reuse IDs!
                             for (var i = 0; i < sub.nodes.length; i++) {
                                 if (i == 0) {
                                     clone.next = sub.nodes[i];
@@ -234,6 +241,7 @@ var Application = React.createClass({
                             }
 
                             // Always add branchable questions previous state into headStack
+                            // This is how we can revert alterations to a branched question
                             headStack.push(currentQuestion);
 
                             // Find the head
@@ -370,6 +378,7 @@ var Application = React.createClass({
                 }
 
                 // Branching ONLY happens when moving BACK into branchable question
+                // ALWAYS undo branched state to maintain survey consitency 
                 var sub_surveys = nextQuestion.sub_surveys;
                 if (sub_surveys && headStack.length) {
                     // If he's in the branched stack, pop em off
@@ -416,7 +425,13 @@ var Application = React.createClass({
 
     },
 
-    // Check if response is in bucket
+    /* 
+     * Check if response is in bucket
+     * 
+     * @buckets: Array of buckets (can be ranges in [num,num) form or "qid" for mc
+     * @type: type of bucket
+     * @resposne: answer to check if in bucket 
+     */
     inBucket: function(buckets, type, response) {
         if (response === null) 
             return false;
@@ -425,6 +440,7 @@ var Application = React.createClass({
             case "integer":
             case "decimal":
                 var inBee = 1; // Innocent untill proven guilty
+                // Split bucket into four sections, confirm that value in range, otherwise set inBee to false
                 buckets.forEach(function(bucket) {
                     var left = bucket.split(',')[0];
                     var right = bucket.split(',')[1];
@@ -463,6 +479,7 @@ var Application = React.createClass({
 
                 console.log(response, inBee);
                 return inBee;
+
             case "date":
                 var inBee = 1; // Innocent untill proven guilty
                 response = new Date(response); // Convert to date object for comparisons
@@ -505,6 +522,7 @@ var Application = React.createClass({
                 console.log(response, inBee);
                 return inBee;
             case 'timestamp': 
+                //TODO: This bucket
                 return false;
             case 'multiple_choice': 
                 var inBee = 0;
@@ -519,7 +537,11 @@ var Application = React.createClass({
         }
     },
 
-    // Clone linked list node, arrays don't need to be cloned, only next/prev ptrs
+    /* 
+     * Clone linked list node, arrays don't need to be cloned, only next/prev ptrs
+     * @node: Current node to clone
+     * @ids: Dictionay reference of currently cloned nodes, prevents recursion going on forever
+     */
     cloneNode: function(node, ids) {
         var self = this;
         var clone = {
@@ -535,7 +557,7 @@ var Application = React.createClass({
             }
         });
 
-       // Should be mutable ...
+       // Mutable so next/prev pointers will be visible to all nodes that reference this dictionary
        ids[node.id] = clone;
 
        if (node.next) {
@@ -596,13 +618,11 @@ var Application = React.createClass({
 
                 // New facilities need to be stored seperatly from survey
                 if (question.type_constraint === 'facility') {
-                    console.log("Facility:", response);
                     if (response.metadata && response.metadata.is_new) {
-                        console.log("Adding new facility data");
+                        console.log("Facility:", response);
                         self.state.trees[question.id]
                             .addFacility(response.response.lat, response.response.lng, response.response);
 
-                        console.log("Storing facility in unsynced array");
                         unsynced_facilities.push({
                             'surveyID': self.props.survey.id,
                             'facilityData': response.response,
@@ -712,7 +732,6 @@ var Application = React.createClass({
                     if (idx === -1) 
                         return;
 
-                    console.log(idx, unsynced_submissions.length);
                     unsynced_submissions.splice(idx, 1);
 
                     unsynced_surveys[survey.survey_id] = unsynced_submissions;
@@ -1067,6 +1086,12 @@ var Application = React.createClass({
     }
 });
 
+/*
+ * Entry point for template
+ *
+ * @survey: JSON representation of the survey
+ * @revisit_url: Revisit url, set globally
+ */
 init = function(survey, url) {
     // Set revisit url
     revisit_url = url;
