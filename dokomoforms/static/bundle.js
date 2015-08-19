@@ -47517,16 +47517,17 @@ var Application = React.createClass({displayName: "Application",
                 var BREAK = false;
                 buckets.forEach(function(bucket) {
                     if (BREAK) {return;}
+                    inBee = 1;
                     var left = bucket.split(',')[0];
                     var right = bucket.split(',')[1];
                     if (left[0] === "[") {
-                        console.log("Inclusive Left");
                         var leftLim = parseFloat(left.split("[")[1]);
+                        console.log("Inclusive Left", leftLim);
                         if (!isNaN(leftLim)) // Infinity doesnt need to be checked
                             inBee &= (response >= leftLim);
                     } else if (left[0] === "(") {
-                        console.log("Exclusive Left");
                         var leftLim = parseFloat(left.split("(")[1]);
+                        console.log("Exclusive Left", leftLim);
                         if (!isNaN(leftLim)) // Infinity doesnt need to be checked
                             inBee &= (response > leftLim)
                     } else {
@@ -47534,13 +47535,13 @@ var Application = React.createClass({displayName: "Application",
                     }
 
                     if (right[right.length - 1] === "]") {
-                        console.log("Inclusive Right");
                         var rightLim = parseFloat(right.split("]")[0]);
+                        console.log("Inclusive Right", rightLim);
                         if (!isNaN(rightLim)) // Infinity doesnt need to be checked
                             inBee &= (response <= rightLim)
                     } else if (right[right.length - 1] === ")") {
-                        console.log("Exclusive Right");
                         var rightLim = parseFloat(right.split(")")[0]);
+                        console.log("Exclusive Right", rightLim);
                         if (!isNaN(rightLim)) // Infinity doesnt need to be checked
                             inBee &= (response < rightLim)
                     } else {
@@ -47561,6 +47562,7 @@ var Application = React.createClass({displayName: "Application",
                 response = new Date(response); // Convert to date object for comparisons
                 var BREAK = false;
                 buckets.forEach(function(bucket) {
+                    inBee = 1;
                     if (BREAK) {return;}
                     var left = bucket.split(',')[0];
                     var right = bucket.split(',')[1];
