@@ -209,7 +209,9 @@ var Application = React.createClass({
                     console.log("Answer:", answer);
 
                     // Check which subsurvey this answer buckets into
+                    var BREAK = false;
                     sub_surveys.forEach(function(sub) {
+                        if (BREAK) {return;}
                         console.log("Bucket:", sub.buckets, "Type:", currentQuestion.type_constraint);
 
                         // Append all subsurveys to clone of current question, update head, update headStack if in bucket
@@ -254,7 +256,7 @@ var Application = React.createClass({
                             // Set current question to CLONE always
                             currentQuestion = clone;
 
-                            return false; // break
+                            BREAK = true;// break
                         }
 
                     });
@@ -441,10 +443,11 @@ var Application = React.createClass({
             case "decimal":
                 var inBee = 1; // Innocent untill proven guilty
                 // Split bucket into four sections, confirm that value in range, otherwise set inBee to false
+                var BREAK = false;
                 buckets.forEach(function(bucket) {
+                    if (BREAK) {return;}
                     var left = bucket.split(',')[0];
                     var right = bucket.split(',')[1];
-                    console.log(response, inBee);
                     if (left[0] === "[") {
                         console.log("Inclusive Left");
                         var leftLim = parseFloat(left.split("[")[1]);
@@ -473,20 +476,23 @@ var Application = React.createClass({
                         inBee = 0; // unknown
                     }
 
-                    if (inBee) 
-                        return false; //break
+                    console.log("Bucket:", bucket, response, inBee);
+                    if (inBee) { 
+                        BREAK = true; //break
+                    }
+
                 });
 
-                console.log(response, inBee);
                 return inBee;
 
             case "date":
                 var inBee = 1; // Innocent untill proven guilty
                 response = new Date(response); // Convert to date object for comparisons
+                var BREAK = false;
                 buckets.forEach(function(bucket) {
+                    if (BREAK) {return;}
                     var left = bucket.split(',')[0];
                     var right = bucket.split(',')[1];
-                    console.log(response, inBee);
                     if (left[0] === "[") {
                         console.log("Inclusive Left");
                         var leftLim = new Date(left.split("[")[1]);
@@ -515,11 +521,14 @@ var Application = React.createClass({
                         inBee = 0; // unknown
                     }
 
-                    if (inBee) 
-                        return false; //break
+                    console.log("Bucket:", bucket, response, inBee);
+                    if (inBee) { 
+                        BREAK = true; //break
+                    }
+
+                    return true;
                 });
 
-                console.log(response, inBee);
                 return inBee;
             case 'timestamp': 
                 //TODO: This bucket
@@ -528,8 +537,8 @@ var Application = React.createClass({
                 var inBee = 0;
                 buckets.forEach(function(bucket) {
                     inBee |= (bucket === response);
+                    console.log("Bucket:", bucket, response, inBee);
                 });
-                console.log(response, inBee);
                 return inBee;
             default:
                 return false;
@@ -723,9 +732,7 @@ var Application = React.createClass({
                     unsynced_submissions.forEach(function(usurvey, i) {
                         if (Date(usurvey.save_time) === Date(survey.save_time)) {
                             idx = i;
-                            return false;
                         }
-                        return true;
                     });
 
                     // Not sure what happened, do not update localStorage
@@ -784,9 +791,7 @@ var Application = React.createClass({
                                         }
                                         console.log("Removed:", result);
                                     });
-                                    return false;
                                 }
-                                return true;
                             });
 
                             // What??
@@ -824,9 +829,7 @@ var Application = React.createClass({
                             var facilityID = facility.facilityData.facility_id;
                             if (ufacilityID === facilityID) {
                                 idx = i;
-                                return false;
                             }
-                            return true;
                         });
 
                         // What??

@@ -6,6 +6,17 @@ var $ = require('jquery');
 var LZString = require('lz-string');
 var Promise = require('mpromise');
 
+/*
+ * FacilityTree class, contains accessors for facilities
+ *
+ * @nlat: north latitude
+ * @slat: south latitude
+ * @elng: east longitude
+ * @wlng: west longitude
+ * 
+ *
+ * All underscore methods are helper methods to do the recursion
+ */
 var FacilityTree = function(nlat, wlng, slat, elng, db) {
     // Ajax request made below node definition
     var self = this;
@@ -15,6 +26,11 @@ var FacilityTree = function(nlat, wlng, slat, elng, db) {
     this.elng = elng;
     this.db = db;
 
+    /*
+     * FacilityNode class, node of the tree, knows how to access pouchDB to read compressed facilities
+     *
+     * @obj: JSON representation of the node
+     */
     var facilityNode = function(obj) {
         
         // Bounding Box
@@ -79,6 +95,11 @@ var FacilityTree = function(nlat, wlng, slat, elng, db) {
         console.log(indent + "__");
     };
     
+    /*
+     * Set the facilities array into pouchDB
+     *
+     * facilities is a compressed LZString16 bit representation of facilities contained in an one entry array
+     */
     facilityNode.prototype.setFacilities = function(facilities) {
         var id = this.en[1]+""+this.ws[0]+""+this.ws[1]+""+this.en[0];
         // Upsert deals with put 409 conflict bs
@@ -93,6 +114,11 @@ var FacilityTree = function(nlat, wlng, slat, elng, db) {
             });
     };
     
+    /*
+     * Get facilities for this node
+     *
+     * returns mpromise style promise that will contain an array of uncompressed facilities
+     */
     facilityNode.prototype.getFacilities = function() {
         var id = this.en[1]+""+this.ws[0]+""+this.ws[1]+""+this.en[0];
         var p = new Promise;
@@ -207,6 +233,9 @@ FacilityTree.prototype._getNNode = function(lat, lng, node) {
     }
 }
 
+/*
+ * Get Nearest node to lat, lng
+ */
 FacilityTree.prototype.getNNode = function(lat, lng) {
     var self = this;
 
@@ -253,6 +282,9 @@ FacilityTree.prototype._getRNodes = function(nlat, wlng, slat, elng, node) {
     return nodes;
 }
 
+/*
+ * Get all nodes that cross the box defined by nlat, wlng, slat, elng
+ */
 FacilityTree.prototype.getRNodesBox = function(nlat, wlng, slat, elng) {
     var self = this;
 
@@ -263,6 +295,9 @@ FacilityTree.prototype.getRNodesBox = function(nlat, wlng, slat, elng) {
     return nodes;
 }
 
+/* 
+ * Get all nodes that cross the circle defined by lat, lng and radius r
+ */
 FacilityTree.prototype.getRNodesRad = function(lat, lng, r) {
     var self = this;
 
@@ -286,6 +321,8 @@ FacilityTree.prototype.getRNodesRad = function(lat, lng, r) {
 /*
  * Returns a promise with n nearest sorted facilities
  * pouchDB forces the async virus to spread to all getFacilities function calls :(
+ *
+ * XXX: Basically the only function that matters
  */
 FacilityTree.prototype.getNNearestFacilities = function(lat, lng, r, n) {
     var self = this;
@@ -405,11 +442,19 @@ FacilityTree.prototype._getLeaves = function(node) {
     return nodes;
 }
 
+/*
+ * Return all leaf nodes of the facility
+ * ie. any node with isLeaf flag set to true
+ */
 FacilityTree.prototype.getLeaves = function() {
     var self = this;
     return self._getLeaves(self.root);
 }
 
+/*
+ * Helper method to calculate compressed size
+ * (Sums up values in all leaves)
+ */
 FacilityTree.prototype.getCompressedSize = function() {
     var self = this;
     var leaves = self._getLeaves(self.root);;
@@ -418,6 +463,10 @@ FacilityTree.prototype.getCompressedSize = function() {
     }, 0);
 };
 
+/*
+ * Helper method to calculate uncompressed size
+ * (Sums up values in all leaves)
+ */
 FacilityTree.prototype.getUncompressedSize = function() {
     var self = this;
     var leaves = self._getLeaves(self.root);
@@ -426,6 +475,10 @@ FacilityTree.prototype.getUncompressedSize = function() {
     }, 0);
 };
 
+/*
+ * Helper method to calculate total facility count
+ * (Sums up values in all leaves)
+ */
 FacilityTree.prototype.getCount = function() {
     var self = this;
     var leaves = self._getLeaves(self.root);
@@ -434,6 +487,11 @@ FacilityTree.prototype.getCount = function() {
     }, 0);
 };
 
+/*
+ * Helper method for transforming facility data into Revisit format
+ *
+ * @facilityData: Facility data in dokomoforms submission form
+ */
 FacilityTree.prototype.formatFacility = function(facilityData) {
     var facility = {};
     facility.uuid = facilityData.facility_id; 
@@ -443,13 +501,20 @@ FacilityTree.prototype.formatFacility = function(facilityData) {
     return facility;
 };
 
-FacilityTree.prototype.addFacility = function(lat, lng, facilityData, format) {
+/*
+ * Adds a facility to local copy of facilityTree
+ *
+ * @lat, lng: location to add facility
+ * @facilityData: Facility information to add into tree
+ * @formatted: if facilityData is already in correct format (will be converted if not set)
+ */
+FacilityTree.prototype.addFacility = function(lat, lng, facilityData, formatted) {
     var self = this;
     var leaf = self.getNNode(lat, lng);
 
-    format = Boolean(format) || true;
-    console.log("formating?", format);
-    var facility = format ? self.formatFacility(facilityData) : facilityData;
+    formatted = Boolean(formatted) || false;
+    console.log("formatted?", formatted);
+    var facility = formatted ? facilityData : self.formattedFacility(facilityData);
 
     console.log("Before", leaf.count, leaf.uncompressedSize, leaf.compressedSize);
     leaf.getFacilities().onResolve(function(err, facilities) {
@@ -472,11 +537,21 @@ FacilityTree.prototype.addFacility = function(lat, lng, facilityData, format) {
     });
 }
 
-FacilityTree.prototype.postFacility = function(facilityData, successCB, errorCB, format) {
+/*
+ * Post facility to Revisit
+ *
+ * @facilityData: Facility information to send to revisit
+ * @successCB: What to do on succesful post
+ * @errorCB: What to do on unsuccesful post
+ * @formatted: if facilityData is already in correct format (will be converted if not set)
+ */
+FacilityTree.prototype.postFacility = function(facilityData, successCB, errorCB, formatted) {
     var self = this;
-    format = Boolean(format) || true;
-    console.log("formating?", format);
-    var facility = format ? self.formatFacility(facilityData) : facilityData;
+
+    formatted = Boolean(formatted) || false;
+    console.log("formatted?", formatted);
+    var facility = formatted ? facilityData : self.formattedFacility(facilityData);
+
     $.ajax({
         url: revisit_url,
         type: 'POST',
@@ -495,6 +570,11 @@ FacilityTree.prototype.postFacility = function(facilityData, successCB, errorCB,
     });
 }
 
+/*
+ * Compute lat lng distance from center {lat, lng}
+ *
+ * XXX function is copied in a few places with mild alterations, prob should be merged
+ */
 FacilityTree.prototype.distance = function(lat, lng, center) {
     var self = this;
     var R = 6371000; // metres
@@ -602,7 +682,7 @@ module.exports = {
 
     /* 
      * Add photo with given uuid and base64 URI to pouchDB
-     * XXX set up callback
+     * TODO set up callback
      */
     addPhoto: function(db, photoID, photo, callback) {
         var photo64 = photo.substring(photo.indexOf(',')+1)
@@ -2164,7 +2244,6 @@ module.exports = React.createClass({displayName: "exports",
         //e.stopPropagation();
         //e.cancelBubble = true;
 
-        console.log('selected', option, checked);
         if (this.props.selectFunction)
             this.props.selectFunction(selected);
 
@@ -2437,7 +2516,6 @@ module.exports = React.createClass({displayName: "exports",
     // Determine the input field type based on props.type
     getResponseType: function() {
         var type = this.props.type;
-        console.log(type);
         switch(type) {
             case "integer":
             case "decimal":
@@ -2458,7 +2536,6 @@ module.exports = React.createClass({displayName: "exports",
     // Determine the input field step based on props.type
     getResponseStep: function() {
         var type = this.props.type;
-        console.log(type);
         switch(type) {
             case "decimal":
                 return "any"
@@ -2508,14 +2585,12 @@ module.exports = React.createClass({displayName: "exports",
 
                 if (logic && logic.min && typeof logic.min === 'number') {
                     if (val < logic.min) {
-                        console.log("Failed logic");
                         val = null;
                     }
                 }
 
                 if (logic && logic.max && typeof logic.max === 'number') {
                     if (val > logic.max) {
-                        console.log("Failed logic");
                         val = null;
                     }
                 }
@@ -2533,14 +2608,12 @@ module.exports = React.createClass({displayName: "exports",
                
                 if (logic && logic.min && !isNaN((new Date(logic.min)).getDate())) {
                     if (resp < new Date(logic.min)) {
-                        console.log("Failed logic");
                         val = null;
                     }
                 }
 
                 if (logic && logic.max && !isNaN((new Date(logic.max)).getDate())) {
                     if (resp > new Date(logic.max)) {
-                        console.log("Failed logic");
                         val = null;
                     }
                 }
@@ -2548,6 +2621,7 @@ module.exports = React.createClass({displayName: "exports",
                 break;
             case "timestamp":
             case "time":
+                //TODO: enforce
             default:
               if (answer) {
                   val = answer;
@@ -47036,6 +47110,7 @@ var FacilityTree = require('./FacilityAPI.js');
  */
 var Application = React.createClass({displayName: "Application",
     getInitialState: function() {
+        // Set up db for photos and facility tree
         var trees = {};
         var surveyDB = new PouchDB(this.props.survey.id, {
                     'auto_compaction': true,
@@ -47086,6 +47161,12 @@ var Application = React.createClass({displayName: "Application",
     /*
      * Create Facility Tree object at node id for every facility tree question
      * Recurse into subnodes if found
+     *
+     * @questions: all nodes at current sub level
+     * @trees: dictionary of question ids and facility trees
+     *
+     * NOTE: facility trees update exact same location in pouchdb (based on bounds of coordinates)
+     * i.e: Multiple trees with same bounds do not increase memory usage (network usage does increase though)
      */
     buildTrees: function(questions, trees) {
         var self = this;
@@ -47112,6 +47193,9 @@ var Application = React.createClass({displayName: "Application",
     /*
      * Load next question, updates state of the Application
      * if next question is not found move to either SPLASH/SUBMIT
+     * 
+     * Deals with branching, required and setting up dontknow footer state
+     * Uses refs! (Could be removed)
      */
     onNextButton: function() {
         var self = this;
@@ -47173,16 +47257,12 @@ var Application = React.createClass({displayName: "Application",
                         return (response && response.response !== null);
                     });
 
-                    console.log("Responses to required question:", answers);
-
                     if (!answers.length) {
                         alert("Valid response is required.");
                         return;
                     }
                 }
                 
-                /* Branching question */
-
                 // Get answer
                 var questionID = currentQuestion.id;
                 var survey = JSON.parse(localStorage[surveyID] || '{}');
@@ -47200,10 +47280,10 @@ var Application = React.createClass({displayName: "Application",
                     console.log("Answer:", answer);
 
                     // Check which subsurvey this answer buckets into
+                    var BREAK = false;
                     sub_surveys.forEach(function(sub) {
+                        if (BREAK) {return;}
                         console.log("Bucket:", sub.buckets, "Type:", currentQuestion.type_constraint);
-                        console.log("currentQuestion:", currentQuestion.next && currentQuestion.next.id);
-                        console.log("currentQuestion:", currentQuestion.prev && currentQuestion.prev.id);
 
                         // Append all subsurveys to clone of current question, update head, update headStack if in bucket
                         var inBee = self.inBucket(sub.buckets, currentQuestion.type_constraint, answer);
@@ -47213,6 +47293,9 @@ var Application = React.createClass({displayName: "Application",
                             var temp = clone.next;
 
                             // link sub nodes
+                            // TODO: Deal with repeatable flag here!
+                            // XXX: When adding repeat questions make sure to augment the question.id in a repeatable and unique way
+                            // XXX: QuestionIDs are used to distinguish/remember questions everywhere, do not reuse IDs!
                             for (var i = 0; i < sub.nodes.length; i++) {
                                 if (i == 0) {
                                     clone.next = sub.nodes[i];
@@ -47231,6 +47314,7 @@ var Application = React.createClass({displayName: "Application",
                             }
 
                             // Always add branchable questions previous state into headStack
+                            // This is how we can revert alterations to a branched question
                             headStack.push(currentQuestion);
 
                             // Find the head
@@ -47243,7 +47327,7 @@ var Application = React.createClass({displayName: "Application",
                             // Set current question to CLONE always
                             currentQuestion = clone;
 
-                            return false; // break
+                            BREAK = true;// break
                         }
 
                     });
@@ -47367,6 +47451,7 @@ var Application = React.createClass({displayName: "Application",
                 }
 
                 // Branching ONLY happens when moving BACK into branchable question
+                // ALWAYS undo branched state to maintain survey consitency 
                 var sub_surveys = nextQuestion.sub_surveys;
                 if (sub_surveys && headStack.length) {
                     // If he's in the branched stack, pop em off
@@ -47413,7 +47498,13 @@ var Application = React.createClass({displayName: "Application",
 
     },
 
-    // Check if response is in bucket
+    /* 
+     * Check if response is in bucket
+     * 
+     * @buckets: Array of buckets (can be ranges in [num,num) form or "qid" for mc
+     * @type: type of bucket
+     * @resposne: answer to check if in bucket 
+     */
     inBucket: function(buckets, type, response) {
         if (response === null) 
             return false;
@@ -47422,10 +47513,12 @@ var Application = React.createClass({displayName: "Application",
             case "integer":
             case "decimal":
                 var inBee = 1; // Innocent untill proven guilty
+                // Split bucket into four sections, confirm that value in range, otherwise set inBee to false
+                var BREAK = false;
                 buckets.forEach(function(bucket) {
+                    if (BREAK) {return;}
                     var left = bucket.split(',')[0];
                     var right = bucket.split(',')[1];
-                    console.log(response, inBee);
                     if (left[0] === "[") {
                         console.log("Inclusive Left");
                         var leftLim = parseFloat(left.split("[")[1]);
@@ -47454,19 +47547,23 @@ var Application = React.createClass({displayName: "Application",
                         inBee = 0; // unknown
                     }
 
-                    if (inBee) 
-                        return false; //break
+                    console.log("Bucket:", bucket, response, inBee);
+                    if (inBee) { 
+                        BREAK = true; //break
+                    }
+
                 });
 
-                console.log(response, inBee);
                 return inBee;
+
             case "date":
                 var inBee = 1; // Innocent untill proven guilty
                 response = new Date(response); // Convert to date object for comparisons
+                var BREAK = false;
                 buckets.forEach(function(bucket) {
+                    if (BREAK) {return;}
                     var left = bucket.split(',')[0];
                     var right = bucket.split(',')[1];
-                    console.log(response, inBee);
                     if (left[0] === "[") {
                         console.log("Inclusive Left");
                         var leftLim = new Date(left.split("[")[1]);
@@ -47495,20 +47592,24 @@ var Application = React.createClass({displayName: "Application",
                         inBee = 0; // unknown
                     }
 
-                    if (inBee) 
-                        return false; //break
+                    console.log("Bucket:", bucket, response, inBee);
+                    if (inBee) { 
+                        BREAK = true; //break
+                    }
+
+                    return true;
                 });
 
-                console.log(response, inBee);
                 return inBee;
             case 'timestamp': 
+                //TODO: This bucket
                 return false;
             case 'multiple_choice': 
                 var inBee = 0;
                 buckets.forEach(function(bucket) {
                     inBee |= (bucket === response);
+                    console.log("Bucket:", bucket, response, inBee);
                 });
-                console.log(response, inBee);
                 return inBee;
             default:
                 return false;
@@ -47516,7 +47617,11 @@ var Application = React.createClass({displayName: "Application",
         }
     },
 
-    // Clone linked list node, arrays don't need to be cloned, only next/prev ptrs
+    /* 
+     * Clone linked list node, arrays don't need to be cloned, only next/prev ptrs
+     * @node: Current node to clone
+     * @ids: Dictionay reference of currently cloned nodes, prevents recursion going on forever
+     */
     cloneNode: function(node, ids) {
         var self = this;
         var clone = {
@@ -47532,7 +47637,7 @@ var Application = React.createClass({displayName: "Application",
             }
         });
 
-       // Should be mutable ...
+       // Mutable so next/prev pointers will be visible to all nodes that reference this dictionary
        ids[node.id] = clone;
 
        if (node.next) {
@@ -47593,13 +47698,11 @@ var Application = React.createClass({displayName: "Application",
 
                 // New facilities need to be stored seperatly from survey
                 if (question.type_constraint === 'facility') {
-                    console.log("Facility:", response);
                     if (response.metadata && response.metadata.is_new) {
-                        console.log("Adding new facility data");
+                        console.log("Facility:", response);
                         self.state.trees[question.id]
                             .addFacility(response.response.lat, response.response.lng, response.response);
 
-                        console.log("Storing facility in unsynced array");
                         unsynced_facilities.push({
                             'surveyID': self.props.survey.id,
                             'facilityData': response.response,
@@ -47700,16 +47803,13 @@ var Application = React.createClass({displayName: "Application",
                     unsynced_submissions.forEach(function(usurvey, i) {
                         if (Date(usurvey.save_time) === Date(survey.save_time)) {
                             idx = i;
-                            return false;
                         }
-                        return true;
                     });
 
                     // Not sure what happened, do not update localStorage
                     if (idx === -1) 
                         return;
 
-                    console.log(idx, unsynced_submissions.length);
                     unsynced_submissions.splice(idx, 1);
 
                     unsynced_surveys[survey.survey_id] = unsynced_submissions;
@@ -47762,9 +47862,7 @@ var Application = React.createClass({displayName: "Application",
                                         }
                                         console.log("Removed:", result);
                                     });
-                                    return false;
                                 }
-                                return true;
                             });
 
                             // What??
@@ -47802,9 +47900,7 @@ var Application = React.createClass({displayName: "Application",
                             var facilityID = facility.facilityData.facility_id;
                             if (ufacilityID === facilityID) {
                                 idx = i;
-                                return false;
                             }
-                            return true;
                         });
 
                         // What??
@@ -48064,6 +48160,12 @@ var Application = React.createClass({displayName: "Application",
     }
 });
 
+/*
+ * Entry point for template
+ *
+ * @survey: JSON representation of the survey
+ * @revisit_url: Revisit url, set globally
+ */
 init = function(survey, url) {
     // Set revisit url
     revisit_url = url;
