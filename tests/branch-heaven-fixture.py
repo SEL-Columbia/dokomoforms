@@ -203,6 +203,35 @@ with session.begin():
             ]
     ))
 
+    survey.nodes.append(models.construct_survey_node(
+        node=models.construct_node(
+            type_constraint='integer',
+            title={'English': 'two buckets'},
+        ),
+        sub_surveys=[
+            models.SubSurvey(
+                buckets=[
+                    models.construct_bucket(
+                        bucket_type='integer',
+                        bucket='[0, 10]',
+                    ),
+                    models.construct_bucket(
+                        bucket_type='integer',
+                        bucket='[20, 30]',
+                    ),
+                ],
+                nodes=[
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            title={'English': 'two_bucket_branch'},
+                            type_constraint='text',
+                        ),
+                    ),
+                ]
+            )
+        ]
+    ))
+
     # Add survey to creator
     creator.surveys.append(survey)
 
