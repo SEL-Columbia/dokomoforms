@@ -41,7 +41,6 @@ module.exports = React.createClass({
         //e.stopPropagation();
         //e.cancelBubble = true;
 
-        console.log('selected', option, checked);
         if (this.props.selectFunction)
             this.props.selectFunction(selected);
 

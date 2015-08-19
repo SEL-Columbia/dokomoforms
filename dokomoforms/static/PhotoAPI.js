@@ -56,7 +56,7 @@ module.exports = {
 
     /* 
      * Add photo with given uuid and base64 URI to pouchDB
-     * XXX set up callback
+     * TODO set up callback
      */
     addPhoto: function(db, photoID, photo, callback) {
         var photo64 = photo.substring(photo.indexOf(',')+1)
