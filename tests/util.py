@@ -177,9 +177,9 @@ def dont_run_in_a_transaction(doko_test):
     """
     @wraps(doko_test)
     def wrapper(self):
-        self.session.close()
-        self.session = Session(bind=engine, autocommit=True)
         try:
+            self.session.close()
+            self.session = Session(bind=engine, autocommit=True)
             return doko_test(self)
         finally:
             unload_fixtures(engine, 'doko_test')

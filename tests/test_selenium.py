@@ -285,6 +285,8 @@ class DriverTest(tests.util.DokoFixtureTest):
             element.send_keys('{}:{} {}'.format(hour, minute, am_pm))
 
     def enter_timestamp(self, element, year, month, day, hour, minute, am_pm):
+        if self.browser == 'chrome':
+            raise unittest.SkipTest('Selenium + Chrome + timestamp == 😢')
         self.enter_date(element, year, month, day)
         if self.browser == 'chrome':
             # For some reason this doesn't work...
@@ -591,8 +593,6 @@ class TestEnumerate(DriverTest):
 
     @report_success_status
     def test_single_timestamp_question(self):
-        if self.browser == 'chrome':
-            raise unittest.SkipTest('Selenium + Chrome + timestamp == 😢')
         survey_id = self.get_single_node_survey_id('timestamp')
         existing_submission = self.get_last_submission(survey_id)
 
@@ -881,6 +881,34 @@ class TestEnumerate(DriverTest):
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
 
+        self.assertEqual(len(self.drv.find_elements_by_tag_name('button')), 1)
+
+    @report_success_status
+    def test_presence_of_submit_button(self):
+        survey_id = self.get_single_node_survey_id('integer')
+
+        self.get('/enumerate/{}'.format(survey_id))
+
+        self.toggle_online()
+
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        self.assertEqual(len(self.drv.find_elements_by_tag_name('button')), 1)
+
+        self.toggle_online()
+        time.sleep(1)
+        self.assertEqual(len(self.drv.find_elements_by_tag_name('button')), 2)
+
+        self.toggle_online()
+        time.sleep(1)
         self.assertEqual(len(self.drv.find_elements_by_tag_name('button')), 1)
 
     @report_success_status
@@ -1497,3 +1525,1430 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[0].answer, 15)
         self.assertEqual(new_submission.answers[1].answer, 'in a branch')
         self.assertEqual(new_submission.answers[2].answer, 4)
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_last_question_branching_enter_branch(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'basic branching'},
+                nodes=[
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'integer_0'},
+                            type_constraint='integer',
+                        ),
+                    ),
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'integer_1'},
+                            type_constraint='integer',
+                        ),
+                        sub_surveys=[
+                            SubSurvey(
+                                buckets=[
+                                    construct_bucket(
+                                        bucket_type='integer',
+                                        bucket='[10,20]',
+                                    ),
+                                ],
+                                nodes=[
+                                    construct_survey_node(
+                                        node=construct_node(
+                                            title={
+                                                'English': 'branch',
+                                            },
+                                            type_constraint='text',
+                                        ),
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('4')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('15')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'branch'
+        )
+
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('in a branch')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertEqual(new_submission.answers[0].answer, 4)
+        self.assertEqual(new_submission.answers[1].answer, 15)
+        self.assertEqual(new_submission.answers[2].answer, 'in a branch')
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_last_question_branching_do_not_enter_branch(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'basic branching'},
+                nodes=[
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'integer_0'},
+                            type_constraint='integer',
+                        ),
+                    ),
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'integer_1'},
+                            type_constraint='integer',
+                        ),
+                        sub_surveys=[
+                            SubSurvey(
+                                buckets=[
+                                    construct_bucket(
+                                        bucket_type='integer',
+                                        bucket='[10,20]',
+                                    ),
+                                ],
+                                nodes=[
+                                    construct_survey_node(
+                                        node=construct_node(
+                                            title={
+                                                'English': 'branch',
+                                            },
+                                            type_constraint='text',
+                                        ),
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('4')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('25')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        self.assertNotEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'branch'
+        )
+
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertEqual(new_submission.answers[0].answer, 4)
+        self.assertEqual(new_submission.answers[1].answer, 25)
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_branch_nesting(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'basic branching'},
+                nodes=[
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'integer_0'},
+                            type_constraint='integer',
+                        ),
+                        sub_surveys=[
+                            SubSurvey(
+                                buckets=[
+                                    construct_bucket(
+                                        bucket_type='integer',
+                                        bucket='[10,20]',
+                                    ),
+                                ],
+                                nodes=[
+                                    construct_survey_node(
+                                        node=construct_node(
+                                            title={
+                                                'English': 'branch_0',
+                                            },
+                                            type_constraint='text',
+                                        ),
+                                    ),
+                                ],
+                            ),
+                            SubSurvey(
+                                buckets=[
+                                    construct_bucket(
+                                        bucket_type='integer',
+                                        bucket='[21,30]',
+                                    ),
+                                ],
+                                nodes=[
+                                    construct_survey_node(
+                                        node=construct_node(
+                                            title={
+                                                'English': 'branch_1',
+                                            },
+                                            type_constraint='integer',
+                                        ),
+                                        sub_surveys=[
+                                            SubSurvey(
+                                                buckets=[
+                                                    construct_bucket(
+                                                        bucket_type='integer',
+                                                        bucket='[10,20]',
+                                                    ),
+                                                ],
+                                                nodes=[
+                                                    construct_survey_node(
+                                                        node=construct_node(
+                                                            title={
+                                                                'English': (
+                                                                    'branch_2'
+                                                                ),
+                                                            },
+                                                            type_constraint=(
+                                                                'text'
+                                                            ),
+                                                        ),
+                                                    ),
+                                                ],
+                                            ),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'integer_1'},
+                            type_constraint='integer',
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('25')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'branch_1'
+        )
+
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('15')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'branch_2'
+        )
+
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('do not submit this')
+        )
+
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'integer_0'
+        )
+
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('15')
+            .perform()
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'branch_0'
+        )
+
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('submit this')
+        )
+
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertEqual(len(new_submission.answers), 3)
+        self.assertEqual(new_submission.answers[0].answer, 15)
+        self.assertEqual(new_submission.answers[1].answer, 'submit this')
+        self.assertEqual(new_submission.answers[2].answer, 3)
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_nesting_maintains_answers(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'basic branching'},
+                nodes=[
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'integer_0'},
+                            type_constraint='integer',
+                        ),
+                        sub_surveys=[
+                            SubSurvey(
+                                buckets=[
+                                    construct_bucket(
+                                        bucket_type='integer',
+                                        bucket='[10,20]',
+                                    ),
+                                ],
+                                nodes=[
+                                    construct_survey_node(
+                                        node=construct_node(
+                                            title={
+                                                'English': 'branch_0',
+                                            },
+                                            type_constraint='integer',
+                                        ),
+                                        sub_surveys=[
+                                            SubSurvey(
+                                                buckets=[
+                                                    construct_bucket(
+                                                        bucket_type='integer',
+                                                        bucket='[10,20]',
+                                                    ),
+                                                ],
+                                                nodes=[
+                                                    construct_survey_node(
+                                                        node=construct_node(
+                                                            title={
+                                                                'English': (
+                                                                    'branch_2'
+                                                                ),
+                                                            },
+                                                            type_constraint=(
+                                                                'text'
+                                                            ),
+                                                        ),
+                                                    ),
+                                                ],
+                                            ),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'integer_1'},
+                            type_constraint='integer',
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('15')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('16')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('submit this')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('3')
+        )
+
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('input').get_attribute('value'),
+            '15'
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('input').get_attribute('value'),
+            '16'
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('input').get_attribute('value'),
+            'submit this'
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('input').get_attribute('value'),
+            '3'
+        )
+
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertEqual(len(new_submission.answers), 4)
+        self.assertEqual(new_submission.answers[0].answer, 15)
+        self.assertEqual(new_submission.answers[1].answer, 16)
+        self.assertEqual(new_submission.answers[2].answer, 'submit this')
+        self.assertEqual(new_submission.answers[3].answer, 3)
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_multiple_buckets_for_same_branch(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'basic branching'},
+                nodes=[
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'branching'},
+                            type_constraint='integer',
+                        ),
+                        sub_surveys=[
+                            SubSurvey(
+                                buckets=[
+                                    construct_bucket(
+                                        bucket_type='integer',
+                                        bucket='[0, 10]',
+                                    ),
+                                    construct_bucket(
+                                        bucket_type='integer',
+                                        bucket='[20, 30]',
+                                    ),
+                                ],
+                                nodes=[
+                                    construct_survey_node(
+                                        node=construct_node(
+                                            title={'English': 'branch'},
+                                            type_constraint='text',
+                                        ),
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'last question'},
+                            type_constraint='integer',
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('5')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'branch'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('25')
+            .perform()
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'branch'
+        )
+
+    def survey_with_branch(self, type_constraint, *buckets):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'basic branching'},
+                nodes=[
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'branching'},
+                            type_constraint=type_constraint,
+                        ),
+                        sub_surveys=[
+                            SubSurvey(
+                                buckets=[
+                                    construct_bucket(
+                                        bucket_type=type_constraint,
+                                        bucket=bucket,
+                                    ),
+                                ],
+                                nodes=[
+                                    construct_survey_node(
+                                        node=construct_node(
+                                            title={'English': 'b{}'.format(i)},
+                                            type_constraint='text',
+                                        ),
+                                    ),
+                                ],
+                            ) for i, bucket in enumerate(buckets)
+                        ],
+                    ),
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'last question'},
+                            type_constraint='integer',
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+        return survey.id
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_integer_buckets(self):
+        survey_id = self.survey_with_branch('integer', '(1, 3)', '[4, 5]')
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('2')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b0'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('4')
+            .perform()
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b1'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('1')
+            .perform()
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'last question'
+        )
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_integer_buckets_open_ranges(self):
+        survey_id = self.survey_with_branch('integer', '(, 0)', '[10,)')
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('-5')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b0'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('15')
+            .perform()
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b1'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('5')
+            .perform()
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'last question'
+        )
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_integer_buckets_total_open(self):
+        survey_id = self.survey_with_branch('integer', '(,)')
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('-999')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b0'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('999')
+            .perform()
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b0'
+        )
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_decimal_buckets(self):
+        survey_id = self.survey_with_branch(
+            'decimal',
+            '(1.2, 3.2)',
+            '[4.2, 5.2]'
+        )
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('1.3')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b0'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('4.2')
+            .perform()
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b1'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('1.2')
+            .perform()
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'last question'
+        )
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_decimal_buckets_open_ranges(self):
+        survey_id = self.survey_with_branch('decimal', '(, 0.1)', '[10.1,)')
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('-5.1')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b0'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('15.1')
+            .perform()
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b1'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('5.1')
+            .perform()
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'last question'
+        )
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_decimal_buckets_total_open(self):
+        survey_id = self.survey_with_branch('decimal', '(,)')
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('-999.1')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b0'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('999.1')
+            .perform()
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b0'
+        )
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_date_buckets(self):
+        survey_id = self.survey_with_branch(
+            'date',
+            '(2015-01-01, 2015-01-03)',
+            '[2015-01-04, 2015-01-05]'
+        )
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.enter_date(
+            self.drv.find_element_by_tag_name('input'),
+            '2015', '01', '02'
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b0'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys(Keys.DELETE)
+            .perform()
+        )
+        self.enter_date(
+            self.drv.find_element_by_tag_name('input'),
+            '2015', '01', '04'
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b1'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys(Keys.DELETE)
+            .perform()
+        )
+        self.enter_date(
+            self.drv.find_element_by_tag_name('input'),
+            '2015', '01', '01'
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'last question'
+        )
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_date_buckets_open_ranges(self):
+        survey_id = self.survey_with_branch(
+            'date',
+            '(, 2015-01-01)',
+            '[2015-01-10,]'
+        )
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.enter_date(
+            self.drv.find_element_by_tag_name('input'),
+            '2014', '11', '22'
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b0'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys(Keys.DELETE)
+            .perform()
+        )
+        self.enter_date(
+            self.drv.find_element_by_tag_name('input'),
+            '2015', '11', '22'
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b1'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys(Keys.DELETE)
+            .perform()
+        )
+        self.enter_date(
+            self.drv.find_element_by_tag_name('input'),
+            '2015', '01', '05'
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'last question'
+        )
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_date_buckets_total_open(self):
+        survey_id = self.survey_with_branch('date', '(,)')
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.enter_date(
+            self.drv.find_element_by_tag_name('input'),
+            '1970', '01', '05'
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b0'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys(Keys.DELETE)
+            .perform()
+        )
+        self.enter_date(
+            self.drv.find_element_by_tag_name('input'),
+            '2070', '01', '05'
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b0'
+        )
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_timestamp_buckets(self):
+        survey_id = self.survey_with_branch(
+            'timestamp',
+            '(2015-01-01T1:00:00, 2015-01-03:1:00:00)',
+            '[2015-01-04T1:00:00, 2015-01-05T1:00:00]'
+        )
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.enter_timestamp(
+            self.drv.find_element_by_tag_name('input'),
+            '2015', '01', '02', '01', '00', 'AM'
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b0'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys(Keys.DELETE)
+            .perform()
+        )
+        self.enter_timestamp(
+            self.drv.find_element_by_tag_name('input'),
+            '2015', '01', '04', '01', '00', 'AM'
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b1'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys(Keys.DELETE)
+            .perform()
+        )
+        self.enter_timestamp(
+            self.drv.find_element_by_tag_name('input'),
+            '2015', '01', '01', '01', '00', 'AM'
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'last question'
+        )
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_timestamp_buckets_open_ranges(self):
+        survey_id = self.survey_with_branch(
+            'timestamp',
+            '(, 2015-01-01T1:00:00)',
+            '[2015-01-10T1:00:00,]'
+        )
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.enter_timestamp(
+            self.drv.find_element_by_tag_name('input'),
+            '2014', '11', '22', '01', '00', 'AM'
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b0'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys(Keys.DELETE)
+            .perform()
+        )
+        self.enter_timestamp(
+            self.drv.find_element_by_tag_name('input'),
+            '2015', '11', '22', '01', '00', 'AM'
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b1'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys(Keys.DELETE)
+            .perform()
+        )
+        self.enter_timestamp(
+            self.drv.find_element_by_tag_name('input'),
+            '2015', '01', '05', '01', '00', 'AM'
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'last question'
+        )
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_timestamp_buckets_total_open(self):
+        survey_id = self.survey_with_branch('timestamp', '(,)')
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.enter_timestamp(
+            self.drv.find_element_by_tag_name('input'),
+            '1970', '01', '05', '01', '00', 'AM'
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b0'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys(Keys.DELETE)
+            .perform()
+        )
+        self.enter_timestamp(
+            self.drv.find_element_by_tag_name('input'),
+            '2070', '01', '05', '01', '00', 'AM'
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b0'
+        )
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_multiple_choice_buckets(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            node = construct_node(
+                title={'English': 'branching'},
+                type_constraint='multiple_choice',
+                choices=[
+                    Choice(
+                        choice_text={'English': str(i)}
+                    ) for i in range(3)
+                ],
+            )
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'basic branching'},
+                nodes=[
+                    construct_survey_node(
+                        node=node,
+                        sub_surveys=[
+                            SubSurvey(
+                                buckets=[
+                                    construct_bucket(
+                                        bucket_type='multiple_choice',
+                                        bucket=choice,
+                                    ),
+                                ],
+                                nodes=[
+                                    construct_survey_node(
+                                        node=construct_node(
+                                            title={'English': 'b{}'.format(i)},
+                                            type_constraint='text',
+                                        ),
+                                    ),
+                                ],
+                            ) for i, choice in enumerate(node.choices[:2])
+                        ],
+                    ),
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'last question'},
+                            type_constraint='integer',
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('option')[1])
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b0'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        self.click(self.drv.find_elements_by_tag_name('option')[2])
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'b1'
+        )
+        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        self.click(self.drv.find_elements_by_tag_name('option')[3])
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'last question'
+        )
+
+    @report_success_status
+    @tests.util.dont_run_in_a_transaction
+    def test_after_saving_branch_path_resets(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            node = construct_node(
+                title={'English': 'branching'},
+                type_constraint='integer',
+            )
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'basic branching'},
+                nodes=[
+                    construct_survey_node(
+                        node=node,
+                        sub_surveys=[
+                            SubSurvey(
+                                buckets=[
+                                    construct_bucket(
+                                        bucket_type='integer',
+                                        bucket='[0, 10]',
+                                    ),
+                                ],
+                                nodes=[
+                                    construct_survey_node(
+                                        node=construct_node(
+                                            title={'English': 'begin nesting'},
+                                            type_constraint='integer',
+                                        ),
+                                        sub_surveys=[
+                                            SubSurvey(
+                                                buckets=[
+                                                    construct_bucket(
+                                                        bucket_type='integer',
+                                                        bucket='[20, 30]',
+                                                    ),
+                                                ],
+                                                nodes=[
+                                                    construct_survey_node(
+                                                        node=construct_node(
+                                                            title={
+                                                                'English': (
+                                                                    'nest 2'
+                                                                ),
+                                                            },
+                                                            type_constraint=(
+                                                                'text'
+                                                            ),
+                                                        ),
+                                                    ),
+                                                ],
+                                            ),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'last question'},
+                            type_constraint='integer',
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('5')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('25')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('save this')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('4')
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'last question'
+        )
