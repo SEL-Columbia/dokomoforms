@@ -23,7 +23,6 @@ module.exports = React.createClass({
     // Determine the input field type based on props.type
     getResponseType: function() {
         var type = this.props.type;
-        console.log(type);
         switch(type) {
             case "integer":
             case "decimal":
@@ -44,7 +43,6 @@ module.exports = React.createClass({
     // Determine the input field step based on props.type
     getResponseStep: function() {
         var type = this.props.type;
-        console.log(type);
         switch(type) {
             case "decimal":
                 return "any"
@@ -94,14 +92,12 @@ module.exports = React.createClass({
 
                 if (logic && logic.min && typeof logic.min === 'number') {
                     if (val < logic.min) {
-                        console.log("Failed logic");
                         val = null;
                     }
                 }
 
                 if (logic && logic.max && typeof logic.max === 'number') {
                     if (val > logic.max) {
-                        console.log("Failed logic");
                         val = null;
                     }
                 }
@@ -119,14 +115,12 @@ module.exports = React.createClass({
                
                 if (logic && logic.min && !isNaN((new Date(logic.min)).getDate())) {
                     if (resp < new Date(logic.min)) {
-                        console.log("Failed logic");
                         val = null;
                     }
                 }
 
                 if (logic && logic.max && !isNaN((new Date(logic.max)).getDate())) {
                     if (resp > new Date(logic.max)) {
-                        console.log("Failed logic");
                         val = null;
                     }
                 }
@@ -134,6 +128,7 @@ module.exports = React.createClass({
                 break;
             case "timestamp":
             case "time":
+                //TODO: enforce
             default:
               if (answer) {
                   val = answer;

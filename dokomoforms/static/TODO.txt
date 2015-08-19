@@ -1,0 +1,39 @@
+I left TODO markers anywhere things need to be finished up
+I left XXX markers for 'interesting' sections of the code
+
+
+0. BIG one, facilityTree is always queried, never retireved locally if callback
+fails.
+    This is an easy fix that I will hopefully update before I leave.
+    If I dont, please dont naively store response in localStorage, leaves must
+    be removed
+
+1. Add new facility not fully validated
+    I validate each input individually as they are each an individual React
+    components. However this does not prevent some of the fields from being
+    filled with the others being left empty. This can be fixed if the add
+    facility component is factored into its own view and validated in a 
+    special way. I believe it would be way too messy to messy to do it all in
+    Facility.js
+
+2. Timestamp/time not enforced or validated in Response.js 
+    I blame javascript 
+
+3. Timestamp bucket not implemented
+    I blame javascript
+
+4. Repetable sub_surveys not implemented
+    The solution has been thought out, however the implementation may introduce
+    more bugs (espicially with the 'unique qid' thing i mentioned in the TODO.
+    Was not worth it to do im my last two days. (Also it would complicate
+    submission)
+
+5. Flesh out logic
+    Some min max's were implemented. Could really thing of much more
+
+6. Photos are stored as PNG base64 strings, need to be done as JPGs
+
+7. Photo View is not well designed
+
+8. Extensive offline testing needs to be done (espicially the 'i turned off my
+phone case')
