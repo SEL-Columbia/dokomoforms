@@ -22,9 +22,11 @@ module.exports = React.createClass({
 
         // Update navigator.onLine
         var interval = window.setInterval(function() {
-            self.setState({
-                online: navigator.onLine,
-            });
+            if (self.state.online !== navigator.onLine) {
+                self.setState({
+                    online: navigator.onLine,
+                });
+            }
         }, 1000);
 
         return { 
