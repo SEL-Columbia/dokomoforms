@@ -108,7 +108,9 @@ var Application = React.createClass({
                         parseFloat(node.logic.wlng), 
                         parseFloat(node.logic.slat), 
                         parseFloat(node.logic.elng),
-                        surveyDB);
+                        surveyDB,
+                        node.id
+                        );
             }
 
             if (node.sub_surveys) {

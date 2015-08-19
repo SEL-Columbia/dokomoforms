@@ -17,7 +17,7 @@ var Promise = require('mpromise');
  *
  * All underscore methods are helper methods to do the recursion
  */
-var FacilityTree = function(nlat, wlng, slat, elng, db) {
+var FacilityTree = function(nlat, wlng, slat, elng, db, id) {
     // Ajax request made below node definition
     var self = this;
     this.nlat = nlat;
@@ -25,6 +25,7 @@ var FacilityTree = function(nlat, wlng, slat, elng, db) {
     this.slat = slat;
     this.elng = elng;
     this.db = db;
+    this.id = id;
 
     /*
      * FacilityNode class, node of the tree, knows how to access pouchDB to read compressed facilities
@@ -49,7 +50,7 @@ var FacilityTree = function(nlat, wlng, slat, elng, db) {
         this.isRoot = obj.isRoot
         this.isLeaf = obj.isLeaf
         this.children = {};
-        if (this.isLeaf) {
+        if (this.isLeaf && obj.data) {
             this.setFacilities(obj.data);
         }
 
@@ -66,6 +67,7 @@ var FacilityTree = function(nlat, wlng, slat, elng, db) {
         }
     
     };
+
 
     facilityNode.prototype.print = function(indent) {
         var indent = indent || "";
@@ -182,9 +184,14 @@ var FacilityTree = function(nlat, wlng, slat, elng, db) {
             console.log("Recieved Data traversing");
             self.total = data.total;
             self.root = new facilityNode(data.facilities); 
+            self.storeTree();
         },
         error: function(data) {
-            console.log("Done");
+            console.log("Failed to retrieve data, building from local");
+            var facilities = self.loadTree(); 
+            if (facilities)
+                self.root = new facilityNode(facilities);
+
         },
     });
 
@@ -193,6 +200,21 @@ var FacilityTree = function(nlat, wlng, slat, elng, db) {
             "&compressed");
 
 }
+
+/* Store facility tree in localStorage without children */
+FacilityTree.prototype.storeTree = function() {
+    // Data is never stored in object, stringifiying root should be sufficient
+    var facilities = JSON.parse(localStorage['facilities'] || '{}');
+    facilities[this.id] = this.root;
+    localStorage['facilities'] = JSON.stringify(facilities);
+}
+
+/* Load facility tree from localStorage */
+FacilityTree.prototype.loadTree = function() {
+    var facilities = JSON.parse(localStorage['facilities'] || '{}');
+    return facilities[this.id];
+}
+
 
 FacilityTree.prototype._getNNode = function(lat, lng, node) {
     var self = this;
@@ -47179,7 +47201,9 @@ var Application = React.createClass({displayName: "Application",
                         parseFloat(node.logic.wlng), 
                         parseFloat(node.logic.slat), 
                         parseFloat(node.logic.elng),
-                        surveyDB);
+                        surveyDB,
+                        node.id
+                        );
             }
 
             if (node.sub_surveys) {
