@@ -1,13 +1,6 @@
 I left TODO markers anywhere things need to be finished up
 I left XXX markers for 'interesting' sections of the code
 
-
-0. BIG one, facilityTree is always queried, never retireved locally if callback
-fails.
-    This is an easy fix that I will hopefully update before I leave.
-    If I dont, please dont naively store response in localStorage, leaves must
-    be removed
-
 1. Add new facility not fully validated
     I validate each input individually as they are each an individual React
     components. However this does not prevent some of the fields from being
