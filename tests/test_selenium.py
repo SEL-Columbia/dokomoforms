@@ -166,25 +166,16 @@ class DriverTest(tests.util.DokoFixtureTest):
             browser_profile = f_profile
         elif self.browser == 'chrome':
             caps['disable-user-media-security'] = True
-        # Try to start the remote webdriver a few times... For some reason
-        # it fails sometimes with a ValueError.
-        number_of_attempts = 10
-        for attempt in range(number_of_attempts):
-            try:
-                self.drv = webdriver.Remote(
-                    desired_capabilities=caps,
-                    command_executor=cmd_executor,
-                    browser_profile=browser_profile,
-                )
-                break
-            except urllib.error.URLError:
-                self.fail(
-                    'Sauce Connect failure. Did you start Sauce Connect?'
-                )
-            except ValueError:
-                if attempt == number_of_attempts - 1:
-                    raise
-                time.sleep(5)
+        try:
+            self.drv = webdriver.Remote(
+                desired_capabilities=caps,
+                command_executor=cmd_executor,
+                browser_profile=browser_profile,
+            )
+        except urllib.error.URLError:
+            self.fail(
+                'Sauce Connect failure. Did you start Sauce Connect?'
+            )
         self.drv.implicitly_wait(10)
 
     def _set_sauce_status(self):
