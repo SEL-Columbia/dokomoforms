@@ -69,6 +69,8 @@
 				        {"response_type": {{ answer.response['response_type'] }}, "response": {{ answer.response['response'].isoformat() }} }
 				    {% elif answer.type_constraint == 'decimal' %}
 				        {"response_type": {{ answer.response['response_type'] }}, "response": {{ float(answer.response['response']) }} }
+				    {% elif answer.type_constraint == 'photo' %}
+				        {"response_type": {{ answer.response['response_type'] }}, "response": <img src="data:image/png;base64,{{ answer.photo.image }}"> }
 				    {% else %}
 				        {{ json_encode(answer.response) }}
 				    {% end %}
