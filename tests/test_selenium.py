@@ -842,10 +842,8 @@ class TestEnumerate(DriverTest):
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
 
-        self.toggle_online()  # TODO: have a js listener for this
-        # so that the next two lines can go away
-        self.click(self.drv.find_element_by_class_name('navigate-right'))
-        self.click(self.drv.find_element_by_class_name('page_nav__prev'))
+        self.toggle_online()
+        time.sleep(1)
 
         self.click(self.drv.find_elements_by_tag_name('button')[0])
 
