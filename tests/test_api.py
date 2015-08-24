@@ -4,7 +4,6 @@ from collections import OrderedDict
 from datetime import datetime, date, timedelta
 import json
 import os
-import signal
 import uuid
 import unittest
 
@@ -18,7 +17,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as pg
 
 from tests.util import (
-    DokoHTTPTest, setUpModule, tearDownModule, keyboard_interrupt_handler
+    DokoHTTPTest, setUpModule, tearDownModule
 )
 
 from dokomoforms.models import Submission, Survey, Node, SurveyCreator
@@ -28,7 +27,6 @@ from dokomoforms.api.base import BaseResource
 from dokomoforms.api.nodes import NodeResource
 
 utils = (setUpModule, tearDownModule)
-signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
 
 """

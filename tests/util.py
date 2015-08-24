@@ -5,8 +5,6 @@ Also injects the --schema=doko_test option.
 """
 from contextlib import contextmanager
 from functools import wraps
-import signal
-import sys
 import unittest
 from unittest.mock import patch
 from urllib.parse import urlencode
@@ -44,14 +42,6 @@ def setUpModule():
 def tearDownModule():
     """Drop the doko_test schema."""
     engine.execute(DDL('DROP SCHEMA IF EXISTS doko_test CASCADE'))
-
-
-def keyboard_interrupt_handler(signal, frame):
-    """Couldn't find a better solution than this one."""
-    sys.exit()
-
-
-signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
 
 class DokoTest(unittest.TestCase):

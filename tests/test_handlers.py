@@ -1,5 +1,4 @@
 """Handler tests"""
-import signal
 import uuid
 from unittest.mock import patch
 
@@ -14,11 +13,10 @@ import tornado.httpclient
 import tornado.testing
 
 from tests.util import (
-    DokoHTTPTest, setUpModule, tearDownModule, keyboard_interrupt_handler
+    DokoHTTPTest, setUpModule, tearDownModule
 )
 
 utils = (setUpModule, tearDownModule)
-signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
 import dokomoforms.handlers as handlers
 import dokomoforms.handlers.auth

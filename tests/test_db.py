@@ -1,10 +1,8 @@
 """Database interaction tests."""
-import signal
 from tests.util import (
-    DokoTest, setUpModule, tearDownModule, keyboard_interrupt_handler
+    DokoTest, setUpModule, tearDownModule
 )
 utils = (setUpModule, tearDownModule)
-signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
 from dokomoforms.models import Base
 

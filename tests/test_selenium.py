@@ -7,8 +7,6 @@ import json
 from http.client import HTTPConnection
 import os
 import re
-from subprocess import check_output, Popen, STDOUT, DEVNULL, CalledProcessError
-import signal
 import sys
 from threading import Thread, Event
 import time
@@ -36,94 +34,78 @@ from dokomoforms.models import (
     Survey, Submission, Photo, SurveyCreator, Node, Choice, SubSurvey,
     construct_survey, construct_survey_node, construct_node, construct_bucket
 )
+import webapp
 
 
 base = 'http://localhost:9999'
-webapp = None
+stop_webapp = None
+
+
+class DokoWebapp(Thread):
+    def __init__(self, event):
+        Thread.__init__(self)
+        self.stopped = event
+
+    def run(self):
+        webapp.options.port = 9999
+        webapp.options.schema = 'doko_test'
+        webapp.options.debug = True
+        webapp.options.silent = True
+        webapp.options.https = False
+        webapp.options.persona_verification_url = (
+            '{}/debug/persona_verify'.format(base)
+        )
+        webapp.options.revisit_url = '{}/debug/facilities'.format(base)
+        logger = webapp.logging.getLogger()
+        logger.disabled = True
+        webapp.main()
 
 
 def setUpModule():
     """Start the webapp in the background on port 9999."""
-    global webapp
+    global stop_webapp
     tests.util.setUpModule()
-    try:
-        already_running = (
-            check_output(['lsof', '-t', '-i:9999'], stderr=STDOUT)
-            .decode()
-            .strip()
-        ) is not None
-    except CalledProcessError:
-        already_running = None
-    if not already_running:
-        webapp = Popen(
-            [
-                'python', 'webapp.py',
-                '--port=9999',
-                '--schema=doko_test',
-                '--debug=True',
-                '--https=False',
-                '--persona_verification_url='
-                '{}/debug/persona_verify'.format(base),
-                '--revisit_url={}/debug/facilities'.format(base),
-            ],
-            stdout=DEVNULL,
-            stderr=DEVNULL,
-            preexec_fn=os.setsid,
-        )
-        time.sleep(2)
-
-
-def kill_webapp():
-    """Kill the webapp cleanly."""
-    if webapp is None:
-        return
-    if webapp.stdout:
-        webapp.stdout.close()
-    if webapp.stderr:
-        webapp.stderr.close()
-    if webapp.stdin:
-        webapp.stdin.close()
-    os.killpg(webapp.pid, signal.SIGTERM)
+    stop_webapp = Event()
+    background_webapp = DokoWebapp(stop_webapp)
+    background_webapp.start()
 
 
 def tearDownModule():
     tests.util.tearDownModule()
-    kill_webapp()
-
-
-def keyboard_interrupt_handler(signal, frame):
-    """This handler allows you to hit Ctrl-C without worry... more or less."""
-    kill_webapp()
-    sys.exit()
-
-
-signal.signal(signal.SIGINT, keyboard_interrupt_handler)
+    stop_webapp.set()
 
 
 class StillAliveTravis(Thread):
-    def __init__(self, event):
+    def __init__(self, event, method_name):
         Thread.__init__(self)
         self.stopped = event
+        self.method_name = method_name
         self.attempts = 0
 
     def run(self):
-        while self.attempts < 25 and not self.stopped.wait(60):
-            print('still alive Travis', file=sys.stderr)
+        while self.attempts < 5 and not self.stopped.wait(60):
+            print(
+                '{} -- still alive Travis'.format(self.method_name),
+                file=sys.stderr
+            )
             self.attempts += 1
 
 
 def report_success_status(method):
     @functools.wraps(method)
     def set_passed(self, *args, **kwargs):
-        stopFlag = Event()
-        try:
-            travis_out = StillAliveTravis(stopFlag)
+        is_travis = os.environ.get('TRAVIS', 'f').startswith('t')
+        if is_travis:
+            stop_flag = Event()
+            travis_out = StillAliveTravis(stop_flag, self._testMethodName)
             travis_out.start()
+        try:
             result = method(self, *args, **kwargs)
-            self.passed = True
-            return result
         finally:
-            stopFlag.set()
+            if is_travis:
+                stop_flag.set()
+        self.passed = True
+        return result
     return set_passed
 
 
@@ -1007,6 +989,8 @@ class TestEnumerate(DriverTest):
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        time.sleep(1)
 
         new_submission = self.get_last_submission(survey_id)
 
