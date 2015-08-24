@@ -104,22 +104,26 @@ class StillAliveTravis(Thread):
     def __init__(self, event):
         Thread.__init__(self)
         self.stopped = event
+        self.attempts = 0
 
     def run(self):
-        while not self.stopped.wait(60):
+        while self.attempts < 25 and not self.stopped.wait(60):
             print('still alive Travis', file=sys.stderr)
+            self.attempts += 1
 
 
 def report_success_status(method):
     @functools.wraps(method)
     def set_passed(self, *args, **kwargs):
         stopFlag = Event()
-        travis_out = StillAliveTravis(stopFlag)
-        travis_out.start()
-        result = method(self, *args, **kwargs)
-        stopFlag.set()
-        self.passed = True
-        return result
+        try:
+            travis_out = StillAliveTravis(stopFlag)
+            travis_out.start()
+            result = method(self, *args, **kwargs)
+            self.passed = True
+            return result
+        finally:
+            stopFlag.set()
     return set_passed
 
 
