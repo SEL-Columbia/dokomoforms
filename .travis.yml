@@ -16,6 +16,8 @@ before_script:
   - python3 -m flake8 .
   - psql -c 'create database doko;' -U postgres
   - head -c 24 /dev/urandom > cookie_secret
+  - ./webapp.py --port=9999 --schema=doko_test --debug=True --https=False --persona_verification_url=http://localhost:9999/debug/persona_verify --revisit_url=http://localhost:9999/debug/facilities > /dev/null 2>&1 &
+  - sleep 2
 
 script:
   - xvfb-run tox -e cover

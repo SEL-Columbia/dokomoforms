@@ -21,6 +21,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 import tests.util
+from tests.util import setUpModule, tearDownModule
+util = (setUpModule, tearDownModule)
 
 import config
 SAUCE_CONNECT = getattr(config, 'SAUCE_CONNECT', False)
@@ -34,51 +36,15 @@ from dokomoforms.models import (
     Survey, Submission, Photo, SurveyCreator, Node, Choice, SubSurvey,
     construct_survey, construct_survey_node, construct_node, construct_bucket
 )
-import webapp
 
 
 base = 'http://localhost:9999'
-stop_webapp = None
-
-
-class DokoWebapp(Thread):
-    def __init__(self, event):
-        Thread.__init__(self)
-        self.stopped = event
-
-    def run(self):
-        webapp.options.port = 9999
-        webapp.options.schema = 'doko_test'
-        webapp.options.debug = True
-        webapp.options.silent = True
-        webapp.options.https = False
-        webapp.options.persona_verification_url = (
-            '{}/debug/persona_verify'.format(base)
-        )
-        webapp.options.revisit_url = '{}/debug/facilities'.format(base)
-        logger = webapp.logging.getLogger()
-        logger.disabled = True
-        webapp.main()
-
-
-def setUpModule():
-    """Start the webapp in the background on port 9999."""
-    global stop_webapp
-    tests.util.setUpModule()
-    stop_webapp = Event()
-    background_webapp = DokoWebapp(stop_webapp)
-    background_webapp.start()
-
-
-def tearDownModule():
-    tests.util.tearDownModule()
-    stop_webapp.set()
 
 
 class StillAliveTravis(Thread):
-    def __init__(self, event, method_name):
-        Thread.__init__(self)
-        self.stopped = event
+    def __init__(self, method_name):
+        super().__init__(self)
+        self._stop = Event()
         self.method_name = method_name
         self.attempts = 0
 
@@ -90,20 +56,25 @@ class StillAliveTravis(Thread):
             )
             self.attempts += 1
 
+    def stop(self):
+        self._stop.set()
+
+    def stopped(self):
+        return self._stop.isSet()
+
 
 def report_success_status(method):
     @functools.wraps(method)
     def set_passed(self, *args, **kwargs):
         is_travis = os.environ.get('TRAVIS', 'f').startswith('t')
         if is_travis:
-            stop_flag = Event()
-            travis_out = StillAliveTravis(stop_flag, self._testMethodName)
+            travis_out = StillAliveTravis(self._testMethodName)
             travis_out.start()
         try:
             result = method(self, *args, **kwargs)
         finally:
             if is_travis:
-                stop_flag.set()
+                travis_out.stop()
         self.passed = True
         return result
     return set_passed
