@@ -107,7 +107,7 @@ class StillAliveTravis(Thread):
 
     def run(self):
         while not self.stopped.wait(60):
-            print('still alive Travis...', file=sys.stderr)
+            print('still alive Travis', file=sys.stderr)
 
 
 def report_success_status(method):
