@@ -42,9 +42,9 @@ base = 'http://localhost:9999'
 
 
 class StillAliveTravis(Thread):
-    def __init__(self, method_name):
-        super().__init__(self)
-        self._stop = Event()
+    def __init__(self, event, method_name):
+        Thread.__init__(self)
+        self.stopped = event
         self.method_name = method_name
         self.attempts = 0
 
@@ -56,25 +56,20 @@ class StillAliveTravis(Thread):
             )
             self.attempts += 1
 
-    def stop(self):
-        self._stop.set()
-
-    def stopped(self):
-        return self._stop.isSet()
-
 
 def report_success_status(method):
     @functools.wraps(method)
     def set_passed(self, *args, **kwargs):
         is_travis = os.environ.get('TRAVIS', 'f').startswith('t')
         if is_travis:
-            travis_out = StillAliveTravis(self._testMethodName)
+            stop_flag = Event()
+            travis_out = StillAliveTravis(stop_flag, self._testMethodName)
             travis_out.start()
         try:
             result = method(self, *args, **kwargs)
         finally:
             if is_travis:
-                travis_out.stop()
+                stop_flag.set()
         self.passed = True
         return result
     return set_passed
