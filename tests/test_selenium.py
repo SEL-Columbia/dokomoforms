@@ -311,6 +311,7 @@ class DriverTest(tests.util.DokoFixtureTest):
 
 
 class TestAuth(DriverTest):
+    @report_success_status
     def test_login(self):
         self.get('/')
         self.wait_for_element('btn-login', By.CLASS_NAME)
