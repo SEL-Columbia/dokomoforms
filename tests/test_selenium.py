@@ -10,6 +10,7 @@ import re
 from subprocess import check_output, Popen, STDOUT, DEVNULL, CalledProcessError
 import signal
 import sys
+from threading import Thread, Event
 import time
 import unittest
 import urllib.error
@@ -99,10 +100,24 @@ def keyboard_interrupt_handler(signal, frame):
 signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
 
+class StillAliveTravis(Thread):
+    def __init__(self, event):
+        Thread.__init__(self)
+        self.stopped = event
+
+    def run(self):
+        while not self.stopped.wait(60):
+            print('still alive Travis...', file=sys.stderr)
+
+
 def report_success_status(method):
     @functools.wraps(method)
     def set_passed(self, *args, **kwargs):
+        stopFlag = Event()
+        travis_out = StillAliveTravis(stopFlag)
+        travis_out.start()
         result = method(self, *args, **kwargs)
+        stopFlag.set()
         self.passed = True
         return result
     return set_passed
