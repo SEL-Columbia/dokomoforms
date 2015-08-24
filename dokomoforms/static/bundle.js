@@ -1,4 +1,1121 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+//XXX Set on init
+revisit_url = "";
+
+var React = require('react');
+var $ = require('jquery');
+var PouchDB  = require('pouchdb');
+PouchDB.plugin(require('pouchdb-upsert'));
+
+var ResponseField = require('./components/baseComponents/ResponseField.js');
+var ResponseFields = require('./components/baseComponents/ResponseFields.js');
+var BigButton = require('./components/baseComponents/BigButton.js');
+var LittleButton = require('./components/baseComponents/LittleButton.js');
+var DontKnow = require('./components/baseComponents/DontKnow.js');
+
+var Title = require('./components/baseComponents/Title.js');
+var Card = require('./components/baseComponents/Card.js');
+var Select = require('./components/baseComponents/Select.js');
+var FacilityRadios = require('./components/baseComponents/FacilityRadios.js');
+var Message = require('./components/baseComponents/Message.js');
+
+var Header = require('./components/Header.js');
+var Footer = require('./components/Footer.js');
+var Question = require('./components/Question.js'); 
+var Note = require('./components/Note.js'); 
+
+var MultipleChoice = require('./components/MultipleChoice.js'); 
+var Photo = require('./components/Photo.js'); 
+var Location = require('./components/Location.js'); 
+var Facility = require('./components/Facility.js'); 
+var Submit = require('./components/Submit.js'); 
+var Splash = require('./components/Splash.js'); 
+
+var PhotoAPI = require('./PhotoAPI.js');
+var FacilityTree = require('./FacilityAPI.js');
+
+/* 
+ * Create Single Page App with three main components
+ * Header, Content, Footer
+ */
+var Application = React.createClass({displayName: "Application",
+    getInitialState: function() {
+        // Set up db for photos and facility tree
+        var trees = {};
+        var surveyDB = new PouchDB(this.props.survey.id, {
+                    'auto_compaction': true,
+        });
+        window.surveyDB = surveyDB;
+
+        // Build initial linked list
+        var questions = this.props.survey.nodes;
+        var first_question = null;
+        questions.forEach(function(node, idx) {
+            var question = node;
+            question.prev = null;
+            question.next = null;
+            if (idx > 0) {
+                question.prev = questions[idx - 1];
+            }
+
+            if (idx < questions.length - 1) {
+                question.next = questions[idx + 1];
+            }
+
+            if (idx === 0) {
+                first_question = question;
+            }
+
+        });
+
+        // Recursively construct trees
+        this.buildTrees(questions, trees); 
+
+        return { 
+            showDontKnow: false,
+            showDontKnowBox: false,
+            head: first_question,
+            question: null,
+            headStack: [], //XXX Stack of linked list heads
+            states : {
+                SPLASH : 1,
+                QUESTION : 2,
+                SUBMIT : 3,
+            },
+            state: 1,
+            trees: trees,
+            db: surveyDB
+        }
+    },
+
+    /*
+     * Create Facility Tree object at node id for every facility tree question
+     * Recurse into subnodes if found
+     *
+     * @questions: all nodes at current sub level
+     * @trees: dictionary of question ids and facility trees
+     *
+     * NOTE: facility trees update exact same location in pouchdb (based on bounds of coordinates)
+     * i.e: Multiple trees with same bounds do not increase memory usage (network usage does increase though)
+     */
+    buildTrees: function(questions, trees) {
+        var self = this;
+        questions = questions || [];
+
+        questions.forEach(function(node, idx) {
+            if (node.type_constraint === 'facility') {
+                trees[node.id] = new FacilityTree(
+                        parseFloat(node.logic.nlat), 
+                        parseFloat(node.logic.wlng), 
+                        parseFloat(node.logic.slat), 
+                        parseFloat(node.logic.elng),
+                        surveyDB,
+                        node.id
+                        );
+            }
+
+            if (node.sub_surveys) {
+                node.sub_surveys.forEach(function(subs) {
+                    self.buildTrees(subs.nodes, trees);
+                });
+            }
+        });
+    },
+
+    /*
+     * Load next question, updates state of the Application
+     * if next question is not found move to either SPLASH/SUBMIT
+     * 
+     * Deals with branching, required and setting up dontknow footer state
+     * Uses refs! (Could be removed)
+     */
+    onNextButton: function() {
+        var self = this;
+        var surveyID = this.props.survey.id;
+        var currentState = this.state.state;
+        var currentQuestion = this.state.question;
+
+        // Set up next state
+        var nextQuestion = null;
+        var showDontKnow = false;
+        var showDontKnowBox = false;
+        var state = this.state.states.SPLASH;
+        var head = this.state.head;
+        var headStack = this.state.headStack;
+
+        console.log("Current Question", currentQuestion);
+
+        switch(currentState) {
+            // On Submit page and next was pressed
+            case this.state.states.SUBMIT:
+                nextQuestion = null;
+                showDontKnow = false;
+                showDontKnowBox = false;
+                state = this.state.states.SPLASH
+                //XXX Fire Modal for submitting here
+                this.onSave();
+
+                // Reset Survey Linked List
+                head = this.state.headStack[0] || head; 
+                while(head.prev) {
+                    head = head.prev;
+                };
+                headStack = [];
+                break;
+
+            // On Splash page and next was pressed
+            case this.state.states.SPLASH:
+                nextQuestion = this.state.head;
+                showDontKnow = nextQuestion.allow_dont_know || false;
+                showDontKnowBox = false;
+                state = this.state.states.QUESTION
+
+                var questionID = nextQuestion.id;
+                if (showDontKnow) { 
+                    var response = this.refs.footer.getAnswer(questionID);
+                    console.log("Footer response:", response);
+                    showDontKnowBox = Boolean(response);
+                }
+
+                break;
+
+            case this.state.states.QUESTION:
+                // Look into active answers, check if any filled out if question is REQUIRED
+                var required = currentQuestion.required || false;
+                if (required) {
+                    var questionID = currentQuestion.id;
+                    var survey = JSON.parse(localStorage[surveyID] || '{}');
+                    var answers = (survey[questionID] || []).filter(function(response) {
+                        return (response && response.response !== null);
+                    });
+
+                    if (!answers.length) {
+                        alert("Valid response is required.");
+                        return;
+                    }
+                }
+                
+                // Get answer
+                var questionID = currentQuestion.id;
+                var survey = JSON.parse(localStorage[surveyID] || '{}');
+                var answers = (survey[questionID] || []).filter(function(response) {
+                    return (response && response.response !== null);
+                });
+
+                // XXX Confirm response type is answer (instead of dont-know/other)
+                var answer = answers.length && answers[0].response || null;
+                var sub_surveys = currentQuestion.sub_surveys;
+
+                // If has subsurveys then it can branch
+                if (sub_surveys) {
+                    console.log("Subsurveys:", currentQuestion.id, sub_surveys);
+                    console.log("Answer:", answer);
+
+                    // Check which subsurvey this answer buckets into
+                    var BREAK = false;
+                    sub_surveys.forEach(function(sub) {
+                        if (BREAK) {return;}
+                        console.log("Bucket:", sub.buckets, "Type:", currentQuestion.type_constraint);
+
+                        // Append all subsurveys to clone of current question, update head, update headStack if in bucket
+                        var inBee = self.inBucket(sub.buckets, currentQuestion.type_constraint, answer);
+                        if (inBee) {
+                            // Clone current element
+                            var clone = self.cloneNode(currentQuestion);
+                            var temp = clone.next;
+
+                            // link sub nodes
+                            // TODO: Deal with repeatable flag here!
+                            // XXX: When adding repeat questions make sure to augment the question.id in a repeatable and unique way
+                            // XXX: QuestionIDs are used to distinguish/remember questions everywhere, do not reuse IDs!
+                            for (var i = 0; i < sub.nodes.length; i++) {
+                                if (i == 0) {
+                                    clone.next = sub.nodes[i];
+                                    sub.nodes[i].prev = clone;
+                                } else {
+                                    sub.nodes[i].prev = sub.nodes[i - 1];;
+                                }
+
+                                if (i === sub.nodes.length - 1) {
+                                    sub.nodes[i].next = temp;
+                                    if (temp)
+                                        temp.prev = sub.nodes[i];
+                                } else { 
+                                    sub.nodes[i].next = sub.nodes[i + 1];
+                                }
+                            }
+
+                            // Always add branchable questions previous state into headStack
+                            // This is how we can revert alterations to a branched question
+                            headStack.push(currentQuestion);
+
+                            // Find the head
+                            var newHead = clone;
+                            while(newHead.prev) {
+                                newHead = newHead.prev;
+                            }
+                            head = newHead;
+
+                            // Set current question to CLONE always
+                            currentQuestion = clone;
+
+                            BREAK = true;// break
+                        }
+
+                    });
+
+                }
+
+                nextQuestion = currentQuestion.next;
+                state = this.state.states.QUESTION
+
+                // Set the state to SUBMIT when reach the end of questions
+                if (nextQuestion === null) {
+                    nextQuestion = currentQuestion; //Keep track of tail
+                    showDontKnow = false;
+                    showDontKnowBox = false;
+                    state = this.state.states.SUBMIT;
+                    break;
+                }
+
+                // Moving into a valid question
+                showDontKnow = nextQuestion.allow_dont_know || false;
+                showDontKnowBox = false;
+                var questionID = nextQuestion.id;
+
+                if (showDontKnow) { 
+                    var response = this.refs.footer.getAnswer(questionID);
+                    console.log("Footer response:", response);
+                    showDontKnowBox = Boolean(response);
+                }
+
+                break;
+
+        }
+
+        this.setState({
+            question: nextQuestion,
+            showDontKnow: showDontKnow,
+            showDontKnowBox: showDontKnowBox,
+            head: head,
+            headStack: headStack,
+            state: state
+        })
+
+        return;
+
+    },
+
+    /*
+     * Load prev question, updates state of the Application
+     * if prev question is not found to SPLASH
+     */
+    onPrevButton: function() {
+        var self = this;
+        var surveyID = this.props.survey.id;
+        var currentState = this.state.state;
+        var currentQuestion = this.state.question;
+
+        // Set up next state
+        var nextQuestion = null;
+        var showDontKnow = false;
+        var showDontKnowBox = false;
+        var state = this.state.states.SPLASH;
+        var head = this.state.head;
+        var headStack = this.state.headStack;
+
+        switch(currentState) {
+            // On Submit page and prev was pressed
+            case this.state.states.SUBMIT:
+                nextQuestion = currentQuestion; // Tail was saved in current question
+
+                // Branching ONLY happens when moving BACK into branchable question
+                // Rare but can happen on question that either leads to submit or more questions
+                var sub_surveys = nextQuestion.sub_surveys;
+                if (sub_surveys && headStack.length) {
+                    // If he's in the branched stack, pop em off
+                    if (headStack[headStack.length - 1].id === nextQuestion.id) {
+                        console.log("RESETING", nextQuestion.id, headStack.length);
+                        // Reset the nextQuestion to previously unbranched state
+                        nextQuestion = headStack.pop();
+                        console.log("RESET", nextQuestion.id, headStack.length);
+                        // Find the head
+                        var newHead = nextQuestion;
+                        while(newHead.prev) {
+                            newHead = newHead.prev;
+                        }
+                        head = newHead;
+                    }
+                }
+
+
+                showDontKnow = currentQuestion.allow_dont_know || false;
+                showDontKnowBox = false;
+                state = this.state.states.QUESTION
+
+                var questionID = currentQuestion.id;
+                if (showDontKnow) { 
+                    var response = this.refs.footer.getAnswer(questionID);
+                    console.log("Footer response:", response);
+                    showDontKnowBox = Boolean(response);
+                }
+                break;
+
+            // On Splash page and prev was pressed (IMPOSSIBLE)
+            case this.state.states.SPLASH:
+                nextQuestion = null;
+                showDontKnowBox = false;
+                showDontKnow = false;
+                state = this.state.states.SPLASH
+                break;
+
+            case this.state.states.QUESTION:
+                nextQuestion = currentQuestion.prev;
+                state = this.state.states.QUESTION
+
+                // Set the state to SUBMIT when reach the end of questions
+                if (nextQuestion === null) {
+                    nextQuestion = currentQuestion;
+                    showDontKnow = false;
+                    showDontKnowBox = false;
+                    state = this.state.states.SPLASH;
+                    break;
+                }
+
+                // Branching ONLY happens when moving BACK into branchable question
+                // ALWAYS undo branched state to maintain survey consitency 
+                var sub_surveys = nextQuestion.sub_surveys;
+                if (sub_surveys && headStack.length) {
+                    // If he's in the branched stack, pop em off
+                    if (headStack[headStack.length - 1].id === nextQuestion.id) {
+                        console.log("RESETING", nextQuestion.id, headStack.length);
+                        // Reset the nextQuestion to previously unbranched state
+                        nextQuestion = headStack.pop();
+                        console.log("RESET", nextQuestion.id, headStack.length);
+                        // Find the head
+                        var newHead = nextQuestion;
+                        while(newHead.prev) {
+                            newHead = newHead.prev;
+                        }
+                        head = newHead;
+                    }
+                }
+
+
+                // Moving into a valid question
+                showDontKnow = nextQuestion.allow_dont_know || false;
+                showDontKnowBox = false;
+                var questionID = nextQuestion.id;
+
+                if (showDontKnow) { 
+                    var response = this.refs.footer.getAnswer(questionID);
+                    console.log("Footer response:", response);
+                    showDontKnowBox = Boolean(response);
+                }
+
+                break;
+
+        }
+
+        this.setState({
+            question: nextQuestion,
+            showDontKnow: showDontKnow,
+            showDontKnowBox: showDontKnowBox,
+            head: head,
+            headStack: headStack,
+            state: state
+        })
+
+        return;
+
+    },
+
+    /* 
+     * Check if response is in bucket
+     * 
+     * @buckets: Array of buckets (can be ranges in [num,num) form or "qid" for mc
+     * @type: type of bucket
+     * @resposne: answer to check if in bucket 
+     */
+    inBucket: function(buckets, type, response) {
+        if (response === null) 
+            return false;
+
+        switch(type) {
+            case "integer":
+            case "decimal":
+                var inBee = 1; // Innocent untill proven guilty
+                // Split bucket into four sections, confirm that value in range, otherwise set inBee to false
+                var BREAK = false;
+                buckets.forEach(function(bucket) {
+                    if (BREAK) {return;}
+                    inBee = 1;
+                    var left = bucket.split(',')[0];
+                    var right = bucket.split(',')[1];
+                    if (left[0] === "[") {
+                        var leftLim = parseFloat(left.split("[")[1]);
+                        console.log("Inclusive Left", leftLim);
+                        if (!isNaN(leftLim)) // Infinity doesnt need to be checked
+                            inBee &= (response >= leftLim);
+                    } else if (left[0] === "(") {
+                        var leftLim = parseFloat(left.split("(")[1]);
+                        console.log("Exclusive Left", leftLim);
+                        if (!isNaN(leftLim)) // Infinity doesnt need to be checked
+                            inBee &= (response > leftLim)
+                    } else {
+                        inBee = 0;
+                    }
+
+                    if (right[right.length - 1] === "]") {
+                        var rightLim = parseFloat(right.split("]")[0]);
+                        console.log("Inclusive Right", rightLim);
+                        if (!isNaN(rightLim)) // Infinity doesnt need to be checked
+                            inBee &= (response <= rightLim)
+                    } else if (right[right.length - 1] === ")") {
+                        var rightLim = parseFloat(right.split(")")[0]);
+                        console.log("Exclusive Right", rightLim);
+                        if (!isNaN(rightLim)) // Infinity doesnt need to be checked
+                            inBee &= (response < rightLim)
+                    } else {
+                        inBee = 0; // unknown
+                    }
+
+                    console.log("Bucket:", bucket, response, inBee);
+                    if (inBee) { 
+                        BREAK = true; //break
+                    }
+
+                });
+
+                return inBee;
+
+	    case "timestamp": // TODO: We need moment.js for this to work properly
+            case "date":
+                var inBee = 1; // Innocent untill proven guilty
+                response = new Date(response); // Convert to date object for comparisons
+                var BREAK = false;
+                buckets.forEach(function(bucket) {
+                    inBee = 1;
+                    if (BREAK) {return;}
+                    var left = bucket.split(',')[0];
+                    var right = bucket.split(',')[1];
+                    if (left[0] === "[") {
+                        console.log("Inclusive Left");
+                        var leftLim = new Date(left.split("[")[1].replace(/\s/, 'T'));
+                        if (!isNaN(leftLim)) // Infinity doesnt need to be checked
+                            inBee &= (response >= leftLim);
+                    } else if (left[0] === "(") {
+                        console.log("Exclusive Left");
+                        var leftLim = new Date(left.split("(")[1].replace(/\s/, 'T'));
+                        if (!isNaN(leftLim)) // Infinity doesnt need to be checked
+                            inBee &= (response > leftLim)
+                    } else {
+                        inBee = 0;
+                    }
+
+                    if (right[right.length - 1] === "]") {
+                        console.log("Inclusive Right");
+                        var rightLim = new Date(right.split("]")[0].replace(/\s/, 'T'));
+                        if (!isNaN(rightLim)) // Infinity doesnt need to be checked
+                            inBee &= (response <= rightLim)
+                    } else if (right[right.length - 1] === ")") {
+                        console.log("Exclusive Right");
+                        var rightLim = new Date(right.split(")")[0].replace(/\s/, 'T'));
+                        if (!isNaN(rightLim)) // Infinity doesnt need to be checked
+                            inBee &= (response < rightLim)
+                    } else {
+                        inBee = 0; // unknown
+                    }
+
+                    console.log("Bucket:", bucket, response, inBee);
+                    if (inBee) { 
+                        BREAK = true; //break
+                    }
+
+                    return true;
+                });
+
+                return inBee;
+            case 'multiple_choice': 
+                var inBee = 0;
+                buckets.forEach(function(bucket) {
+                    inBee |= (bucket === response);
+                    console.log("Bucket:", bucket, response, inBee);
+                });
+                return inBee;
+            default:
+                return false;
+
+        }
+    },
+
+    /* 
+     * Clone linked list node, arrays don't need to be cloned, only next/prev ptrs
+     * @node: Current node to clone
+     * @ids: Dictionay reference of currently cloned nodes, prevents recursion going on forever
+     */
+    cloneNode: function(node, ids) {
+        var self = this;
+        var clone = {
+            next: null,
+            prev: null
+        };
+
+        ids = ids || {};
+
+        Object.keys(node).forEach(function(key) {
+            if (key != 'next' && key != 'prev') {
+                clone[key] = node[key]
+            }
+        });
+
+       // Mutable so next/prev pointers will be visible to all nodes that reference this dictionary
+       ids[node.id] = clone;
+
+       if (node.next) {
+           var next = ids[node.next.id];
+           clone.next = next || self.cloneNode(node.next, ids);
+       }
+
+       if (node.prev) {
+           var prev = ids[node.prev.id];
+           clone.prev = prev || self.cloneNode(node.prev, ids);
+       }
+
+        return clone;
+    },
+
+    /*
+     * Save active survey into unsynced array 
+     */
+    onSave: function() {
+        var survey = JSON.parse(localStorage[this.props.survey.id] || '{}');
+        // Get all unsynced surveys
+        var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
+        // Get array of unsynced submissions to this survey
+        var unsynced_submissions = unsynced_surveys[this.props.survey.id] || [];
+        // Get array of unsynced photo id's
+        var unsynced_photos = JSON.parse(localStorage['unsynced_photos'] || '[]');
+        // Get array of unsynced facilities
+        var unsynced_facilities = JSON.parse(localStorage['unsynced_facilities'] || '[]');
+
+        // Build new submission
+        var answers = []; 
+        var self = this;
+
+        // Copy active questions into simple list; 
+        var questions = [];
+        var head = this.state.head;
+        while(head) {
+            questions.push(head);
+            head = head.next;
+        }
+
+        questions.forEach(function(question) {
+            var responses = survey[question.id] || [];
+            responses.forEach(function(response) {
+                // Ignore empty responses
+                if (!response || response.response === null) {
+                    return true; // continue;
+                }
+
+                // Photos need to synced independantly from survey
+                if (question.type_constraint === 'photo') {
+                   unsynced_photos.push({
+                       'surveyID': self.props.survey.id,
+                       'photoID': response.response,
+                       'questionID': question.id
+                   });
+                }
+
+                // New facilities need to be stored seperatly from survey
+                if (question.type_constraint === 'facility') {
+                    if (response.metadata && response.metadata.is_new) {
+                        console.log("Facility:", response);
+                        self.state.trees[question.id]
+                            .addFacility(response.response.lat, response.response.lng, response.response);
+
+                        unsynced_facilities.push({
+                            'surveyID': self.props.survey.id,
+                            'facilityData': response.response,
+                            'questionID': question.id
+                        });
+                    } 
+                }
+
+                answers.push({
+                    survey_node_id: question.id,
+                    response: response,
+                    type_constraint: question.type_constraint
+                });
+            });
+
+        });
+
+        // Don't record it if there are no answers, will mess up splash 
+        if (answers.length === 0) {
+            return;
+        }
+
+        var submission = {
+            submitter_name: localStorage['submitter_name'] || "anon",
+            submitter_email: localStorage['submitter_email'] || "anon@anon.org",
+            submission_type: "unauthenticated", //XXX 
+            survey_id: this.props.survey.id,
+            answers: answers,
+            save_time: new Date().toISOString(),
+            submission_time: "" // For comparisions during submit ajax callback
+        }
+
+        console.log("Submission", submission);
+
+        // Record new submission into array
+        unsynced_submissions.push(submission);
+        unsynced_surveys[this.props.survey.id] = unsynced_submissions;
+        localStorage['unsynced'] = JSON.stringify(unsynced_surveys);
+
+        // Store photos 
+        localStorage['unsynced_photos'] = JSON.stringify(unsynced_photos);
+
+        // Store facilities
+        localStorage['unsynced_facilities'] = JSON.stringify(unsynced_facilities);
+
+        // Wipe active survey
+        localStorage[this.props.survey.id] = JSON.stringify({});
+
+        // Wipe location info
+        localStorage['location'] = JSON.stringify({});
+
+    },
+
+    /*
+     * Loop through unsynced submissions for active survey and POST
+     * Only modifies localStorage on success
+     */
+    onSubmit: function() {
+        function getCookie(name) {
+            var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
+            return r ? r[1] : undefined;
+        }
+        
+        var self = this;
+
+        // Get all unsynced surveys
+        var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
+        // Get array of unsynced submissions to this survey
+        var unsynced_submissions = unsynced_surveys[this.props.survey.id] || [];
+        // Get all unsynced photos.
+        var unsynced_photos = JSON.parse(localStorage['unsynced_photos'] || '[]');
+        // Get all unsynced facilities
+        var unsynced_facilities = JSON.parse(localStorage['unsynced_facilities'] || '[]');
+
+        // Post surveys to Dokomoforms
+        unsynced_submissions.forEach(function(survey) {
+            // Update submit time
+            survey.submission_time = new Date().toISOString();
+            $.ajax({
+                url: '/api/v0/surveys/'+survey.survey_id+'/submit',
+                type: 'POST',
+                contentType: 'application/json',
+                processData: false,
+                data: JSON.stringify(survey),
+                headers: {
+                    "X-XSRFToken": getCookie("_xsrf")
+                },
+                dataType: 'json',
+                success: function(survey, anything, hey) {
+                    console.log("success", anything, hey);
+                    // Get all unsynced surveys
+                    var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
+                    // Get array of unsynced submissions to this survey
+                    var unsynced_submissions = unsynced_surveys[survey.survey_id] || [];
+
+                    // Find unsynced_submission
+                    var idx = -1;
+                    unsynced_submissions.forEach(function(usurvey, i) {
+                        if (Date(usurvey.save_time) === Date(survey.save_time)) {
+                            idx = i;
+                        }
+                    });
+
+                    // Not sure what happened, do not update localStorage
+                    if (idx === -1) 
+                        return;
+
+                    unsynced_submissions.splice(idx, 1);
+
+                    unsynced_surveys[survey.survey_id] = unsynced_submissions;
+                    localStorage['unsynced'] = JSON.stringify(unsynced_surveys);
+
+                    // Update splash page if still on it
+                    if (self.state.state === self.state.states.SPLASH)
+                        self.refs.splash.update();
+                },
+
+                error: function(err) {
+                    console.log("Failed to post survey", err, survey);
+                }
+            });
+
+            console.log('synced submission:', survey);
+            console.log('survey', '/api/v0/surveys/'+survey.survey_id+'/submit');
+        });
+
+        // Post photos to dokomoforms
+        unsynced_photos.forEach(function(photo, idx) {
+            if (photo.surveyID === self.props.survey.id) {
+                PhotoAPI.getBase64(self.state.db, photo.photoID, function(err, base64){
+                    $.ajax({
+                        url: '/api/v0/photos',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        processData: false,
+                        data: JSON.stringify({
+                            'id' : photo.photoID,
+                            'mime_type': 'image/png',
+                            'image': base64
+                        }),
+                        headers: {
+                            "X-XSRFToken": getCookie("_xsrf")
+                        },
+                        dataType: 'json',
+                        success: function(photo) {
+                            console.log("Photo success:", photo);
+                            var unsynced_photos = JSON.parse(localStorage['unsynced_photos'] || '[]');
+                            // Find photo
+                            var idx = -1;
+                            unsynced_photos.forEach(function(uphoto, i) {
+                                if (uphoto.photoID === photo.id) {
+                                    idx = i;
+                                    PhotoAPI.removePhoto(self.state.db, uphoto.photoID, function(err, result) {
+                                        if (err) {
+                                            console.log("Couldnt remove from db:", err);
+                                            return;
+                                        }
+                                        console.log("Removed:", result);
+                                    });
+                                }
+                            });
+
+                            // What??
+                            if (idx === -1)
+                                return;
+
+                            console.log(idx, unsynced_photos.length);
+                            unsynced_photos.splice(idx, 1);
+
+                            localStorage['unsynced_photos'] = JSON.stringify(unsynced_photos);
+                        },
+
+                        error: function(err) {
+                            console.log("Failed to post photo:", err, photo);
+                        }
+                    });
+                });
+            }
+        });
+        
+        // Post facilities to Revisit
+        unsynced_facilities.forEach(function(facility, idx) {
+            if (facility.surveyID === self.props.survey.id) {
+                self.state.trees[facility.questionID].postFacility(facility.facilityData, 
+                    // Success
+                    function(revisitFacility) {
+                        console.log("Successfully posted facility", revisitFacility, facility); 
+                        var unsynced_facilities = JSON.parse(localStorage['unsynced_facilities'] || '[]');
+
+                        // Find facility
+                        var idx = -1;
+                        console.log(idx, unsynced_facilities.length);
+                        unsynced_facilities.forEach(function(ufacility, i) {
+                            var ufacilityID = ufacility.facilityData.facility_id;
+                            var facilityID = facility.facilityData.facility_id;
+                            if (ufacilityID === facilityID) {
+                                idx = i;
+                            }
+                        });
+
+                        // What??
+                        if (idx === -1)
+                            return;
+
+                        console.log(idx, unsynced_facilities.length);
+                        unsynced_facilities.splice(idx, 1);
+
+                        localStorage['unsynced_facilities'] = JSON.stringify(unsynced_facilities);
+                    },
+
+                    // Error
+                    function(revisitFacility) {
+                        console.log("Failed to post facility", err, facility); 
+                    }
+                );
+            }
+        });
+    },
+
+
+    /*
+     * Respond to don't know checkbox event, this is listend to by Application
+     * due to app needing to resize for the increased height of the don't know
+     * region
+     */
+    onCheckButton: function() {
+        this.setState({
+            showDontKnowBox: this.state.showDontKnowBox ? false: true,
+            showDontKnow: this.state.showDontKnow,
+        });
+
+        // Force questions to update
+        if (this.state.state = this.state.states.QUESTION)
+            this.refs.question.update();
+
+    },
+
+    /*
+     * Load the appropiate question based on the nextQuestion state
+     * Loads splash or submit content if state is either SPLASH/SUBMIT 
+     */
+    getContent: function() {
+        var question = this.state.question;
+        var state = this.state.state;
+        var survey = this.props.survey;
+
+        if (state === this.state.states.QUESTION) {
+            var questionID = question.id;
+            var questionType = question.type_constraint;
+            switch(questionType) {
+                case 'multiple_choice':
+                    return (
+                            React.createElement(MultipleChoice, {
+                                ref: "question", 
+                                key: questionID, 
+                                question: question, 
+                                questionType: questionType, 
+                                language: survey.default_language, 
+                                surveyID: survey.id, 
+                                disabled: this.state.showDontKnowBox}
+                           )
+                       )
+                case 'photo':
+                    return (
+                            React.createElement(Photo, {
+                                ref: "question", 
+                                key: questionID, 
+                                question: question, 
+                                questionType: questionType, 
+                                language: survey.default_language, 
+                                surveyID: survey.id, 
+                                disabled: this.state.showDontKnowBox, 
+                                db: this.state.db}
+                           )
+                       )
+
+                case 'location':
+                    return (
+                            React.createElement(Location, {
+                                ref: "question", 
+                                key: questionID, 
+                                question: question, 
+                                questionType: questionType, 
+                                language: survey.default_language, 
+                                surveyID: survey.id, 
+                                disabled: this.state.showDontKnowBox}
+                           )
+                       )
+                case 'facility':
+                    return (
+                            React.createElement(Facility, {
+                                ref: "question", 
+                                key: questionID, 
+                                question: question, 
+                                questionType: questionType, 
+                                language: survey.default_language, 
+                                surveyID: survey.id, 
+                                disabled: this.state.showDontKnowBox, 
+                                db: this.state.db, 
+                                tree: this.state.trees[questionID]}
+                           )
+                       )
+                case 'note':
+                    return (
+                            React.createElement(Note, {
+                                ref: "question", 
+                                key: questionID, 
+                                question: question, 
+                                questionType: questionType, 
+                                language: survey.default_language, 
+                                surveyID: survey.id, 
+                                disabled: this.state.showDontKnowBox}
+                           )
+                       )
+                default:
+                    return (
+                            React.createElement(Question, {
+                                ref: "question", 
+                                key: questionID, 
+                                question: question, 
+                                questionType: questionType, 
+                                language: survey.default_language, 
+                                surveyID: survey.id, 
+                                disabled: this.state.showDontKnowBox}
+                           )
+                       )
+            }
+        } else if (state === this.state.states.SUBMIT) {
+            return (
+                    React.createElement(Submit, {
+                        ref: "submit", 
+                        surveyID: survey.id, 
+                        language: survey.default_language}
+                    )
+                   )
+        } else {
+            return (
+                    React.createElement(Splash, {
+                        ref: "splash", 
+                        surveyID: survey.id, 
+                        surveyTitle: survey.title, 
+                        language: survey.default_language, 
+                        buttonFunction: this.onSubmit}
+                    )
+                   )
+        }
+    },
+
+    /*
+     * Load the appropiate title based on the question and state
+     */
+    getTitle: function() {
+        var survey = this.props.survey;
+        var question = this.state.question;
+        var state = this.state.state;
+
+        if (state === this.state.states.QUESTION) {
+            return question.title[survey.default_language] 
+        } else if (state === this.state.states.SUBMIT) {
+            return "Ready to Save?"
+        } else {
+            return survey.title[survey.default_language] 
+        }
+    },
+
+    /*
+     * Load the appropiate 'hint' based on the question and state
+     */
+    getMessage: function() {
+        var survey = this.props.survey;
+        var question = this.state.question;
+        var state = this.state.state;
+
+        if (state === this.state.states.QUESTION) {
+            return question.hint[survey.default_language] 
+        } else if (state === this.state.states.SUBMIT) {
+            return "If youre satisfied with the answers to all the questions, you can save the survey now."
+        } else {
+            return "version " + survey.version + " | last updated " + survey.last_updated_time;
+        }
+    },
+
+    /*
+     * Load the appropiate text in the Footer's button based on state
+     */
+    getButtonText: function() {
+        var state = this.state.state;
+        if (state === this.state.states.QUESTION) {
+            return "Next Question";
+        } else if (state === this.state.states.SUBMIT) {
+            return "Save Survey"
+        } else {
+            return "Begin a New Survey"
+        }
+    },
+
+    render: function() {
+        var contentClasses = "content";
+        var state = this.state.state;
+        var question = this.state.question;
+        var questionID = question && question.id || -1;
+        var surveyID = this.props.survey.id;
+
+        // Get current length of survey and question number
+        var number = -1;
+        var length = 0;
+        var head = this.state.head;
+        while(head) {
+            if (head.id === questionID) {
+                number = length;
+            }
+
+            head = head.next;
+            length++;
+        } 
+
+
+        // Alter the height of content based on DontKnow state
+        if (this.state.showDontKnow) 
+            contentClasses += " content-shrunk";
+
+        if (this.state.showDontKnowBox) 
+            contentClasses += " content-shrunk content-super-shrunk";
+
+        return (
+                React.createElement("div", {id: "wrapper"}, 
+                    React.createElement(Header, {
+                        ref: "header", 
+                        buttonFunction: this.onPrevButton, 
+                        number: number + 1, 
+                        total: length + 1, 
+                        db: this.state.db, 
+                        surveyID: surveyID, 
+                        splash: state === this.state.states.SPLASH}), 
+                    React.createElement("div", {
+                        className: contentClasses}, 
+                        React.createElement(Title, {title: this.getTitle(), message: this.getMessage()}), 
+                        this.getContent()
+                    ), 
+                    React.createElement(Footer, {
+                        ref: "footer", 
+                        showDontKnow: this.state.showDontKnow, 
+                        showDontKnowBox: this.state.showDontKnowBox, 
+                        buttonFunction: this.onNextButton, 
+                        checkBoxFunction: this.onCheckButton, 
+                        buttonType: state === this.state.states.QUESTION 
+                            ? 'btn-primary': 'btn-positive', 
+                        buttonText: this.getButtonText(), 
+                        questionID: questionID, 
+                        surveyID: surveyID}
+                     )
+
+                )
+               )
+    }
+});
+
+/*
+ * Entry point for template
+ *
+ * @survey: JSON representation of the survey
+ * @revisit_url: Revisit url, set globally
+ */
+init = function(survey, url) {
+    // Set revisit url
+    revisit_url = url;
+
+    // Listen to appcache updates, reload JS.
+    window.applicationCache.addEventListener('updateready', function() {
+        alert("Application updated, reloading ...");
+        window.applicationCache.swapCache()
+        window.location.reload();
+    });
+
+    React.render(
+            React.createElement(Application, {survey: survey}),
+            document.body
+    );
+};
+
+},{"./FacilityAPI.js":2,"./PhotoAPI.js":3,"./components/Facility.js":4,"./components/Footer.js":5,"./components/Header.js":6,"./components/Location.js":7,"./components/MultipleChoice.js":8,"./components/Note.js":9,"./components/Photo.js":10,"./components/Question.js":11,"./components/Splash.js":12,"./components/Submit.js":13,"./components/baseComponents/BigButton.js":14,"./components/baseComponents/Card.js":15,"./components/baseComponents/DontKnow.js":16,"./components/baseComponents/FacilityRadios.js":17,"./components/baseComponents/LittleButton.js":18,"./components/baseComponents/Message.js":20,"./components/baseComponents/ResponseField.js":22,"./components/baseComponents/ResponseFields.js":23,"./components/baseComponents/Select.js":24,"./components/baseComponents/Title.js":25,"jquery":26,"pouchdb":81,"pouchdb-upsert":30,"react":285}],2:[function(require,module,exports){
 //XXX set globally on init in application
 //var revisit_url = 'http://localhost:3000/api/v0/facilities.json';
 
@@ -645,7 +1762,7 @@ FacilityTree.prototype.distance = function(lat, lng, center) {
 
 module.exports = FacilityTree;
 
-},{"jquery":25,"lz-string":26,"mpromise":27}],2:[function(require,module,exports){
+},{"jquery":26,"lz-string":27,"mpromise":28}],3:[function(require,module,exports){
 var PouchDB  = require('pouchdb');
 module.exports = {
     /*
@@ -724,7 +1841,7 @@ module.exports = {
 
 };
 
-},{"pouchdb":80}],3:[function(require,module,exports){
+},{"pouchdb":81}],4:[function(require,module,exports){
 var React = require('react');
 var Promise = require('mpromise');
 
@@ -1043,7 +2160,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"./baseComponents/FacilityRadios.js":16,"./baseComponents/LittleButton.js":17,"./baseComponents/ResponseField.js":21,"./baseComponents/ResponseFields.js":22,"./baseComponents/Select.js":23,"mpromise":27,"react":279}],4:[function(require,module,exports){
+},{"./baseComponents/FacilityRadios.js":17,"./baseComponents/LittleButton.js":18,"./baseComponents/ResponseField.js":22,"./baseComponents/ResponseFields.js":23,"./baseComponents/Select.js":24,"mpromise":28,"react":285}],5:[function(require,module,exports){
 var React = require('react'); 
 var BigButton = require('./baseComponents/BigButton.js');
 var DontKnow = require('./baseComponents/DontKnow.js');
@@ -1147,7 +2264,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"./baseComponents/BigButton.js":13,"./baseComponents/DontKnow.js":15,"./baseComponents/ResponseField.js":21,"react":279}],5:[function(require,module,exports){
+},{"./baseComponents/BigButton.js":14,"./baseComponents/DontKnow.js":16,"./baseComponents/ResponseField.js":22,"react":285}],6:[function(require,module,exports){
 var React = require('react');
 var Menu = require('./baseComponents/Menu.js');
 
@@ -1199,7 +2316,7 @@ module.exports = React.createClass({displayName: "exports",
 
 });
 
-},{"./baseComponents/Menu.js":18,"react":279}],6:[function(require,module,exports){
+},{"./baseComponents/Menu.js":19,"react":285}],7:[function(require,module,exports){
 var React = require('react');
 
 var ResponseField = require('./baseComponents/ResponseField.js');
@@ -1387,7 +2504,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"./baseComponents/LittleButton.js":17,"./baseComponents/ResponseField.js":21,"react":279}],7:[function(require,module,exports){
+},{"./baseComponents/LittleButton.js":18,"./baseComponents/ResponseField.js":22,"react":285}],8:[function(require,module,exports){
 var React = require('react');
 var Select = require('./baseComponents/Select.js');
 
@@ -1520,7 +2637,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"./baseComponents/Select.js":23,"react":279}],8:[function(require,module,exports){
+},{"./baseComponents/Select.js":24,"react":285}],9:[function(require,module,exports){
 var React = require('react');
 
 /*
@@ -1544,7 +2661,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"react":279}],9:[function(require,module,exports){
+},{"react":285}],10:[function(require,module,exports){
 var React = require('react');
 
 var PhotoField = require('./baseComponents/PhotoField.js');
@@ -1804,7 +2921,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"../PhotoAPI.js":2,"./baseComponents/LittleButton.js":17,"./baseComponents/PhotoField.js":20,"node-uuid":28,"react":279}],10:[function(require,module,exports){
+},{"../PhotoAPI.js":3,"./baseComponents/LittleButton.js":18,"./baseComponents/PhotoField.js":21,"node-uuid":29,"react":285}],11:[function(require,module,exports){
 var React = require('react');
 
 var ResponseField = require('./baseComponents/ResponseField.js');
@@ -1961,7 +3078,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"./baseComponents/LittleButton.js":17,"./baseComponents/ResponseField.js":21,"react":279}],11:[function(require,module,exports){
+},{"./baseComponents/LittleButton.js":18,"./baseComponents/ResponseField.js":22,"react":285}],12:[function(require,module,exports){
 var React = require('react');
 
 var Card = require('./baseComponents/Card.js');
@@ -1986,9 +3103,11 @@ module.exports = React.createClass({displayName: "exports",
 
         // Update navigator.onLine
         var interval = window.setInterval(function() {
-            self.setState({
-                online: navigator.onLine,
-            });
+            if (self.state.online !== navigator.onLine) {
+                self.setState({
+                    online: navigator.onLine,
+                });
+            }
         }, 1000);
 
         return { 
@@ -2069,7 +3188,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"./baseComponents/BigButton.js":13,"./baseComponents/Card.js":14,"react":279}],12:[function(require,module,exports){
+},{"./baseComponents/BigButton.js":14,"./baseComponents/Card.js":15,"react":285}],13:[function(require,module,exports){
 var React = require('react');
 var Card = require('./baseComponents/Card.js');
 var Message = require('./baseComponents/Message.js');
@@ -2132,7 +3251,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"./baseComponents/Card.js":14,"./baseComponents/Message.js":19,"./baseComponents/ResponseField.js":21,"react":279}],13:[function(require,module,exports){
+},{"./baseComponents/Card.js":15,"./baseComponents/Message.js":20,"./baseComponents/ResponseField.js":22,"react":285}],14:[function(require,module,exports){
 var React = require('react');
 
 /*
@@ -2162,7 +3281,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"react":279}],14:[function(require,module,exports){
+},{"react":285}],15:[function(require,module,exports){
 var React = require('react'); 
 
 /*
@@ -2196,7 +3315,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"react":279}],15:[function(require,module,exports){
+},{"react":285}],16:[function(require,module,exports){
 var React = require('react'); 
 
 /*
@@ -2222,7 +3341,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"react":279}],16:[function(require,module,exports){
+},{"react":285}],17:[function(require,module,exports){
 var React = require('react'); 
 
 /*
@@ -2320,7 +3439,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"react":279}],17:[function(require,module,exports){
+},{"react":285}],18:[function(require,module,exports){
 var React = require('react');
 
 /*
@@ -2349,7 +3468,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"react":279}],18:[function(require,module,exports){
+},{"react":285}],19:[function(require,module,exports){
 var React = require('react'); 
 var PhotoAPI = require('../../PhotoAPI.js');
 
@@ -2437,7 +3556,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"../../PhotoAPI.js":2,"react":279}],19:[function(require,module,exports){
+},{"../../PhotoAPI.js":3,"react":285}],20:[function(require,module,exports){
 var React = require('react');
 
 /*
@@ -2456,7 +3575,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"react":279}],20:[function(require,module,exports){
+},{"react":285}],21:[function(require,module,exports){
 var React = require('react');
 
 /*
@@ -2512,7 +3631,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"react":279}],21:[function(require,module,exports){
+},{"react":285}],22:[function(require,module,exports){
 var React = require('react');
 
 /*
@@ -2698,7 +3817,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"react":279}],22:[function(require,module,exports){
+},{"react":285}],23:[function(require,module,exports){
 var React = require('react');
 var ResponseField = require('./ResponseField.js');
 
@@ -2731,7 +3850,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"./ResponseField.js":21,"react":279}],23:[function(require,module,exports){
+},{"./ResponseField.js":22,"react":285}],24:[function(require,module,exports){
 var React = require('react'); 
 ResponseField = require('./ResponseField.js');
 
@@ -2812,7 +3931,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"./ResponseField.js":21,"react":279}],24:[function(require,module,exports){
+},{"./ResponseField.js":22,"react":285}],25:[function(require,module,exports){
 var React = require('react');
 
 /*
@@ -2833,7 +3952,7 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"react":279}],25:[function(require,module,exports){
+},{"react":285}],26:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.1.4
  * http://jquery.com/
@@ -12045,7 +13164,7 @@ return jQuery;
 
 }));
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 // Copyright (c) 2013 Pieroxy <pieroxy@pieroxy.net>
 // This work is free. You can redistribute it and/or modify it
 // under the terms of the WTFPL, Version 2
@@ -12548,7 +13667,7 @@ if (typeof define === 'function' && define.amd) {
   module.exports = LZString
 }
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 (function (process){
 'use strict';
 var util = require('util');
@@ -12997,7 +14116,7 @@ Promise.deferred = function deferred() {
 /* End A+ tests adapter bit */
 
 }).call(this,require('_process'))
-},{"_process":283,"events":281,"util":285}],28:[function(require,module,exports){
+},{"_process":289,"events":287,"util":291}],29:[function(require,module,exports){
 //     uuid.js
 //
 //     Copyright (c) 2010-2012 Robert Kieffer
@@ -13246,7 +14365,7 @@ Promise.deferred = function deferred() {
   }
 }).call(this);
 
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -13353,13 +14472,13 @@ if (typeof window !== 'undefined' && window.PouchDB) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"lie":33}],30:[function(require,module,exports){
+},{"lie":34}],31:[function(require,module,exports){
 'use strict';
 
 module.exports = INTERNAL;
 
 function INTERNAL() {}
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise');
 var reject = require('./reject');
@@ -13403,7 +14522,7 @@ function all(iterable) {
     }
   }
 }
-},{"./INTERNAL":30,"./handlers":32,"./promise":34,"./reject":37,"./resolve":38}],32:[function(require,module,exports){
+},{"./INTERNAL":31,"./handlers":33,"./promise":35,"./reject":38,"./resolve":39}],33:[function(require,module,exports){
 'use strict';
 var tryCatch = require('./tryCatch');
 var resolveThenable = require('./resolveThenable');
@@ -13450,7 +14569,7 @@ function getThen(obj) {
   }
 }
 
-},{"./resolveThenable":39,"./states":40,"./tryCatch":41}],33:[function(require,module,exports){
+},{"./resolveThenable":40,"./states":41,"./tryCatch":42}],34:[function(require,module,exports){
 module.exports = exports = require('./promise');
 
 exports.resolve = require('./resolve');
@@ -13458,7 +14577,7 @@ exports.reject = require('./reject');
 exports.all = require('./all');
 exports.race = require('./race');
 
-},{"./all":31,"./promise":34,"./race":36,"./reject":37,"./resolve":38}],34:[function(require,module,exports){
+},{"./all":32,"./promise":35,"./race":37,"./reject":38,"./resolve":39}],35:[function(require,module,exports){
 'use strict';
 
 var unwrap = require('./unwrap');
@@ -13502,7 +14621,7 @@ Promise.prototype.then = function (onFulfilled, onRejected) {
   return promise;
 };
 
-},{"./INTERNAL":30,"./queueItem":35,"./resolveThenable":39,"./states":40,"./unwrap":42}],35:[function(require,module,exports){
+},{"./INTERNAL":31,"./queueItem":36,"./resolveThenable":40,"./states":41,"./unwrap":43}],36:[function(require,module,exports){
 'use strict';
 var handlers = require('./handlers');
 var unwrap = require('./unwrap');
@@ -13532,7 +14651,7 @@ QueueItem.prototype.otherCallRejected = function (value) {
   unwrap(this.promise, this.onRejected, value);
 };
 
-},{"./handlers":32,"./unwrap":42}],36:[function(require,module,exports){
+},{"./handlers":33,"./unwrap":43}],37:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise');
 var reject = require('./reject');
@@ -13573,7 +14692,7 @@ function race(iterable) {
   }
 }
 
-},{"./INTERNAL":30,"./handlers":32,"./promise":34,"./reject":37,"./resolve":38}],37:[function(require,module,exports){
+},{"./INTERNAL":31,"./handlers":33,"./promise":35,"./reject":38,"./resolve":39}],38:[function(require,module,exports){
 'use strict';
 
 var Promise = require('./promise');
@@ -13585,7 +14704,7 @@ function reject(reason) {
 	var promise = new Promise(INTERNAL);
 	return handlers.reject(promise, reason);
 }
-},{"./INTERNAL":30,"./handlers":32,"./promise":34}],38:[function(require,module,exports){
+},{"./INTERNAL":31,"./handlers":33,"./promise":35}],39:[function(require,module,exports){
 'use strict';
 
 var Promise = require('./promise');
@@ -13620,7 +14739,7 @@ function resolve(value) {
       return EMPTYSTRING;
   }
 }
-},{"./INTERNAL":30,"./handlers":32,"./promise":34}],39:[function(require,module,exports){
+},{"./INTERNAL":31,"./handlers":33,"./promise":35}],40:[function(require,module,exports){
 'use strict';
 var handlers = require('./handlers');
 var tryCatch = require('./tryCatch');
@@ -13653,14 +14772,14 @@ function safelyResolveThenable(self, thenable) {
   }
 }
 exports.safely = safelyResolveThenable;
-},{"./handlers":32,"./tryCatch":41}],40:[function(require,module,exports){
+},{"./handlers":33,"./tryCatch":42}],41:[function(require,module,exports){
 // Lazy man's symbols for states
 
 exports.REJECTED = ['REJECTED'];
 exports.FULFILLED = ['FULFILLED'];
 exports.PENDING = ['PENDING'];
 
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 'use strict';
 
 module.exports = tryCatch;
@@ -13676,7 +14795,7 @@ function tryCatch(func, value) {
   }
   return out;
 }
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 'use strict';
 
 var immediate = require('immediate');
@@ -13698,7 +14817,7 @@ function unwrap(promise, func, value) {
     }
   });
 }
-},{"./handlers":32,"immediate":43}],43:[function(require,module,exports){
+},{"./handlers":33,"immediate":44}],44:[function(require,module,exports){
 (function (global){
 'use strict';
 var Mutation = global.MutationObserver || global.WebKitMutationObserver;
@@ -13771,7 +14890,7 @@ function immediate(task) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],44:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 (function (process){
 "use strict";
 
@@ -14597,7 +15716,7 @@ AbstractPouchDB.prototype.destroy =
 });
 
 }).call(this,require('_process'))
-},{"./changes":56,"./deps/errors":67,"./deps/upsert":76,"./merge":81,"./utils":92,"_process":283,"events":281}],45:[function(require,module,exports){
+},{"./changes":57,"./deps/errors":68,"./deps/upsert":77,"./merge":82,"./utils":93,"_process":289,"events":287}],46:[function(require,module,exports){
 (function (process){
 "use strict";
 
@@ -15710,7 +16829,7 @@ HttpPouch.valid = function () {
 module.exports = HttpPouch;
 
 }).call(this,require('_process'))
-},{"../../deps/binary/base64":60,"../../deps/binary/binaryStringToBlob":62,"../../deps/binary/readAsBinaryString":65,"../../deps/buffer":66,"../../deps/errors":67,"../../deps/multipart":70,"../../utils":92,"_process":283,"debug":95}],46:[function(require,module,exports){
+},{"../../deps/binary/base64":61,"../../deps/binary/binaryStringToBlob":63,"../../deps/binary/readAsBinaryString":66,"../../deps/buffer":67,"../../deps/errors":68,"../../deps/multipart":71,"../../utils":93,"_process":289,"debug":96}],47:[function(require,module,exports){
 'use strict';
 
 var merge = require('../../merge');
@@ -15895,7 +17014,7 @@ function idbAllDocs(opts, api, idb, callback) {
 }
 
 module.exports = idbAllDocs;
-},{"../../deps/errors":67,"../../merge":81,"./idb-constants":49,"./idb-utils":50}],47:[function(require,module,exports){
+},{"../../deps/errors":68,"../../merge":82,"./idb-constants":50,"./idb-utils":51}],48:[function(require,module,exports){
 'use strict';
 
 var utils = require('../../utils');
@@ -15959,7 +17078,7 @@ function checkBlobSupport(txn, idb) {
 }
 
 module.exports = checkBlobSupport;
-},{"../../utils":92,"./idb-constants":49}],48:[function(require,module,exports){
+},{"../../utils":93,"./idb-constants":50}],49:[function(require,module,exports){
 'use strict';
 
 var utils = require('../../utils');
@@ -16322,7 +17441,7 @@ function idbBulkDocs(req, opts, api, idb, Changes, callback) {
 }
 
 module.exports = idbBulkDocs;
-},{"../../deps/errors":67,"../../utils":92,"./idb-constants":49,"./idb-utils":50}],49:[function(require,module,exports){
+},{"../../deps/errors":68,"../../utils":93,"./idb-constants":50,"./idb-utils":51}],50:[function(require,module,exports){
 'use strict';
 
 // IndexedDB requires a versioned database structure, so we use the
@@ -16349,7 +17468,7 @@ exports.META_STORE = 'meta-store';
 exports.LOCAL_STORE = 'local-store';
 // Where we detect blob support
 exports.DETECT_BLOB_SUPPORT_STORE = 'detect-blob-support';
-},{}],50:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -16601,7 +17720,7 @@ exports.openTransactionSafely = function (idb, stores, mode) {
   }
 };
 }).call(this,require('_process'))
-},{"../../deps/binary/base64":60,"../../deps/binary/binaryStringToArrayBuffer":61,"../../deps/binary/readAsBinaryString":65,"../../deps/errors":67,"../../utils":92,"./idb-constants":49,"_process":283}],51:[function(require,module,exports){
+},{"../../deps/binary/base64":61,"../../deps/binary/binaryStringToArrayBuffer":62,"../../deps/binary/readAsBinaryString":66,"../../deps/errors":68,"../../utils":93,"./idb-constants":50,"_process":289}],52:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -17556,7 +18675,7 @@ IdbPouch.Changes = new utils.Changes();
 module.exports = IdbPouch;
 
 }).call(this,require('_process'))
-},{"../../deps/errors":67,"../../merge":81,"../../utils":92,"./idb-all-docs":46,"./idb-blob-support":47,"./idb-bulk-docs":48,"./idb-constants":49,"./idb-utils":50,"_process":283}],52:[function(require,module,exports){
+},{"../../deps/errors":68,"../../merge":82,"../../utils":93,"./idb-all-docs":47,"./idb-blob-support":48,"./idb-bulk-docs":49,"./idb-constants":50,"./idb-utils":51,"_process":289}],53:[function(require,module,exports){
 'use strict';
 
 var utils = require('../../utils');
@@ -17881,7 +19000,7 @@ function websqlBulkDocs(req, opts, api, db, Changes, callback) {
 
 module.exports = websqlBulkDocs;
 
-},{"../../deps/errors":67,"../../utils":92,"./websql-constants":53,"./websql-utils":54}],53:[function(require,module,exports){
+},{"../../deps/errors":68,"../../utils":93,"./websql-constants":54,"./websql-utils":55}],54:[function(require,module,exports){
 'use strict';
 
 function quote(str) {
@@ -17905,7 +19024,7 @@ exports.META_STORE = quote('metadata-store');
 exports.ATTACH_AND_SEQ_STORE = quote('attach-seq-store');
 
 
-},{}],54:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 'use strict';
 
 var utils = require('../../utils');
@@ -18134,7 +19253,7 @@ module.exports = {
   openDB: openDB,
   valid: valid
 };
-},{"../../deps/errors":67,"../../utils":92,"./websql-constants":53}],55:[function(require,module,exports){
+},{"../../deps/errors":68,"../../utils":93,"./websql-constants":54}],56:[function(require,module,exports){
 'use strict';
 
 var utils = require('../../utils');
@@ -19144,7 +20263,7 @@ WebSqlPouch.Changes = new utils.Changes();
 
 module.exports = WebSqlPouch;
 
-},{"../../deps/binary/binaryStringToBlob":62,"../../deps/errors":67,"../../deps/parse-hex":72,"../../merge":81,"../../utils":92,"./websql-bulk-docs":52,"./websql-constants":53,"./websql-utils":54}],56:[function(require,module,exports){
+},{"../../deps/binary/binaryStringToBlob":63,"../../deps/errors":68,"../../deps/parse-hex":73,"../../merge":82,"../../utils":93,"./websql-bulk-docs":53,"./websql-constants":54,"./websql-utils":55}],57:[function(require,module,exports){
 'use strict';
 var utils = require('./utils');
 var merge = require('./merge');
@@ -19401,7 +20520,7 @@ Changes.prototype.filterChanges = function (opts) {
     });
   }
 };
-},{"./deps/errors":67,"./evalFilter":78,"./evalView":79,"./merge":81,"./utils":92,"events":281}],57:[function(require,module,exports){
+},{"./deps/errors":68,"./evalFilter":79,"./evalView":80,"./merge":82,"./utils":93,"events":287}],58:[function(require,module,exports){
 (function (process,global){
 /*globals cordova */
 "use strict";
@@ -19565,7 +20684,7 @@ PouchDB.debug = require('debug');
 module.exports = PouchDB;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./adapter":44,"./taskqueue":91,"./utils":92,"_process":283,"debug":95}],58:[function(require,module,exports){
+},{"./adapter":45,"./taskqueue":92,"./utils":93,"_process":289,"debug":96}],59:[function(require,module,exports){
 (function (process){
 "use strict";
 
@@ -19706,7 +20825,7 @@ function ajax(options, adapterCallback) {
 module.exports = ajax;
 
 }).call(this,require('_process'))
-},{"../utils":92,"./buffer":66,"./errors":67,"_process":283,"request":75}],59:[function(require,module,exports){
+},{"../utils":93,"./buffer":67,"./errors":68,"_process":289,"request":76}],60:[function(require,module,exports){
 'use strict';
 
 //Can't find original post, but this is close
@@ -19721,7 +20840,7 @@ module.exports = function (buffer) {
   }
   return binary;
 };
-},{}],60:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 'use strict';
 
 var buffer = require('./../buffer');
@@ -19753,7 +20872,7 @@ if (typeof btoa === 'function') {
     return new buffer(str, 'binary').toString('base64');
   };
 }
-},{"./../buffer":66}],61:[function(require,module,exports){
+},{"./../buffer":67}],62:[function(require,module,exports){
 'use strict';
 
 // From http://stackoverflow.com/questions/14967647/ (continues on next line)
@@ -19767,7 +20886,7 @@ module.exports = function (bin) {
   }
   return buf;
 };
-},{}],62:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 'use strict';
 
 var createBlob = require('./blob');
@@ -19776,7 +20895,7 @@ var binaryStringToArrayBuffer = require('./binaryStringToArrayBuffer');
 module.exports = function binaryStringToBlob(binString, type) {
   return createBlob([binaryStringToArrayBuffer(binString)], {type: type});
 };
-},{"./binaryStringToArrayBuffer":61,"./blob":63}],63:[function(require,module,exports){
+},{"./binaryStringToArrayBuffer":62,"./blob":64}],64:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -19808,7 +20927,7 @@ module.exports = createBlob;
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],64:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 'use strict';
 
 // simplified API. universal browser support is assumed
@@ -19820,7 +20939,7 @@ module.exports = function (blob, callback) {
   };
   reader.readAsArrayBuffer(blob);
 };
-},{}],65:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 'use strict';
 
 var arrayBufferToBinaryString = require('./arrayBufferToBinaryString');
@@ -19842,10 +20961,10 @@ module.exports = function (blob, callback) {
     reader.readAsArrayBuffer(blob);
   }
 };
-},{"./arrayBufferToBinaryString":59}],66:[function(require,module,exports){
+},{"./arrayBufferToBinaryString":60}],67:[function(require,module,exports){
 // hey guess what, we don't need this in the browser
 module.exports = {};
-},{}],67:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 "use strict";
 
 var inherits = require('inherits');
@@ -20107,7 +21226,7 @@ exports.generateErrorFromResponse = function (res) {
   return error;
 };
 
-},{"inherits":98}],68:[function(require,module,exports){
+},{"inherits":99}],69:[function(require,module,exports){
 (function (process,global){
 'use strict';
 
@@ -20121,7 +21240,7 @@ function explain404(str) {
 
 module.exports = explain404;
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":283}],69:[function(require,module,exports){
+},{"_process":289}],70:[function(require,module,exports){
 (function (process,global){
 'use strict';
 
@@ -20200,7 +21319,7 @@ module.exports = function (data, callback) {
 };
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./binary/base64":60,"_process":283,"crypto":280,"spark-md5":123}],70:[function(require,module,exports){
+},{"./binary/base64":61,"_process":289,"crypto":286,"spark-md5":129}],71:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -20282,7 +21401,7 @@ function createMultipart(doc) {
 module.exports = createMultipart;
 
 }).call(this,require('_process'))
-},{"../utils":92,"./binary/base64":60,"./binary/binaryStringToArrayBuffer":61,"./binary/blob":63,"./buffer":66,"./uuid":77,"_process":283}],71:[function(require,module,exports){
+},{"../utils":93,"./binary/base64":61,"./binary/binaryStringToArrayBuffer":62,"./binary/blob":64,"./buffer":67,"./uuid":78,"_process":289}],72:[function(require,module,exports){
 'use strict';
 
 var errors = require('./errors');
@@ -20450,7 +21569,7 @@ exports.parseDoc = function (doc, newEdits) {
   }
   return result;
 };
-},{"./errors":67,"./uuid":77}],72:[function(require,module,exports){
+},{"./errors":68,"./uuid":78}],73:[function(require,module,exports){
 'use strict';
 
 //
@@ -20518,7 +21637,7 @@ function parseHexString(str, encoding) {
 }
 
 module.exports = parseHexString;
-},{}],73:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 'use strict';
 
 // originally parseUri 1.2.2, now patched by us
@@ -20564,7 +21683,7 @@ function parseUri(str) {
 
 
 module.exports = parseUri;
-},{}],74:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 'use strict';
 
 if (typeof Promise === 'function') {
@@ -20572,7 +21691,7 @@ if (typeof Promise === 'function') {
 } else {
   module.exports = require('bluebird');
 }
-},{"bluebird":102}],75:[function(require,module,exports){
+},{"bluebird":103}],76:[function(require,module,exports){
 /* global fetch */
 /* global Headers */
 'use strict';
@@ -20806,7 +21925,7 @@ module.exports = function(options, callback) {
   }
 };
 
-},{"../utils":92,"./binary/blob.js":63,"./binary/readAsArrayBuffer":64}],76:[function(require,module,exports){
+},{"../utils":93,"./binary/blob.js":64,"./binary/readAsArrayBuffer":65}],77:[function(require,module,exports){
 'use strict';
 
 var upsert = require('pouchdb-upsert').upsert;
@@ -20815,7 +21934,7 @@ module.exports = function (db, doc, diffFun, cb) {
   return upsert.call(db, doc, diffFun, cb);
 };
 
-},{"pouchdb-upsert":29}],77:[function(require,module,exports){
+},{"pouchdb-upsert":128}],78:[function(require,module,exports){
 "use strict";
 
 // BEGIN Math.uuid.js
@@ -20900,7 +22019,7 @@ function uuid(len, radix) {
 module.exports = uuid;
 
 
-},{}],78:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 'use strict';
 
 module.exports = evalFilter;
@@ -20912,7 +22031,7 @@ function evalFilter(input) {
     ' })()'
   ].join(''));
 }
-},{}],79:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 'use strict';
 
 module.exports = evalView;
@@ -20934,7 +22053,7 @@ function evalView(input) {
     '})()'
   ].join('\n'));
 }
-},{}],80:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 (function (process){
 "use strict";
 
@@ -20962,7 +22081,7 @@ if (!process.browser) {
 }
 
 }).call(this,require('_process'))
-},{"./adapters/http/http":45,"./adapters/idb/idb":51,"./adapters/leveldb/leveldb":280,"./adapters/websql/websql":55,"./deps/ajax":58,"./deps/errors":67,"./replicate":86,"./setup":89,"./sync":90,"./utils":92,"./version":93,"_process":283,"pouchdb-mapreduce":119}],81:[function(require,module,exports){
+},{"./adapters/http/http":46,"./adapters/idb/idb":52,"./adapters/leveldb/leveldb":286,"./adapters/websql/websql":56,"./deps/ajax":59,"./deps/errors":68,"./replicate":87,"./setup":90,"./sync":91,"./utils":93,"./version":94,"_process":289,"pouchdb-mapreduce":124}],82:[function(require,module,exports){
 'use strict';
 var extend = require('pouchdb-extend');
 
@@ -21264,7 +22383,7 @@ PouchMerge.rootToLeaf = function (tree) {
 
 module.exports = PouchMerge;
 
-},{"pouchdb-extend":116}],82:[function(require,module,exports){
+},{"pouchdb-extend":121}],83:[function(require,module,exports){
 'use strict';
 
 var STARTING_BACK_OFF = 0;
@@ -21318,7 +22437,7 @@ function backOff(opts, returnValue, error, callback) {
 }
 
 module.exports = backOff;
-},{}],83:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 'use strict';
 
 var Promise = require('./../deps/promise');
@@ -21420,7 +22539,7 @@ Checkpointer.prototype.getCheckpoint = function () {
 
 module.exports = Checkpointer;
 
-},{"./../deps/explain404":68,"./../deps/promise":74,"pouchdb-collate":113}],84:[function(require,module,exports){
+},{"./../deps/explain404":69,"./../deps/promise":75,"pouchdb-collate":118}],85:[function(require,module,exports){
 'use strict';
 
 var utils = require('../utils');
@@ -21445,7 +22564,7 @@ function genReplicationId(src, target, opts) {
 }
 
 module.exports = genReplicationId;
-},{"../utils":92}],85:[function(require,module,exports){
+},{"../utils":93}],86:[function(require,module,exports){
 'use strict';
 
 var utils = require('./../utils');
@@ -21558,7 +22677,7 @@ function getDocs(src, diffs, state) {
 }
 
 module.exports = getDocs;
-},{"./../utils":92}],86:[function(require,module,exports){
+},{"./../utils":93}],87:[function(require,module,exports){
 'use strict';
 
 var utils = require('../utils');
@@ -21601,7 +22720,7 @@ module.exports = {
   replicate : replicateWrapper,
   toPouch: toPouch
 };
-},{"../utils":92,"./replicate":87,"./replication":88}],87:[function(require,module,exports){
+},{"../utils":93,"./replicate":88,"./replication":89}],88:[function(require,module,exports){
 'use strict';
 
 var utils = require('./../utils');
@@ -22028,7 +23147,7 @@ function replicate(src, target, opts, returnValue, result) {
 }
 
 module.exports = replicate;
-},{"./../utils":92,"./backoff":82,"./checkpointer":83,"./gen-replication-id":84,"./get-docs":85}],88:[function(require,module,exports){
+},{"./../utils":93,"./backoff":83,"./checkpointer":84,"./gen-replication-id":85,"./get-docs":86}],89:[function(require,module,exports){
 'use strict';
 
 var utils = require('./../utils');
@@ -22084,7 +23203,7 @@ Replication.prototype.ready = function (src, target) {
 };
 
 module.exports = Replication;
-},{"./../utils":92,"events":281}],89:[function(require,module,exports){
+},{"./../utils":93,"events":287}],90:[function(require,module,exports){
 "use strict";
 
 var PouchDB = require("./constructor");
@@ -22246,7 +23365,7 @@ PouchDB.defaults = function (defaultOpts) {
 
 module.exports = PouchDB;
 
-},{"./constructor":57,"./utils":92,"events":281}],90:[function(require,module,exports){
+},{"./constructor":58,"./utils":93,"events":287}],91:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -22432,7 +23551,7 @@ Sync.prototype.cancel = function () {
   }
 };
 
-},{"./replicate":86,"./utils":92,"events":281}],91:[function(require,module,exports){
+},{"./replicate":87,"./utils":93,"events":287}],92:[function(require,module,exports){
 'use strict';
 
 module.exports = TaskQueue;
@@ -22502,7 +23621,7 @@ TaskQueue.prototype.addTask = function (name, parameters) {
   }
 };
 
-},{}],92:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 (function (process){
 /*jshint strict: false */
 /*global chrome */
@@ -23247,10 +24366,10 @@ exports.safeJsonStringify = function safeJsonStringify(json) {
 };
 
 }).call(this,require('_process'))
-},{"./deps/ajax":58,"./deps/binary/arrayBufferToBinaryString":59,"./deps/binary/base64":60,"./deps/binary/binaryStringToBlob":62,"./deps/binary/blob":63,"./deps/binary/readAsArrayBuffer":64,"./deps/errors":67,"./deps/explain404":68,"./deps/md5":69,"./deps/parse-doc":71,"./deps/parse-uri":73,"./deps/promise":74,"./deps/uuid":77,"./merge":81,"_process":283,"argsarray":94,"debug":95,"events":281,"inherits":98,"pouchdb-collections":115,"pouchdb-extend":116,"vuvuzela":124}],93:[function(require,module,exports){
+},{"./deps/ajax":59,"./deps/binary/arrayBufferToBinaryString":60,"./deps/binary/base64":61,"./deps/binary/binaryStringToBlob":63,"./deps/binary/blob":64,"./deps/binary/readAsArrayBuffer":65,"./deps/errors":68,"./deps/explain404":69,"./deps/md5":70,"./deps/parse-doc":72,"./deps/parse-uri":74,"./deps/promise":75,"./deps/uuid":78,"./merge":82,"_process":289,"argsarray":95,"debug":96,"events":287,"inherits":99,"pouchdb-collections":120,"pouchdb-extend":121,"vuvuzela":130}],94:[function(require,module,exports){
 module.exports = "3.6.0";
 
-},{}],94:[function(require,module,exports){
+},{}],95:[function(require,module,exports){
 'use strict';
 
 module.exports = argsArray;
@@ -23270,7 +24389,7 @@ function argsArray(fun) {
     }
   };
 }
-},{}],95:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 
 /**
  * This is the web browser implementation of `debug()`.
@@ -23440,7 +24559,7 @@ function localstorage(){
   } catch (e) {}
 }
 
-},{"./debug":96}],96:[function(require,module,exports){
+},{"./debug":97}],97:[function(require,module,exports){
 
 /**
  * This is the common logic for both the Node.js and web browser
@@ -23639,7 +24758,7 @@ function coerce(val) {
   return val;
 }
 
-},{"ms":97}],97:[function(require,module,exports){
+},{"ms":98}],98:[function(require,module,exports){
 /**
  * Helpers.
  */
@@ -23766,7 +24885,7 @@ function plural(ms, n, name) {
   return Math.ceil(ms / n) + ' ' + name + 's';
 }
 
-},{}],98:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -23791,35 +24910,159 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],99:[function(require,module,exports){
-arguments[4][30][0].apply(exports,arguments)
-},{"dup":30}],100:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 arguments[4][31][0].apply(exports,arguments)
-},{"./INTERNAL":99,"./handlers":101,"./promise":103,"./reject":106,"./resolve":107,"dup":31}],101:[function(require,module,exports){
+},{"dup":31}],101:[function(require,module,exports){
 arguments[4][32][0].apply(exports,arguments)
-},{"./resolveThenable":108,"./states":109,"./tryCatch":110,"dup":32}],102:[function(require,module,exports){
+},{"./INTERNAL":100,"./handlers":102,"./promise":104,"./reject":107,"./resolve":108,"dup":32}],102:[function(require,module,exports){
 arguments[4][33][0].apply(exports,arguments)
-},{"./all":100,"./promise":103,"./race":105,"./reject":106,"./resolve":107,"dup":33}],103:[function(require,module,exports){
+},{"./resolveThenable":109,"./states":110,"./tryCatch":111,"dup":33}],103:[function(require,module,exports){
 arguments[4][34][0].apply(exports,arguments)
-},{"./INTERNAL":99,"./queueItem":104,"./resolveThenable":108,"./states":109,"./unwrap":111,"dup":34}],104:[function(require,module,exports){
+},{"./all":101,"./promise":104,"./race":106,"./reject":107,"./resolve":108,"dup":34}],104:[function(require,module,exports){
 arguments[4][35][0].apply(exports,arguments)
-},{"./handlers":101,"./unwrap":111,"dup":35}],105:[function(require,module,exports){
+},{"./INTERNAL":100,"./queueItem":105,"./resolveThenable":109,"./states":110,"./unwrap":112,"dup":35}],105:[function(require,module,exports){
 arguments[4][36][0].apply(exports,arguments)
-},{"./INTERNAL":99,"./handlers":101,"./promise":103,"./reject":106,"./resolve":107,"dup":36}],106:[function(require,module,exports){
+},{"./handlers":102,"./unwrap":112,"dup":36}],106:[function(require,module,exports){
 arguments[4][37][0].apply(exports,arguments)
-},{"./INTERNAL":99,"./handlers":101,"./promise":103,"dup":37}],107:[function(require,module,exports){
+},{"./INTERNAL":100,"./handlers":102,"./promise":104,"./reject":107,"./resolve":108,"dup":37}],107:[function(require,module,exports){
 arguments[4][38][0].apply(exports,arguments)
-},{"./INTERNAL":99,"./handlers":101,"./promise":103,"dup":38}],108:[function(require,module,exports){
+},{"./INTERNAL":100,"./handlers":102,"./promise":104,"dup":38}],108:[function(require,module,exports){
 arguments[4][39][0].apply(exports,arguments)
-},{"./handlers":101,"./tryCatch":110,"dup":39}],109:[function(require,module,exports){
+},{"./INTERNAL":100,"./handlers":102,"./promise":104,"dup":39}],109:[function(require,module,exports){
 arguments[4][40][0].apply(exports,arguments)
-},{"dup":40}],110:[function(require,module,exports){
+},{"./handlers":102,"./tryCatch":111,"dup":40}],110:[function(require,module,exports){
 arguments[4][41][0].apply(exports,arguments)
 },{"dup":41}],111:[function(require,module,exports){
 arguments[4][42][0].apply(exports,arguments)
-},{"./handlers":101,"dup":42,"immediate":112}],112:[function(require,module,exports){
+},{"dup":42}],112:[function(require,module,exports){
 arguments[4][43][0].apply(exports,arguments)
-},{"dup":43}],113:[function(require,module,exports){
+},{"./handlers":102,"dup":43,"immediate":113}],113:[function(require,module,exports){
+'use strict';
+var types = [
+  require('./nextTick'),
+  require('./mutation.js'),
+  require('./messageChannel'),
+  require('./stateChange'),
+  require('./timeout')
+];
+var draining;
+var queue = [];
+//named nextTick for less confusing stack traces
+function nextTick() {
+  draining = true;
+  var i, oldQueue;
+  var len = queue.length;
+  while (len) {
+    oldQueue = queue;
+    queue = [];
+    i = -1;
+    while (++i < len) {
+      oldQueue[i]();
+    }
+    len = queue.length;
+  }
+  draining = false;
+}
+var scheduleDrain;
+var i = -1;
+var len = types.length;
+while (++ i < len) {
+  if (types[i] && types[i].test && types[i].test()) {
+    scheduleDrain = types[i].install(nextTick);
+    break;
+  }
+}
+module.exports = immediate;
+function immediate(task) {
+  if (queue.push(task) === 1 && !draining) {
+    scheduleDrain();
+  }
+}
+},{"./messageChannel":114,"./mutation.js":115,"./nextTick":286,"./stateChange":116,"./timeout":117}],114:[function(require,module,exports){
+(function (global){
+'use strict';
+
+exports.test = function () {
+  if (global.setImmediate) {
+    // we can only get here in IE10
+    // which doesn't handel postMessage well
+    return false;
+  }
+  return typeof global.MessageChannel !== 'undefined';
+};
+
+exports.install = function (func) {
+  var channel = new global.MessageChannel();
+  channel.port1.onmessage = func;
+  return function () {
+    channel.port2.postMessage(0);
+  };
+};
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],115:[function(require,module,exports){
+(function (global){
+'use strict';
+//based off rsvp https://github.com/tildeio/rsvp.js
+//license https://github.com/tildeio/rsvp.js/blob/master/LICENSE
+//https://github.com/tildeio/rsvp.js/blob/master/lib/rsvp/asap.js
+
+var Mutation = global.MutationObserver || global.WebKitMutationObserver;
+
+exports.test = function () {
+  return Mutation;
+};
+
+exports.install = function (handle) {
+  var called = 0;
+  var observer = new Mutation(handle);
+  var element = global.document.createTextNode('');
+  observer.observe(element, {
+    characterData: true
+  });
+  return function () {
+    element.data = (called = ++called % 2);
+  };
+};
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],116:[function(require,module,exports){
+(function (global){
+'use strict';
+
+exports.test = function () {
+  return 'document' in global && 'onreadystatechange' in global.document.createElement('script');
+};
+
+exports.install = function (handle) {
+  return function () {
+
+    // Create a <script> element; its readystatechange event will be fired asynchronously once it is inserted
+    // into the document. Do so, thus queuing up the task. Remember to clean up once it's been called.
+    var scriptEl = global.document.createElement('script');
+    scriptEl.onreadystatechange = function () {
+      handle();
+
+      scriptEl.onreadystatechange = null;
+      scriptEl.parentNode.removeChild(scriptEl);
+      scriptEl = null;
+    };
+    global.document.documentElement.appendChild(scriptEl);
+
+    return handle;
+  };
+};
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],117:[function(require,module,exports){
+'use strict';
+exports.test = function () {
+  return true;
+};
+
+exports.install = function (t) {
+  return function () {
+    setTimeout(t, 0);
+  };
+};
+},{}],118:[function(require,module,exports){
 'use strict';
 
 var MIN_MAGNITUDE = -324; // verified by -Number.MIN_VALUE
@@ -24174,7 +25417,7 @@ function numToIndexableString(num) {
   return result;
 }
 
-},{"./utils":114}],114:[function(require,module,exports){
+},{"./utils":119}],119:[function(require,module,exports){
 'use strict';
 
 function pad(str, padWith, upToLength) {
@@ -24245,7 +25488,7 @@ exports.intToDecimalForm = function (int) {
 
   return result;
 };
-},{}],115:[function(require,module,exports){
+},{}],120:[function(require,module,exports){
 'use strict';
 exports.Map = LazyMap; // TODO: use ES6 map
 exports.Set = LazySet; // TODO: use ES6 set
@@ -24266,8 +25509,9 @@ LazyMap.prototype.get = function (key) {
   var mangled = this.mangle(key);
   if (mangled in this.store) {
     return this.store[mangled];
+  } else {
+    return void 0;
   }
-  return void 0;
 };
 LazyMap.prototype.set = function (key, value) {
   var mangled = this.mangle(key);
@@ -24287,13 +25531,13 @@ LazyMap.prototype.delete = function (key) {
   return false;
 };
 LazyMap.prototype.forEach = function (cb) {
-  var keys = Object.keys(this.store);
-  for (var i = 0, len = keys.length; i < len; i++) {
-    var key = keys[i];
-    var value = this.store[key];
-    key = this.unmangle(key);
+  var self = this;
+  var keys = Object.keys(self.store);
+  keys.forEach(function (key) {
+    var value = self.store[key];
+    key = self.unmangle(key);
     cb(value, key);
-  }
+  });
 };
 
 function LazySet(array) {
@@ -24316,7 +25560,7 @@ LazySet.prototype.delete = function (key) {
   return this.store.delete(key);
 };
 
-},{}],116:[function(require,module,exports){
+},{}],121:[function(require,module,exports){
 "use strict";
 
 // Extends method
@@ -24497,7 +25741,7 @@ module.exports = extend;
 
 
 
-},{}],117:[function(require,module,exports){
+},{}],122:[function(require,module,exports){
 'use strict';
 
 var upsert = require('./upsert');
@@ -24576,7 +25820,7 @@ module.exports = function (opts) {
   });
 };
 
-},{"./upsert":121,"./utils":122}],118:[function(require,module,exports){
+},{"./upsert":126,"./utils":127}],123:[function(require,module,exports){
 'use strict';
 
 module.exports = function (func, emit, sum, log, isArray, toJSON) {
@@ -24584,7 +25828,7 @@ module.exports = function (func, emit, sum, log, isArray, toJSON) {
   return eval("'use strict'; (" + func.replace(/;\s*$/, "") + ");");
 };
 
-},{}],119:[function(require,module,exports){
+},{}],124:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -25458,7 +26702,7 @@ function BuiltInError(message) {
 
 utils.inherits(BuiltInError, Error);
 }).call(this,require('_process'))
-},{"./create-view":117,"./evalfunc":118,"./taskqueue":120,"./utils":122,"_process":283,"pouchdb-collate":113}],120:[function(require,module,exports){
+},{"./create-view":122,"./evalfunc":123,"./taskqueue":125,"./utils":127,"_process":289,"pouchdb-collate":118}],125:[function(require,module,exports){
 'use strict';
 /*
  * Simple task queue to sequentialize actions. Assumes callbacks will eventually fire (once).
@@ -25483,7 +26727,7 @@ TaskQueue.prototype.finish = function () {
 
 module.exports = TaskQueue;
 
-},{"./utils":122}],121:[function(require,module,exports){
+},{"./utils":127}],126:[function(require,module,exports){
 'use strict';
 
 var upsert = require('pouchdb-upsert').upsert;
@@ -25491,7 +26735,7 @@ var upsert = require('pouchdb-upsert').upsert;
 module.exports = function (db, doc, diffFun) {
   return upsert.apply(db, [doc, diffFun]);
 };
-},{"pouchdb-upsert":29}],122:[function(require,module,exports){
+},{"pouchdb-upsert":128}],127:[function(require,module,exports){
 (function (process,global){
 'use strict';
 /* istanbul ignore if */
@@ -25600,7 +26844,9 @@ exports.MD5 = function (string) {
   }
 };
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":283,"argsarray":94,"crypto":280,"inherits":98,"lie":102,"pouchdb-extend":116,"spark-md5":123}],123:[function(require,module,exports){
+},{"_process":289,"argsarray":95,"crypto":286,"inherits":99,"lie":103,"pouchdb-extend":121,"spark-md5":129}],128:[function(require,module,exports){
+arguments[4][30][0].apply(exports,arguments)
+},{"dup":30,"lie":103}],129:[function(require,module,exports){
 /*jshint bitwise:false*/
 /*global unescape*/
 
@@ -26201,7 +27447,7 @@ exports.MD5 = function (string) {
     return SparkMD5;
 }));
 
-},{}],124:[function(require,module,exports){
+},{}],130:[function(require,module,exports){
 'use strict';
 
 /**
@@ -26376,7 +27622,7 @@ exports.parse = function (str) {
   }
 };
 
-},{}],125:[function(require,module,exports){
+},{}],131:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -26403,7 +27649,7 @@ var AutoFocusMixin = {
 
 module.exports = AutoFocusMixin;
 
-},{"./focusNode":243}],126:[function(require,module,exports){
+},{"./focusNode":249}],132:[function(require,module,exports){
 /**
  * Copyright 2013-2015 Facebook, Inc.
  * All rights reserved.
@@ -26898,7 +28144,7 @@ var BeforeInputEventPlugin = {
 
 module.exports = BeforeInputEventPlugin;
 
-},{"./EventConstants":138,"./EventPropagators":143,"./ExecutionEnvironment":144,"./FallbackCompositionState":145,"./SyntheticCompositionEvent":217,"./SyntheticInputEvent":221,"./keyOf":265}],127:[function(require,module,exports){
+},{"./EventConstants":144,"./EventPropagators":149,"./ExecutionEnvironment":150,"./FallbackCompositionState":151,"./SyntheticCompositionEvent":223,"./SyntheticInputEvent":227,"./keyOf":271}],133:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -27023,7 +28269,7 @@ var CSSProperty = {
 
 module.exports = CSSProperty;
 
-},{}],128:[function(require,module,exports){
+},{}],134:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -27205,7 +28451,7 @@ var CSSPropertyOperations = {
 module.exports = CSSPropertyOperations;
 
 }).call(this,require('_process'))
-},{"./CSSProperty":127,"./ExecutionEnvironment":144,"./camelizeStyleName":232,"./dangerousStyleValue":237,"./hyphenateStyleName":257,"./memoizeStringOnly":267,"./warning":278,"_process":283}],129:[function(require,module,exports){
+},{"./CSSProperty":133,"./ExecutionEnvironment":150,"./camelizeStyleName":238,"./dangerousStyleValue":243,"./hyphenateStyleName":263,"./memoizeStringOnly":273,"./warning":284,"_process":289}],135:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -27305,7 +28551,7 @@ PooledClass.addPoolingTo(CallbackQueue);
 module.exports = CallbackQueue;
 
 }).call(this,require('_process'))
-},{"./Object.assign":150,"./PooledClass":151,"./invariant":259,"_process":283}],130:[function(require,module,exports){
+},{"./Object.assign":156,"./PooledClass":157,"./invariant":265,"_process":289}],136:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -27687,7 +28933,7 @@ var ChangeEventPlugin = {
 
 module.exports = ChangeEventPlugin;
 
-},{"./EventConstants":138,"./EventPluginHub":140,"./EventPropagators":143,"./ExecutionEnvironment":144,"./ReactUpdates":211,"./SyntheticEvent":219,"./isEventSupported":260,"./isTextInputElement":262,"./keyOf":265}],131:[function(require,module,exports){
+},{"./EventConstants":144,"./EventPluginHub":146,"./EventPropagators":149,"./ExecutionEnvironment":150,"./ReactUpdates":217,"./SyntheticEvent":225,"./isEventSupported":266,"./isTextInputElement":268,"./keyOf":271}],137:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -27712,7 +28958,7 @@ var ClientReactRootIndex = {
 
 module.exports = ClientReactRootIndex;
 
-},{}],132:[function(require,module,exports){
+},{}],138:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -27850,7 +29096,7 @@ var DOMChildrenOperations = {
 module.exports = DOMChildrenOperations;
 
 }).call(this,require('_process'))
-},{"./Danger":135,"./ReactMultiChildUpdateTypes":196,"./invariant":259,"./setTextContent":273,"_process":283}],133:[function(require,module,exports){
+},{"./Danger":141,"./ReactMultiChildUpdateTypes":202,"./invariant":265,"./setTextContent":279,"_process":289}],139:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -28149,7 +29395,7 @@ var DOMProperty = {
 module.exports = DOMProperty;
 
 }).call(this,require('_process'))
-},{"./invariant":259,"_process":283}],134:[function(require,module,exports){
+},{"./invariant":265,"_process":289}],140:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -28341,7 +29587,7 @@ var DOMPropertyOperations = {
 module.exports = DOMPropertyOperations;
 
 }).call(this,require('_process'))
-},{"./DOMProperty":133,"./quoteAttributeValueForBrowser":271,"./warning":278,"_process":283}],135:[function(require,module,exports){
+},{"./DOMProperty":139,"./quoteAttributeValueForBrowser":277,"./warning":284,"_process":289}],141:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -28528,7 +29774,7 @@ var Danger = {
 module.exports = Danger;
 
 }).call(this,require('_process'))
-},{"./ExecutionEnvironment":144,"./createNodesFromMarkup":236,"./emptyFunction":238,"./getMarkupWrap":251,"./invariant":259,"_process":283}],136:[function(require,module,exports){
+},{"./ExecutionEnvironment":150,"./createNodesFromMarkup":242,"./emptyFunction":244,"./getMarkupWrap":257,"./invariant":265,"_process":289}],142:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -28567,7 +29813,7 @@ var DefaultEventPluginOrder = [
 
 module.exports = DefaultEventPluginOrder;
 
-},{"./keyOf":265}],137:[function(require,module,exports){
+},{"./keyOf":271}],143:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -28707,7 +29953,7 @@ var EnterLeaveEventPlugin = {
 
 module.exports = EnterLeaveEventPlugin;
 
-},{"./EventConstants":138,"./EventPropagators":143,"./ReactMount":194,"./SyntheticMouseEvent":223,"./keyOf":265}],138:[function(require,module,exports){
+},{"./EventConstants":144,"./EventPropagators":149,"./ReactMount":200,"./SyntheticMouseEvent":229,"./keyOf":271}],144:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -28779,7 +30025,7 @@ var EventConstants = {
 
 module.exports = EventConstants;
 
-},{"./keyMirror":264}],139:[function(require,module,exports){
+},{"./keyMirror":270}],145:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -28869,7 +30115,7 @@ var EventListener = {
 module.exports = EventListener;
 
 }).call(this,require('_process'))
-},{"./emptyFunction":238,"_process":283}],140:[function(require,module,exports){
+},{"./emptyFunction":244,"_process":289}],146:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -29147,7 +30393,7 @@ var EventPluginHub = {
 module.exports = EventPluginHub;
 
 }).call(this,require('_process'))
-},{"./EventPluginRegistry":141,"./EventPluginUtils":142,"./accumulateInto":229,"./forEachAccumulated":244,"./invariant":259,"_process":283}],141:[function(require,module,exports){
+},{"./EventPluginRegistry":147,"./EventPluginUtils":148,"./accumulateInto":235,"./forEachAccumulated":250,"./invariant":265,"_process":289}],147:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -29427,7 +30673,7 @@ var EventPluginRegistry = {
 module.exports = EventPluginRegistry;
 
 }).call(this,require('_process'))
-},{"./invariant":259,"_process":283}],142:[function(require,module,exports){
+},{"./invariant":265,"_process":289}],148:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -29648,7 +30894,7 @@ var EventPluginUtils = {
 module.exports = EventPluginUtils;
 
 }).call(this,require('_process'))
-},{"./EventConstants":138,"./invariant":259,"_process":283}],143:[function(require,module,exports){
+},{"./EventConstants":144,"./invariant":265,"_process":289}],149:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -29790,7 +31036,7 @@ var EventPropagators = {
 module.exports = EventPropagators;
 
 }).call(this,require('_process'))
-},{"./EventConstants":138,"./EventPluginHub":140,"./accumulateInto":229,"./forEachAccumulated":244,"_process":283}],144:[function(require,module,exports){
+},{"./EventConstants":144,"./EventPluginHub":146,"./accumulateInto":235,"./forEachAccumulated":250,"_process":289}],150:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -29834,7 +31080,7 @@ var ExecutionEnvironment = {
 
 module.exports = ExecutionEnvironment;
 
-},{}],145:[function(require,module,exports){
+},{}],151:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -29925,7 +31171,7 @@ PooledClass.addPoolingTo(FallbackCompositionState);
 
 module.exports = FallbackCompositionState;
 
-},{"./Object.assign":150,"./PooledClass":151,"./getTextContentAccessor":254}],146:[function(require,module,exports){
+},{"./Object.assign":156,"./PooledClass":157,"./getTextContentAccessor":260}],152:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -30136,7 +31382,7 @@ var HTMLDOMPropertyConfig = {
 
 module.exports = HTMLDOMPropertyConfig;
 
-},{"./DOMProperty":133,"./ExecutionEnvironment":144}],147:[function(require,module,exports){
+},{"./DOMProperty":139,"./ExecutionEnvironment":150}],153:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -30292,7 +31538,7 @@ var LinkedValueUtils = {
 module.exports = LinkedValueUtils;
 
 }).call(this,require('_process'))
-},{"./ReactPropTypes":202,"./invariant":259,"_process":283}],148:[function(require,module,exports){
+},{"./ReactPropTypes":208,"./invariant":265,"_process":289}],154:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2014-2015, Facebook, Inc.
@@ -30349,7 +31595,7 @@ var LocalEventTrapMixin = {
 module.exports = LocalEventTrapMixin;
 
 }).call(this,require('_process'))
-},{"./ReactBrowserEventEmitter":154,"./accumulateInto":229,"./forEachAccumulated":244,"./invariant":259,"_process":283}],149:[function(require,module,exports){
+},{"./ReactBrowserEventEmitter":160,"./accumulateInto":235,"./forEachAccumulated":250,"./invariant":265,"_process":289}],155:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -30407,7 +31653,7 @@ var MobileSafariClickEventPlugin = {
 
 module.exports = MobileSafariClickEventPlugin;
 
-},{"./EventConstants":138,"./emptyFunction":238}],150:[function(require,module,exports){
+},{"./EventConstants":144,"./emptyFunction":244}],156:[function(require,module,exports){
 /**
  * Copyright 2014-2015, Facebook, Inc.
  * All rights reserved.
@@ -30456,7 +31702,7 @@ function assign(target, sources) {
 
 module.exports = assign;
 
-},{}],151:[function(require,module,exports){
+},{}],157:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -30572,7 +31818,7 @@ var PooledClass = {
 module.exports = PooledClass;
 
 }).call(this,require('_process'))
-},{"./invariant":259,"_process":283}],152:[function(require,module,exports){
+},{"./invariant":265,"_process":289}],158:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -30724,7 +31970,7 @@ React.version = '0.13.3';
 module.exports = React;
 
 }).call(this,require('_process'))
-},{"./EventPluginUtils":142,"./ExecutionEnvironment":144,"./Object.assign":150,"./ReactChildren":156,"./ReactClass":157,"./ReactComponent":158,"./ReactContext":162,"./ReactCurrentOwner":163,"./ReactDOM":164,"./ReactDOMTextComponent":175,"./ReactDefaultInjection":178,"./ReactElement":181,"./ReactElementValidator":182,"./ReactInstanceHandles":190,"./ReactMount":194,"./ReactPerf":199,"./ReactPropTypes":202,"./ReactReconciler":205,"./ReactServerRendering":208,"./findDOMNode":241,"./onlyChild":268,"_process":283}],153:[function(require,module,exports){
+},{"./EventPluginUtils":148,"./ExecutionEnvironment":150,"./Object.assign":156,"./ReactChildren":162,"./ReactClass":163,"./ReactComponent":164,"./ReactContext":168,"./ReactCurrentOwner":169,"./ReactDOM":170,"./ReactDOMTextComponent":181,"./ReactDefaultInjection":184,"./ReactElement":187,"./ReactElementValidator":188,"./ReactInstanceHandles":196,"./ReactMount":200,"./ReactPerf":205,"./ReactPropTypes":208,"./ReactReconciler":211,"./ReactServerRendering":214,"./findDOMNode":247,"./onlyChild":274,"_process":289}],159:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -30755,7 +32001,7 @@ var ReactBrowserComponentMixin = {
 
 module.exports = ReactBrowserComponentMixin;
 
-},{"./findDOMNode":241}],154:[function(require,module,exports){
+},{"./findDOMNode":247}],160:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -31108,7 +32354,7 @@ var ReactBrowserEventEmitter = assign({}, ReactEventEmitterMixin, {
 
 module.exports = ReactBrowserEventEmitter;
 
-},{"./EventConstants":138,"./EventPluginHub":140,"./EventPluginRegistry":141,"./Object.assign":150,"./ReactEventEmitterMixin":185,"./ViewportMetrics":228,"./isEventSupported":260}],155:[function(require,module,exports){
+},{"./EventConstants":144,"./EventPluginHub":146,"./EventPluginRegistry":147,"./Object.assign":156,"./ReactEventEmitterMixin":191,"./ViewportMetrics":234,"./isEventSupported":266}],161:[function(require,module,exports){
 /**
  * Copyright 2014-2015, Facebook, Inc.
  * All rights reserved.
@@ -31235,7 +32481,7 @@ var ReactChildReconciler = {
 
 module.exports = ReactChildReconciler;
 
-},{"./ReactReconciler":205,"./flattenChildren":242,"./instantiateReactComponent":258,"./shouldUpdateReactComponent":275}],156:[function(require,module,exports){
+},{"./ReactReconciler":211,"./flattenChildren":248,"./instantiateReactComponent":264,"./shouldUpdateReactComponent":281}],162:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -31388,7 +32634,7 @@ var ReactChildren = {
 module.exports = ReactChildren;
 
 }).call(this,require('_process'))
-},{"./PooledClass":151,"./ReactFragment":187,"./traverseAllChildren":277,"./warning":278,"_process":283}],157:[function(require,module,exports){
+},{"./PooledClass":157,"./ReactFragment":193,"./traverseAllChildren":283,"./warning":284,"_process":289}],163:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -32334,7 +33580,7 @@ var ReactClass = {
 module.exports = ReactClass;
 
 }).call(this,require('_process'))
-},{"./Object.assign":150,"./ReactComponent":158,"./ReactCurrentOwner":163,"./ReactElement":181,"./ReactErrorUtils":184,"./ReactInstanceMap":191,"./ReactLifeCycle":192,"./ReactPropTypeLocationNames":200,"./ReactPropTypeLocations":201,"./ReactUpdateQueue":210,"./invariant":259,"./keyMirror":264,"./keyOf":265,"./warning":278,"_process":283}],158:[function(require,module,exports){
+},{"./Object.assign":156,"./ReactComponent":164,"./ReactCurrentOwner":169,"./ReactElement":187,"./ReactErrorUtils":190,"./ReactInstanceMap":197,"./ReactLifeCycle":198,"./ReactPropTypeLocationNames":206,"./ReactPropTypeLocations":207,"./ReactUpdateQueue":216,"./invariant":265,"./keyMirror":270,"./keyOf":271,"./warning":284,"_process":289}],164:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -32488,7 +33734,7 @@ if ("production" !== process.env.NODE_ENV) {
 module.exports = ReactComponent;
 
 }).call(this,require('_process'))
-},{"./ReactUpdateQueue":210,"./invariant":259,"./warning":278,"_process":283}],159:[function(require,module,exports){
+},{"./ReactUpdateQueue":216,"./invariant":265,"./warning":284,"_process":289}],165:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -32535,7 +33781,7 @@ var ReactComponentBrowserEnvironment = {
 
 module.exports = ReactComponentBrowserEnvironment;
 
-},{"./ReactDOMIDOperations":168,"./ReactMount":194}],160:[function(require,module,exports){
+},{"./ReactDOMIDOperations":174,"./ReactMount":200}],166:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2014-2015, Facebook, Inc.
@@ -32596,7 +33842,7 @@ var ReactComponentEnvironment = {
 module.exports = ReactComponentEnvironment;
 
 }).call(this,require('_process'))
-},{"./invariant":259,"_process":283}],161:[function(require,module,exports){
+},{"./invariant":265,"_process":289}],167:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -33509,7 +34755,7 @@ var ReactCompositeComponent = {
 module.exports = ReactCompositeComponent;
 
 }).call(this,require('_process'))
-},{"./Object.assign":150,"./ReactComponentEnvironment":160,"./ReactContext":162,"./ReactCurrentOwner":163,"./ReactElement":181,"./ReactElementValidator":182,"./ReactInstanceMap":191,"./ReactLifeCycle":192,"./ReactNativeComponent":197,"./ReactPerf":199,"./ReactPropTypeLocationNames":200,"./ReactPropTypeLocations":201,"./ReactReconciler":205,"./ReactUpdates":211,"./emptyObject":239,"./invariant":259,"./shouldUpdateReactComponent":275,"./warning":278,"_process":283}],162:[function(require,module,exports){
+},{"./Object.assign":156,"./ReactComponentEnvironment":166,"./ReactContext":168,"./ReactCurrentOwner":169,"./ReactElement":187,"./ReactElementValidator":188,"./ReactInstanceMap":197,"./ReactLifeCycle":198,"./ReactNativeComponent":203,"./ReactPerf":205,"./ReactPropTypeLocationNames":206,"./ReactPropTypeLocations":207,"./ReactReconciler":211,"./ReactUpdates":217,"./emptyObject":245,"./invariant":265,"./shouldUpdateReactComponent":281,"./warning":284,"_process":289}],168:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -33587,7 +34833,7 @@ var ReactContext = {
 module.exports = ReactContext;
 
 }).call(this,require('_process'))
-},{"./Object.assign":150,"./emptyObject":239,"./warning":278,"_process":283}],163:[function(require,module,exports){
+},{"./Object.assign":156,"./emptyObject":245,"./warning":284,"_process":289}],169:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -33621,7 +34867,7 @@ var ReactCurrentOwner = {
 
 module.exports = ReactCurrentOwner;
 
-},{}],164:[function(require,module,exports){
+},{}],170:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -33800,7 +35046,7 @@ var ReactDOM = mapObject({
 module.exports = ReactDOM;
 
 }).call(this,require('_process'))
-},{"./ReactElement":181,"./ReactElementValidator":182,"./mapObject":266,"_process":283}],165:[function(require,module,exports){
+},{"./ReactElement":187,"./ReactElementValidator":188,"./mapObject":272,"_process":289}],171:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -33864,7 +35110,7 @@ var ReactDOMButton = ReactClass.createClass({
 
 module.exports = ReactDOMButton;
 
-},{"./AutoFocusMixin":125,"./ReactBrowserComponentMixin":153,"./ReactClass":157,"./ReactElement":181,"./keyMirror":264}],166:[function(require,module,exports){
+},{"./AutoFocusMixin":131,"./ReactBrowserComponentMixin":159,"./ReactClass":163,"./ReactElement":187,"./keyMirror":270}],172:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -34374,7 +35620,7 @@ ReactDOMComponent.injection = {
 module.exports = ReactDOMComponent;
 
 }).call(this,require('_process'))
-},{"./CSSPropertyOperations":128,"./DOMProperty":133,"./DOMPropertyOperations":134,"./Object.assign":150,"./ReactBrowserEventEmitter":154,"./ReactComponentBrowserEnvironment":159,"./ReactMount":194,"./ReactMultiChild":195,"./ReactPerf":199,"./escapeTextContentForBrowser":240,"./invariant":259,"./isEventSupported":260,"./keyOf":265,"./warning":278,"_process":283}],167:[function(require,module,exports){
+},{"./CSSPropertyOperations":134,"./DOMProperty":139,"./DOMPropertyOperations":140,"./Object.assign":156,"./ReactBrowserEventEmitter":160,"./ReactComponentBrowserEnvironment":165,"./ReactMount":200,"./ReactMultiChild":201,"./ReactPerf":205,"./escapeTextContentForBrowser":246,"./invariant":265,"./isEventSupported":266,"./keyOf":271,"./warning":284,"_process":289}],173:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -34423,7 +35669,7 @@ var ReactDOMForm = ReactClass.createClass({
 
 module.exports = ReactDOMForm;
 
-},{"./EventConstants":138,"./LocalEventTrapMixin":148,"./ReactBrowserComponentMixin":153,"./ReactClass":157,"./ReactElement":181}],168:[function(require,module,exports){
+},{"./EventConstants":144,"./LocalEventTrapMixin":154,"./ReactBrowserComponentMixin":159,"./ReactClass":163,"./ReactElement":187}],174:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -34591,7 +35837,7 @@ ReactPerf.measureMethods(ReactDOMIDOperations, 'ReactDOMIDOperations', {
 module.exports = ReactDOMIDOperations;
 
 }).call(this,require('_process'))
-},{"./CSSPropertyOperations":128,"./DOMChildrenOperations":132,"./DOMPropertyOperations":134,"./ReactMount":194,"./ReactPerf":199,"./invariant":259,"./setInnerHTML":272,"_process":283}],169:[function(require,module,exports){
+},{"./CSSPropertyOperations":134,"./DOMChildrenOperations":138,"./DOMPropertyOperations":140,"./ReactMount":200,"./ReactPerf":205,"./invariant":265,"./setInnerHTML":278,"_process":289}],175:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -34636,7 +35882,7 @@ var ReactDOMIframe = ReactClass.createClass({
 
 module.exports = ReactDOMIframe;
 
-},{"./EventConstants":138,"./LocalEventTrapMixin":148,"./ReactBrowserComponentMixin":153,"./ReactClass":157,"./ReactElement":181}],170:[function(require,module,exports){
+},{"./EventConstants":144,"./LocalEventTrapMixin":154,"./ReactBrowserComponentMixin":159,"./ReactClass":163,"./ReactElement":187}],176:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -34682,7 +35928,7 @@ var ReactDOMImg = ReactClass.createClass({
 
 module.exports = ReactDOMImg;
 
-},{"./EventConstants":138,"./LocalEventTrapMixin":148,"./ReactBrowserComponentMixin":153,"./ReactClass":157,"./ReactElement":181}],171:[function(require,module,exports){
+},{"./EventConstants":144,"./LocalEventTrapMixin":154,"./ReactBrowserComponentMixin":159,"./ReactClass":163,"./ReactElement":187}],177:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -34859,7 +36105,7 @@ var ReactDOMInput = ReactClass.createClass({
 module.exports = ReactDOMInput;
 
 }).call(this,require('_process'))
-},{"./AutoFocusMixin":125,"./DOMPropertyOperations":134,"./LinkedValueUtils":147,"./Object.assign":150,"./ReactBrowserComponentMixin":153,"./ReactClass":157,"./ReactElement":181,"./ReactMount":194,"./ReactUpdates":211,"./invariant":259,"_process":283}],172:[function(require,module,exports){
+},{"./AutoFocusMixin":131,"./DOMPropertyOperations":140,"./LinkedValueUtils":153,"./Object.assign":156,"./ReactBrowserComponentMixin":159,"./ReactClass":163,"./ReactElement":187,"./ReactMount":200,"./ReactUpdates":217,"./invariant":265,"_process":289}],178:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -34911,7 +36157,7 @@ var ReactDOMOption = ReactClass.createClass({
 module.exports = ReactDOMOption;
 
 }).call(this,require('_process'))
-},{"./ReactBrowserComponentMixin":153,"./ReactClass":157,"./ReactElement":181,"./warning":278,"_process":283}],173:[function(require,module,exports){
+},{"./ReactBrowserComponentMixin":159,"./ReactClass":163,"./ReactElement":187,"./warning":284,"_process":289}],179:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -35089,7 +36335,7 @@ var ReactDOMSelect = ReactClass.createClass({
 
 module.exports = ReactDOMSelect;
 
-},{"./AutoFocusMixin":125,"./LinkedValueUtils":147,"./Object.assign":150,"./ReactBrowserComponentMixin":153,"./ReactClass":157,"./ReactElement":181,"./ReactUpdates":211}],174:[function(require,module,exports){
+},{"./AutoFocusMixin":131,"./LinkedValueUtils":153,"./Object.assign":156,"./ReactBrowserComponentMixin":159,"./ReactClass":163,"./ReactElement":187,"./ReactUpdates":217}],180:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -35302,7 +36548,7 @@ var ReactDOMSelection = {
 
 module.exports = ReactDOMSelection;
 
-},{"./ExecutionEnvironment":144,"./getNodeForCharacterOffset":252,"./getTextContentAccessor":254}],175:[function(require,module,exports){
+},{"./ExecutionEnvironment":150,"./getNodeForCharacterOffset":258,"./getTextContentAccessor":260}],181:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -35419,7 +36665,7 @@ assign(ReactDOMTextComponent.prototype, {
 
 module.exports = ReactDOMTextComponent;
 
-},{"./DOMPropertyOperations":134,"./Object.assign":150,"./ReactComponentBrowserEnvironment":159,"./ReactDOMComponent":166,"./escapeTextContentForBrowser":240}],176:[function(require,module,exports){
+},{"./DOMPropertyOperations":140,"./Object.assign":156,"./ReactComponentBrowserEnvironment":165,"./ReactDOMComponent":172,"./escapeTextContentForBrowser":246}],182:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -35559,7 +36805,7 @@ var ReactDOMTextarea = ReactClass.createClass({
 module.exports = ReactDOMTextarea;
 
 }).call(this,require('_process'))
-},{"./AutoFocusMixin":125,"./DOMPropertyOperations":134,"./LinkedValueUtils":147,"./Object.assign":150,"./ReactBrowserComponentMixin":153,"./ReactClass":157,"./ReactElement":181,"./ReactUpdates":211,"./invariant":259,"./warning":278,"_process":283}],177:[function(require,module,exports){
+},{"./AutoFocusMixin":131,"./DOMPropertyOperations":140,"./LinkedValueUtils":153,"./Object.assign":156,"./ReactBrowserComponentMixin":159,"./ReactClass":163,"./ReactElement":187,"./ReactUpdates":217,"./invariant":265,"./warning":284,"_process":289}],183:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -35632,7 +36878,7 @@ var ReactDefaultBatchingStrategy = {
 
 module.exports = ReactDefaultBatchingStrategy;
 
-},{"./Object.assign":150,"./ReactUpdates":211,"./Transaction":227,"./emptyFunction":238}],178:[function(require,module,exports){
+},{"./Object.assign":156,"./ReactUpdates":217,"./Transaction":233,"./emptyFunction":244}],184:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -35791,7 +37037,7 @@ module.exports = {
 };
 
 }).call(this,require('_process'))
-},{"./BeforeInputEventPlugin":126,"./ChangeEventPlugin":130,"./ClientReactRootIndex":131,"./DefaultEventPluginOrder":136,"./EnterLeaveEventPlugin":137,"./ExecutionEnvironment":144,"./HTMLDOMPropertyConfig":146,"./MobileSafariClickEventPlugin":149,"./ReactBrowserComponentMixin":153,"./ReactClass":157,"./ReactComponentBrowserEnvironment":159,"./ReactDOMButton":165,"./ReactDOMComponent":166,"./ReactDOMForm":167,"./ReactDOMIDOperations":168,"./ReactDOMIframe":169,"./ReactDOMImg":170,"./ReactDOMInput":171,"./ReactDOMOption":172,"./ReactDOMSelect":173,"./ReactDOMTextComponent":175,"./ReactDOMTextarea":176,"./ReactDefaultBatchingStrategy":177,"./ReactDefaultPerf":179,"./ReactElement":181,"./ReactEventListener":186,"./ReactInjection":188,"./ReactInstanceHandles":190,"./ReactMount":194,"./ReactReconcileTransaction":204,"./SVGDOMPropertyConfig":212,"./SelectEventPlugin":213,"./ServerReactRootIndex":214,"./SimpleEventPlugin":215,"./createFullPageComponent":235,"_process":283}],179:[function(require,module,exports){
+},{"./BeforeInputEventPlugin":132,"./ChangeEventPlugin":136,"./ClientReactRootIndex":137,"./DefaultEventPluginOrder":142,"./EnterLeaveEventPlugin":143,"./ExecutionEnvironment":150,"./HTMLDOMPropertyConfig":152,"./MobileSafariClickEventPlugin":155,"./ReactBrowserComponentMixin":159,"./ReactClass":163,"./ReactComponentBrowserEnvironment":165,"./ReactDOMButton":171,"./ReactDOMComponent":172,"./ReactDOMForm":173,"./ReactDOMIDOperations":174,"./ReactDOMIframe":175,"./ReactDOMImg":176,"./ReactDOMInput":177,"./ReactDOMOption":178,"./ReactDOMSelect":179,"./ReactDOMTextComponent":181,"./ReactDOMTextarea":182,"./ReactDefaultBatchingStrategy":183,"./ReactDefaultPerf":185,"./ReactElement":187,"./ReactEventListener":192,"./ReactInjection":194,"./ReactInstanceHandles":196,"./ReactMount":200,"./ReactReconcileTransaction":210,"./SVGDOMPropertyConfig":218,"./SelectEventPlugin":219,"./ServerReactRootIndex":220,"./SimpleEventPlugin":221,"./createFullPageComponent":241,"_process":289}],185:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -36057,7 +37303,7 @@ var ReactDefaultPerf = {
 
 module.exports = ReactDefaultPerf;
 
-},{"./DOMProperty":133,"./ReactDefaultPerfAnalysis":180,"./ReactMount":194,"./ReactPerf":199,"./performanceNow":270}],180:[function(require,module,exports){
+},{"./DOMProperty":139,"./ReactDefaultPerfAnalysis":186,"./ReactMount":200,"./ReactPerf":205,"./performanceNow":276}],186:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -36263,7 +37509,7 @@ var ReactDefaultPerfAnalysis = {
 
 module.exports = ReactDefaultPerfAnalysis;
 
-},{"./Object.assign":150}],181:[function(require,module,exports){
+},{"./Object.assign":156}],187:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2014-2015, Facebook, Inc.
@@ -36571,7 +37817,7 @@ ReactElement.isValidElement = function(object) {
 module.exports = ReactElement;
 
 }).call(this,require('_process'))
-},{"./Object.assign":150,"./ReactContext":162,"./ReactCurrentOwner":163,"./warning":278,"_process":283}],182:[function(require,module,exports){
+},{"./Object.assign":156,"./ReactContext":168,"./ReactCurrentOwner":169,"./warning":284,"_process":289}],188:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2014-2015, Facebook, Inc.
@@ -37036,7 +38282,7 @@ var ReactElementValidator = {
 module.exports = ReactElementValidator;
 
 }).call(this,require('_process'))
-},{"./ReactCurrentOwner":163,"./ReactElement":181,"./ReactFragment":187,"./ReactNativeComponent":197,"./ReactPropTypeLocationNames":200,"./ReactPropTypeLocations":201,"./getIteratorFn":250,"./invariant":259,"./warning":278,"_process":283}],183:[function(require,module,exports){
+},{"./ReactCurrentOwner":169,"./ReactElement":187,"./ReactFragment":193,"./ReactNativeComponent":203,"./ReactPropTypeLocationNames":206,"./ReactPropTypeLocations":207,"./getIteratorFn":256,"./invariant":265,"./warning":284,"_process":289}],189:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2014-2015, Facebook, Inc.
@@ -37131,7 +38377,7 @@ var ReactEmptyComponent = {
 module.exports = ReactEmptyComponent;
 
 }).call(this,require('_process'))
-},{"./ReactElement":181,"./ReactInstanceMap":191,"./invariant":259,"_process":283}],184:[function(require,module,exports){
+},{"./ReactElement":187,"./ReactInstanceMap":197,"./invariant":265,"_process":289}],190:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -37163,7 +38409,7 @@ var ReactErrorUtils = {
 
 module.exports = ReactErrorUtils;
 
-},{}],185:[function(require,module,exports){
+},{}],191:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -37213,7 +38459,7 @@ var ReactEventEmitterMixin = {
 
 module.exports = ReactEventEmitterMixin;
 
-},{"./EventPluginHub":140}],186:[function(require,module,exports){
+},{"./EventPluginHub":146}],192:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -37396,7 +38642,7 @@ var ReactEventListener = {
 
 module.exports = ReactEventListener;
 
-},{"./EventListener":139,"./ExecutionEnvironment":144,"./Object.assign":150,"./PooledClass":151,"./ReactInstanceHandles":190,"./ReactMount":194,"./ReactUpdates":211,"./getEventTarget":249,"./getUnboundedScrollPosition":255}],187:[function(require,module,exports){
+},{"./EventListener":145,"./ExecutionEnvironment":150,"./Object.assign":156,"./PooledClass":157,"./ReactInstanceHandles":196,"./ReactMount":200,"./ReactUpdates":217,"./getEventTarget":255,"./getUnboundedScrollPosition":261}],193:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2015, Facebook, Inc.
@@ -37581,7 +38827,7 @@ var ReactFragment = {
 module.exports = ReactFragment;
 
 }).call(this,require('_process'))
-},{"./ReactElement":181,"./warning":278,"_process":283}],188:[function(require,module,exports){
+},{"./ReactElement":187,"./warning":284,"_process":289}],194:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -37623,7 +38869,7 @@ var ReactInjection = {
 
 module.exports = ReactInjection;
 
-},{"./DOMProperty":133,"./EventPluginHub":140,"./ReactBrowserEventEmitter":154,"./ReactClass":157,"./ReactComponentEnvironment":160,"./ReactDOMComponent":166,"./ReactEmptyComponent":183,"./ReactNativeComponent":197,"./ReactPerf":199,"./ReactRootIndex":207,"./ReactUpdates":211}],189:[function(require,module,exports){
+},{"./DOMProperty":139,"./EventPluginHub":146,"./ReactBrowserEventEmitter":160,"./ReactClass":163,"./ReactComponentEnvironment":166,"./ReactDOMComponent":172,"./ReactEmptyComponent":189,"./ReactNativeComponent":203,"./ReactPerf":205,"./ReactRootIndex":213,"./ReactUpdates":217}],195:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -37758,7 +39004,7 @@ var ReactInputSelection = {
 
 module.exports = ReactInputSelection;
 
-},{"./ReactDOMSelection":174,"./containsNode":233,"./focusNode":243,"./getActiveElement":245}],190:[function(require,module,exports){
+},{"./ReactDOMSelection":180,"./containsNode":239,"./focusNode":249,"./getActiveElement":251}],196:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -38094,7 +39340,7 @@ var ReactInstanceHandles = {
 module.exports = ReactInstanceHandles;
 
 }).call(this,require('_process'))
-},{"./ReactRootIndex":207,"./invariant":259,"_process":283}],191:[function(require,module,exports){
+},{"./ReactRootIndex":213,"./invariant":265,"_process":289}],197:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -38143,7 +39389,7 @@ var ReactInstanceMap = {
 
 module.exports = ReactInstanceMap;
 
-},{}],192:[function(require,module,exports){
+},{}],198:[function(require,module,exports){
 /**
  * Copyright 2015, Facebook, Inc.
  * All rights reserved.
@@ -38180,7 +39426,7 @@ var ReactLifeCycle = {
 
 module.exports = ReactLifeCycle;
 
-},{}],193:[function(require,module,exports){
+},{}],199:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -38228,7 +39474,7 @@ var ReactMarkupChecksum = {
 
 module.exports = ReactMarkupChecksum;
 
-},{"./adler32":230}],194:[function(require,module,exports){
+},{"./adler32":236}],200:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -39119,7 +40365,7 @@ ReactPerf.measureMethods(ReactMount, 'ReactMount', {
 module.exports = ReactMount;
 
 }).call(this,require('_process'))
-},{"./DOMProperty":133,"./ReactBrowserEventEmitter":154,"./ReactCurrentOwner":163,"./ReactElement":181,"./ReactElementValidator":182,"./ReactEmptyComponent":183,"./ReactInstanceHandles":190,"./ReactInstanceMap":191,"./ReactMarkupChecksum":193,"./ReactPerf":199,"./ReactReconciler":205,"./ReactUpdateQueue":210,"./ReactUpdates":211,"./containsNode":233,"./emptyObject":239,"./getReactRootElementInContainer":253,"./instantiateReactComponent":258,"./invariant":259,"./setInnerHTML":272,"./shouldUpdateReactComponent":275,"./warning":278,"_process":283}],195:[function(require,module,exports){
+},{"./DOMProperty":139,"./ReactBrowserEventEmitter":160,"./ReactCurrentOwner":169,"./ReactElement":187,"./ReactElementValidator":188,"./ReactEmptyComponent":189,"./ReactInstanceHandles":196,"./ReactInstanceMap":197,"./ReactMarkupChecksum":199,"./ReactPerf":205,"./ReactReconciler":211,"./ReactUpdateQueue":216,"./ReactUpdates":217,"./containsNode":239,"./emptyObject":245,"./getReactRootElementInContainer":259,"./instantiateReactComponent":264,"./invariant":265,"./setInnerHTML":278,"./shouldUpdateReactComponent":281,"./warning":284,"_process":289}],201:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -39549,7 +40795,7 @@ var ReactMultiChild = {
 
 module.exports = ReactMultiChild;
 
-},{"./ReactChildReconciler":155,"./ReactComponentEnvironment":160,"./ReactMultiChildUpdateTypes":196,"./ReactReconciler":205}],196:[function(require,module,exports){
+},{"./ReactChildReconciler":161,"./ReactComponentEnvironment":166,"./ReactMultiChildUpdateTypes":202,"./ReactReconciler":211}],202:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -39582,7 +40828,7 @@ var ReactMultiChildUpdateTypes = keyMirror({
 
 module.exports = ReactMultiChildUpdateTypes;
 
-},{"./keyMirror":264}],197:[function(require,module,exports){
+},{"./keyMirror":270}],203:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2014-2015, Facebook, Inc.
@@ -39689,7 +40935,7 @@ var ReactNativeComponent = {
 module.exports = ReactNativeComponent;
 
 }).call(this,require('_process'))
-},{"./Object.assign":150,"./invariant":259,"_process":283}],198:[function(require,module,exports){
+},{"./Object.assign":156,"./invariant":265,"_process":289}],204:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -39801,7 +41047,7 @@ var ReactOwner = {
 module.exports = ReactOwner;
 
 }).call(this,require('_process'))
-},{"./invariant":259,"_process":283}],199:[function(require,module,exports){
+},{"./invariant":265,"_process":289}],205:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -39905,7 +41151,7 @@ function _noMeasure(objName, fnName, func) {
 module.exports = ReactPerf;
 
 }).call(this,require('_process'))
-},{"_process":283}],200:[function(require,module,exports){
+},{"_process":289}],206:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -39933,7 +41179,7 @@ if ("production" !== process.env.NODE_ENV) {
 module.exports = ReactPropTypeLocationNames;
 
 }).call(this,require('_process'))
-},{"_process":283}],201:[function(require,module,exports){
+},{"_process":289}],207:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -39957,7 +41203,7 @@ var ReactPropTypeLocations = keyMirror({
 
 module.exports = ReactPropTypeLocations;
 
-},{"./keyMirror":264}],202:[function(require,module,exports){
+},{"./keyMirror":270}],208:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -40306,7 +41552,7 @@ function getPreciseType(propValue) {
 
 module.exports = ReactPropTypes;
 
-},{"./ReactElement":181,"./ReactFragment":187,"./ReactPropTypeLocationNames":200,"./emptyFunction":238}],203:[function(require,module,exports){
+},{"./ReactElement":187,"./ReactFragment":193,"./ReactPropTypeLocationNames":206,"./emptyFunction":244}],209:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -40362,7 +41608,7 @@ PooledClass.addPoolingTo(ReactPutListenerQueue);
 
 module.exports = ReactPutListenerQueue;
 
-},{"./Object.assign":150,"./PooledClass":151,"./ReactBrowserEventEmitter":154}],204:[function(require,module,exports){
+},{"./Object.assign":156,"./PooledClass":157,"./ReactBrowserEventEmitter":160}],210:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -40538,7 +41784,7 @@ PooledClass.addPoolingTo(ReactReconcileTransaction);
 
 module.exports = ReactReconcileTransaction;
 
-},{"./CallbackQueue":129,"./Object.assign":150,"./PooledClass":151,"./ReactBrowserEventEmitter":154,"./ReactInputSelection":189,"./ReactPutListenerQueue":203,"./Transaction":227}],205:[function(require,module,exports){
+},{"./CallbackQueue":135,"./Object.assign":156,"./PooledClass":157,"./ReactBrowserEventEmitter":160,"./ReactInputSelection":195,"./ReactPutListenerQueue":209,"./Transaction":233}],211:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -40662,7 +41908,7 @@ var ReactReconciler = {
 module.exports = ReactReconciler;
 
 }).call(this,require('_process'))
-},{"./ReactElementValidator":182,"./ReactRef":206,"_process":283}],206:[function(require,module,exports){
+},{"./ReactElementValidator":188,"./ReactRef":212,"_process":289}],212:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -40733,7 +41979,7 @@ ReactRef.detachRefs = function(instance, element) {
 
 module.exports = ReactRef;
 
-},{"./ReactOwner":198}],207:[function(require,module,exports){
+},{"./ReactOwner":204}],213:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -40764,7 +42010,7 @@ var ReactRootIndex = {
 
 module.exports = ReactRootIndex;
 
-},{}],208:[function(require,module,exports){
+},{}],214:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -40846,7 +42092,7 @@ module.exports = {
 };
 
 }).call(this,require('_process'))
-},{"./ReactElement":181,"./ReactInstanceHandles":190,"./ReactMarkupChecksum":193,"./ReactServerRenderingTransaction":209,"./emptyObject":239,"./instantiateReactComponent":258,"./invariant":259,"_process":283}],209:[function(require,module,exports){
+},{"./ReactElement":187,"./ReactInstanceHandles":196,"./ReactMarkupChecksum":199,"./ReactServerRenderingTransaction":215,"./emptyObject":245,"./instantiateReactComponent":264,"./invariant":265,"_process":289}],215:[function(require,module,exports){
 /**
  * Copyright 2014-2015, Facebook, Inc.
  * All rights reserved.
@@ -40959,7 +42205,7 @@ PooledClass.addPoolingTo(ReactServerRenderingTransaction);
 
 module.exports = ReactServerRenderingTransaction;
 
-},{"./CallbackQueue":129,"./Object.assign":150,"./PooledClass":151,"./ReactPutListenerQueue":203,"./Transaction":227,"./emptyFunction":238}],210:[function(require,module,exports){
+},{"./CallbackQueue":135,"./Object.assign":156,"./PooledClass":157,"./ReactPutListenerQueue":209,"./Transaction":233,"./emptyFunction":244}],216:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2015, Facebook, Inc.
@@ -41258,7 +42504,7 @@ var ReactUpdateQueue = {
 module.exports = ReactUpdateQueue;
 
 }).call(this,require('_process'))
-},{"./Object.assign":150,"./ReactCurrentOwner":163,"./ReactElement":181,"./ReactInstanceMap":191,"./ReactLifeCycle":192,"./ReactUpdates":211,"./invariant":259,"./warning":278,"_process":283}],211:[function(require,module,exports){
+},{"./Object.assign":156,"./ReactCurrentOwner":169,"./ReactElement":187,"./ReactInstanceMap":197,"./ReactLifeCycle":198,"./ReactUpdates":217,"./invariant":265,"./warning":284,"_process":289}],217:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -41540,7 +42786,7 @@ var ReactUpdates = {
 module.exports = ReactUpdates;
 
 }).call(this,require('_process'))
-},{"./CallbackQueue":129,"./Object.assign":150,"./PooledClass":151,"./ReactCurrentOwner":163,"./ReactPerf":199,"./ReactReconciler":205,"./Transaction":227,"./invariant":259,"./warning":278,"_process":283}],212:[function(require,module,exports){
+},{"./CallbackQueue":135,"./Object.assign":156,"./PooledClass":157,"./ReactCurrentOwner":169,"./ReactPerf":205,"./ReactReconciler":211,"./Transaction":233,"./invariant":265,"./warning":284,"_process":289}],218:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -41634,7 +42880,7 @@ var SVGDOMPropertyConfig = {
 
 module.exports = SVGDOMPropertyConfig;
 
-},{"./DOMProperty":133}],213:[function(require,module,exports){
+},{"./DOMProperty":139}],219:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -41829,7 +43075,7 @@ var SelectEventPlugin = {
 
 module.exports = SelectEventPlugin;
 
-},{"./EventConstants":138,"./EventPropagators":143,"./ReactInputSelection":189,"./SyntheticEvent":219,"./getActiveElement":245,"./isTextInputElement":262,"./keyOf":265,"./shallowEqual":274}],214:[function(require,module,exports){
+},{"./EventConstants":144,"./EventPropagators":149,"./ReactInputSelection":195,"./SyntheticEvent":225,"./getActiveElement":251,"./isTextInputElement":268,"./keyOf":271,"./shallowEqual":280}],220:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -41860,7 +43106,7 @@ var ServerReactRootIndex = {
 
 module.exports = ServerReactRootIndex;
 
-},{}],215:[function(require,module,exports){
+},{}],221:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -42288,7 +43534,7 @@ var SimpleEventPlugin = {
 module.exports = SimpleEventPlugin;
 
 }).call(this,require('_process'))
-},{"./EventConstants":138,"./EventPluginUtils":142,"./EventPropagators":143,"./SyntheticClipboardEvent":216,"./SyntheticDragEvent":218,"./SyntheticEvent":219,"./SyntheticFocusEvent":220,"./SyntheticKeyboardEvent":222,"./SyntheticMouseEvent":223,"./SyntheticTouchEvent":224,"./SyntheticUIEvent":225,"./SyntheticWheelEvent":226,"./getEventCharCode":246,"./invariant":259,"./keyOf":265,"./warning":278,"_process":283}],216:[function(require,module,exports){
+},{"./EventConstants":144,"./EventPluginUtils":148,"./EventPropagators":149,"./SyntheticClipboardEvent":222,"./SyntheticDragEvent":224,"./SyntheticEvent":225,"./SyntheticFocusEvent":226,"./SyntheticKeyboardEvent":228,"./SyntheticMouseEvent":229,"./SyntheticTouchEvent":230,"./SyntheticUIEvent":231,"./SyntheticWheelEvent":232,"./getEventCharCode":252,"./invariant":265,"./keyOf":271,"./warning":284,"_process":289}],222:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -42333,7 +43579,7 @@ SyntheticEvent.augmentClass(SyntheticClipboardEvent, ClipboardEventInterface);
 
 module.exports = SyntheticClipboardEvent;
 
-},{"./SyntheticEvent":219}],217:[function(require,module,exports){
+},{"./SyntheticEvent":225}],223:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -42378,7 +43624,7 @@ SyntheticEvent.augmentClass(
 
 module.exports = SyntheticCompositionEvent;
 
-},{"./SyntheticEvent":219}],218:[function(require,module,exports){
+},{"./SyntheticEvent":225}],224:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -42417,7 +43663,7 @@ SyntheticMouseEvent.augmentClass(SyntheticDragEvent, DragEventInterface);
 
 module.exports = SyntheticDragEvent;
 
-},{"./SyntheticMouseEvent":223}],219:[function(require,module,exports){
+},{"./SyntheticMouseEvent":229}],225:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -42583,7 +43829,7 @@ PooledClass.addPoolingTo(SyntheticEvent, PooledClass.threeArgumentPooler);
 
 module.exports = SyntheticEvent;
 
-},{"./Object.assign":150,"./PooledClass":151,"./emptyFunction":238,"./getEventTarget":249}],220:[function(require,module,exports){
+},{"./Object.assign":156,"./PooledClass":157,"./emptyFunction":244,"./getEventTarget":255}],226:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -42622,7 +43868,7 @@ SyntheticUIEvent.augmentClass(SyntheticFocusEvent, FocusEventInterface);
 
 module.exports = SyntheticFocusEvent;
 
-},{"./SyntheticUIEvent":225}],221:[function(require,module,exports){
+},{"./SyntheticUIEvent":231}],227:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -42668,7 +43914,7 @@ SyntheticEvent.augmentClass(
 
 module.exports = SyntheticInputEvent;
 
-},{"./SyntheticEvent":219}],222:[function(require,module,exports){
+},{"./SyntheticEvent":225}],228:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -42755,7 +44001,7 @@ SyntheticUIEvent.augmentClass(SyntheticKeyboardEvent, KeyboardEventInterface);
 
 module.exports = SyntheticKeyboardEvent;
 
-},{"./SyntheticUIEvent":225,"./getEventCharCode":246,"./getEventKey":247,"./getEventModifierState":248}],223:[function(require,module,exports){
+},{"./SyntheticUIEvent":231,"./getEventCharCode":252,"./getEventKey":253,"./getEventModifierState":254}],229:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -42836,7 +44082,7 @@ SyntheticUIEvent.augmentClass(SyntheticMouseEvent, MouseEventInterface);
 
 module.exports = SyntheticMouseEvent;
 
-},{"./SyntheticUIEvent":225,"./ViewportMetrics":228,"./getEventModifierState":248}],224:[function(require,module,exports){
+},{"./SyntheticUIEvent":231,"./ViewportMetrics":234,"./getEventModifierState":254}],230:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -42884,7 +44130,7 @@ SyntheticUIEvent.augmentClass(SyntheticTouchEvent, TouchEventInterface);
 
 module.exports = SyntheticTouchEvent;
 
-},{"./SyntheticUIEvent":225,"./getEventModifierState":248}],225:[function(require,module,exports){
+},{"./SyntheticUIEvent":231,"./getEventModifierState":254}],231:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -42946,7 +44192,7 @@ SyntheticEvent.augmentClass(SyntheticUIEvent, UIEventInterface);
 
 module.exports = SyntheticUIEvent;
 
-},{"./SyntheticEvent":219,"./getEventTarget":249}],226:[function(require,module,exports){
+},{"./SyntheticEvent":225,"./getEventTarget":255}],232:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -43007,7 +44253,7 @@ SyntheticMouseEvent.augmentClass(SyntheticWheelEvent, WheelEventInterface);
 
 module.exports = SyntheticWheelEvent;
 
-},{"./SyntheticMouseEvent":223}],227:[function(require,module,exports){
+},{"./SyntheticMouseEvent":229}],233:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -43248,7 +44494,7 @@ var Transaction = {
 module.exports = Transaction;
 
 }).call(this,require('_process'))
-},{"./invariant":259,"_process":283}],228:[function(require,module,exports){
+},{"./invariant":265,"_process":289}],234:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -43277,7 +44523,7 @@ var ViewportMetrics = {
 
 module.exports = ViewportMetrics;
 
-},{}],229:[function(require,module,exports){
+},{}],235:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2014-2015, Facebook, Inc.
@@ -43343,7 +44589,7 @@ function accumulateInto(current, next) {
 module.exports = accumulateInto;
 
 }).call(this,require('_process'))
-},{"./invariant":259,"_process":283}],230:[function(require,module,exports){
+},{"./invariant":265,"_process":289}],236:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -43377,7 +44623,7 @@ function adler32(data) {
 
 module.exports = adler32;
 
-},{}],231:[function(require,module,exports){
+},{}],237:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -43409,7 +44655,7 @@ function camelize(string) {
 
 module.exports = camelize;
 
-},{}],232:[function(require,module,exports){
+},{}],238:[function(require,module,exports){
 /**
  * Copyright 2014-2015, Facebook, Inc.
  * All rights reserved.
@@ -43451,7 +44697,7 @@ function camelizeStyleName(string) {
 
 module.exports = camelizeStyleName;
 
-},{"./camelize":231}],233:[function(require,module,exports){
+},{"./camelize":237}],239:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -43495,7 +44741,7 @@ function containsNode(outerNode, innerNode) {
 
 module.exports = containsNode;
 
-},{"./isTextNode":263}],234:[function(require,module,exports){
+},{"./isTextNode":269}],240:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -43581,7 +44827,7 @@ function createArrayFromMixed(obj) {
 
 module.exports = createArrayFromMixed;
 
-},{"./toArray":276}],235:[function(require,module,exports){
+},{"./toArray":282}],241:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -43643,7 +44889,7 @@ function createFullPageComponent(tag) {
 module.exports = createFullPageComponent;
 
 }).call(this,require('_process'))
-},{"./ReactClass":157,"./ReactElement":181,"./invariant":259,"_process":283}],236:[function(require,module,exports){
+},{"./ReactClass":163,"./ReactElement":187,"./invariant":265,"_process":289}],242:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -43733,7 +44979,7 @@ function createNodesFromMarkup(markup, handleScript) {
 module.exports = createNodesFromMarkup;
 
 }).call(this,require('_process'))
-},{"./ExecutionEnvironment":144,"./createArrayFromMixed":234,"./getMarkupWrap":251,"./invariant":259,"_process":283}],237:[function(require,module,exports){
+},{"./ExecutionEnvironment":150,"./createArrayFromMixed":240,"./getMarkupWrap":257,"./invariant":265,"_process":289}],243:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -43791,7 +45037,7 @@ function dangerousStyleValue(name, value) {
 
 module.exports = dangerousStyleValue;
 
-},{"./CSSProperty":127}],238:[function(require,module,exports){
+},{"./CSSProperty":133}],244:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -43825,7 +45071,7 @@ emptyFunction.thatReturnsArgument = function(arg) { return arg; };
 
 module.exports = emptyFunction;
 
-},{}],239:[function(require,module,exports){
+},{}],245:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -43849,7 +45095,7 @@ if ("production" !== process.env.NODE_ENV) {
 module.exports = emptyObject;
 
 }).call(this,require('_process'))
-},{"_process":283}],240:[function(require,module,exports){
+},{"_process":289}],246:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -43889,7 +45135,7 @@ function escapeTextContentForBrowser(text) {
 
 module.exports = escapeTextContentForBrowser;
 
-},{}],241:[function(require,module,exports){
+},{}],247:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -43962,7 +45208,7 @@ function findDOMNode(componentOrElement) {
 module.exports = findDOMNode;
 
 }).call(this,require('_process'))
-},{"./ReactCurrentOwner":163,"./ReactInstanceMap":191,"./ReactMount":194,"./invariant":259,"./isNode":261,"./warning":278,"_process":283}],242:[function(require,module,exports){
+},{"./ReactCurrentOwner":169,"./ReactInstanceMap":197,"./ReactMount":200,"./invariant":265,"./isNode":267,"./warning":284,"_process":289}],248:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -44020,7 +45266,7 @@ function flattenChildren(children) {
 module.exports = flattenChildren;
 
 }).call(this,require('_process'))
-},{"./traverseAllChildren":277,"./warning":278,"_process":283}],243:[function(require,module,exports){
+},{"./traverseAllChildren":283,"./warning":284,"_process":289}],249:[function(require,module,exports){
 /**
  * Copyright 2014-2015, Facebook, Inc.
  * All rights reserved.
@@ -44049,7 +45295,7 @@ function focusNode(node) {
 
 module.exports = focusNode;
 
-},{}],244:[function(require,module,exports){
+},{}],250:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -44080,7 +45326,7 @@ var forEachAccumulated = function(arr, cb, scope) {
 
 module.exports = forEachAccumulated;
 
-},{}],245:[function(require,module,exports){
+},{}],251:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -44109,7 +45355,7 @@ function getActiveElement() /*?DOMElement*/ {
 
 module.exports = getActiveElement;
 
-},{}],246:[function(require,module,exports){
+},{}],252:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -44161,7 +45407,7 @@ function getEventCharCode(nativeEvent) {
 
 module.exports = getEventCharCode;
 
-},{}],247:[function(require,module,exports){
+},{}],253:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -44266,7 +45512,7 @@ function getEventKey(nativeEvent) {
 
 module.exports = getEventKey;
 
-},{"./getEventCharCode":246}],248:[function(require,module,exports){
+},{"./getEventCharCode":252}],254:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -44313,7 +45559,7 @@ function getEventModifierState(nativeEvent) {
 
 module.exports = getEventModifierState;
 
-},{}],249:[function(require,module,exports){
+},{}],255:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -44344,7 +45590,7 @@ function getEventTarget(nativeEvent) {
 
 module.exports = getEventTarget;
 
-},{}],250:[function(require,module,exports){
+},{}],256:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -44388,7 +45634,7 @@ function getIteratorFn(maybeIterable) {
 
 module.exports = getIteratorFn;
 
-},{}],251:[function(require,module,exports){
+},{}],257:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -44507,7 +45753,7 @@ function getMarkupWrap(nodeName) {
 module.exports = getMarkupWrap;
 
 }).call(this,require('_process'))
-},{"./ExecutionEnvironment":144,"./invariant":259,"_process":283}],252:[function(require,module,exports){
+},{"./ExecutionEnvironment":150,"./invariant":265,"_process":289}],258:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -44582,7 +45828,7 @@ function getNodeForCharacterOffset(root, offset) {
 
 module.exports = getNodeForCharacterOffset;
 
-},{}],253:[function(require,module,exports){
+},{}],259:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -44617,7 +45863,7 @@ function getReactRootElementInContainer(container) {
 
 module.exports = getReactRootElementInContainer;
 
-},{}],254:[function(require,module,exports){
+},{}],260:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -44654,7 +45900,7 @@ function getTextContentAccessor() {
 
 module.exports = getTextContentAccessor;
 
-},{"./ExecutionEnvironment":144}],255:[function(require,module,exports){
+},{"./ExecutionEnvironment":150}],261:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -44694,7 +45940,7 @@ function getUnboundedScrollPosition(scrollable) {
 
 module.exports = getUnboundedScrollPosition;
 
-},{}],256:[function(require,module,exports){
+},{}],262:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -44727,7 +45973,7 @@ function hyphenate(string) {
 
 module.exports = hyphenate;
 
-},{}],257:[function(require,module,exports){
+},{}],263:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -44768,7 +46014,7 @@ function hyphenateStyleName(string) {
 
 module.exports = hyphenateStyleName;
 
-},{"./hyphenate":256}],258:[function(require,module,exports){
+},{"./hyphenate":262}],264:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -44906,7 +46152,7 @@ function instantiateReactComponent(node, parentCompositeType) {
 module.exports = instantiateReactComponent;
 
 }).call(this,require('_process'))
-},{"./Object.assign":150,"./ReactCompositeComponent":161,"./ReactEmptyComponent":183,"./ReactNativeComponent":197,"./invariant":259,"./warning":278,"_process":283}],259:[function(require,module,exports){
+},{"./Object.assign":156,"./ReactCompositeComponent":167,"./ReactEmptyComponent":189,"./ReactNativeComponent":203,"./invariant":265,"./warning":284,"_process":289}],265:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -44963,7 +46209,7 @@ var invariant = function(condition, format, a, b, c, d, e, f) {
 module.exports = invariant;
 
 }).call(this,require('_process'))
-},{"_process":283}],260:[function(require,module,exports){
+},{"_process":289}],266:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -45028,7 +46274,7 @@ function isEventSupported(eventNameSuffix, capture) {
 
 module.exports = isEventSupported;
 
-},{"./ExecutionEnvironment":144}],261:[function(require,module,exports){
+},{"./ExecutionEnvironment":150}],267:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -45055,7 +46301,7 @@ function isNode(object) {
 
 module.exports = isNode;
 
-},{}],262:[function(require,module,exports){
+},{}],268:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -45098,7 +46344,7 @@ function isTextInputElement(elem) {
 
 module.exports = isTextInputElement;
 
-},{}],263:[function(require,module,exports){
+},{}],269:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -45123,7 +46369,7 @@ function isTextNode(object) {
 
 module.exports = isTextNode;
 
-},{"./isNode":261}],264:[function(require,module,exports){
+},{"./isNode":267}],270:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -45178,7 +46424,7 @@ var keyMirror = function(obj) {
 module.exports = keyMirror;
 
 }).call(this,require('_process'))
-},{"./invariant":259,"_process":283}],265:[function(require,module,exports){
+},{"./invariant":265,"_process":289}],271:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -45214,7 +46460,7 @@ var keyOf = function(oneKeyObj) {
 
 module.exports = keyOf;
 
-},{}],266:[function(require,module,exports){
+},{}],272:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -45267,7 +46513,7 @@ function mapObject(object, callback, context) {
 
 module.exports = mapObject;
 
-},{}],267:[function(require,module,exports){
+},{}],273:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -45300,7 +46546,7 @@ function memoizeStringOnly(callback) {
 
 module.exports = memoizeStringOnly;
 
-},{}],268:[function(require,module,exports){
+},{}],274:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -45340,7 +46586,7 @@ function onlyChild(children) {
 module.exports = onlyChild;
 
 }).call(this,require('_process'))
-},{"./ReactElement":181,"./invariant":259,"_process":283}],269:[function(require,module,exports){
+},{"./ReactElement":187,"./invariant":265,"_process":289}],275:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -45368,7 +46614,7 @@ if (ExecutionEnvironment.canUseDOM) {
 
 module.exports = performance || {};
 
-},{"./ExecutionEnvironment":144}],270:[function(require,module,exports){
+},{"./ExecutionEnvironment":150}],276:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -45396,7 +46642,7 @@ var performanceNow = performance.now.bind(performance);
 
 module.exports = performanceNow;
 
-},{"./performance":269}],271:[function(require,module,exports){
+},{"./performance":275}],277:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -45424,7 +46670,7 @@ function quoteAttributeValueForBrowser(value) {
 
 module.exports = quoteAttributeValueForBrowser;
 
-},{"./escapeTextContentForBrowser":240}],272:[function(require,module,exports){
+},{"./escapeTextContentForBrowser":246}],278:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -45513,7 +46759,7 @@ if (ExecutionEnvironment.canUseDOM) {
 
 module.exports = setInnerHTML;
 
-},{"./ExecutionEnvironment":144}],273:[function(require,module,exports){
+},{"./ExecutionEnvironment":150}],279:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -45555,7 +46801,7 @@ if (ExecutionEnvironment.canUseDOM) {
 
 module.exports = setTextContent;
 
-},{"./ExecutionEnvironment":144,"./escapeTextContentForBrowser":240,"./setInnerHTML":272}],274:[function(require,module,exports){
+},{"./ExecutionEnvironment":150,"./escapeTextContentForBrowser":246,"./setInnerHTML":278}],280:[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -45599,7 +46845,7 @@ function shallowEqual(objA, objB) {
 
 module.exports = shallowEqual;
 
-},{}],275:[function(require,module,exports){
+},{}],281:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -45703,7 +46949,7 @@ function shouldUpdateReactComponent(prevElement, nextElement) {
 module.exports = shouldUpdateReactComponent;
 
 }).call(this,require('_process'))
-},{"./warning":278,"_process":283}],276:[function(require,module,exports){
+},{"./warning":284,"_process":289}],282:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2014-2015, Facebook, Inc.
@@ -45775,7 +47021,7 @@ function toArray(obj) {
 module.exports = toArray;
 
 }).call(this,require('_process'))
-},{"./invariant":259,"_process":283}],277:[function(require,module,exports){
+},{"./invariant":265,"_process":289}],283:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -46028,7 +47274,7 @@ function traverseAllChildren(children, callback, traverseContext) {
 module.exports = traverseAllChildren;
 
 }).call(this,require('_process'))
-},{"./ReactElement":181,"./ReactFragment":187,"./ReactInstanceHandles":190,"./getIteratorFn":250,"./invariant":259,"./warning":278,"_process":283}],278:[function(require,module,exports){
+},{"./ReactElement":187,"./ReactFragment":193,"./ReactInstanceHandles":196,"./getIteratorFn":256,"./invariant":265,"./warning":284,"_process":289}],284:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2014-2015, Facebook, Inc.
@@ -46091,12 +47337,12 @@ if ("production" !== process.env.NODE_ENV) {
 module.exports = warning;
 
 }).call(this,require('_process'))
-},{"./emptyFunction":238,"_process":283}],279:[function(require,module,exports){
+},{"./emptyFunction":244,"_process":289}],285:[function(require,module,exports){
 module.exports = require('./lib/React');
 
-},{"./lib/React":152}],280:[function(require,module,exports){
+},{"./lib/React":158}],286:[function(require,module,exports){
 
-},{}],281:[function(require,module,exports){
+},{}],287:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -46399,9 +47645,9 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],282:[function(require,module,exports){
-arguments[4][98][0].apply(exports,arguments)
-},{"dup":98}],283:[function(require,module,exports){
+},{}],288:[function(require,module,exports){
+arguments[4][99][0].apply(exports,arguments)
+},{"dup":99}],289:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -46493,14 +47739,14 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],284:[function(require,module,exports){
+},{}],290:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],285:[function(require,module,exports){
+},{}],291:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -47090,1123 +48336,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":284,"_process":283,"inherits":282}],286:[function(require,module,exports){
-//XXX Set on init
-revisit_url = "";
-
-var React = require('react');
-var $ = require('jquery');
-var PouchDB  = require('pouchdb');
-PouchDB.plugin(require('pouchdb-upsert'));
-
-var ResponseField = require('./components/baseComponents/ResponseField.js');
-var ResponseFields = require('./components/baseComponents/ResponseFields.js');
-var BigButton = require('./components/baseComponents/BigButton.js');
-var LittleButton = require('./components/baseComponents/LittleButton.js');
-var DontKnow = require('./components/baseComponents/DontKnow.js');
-
-var Title = require('./components/baseComponents/Title.js');
-var Card = require('./components/baseComponents/Card.js');
-var Select = require('./components/baseComponents/Select.js');
-var FacilityRadios = require('./components/baseComponents/FacilityRadios.js');
-var Message = require('./components/baseComponents/Message.js');
-
-var Header = require('./components/Header.js');
-var Footer = require('./components/Footer.js');
-var Question = require('./components/Question.js'); 
-var Note = require('./components/Note.js'); 
-
-var MultipleChoice = require('./components/MultipleChoice.js'); 
-var Photo = require('./components/Photo.js'); 
-var Location = require('./components/Location.js'); 
-var Facility = require('./components/Facility.js'); 
-var Submit = require('./components/Submit.js'); 
-var Splash = require('./components/Splash.js'); 
-
-var PhotoAPI = require('./PhotoAPI.js');
-var FacilityTree = require('./FacilityAPI.js');
-
-/* 
- * Create Single Page App with three main components
- * Header, Content, Footer
- */
-var Application = React.createClass({displayName: "Application",
-    getInitialState: function() {
-        // Set up db for photos and facility tree
-        var trees = {};
-        var surveyDB = new PouchDB(this.props.survey.id, {
-                    'auto_compaction': true,
-        });
-        window.surveyDB = surveyDB;
-
-        // Build initial linked list
-        var questions = this.props.survey.nodes;
-        var first_question = null;
-        questions.forEach(function(node, idx) {
-            var question = node;
-            question.prev = null;
-            question.next = null;
-            if (idx > 0) {
-                question.prev = questions[idx - 1];
-            }
-
-            if (idx < questions.length - 1) {
-                question.next = questions[idx + 1];
-            }
-
-            if (idx === 0) {
-                first_question = question;
-            }
-
-        });
-
-        // Recursively construct trees
-        this.buildTrees(questions, trees); 
-
-        return { 
-            showDontKnow: false,
-            showDontKnowBox: false,
-            head: first_question,
-            question: null,
-            headStack: [], //XXX Stack of linked list heads
-            states : {
-                SPLASH : 1,
-                QUESTION : 2,
-                SUBMIT : 3,
-            },
-            state: 1,
-            trees: trees,
-            db: surveyDB
-        }
-    },
-
-    /*
-     * Create Facility Tree object at node id for every facility tree question
-     * Recurse into subnodes if found
-     *
-     * @questions: all nodes at current sub level
-     * @trees: dictionary of question ids and facility trees
-     *
-     * NOTE: facility trees update exact same location in pouchdb (based on bounds of coordinates)
-     * i.e: Multiple trees with same bounds do not increase memory usage (network usage does increase though)
-     */
-    buildTrees: function(questions, trees) {
-        var self = this;
-        questions = questions || [];
-
-        questions.forEach(function(node, idx) {
-            if (node.type_constraint === 'facility') {
-                trees[node.id] = new FacilityTree(
-                        parseFloat(node.logic.nlat), 
-                        parseFloat(node.logic.wlng), 
-                        parseFloat(node.logic.slat), 
-                        parseFloat(node.logic.elng),
-                        surveyDB,
-                        node.id
-                        );
-            }
-
-            if (node.sub_surveys) {
-                node.sub_surveys.forEach(function(subs) {
-                    self.buildTrees(subs.nodes, trees);
-                });
-            }
-        });
-    },
-
-    /*
-     * Load next question, updates state of the Application
-     * if next question is not found move to either SPLASH/SUBMIT
-     * 
-     * Deals with branching, required and setting up dontknow footer state
-     * Uses refs! (Could be removed)
-     */
-    onNextButton: function() {
-        var self = this;
-        var surveyID = this.props.survey.id;
-        var currentState = this.state.state;
-        var currentQuestion = this.state.question;
-
-        // Set up next state
-        var nextQuestion = null;
-        var showDontKnow = false;
-        var showDontKnowBox = false;
-        var state = this.state.states.SPLASH;
-        var head = this.state.head;
-        var headStack = this.state.headStack;
-
-        console.log("Current Question", currentQuestion);
-
-        switch(currentState) {
-            // On Submit page and next was pressed
-            case this.state.states.SUBMIT:
-                nextQuestion = null;
-                showDontKnow = false;
-                showDontKnowBox = false;
-                state = this.state.states.SPLASH
-                //XXX Fire Modal for submitting here
-                this.onSave();
-
-                // Reset Survey Linked List
-                head = this.state.headStack[0] || head; 
-                while(head.prev) {
-                    head = head.prev;
-                };
-                headStack = [];
-                break;
-
-            // On Splash page and next was pressed
-            case this.state.states.SPLASH:
-                nextQuestion = this.state.head;
-                showDontKnow = nextQuestion.allow_dont_know || false;
-                showDontKnowBox = false;
-                state = this.state.states.QUESTION
-
-                var questionID = nextQuestion.id;
-                if (showDontKnow) { 
-                    var response = this.refs.footer.getAnswer(questionID);
-                    console.log("Footer response:", response);
-                    showDontKnowBox = Boolean(response);
-                }
-
-                break;
-
-            case this.state.states.QUESTION:
-                // Look into active answers, check if any filled out if question is REQUIRED
-                var required = currentQuestion.required || false;
-                if (required) {
-                    var questionID = currentQuestion.id;
-                    var survey = JSON.parse(localStorage[surveyID] || '{}');
-                    var answers = (survey[questionID] || []).filter(function(response) {
-                        return (response && response.response !== null);
-                    });
-
-                    if (!answers.length) {
-                        alert("Valid response is required.");
-                        return;
-                    }
-                }
-                
-                // Get answer
-                var questionID = currentQuestion.id;
-                var survey = JSON.parse(localStorage[surveyID] || '{}');
-                var answers = (survey[questionID] || []).filter(function(response) {
-                    return (response && response.response !== null);
-                });
-
-                // XXX Confirm response type is answer (instead of dont-know/other)
-                var answer = answers.length && answers[0].response || null;
-                var sub_surveys = currentQuestion.sub_surveys;
-
-                // If has subsurveys then it can branch
-                if (sub_surveys) {
-                    console.log("Subsurveys:", currentQuestion.id, sub_surveys);
-                    console.log("Answer:", answer);
-
-                    // Check which subsurvey this answer buckets into
-                    var BREAK = false;
-                    sub_surveys.forEach(function(sub) {
-                        if (BREAK) {return;}
-                        console.log("Bucket:", sub.buckets, "Type:", currentQuestion.type_constraint);
-
-                        // Append all subsurveys to clone of current question, update head, update headStack if in bucket
-                        var inBee = self.inBucket(sub.buckets, currentQuestion.type_constraint, answer);
-                        if (inBee) {
-                            // Clone current element
-                            var clone = self.cloneNode(currentQuestion);
-                            var temp = clone.next;
-
-                            // link sub nodes
-                            // TODO: Deal with repeatable flag here!
-                            // XXX: When adding repeat questions make sure to augment the question.id in a repeatable and unique way
-                            // XXX: QuestionIDs are used to distinguish/remember questions everywhere, do not reuse IDs!
-                            for (var i = 0; i < sub.nodes.length; i++) {
-                                if (i == 0) {
-                                    clone.next = sub.nodes[i];
-                                    sub.nodes[i].prev = clone;
-                                } else {
-                                    sub.nodes[i].prev = sub.nodes[i - 1];;
-                                }
-
-                                if (i === sub.nodes.length - 1) {
-                                    sub.nodes[i].next = temp;
-                                    if (temp)
-                                        temp.prev = sub.nodes[i];
-                                } else { 
-                                    sub.nodes[i].next = sub.nodes[i + 1];
-                                }
-                            }
-
-                            // Always add branchable questions previous state into headStack
-                            // This is how we can revert alterations to a branched question
-                            headStack.push(currentQuestion);
-
-                            // Find the head
-                            var newHead = clone;
-                            while(newHead.prev) {
-                                newHead = newHead.prev;
-                            }
-                            head = newHead;
-
-                            // Set current question to CLONE always
-                            currentQuestion = clone;
-
-                            BREAK = true;// break
-                        }
-
-                    });
-
-                }
-
-                nextQuestion = currentQuestion.next;
-                state = this.state.states.QUESTION
-
-                // Set the state to SUBMIT when reach the end of questions
-                if (nextQuestion === null) {
-                    nextQuestion = currentQuestion; //Keep track of tail
-                    showDontKnow = false;
-                    showDontKnowBox = false;
-                    state = this.state.states.SUBMIT;
-                    break;
-                }
-
-                // Moving into a valid question
-                showDontKnow = nextQuestion.allow_dont_know || false;
-                showDontKnowBox = false;
-                var questionID = nextQuestion.id;
-
-                if (showDontKnow) { 
-                    var response = this.refs.footer.getAnswer(questionID);
-                    console.log("Footer response:", response);
-                    showDontKnowBox = Boolean(response);
-                }
-
-                break;
-
-        }
-
-        this.setState({
-            question: nextQuestion,
-            showDontKnow: showDontKnow,
-            showDontKnowBox: showDontKnowBox,
-            head: head,
-            headStack: headStack,
-            state: state
-        })
-
-        return;
-
-    },
-
-    /*
-     * Load prev question, updates state of the Application
-     * if prev question is not found to SPLASH
-     */
-    onPrevButton: function() {
-        var self = this;
-        var surveyID = this.props.survey.id;
-        var currentState = this.state.state;
-        var currentQuestion = this.state.question;
-
-        // Set up next state
-        var nextQuestion = null;
-        var showDontKnow = false;
-        var showDontKnowBox = false;
-        var state = this.state.states.SPLASH;
-        var head = this.state.head;
-        var headStack = this.state.headStack;
-
-        switch(currentState) {
-            // On Submit page and prev was pressed
-            case this.state.states.SUBMIT:
-                nextQuestion = currentQuestion; // Tail was saved in current question
-
-                // Branching ONLY happens when moving BACK into branchable question
-                // Rare but can happen on question that either leads to submit or more questions
-                var sub_surveys = nextQuestion.sub_surveys;
-                if (sub_surveys && headStack.length) {
-                    // If he's in the branched stack, pop em off
-                    if (headStack[headStack.length - 1].id === nextQuestion.id) {
-                        console.log("RESETING", nextQuestion.id, headStack.length);
-                        // Reset the nextQuestion to previously unbranched state
-                        nextQuestion = headStack.pop();
-                        console.log("RESET", nextQuestion.id, headStack.length);
-                        // Find the head
-                        var newHead = nextQuestion;
-                        while(newHead.prev) {
-                            newHead = newHead.prev;
-                        }
-                        head = newHead;
-                    }
-                }
-
-
-                showDontKnow = currentQuestion.allow_dont_know || false;
-                showDontKnowBox = false;
-                state = this.state.states.QUESTION
-
-                var questionID = currentQuestion.id;
-                if (showDontKnow) { 
-                    var response = this.refs.footer.getAnswer(questionID);
-                    console.log("Footer response:", response);
-                    showDontKnowBox = Boolean(response);
-                }
-                break;
-
-            // On Splash page and prev was pressed (IMPOSSIBLE)
-            case this.state.states.SPLASH:
-                nextQuestion = null;
-                showDontKnowBox = false;
-                showDontKnow = false;
-                state = this.state.states.SPLASH
-                break;
-
-            case this.state.states.QUESTION:
-                nextQuestion = currentQuestion.prev;
-                state = this.state.states.QUESTION
-
-                // Set the state to SUBMIT when reach the end of questions
-                if (nextQuestion === null) {
-                    nextQuestion = currentQuestion;
-                    showDontKnow = false;
-                    showDontKnowBox = false;
-                    state = this.state.states.SPLASH;
-                    break;
-                }
-
-                // Branching ONLY happens when moving BACK into branchable question
-                // ALWAYS undo branched state to maintain survey consitency 
-                var sub_surveys = nextQuestion.sub_surveys;
-                if (sub_surveys && headStack.length) {
-                    // If he's in the branched stack, pop em off
-                    if (headStack[headStack.length - 1].id === nextQuestion.id) {
-                        console.log("RESETING", nextQuestion.id, headStack.length);
-                        // Reset the nextQuestion to previously unbranched state
-                        nextQuestion = headStack.pop();
-                        console.log("RESET", nextQuestion.id, headStack.length);
-                        // Find the head
-                        var newHead = nextQuestion;
-                        while(newHead.prev) {
-                            newHead = newHead.prev;
-                        }
-                        head = newHead;
-                    }
-                }
-
-
-                // Moving into a valid question
-                showDontKnow = nextQuestion.allow_dont_know || false;
-                showDontKnowBox = false;
-                var questionID = nextQuestion.id;
-
-                if (showDontKnow) { 
-                    var response = this.refs.footer.getAnswer(questionID);
-                    console.log("Footer response:", response);
-                    showDontKnowBox = Boolean(response);
-                }
-
-                break;
-
-        }
-
-        this.setState({
-            question: nextQuestion,
-            showDontKnow: showDontKnow,
-            showDontKnowBox: showDontKnowBox,
-            head: head,
-            headStack: headStack,
-            state: state
-        })
-
-        return;
-
-    },
-
-    /* 
-     * Check if response is in bucket
-     * 
-     * @buckets: Array of buckets (can be ranges in [num,num) form or "qid" for mc
-     * @type: type of bucket
-     * @resposne: answer to check if in bucket 
-     */
-    inBucket: function(buckets, type, response) {
-        if (response === null) 
-            return false;
-
-        switch(type) {
-            case "integer":
-            case "decimal":
-                var inBee = 1; // Innocent untill proven guilty
-                // Split bucket into four sections, confirm that value in range, otherwise set inBee to false
-                var BREAK = false;
-                buckets.forEach(function(bucket) {
-                    if (BREAK) {return;}
-                    inBee = 1;
-                    var left = bucket.split(',')[0];
-                    var right = bucket.split(',')[1];
-                    if (left[0] === "[") {
-                        var leftLim = parseFloat(left.split("[")[1]);
-                        console.log("Inclusive Left", leftLim);
-                        if (!isNaN(leftLim)) // Infinity doesnt need to be checked
-                            inBee &= (response >= leftLim);
-                    } else if (left[0] === "(") {
-                        var leftLim = parseFloat(left.split("(")[1]);
-                        console.log("Exclusive Left", leftLim);
-                        if (!isNaN(leftLim)) // Infinity doesnt need to be checked
-                            inBee &= (response > leftLim)
-                    } else {
-                        inBee = 0;
-                    }
-
-                    if (right[right.length - 1] === "]") {
-                        var rightLim = parseFloat(right.split("]")[0]);
-                        console.log("Inclusive Right", rightLim);
-                        if (!isNaN(rightLim)) // Infinity doesnt need to be checked
-                            inBee &= (response <= rightLim)
-                    } else if (right[right.length - 1] === ")") {
-                        var rightLim = parseFloat(right.split(")")[0]);
-                        console.log("Exclusive Right", rightLim);
-                        if (!isNaN(rightLim)) // Infinity doesnt need to be checked
-                            inBee &= (response < rightLim)
-                    } else {
-                        inBee = 0; // unknown
-                    }
-
-                    console.log("Bucket:", bucket, response, inBee);
-                    if (inBee) { 
-                        BREAK = true; //break
-                    }
-
-                });
-
-                return inBee;
-
-            case "date":
-                var inBee = 1; // Innocent untill proven guilty
-                response = new Date(response); // Convert to date object for comparisons
-                var BREAK = false;
-                buckets.forEach(function(bucket) {
-                    inBee = 1;
-                    if (BREAK) {return;}
-                    var left = bucket.split(',')[0];
-                    var right = bucket.split(',')[1];
-                    if (left[0] === "[") {
-                        console.log("Inclusive Left");
-                        var leftLim = new Date(left.split("[")[1]);
-                        if (!isNaN(leftLim)) // Infinity doesnt need to be checked
-                            inBee &= (response >= leftLim);
-                    } else if (left[0] === "(") {
-                        console.log("Exclusive Left");
-                        var leftLim = new Date(left.split("(")[1]);
-                        if (!isNaN(leftLim)) // Infinity doesnt need to be checked
-                            inBee &= (response > leftLim)
-                    } else {
-                        inBee = 0;
-                    }
-
-                    if (right[right.length - 1] === "]") {
-                        console.log("Inclusive Right");
-                        var rightLim = new Date(right.split("]")[0]);
-                        if (!isNaN(rightLim)) // Infinity doesnt need to be checked
-                            inBee &= (response <= rightLim)
-                    } else if (right[right.length - 1] === ")") {
-                        console.log("Exclusive Right");
-                        var rightLim = new Date(right.split(")")[0]);
-                        if (!isNaN(rightLim)) // Infinity doesnt need to be checked
-                            inBee &= (response < rightLim)
-                    } else {
-                        inBee = 0; // unknown
-                    }
-
-                    console.log("Bucket:", bucket, response, inBee);
-                    if (inBee) { 
-                        BREAK = true; //break
-                    }
-
-                    return true;
-                });
-
-                return inBee;
-            case 'timestamp': 
-                //TODO: This bucket
-                return false;
-            case 'multiple_choice': 
-                var inBee = 0;
-                buckets.forEach(function(bucket) {
-                    inBee |= (bucket === response);
-                    console.log("Bucket:", bucket, response, inBee);
-                });
-                return inBee;
-            default:
-                return false;
-
-        }
-    },
-
-    /* 
-     * Clone linked list node, arrays don't need to be cloned, only next/prev ptrs
-     * @node: Current node to clone
-     * @ids: Dictionay reference of currently cloned nodes, prevents recursion going on forever
-     */
-    cloneNode: function(node, ids) {
-        var self = this;
-        var clone = {
-            next: null,
-            prev: null
-        };
-
-        ids = ids || {};
-
-        Object.keys(node).forEach(function(key) {
-            if (key != 'next' && key != 'prev') {
-                clone[key] = node[key]
-            }
-        });
-
-       // Mutable so next/prev pointers will be visible to all nodes that reference this dictionary
-       ids[node.id] = clone;
-
-       if (node.next) {
-           var next = ids[node.next.id];
-           clone.next = next || self.cloneNode(node.next, ids);
-       }
-
-       if (node.prev) {
-           var prev = ids[node.prev.id];
-           clone.prev = prev || self.cloneNode(node.prev, ids);
-       }
-
-        return clone;
-    },
-
-    /*
-     * Save active survey into unsynced array 
-     */
-    onSave: function() {
-        var survey = JSON.parse(localStorage[this.props.survey.id] || '{}');
-        // Get all unsynced surveys
-        var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
-        // Get array of unsynced submissions to this survey
-        var unsynced_submissions = unsynced_surveys[this.props.survey.id] || [];
-        // Get array of unsynced photo id's
-        var unsynced_photos = JSON.parse(localStorage['unsynced_photos'] || '[]');
-        // Get array of unsynced facilities
-        var unsynced_facilities = JSON.parse(localStorage['unsynced_facilities'] || '[]');
-
-        // Build new submission
-        var answers = []; 
-        var self = this;
-
-        // Copy active questions into simple list; 
-        var questions = [];
-        var head = this.state.head;
-        while(head) {
-            questions.push(head);
-            head = head.next;
-        }
-
-        questions.forEach(function(question) {
-            var responses = survey[question.id] || [];
-            responses.forEach(function(response) {
-                // Ignore empty responses
-                if (!response || response.response === null) {
-                    return true; // continue;
-                }
-
-                // Photos need to synced independantly from survey
-                if (question.type_constraint === 'photo') {
-                   unsynced_photos.push({
-                       'surveyID': self.props.survey.id,
-                       'photoID': response.response,
-                       'questionID': question.id
-                   });
-                }
-
-                // New facilities need to be stored seperatly from survey
-                if (question.type_constraint === 'facility') {
-                    if (response.metadata && response.metadata.is_new) {
-                        console.log("Facility:", response);
-                        self.state.trees[question.id]
-                            .addFacility(response.response.lat, response.response.lng, response.response);
-
-                        unsynced_facilities.push({
-                            'surveyID': self.props.survey.id,
-                            'facilityData': response.response,
-                            'questionID': question.id
-                        });
-                    } 
-                }
-
-                answers.push({
-                    survey_node_id: question.id,
-                    response: response,
-                    type_constraint: question.type_constraint
-                });
-            });
-
-        });
-
-        // Don't record it if there are no answers, will mess up splash 
-        if (answers.length === 0) {
-            return;
-        }
-
-        var submission = {
-            submitter_name: localStorage['submitter_name'] || "anon",
-            submitter_email: localStorage['submitter_email'] || "anon@anon.org",
-            submission_type: "unauthenticated", //XXX 
-            survey_id: this.props.survey.id,
-            answers: answers,
-            save_time: new Date().toISOString(),
-            submission_time: "" // For comparisions during submit ajax callback
-        }
-
-        console.log("Submission", submission);
-
-        // Record new submission into array
-        unsynced_submissions.push(submission);
-        unsynced_surveys[this.props.survey.id] = unsynced_submissions;
-        localStorage['unsynced'] = JSON.stringify(unsynced_surveys);
-
-        // Store photos 
-        localStorage['unsynced_photos'] = JSON.stringify(unsynced_photos);
-
-        // Store facilities
-        localStorage['unsynced_facilities'] = JSON.stringify(unsynced_facilities);
-
-        // Wipe active survey
-        localStorage[this.props.survey.id] = JSON.stringify({});
-
-        // Wipe location info
-        localStorage['location'] = JSON.stringify({});
-
-    },
-
-    /*
-     * Loop through unsynced submissions for active survey and POST
-     * Only modifies localStorage on success
-     */
-    onSubmit: function() {
-        function getCookie(name) {
-            var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
-            return r ? r[1] : undefined;
-        }
-        
-        var self = this;
-
-        // Get all unsynced surveys
-        var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
-        // Get array of unsynced submissions to this survey
-        var unsynced_submissions = unsynced_surveys[this.props.survey.id] || [];
-        // Get all unsynced photos.
-        var unsynced_photos = JSON.parse(localStorage['unsynced_photos'] || '[]');
-        // Get all unsynced facilities
-        var unsynced_facilities = JSON.parse(localStorage['unsynced_facilities'] || '[]');
-
-        // Post surveys to Dokomoforms
-        unsynced_submissions.forEach(function(survey) {
-            // Update submit time
-            survey.submission_time = new Date().toISOString();
-            $.ajax({
-                url: '/api/v0/surveys/'+survey.survey_id+'/submit',
-                type: 'POST',
-                contentType: 'application/json',
-                processData: false,
-                data: JSON.stringify(survey),
-                headers: {
-                    "X-XSRFToken": getCookie("_xsrf")
-                },
-                dataType: 'json',
-                success: function(survey, anything, hey) {
-                    console.log("success", anything, hey);
-                    // Get all unsynced surveys
-                    var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
-                    // Get array of unsynced submissions to this survey
-                    var unsynced_submissions = unsynced_surveys[survey.survey_id] || [];
-
-                    // Find unsynced_submission
-                    var idx = -1;
-                    unsynced_submissions.forEach(function(usurvey, i) {
-                        if (Date(usurvey.save_time) === Date(survey.save_time)) {
-                            idx = i;
-                        }
-                    });
-
-                    // Not sure what happened, do not update localStorage
-                    if (idx === -1) 
-                        return;
-
-                    unsynced_submissions.splice(idx, 1);
-
-                    unsynced_surveys[survey.survey_id] = unsynced_submissions;
-                    localStorage['unsynced'] = JSON.stringify(unsynced_surveys);
-
-                    // Update splash page if still on it
-                    if (self.state.state === self.state.states.SPLASH)
-                        self.refs.splash.update();
-                },
-
-                error: function(err) {
-                    console.log("Failed to post survey", err, survey);
-                }
-            });
-
-            console.log('synced submission:', survey);
-            console.log('survey', '/api/v0/surveys/'+survey.survey_id+'/submit');
-        });
-
-        // Post photos to dokomoforms
-        unsynced_photos.forEach(function(photo, idx) {
-            if (photo.surveyID === self.props.survey.id) {
-                PhotoAPI.getBase64(self.state.db, photo.photoID, function(err, base64){
-                    $.ajax({
-                        url: '/api/v0/photos',
-                        type: 'POST',
-                        contentType: 'application/json',
-                        processData: false,
-                        data: JSON.stringify({
-                            'id' : photo.photoID,
-                            'mime_type': 'image/png',
-                            'image': base64
-                        }),
-                        headers: {
-                            "X-XSRFToken": getCookie("_xsrf")
-                        },
-                        dataType: 'json',
-                        success: function(photo) {
-                            console.log("Photo success:", photo);
-                            var unsynced_photos = JSON.parse(localStorage['unsynced_photos'] || '[]');
-                            // Find photo
-                            var idx = -1;
-                            unsynced_photos.forEach(function(uphoto, i) {
-                                if (uphoto.photoID === photo.id) {
-                                    idx = i;
-                                    PhotoAPI.removePhoto(self.state.db, uphoto.photoID, function(err, result) {
-                                        if (err) {
-                                            console.log("Couldnt remove from db:", err);
-                                            return;
-                                        }
-                                        console.log("Removed:", result);
-                                    });
-                                }
-                            });
-
-                            // What??
-                            if (idx === -1)
-                                return;
-
-                            console.log(idx, unsynced_photos.length);
-                            unsynced_photos.splice(idx, 1);
-
-                            localStorage['unsynced_photos'] = JSON.stringify(unsynced_photos);
-                        },
-
-                        error: function(err) {
-                            console.log("Failed to post photo:", err, photo);
-                        }
-                    });
-                });
-            }
-        });
-        
-        // Post facilities to Revisit
-        unsynced_facilities.forEach(function(facility, idx) {
-            if (facility.surveyID === self.props.survey.id) {
-                self.state.trees[facility.questionID].postFacility(facility.facilityData, 
-                    // Success
-                    function(revisitFacility) {
-                        console.log("Successfully posted facility", revisitFacility, facility); 
-                        var unsynced_facilities = JSON.parse(localStorage['unsynced_facilities'] || '[]');
-
-                        // Find facility
-                        var idx = -1;
-                        console.log(idx, unsynced_facilities.length);
-                        unsynced_facilities.forEach(function(ufacility, i) {
-                            var ufacilityID = ufacility.facilityData.facility_id;
-                            var facilityID = facility.facilityData.facility_id;
-                            if (ufacilityID === facilityID) {
-                                idx = i;
-                            }
-                        });
-
-                        // What??
-                        if (idx === -1)
-                            return;
-
-                        console.log(idx, unsynced_facilities.length);
-                        unsynced_facilities.splice(idx, 1);
-
-                        localStorage['unsynced_facilities'] = JSON.stringify(unsynced_facilities);
-                    },
-
-                    // Error
-                    function(revisitFacility) {
-                        console.log("Failed to post facility", err, facility); 
-                    }
-                );
-            }
-        });
-    },
-
-
-    /*
-     * Respond to don't know checkbox event, this is listend to by Application
-     * due to app needing to resize for the increased height of the don't know
-     * region
-     */
-    onCheckButton: function() {
-        this.setState({
-            showDontKnowBox: this.state.showDontKnowBox ? false: true,
-            showDontKnow: this.state.showDontKnow,
-        });
-
-        // Force questions to update
-        if (this.state.state = this.state.states.QUESTION)
-            this.refs.question.update();
-
-    },
-
-    /*
-     * Load the appropiate question based on the nextQuestion state
-     * Loads splash or submit content if state is either SPLASH/SUBMIT 
-     */
-    getContent: function() {
-        var question = this.state.question;
-        var state = this.state.state;
-        var survey = this.props.survey;
-
-        if (state === this.state.states.QUESTION) {
-            var questionID = question.id;
-            var questionType = question.type_constraint;
-            switch(questionType) {
-                case 'multiple_choice':
-                    return (
-                            React.createElement(MultipleChoice, {
-                                ref: "question", 
-                                key: questionID, 
-                                question: question, 
-                                questionType: questionType, 
-                                language: survey.default_language, 
-                                surveyID: survey.id, 
-                                disabled: this.state.showDontKnowBox}
-                           )
-                       )
-                case 'photo':
-                    return (
-                            React.createElement(Photo, {
-                                ref: "question", 
-                                key: questionID, 
-                                question: question, 
-                                questionType: questionType, 
-                                language: survey.default_language, 
-                                surveyID: survey.id, 
-                                disabled: this.state.showDontKnowBox, 
-                                db: this.state.db}
-                           )
-                       )
-
-                case 'location':
-                    return (
-                            React.createElement(Location, {
-                                ref: "question", 
-                                key: questionID, 
-                                question: question, 
-                                questionType: questionType, 
-                                language: survey.default_language, 
-                                surveyID: survey.id, 
-                                disabled: this.state.showDontKnowBox}
-                           )
-                       )
-                case 'facility':
-                    return (
-                            React.createElement(Facility, {
-                                ref: "question", 
-                                key: questionID, 
-                                question: question, 
-                                questionType: questionType, 
-                                language: survey.default_language, 
-                                surveyID: survey.id, 
-                                disabled: this.state.showDontKnowBox, 
-                                db: this.state.db, 
-                                tree: this.state.trees[questionID]}
-                           )
-                       )
-                case 'note':
-                    return (
-                            React.createElement(Note, {
-                                ref: "question", 
-                                key: questionID, 
-                                question: question, 
-                                questionType: questionType, 
-                                language: survey.default_language, 
-                                surveyID: survey.id, 
-                                disabled: this.state.showDontKnowBox}
-                           )
-                       )
-                default:
-                    return (
-                            React.createElement(Question, {
-                                ref: "question", 
-                                key: questionID, 
-                                question: question, 
-                                questionType: questionType, 
-                                language: survey.default_language, 
-                                surveyID: survey.id, 
-                                disabled: this.state.showDontKnowBox}
-                           )
-                       )
-            }
-        } else if (state === this.state.states.SUBMIT) {
-            return (
-                    React.createElement(Submit, {
-                        ref: "submit", 
-                        surveyID: survey.id, 
-                        language: survey.default_language}
-                    )
-                   )
-        } else {
-            return (
-                    React.createElement(Splash, {
-                        ref: "splash", 
-                        surveyID: survey.id, 
-                        surveyTitle: survey.title, 
-                        language: survey.default_language, 
-                        buttonFunction: this.onSubmit}
-                    )
-                   )
-        }
-    },
-
-    /*
-     * Load the appropiate title based on the question and state
-     */
-    getTitle: function() {
-        var survey = this.props.survey;
-        var question = this.state.question;
-        var state = this.state.state;
-
-        if (state === this.state.states.QUESTION) {
-            return question.title[survey.default_language] 
-        } else if (state === this.state.states.SUBMIT) {
-            return "Ready to Save?"
-        } else {
-            return survey.title[survey.default_language] 
-        }
-    },
-
-    /*
-     * Load the appropiate 'hint' based on the question and state
-     */
-    getMessage: function() {
-        var survey = this.props.survey;
-        var question = this.state.question;
-        var state = this.state.state;
-
-        if (state === this.state.states.QUESTION) {
-            return question.hint[survey.default_language] 
-        } else if (state === this.state.states.SUBMIT) {
-            return "If youre satisfied with the answers to all the questions, you can save the survey now."
-        } else {
-            return "version " + survey.version + " | last updated " + survey.last_updated_time;
-        }
-    },
-
-    /*
-     * Load the appropiate text in the Footer's button based on state
-     */
-    getButtonText: function() {
-        var state = this.state.state;
-        if (state === this.state.states.QUESTION) {
-            return "Next Question";
-        } else if (state === this.state.states.SUBMIT) {
-            return "Save Survey"
-        } else {
-            return "Begin a New Survey"
-        }
-    },
-
-    render: function() {
-        var contentClasses = "content";
-        var state = this.state.state;
-        var question = this.state.question;
-        var questionID = question && question.id || -1;
-        var surveyID = this.props.survey.id;
-
-        // Get current length of survey and question number
-        var number = -1;
-        var length = 0;
-        var head = this.state.head;
-        while(head) {
-            if (head.id === questionID) {
-                number = length;
-            }
-
-            head = head.next;
-            length++;
-        } 
-
-
-        // Alter the height of content based on DontKnow state
-        if (this.state.showDontKnow) 
-            contentClasses += " content-shrunk";
-
-        if (this.state.showDontKnowBox) 
-            contentClasses += " content-shrunk content-super-shrunk";
-
-        return (
-                React.createElement("div", {id: "wrapper"}, 
-                    React.createElement(Header, {
-                        ref: "header", 
-                        buttonFunction: this.onPrevButton, 
-                        number: number + 1, 
-                        total: length + 1, 
-                        db: this.state.db, 
-                        surveyID: surveyID, 
-                        splash: state === this.state.states.SPLASH}), 
-                    React.createElement("div", {
-                        className: contentClasses}, 
-                        React.createElement(Title, {title: this.getTitle(), message: this.getMessage()}), 
-                        this.getContent()
-                    ), 
-                    React.createElement(Footer, {
-                        ref: "footer", 
-                        showDontKnow: this.state.showDontKnow, 
-                        showDontKnowBox: this.state.showDontKnowBox, 
-                        buttonFunction: this.onNextButton, 
-                        checkBoxFunction: this.onCheckButton, 
-                        buttonType: state === this.state.states.QUESTION 
-                            ? 'btn-primary': 'btn-positive', 
-                        buttonText: this.getButtonText(), 
-                        questionID: questionID, 
-                        surveyID: surveyID}
-                     )
-
-                )
-               )
-    }
-});
-
-/*
- * Entry point for template
- *
- * @survey: JSON representation of the survey
- * @revisit_url: Revisit url, set globally
- */
-init = function(survey, url) {
-    // Set revisit url
-    revisit_url = url;
-
-    // Listen to appcache updates, reload JS.
-    window.applicationCache.addEventListener('updateready', function() {
-        alert("Application updated, reloading ...");
-        window.applicationCache.swapCache()
-        window.location.reload();
-    });
-
-    React.render(
-            React.createElement(Application, {survey: survey}),
-            document.body
-    );
-};
-
-},{"./FacilityAPI.js":1,"./PhotoAPI.js":2,"./components/Facility.js":3,"./components/Footer.js":4,"./components/Header.js":5,"./components/Location.js":6,"./components/MultipleChoice.js":7,"./components/Note.js":8,"./components/Photo.js":9,"./components/Question.js":10,"./components/Splash.js":11,"./components/Submit.js":12,"./components/baseComponents/BigButton.js":13,"./components/baseComponents/Card.js":14,"./components/baseComponents/DontKnow.js":15,"./components/baseComponents/FacilityRadios.js":16,"./components/baseComponents/LittleButton.js":17,"./components/baseComponents/Message.js":19,"./components/baseComponents/ResponseField.js":21,"./components/baseComponents/ResponseFields.js":22,"./components/baseComponents/Select.js":23,"./components/baseComponents/Title.js":24,"jquery":25,"pouchdb":80,"pouchdb-upsert":29,"react":279}]},{},[286]);
+},{"./support/isBuffer":290,"_process":289,"inherits":288}]},{},[1]);

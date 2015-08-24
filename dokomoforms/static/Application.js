@@ -488,6 +488,7 @@ var Application = React.createClass({
 
                 return inBee;
 
+	    case "timestamp": // TODO: We need moment.js for this to work properly
             case "date":
                 var inBee = 1; // Innocent untill proven guilty
                 response = new Date(response); // Convert to date object for comparisons
@@ -499,12 +500,12 @@ var Application = React.createClass({
                     var right = bucket.split(',')[1];
                     if (left[0] === "[") {
                         console.log("Inclusive Left");
-                        var leftLim = new Date(left.split("[")[1]);
+                        var leftLim = new Date(left.split("[")[1].replace(/\s/, 'T'));
                         if (!isNaN(leftLim)) // Infinity doesnt need to be checked
                             inBee &= (response >= leftLim);
                     } else if (left[0] === "(") {
                         console.log("Exclusive Left");
-                        var leftLim = new Date(left.split("(")[1]);
+                        var leftLim = new Date(left.split("(")[1].replace(/\s/, 'T'));
                         if (!isNaN(leftLim)) // Infinity doesnt need to be checked
                             inBee &= (response > leftLim)
                     } else {
@@ -513,12 +514,12 @@ var Application = React.createClass({
 
                     if (right[right.length - 1] === "]") {
                         console.log("Inclusive Right");
-                        var rightLim = new Date(right.split("]")[0]);
+                        var rightLim = new Date(right.split("]")[0].replace(/\s/, 'T'));
                         if (!isNaN(rightLim)) // Infinity doesnt need to be checked
                             inBee &= (response <= rightLim)
                     } else if (right[right.length - 1] === ")") {
                         console.log("Exclusive Right");
-                        var rightLim = new Date(right.split(")")[0]);
+                        var rightLim = new Date(right.split(")")[0].replace(/\s/, 'T'));
                         if (!isNaN(rightLim)) // Infinity doesnt need to be checked
                             inBee &= (response < rightLim)
                     } else {
@@ -534,9 +535,6 @@ var Application = React.createClass({
                 });
 
                 return inBee;
-            case 'timestamp': 
-                //TODO: This bucket
-                return false;
             case 'multiple_choice': 
                 var inBee = 0;
                 buckets.forEach(function(bucket) {
