@@ -10,6 +10,7 @@ addons:
   firefox: "39.0"
 
 install:
+  - pip install -r requirements.txt
   - pip install coveralls flake8 tox
 
 before_script:
