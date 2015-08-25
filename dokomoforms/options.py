@@ -18,8 +18,6 @@ _arg = None
 define('port', help='run on the given port', type=int)
 define('cookie_secret', help='string used to create session cookies')
 define('debug', default=False, help='whether to enable debug mode', type=bool)
-silent_help = 'the application will not print anything to stdout'
-define('silent', default=False, help=silent_help, type=bool)
 define('autoreload', default=False, help='whether to autoreload', type=bool)
 
 dev_help = 'turn on autoreload and debug, maybe some other dev options'

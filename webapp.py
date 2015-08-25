@@ -47,12 +47,6 @@ UUID_REGEX = (
 )
 
 
-if options.silent:
-    print = lambda *args, **kwargs: None
-    logger = logging.getLogger()
-    logger.disabled = True
-
-
 def modify_text(text: str, modifier: str) -> str:
     """Modify text for printing to the command line.
 
@@ -254,8 +248,6 @@ class Application(tornado.web.Application):
             'debug': options.dev or options.debug,
             'autoreload': options.dev or options.autoreload,
         }
-        if options.silent:
-            settings['log_function'] = lambda _: None
         super().__init__(urls, **settings)
 
         # Database setup

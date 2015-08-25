@@ -179,11 +179,10 @@ def create_engine(echo: bool=None) -> sqlalchemy.engine.Engine:
                  (or 'debug') overrides the echo setting of options.debug.
     :return: a SQLAlchemy engine
     """
-    debug_echo = False if options.silent else options.debug
     if echo is None:
         # This causes duplicate log messages, but I can't figure out how to get
         # the same level of logging otherwise...
-        echo = 'debug' if debug_echo else False
+        echo = 'debug' if options.debug else False
     return sa.create_engine(
         'postgresql+psycopg2://{}:{}@{}/{}'.format(
             options.db_user,

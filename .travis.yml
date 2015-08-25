@@ -9,9 +9,8 @@ addons:
   postgresql: "9.4"
   firefox: "39.0"
 
-install:
-  - pip install -r requirements.txt
-  - pip install coveralls flake8 tox
+before_install:
+  - pip install coveralls flake8 coverage beautifulsoup4 py-dateutil selenium
 
 before_script:
   - python3 -m flake8 .
@@ -21,7 +20,7 @@ before_script:
   - sleep 2
 
 script:
-  - xvfb-run tox -e cover
+  - xvfb-run tests/coverage_run.sh
 
 after_success: coveralls
 
