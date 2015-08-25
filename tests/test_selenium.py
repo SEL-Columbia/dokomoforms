@@ -7,8 +7,8 @@ import json
 from http.client import HTTPConnection
 import os
 import re
+import signal
 import sys
-from threading import Thread, Event
 import time
 import unittest
 import urllib.error
@@ -41,37 +41,38 @@ from dokomoforms.models import (
 base = 'http://localhost:9999'
 
 
-class StillAliveTravis(Thread):
-    def __init__(self, event, method_name):
-        Thread.__init__(self)
-        self.stopped = event
-        self.method_name = method_name
-        self.attempts = 0
+class SauceTestTooLong(Exception):
+    pass
 
-    def run(self):
-        while self.attempts < 5 and not self.stopped.wait(60):
-            print(
-                '{} -- still alive Travis'.format(self.method_name),
-                file=sys.stderr
-            )
-            self.attempts += 1
+
+def too_long(signum, frame):
+    raise SauceTestTooLong()
+
+
+def attempt_a_sauce_test(self, method, *args, **kwargs):
+    is_travis = os.environ.get('TRAVIS', 'f').startswith('t')
+    if is_travis:
+        signal.signal(signal.SIGALRM, too_long)
+        signal.alarm(120)
+    try:
+        result = method(self, *args, **kwargs)
+    finally:
+        if is_travis:
+            signal.alarm(0)
+    self.passed = True
+    return result
 
 
 def report_success_status(method):
     @functools.wraps(method)
     def set_passed(self, *args, **kwargs):
-        is_travis = os.environ.get('TRAVIS', 'f').startswith('t')
-        if is_travis:
-            stop_flag = Event()
-            travis_out = StillAliveTravis(stop_flag, self._testMethodName)
-            travis_out.start()
         try:
-            result = method(self, *args, **kwargs)
-        finally:
-            if is_travis:
-                stop_flag.set()
-        self.passed = True
-        return result
+            return attempt_a_sauce_test(self, method, *args, **kwargs)
+        except SauceTestTooLong:
+            print(
+                '2nd attempt {}'.format(self._testMethodName), file=sys.stderr
+            )
+            return attempt_a_sauce_test(self, method, *args, **kwargs)
     return set_passed
 
 
