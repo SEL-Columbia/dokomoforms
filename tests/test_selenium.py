@@ -14,6 +14,7 @@ import unittest
 import urllib.error
 
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -53,7 +54,7 @@ def attempt_a_sauce_test(self, method, *args, **kwargs):
     is_travis = os.environ.get('TRAVIS', 'f').startswith('t')
     if is_travis:
         signal.signal(signal.SIGALRM, too_long)
-        signal.alarm(120)
+        signal.alarm(240)
     try:
         result = method(self, *args, **kwargs)
     finally:
@@ -66,15 +67,19 @@ def attempt_a_sauce_test(self, method, *args, **kwargs):
 def report_success_status(method):
     @functools.wraps(method)
     def set_passed(self, *args, **kwargs):
-        try:
-            return attempt_a_sauce_test(self, method, *args, **kwargs)
-        except SauceTestTooLong:
-            print(
-                '2nd attempt {}'.format(self._testMethodName), file=sys.stderr
-            )
-            self.drv.quit()
-            self.setUp()
-            return attempt_a_sauce_test(self, method, *args, **kwargs)
+        num_attempts = 3
+        for attempt in range(num_attempts):
+            try:
+                return attempt_a_sauce_test(self, method, *args, **kwargs)
+            except (SauceTestTooLong, TimeoutException):
+                print(
+                    'timeout {} -- {}'.format(attempt, self._testMethodName),
+                    file=sys.stderr
+                )
+                if attempt == num_attempts - 1:
+                    raise
+                self.drv.quit()
+                self.setUp()
     return set_passed
 
 
@@ -110,7 +115,7 @@ class DriverTest(tests.util.DokoFixtureTest):
         caps = {
             'browserName': self.browser,
             'platform': self.platform,
-            'idleTimeout': 180,
+            'idleTimeout': 1000,  # maximum
         }
         if self.browser in {'android', 'iPhone'}:
             caps['deviceName'] = other[0]
@@ -152,6 +157,8 @@ class DriverTest(tests.util.DokoFixtureTest):
                 'Sauce Connect failure. Did you start Sauce Connect?'
             )
         self.drv.implicitly_wait(10)
+        self.drv.set_page_load_timeout(180)
+        self.drv.set_script_timeout(180)
 
     def _set_sauce_status(self):
         credentials = '{}:{}'.format(self.username, self.access_key).encode()
@@ -299,6 +306,7 @@ class TestEnumerate(DriverTest):
         )
 
     def get_last_submission(self, survey_id):
+        self.sleep()
         return (
             self.session
             .query(Submission)
