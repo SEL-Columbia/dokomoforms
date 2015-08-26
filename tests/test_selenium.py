@@ -72,6 +72,8 @@ def report_success_status(method):
             print(
                 '2nd attempt {}'.format(self._testMethodName), file=sys.stderr
             )
+            self.drv.quit()
+            self.setUp()
             return attempt_a_sauce_test(self, method, *args, **kwargs)
     return set_passed
 
@@ -138,12 +140,13 @@ class DriverTest(tests.util.DokoFixtureTest):
             browser_profile = f_profile
         elif self.browser == 'chrome':
             caps['disable-user-media-security'] = True
+        self.driver_config = {
+            'desired_capabilities': caps,
+            'command_executor': cmd_executor,
+            'browser_profile': browser_profile,
+        }
         try:
-            self.drv = webdriver.Remote(
-                desired_capabilities=caps,
-                command_executor=cmd_executor,
-                browser_profile=browser_profile,
-            )
+            self.drv = webdriver.Remote(**self.driver_config)
         except urllib.error.URLError:
             self.fail(
                 'Sauce Connect failure. Did you start Sauce Connect?'
