@@ -180,6 +180,8 @@ class DriverTest(tests.util.DokoFixtureTest):
                 if attempt == num_attempts - 1:
                     raise
         self.drv.implicitly_wait(10)
+        if self.platform == 'Windows 8.1':
+            time.sleep(10)
         self.drv.set_page_load_timeout(180)
         self.drv.set_script_timeout(180)
 
