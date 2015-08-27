@@ -167,7 +167,9 @@ class ModelJSONEncoder(json.JSONEncoder):
             return super().default(obj)
 
 
-def create_engine(echo: bool=None) -> sqlalchemy.engine.Engine:
+def create_engine(echo: bool=None,
+                  pool_size: int=None,
+                  max_overflow: int=None) -> sqlalchemy.engine.Engine:
     """Get a connection to the database.
 
     Return a sqlalchemy.engine.Engine configured with the options set in
@@ -183,17 +185,20 @@ def create_engine(echo: bool=None) -> sqlalchemy.engine.Engine:
         # This causes duplicate log messages, but I can't figure out how to get
         # the same level of logging otherwise...
         echo = 'debug' if options.debug else False
-    return sa.create_engine(
-        'postgresql+psycopg2://{}:{}@{}/{}'.format(
-            options.db_user,
-            options.db_password,
-            options.db_host,
-            options.db_database,
-        ),
-        # pool_size=0,
-        # max_overflow=-1,
-        echo=echo,
+    connection_string = 'postgresql+psycopg2://{}:{}@{}/{}'.format(
+        options.db_user,
+        options.db_password,
+        options.db_host,
+        options.db_database,
     )
+    pool_size = pool_size or options.pool_size
+    max_overflow = max_overflow or options.max_overflow
+    engine_params = {'echo': echo}
+    if pool_size is not None:
+        engine_params['pool_size'] = pool_size
+    if max_overflow is not None:
+        engine_params['max_overflow'] = max_overflow
+    return sa.create_engine(connection_string, **engine_params)
 
 
 def pk(*foreign_key_column_names: str) -> sa.Column:

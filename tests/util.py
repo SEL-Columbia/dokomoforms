@@ -25,7 +25,7 @@ from dokomoforms.handlers.util import BaseHandler
 from webapp import Application
 from tests.fixtures import load_fixtures, unload_fixtures
 
-engine = create_engine(echo=False)
+engine = create_engine(echo=False, pool_size=0, max_overflow=-1)
 Session = sessionmaker()
 
 

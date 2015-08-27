@@ -47,6 +47,18 @@ define('db_database', help='database name')
 define('db_user', help='database user')
 define('db_password', help='database password')
 
+pool_help = (
+    'the number of database connections to keep in the pool. You can usually'
+    ' leave this unchanged.'
+)
+define('pool_size', help=pool_help, type=int)
+
+max_overflow_help = (
+    'the maximum number of database connections open at once. You can usually'
+    ' leave this unchanged.'
+)
+define('max_overflow', help=max_overflow_help, type=int)
+
 kill_help = 'whether to drop the existing schema before starting'
 define('kill', default=False, help=kill_help, type=bool)
 
