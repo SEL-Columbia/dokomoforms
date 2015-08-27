@@ -54,6 +54,7 @@ def attempt_a_sauce_test(self, method, *args, **kwargs):
     is_travis = os.environ.get('TRAVIS', 'f').startswith('t')
     if is_travis:
         signal.signal(signal.SIGALRM, too_long)
+        print('starting countdown', file=sys.stderr)
         signal.alarm(240)
     try:
         result = method(self, *args, **kwargs)
