@@ -60,8 +60,9 @@ def attempt_a_sauce_test(self, method, *args, **kwargs):
     is_travis = os.environ.get('TRAVIS', 'f').startswith('t')
     if is_travis:
         signal.signal(signal.SIGALRM, too_long(SauceTestTooLong))
-        print('starting countdown', file=sys.stderr)
-        signal.alarm(240)
+        # print('starting countdown', file=sys.stderr)
+        countdown = 360 if self.browser == 'android' else 240
+        signal.alarm(countdown)
     try:
         result = method(self, *args, **kwargs)
     finally:
@@ -78,6 +79,9 @@ def report_success_status(method):
         for attempt in range(num_attempts):
             try:
                 return attempt_a_sauce_test(self, method, *args, **kwargs)
+            except unittest.SkipTest:
+                self.passed = True
+                raise
             except (SauceTestTooLong, TimeoutException):
                 print(
                     'timeout {} -- {}'.format(attempt, self._testMethodName),
@@ -90,17 +94,17 @@ def report_success_status(method):
     return set_passed
 
 
-def start_remote_webdriver(**driver_config):
-    signal.signal(signal.SIGALRM, too_long(DriverTakingTooLong))
-    print('attempting to start webdriver', file=sys.stderr)
-    signal.alarm(60)
-    try:
-        return webdriver.Remote(**driver_config)
-    finally:
-        signal.alarm(0)
-
-
 class DriverTest(tests.util.DokoFixtureTest):
+    def start_remote_webdriver(self):
+        signal.signal(signal.SIGALRM, too_long(DriverTakingTooLong))
+        # print('attempting to start webdriver', file=sys.stderr)
+        countdown = 120 if self.browser == 'android' else 60
+        signal.alarm(countdown)
+        try:
+            return webdriver.Remote(**self.driver_config)
+        finally:
+            signal.alarm(0)
+
     def setUp(self):
         super().setUp()
 
@@ -170,19 +174,21 @@ class DriverTest(tests.util.DokoFixtureTest):
         num_attempts = 3
         for attempt in range(num_attempts):
             try:
-                self.drv = start_remote_webdriver(**self.driver_config)
+                self.drv = self.start_remote_webdriver()
                 break
             except urllib.error.URLError:
                 self.fail(
                     'Sauce Connect failure. Did you start Sauce Connect?'
                 )
             except DriverTakingTooLong:
+                print('webdriver {}'.format(attempt))
                 if attempt == num_attempts - 1:
                     raise
         self.drv.implicitly_wait(10)
         if self.platform == 'Windows 8.1':
             time.sleep(10)
-        self.drv.set_page_load_timeout(180)
+        if self.browser != 'android':
+            self.drv.set_page_load_timeout(180)
         self.drv.set_script_timeout(180)
 
     def _set_sauce_status(self):
@@ -305,6 +311,8 @@ class DriverTest(tests.util.DokoFixtureTest):
 class TestAuth(DriverTest):
     @report_success_status
     def test_login(self):
+        if self.browser == 'android':
+            raise unittest.SkipTest("The popup doesn't open in the webview.")
         self.get('/')
         self.wait_for_element('btn-login', By.CLASS_NAME)
         self.click(self.drv.find_elements_by_class_name('btn-login')[-1])
