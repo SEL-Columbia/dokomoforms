@@ -68,6 +68,14 @@ class TestBase(unittest.TestCase):
         engine3 = models.create_engine(False)
         self.assertEqual(engine3.echo, False)
 
+        self.assertEqual(engine3.pool.size(), 5)
+        engine4 = models.create_engine(pool_size=10)
+        self.assertEqual(engine4.pool.size(), 10)
+
+        self.assertEqual(engine3.pool._max_overflow, 10)
+        engine5 = models.create_engine(max_overflow=20)
+        self.assertEqual(engine5.pool._max_overflow, 20)
+
 
 class TestUtil(DokoTest):
     def test_jsonify(self):
