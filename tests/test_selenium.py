@@ -46,14 +46,20 @@ class SauceTestTooLong(Exception):
     pass
 
 
-def too_long(signum, frame):
-    raise SauceTestTooLong()
+class DriverTakingTooLong(Exception):
+    pass
+
+
+def too_long(exception_class):
+    def alarm(signum, frame):
+        raise exception_class()
+    return alarm
 
 
 def attempt_a_sauce_test(self, method, *args, **kwargs):
     is_travis = os.environ.get('TRAVIS', 'f').startswith('t')
     if is_travis:
-        signal.signal(signal.SIGALRM, too_long)
+        signal.signal(signal.SIGALRM, too_long(SauceTestTooLong))
         print('starting countdown', file=sys.stderr)
         signal.alarm(240)
     try:
@@ -82,6 +88,16 @@ def report_success_status(method):
                 self.drv.quit()
                 self.setUp()
     return set_passed
+
+
+def start_remote_webdriver(**driver_config):
+    signal.signal(signal.SIGALRM, too_long(DriverTakingTooLong))
+    print('attempting to start webdriver', file=sys.stderr)
+    signal.alarm(60)
+    try:
+        return webdriver.Remote(**driver_config)
+    finally:
+        signal.alarm(0)
 
 
 class DriverTest(tests.util.DokoFixtureTest):
@@ -151,12 +167,18 @@ class DriverTest(tests.util.DokoFixtureTest):
             'command_executor': cmd_executor,
             'browser_profile': browser_profile,
         }
-        try:
-            self.drv = webdriver.Remote(**self.driver_config)
-        except urllib.error.URLError:
-            self.fail(
-                'Sauce Connect failure. Did you start Sauce Connect?'
-            )
+        num_attempts = 3
+        for attempt in range(num_attempts):
+            try:
+                self.drv = start_remote_webdriver(**self.driver_config)
+                break
+            except urllib.error.URLError:
+                self.fail(
+                    'Sauce Connect failure. Did you start Sauce Connect?'
+                )
+            except DriverTakingTooLong:
+                if attempt == num_attempts - 1:
+                    raise
         self.drv.implicitly_wait(10)
         self.drv.set_page_load_timeout(180)
         self.drv.set_script_timeout(180)
