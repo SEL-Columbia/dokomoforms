@@ -60,7 +60,6 @@ def attempt_a_sauce_test(self, method, *args, **kwargs):
     is_travis = os.environ.get('TRAVIS', 'f').startswith('t')
     if is_travis:
         signal.signal(signal.SIGALRM, too_long(SauceTestTooLong))
-        # print('starting countdown', file=sys.stderr)
         countdown = 360 if self.browser == 'android' else 240
         signal.alarm(countdown)
     try:
@@ -97,7 +96,6 @@ def report_success_status(method):
 class DriverTest(tests.util.DokoFixtureTest):
     def start_remote_webdriver(self):
         signal.signal(signal.SIGALRM, too_long(DriverTakingTooLong))
-        # print('attempting to start webdriver', file=sys.stderr)
         countdown = 120 if self.browser == 'android' else 60
         signal.alarm(countdown)
         try:
