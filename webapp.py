@@ -32,7 +32,7 @@ if __name__ == '__main__':  # pragma: no cover
     parse_options()
 
 import dokomoforms.handlers as handlers
-from dokomoforms.models import create_engine, Base
+from dokomoforms.models import create_engine, Base, UUID_REGEX
 from dokomoforms.api import (
     SurveyResource, SubmissionResource, PhotoResource, NodeResource
 )
@@ -41,10 +41,6 @@ from dokomoforms.api import (
 _pwd = os.path.dirname(__file__)
 bold = '\033[1m'
 green = '\033[92m'
-
-UUID_REGEX = (
-    '[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}'
-)
 
 
 def modify_text(text: str, modifier: str) -> str:
@@ -168,10 +164,13 @@ class Application(tornado.web.Application):
             ),
 
             # * Regular views
-            # TODO: use survey title?? instead of id
             url(
                 r'/enumerate/({})/?'.format(UUID_REGEX), handlers.Enumerate,
                 name='enumerate'
+            ),
+            url(
+                r'/enumerate/(.+)/?', handlers.EnumerateTitle,
+                name='enumerate_title'
             ),
 
             # API

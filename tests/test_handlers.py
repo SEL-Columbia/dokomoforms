@@ -221,6 +221,26 @@ class TestEnumerate(DokoHTTPTest):
             )
         )
 
+    def test_get_public_survey_by_title_not_logged_in(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        with self.session.begin():
+            survey = self.session.query(models.Survey).get(survey_id)
+            survey.url_slug = 'url_slug'
+        url = '/enumerate/url_slug'
+        response = self.fetch(url, method='GET', _logged_in_user=None)
+        body = response.body
+
+        safe_url = '/enumerate/' + survey_id
+        safe_response = self.fetch(safe_url, _logged_in_user=None)
+        safe_body = safe_response.body
+
+        self.assertEqual(body, safe_body)
+
+    def test_get_public_survey_by_title_404(self):
+        url = '/enumerate/aaa'
+        response = self.fetch(url, method='GET', _logged_in_user=None)
+        self.assertEqual(response.code, 404)
+
     def test_get_public_survey_logged_in(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
         url = '/enumerate/' + survey_id

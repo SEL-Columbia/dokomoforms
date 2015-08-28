@@ -1562,6 +1562,120 @@ class TestSurvey(DokoTest):
 
                 self.session.add(creator)
 
+    def test_url_slug_empty(self):
+        with self.session.begin():
+            self.session.add(
+                models.SurveyCreator(
+                    name='creator',
+                    surveys=[
+                        models.construct_survey(
+                            survey_type='public',
+                            title={'English': 'no_url_slug'},
+                        ),
+                    ],
+                )
+            )
+            self.session.add(
+                models.SurveyCreator(
+                    name='creator2',
+                    surveys=[
+                        models.construct_survey(
+                            survey_type='public',
+                            title={'English': 'no_url_slug2'},
+                        ),
+                    ],
+                )
+            )
+
+        surveys = self.session.query(models.Survey).all()
+        self.assertEqual(len(surveys), 2)
+        self.assertIsNone(surveys[0].url_slug)
+        self.assertIsNone(surveys[1].url_slug)
+
+    def test_url_slug_valid(self):
+        with self.session.begin():
+            self.session.add(
+                models.SurveyCreator(
+                    name='creator',
+                    surveys=[
+                        models.construct_survey(
+                            survey_type='public',
+                            title={'English': 'url_slug'},
+                            url_slug='cool_survey',
+                        ),
+                    ],
+                )
+            )
+
+        survey = self.session.query(models.Survey).one()
+        self.assertEqual(survey.url_slug, 'cool_survey')
+
+    def test_url_slug_unique(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                self.session.add(
+                    models.SurveyCreator(
+                        name='creator',
+                        surveys=[
+                            models.construct_survey(
+                                survey_type='public',
+                                title={'English': 'url_slug'},
+                                url_slug='cool_survey',
+                            ),
+                        ],
+                    )
+                )
+                self.session.add(
+                    models.SurveyCreator(
+                        name='creator2',
+                        surveys=[
+                            models.construct_survey(
+                                survey_type='public',
+                                title={'English': 'url_slug2'},
+                                url_slug='cool_survey',
+                            ),
+                        ],
+                    )
+                )
+
+    def test_url_slug_invalid_character(self):
+        for bad_character in ';/?:@&=+$, ':
+            with self.subTest(bad_character=bad_character):
+                with self.assertRaises(IntegrityError):
+                    with self.session.begin():
+                        self.session.add(
+                            models.SurveyCreator(
+                                name='creator',
+                                surveys=[
+                                    models.construct_survey(
+                                        survey_type='public',
+                                        title={'English': 'url_slug'},
+                                        url_slug=(
+                                            'co{}ol_survey'.format(
+                                                bad_character
+                                            )
+                                        ),
+                                    ),
+                                ],
+                            )
+                        )
+
+    def test_url_slug_is_not_uuid(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                self.session.add(
+                    models.SurveyCreator(
+                        name='creator',
+                        surveys=[
+                            models.construct_survey(
+                                survey_type='public',
+                                title={'English': 'url_slug'},
+                                url_slug=str(uuid.uuid4()),
+                            ),
+                        ],
+                    )
+                )
+
     def test_one_node_surveys(self):
         number_of_questions = 11
         with self.session.begin():
@@ -1702,6 +1816,7 @@ class TestSurvey(DokoTest):
                 ('id', the_survey.id),
                 ('deleted', False),
                 ('title', OrderedDict((('English', 'some survey'),))),
+                ('url_slug', None),
                 ('default_language', 'English'),
                 ('survey_type', 'public'),
                 ('version', 1),
@@ -2369,6 +2484,7 @@ class TestSurveyNode(DokoTest):
                 ('id', survey.id),
                 ('deleted', False),
                 ('title', OrderedDict((('French', 'french title'),))),
+                ('url_slug', None),
                 ('default_language', 'French'),
                 ('survey_type', 'public'),
                 ('version', 1),

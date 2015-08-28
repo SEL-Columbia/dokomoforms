@@ -52,6 +52,15 @@ class Survey(Base):
     )
     languages = util.languages_column('languages')
     title = util.json_column('title')
+    url_slug = sa.Column(
+        pg.TEXT,
+        sa.CheckConstraint(
+            "url_slug !~ '[;/?:@&=+$,\s]' AND "
+            "url_slug !~ '{}'".format(util.UUID_REGEX),
+            name='url_safe_slug'
+        ),
+        unique=True,
+    )
     default_language = sa.Column(
         pg.TEXT,
         sa.CheckConstraint(
@@ -134,6 +143,7 @@ class Survey(Base):
             ('id', self.id),
             ('deleted', self.deleted),
             ('title', OrderedDict(sorted(self.title.items()))),
+            ('url_slug', self.url_slug),
             ('default_language', self.default_language),
             ('survey_type', self.survey_type),
             ('version', self.version),
