@@ -64,3 +64,7 @@
 17. Adding a non-null reference to the "first" element of a one-to-many
     relationship works as an n>1 constraint but might be too cumbersome.
 18. Allow API searchs on answers?
+19. Due to react (most likely) the enumerate page does not load at all on
+    AOSP browser.
+    https://facebook.github.io/react/docs/working-with-the-browser.html
+    #browser-support-and-polyfills
