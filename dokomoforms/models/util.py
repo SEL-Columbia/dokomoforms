@@ -190,10 +190,11 @@ def create_engine(echo: bool=None,
         # This causes duplicate log messages, but I can't figure out how to get
         # the same level of logging otherwise...
         echo = 'debug' if options.debug else False
-    connection_string = 'postgresql+psycopg2://{}:{}@{}/{}'.format(
+    connection_string = 'postgresql+psycopg2://{}:{}@{}:{}/{}'.format(
         options.db_user,
         options.db_password,
         options.db_host,
+        options.db_port,
         options.db_database,
     )
     pool_size = pool_size or options.pool_size
