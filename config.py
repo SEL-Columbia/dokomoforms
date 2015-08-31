@@ -11,13 +11,16 @@ If you want to use different values, set them as command line arguments:
 or place them in a file called local_config.py (which is in the .gitignore
 file).
 """
+import os
+
 
 port = 8888
 schema = 'doko'
-db_host = 'localhost:5432'
+db_host = os.environ.get('DB_PORT_5432_TCP_ADDR', 'localhost')
+db_port = os.environ.get('DB_PORT_5432_TCP_PORT', '5432')
 db_database = 'doko'
 db_user = 'postgres'
-db_password = 'whatever your password is'
+db_password = os.environ.get('DB_ENV_POSTGRES_PASSWORD', 'database password')
 organization = 'unconfigured organization'
 
 https = True

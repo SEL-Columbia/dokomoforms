@@ -40,14 +40,14 @@ Dokomo Forms is a self-hosted data collection and analysis platform, and is the 
   `$ tox -e cover`
 
   The tests only touch the `doko_test` schema (which they create/destroy for you).
-  
+
 # Using Docker for Local Dev Environment and Deployment
 
 [Docker](https://en.wikipedia.org/wiki/Docker_(software)) is a container management software that aims at component separation and deployment automation. Please refer to [the Docker API](https://docs.docker.com/) for a fuller introduction.
 
 ## Using Docker Manually (Docker knowledge required)
 
-There is a [Dockerfile](Dockerfile) in the root directory to build the Docker image of the Dokomo Forms webapp component building on top a Python 3 image. To build the webapp image, run 
+There is a [Dockerfile](Dockerfile) in the root directory to build the Docker image of the Dokomo Forms webapp component building on top a Python 3 image. To build the webapp image, run
 
 > $ docker build -t selcolumbia/dokomoforms .
 
@@ -67,7 +67,7 @@ Docker will download the necessary images, then build and link them. This step t
 
 ## Using Docker for Automated Deployment
 
-`docker-machine` is the program that automates the deployment process. It can hook into many VPS providers such as [AWS](http://aws.amazon.com/), [Rackspace](http://www.rackspace.com/) and [DigitalOcean](https://www.digitalocean.com/). 
+`docker-machine` is the program that automates the deployment process. It can hook into many VPS providers such as [AWS](http://aws.amazon.com/), [Rackspace](http://www.rackspace.com/) and [DigitalOcean](https://www.digitalocean.com/).
 
 Here is an example using DigitalOcean:
 

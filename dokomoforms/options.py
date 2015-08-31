@@ -43,6 +43,7 @@ define('revisit_url', default=revisit_url, help=revisit_help)
 # Database options
 define('schema', help='database schema name')
 define('db_host', help='database host')
+define('db_port', help='database port')
 define('db_database', help='database name')
 define('db_user', help='database user')
 define('db_password', help='database password')
