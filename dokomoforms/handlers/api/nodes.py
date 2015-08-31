@@ -1,5 +1,5 @@
 """TornadoResource class for dokomoforms.models.node.Node subclasses."""
-from dokomoforms.api import BaseResource
+from dokomoforms.handlers.api import BaseResource
 from dokomoforms.models import (
     Node, Choice, construct_node
 )

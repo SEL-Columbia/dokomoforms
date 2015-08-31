@@ -1,14 +1,13 @@
-dokomoforms
-===========
+dokomoforms package
+===================
 
 Subpackages
 -----------
 
 .. toctree::
 
-    dokomoforms.models
-    dokomoforms.api
     dokomoforms.handlers
+    dokomoforms.models
 
 Submodules
 ----------

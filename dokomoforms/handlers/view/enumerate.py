@@ -7,7 +7,7 @@ from restless.exceptions import Unauthorized
 import tornado.web
 
 from dokomoforms.handlers.util import BaseHandler
-from dokomoforms.api import get_survey_for_handler
+from dokomoforms.handlers.api import get_survey_for_handler
 from dokomoforms.options import options
 from dokomoforms.models import Survey
 

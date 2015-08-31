@@ -1,7 +1,7 @@
 """TornadoResource class for dokomoforms.models.submission.Submission."""
 import restless.exceptions as exc
 
-from dokomoforms.api import BaseResource
+from dokomoforms.handlers.api import BaseResource
 from dokomoforms.models import (
     Survey, Submission, User,
     construct_submission, construct_answer, Answer,
