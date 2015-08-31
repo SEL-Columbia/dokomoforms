@@ -74,6 +74,8 @@ def attempt_a_sauce_test(self, method, *args, **kwargs):
 def report_success_status(method):
     @functools.wraps(method)
     def set_passed(self, *args, **kwargs):
+        if not SAUCE_CONNECT:
+            return method(self, *args, **kwargs)
         num_attempts = 3
         for attempt in range(num_attempts):
             try:
