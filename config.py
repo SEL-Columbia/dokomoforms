@@ -20,7 +20,7 @@ db_host = os.environ.get('DB_PORT_5432_TCP_ADDR', 'localhost')
 db_port = os.environ.get('DB_PORT_5432_TCP_PORT', '5432')
 db_database = 'doko'
 db_user = 'postgres'
-db_password = os.environ.get('DB_ENV_POSTGRES_PASSWORD', 'database password')
+db_password = os.environ.get('DB_ENV_POSTGRES_PASSWORD', 'password')
 organization = 'unconfigured organization'
 
 https = True
