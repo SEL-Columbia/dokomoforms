@@ -1,5 +1,6 @@
 webapp:
   build: .
+  command: python webapp.py
   links:
     - "db:db"
   ports:
@@ -8,3 +9,4 @@ db:
   image: "mdillon/postgis:9.4"
   environment:
     POSTGRES_PASSWORD: 'password'
+    POSTGRES_DB: 'doko'
