@@ -121,9 +121,7 @@ class GenerateToken(BaseHandler):  # We should probably do this in JS
     @tornado.web.authenticated
     def get(self):
         """Set a new token for the logged in user and return the token."""
-        token = (
-            ''.join(char for char in str(uuid.uuid4()) if char.isalnum())
-        )
+        token = uuid.uuid4().hex
         user = self.current_user_model
         with self.session.begin():
             user.token = bcrypt_sha256.encrypt(token).encode()
