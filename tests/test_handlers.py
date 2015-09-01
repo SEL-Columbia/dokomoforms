@@ -98,6 +98,19 @@ class TestDebug(DokoHTTPTest):
         self.assertEqual(response.code, 200, msg=response)
 
 
+class TestHeaders(DokoHTTPTest):
+    def test_secure_headers(self):
+        response = self.fetch('/', method='GET', _logged_in_user=None)
+        self.assertNotIn(
+            'server',
+            {header.lower() for header in response.headers}
+        )
+        self.assertIn('X-Frame-Options', response.headers)
+        self.assertIn('X-Xss-Protection', response.headers)
+        self.assertIn('X-Content-Type-Options', response.headers)
+        self.assertIn('Content-Security-Policy', response.headers)
+
+
 class TestAuth(DokoHTTPTest):
     @tornado.testing.gen_test
     def test_async_post(self):
