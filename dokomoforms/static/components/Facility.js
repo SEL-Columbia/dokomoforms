@@ -2,7 +2,6 @@ var React = require('react');
 var Promise = require('mpromise');
 
 var ResponseField = require('./baseComponents/ResponseField.js');
-var ResponseFields = require('./baseComponents/ResponseFields.js');
 var LittleButton = require('./baseComponents/LittleButton.js');
 
 var FacilityRadios = require('./baseComponents/FacilityRadios.js');
@@ -17,28 +16,27 @@ var Select = require('./baseComponents/Select.js');
  *     @language: current survey language
  *     @surveyID: current survey id
  *     @disabled: boolean for disabling all inputs
- *     @db: pouchdb database 
+ *     @db: pouchdb database
  *     @tree: Facility Tree object
  */
 module.exports = React.createClass({
     getInitialState: function() {
-        var self = this;
         var answer = this.getAnswer();
         var selectOff = answer && answer.metadata && answer.metadata.is_new;
-        return { 
+        return {
             loc: null,
             selectFacility: !selectOff,
             facilities: [],
             choices: [
-                {'value': 'water', 'text': 'Water'}, 
-                {'value': 'energy', 'text': 'Energy'}, 
-                {'value': 'education', 'text': 'Education'}, 
-                {'value': 'health', 'text': 'Health'}, 
-            ],
-        }
+                {'value': 'water', 'text': 'Water'},
+                {'value': 'energy', 'text': 'Energy'},
+                {'value': 'education', 'text': 'Education'},
+                {'value': 'health', 'text': 'Health'}
+            ]
+        };
     },
 
-    /* 
+    /*
      * Deal with async call to getFacilities
      */
     componentWillMount: function() {
@@ -53,7 +51,7 @@ module.exports = React.createClass({
     },
     /*
      * Hack to force react to update child components
-     * Gets called by parent element through 'refs' when state of something changed 
+     * Gets called by parent element through 'refs' when state of something changed
      * (usually localStorage)
      */
     update: function() {
@@ -61,7 +59,7 @@ module.exports = React.createClass({
         var answers = survey[this.props.question.id] || [];
         var length = answers.length === 0 ? 1 : answers.length;
         this.setState({
-            questionCount: length,
+            questionCount: length
         });
     },
 
@@ -71,7 +69,7 @@ module.exports = React.createClass({
     toggleAddFacility: function() {
         this.setState({
             selectFacility : this.state.selectFacility ? false : true
-        })
+        });
     },
 
     /*
@@ -94,8 +92,8 @@ module.exports = React.createClass({
                         'facility_name': facility.name,
                         'facility_sector': facility.properties.sector,
                         'lat': facility.coordinates[1],
-                        'lng': facility.coordinates[0],
-                    }, 
+                        'lng': facility.coordinates[0]
+                    },
                     'response_type': 'answer'
                 }];
                 return false;
@@ -105,10 +103,10 @@ module.exports = React.createClass({
 
         survey[this.props.question.id] = answers;
         localStorage[this.props.surveyID] = JSON.stringify(survey);
-        
+
     },
 
-    /* 
+    /*
      * Query the tree for nearby facilities near given location when possible
      *
      * @loc: The location ({lat: NUM, lng: NUM}) to query around
@@ -126,13 +124,12 @@ module.exports = React.createClass({
 
     /*
      * Get response from localStorage
-     */ 
+     */
     getAnswer: function() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
         console.log("Selected facility", answers[0]);
-        if (answers[0]) 
-            return answers[0]
+        if (answers[0]) return answers[0];
     },
 
     /*
@@ -141,10 +138,10 @@ module.exports = React.createClass({
      * Returns an objectID string
      */
     createObjectID: function() {
-       return 'xxxxxxxxxxxxxxxxxxxxxxxx'.replace(/[x]/g, function() {
-           var r = Math.random()*16|0;
-           return r.toString(16);
-       });
+        return 'xxxxxxxxxxxxxxxxxxxxxxxx'.replace(/[x]/g, function() {
+            var r = Math.random()*16|0;
+            return r.toString(16);
+        });
     },
 
     /*
@@ -163,12 +160,12 @@ module.exports = React.createClass({
         }
 
         // Load up previous response, update values
-        var response = (answers[0] && answers[0].response) || {}; 
+        var response = (answers[0] && answers[0].response) || {};
         var uuid = response.facility_id || this.createObjectID();
         response.facility_id = uuid;
         // XXX This kind of assumes that current lat/lng is correct at the time of last field update
-        response.lat = this.state.loc.lat; 
-        response.lng = this.state.loc.lng; 
+        response.lat = this.state.loc.lat;
+        response.lng = this.state.loc.lng;
 
         switch(type) {
             case 'text':
@@ -187,7 +184,7 @@ module.exports = React.createClass({
 
         //XXX Failed validation messes up facility question
         //TODO: Properly handle null values
-       
+
         answers = [{
             'response': response,
             'response_type': 'answer',
@@ -212,7 +209,7 @@ module.exports = React.createClass({
             function success(position) {
                 var loc = {
                     'lat': position.coords.latitude,
-                    'lng': position.coords.longitude, 
+                    'lng': position.coords.longitude,
                 }
 
                 // Record location for survey
@@ -224,12 +221,12 @@ module.exports = React.createClass({
                         facilities: facilities
                     });
                 });
-            }, 
-            
+            },
+
             function error() {
                 console.log("Location could not be grabbed");
-            }, 
-            
+            },
+
             {
                 enableHighAccuracy: true,
                 timeout: 20000,
@@ -251,7 +248,7 @@ module.exports = React.createClass({
         // Update sector field to match initSelect expected value
         var sector = answer && answer.response.facility_sector;
         var isOther = choiceOptions.indexOf(sector) === -1;
-        sector = isOther ? sector && 'other' : sector; 
+        sector = isOther ? sector && 'other' : sector;
 
         return (
                 <span>
@@ -259,13 +256,13 @@ module.exports = React.createClass({
                     <span>
                     <LittleButton buttonFunction={this.onLocate}
                         icon={'icon-star'}
-                        text={'find my location and show nearby facilities'} 
+                        text={'find my location and show nearby facilities'}
                         disabled={this.props.disabled}
                     />
 
-                    <FacilityRadios 
+                    <FacilityRadios
                         key={this.props.disabled}
-                        selectFunction={this.selectFacility} 
+                        selectFunction={this.selectFacility}
                         facilities={this.state.facilities}
                         initValue={answer && !isNew && answer.response.facility_id}
                         disabled={this.props.disabled}
@@ -274,38 +271,38 @@ module.exports = React.createClass({
                     { hasLocation  ?
                         <LittleButton buttonFunction={this.toggleAddFacility}
                             disabled={this.props.disabled}
-                            text={'add new facility'} 
+                            text={'add new facility'}
                         />
                         : null
                     }
                     </span>
                 :
                     <span>
-                    <ResponseField 
+                    <ResponseField
                         onInput={this.onInput.bind(null, 'text')}
                         initValue={isNew && answer.response.facility_name}
                         type={'text'}
                         disabled={this.props.disabled}
                     />
-                    <ResponseField 
-                        initValue={JSON.stringify(this.state.loc)} 
+                    <ResponseField
+                        initValue={JSON.stringify(this.state.loc)}
                         type={'location'}
                         disabled={true}
                     />
-                    <Select 
-                        choices={this.state.choices} 
+                    <Select
+                        choices={this.state.choices}
                         initValue={isNew && isOther ? answer.response.facility_sector : null}
-                        initSelect={isNew && [sector]} 
-                        withOther={true} 
+                        initSelect={isNew && [sector]}
+                        withOther={true}
                         multiSelect={false}
                         onInput={this.onInput.bind(null, 'other')}
                         onSelect={this.onInput.bind(null, 'select')}
                         disabled={this.props.disabled}
                     />
 
-                    <LittleButton 
-                        buttonFunction={this.toggleAddFacility} 
-                            text={'cancel'} 
+                    <LittleButton
+                        buttonFunction={this.toggleAddFacility}
+                            text={'cancel'}
                             disabled={this.props.disabled}
                      />
 

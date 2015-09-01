@@ -1,12 +1,14 @@
 function getCookie(name) {
-    "use strict";
+    'use strict';
     // Apparently this is what you have to do to get a cookie in JavaScript...
-    if (!name) { return null; }
-    return decodeURIComponent(document.cookie.replace(new RegExp("(?:(?:^|.*;)\\s*" + encodeURIComponent(name).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*([^;]*).*$)|^.*$"), "$1")) || null;
+    if (!name) {
+        return null;
+    }
+    return decodeURIComponent(document.cookie.replace(new RegExp('(?:(?:^|.*;)\\s*' + encodeURIComponent(name).replace(/[\-\.\+\*]/g, '\\$&') + '\\s*\\=\\s*([^;]*).*$)|^.*$'), '$1')) || null;
 }
 
-(function () {
-    "use strict";
+(function() {
+    'use strict';
     navigator.id.watch({
         loggedInUser: localStorage['email'] || null,
         onlogin: function(assertion) {
@@ -21,17 +23,21 @@ function getCookie(name) {
                         $.ajax({
                             type: 'POST',
                             url: '/user/login',
-                            data: { assertion: assertion },
-                            headers: { "X-XSRFToken": getCookie("_xsrf") },
+                            data: {
+                                assertion: assertion
+                            },
+                            headers: {
+                                'X-XSRFToken': getCookie('_xsrf')
+                            },
                             success: function(res, status, xhr) {
                                 localStorage['email'] = res.email;
                                 // Pick where to go from ?next=
-				var next_url = decodeURIComponent(window.location.search.substring(6));
-				if (next_url) {
-				    location.href = next_url;
-				} else {
-				    location.reload();
-				}
+                                var next_url = decodeURIComponent(window.location.search.substring(6));
+                                if (next_url) {
+                                    location.href = next_url;
+                                } else {
+                                    location.reload();
+                                }
                             },
                             error: function(xhr, status, err) {
                                 localStorage['login_error'] = err;
@@ -45,8 +51,10 @@ function getCookie(name) {
         onlogout: function() {
             $.ajax({
                 type: 'POST',
-                url: '/user/logout', // The "user" cookie is httponly
-                headers: { "X-XSRFToken": getCookie("_xsrf") },
+                url: '/user/logout', // The 'user' cookie is httponly
+                headers: {
+                    'X-XSRFToken': getCookie('_xsrf')
+                },
                 success: function(res, status, xhr) {
                     localStorage.removeItem('email');
                     if (localStorage['login_error']) {
@@ -58,7 +66,9 @@ function getCookie(name) {
                         location.href = '/';
                     }
                 },
-                error: function(xhr, status, err) { alert('Logout failure: ' + err); }
+                error: function(xhr, status, err) {
+                    alert('Logout failure: ' + err);
+                }
             });
         }
     });

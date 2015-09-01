@@ -1,11 +1,11 @@
-var React = require('react'); 
+var React = require('react');
 var PhotoAPI = require('../../PhotoAPI.js');
 
 /*
  * Header Menu component
  *
- * XXX In works, must sort out way to properly clear active survey 
- * (Could have active survey data that references photos in pouchdb that would 
+ * XXX In works, must sort out way to properly clear active survey
+ * (Could have active survey data that references photos in pouchdb that would
  * be left orphaned if not submitted).
  *
  * @db: active pouch db
@@ -15,8 +15,8 @@ module.exports = React.createClass({
 
     wipeActive: function() {
         // Confirm their intent
-        var nuke = confirm("Warning: Active survey and photos will be lost.");
-        if (!nuke) 
+        var nuke = confirm('Warning: Active survey and photos will be lost.');
+        if (!nuke)
             return;
 
         var self = this;
@@ -35,11 +35,11 @@ module.exports = React.createClass({
                     PhotoAPI.removePhoto(self.props.db, response.response, function(err, result) {
                         if (err) {
                             //XXX should fail often as it tries to clear every response
-                            console.log("Couldnt remove from db:", err);
+                            console.log('Couldnt remove from db:', err);
                             return;
                         }
 
-                        console.log("Removed:", result);
+                        console.log('Removed:', result);
                     });
                 }
             });
@@ -52,12 +52,12 @@ module.exports = React.createClass({
         window.location.reload();
     },
 
-    
+
     wipeAll: function() {
         var self = this;
         // Confirm their intent
-        var nuke = confirm("Warning: All stored surveys and photos will be lost.");
-        if (!nuke) 
+        var nuke = confirm('Warning: All stored surveys and photos will be lost.');
+        if (!nuke)
             return;
 
         localStorage.clear();
@@ -69,13 +69,13 @@ module.exports = React.createClass({
     render: function() {
         var self = this;
         return (
-            <div className="title_menu">
-                <div className="title_menu_option menu_restart"
+            <div className='title_menu'>
+                <div className='title_menu_option menu_restart'
                     onClick={self.wipeActive}
                 >
                     Cancel survey
                 </div>
-                <div className="title_menu_option menu_clear"
+                <div className='title_menu_option menu_clear'
                     onClick={self.wipeAll}
                 >
                     Clear all saved surveys

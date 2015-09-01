@@ -1,4 +1,4 @@
-var React = require('react'); 
+var React = require('react');
 
 /*
  * Don't know component
@@ -9,17 +9,17 @@ var React = require('react');
 module.exports = React.createClass({
     render: function() {
         return (
-                <div className="question__btn__other">
-                    <input 
+                <div className='question__btn__other'>
+                    <input
                         onClick={this.props.checkBoxFunction}
-                        type="checkbox" 
-                        id="dont-know" 
-                        name="dont-know" 
+                        type='checkbox'
+                        id='dont-know'
+                        name='dont-know'
                         defaultChecked={this.props.checked}
                     />
-                    <label htmlFor="dont-know">I don't know the answer</label>
+                    <label htmlFor='dont-know'>I don't know the answer</label>
                 </div>
-               )
+               );
     }
 });
 

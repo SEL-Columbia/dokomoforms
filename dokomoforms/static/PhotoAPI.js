@@ -1,4 +1,3 @@
-var PouchDB  = require('pouchdb');
 module.exports = {
     /*
      * Get photo with uuid, id from pouchDB as data URI
@@ -10,19 +9,19 @@ module.exports = {
             callback(err);
         });
     },
-    
+
     /*
      * Get photo with uuid, id from pouchDB as base64 string
      */
     getBase64: function(db, id, callback) {
         db.getAttachment(id, 'photo').then(function(photoBlob) {
             var reader = new window.FileReader();
-            reader.readAsDataURL(photoBlob); 
+            reader.readAsDataURL(photoBlob);
             reader.onloadend = function() {
-                var photoURI = reader.result;                
-                var photo64 = photoURI.substring(photoURI.indexOf(',')+1)
+                var photoURI = reader.result;
+                var photo64 = photoURI.substring(photoURI.indexOf(',')+1);
                 callback(null, photo64);
-            }
+            };
         }).catch(function(err) {
             callback(err);
         });
@@ -47,32 +46,32 @@ module.exports = {
             db.removeAttachment(photoID, 'photo', photoDoc._rev)
                 .then(function(result) {
                     db.remove(photoID, result.rev);
-                    callback(null, result)
+                    callback(null, result);
                 }).catch(function(err) {
-                    callback(err)
+                    callback(err);
                 });
         });
     },
 
-    /* 
+    /*
      * Add photo with given uuid and base64 URI to pouchDB
      * TODO set up callback
      */
     addPhoto: function(db, photoID, photo, callback) {
-        var photo64 = photo.substring(photo.indexOf(',')+1)
+        var photo64 = photo.substring(photo.indexOf(',')+1);
         console.log(photo);
         console.log(photoID);
         db.put({
             '_id': photoID,
             '_attachments': {
                 'photo': {
-                    "content_type": "image/png",
-                    "data": photo64
+                    'content_type': 'image/png',
+                    'data': photo64
                 }
             }
         });
 
-    },
+    }
 
 };
 

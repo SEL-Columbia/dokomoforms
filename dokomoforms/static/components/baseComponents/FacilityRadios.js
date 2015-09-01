@@ -1,4 +1,4 @@
-var React = require('react'); 
+var React = require('react');
 
 /*
  * Facility Radio component
@@ -8,20 +8,20 @@ var React = require('react');
  *  @facilities: Array of facility objects (revisit format)
  *  @selectFunction: What to do when facility is selected
  *  @initValue: Default selected facility
- */ 
+ */
 module.exports = React.createClass({
     /*
      * Keep track of which option is selected
      */
     getInitialState: function() {
         return {
-            selected: this.props.initValue,
-        }
+            selected: this.props.initValue
+        };
     },
 
     /*
      * Make radio behave like single option checkbox
-     * 
+     *
      * Calls selectFunction with option (passes null when option unchecked)
      *
      * @e: click event
@@ -56,21 +56,20 @@ module.exports = React.createClass({
                 {this.props.facilities.map(function(facility) {
                     return (
                         <div
-                                key={facility.uuid} 
-                                className='question__radio noselect'
+                            key={facility.uuid}
+                            className='question__radio noselect'
                         >
-
                             <input
-                                type='radio' 
-                                id={facility.uuid} 
-                                name='facility' 
-                                onClick={self.onClick} 
+                                type='radio'
+                                id={facility.uuid}
+                                name='facility'
+                                onClick={self.onClick}
                                 disabled={self.props.disabled}
                                 defaultChecked={facility.uuid === self.state.selected}
                                 value={facility.uuid}
                             />
-                            <label 
-                                htmlFor={facility.uuid} 
+                            <label
+                                htmlFor={facility.uuid}
                                 className='question__radio__label'
                             >
                                 <span className="radio__span">
@@ -79,19 +78,19 @@ module.exports = React.createClass({
                                 <strong className='question__radio__strong__meta'>
                                     {facility.name}
                                 </strong>
-                            <br/>
-                            <span className='question__radio__span__meta'>
-                                {facility.properties.sector}
-                            </span>
-                            <span className='question__radio__span__meta'>
-                                <em>{facility.distance && facility.distance.toFixed(2)}m</em>
-                            </span>
+                                <br/>
+                                <span className='question__radio__span__meta'>
+                                    {facility.properties.sector}
+                                </span>
+                                <span className='question__radio__span__meta'>
+                                    <em>{facility.distance && facility.distance.toFixed(2)}m</em>
+                                </span>
                             </label>
                         </div>
-                    ) 
+                    );
                 })}
                 </div>
-               )
+               );
     }
 });
 

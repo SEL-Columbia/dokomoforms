@@ -15,13 +15,14 @@ module.exports = React.createClass({
 
     /*
      * Validate the answer based on props.type
-     * 
+     *
      * @answer: The response to be validated
+     *
+     * TODO: implement photo validation, if necessary...
      */
     validate: function(answer) {
-        return val;
-
-    }, 
+        return true;
+    },
 
     /*
      * Handle change event, validates on every change
@@ -29,26 +30,27 @@ module.exports = React.createClass({
      *
      * @event: Change event
      */
-    onChange(event) {
-    },
+    // onChange: function(event) {
+
+    // },
 
     render: function() {
         return (
                 <div className="photo_container">
                     <img
-                        className="photo_input" 
+                        className="photo_input"
                         src={this.props.initValue}
                         disabled={this.props.disabled}
                      >
-                     {this.props.showMinus ? 
-                        <span 
-                            onClick={this.props.buttonFunction.bind(null, this.props.index)} 
+                     {this.props.showMinus ?
+                        <span
+                            onClick={this.props.buttonFunction.bind(null, this.props.index)}
                             disabled={this.props.disabled}
                             className="icon icon-close question__minus">
                         </span>
                         : null}
                     </img>
                  </div>
-               )
+               );
     }
 });

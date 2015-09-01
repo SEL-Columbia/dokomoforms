@@ -16,55 +16,55 @@ var React = require('react');
  */
 module.exports = React.createClass({
     getInitialState: function() {
-        return { 
-        }
+        return {
+        };
     },
 
     // Determine the input field type based on props.type
     getResponseType: function() {
         var type = this.props.type;
         switch(type) {
-            case "integer":
-            case "decimal":
-                return "number"
-            case "timestamp":
-                return "datetime-local"
-            case "time":
-                return "time"
-            case "date":
-                return "date"
-            case "email":
-                return "email"
+            case 'integer':
+            case 'decimal':
+                return 'number';
+            case 'timestamp':
+                return 'datetime-local';
+            case 'time':
+                return 'time';
+            case 'date':
+                return 'date';
+            case 'email':
+                return 'email';
             default:
-                return "text"
+                return 'text';
         }
-    }, 
+    },
 
     // Determine the input field step based on props.type
     getResponseStep: function() {
         var type = this.props.type;
         switch(type) {
-            case "decimal":
-                return "any"
-            case "timestamp":
-                return "1"
+            case 'decimal':
+                return 'any';
+            case 'timestamp':
+                return '1';
             default:
-                return null
+                return null;
         }
-    }, 
+    },
 
     /*
      * Validate the answer based on props.type
-     * 
+     *
      * @answer: The response to be validated
      */
     validate: function(answer) {
         var type = this.props.type;
         var logic = this.props.logic;
-        console.log("Enforcing: ", logic);
+        console.log('Enforcing: ', logic);
         var val = null;
         switch(type) {
-            case "integer":
+            case 'integer':
                 val = parseInt(answer);
                 if (isNaN(val)) {
                     val = null;
@@ -84,7 +84,7 @@ module.exports = React.createClass({
                 }
 
                 break;
-            case "decimal":
+            case 'decimal':
                 val = parseFloat(answer);
                 if (isNaN(val)) {
                     val = null;
@@ -103,16 +103,16 @@ module.exports = React.createClass({
                 }
 
                 break;
-            case "date":
+            case 'date':
                 var resp = new Date(answer);
-                var day = ("0" + resp.getDate()).slice(-2);
-                var month = ("0" + (resp.getMonth() + 1)).slice(-2);
+                var day = ('0' + resp.getDate()).slice(-2);
+                var month = ('0' + (resp.getMonth() + 1)).slice(-2);
                 var year = resp.getFullYear();
                 val = answer; //XXX Keep format?
                 if(isNaN(year) || isNaN(month) || isNaN(day))  {
                     val = null;
                 }
-               
+
                 if (logic && logic.min && !isNaN((new Date(logic.min)).getDate())) {
                     if (resp < new Date(logic.min)) {
                         val = null;
@@ -124,10 +124,10 @@ module.exports = React.createClass({
                         val = null;
                     }
                 }
-               
+
                 break;
-            case "timestamp":
-            case "time":
+            case 'timestamp':
+            case 'time':
                 //TODO: enforce
             default:
               if (answer) {
@@ -137,7 +137,7 @@ module.exports = React.createClass({
 
         return val;
 
-    }, 
+    },
 
     /*
      * Handle change event, validates on every change
@@ -145,14 +145,14 @@ module.exports = React.createClass({
      *
      * @event: Change event
      */
-    onChange(event) {
+    onChange: function(event) {
         var value = this.validate(event.target.value);
         var input = event.target;
-        input.setCustomValidity("");
+        input.setCustomValidity('');
 
         if (value === null) {
-            window.target = event.target
-            input.setCustomValidity("Invalid field."); 
+            window.target = event.target;
+            input.setCustomValidity('Invalid field.');
         }
 
         if (this.props.onInput)
@@ -161,24 +161,24 @@ module.exports = React.createClass({
 
     render: function() {
         return (
-                <div className="input_container">
-                    <input 
-                        type={this.getResponseType()} 
+                <div className='input_container'>
+                    <input
+                        type={this.getResponseType()}
                         step={this.getResponseStep()}
-                        placeholder={this.props.placeholder || "Please provide a response."}
+                        placeholder={this.props.placeholder || 'Please provide a response.'}
                         onChange={this.onChange}
                         defaultValue={this.props.initValue}
                         disabled={this.props.disabled}
                      >
-                     {this.props.showMinus ? 
-                        <span 
-                            onClick={this.props.buttonFunction.bind(null, this.props.index)} 
+                     {this.props.showMinus ?
+                        <span
+                            onClick={this.props.buttonFunction.bind(null, this.props.index)}
                             disabled={this.props.disabled}
-                            className="icon icon-close question__minus">
+                            className='icon icon-close question__minus'>
                         </span>
                         : null}
                     </input>
                  </div>
-               )
+               );
     }
 });
