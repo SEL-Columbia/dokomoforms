@@ -20,6 +20,7 @@
     },
     "env": {
         "browser": true,
+        "node": true,
         "commonjs": true,
         "jquery": true
     },

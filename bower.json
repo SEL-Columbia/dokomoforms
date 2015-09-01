@@ -1,0 +1,27 @@
+{
+  "name": "dokomoforms",
+  "version": "0.1.0",
+  "homepage": "https://github.com/SEL-Columbia/dokomoforms",
+  "authors": [
+    "Jonathan Wohl <jw3219@columbia.edu>"
+  ],
+  "description": "Offline surveys made easy.",
+  "keywords": [
+    "surveys"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "private": true,
+  "dependencies": {
+    "bootstrap": "~3.3.4",
+    "lodash": "~3.6.0",
+    "react": "~0.13.3",
+    "ratchet": "~2.0.2"
+  }
+}

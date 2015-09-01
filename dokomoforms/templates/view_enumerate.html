@@ -12,17 +12,19 @@
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="mobile-web-app-status-bar-style" content="black">
 
-        <link href="/static/ratchet-2.0.2/dist/css/ratchet.min.css" rel="stylesheet">
-        <link href="/static/css/survey.css" rel="stylesheet" type="text/css">
+        <link href="/static/dist/css/survey/all-styles.css" rel="stylesheet" type="text/css">
 
         <link href='http://fonts.googleapis.com/css?family=Roboto:400,300,500,700,100' rel='stylesheet' type='text/css'>
-        <link rel="icon" href="/static/img/favicon.png">
+        <link rel="icon" href="/static/dist/img/favicon.png">
     </head>
 
     <body>
         <div id="wrapper"></div>
-        <script src="/static/bundle.js"></script>
-	<!-- pass in the revisit url -->
+        <!-- Vendor libs (jquery, react, lodash, etc.) -->
+        <script src="/static/dist/js/libs.js"></script>
+        <!-- App -->
+        <script src="/static/dist/js/build.js"></script>
+	    <!-- pass in the revisit url -->
         <script>
             init({% raw survey %}, '{% raw revisit_url %}');
         </script>

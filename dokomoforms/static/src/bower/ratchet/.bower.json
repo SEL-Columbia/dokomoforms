@@ -1,0 +1,36 @@
+{
+  "name": "ratchet",
+  "description": "Build mobile apps with simple HTML, CSS, and JS components.",
+  "version": "2.0.2",
+  "keywords": [
+    "css",
+    "js",
+    "fonts",
+    "ios",
+    "android",
+    "mobile",
+    "prototype"
+  ],
+  "main": [
+    "./dist/css/ratchet.css",
+    "./dist/js/ratchet.js"
+  ],
+  "ignore": [
+    "_config.yml",
+    ".travis.yml",
+    "CNAME",
+    "CONTRIBUTING.md",
+    "docs"
+  ],
+  "homepage": "https://github.com/maker/ratchet",
+  "_release": "2.0.2",
+  "_resolution": {
+    "type": "version",
+    "tag": "v2.0.2",
+    "commit": "a2d9f5d4ba8b4c63202f5202cfdc90a9e7f4f9fd"
+  },
+  "_source": "git://github.com/maker/ratchet.git",
+  "_target": "~2.0.2",
+  "_originalSource": "ratchet",
+  "_direct": true
+}
