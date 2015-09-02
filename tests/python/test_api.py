@@ -16,7 +16,7 @@ from tornado.escape import json_decode, json_encode
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as pg
 
-from tests.util import (
+from tests.python.util import (
     DokoHTTPTest, setUpModule, tearDownModule
 )
 

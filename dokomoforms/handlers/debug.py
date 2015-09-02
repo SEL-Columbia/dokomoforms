@@ -101,7 +101,8 @@ class DebugRevisitHandler(BaseHandler):
 
     def get(self):
         """Get the same fake facility (always)."""
-        with open('tests/fake_revisit_facilities.json', 'rb') as facilities:
+        facilities_file = 'tests/python/fake_revisit_facilities.json'
+        with open(facilities_file, 'rb') as facilities:
             result = facilities.read()
         self.write(result)
         self.set_header('Content-Type', 'application/json')
