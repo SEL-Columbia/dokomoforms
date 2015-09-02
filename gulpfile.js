@@ -9,6 +9,7 @@ var gulp = require('gulp'),
     watchify = require('watchify'),
     reactify = require('reactify'),
     streamify = require('gulp-streamify'),
+    underscorify = require("node-underscorify"),
     less = require('gulp-less'),
     sourcemaps = require('gulp-sourcemaps'),
     replace = require('gulp-replace'),
@@ -181,7 +182,7 @@ gulp.task('watch', ['css', 'img', 'fonts'], function() {
 
     var watcher = watchify(browserify({
         entries: [path.JS_ENTRY_POINT],
-        transform: [reactify],
+        transform: [reactify, underscorify],
         debug: true,
         cache: {},
         packageCache: {},

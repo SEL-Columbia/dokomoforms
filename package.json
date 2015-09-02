@@ -38,6 +38,7 @@
     "jshint": "^2.7.0",
     "mocha": "^2.2.4",
     "mocha-istanbul": "^0.2.0",
+    "node-underscorify": "0.0.14",
     "reactify": "^1.1.1",
     "should": "^6.0.1",
     "supertest": "^0.15.0",

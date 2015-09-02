@@ -1,0 +1,1 @@
+<a class="btn btn-secondary btn-xs btn-manage" href="/view/<%= survey_id %>" data-id="<%= survey_id %>">Manage Survey</a>
