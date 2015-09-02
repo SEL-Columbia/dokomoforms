@@ -29,6 +29,26 @@ class BaseHandler(tornado.web.RequestHandler):
             return self.session.query(User).get(user_id)
         return None
 
+    def set_default_headers(self):
+        """Add some security-flavored headers.
+
+        https://news.ycombinator.com/item?id=10143082
+        """
+        super().set_default_headers()
+        self.clear_header('Server')
+        self.set_header('X-Frame-Options', 'DENY')
+        self.set_header('X-Xss-Protection', '1; mode=block')
+        self.set_header('X-Content-Type-Options', 'nosniff')
+        self.set_header(
+            'Content-Security-Policy',
+            "allow 'self'; "
+            "script-src 'self' cdn.leafletjs.com code.highcharts.com"
+            " momentjs.com cdn.datatables.net  login.persona.org; "
+            "frame-src login.persona.org; "
+            "style-src fonts.googleapis.com 'self' cdn.leafletjs.com;"
+            "default-src 'self';"
+        )
+
     def prepare(self):
         """Default behavior before any HTTP method.
 

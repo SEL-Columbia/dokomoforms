@@ -1,21 +1,37 @@
 dokomoforms.handlers package
 ============================
 
+Subpackages
+-----------
+
+.. toctree::
+
+    dokomoforms.handlers.api
+    dokomoforms.handlers.view
+
 Submodules
 ----------
-
-dokomoforms.handlers.root module
-------------------------------------------
-
-.. automodule:: dokomoforms.handlers.root
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 dokomoforms.handlers.auth module
 --------------------------------
 
 .. automodule:: dokomoforms.handlers.auth
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+dokomoforms.handlers.debug module
+---------------------------------
+
+.. automodule:: dokomoforms.handlers.debug
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+dokomoforms.handlers.root module
+--------------------------------
+
+.. automodule:: dokomoforms.handlers.root
     :members:
     :undoc-members:
     :show-inheritance:

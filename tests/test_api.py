@@ -23,8 +23,8 @@ from tests.util import (
 from dokomoforms.models import Submission, Survey, Node, SurveyCreator
 import dokomoforms.models as models
 from dokomoforms.models.answer import PhotoAnswer
-from dokomoforms.api.base import BaseResource
-from dokomoforms.api.nodes import NodeResource
+from dokomoforms.handlers.api.base import BaseResource
+from dokomoforms.handlers.api.nodes import NodeResource
 
 utils = (setUpModule, tearDownModule)
 

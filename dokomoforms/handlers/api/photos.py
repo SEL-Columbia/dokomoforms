@@ -1,5 +1,5 @@
 """TornadoResource class for dokomoforms.models.answer.Photo."""
-from dokomoforms.api import BaseResource
+from dokomoforms.handlers.api import BaseResource
 from dokomoforms.models import Photo, add_new_photo_to_session
 
 

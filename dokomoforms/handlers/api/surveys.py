@@ -8,8 +8,10 @@ from restless.constants import CREATED
 from sqlalchemy import cast, Date
 from sqlalchemy.sql import func
 
-from dokomoforms.api import BaseResource
-from dokomoforms.api.submissions import SubmissionResource, _create_submission
+from dokomoforms.handlers.api import BaseResource
+from dokomoforms.handlers.api.submissions import (
+    SubmissionResource, _create_submission
+)
 from dokomoforms.models import (
     Survey, Submission, SubSurvey, Choice,
     construct_survey, construct_survey_node, construct_bucket,

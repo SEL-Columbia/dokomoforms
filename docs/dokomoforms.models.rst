@@ -12,6 +12,14 @@ dokomoforms.models.answer module
     :undoc-members:
     :show-inheritance:
 
+dokomoforms.models.column_properties module
+-------------------------------------------
+
+.. automodule:: dokomoforms.models.column_properties
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 dokomoforms.models.node module
 ------------------------------
 

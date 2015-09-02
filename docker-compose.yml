@@ -1,6 +1,8 @@
 webapp:
   build: .
   command: python webapp.py
+  volumes:
+      - ./:/dokomo
   links:
     - "db:db"
   ports:

@@ -8,7 +8,9 @@ from dokomoforms.models import (
 )
 from dokomoforms.models.answer import ANSWER_TYPES
 from dokomoforms.handlers.util import BaseHandler
-from dokomoforms.api import get_survey_for_handler, get_submission_for_handler
+from dokomoforms.handlers.api import (
+    get_survey_for_handler, get_submission_for_handler
+)
 
 
 class ViewHandler(BaseHandler):
