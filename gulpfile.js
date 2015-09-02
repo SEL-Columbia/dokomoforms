@@ -150,7 +150,7 @@ gulp.task('css', ['less', 'bootstrap'], function() {
         .pipe(livereload());
 
     // admin
-    gulp.src([path.ADMIN_CSS_DIST + '/*.css', '!' + path.CSS_DIST + '/all-styles.css'])
+    gulp.src([path.ADMIN_CSS_DIST + '/*.css', '!' + path.ADMIN_CSS_DIST + '/all-styles.css'])
         .pipe(concat('all-styles.css'))
         .pipe(gulp.dest(path.ADMIN_CSS_DIST))
         .on('error', function (err) {
