@@ -83,18 +83,15 @@
     </div>
     {% end %}
 
-    <!-- Jquery for everything -->
-    <script src="/static/jquery-2.1.3.min.js"></script>
-    <!-- Lodash (underscore) for everything else -->
-    <script type="text/javascript" src="/static/lodash.min.js"></script>
+    <!-- Vendor libs (jquery, lodash, etc) -->
+    <script src="/static/dist/js/libs.js"></script>
+
     <!-- Leaflet for maps -->
     <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
     <!-- Highcharts -->
     <script src="http://code.highcharts.com/highcharts.js"></script>
     <!-- Moment.js for datetime handling -->
     <script type="text/javascript" src="http://momentjs.com/downloads/moment.min.js"></script>
-    <!-- Bootstrap for UI components -->
-    <script type="text/javascript" src="/static/src/bootstrap/dist/js/bootstrap.min.js"></script>
     <!-- DataTables for... data... tables... -->
     <script src="http://cdn.datatables.net/1.10.5/js/jquery.dataTables.min.js"></script>
     <script src="http://cdn.datatables.net/plug-ins/1.10.6/integration/bootstrap/3/dataTables.bootstrap.js"></script>
@@ -124,7 +121,7 @@
 
     <!-- Persona for login stuff -->
     <script src="https://login.persona.org/include.js"></script>
-    <script src="/static/src/util/persona.js"></script>
+    <script src="/static/src/js/util/persona.js"></script>
 
     <!-- Extra page-specfic scripts should go in this block. -->
     {% block extra_scripts %} {% end %}

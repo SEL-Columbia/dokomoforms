@@ -1,4 +1,4 @@
-{% extends "base.html" %} 
+{% extends "base.html" %}
 
 
 {% block header %}
@@ -14,7 +14,7 @@
     </div>
     {% end %}
 </div>
-{% end %} 
+{% end %}
 
 {% block content %}
 <div class="content">
@@ -24,7 +24,7 @@
         <div class="row">
             <div class="col-md-6">
                 <!-- Recent Submissions -->
-                
+
                 <h4>Recent Submissions <span class="info-icon" data-toggle="tooltip" data-placement="right" title="Quickly view the five latest submissions.">i</span></h4>
                 <div class="recent-submissions" role="tabpanel">
                     <!-- Nav tabs -->
@@ -130,14 +130,14 @@
 
 
     <script type="text/javascript">
-        
-        $(function () { 
+
+        $(function () {
 
             // Activity Graph
 	    $.getJSON('/api/v0/surveys/activity?user_id={{ current_user_id }}', function(data) {
 
                 var results = data.activity,
-                    cats = [], 
+                    cats = [],
                     data = [];
 
                 if (!results.length) {
@@ -184,9 +184,9 @@
                 });
             });
 
-        
+
             // Map
-            var map, 
+            var map,
                 limit = 5;
 	    $.getJSON('/api/v0/submissions?user_id={{ current_user_id }}&limit='+limit, function(data) {
                 var submissions = data.submissions;
@@ -226,7 +226,7 @@
                                 markers.push(marker);
 
                             });
-                            
+
                             if (markers.length) {
                                 var markers_group = new L.featureGroup(markers);
                                 markers_group.addTo(map);
@@ -360,7 +360,7 @@
                 });
             }
         });
-    
+
     </script>
 
     {% end %}

@@ -31,7 +31,7 @@ var path = {
 
     // SURVEY CSS
     LESS_ENTRY_POINT: static_path + '/src/less/survey.less',
-    RATCHET_CSS: bower_path + '/ratchet/dist/css/ratchet.min.css',
+    RATCHET_CSS: static_path + '/src/ratchet-2.0.2/dist/css/ratchet.css',
     CSS_DIST: static_path + '/dist/css/survey',
     CSS_BUILD: static_path + '/dist/css/survey/*.css',
 
@@ -59,12 +59,13 @@ var path = {
     JS_ENTRY_POINT: static_path + '/src/js/main.js',
 
     // IMAGES
-    IMG_SRC: static_path + '/src/img/*',
+    IMG_SRC: static_path + '/src/img/**/*',
     IMG_DIST: static_path + '/dist/img',
 
     // FONTS
     FONT_SRC: [
         static_path + '/src/bootstrap/fonts/*',
+        static_path + '/src/ratchet-2.0.2/fonts/*',
         static_path + '/src/fonts/*'
     ],
     FONT_DIST: static_path + '/dist/fonts',
@@ -176,7 +177,7 @@ gulp.task('fonts', function() {
 // and recompile to dist
 gulp.task('watch', ['css', 'img', 'fonts'], function() {
     livereload.listen();
-    gulp.watch(path.LESS_SRC, ['css', 'img', 'fonts']);
+    gulp.watch([path.LESS_SRC, path.APP_CACHE_SRC], ['css', 'img', 'fonts', 'app-cache']);
 
     var watcher = watchify(browserify({
         entries: [path.JS_ENTRY_POINT],
