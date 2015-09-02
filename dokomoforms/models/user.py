@@ -31,13 +31,8 @@ class User(Base):
         ),
         nullable=False,
     )
-    default_language = sa.Column(
-        pg.TEXT,
-        sa.CheckConstraint(
-            "default_language != ''", name='non_empty_default_language'
-        ),
-        nullable=False,
-        server_default='English',
+    preferences = util.json_column(
+        'preferences', default='{"default_language": "English"}'
     )
     last_update_time = util.last_update_time()
 
@@ -46,6 +41,13 @@ class User(Base):
         'polymorphic_on': role,
     }
 
+    __table_args__ = (
+        sa.CheckConstraint(
+            "((preferences->>'default_language')) IS NOT NULL",
+            name='must_specify_default_language'
+        ),
+    )
+
     def _asdict(self) -> OrderedDict:
         return OrderedDict((
             ('id', self.id),
@@ -53,7 +55,7 @@ class User(Base):
             ('name', self.name),
             ('emails', [email.address for email in self.emails]),
             ('role', self.role),
-            ('default_language', self.default_language),
+            ('preferences', self.preferences),
             ('allowed_surveys', self.allowed_surveys),
             ('last_update_time', self.last_update_time),
         ))
