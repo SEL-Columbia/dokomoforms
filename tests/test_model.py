@@ -44,7 +44,7 @@ class TestBase(unittest.TestCase):
                     ('name', 'base'),
                     ('emails', []),
                     ('role', 'enumerator'),
-                    ('default_language', None),
+                    ('preferences', None),
                     ('allowed_surveys', []),
                     ('last_update_time', None),
                 )),
@@ -439,7 +439,7 @@ class TestUser(DokoTest):
                 ('name', 'a'),
                 ('emails', ['b@b']),
                 ('role', 'enumerator'),
-                ('default_language', 'English'),
+                ('preferences', {'default_language': 'English'}),
                 ('allowed_surveys', []),
                 ('last_update_time', user.last_update_time.isoformat()),
             ))
@@ -470,6 +470,15 @@ class TestUser(DokoTest):
             ))
         )
 
+    def test_must_specify_default_language(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                user = models.User(
+                    name='a',
+                    preferences={'a': 'b'},
+                )
+                self.session.add(user)
+
     def test_survey_creator_asdict(self):
         with self.session.begin():
             new_user = models.SurveyCreator(name='a')
@@ -487,7 +496,7 @@ class TestUser(DokoTest):
                 ('name', 'a'),
                 ('emails', ['b@b']),
                 ('role', 'creator'),
-                ('default_language', 'English'),
+                ('preferences', {'default_language': 'English'}),
                 ('allowed_surveys', []),
                 ('last_update_time', user.last_update_time),
                 (
