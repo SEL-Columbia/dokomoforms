@@ -1,5 +1,5 @@
 """Database interaction tests."""
-from tests.util import (
+from tests.python.util import (
     DokoTest, setUpModule, tearDownModule
 )
 utils = (setUpModule, tearDownModule)

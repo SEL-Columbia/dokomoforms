@@ -12,7 +12,7 @@ import tornado.gen
 import tornado.httpclient
 import tornado.testing
 
-from tests.util import (
+from tests.python.util import (
     DokoHTTPTest, setUpModule, tearDownModule
 )
 

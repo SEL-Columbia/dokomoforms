@@ -24,18 +24,6 @@ from dokomoforms.models.survey import (
 from dokomoforms.models.util import column_search, get_fields_subset, get_model
 from dokomoforms.exc import DokomoError
 
-# TODO: Find out if it is OK to remove these. @jmwohl
-# """
-# A list of the expected query arguments
-# """
-# QUERY_ARGS = [
-#     'limit',
-#     'offset',
-#     'type',
-#     'draw',
-#     'fields',
-# ]
-
 
 class BaseResource(TornadoResource, metaclass=ABCMeta):
 
@@ -343,9 +331,6 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
             }],
             "limit": 5
         }
-
-        TODO: this will require a bit more sophistication, since we probably
-        don't want to just reflect query params willy nilly.
         """
         for prop in sorted(self.r_handler.request.arguments):
             prop_value = self.r_handler.get_query_argument(prop)

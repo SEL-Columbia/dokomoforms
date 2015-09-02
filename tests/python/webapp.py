@@ -21,7 +21,7 @@ except ImportError:
     If you wish to auto-login as a certain user, set TEST_USER in
     local_config.py
 
-    Otherwise run webapp.py as opposed to tests/webapp.py
+    Otherwise run webapp.py as opposed to tests/python/webapp.py
     ''')
     sys.exit(1)
 

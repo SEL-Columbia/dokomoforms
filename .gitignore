@@ -4,6 +4,7 @@
 local_config.py
 cookie_secret
 .coverage
+coverage
 cover/
 htmlcov/
 .idea/

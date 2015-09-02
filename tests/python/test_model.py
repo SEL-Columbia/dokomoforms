@@ -9,7 +9,7 @@ from statistics import pstdev, stdev
 import uuid
 import unittest
 
-from tests.util import (
+from tests.python.util import (
     DokoTest, setUpModule, tearDownModule, dont_run_in_a_transaction
 )
 utils = (setUpModule, tearDownModule)
