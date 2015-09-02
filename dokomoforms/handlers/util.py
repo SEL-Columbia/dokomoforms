@@ -41,11 +41,13 @@ class BaseHandler(tornado.web.RequestHandler):
         self.set_header('X-Content-Type-Options', 'nosniff')
         self.set_header(
             'Content-Security-Policy',
-            "allow 'self'; "
-            "script-src 'self' cdn.leafletjs.com code.highcharts.com"
-            " momentjs.com cdn.datatables.net  login.persona.org; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+            " cdn.leafletjs.com code.highcharts.com"
+            " momentjs.com cdn.datatables.net login.persona.org; "
             "frame-src login.persona.org; "
-            "style-src fonts.googleapis.com 'self' cdn.leafletjs.com;"
+            "style-src 'self' 'unsafe-inline'"
+            " fonts.googleapis.com cdn.leafletjs.com;"
+            "font-src 'self' fonts.googleapis.com fonts.gstatic.com;"
             "default-src 'self';"
         )
 
