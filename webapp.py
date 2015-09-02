@@ -238,7 +238,7 @@ class Application(tornado.web.Application):
         }
 
         # Debug
-        if settings.debug:
+        if settings['debug']:
             urls += [
                 url(r'/debug/create/(.+)/?',
                     handlers.DebugUserCreationHandler),
