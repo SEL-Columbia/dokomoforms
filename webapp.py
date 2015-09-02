@@ -226,17 +226,6 @@ class Application(tornado.web.Application):
             ),
         ]
 
-        # Debug
-        if options.debug:
-            urls += [
-                url(r'/debug/create/(.+)/?',
-                    handlers.DebugUserCreationHandler),
-                url(r'/debug/login/(.+)/?', handlers.DebugLoginHandler),
-                url(r'/debug/logout/?', handlers.DebugLogoutHandler),
-                url(r'/debug/persona_verify/?', handlers.DebugPersonaHandler),
-                url(r'/debug/facilities/?', handlers.DebugRevisitHandler),
-            ]
-
         settings = {
             'template_path': os.path.join(_pwd, 'dokomoforms/templates'),
             'static_path': os.path.join(_pwd, 'dokomoforms/static'),
@@ -247,6 +236,18 @@ class Application(tornado.web.Application):
             'debug': options.dev or options.debug,
             'autoreload': options.dev or options.autoreload,
         }
+
+        # Debug
+        if settings.debug:
+            urls += [
+                url(r'/debug/create/(.+)/?',
+                    handlers.DebugUserCreationHandler),
+                url(r'/debug/login/(.+)/?', handlers.DebugLoginHandler),
+                url(r'/debug/logout/?', handlers.DebugLogoutHandler),
+                url(r'/debug/persona_verify/?', handlers.DebugPersonaHandler),
+                url(r'/debug/facilities/?', handlers.DebugRevisitHandler),
+            ]
+
         super().__init__(urls, **settings)
 
         # Database setup
