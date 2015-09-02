@@ -23,25 +23,24 @@ var static_path = 'dokomoforms/static',
 var path = {
     HTML: template_path + '/index.html',
 
-    // SURVEY CSS
+    // All less src files, for watch task
     LESS_SRC: [
         static_path + '/src/less/*.less',
         static_path + '/src/bootstrap/less/*.less'
     ],
 
+    // SURVEY CSS
     LESS_ENTRY_POINT: static_path + '/src/less/survey.less',
     RATCHET_CSS: bower_path + '/ratchet/dist/css/ratchet.min.css',
     CSS_DIST: static_path + '/dist/css/survey',
     CSS_BUILD: static_path + '/dist/css/survey/*.css',
 
-    // ADMIN CSS
-    ADMIN_LESS_SRC: [
-        static_path + '/src/less/admin/*.less',
-        static_path + '/src/bootstrap/less/*.less'
-    ],
 
-    ADMIN_LESS_ENTRY_POINT: static_path + '/src/less/styles.less',
+    ADMIN_LESS_ENTRY_POINT: static_path + '/src/less/admin.less',
     ADMIN_BOOTSTRAP_LESS_ENTRY_POINT: static_path + '/src/bootstrap/less/bootstrap.less',
+    ADMIN_CSS_EXTRAS_SRC: [
+        static_path + '/src/less/dataTables.bootstrap.css'
+    ],
     ADMIN_CSS_DIST: static_path + '/dist/css/admin',
     ADMIN_CSS_BUILD: static_path + '/dist/css/admin/*.css',
 
@@ -103,7 +102,7 @@ gulp.task('libs', function() {
 // Custom LESS compiling
 gulp.task('less', function() {
     // survey
-    return gulp.src(path.LESS_ENTRY_POINT)
+    gulp.src(path.LESS_ENTRY_POINT)
         .pipe(less())
         // handle errors so the compiler doesn't stop
         .on('error', function (err) {
@@ -113,7 +112,7 @@ gulp.task('less', function() {
         .pipe(gulp.dest(path.CSS_DIST));
 
     // admin
-    return gulp.src(path.ADMIN_LESS_ENTRY_POINT)
+    gulp.src(path.ADMIN_LESS_ENTRY_POINT)
         .pipe(less())
         // handle errors so the compiler doesn't stop
         .on('error', function (err) {
@@ -134,18 +133,6 @@ gulp.task('bootstrap', function() {
             this.emit('end');
         })
         .pipe(gulp.dest(path.ADMIN_CSS_DIST));
-});
-
-// Move images to dist directory
-gulp.task('img', function() {
-    gulp.src(path.IMG_SRC)
-        .pipe(gulp.dest(path.IMG_DIST));
-});
-
-// Move fonts to dist directory
-gulp.task('fonts', function() {
-    gulp.src(path.FONT_SRC)
-        .pipe(gulp.dest(path.FONT_DIST));
 });
 
 // Compile both custom and bootstrap LESS, then concat into a single
@@ -171,6 +158,19 @@ gulp.task('css', ['less', 'bootstrap'], function() {
             })
         .pipe(livereload());
 });
+
+// Move images to dist directory
+gulp.task('img', function() {
+    gulp.src(path.IMG_SRC)
+        .pipe(gulp.dest(path.IMG_DIST));
+});
+
+// Move fonts to dist directory
+gulp.task('fonts', function() {
+    gulp.src(path.FONT_SRC)
+        .pipe(gulp.dest(path.FONT_DIST));
+});
+
 
 // Watch for changes to ann of the less files or javascript files
 // and recompile to dist

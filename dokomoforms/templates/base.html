@@ -9,14 +9,19 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-status-bar-style" content="black">
     <meta name="viewport" content="width=device-width, user-scalable=no,  initial-scale=1, maximum-scale=1">
-    
+
     <link href='http://fonts.googleapis.com/css?family=Roboto:400,300,500,700,100,900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+
+<!--
     <link href="/static/bootstrap-3.3.4/dist/css/bootstrap.css" rel="stylesheet">
     <link href='/static/css/dataTables.bootstrap.css' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
-    <link href="/static/css/admin.css" rel="stylesheet" type="text/css">
-    <link rel="icon" href="/static/img/favicon.png">
-    
+ -->
+
+    <link href="/static/dist/css/admin/all-styles.css" rel="stylesheet" type="text/css">
+
+    <link rel="icon" href="/static/dist/img/favicon.png">
+
     <title>{{ options.organization }} Surveys -- Powered by DokomoData</title>
     <!--<script src="/static/ratchet-2.0.2/dist/js/ratchet.js"></script> -->
     <!-- RIP <link href="/static/css/style.css" rel="stylesheet" type="text/css">-->
@@ -54,7 +59,7 @@
                         </ul>
                     </li>
 
-                    
+
                     {% else %}
                     <li><a class="btn btn-block btn-login" href="#" id="login">Login or Register</a></li>
                     {% end %}
@@ -68,11 +73,11 @@
     {% block content %} {% end %}
     {% block footer %} {% end %}
 
-    {% block modal %} 
+    {% block modal %}
     <div class="modal fade bs-example-modal-lg modal-submission" tabindex="-1" role="dialog" aria-labelledby="Submission Detail" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-              
+
             </div>
         </div>
     </div>
@@ -89,7 +94,7 @@
     <!-- Moment.js for datetime handling -->
     <script type="text/javascript" src="http://momentjs.com/downloads/moment.min.js"></script>
     <!-- Bootstrap for UI components -->
-    <script type="text/javascript" src="/static/bootstrap-3.3.4/dist/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/static/src/bootstrap/dist/js/bootstrap.min.js"></script>
     <!-- DataTables for... data... tables... -->
     <script src="http://cdn.datatables.net/1.10.5/js/jquery.dataTables.min.js"></script>
     <script src="http://cdn.datatables.net/plug-ins/1.10.6/integration/bootstrap/3/dataTables.bootstrap.js"></script>
@@ -103,7 +108,7 @@
         }
 
         $(function() {
-            
+
             // enable tooltips
             $('[data-toggle="tooltip"]').tooltip({
                 container: 'body'
@@ -119,7 +124,7 @@
 
     <!-- Persona for login stuff -->
     <script src="https://login.persona.org/include.js"></script>
-    <script src="/static/persona.js"></script>
+    <script src="/static/src/util/persona.js"></script>
 
     <!-- Extra page-specfic scripts should go in this block. -->
     {% block extra_scripts %} {% end %}
