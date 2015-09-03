@@ -1,1 +1,1 @@
-"""Tests module."""
+"""Test directory."""

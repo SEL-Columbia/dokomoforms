@@ -12,7 +12,7 @@ import tornado.gen
 import tornado.httpclient
 import tornado.testing
 
-from tests.util import (
+from tests.python.util import (
     DokoHTTPTest, setUpModule, tearDownModule
 )
 
@@ -287,6 +287,20 @@ class TestEnumerate(DokoHTTPTest):
             response.headers['Location'], '/?next=' + url_escape(url)
         )
 
+    def test_get_enumerator_only_survey_by_title_not_logged_in(self):
+        survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
+        with self.session.begin():
+            survey = self.session.query(models.Survey).get(survey_id)
+            survey.url_slug = 'url_slug'
+        url = '/enumerate/url_slug'
+        response = self.fetch(
+            url, method='GET', follow_redirects=False, _logged_in_user=None
+        )
+        self.assertEqual(response.code, 302)
+        self.assertEqual(
+            response.headers['Location'], '/?next=' + url_escape(url)
+        )
+
     def test_get_enumerator_only_survey_logged_in(self):
         survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
         url = '/enumerate/' + survey_id
@@ -308,6 +322,59 @@ class TestEnumerate(DokoHTTPTest):
                 self.fetch(api_url, method='GET').body
             )
         )
+
+    def test_get_enumerator_only_survey_by_title_logged_in(self):
+        survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
+        with self.session.begin():
+            survey = self.session.query(models.Survey).get(survey_id)
+            survey.url_slug = 'url_slug'
+        url = '/enumerate/url_slug'
+        response = self.fetch(url, method='GET')
+        body = response.body
+
+        safe_url = '/enumerate/' + survey_id
+        safe_response = self.fetch(safe_url)
+        safe_body = safe_response.body
+
+        self.assertEqual(response.code, safe_response.code)
+        self.assertEqual(body, safe_body)
+
+    def test_get_enumerator_only_survey_logged_in_not_an_enumerator(self):
+        with self.session.begin():
+            some_user = models.User(name='some_user')
+            self.session.add(some_user)
+
+        survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
+        url = '/enumerate/' + survey_id
+
+        response = self.fetch(
+            url,
+            method='GET',
+            follow_redirects=False,
+            _logged_in_user={'user_id': some_user.id, 'user_name': 'some_user'}
+        )
+
+        self.assertEqual(response.code, 403)
+
+    def test_get_enum_only_survey_by_title_logged_in_not_an_enumerator(self):
+        with self.session.begin():
+            some_user = models.User(name='some_user')
+            self.session.add(some_user)
+
+        survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
+        with self.session.begin():
+            survey = self.session.query(models.Survey).get(survey_id)
+            survey.url_slug = 'url_slug'
+        url = '/enumerate/url_slug'
+
+        response = self.fetch(
+            url,
+            method='GET',
+            follow_redirects=False,
+            _logged_in_user={'user_id': some_user.id, 'user_name': 'some_user'}
+        )
+
+        self.assertEqual(response.code, 403)
 
 
 class TestView(DokoHTTPTest):

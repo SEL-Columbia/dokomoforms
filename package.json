@@ -18,6 +18,7 @@
     "react": "^0.13.3"
   },
   "devDependencies": {
+    "jest-cli": "^0.5.0",
     "babelify": "^6.1.2",
     "browserify": "^10.2.3",
     "browserify-shim": "^3.8.7",
@@ -59,8 +60,42 @@
     "lodash": "global:_",
     "moment": "global:moment"
   },
+  "jest": {
+    "testDirectoryName": "tests/js",
+    "collectCoverage": true,
+    "collectCoverageOnlyFrom": {
+      "dokomoforms/static/Application.js": true,
+      "dokomoforms/static/FacilityAPI.js": true,
+      "dokomoforms/static/PhotoAPI.js": true,
+      "dokomoforms/static/persona.js": true,
+      "dokomoforms/static/visualizations.js": true,
+      "dokomoforms/static/components/Facility.js": true,
+      "dokomoforms/static/components/Footer.js": true,
+      "dokomoforms/static/components/Header.js": true,
+      "dokomoforms/static/components/Location.js": true,
+      "dokomoforms/static/components/MultipleChoice.js": true,
+      "dokomoforms/static/components/Note.js": true,
+      "dokomoforms/static/components/Photo.js": true,
+      "dokomoforms/static/components/Question.js": true,
+      "dokomoforms/static/components/Splash.js": true,
+      "dokomoforms/static/components/Submit.js": true,
+      "dokomoforms/static/components/baseComponents/BigButton.js": true,
+      "dokomoforms/static/components/baseComponents/Card.js": true,
+      "dokomoforms/static/components/baseComponents/DontKnow.js": true,
+      "dokomoforms/static/components/baseComponents/FacilityRadios.js": true,
+      "dokomoforms/static/components/baseComponents/LittleButton.js": true,
+      "dokomoforms/static/components/baseComponents/Menu.js": true,
+      "dokomoforms/static/components/baseComponents/Message.js": true,
+      "dokomoforms/static/components/baseComponents/PhotoField.js": true,
+      "dokomoforms/static/components/baseComponents/ResponseField.js": true,
+      "dokomoforms/static/components/baseComponents/ResponseFields.js": true,
+      "dokomoforms/static/components/baseComponents/Select.js": true,
+      "dokomoforms/static/components/baseComponents/Title.js": true
+    }
+  },
   "scripts": {
-    "test": "mocha"
+    "test": "jest",
+    "coveralls": "coveralls"
   },
   "repository": {
     "type": "git",

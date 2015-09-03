@@ -39,6 +39,20 @@ class Enumerate(BaseHandler):
             self.redirect(url)
             return
 
+        # Raise a 403 if the logged-in user is not explicitly listed as an
+        # enumerator. This might not be the behavior we want, since this
+        # excludes the creator and any adminstrators who are not also
+        # enumerators.
+        # TODO: change the implementation (this does a naive check)
+        # TODO: rethink user permission structure
+        try:
+            enumerators = survey.enumerators
+        except AttributeError:
+            pass
+        else:
+            if self.current_user_model not in enumerators:
+                raise tornado.web.HTTPError(403)
+
         # pass in the revisit url
         self.render(
             'view_enumerate.html',

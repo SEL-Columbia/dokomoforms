@@ -2,12 +2,12 @@
 import unittest
 from contextlib import contextmanager
 
-import tests.util
+import tests.python.util
 
 import webapp
 
 
-__all__ = (tests.util,)
+__all__ = (tests.python.util,)
 
 
 class FakeFile:
