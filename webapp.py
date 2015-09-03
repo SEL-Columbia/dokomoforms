@@ -238,7 +238,7 @@ class Application(tornado.web.Application):
         }
 
         # Debug
-        if settings['debug']:
+        if settings['debug']:  # pragma: no cover
             urls += [
                 url(r'/debug/create/(.+)/?',
                     handlers.DebugUserCreationHandler),
@@ -246,6 +246,8 @@ class Application(tornado.web.Application):
                 url(r'/debug/logout/?', handlers.DebugLogoutHandler),
                 url(r'/debug/persona_verify/?', handlers.DebugPersonaHandler),
                 url(r'/debug/facilities/?', handlers.DebugRevisitHandler),
+                url(r'/debug/toggle_facilities/?',
+                    handlers.DebugToggleRevisitHandler),
             ]
 
         super().__init__(urls, **settings)

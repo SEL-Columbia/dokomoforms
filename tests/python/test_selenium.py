@@ -11,6 +11,7 @@ import signal
 import sys
 import time
 import unittest
+from urllib.request import urlopen
 import urllib.error
 
 from selenium import webdriver
@@ -203,6 +204,7 @@ class DriverTest(tests.python.util.DokoFixtureTest):
 
     def tearDown(self):
         super().tearDown()
+        urlopen('http://localhost:9999/debug/toggle_facilities?state=true')
 
         try:
             self.drv.quit()
@@ -254,12 +256,16 @@ class DriverTest(tests.python.util.DokoFixtureTest):
         element.click()
         self.sleep()
 
-    def toggle_online(self):
-        self.online = not self.online
-        self.drv.execute_script(
-            "navigator.__defineGetter__('onLine', function()"
-            " {{return {}}});".format(str(self.online).lower())
-        )
+    def toggle_online(self, browser=True, revisit=True):
+        if browser:
+            self.online = not self.online
+            self.drv.execute_script(
+                "navigator.__defineGetter__('onLine', function()"
+                " {{return {}}});".format(str(self.online).lower())
+            )
+        if revisit:
+            urlopen('http://localhost:9999/debug/toggle_facilities')
+        self.sleep(1)
 
     @property
     def control_key(self):
@@ -685,6 +691,45 @@ class TestEnumerate(DriverTest):
         )
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertIsNot(existing_submission, new_submission)
+        self.assertEqual(
+            new_submission.answers[0].response['response']['facility_name'],
+            'Queensborough Community College - City University of New York'
+        )
+
+    @report_success_status
+    def test_offline_facility_tree(self):
+        survey_id = self.get_single_node_survey_id('facility')
+        existing_submission = self.get_last_submission(survey_id)
+
+        self.get('/enumerate/{}'.format(survey_id))
+
+        self.toggle_online()
+
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.set_geolocation()
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                '.content > span:nth-child(2) > span:nth-child(1)'
+                ' > div:nth-child(1) > button:nth-child(1)'
+            )
+        )
+        self.sleep()
+        self.click(
+            self.drv
+            .find_elements_by_class_name('question__radio__label')[0]
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        self.toggle_online(revisit=False)
+
         self.click(self.drv.find_elements_by_tag_name('button')[0])
 
         new_submission = self.get_last_submission(survey_id)
