@@ -104,6 +104,10 @@ var path = {
     ADMIN_FONT_DIST: admin_dist_path + '/fonts'
 };
 
+
+var admin_tasks = ['admin-less', 'admin-js-vendor', 'admin-js-app', 'admin-img', 'admin-fonts'],
+    survey_tasks = ['survey-less', 'survey-js-vendor', 'survey-js-app', 'survey-img', 'survey-fonts', 'survey-app-cache'];
+
 //
 // DEV TASKS
 //
@@ -243,9 +247,10 @@ gulp.task('admin-watch',
     });
 
 
-
-
-
+//
+// DEV TASKS
+//
+gulp.task('dev-build', admin_tasks.concat(survey_tasks));
 
 
 //
