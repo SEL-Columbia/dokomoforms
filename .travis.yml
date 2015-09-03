@@ -21,6 +21,7 @@ before_script:
   - npm install
   - ./tests/python/selenium_webapp.py > /dev/null 2>&1 &
   - sleep 2
+  - node_modules/gulp/bin/gulp.js dev-build
 
 script:
   - npm test
