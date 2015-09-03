@@ -4026,7 +4026,8 @@ class TestAnswer(DokoTest):
         with self.session.begin():
             answer = self.session.query(models.Answer).one()
             photo_path = os.path.join(
-                os.path.abspath('.'), 'dokomoforms/static/img/favicon.png'
+                os.path.abspath('.'),
+                'dokomoforms/static/src/common/img/favicon.png'
             )
             with open(photo_path, 'rb') as photo_file:
                 b64photo = b64encode(photo_file.read())
@@ -4083,7 +4084,8 @@ class TestAnswer(DokoTest):
             self.session.add(submission)
 
         photo_path = os.path.join(
-            os.path.abspath('.'), 'dokomoforms/static/img/favicon.png'
+            os.path.abspath('.'),
+            'dokomoforms/static/src/common/img/favicon.png'
         )
         with open(photo_path, 'rb') as photo_file:
             b64photo = b64encode(photo_file.read())
@@ -4141,7 +4143,8 @@ class TestAnswer(DokoTest):
             self.session.add(submission)
 
         photo_path = os.path.join(
-            os.path.abspath('.'), 'dokomoforms/static/img/favicon.png'
+            os.path.abspath('.'),
+            'dokomoforms/static/src/common/img/favicon.png'
         )
         with open(photo_path, 'rb') as photo_file:
             b64photo = b64encode(photo_file.read())

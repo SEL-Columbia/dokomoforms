@@ -212,6 +212,9 @@ class TestBaseAPIHandler(DokoHTTPTest):
 
 
 class TestEnumerate(DokoHTTPTest):
+    def survey_from_script(self, script):
+        return script.text.rsplit(',', 1)[0][13:]
+
     def test_get_public_survey_not_logged_in(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
         url = '/enumerate/' + survey_id
@@ -221,7 +224,7 @@ class TestEnumerate(DokoHTTPTest):
         self.assertGreater(len(scripts), 0, msg=response.body)
         # find the last script, right split on first comma, take the first
         # element from the 7th character onward
-        survey = response_soup.findAll('script')[-1].text.rsplit(',', 1)[0][6:]
+        survey = self.survey_from_script(response_soup.findAll('script')[-1])
         try:
             survey = json_decode(survey)
         except ValueError:
@@ -263,7 +266,7 @@ class TestEnumerate(DokoHTTPTest):
         self.assertGreater(len(scripts), 0, msg=response.body)
         # find the last script, right split on first comma, take the first
         # element from the 7th character onward
-        survey = response_soup.findAll('script')[-1].text.rsplit(',', 1)[0][6:]
+        survey = self.survey_from_script(response_soup.findAll('script')[-1])
         try:
             survey = json_decode(survey)
         except ValueError:
@@ -310,7 +313,7 @@ class TestEnumerate(DokoHTTPTest):
         self.assertGreater(len(scripts), 0, msg=response.body)
         # find the last script, right split on first comma, take the first
         # element from the 7th character onward
-        survey = response_soup.findAll('script')[-1].text.rsplit(',', 1)[0][6:]
+        survey = self.survey_from_script(response_soup.findAll('script')[-1])
         try:
             survey = json_decode(survey)
         except ValueError:
