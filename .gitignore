@@ -24,3 +24,4 @@ _templates
 *.sublime-project
 *.sublime-workspace
 *.log
+bower

@@ -103,6 +103,15 @@ class BaseHandler(tornado.web.RequestHandler):
             .limit(10)
         )
 
+    def _get_current_user_id(self):
+        """Get the current user's id for the templates.
+
+        :return: a string contain the currently logged in user's uuid
+        """
+        if not self.current_user:
+            return None
+        return self.current_user_model.id
+
     def get_template_namespace(self):
         """Template functions.
 
@@ -112,6 +121,7 @@ class BaseHandler(tornado.web.RequestHandler):
         namespace = super().get_template_namespace()
         namespace.update({
             'surveys_for_menu': self._get_surveys_for_menu(),
+            'current_user_id': self._get_current_user_id()
         })
         return namespace
 

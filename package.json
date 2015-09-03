@@ -23,6 +23,7 @@
     "browserify-shim": "^3.8.7",
     "coveralls": "^2.11.2",
     "eslint-plugin-react": "^3.3.0",
+    "event-stream": "^3.3.1",
     "gulp": "^3.8.11",
     "gulp-concat": "^2.5.2",
     "gulp-html-replace": "^1.4.5",
@@ -30,6 +31,7 @@
     "gulp-livereload": "^3.8.0",
     "gulp-order": "^1.1.1",
     "gulp-react": "^3.0.1",
+    "gulp-rename": "^1.2.2",
     "gulp-sourcemaps": "^1.5.2",
     "gulp-streamify": "0.0.5",
     "gulp-uglify": "1.1.0",
@@ -54,7 +56,8 @@
   "browserify-shim": {
     "jquery": "global:jQuery",
     "react": "global:React",
-    "lodash": "global:_"
+    "lodash": "global:_",
+    "moment": "global:moment"
   },
   "scripts": {
     "test": "mocha"

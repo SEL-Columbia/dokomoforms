@@ -10,7 +10,8 @@
     <meta name="mobile-web-app-status-bar-style" content="black">
     <meta name="viewport" content="width=device-width, user-scalable=no,  initial-scale=1, maximum-scale=1">
 
-    <link href='http://fonts.googleapis.com/css?family=Roboto:400,300,500,700,100,900' rel='stylesheet' type='text/css'>
+    <!-- TODO: consider not loading these from CDN, especially leaflet -->
+    <link href='http://fonts.googleapis.com/css?family=Roboto:100,300,500,700' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
 
 <!--
@@ -18,9 +19,9 @@
     <link href='/static/css/dataTables.bootstrap.css' rel='stylesheet' type='text/css'>
  -->
 
-    <link href="/static/dist/css/admin/all-styles.css" rel="stylesheet" type="text/css">
+    <link href="/static/dist/admin/css/admin.css" rel="stylesheet" type="text/css">
 
-    <link rel="icon" href="/static/dist/img/favicon.png">
+    <link rel="icon" href="/static/dist/admin/img/favicon.png">
 
     <title>{{ options.organization }} Surveys -- Powered by DokomoData</title>
     <!--<script src="/static/ratchet-2.0.2/dist/js/ratchet.js"></script> -->
@@ -83,45 +84,30 @@
     </div>
     {% end %}
 
-    <!-- Vendor libs (jquery, lodash, etc) -->
-    <script src="/static/dist/js/libs.js"></script>
-
+    <!-- jQuery -->
+    <!-- <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script> -->
+    <!-- lodash (underscore) -->
+    <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.10.1/lodash.min.js"></script> -->
     <!-- Leaflet for maps -->
-    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+    <!-- <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script> -->
     <!-- Highcharts -->
-    <script src="http://code.highcharts.com/highcharts.js"></script>
+    <!-- <script src="http://code.highcharts.com/highcharts.js"></script> -->
     <!-- Moment.js for datetime handling -->
-    <script type="text/javascript" src="http://momentjs.com/downloads/moment.min.js"></script>
+    <!-- <script type="text/javascript" src="http://momentjs.com/downloads/moment.min.js"></script> -->
     <!-- DataTables for... data... tables... -->
-    <script src="http://cdn.datatables.net/1.10.5/js/jquery.dataTables.min.js"></script>
-    <script src="http://cdn.datatables.net/plug-ins/1.10.6/integration/bootstrap/3/dataTables.bootstrap.js"></script>
+    <!-- <script src="http://cdn.datatables.net/1.10.5/js/jquery.dataTables.min.js"></script> -->
+    <!-- <script src="http://cdn.datatables.net/plug-ins/1.10.6/integration/bootstrap/3/dataTables.bootstrap.js"></script> -->
 
-
-    <script type="text/javascript">
-        function openSubmissionDetailModal(submission_id) {
-            var url = '/view/submission/' + submission_id;
-            $('.modal-submission .modal-content').load(url);
-            $('.modal-submission').modal();
-        }
-
-        $(function() {
-
-            // enable tooltips
-            $('[data-toggle="tooltip"]').tooltip({
-                container: 'body'
-            });
-
-            // submission modal click handler
-            $(document).on('click', '.btn-view-submission', function() {
-                var submission_id = $(this).data('id');
-                openSubmissionDetailModal(submission_id);
-            });
-        });
-    </script>
+    <!-- VENDOR bundled -->
+    <script type="text/javascript" src="/static/dist/admin/js/vendor.js"></script>
 
     <!-- Persona for login stuff -->
     <script src="https://login.persona.org/include.js"></script>
-    <script src="/static/src/js/util/persona.js"></script>
+
+    <script type="text/javascript">
+        window.CURRENT_USER_ID = '{{ current_user_id }}';
+    </script>
+
 
     <!-- Extra page-specfic scripts should go in this block. -->
     {% block extra_scripts %} {% end %}
