@@ -40,7 +40,7 @@ var ViewData = (function() {
     function drawMap(element_id, map_data) {
         var markers = [];
 
-        var map = L.map(element_id, {
+        map = L.map(element_id, {
             dragging: true,
             zoom: 14,
             // zoomControl: false,
