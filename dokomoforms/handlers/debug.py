@@ -95,14 +95,33 @@ class DebugPersonaHandler(BaseHandler):
         self.write({'status': 'okay', 'email': 'test_creator@fixtures.com'})
 
 
+revisit_online = True
+
+
 class DebugRevisitHandler(BaseHandler):
 
     """For testing purposes there's no need to hit Revisit proper."""
 
     def get(self):
         """Get the same fake facility (always)."""
+        if not revisit_online:
+            raise tornado.web.HTTPError(502)
         facilities_file = 'tests/python/fake_revisit_facilities.json'
         with open(facilities_file, 'rb') as facilities:
             result = facilities.read()
         self.write(result)
         self.set_header('Content-Type', 'application/json')
+
+
+class DebugToggleRevisitHandler(BaseHandler):
+
+    """For turning the fake Revisit endpoint off and on."""
+
+    def get(self):
+        """Toggle the 'online' state of the GET endpoint."""
+        global revisit_online
+        state_arg = self.get_argument('state', None)
+        if state_arg:
+            revisit_online = state_arg == 'true'
+        else:
+            revisit_online = not revisit_online
