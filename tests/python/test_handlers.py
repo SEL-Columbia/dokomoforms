@@ -97,6 +97,56 @@ class TestDebug(DokoHTTPTest):
         )
         self.assertEqual(response.code, 200, msg=response)
 
+    def test_debug_toggle_revisit(self):
+        response = self.fetch(
+            '/debug/toggle_facilities', method='GET',
+            _logged_in_user=None, _disable_xsrf=False,
+        )
+        self.assertEqual(response.code, 200, msg=response)
+
+        revisit_response = self.fetch(
+            '/debug/facilities', method='GET',
+            _logged_in_user=None, _disable_xsrf=False,
+        )
+        self.assertEqual(revisit_response.code, 502, msg=response)
+
+        toggle_response = self.fetch(
+            '/debug/toggle_facilities', method='GET',
+            _logged_in_user=None, _disable_xsrf=False,
+        )
+        self.assertEqual(toggle_response.code, 200, msg=response)
+
+        revisit_again_response = self.fetch(
+            '/debug/facilities', method='GET',
+            _logged_in_user=None, _disable_xsrf=False,
+        )
+        self.assertEqual(revisit_again_response.code, 200, msg=response)
+
+    def test_debug_toggle_revisit_with_argument(self):
+        response = self.fetch(
+            '/debug/toggle_facilities', method='GET',
+            _logged_in_user=None, _disable_xsrf=False,
+        )
+        self.assertEqual(response.code, 200, msg=response)
+
+        revisit_response = self.fetch(
+            '/debug/facilities', method='GET',
+            _logged_in_user=None, _disable_xsrf=False,
+        )
+        self.assertEqual(revisit_response.code, 502, msg=response)
+
+        toggle_response = self.fetch(
+            '/debug/toggle_facilities?state=true', method='GET',
+            _logged_in_user=None, _disable_xsrf=False,
+        )
+        self.assertEqual(toggle_response.code, 200, msg=response)
+
+        revisit_again_response = self.fetch(
+            '/debug/facilities', method='GET',
+            _logged_in_user=None, _disable_xsrf=False,
+        )
+        self.assertEqual(revisit_again_response.code, 200, msg=response)
+
 
 class TestHeaders(DokoHTTPTest):
     def test_secure_headers(self):
