@@ -18,7 +18,7 @@
             </div>
         </div>
         <div class="row header-sub-nav">
-            
+
         </div>
     </div>
     {% end %}
@@ -85,7 +85,7 @@
 {% block content %}
 <div class="content">
     <div class="container" role="main">
-        
+
         <div class="message">
         </div>
 
@@ -95,11 +95,11 @@
                 <ul class="survey-questions">
                     {% for index, stats in enumerate(question_stats) %}
                         <li>
-                        
-                            <div class="question-title-bar question-type-{{ stats['survey_node'].type_constraint }} {% if stats['survey_node'].type_constraint == "location" %} question-location {% end %}" 
+
+                            <div class="question-title-bar question-type-{{ stats['survey_node'].type_constraint }} {% if stats['survey_node'].type_constraint == "location" %} question-location {% end %}"
                             {% if stats['survey_node'].type_constraint == "location" %} rel="location-map-{{ stats['survey_node'].id }}" {% end %}>
-                                
-                                {{ index }}. {{ stats['survey_node'].node.title }} 
+
+                                {{ index }}. {{ stats['survey_node'].node.title }}
                                 <span class="question-type pull-right">{{ stats['survey_node'].type_constraint }}</span>
                             </div>
 
@@ -125,10 +125,10 @@
                                     {% end %}
                                 </div>
                             </div>
-                            
+
                             <!--<p>{{ index }}. {{ stats['survey_node'].node.title }} - {{ stats['survey_node'].id }}</p>-->
                             <!-- <p><a href="/visualize/{{ stats['survey_node'].id }}">{{ index }}. {{ stats['survey_node'].node.title }}</a></p> -->
-                            
+
                         </li>
                     {% end %}
                 </ul>
@@ -141,75 +141,17 @@
 
 {% block extra_scripts %}
 
+<script type="text/javascript" src="/static/dist/admin/js/view-data.bundle.js"></script>
+
 <script type="text/javascript">
-    $(function() {
-        var map;
+    // This page gets bootstraped with map data from the server...
+    var map_data = {};
 
-        $(document).on('click', '.question-title-bar', function(e) {
-            $el = $(this);
-            if ($el.hasClass('open')) {
-                $el.removeClass('open');
-            } else {
-                $el.addClass('open');
-            }
-            $el.siblings('.question-stats').slideToggle();
-            if ($el.hasClass('question-location')) {
-                if (!map) {
-                    var id = $el.attr('rel');
-                    console.log(id);
-                    drawMap(id, map_data[id]);
-                }
-            }
-        });
+    {% for survey_node_data in location_stats %}
+    map_data['location-map-{{ survey_node_data["survey_node_id"] }}'] = {% raw survey_node_data %};
+    {% end %}
 
-        var maps = {},
-            map_data = {};
-
-        {% for survey_node_data in location_stats %}
-	    map_data['location-map-{{ survey_node_data["survey_node_id"] }}'] = {% raw survey_node_data %};
-        {% end %}
-
-        function drawMap(element_id, map_data) {
-
-            map = L.map(element_id, {
-                dragging: true,
-                zoom: 14,
-                // zoomControl: false,
-                // doubleClickZoom: false,
-                attributionControl: false
-            });
-
-            maps[element_id] = map;
-
-            markers = [];
-
-            L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
-
-	    var markers = [];
-	    _.each(map_data.map_data, function(answer) {
-	        var coordinates = answer.coordinates,
-		    marker = new L.marker([coordinates.lat, coordinates.lng], {
-		        riseOnHover: true
-		});
-                marker.options.icon = new L.icon({iconUrl: "/static/img/icons/normal_base.png", iconAnchor: [13, 30]});
-                marker.on('click', function() {
-                    openSubmissionDetailModal(answer.submission_id);
-                });
-                markers.push(marker);
-	    });
-            
-            if (markers.length) {
-                var markers_group = new L.featureGroup(markers);
-                markers_group.addTo(map);
-                map.fitBounds(markers_group.getBounds(), {
-                    padding: [40, 40]
-                });
-            } else {
-                console.log('No submissions include location.');
-            }
-        }
-
-    } );
+    ViewData.init(map_data);
 </script>
 
 {% end %}

@@ -19,8 +19,9 @@ before_script:
   - head -c 24 /dev/urandom > cookie_secret
   - nvm install iojs
   - npm install
-  - ./tests/python/selenium_webapp.py > /dev/null 2>&1 &
+  - ./tests/python/selenium_webapp.py &>/dev/null &
   - sleep 2
+  - node_modules/gulp/bin/gulp.js dev-build
 
 script:
   - npm test

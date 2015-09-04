@@ -1259,7 +1259,8 @@ class TestSurveyApi(DokoHTTPTest):
 
         photo_url = self.api_root + '/photos'
         photo_path = os.path.join(
-            os.path.abspath('.'), 'dokomoforms/static/img/favicon.png'
+            os.path.abspath('.'),
+            'dokomoforms/static/src/common/img/favicon.png'
         )
         with open(photo_path, 'rb') as photo_file:
             b64photo = b64encode(photo_file.read())
@@ -1338,7 +1339,8 @@ class TestSurveyApi(DokoHTTPTest):
 
         photo_url = self.api_root + '/photos'
         photo_path = os.path.join(
-            os.path.abspath('.'), 'dokomoforms/static/img/favicon.png'
+            os.path.abspath('.'),
+            'dokomoforms/static/src/common/img/favicon.png'
         )
         with open(photo_path, 'rb') as photo_file:
             b64photo = b64encode(photo_file.read())
@@ -1416,7 +1418,8 @@ class TestSurveyApi(DokoHTTPTest):
 
         photo_url = self.api_root + '/photos'
         photo_path = os.path.join(
-            os.path.abspath('.'), 'dokomoforms/static/img/favicon.png'
+            os.path.abspath('.'),
+            'dokomoforms/static/src/common/img/favicon.png'
         )
         with open(photo_path, 'rb') as photo_file:
             b64photo = b64encode(photo_file.read())

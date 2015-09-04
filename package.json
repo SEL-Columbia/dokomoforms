@@ -8,19 +8,65 @@
     "test": "tests"
   },
   "dependencies": {
+    "bootstrap": "^3.3.5",
+    "datatables": "https://github.com/DataTables/DataTables/archive/1.10.9.tar.gz",
+    "gulp-replace": "^0.5.4",
+    "highcharts-release": "^4.1.8",
     "jquery": "^2.1.4",
+    "leaflet": "^0.7.5",
+    "lodash-compat": "^3.10.1",
     "lz-string": "^1.4.4",
+    "moment": "^2.10.6",
     "mpromise": "^0.5.5",
     "node-uuid": "^1.4.3",
     "pouchdb": "^3.6.0",
     "pouchdb-upsert": "^1.1.1",
+    "ratchet": "https://github.com/twbs/ratchet/archive/v2.0.2.tar.gz",
     "react": "^0.13.3"
   },
   "devDependencies": {
     "jest-cli": "^0.5.0",
+    "babelify": "^6.1.2",
+    "browserify": "^10.2.3",
+    "browserify-shim": "^3.8.7",
     "coveralls": "^2.11.2",
+    "eslint-plugin-react": "^3.3.0",
+    "event-stream": "^3.3.1",
+    "gulp": "^3.8.11",
+    "gulp-concat": "^2.5.2",
+    "gulp-html-replace": "^1.4.5",
+    "gulp-less": "^3.0.3",
+    "gulp-livereload": "^3.8.0",
+    "gulp-order": "^1.1.1",
+    "gulp-react": "^3.0.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-sourcemaps": "^1.5.2",
+    "gulp-streamify": "0.0.5",
+    "gulp-uglify": "1.1.0",
+    "istanbul": "^0.3.13",
+    "jsdom": "^5.1.0",
+    "jshint": "^2.7.0",
+    "mocha": "^2.2.4",
+    "mocha-istanbul": "^0.2.0",
+    "node-underscorify": "0.0.14",
     "reactify": "^1.1.1",
-    "browserify": "^10.2.3"
+    "should": "^6.0.1",
+    "supertest": "^0.15.0",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0",
+    "watchify": "^3.2.1"
+  },
+  "browserify": {
+    "transform": [
+      "browserify-shim"
+    ]
+  },
+  "browserify-shim": {
+    "jquery": "global:jQuery",
+    "react": "global:React",
+    "lodash": "global:_",
+    "moment": "global:moment",
+    "leaflet": "global:L"
   },
   "jest": {
     "testDirectoryName": "tests/js",

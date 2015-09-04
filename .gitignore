@@ -22,3 +22,8 @@ reports/
 _build
 _static
 _templates
+*.sublime-project
+*.sublime-workspace
+*.log
+bower
+dokomoforms/static/dist

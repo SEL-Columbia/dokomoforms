@@ -15,6 +15,7 @@ import subprocess
 import sys
 from time import sleep
 import logging
+import mimetypes
 
 from sqlalchemy import DDL
 
@@ -41,6 +42,10 @@ from dokomoforms.handlers.api import (
 _pwd = os.path.dirname(__file__)
 bold = '\033[1m'
 green = '\033[92m'
+
+# Add mimetypes
+mimetypes.add_type("application/x-font-woff", ".woff")
+mimetypes.add_type("application/octet-stream", ".ttf")
 
 
 def modify_text(text: str, modifier: str) -> str:
