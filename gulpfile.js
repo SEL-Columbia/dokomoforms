@@ -49,7 +49,7 @@ var path = {
         node_modules_path + '/jquery/dist/jquery.js',
         node_modules_path + '/bootstrap/dist/js/bootstrap.js',
         node_modules_path + '/lodash/lodash.js',
-        node_modules_path + '/react/react.js'
+        node_modules_path + '/react/dist/react.js'
     ],
     SURVEY_JS_APP_SRC: survey_src_path + '/js',
     SURVEY_JS_ENTRY_POINT: survey_src_path + '/js/main.js',
