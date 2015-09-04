@@ -25,7 +25,7 @@ var src_path = 'dokomoforms/static/src',
     survey_src_path = src_path + '/survey',
     admin_dist_path = dist_path + '/admin',
     survey_dist_path = dist_path + '/survey',
-    bower_path = src_path + '/bower';
+    node_modules_path = 'node_modules';
 
 // explicit file/dir paths
 var path = {
@@ -46,10 +46,10 @@ var path = {
     // SURVEY_CSS_BUILD: survey_dist_path + '/css/survey/*.css',
 
     SURVEY_JS_VENDOR_SRC: [
-        bower_path + '/jquery/dist/jquery.js',
-        bower_path + '/bootstrap/dist/js/bootstrap.js',
-        bower_path + '/lodash/lodash.js',
-        bower_path + '/react/react.js'
+        node_modules_path + '/jquery/dist/jquery.js',
+        node_modules_path + '/bootstrap/dist/js/bootstrap.js',
+        node_modules_path + '/lodash/lodash.js',
+        node_modules_path + '/react/react.js'
     ],
     SURVEY_JS_APP_SRC: survey_src_path + '/js',
     SURVEY_JS_ENTRY_POINT: survey_src_path + '/js/main.js',
@@ -59,7 +59,7 @@ var path = {
     SURVEY_IMG_DIST: survey_dist_path + '/img',
 
     SURVEY_FONT_SRC: [
-        bower_path + '/ratchet/fonts/*'
+        node_modules_path + '/ratchet/fonts/*'
     ],
     SURVEY_FONT_DIST: survey_dist_path + '/fonts',
 
@@ -77,14 +77,14 @@ var path = {
     // ADMIN_CSS_BUILD: src_path + '/dist/admin/css/*.css',
 
     ADMIN_JS_VENDOR_SRC: [
-        bower_path + '/jquery/dist/jquery.js',
-        bower_path + '/bootstrap/dist/js/bootstrap.js',
-        bower_path + '/datatables/media/js/jquery.dataTables.min.js',
-        bower_path + '/datatables/media/js/dataTables.bootstrap.min.js',
-        bower_path + '/lodash/lodash.js',
-        bower_path + '/moment/min/moment.min.js',
-        bower_path + '/leaflet/leaflet.js',
-        bower_path + '/highcharts/highcharts.js'
+        node_modules_path + '/jquery/dist/jquery.js',
+        node_modules_path + '/bootstrap/dist/js/bootstrap.js',
+        node_modules_path + '/datatables/media/js/jquery.dataTables.min.js',
+        node_modules_path + '/datatables/media/js/dataTables.bootstrap.min.js',
+        node_modules_path + '/lodash-compat/index.js',
+        node_modules_path + '/moment/min/moment.min.js',
+        node_modules_path + '/leaflet/leaflet.js',
+        node_modules_path + '/highcharts-release/highcharts.js'
     ],
     ADMIN_JS_APP_SRC: admin_src_path + '/js/**/*.js',
     ADMIN_JS_ENTRY_POINT_PREFIX: admin_src_path + '/js/',
@@ -100,7 +100,7 @@ var path = {
     ADMIN_IMG_DIST: admin_dist_path + '/img',
 
     ADMIN_FONT_SRC: [
-        bower_path + '/bootstrap/fonts/*'
+        node_modules_path + '/bootstrap/fonts/*'
     ],
     ADMIN_FONT_DIST: admin_dist_path + '/fonts'
 };

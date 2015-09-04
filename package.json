@@ -8,13 +8,20 @@
     "test": "tests"
   },
   "dependencies": {
+    "bootstrap": "^3.3.5",
+    "datatables": "https://github.com/DataTables/DataTables/archive/1.10.9.tar.gz",
     "gulp-replace": "^0.5.4",
+    "highcharts-release": "^4.1.8",
     "jquery": "^2.1.4",
+    "leaflet": "^0.7.5",
+    "lodash-compat": "^3.10.1",
     "lz-string": "^1.4.4",
+    "moment": "^2.10.6",
     "mpromise": "^0.5.5",
     "node-uuid": "^1.4.3",
     "pouchdb": "^3.6.0",
     "pouchdb-upsert": "^1.1.1",
+    "ratchet": "https://github.com/twbs/ratchet/archive/v2.0.2.tar.gz",
     "react": "^0.13.3"
   },
   "devDependencies": {
