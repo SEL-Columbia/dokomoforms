@@ -102,11 +102,10 @@
 
 {% block extra_scripts %}
 
-    {% if current_user %}
         <script type="text/javascript" src="/static/dist/admin/js/account-overview.bundle.js"></script>
-    {% end %}
 
     {% if message %}
+    <!-- TODO: this isn't implemented here... -->
     <script>
         App.message("{{ message }}");
     </script>

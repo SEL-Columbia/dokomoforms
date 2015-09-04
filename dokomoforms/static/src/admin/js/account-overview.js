@@ -10,10 +10,11 @@ var AccountOverview = (function() {
 
     function init() {
         base.init();
+        if (window.CURRENT_USER_ID !== 'None') {
+            loadActivityGraph();
 
-        loadActivityGraph();
-
-        setupDataTable();
+            setupDataTable();
+        }
     }
 
     function loadActivityGraph() {
