@@ -6,7 +6,7 @@ var $ = require('jquery'),
 
 var ViewData = (function() {
     var map,
-        maps,
+        maps = {},
         map_data = {};
 
     function init(_map_data) {
@@ -60,7 +60,7 @@ var ViewData = (function() {
                     riseOnHover: true
                 });
             marker.options.icon = new L.icon({
-                iconUrl: '/static/img/icons/normal_base.png',
+                iconUrl: '/static/dist/admin/img/icons/normal_base.png',
                 iconAnchor: [13, 30]
             });
             marker.on('click', function() {
@@ -85,4 +85,5 @@ var ViewData = (function() {
     };
 })();
 
-ViewData.init();
+// expose this module globally so that we can bootstrap it
+window.ViewData = ViewData;

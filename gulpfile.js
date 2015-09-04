@@ -83,7 +83,7 @@ var path = {
         node_modules_path + '/datatables/media/js/dataTables.bootstrap.min.js',
         node_modules_path + '/lodash-compat/index.js',
         node_modules_path + '/moment/min/moment.min.js',
-        node_modules_path + '/leaflet/leaflet.js',
+        node_modules_path + '/leaflet/dist/leaflet.js',
         node_modules_path + '/highcharts-release/highcharts.js'
     ],
     ADMIN_JS_APP_SRC: admin_src_path + '/js/**/*.js',
