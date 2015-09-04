@@ -91,7 +91,8 @@ var path = {
     // note: these are file names only, not full paths...
     // they get concat'ed with ADMIN_JS_SRC_DIR in the bundling process
     ADMIN_JS_ENTRY_POINTS: [
-        'account-overview.js'
+        'account-overview.js',
+        'view-data.js'
     ],
     ADMIN_JS_DIST: admin_dist_path + '/js',
 
@@ -108,9 +109,6 @@ var path = {
 var admin_tasks = ['admin-less', 'admin-js-vendor', 'admin-js-app', 'admin-img', 'admin-fonts'],
     survey_tasks = ['survey-less', 'survey-js-vendor', 'survey-js-app', 'survey-img', 'survey-fonts', 'survey-app-cache'];
 
-//
-// DEV TASKS
-//
 
 process.env.BROWSERIFYSHIM_DIAGNOSTICS=1;
 

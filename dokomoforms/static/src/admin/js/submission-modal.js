@@ -21,7 +21,8 @@ module.exports = (function() {
     }
 
     return {
-        init: initSubmissionModalHandler
+        init: initSubmissionModalHandler,
+        openSubmissionDetailModal: openSubmissionDetailModal
     };
 
 })();

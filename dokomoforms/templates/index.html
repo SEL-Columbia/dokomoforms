@@ -91,7 +91,7 @@
             <h3 class="welcome-title">Dokomo<strong>Data</strong></h3>
             <p class="welcome-blurb">The easiest way to collect and use data for development planning.</p>
             <a class="btn btn-primary btn-large btn-login">Log In or Sign Up</a>
-	    <div id="msg"></div>
+	       <div id="msg"></div>
         </div>
         {% end %}
     </div>
@@ -105,7 +105,6 @@
         <script type="text/javascript" src="/static/dist/admin/js/account-overview.bundle.js"></script>
 
     {% if message %}
-    <!-- TODO: this isn't implemented here... -->
     <script>
         App.message("{{ message }}");
     </script>

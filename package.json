@@ -58,7 +58,8 @@
     "jquery": "global:jQuery",
     "react": "global:React",
     "lodash": "global:_",
-    "moment": "global:moment"
+    "moment": "global:moment",
+    "leaflet": "global:L"
   },
   "jest": {
     "testDirectoryName": "tests/js",
