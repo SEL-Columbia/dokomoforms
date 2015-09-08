@@ -102,6 +102,10 @@ class DebugRevisitHandler(BaseHandler):
 
     """For testing purposes there's no need to hit Revisit proper."""
 
+    def check_xsrf_cookie(self):
+        """Debug endpoint."""
+        return None
+
     def get(self):
         """Get the same fake facility (always)."""
         if not revisit_online:

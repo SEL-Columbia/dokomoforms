@@ -835,8 +835,8 @@ var Application = React.createClass({
                     },
 
                     // Error
-                    function(revisitFacility) {
-                        console.log('Failed to post facility', err, facility);
+                    function(err, facility) {
+		        console.log('Failed to post facility', err, facility);
                     }
                 );
             }
