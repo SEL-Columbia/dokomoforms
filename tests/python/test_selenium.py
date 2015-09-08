@@ -3013,3 +3013,289 @@ class TestEnumerate(DriverTest):
             self.drv.find_element_by_tag_name('h3').text,
             'last question'
         )
+
+    @report_success_status
+    @tests.python.util.dont_run_in_a_transaction
+    def test_logic_integer_min_max(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'integer logic'},
+                nodes=[
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'integer question'},
+                            type_constraint='integer',
+                            logic={'min': 5, 'max': 10},
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('7')
+        )
+
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector('input:invalid')),
+            0
+        )
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector('input:valid')),
+            1
+        )
+
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('2')
+            .perform()
+        )
+
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector('input:invalid')),
+            1
+        )
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector('input:valid')),
+            0
+        )
+
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('12')
+            .perform()
+        )
+
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector('input:invalid')),
+            1
+        )
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector('input:valid')),
+            0
+        )
+
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        self.assertEqual(len(self.drv.find_elements_by_tag_name('button')), 1)
+
+    @report_success_status
+    @tests.python.util.dont_run_in_a_transaction
+    def test_logic_decimal_min_max(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'decimal logic'},
+                nodes=[
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'decimal question'},
+                            type_constraint='decimal',
+                            logic={'min': 5.0, 'max': 10.0},
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        (
+            self.drv
+            .find_element_by_tag_name('input')
+            .send_keys('7')
+        )
+
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector('input:invalid')),
+            0
+        )
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector('input:valid')),
+            1
+        )
+
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('2')
+            .perform()
+        )
+
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector('input:invalid')),
+            1
+        )
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector('input:valid')),
+            0
+        )
+
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('12')
+            .perform()
+        )
+
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector('input:invalid')),
+            1
+        )
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector('input:valid')),
+            0
+        )
+
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        self.assertEqual(len(self.drv.find_elements_by_tag_name('button')), 1)
+
+    @report_success_status
+    @tests.python.util.dont_run_in_a_transaction
+    def test_logic_date_min_max(self):
+        user = (
+            self.session
+            .query(SurveyCreator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'date logic'},
+                nodes=[
+                    construct_survey_node(
+                        node=construct_node(
+                            title={'English': 'date question'},
+                            type_constraint='date',
+                            logic={'min': '2015-09-05', 'max': '2015-09-10'},
+                        ),
+                    ),
+                ],
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        self.enter_date(
+            self.drv.find_element_by_tag_name('input'),
+            '2015', '09', '07'
+        )
+
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector('input:invalid')),
+            0
+        )
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector('input:valid')),
+            1
+        )
+
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys(Keys.DELETE)
+            .perform()
+        )
+        self.enter_date(
+            self.drv.find_element_by_tag_name('input'),
+            '2015', '09', '02'
+        )
+
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector('input:invalid')),
+            1
+        )
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector('input:valid')),
+            0
+        )
+
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_tag_name('input')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys(Keys.DELETE)
+            .perform()
+        )
+        self.enter_date(
+            self.drv.find_element_by_tag_name('input'),
+            '2015', '09', '12'
+        )
+
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector('input:invalid')),
+            1
+        )
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector('input:valid')),
+            0
+        )
+
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        self.assertEqual(len(self.drv.find_elements_by_tag_name('button')), 1)
