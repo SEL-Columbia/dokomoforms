@@ -68,3 +68,4 @@
     AOSP browser.
     https://facebook.github.io/react/docs/working-with-the-browser.html
     #browser-support-and-polyfills
+20. Rate limiting for public API endpoints (view survey and submit).
