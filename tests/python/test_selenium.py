@@ -3299,3 +3299,120 @@ class TestEnumerate(DriverTest):
         self.click(self.drv.find_element_by_class_name('navigate-right'))
 
         self.assertEqual(len(self.drv.find_elements_by_tag_name('button')), 1)
+
+    @report_success_status
+    def test_add_new_facility(self):
+        survey_id = self.get_single_node_survey_id('facility')
+        existing_submission = self.get_last_submission(survey_id)
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.set_geolocation()
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                '.content > span:nth-child(2) > span:nth-child(1)'
+                ' > div:nth-child(1) > button:nth-child(1)'
+            )
+        )
+        self.sleep()
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                'div.content-padded:nth-child(3) > button:nth-child(1)'
+            )
+        )
+        (
+            self.drv
+            .find_elements_by_tag_name('input')[0]
+            .send_keys('new facility')
+        )
+        self.click(self.drv.find_elements_by_tag_name('option')[1])
+
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertIsNot(existing_submission, new_submission)
+        self.assertEqual(
+            new_submission.answers[0].response['response']['facility_name'],
+            'new facility'
+        )
+
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                '.content > span:nth-child(2) > span:nth-child(1)'
+                ' > div:nth-child(1) > button:nth-child(1)'
+            )
+        )
+
+        new_facility_text = (
+            self.drv
+            .find_elements_by_class_name('question__radio__label')[0]
+            .text
+        )
+        self.assertEqual(new_facility_text.split('\n')[0], 'new facility')
+
+    @report_success_status
+    def test_add_new_facility_revisit_cuts_out(self):
+        survey_id = self.get_single_node_survey_id('facility')
+        existing_submission = self.get_last_submission(survey_id)
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.toggle_online(browser=False, revisit=True)
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.set_geolocation()
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                '.content > span:nth-child(2) > span:nth-child(1)'
+                ' > div:nth-child(1) > button:nth-child(1)'
+            )
+        )
+        self.sleep()
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                'div.content-padded:nth-child(3) > button:nth-child(1)'
+            )
+        )
+        (
+            self.drv
+            .find_elements_by_tag_name('input')[0]
+            .send_keys('new facility')
+        )
+        self.click(self.drv.find_elements_by_tag_name('option')[1])
+
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertIsNot(existing_submission, new_submission)
+        self.assertEqual(
+            new_submission.answers[0].response['response']['facility_name'],
+            'new facility'
+        )
+
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                '.content > span:nth-child(2) > span:nth-child(1)'
+                ' > div:nth-child(1) > button:nth-child(1)'
+            )
+        )
+
+        new_facility_text = (
+            self.drv
+            .find_elements_by_class_name('question__radio__label')[0]
+            .text
+        )
+        self.assertEqual(new_facility_text.split('\n')[0], 'new facility')
