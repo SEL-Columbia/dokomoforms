@@ -1,29 +1,12 @@
 """Admin view handlers."""
 import tornado.web
 
-import sqlalchemy as sa
-
-from dokomoforms.models import (
-    Answer, Question, SurveyNode, generate_question_stats, jsonify
-)
+from dokomoforms.models import generate_question_stats
 from dokomoforms.models.answer import ANSWER_TYPES
 from dokomoforms.handlers.util import BaseHandler
 from dokomoforms.handlers.api import (
     get_survey_for_handler, get_submission_for_handler
 )
-
-
-class ViewHandler(BaseHandler):
-
-    """Get all of a user's surveys."""
-
-    @tornado.web.authenticated
-    def get(self):
-        """GET a dashboard-like view."""
-        # TODO: remove this?
-        self.render(
-            'view_view.html', current_user_id=self.current_user_model.id
-        )
 
 
 class ViewSurveyHandler(BaseHandler):
@@ -94,85 +77,4 @@ class ViewSubmissionHandler(BaseHandler):
         survey = get_survey_for_handler(self, submission.survey_id)
         self.render(
             'view_submission.html', survey=survey, submission=submission
-        )
-
-
-class VisualizationHandler(BaseHandler):
-
-    """Visualize answers to a SurveyNode or Question."""
-
-    @tornado.web.authenticated
-    def get(self, question_or_survey_node_id: str):
-        """GET data visualizations for a SurveyNode or Question."""
-        mystery = question_or_survey_node_id
-        question = self.session.query(Question).get(mystery)
-        survey_node = self.session.query(SurveyNode).get(mystery)
-        node = question or survey_node
-
-        if node is None:
-            raise tornado.web.HTTPError(404)
-
-        if isinstance(node, Question):
-            where_id = Answer.question_id == mystery
-            type_constraint = node.type_constraint
-        else:
-            where_id = Answer.survey_node_id == mystery
-            type_constraint = node.the_type_constraint
-
-        answer_cls = ANSWER_TYPES[type_constraint]
-        where = sa.and_(where_id, answer_cls.main_answer.isnot(None))
-
-        time_data, bar_data, map_data = None, None, None
-        if type_constraint in {'integer', 'decimal'}:
-            time_data = [
-                [save_time.isoformat(), jsonify(value)]
-                for save_time, value in self.session.execute(
-                    sa.select([Answer.save_time, answer_cls.main_answer])
-                    .select_from(Answer.__table__.join(
-                        answer_cls.__table__, Answer.id == answer_cls.id
-                    ))
-                    .where(where)
-                    .order_by(Answer.save_time.asc())
-                )
-            ]
-
-        bar_graph_types = {
-            'text', 'integer', 'decimal', 'date', 'time', 'timestamp',
-            'multiple_choice'
-        }
-        if type_constraint in bar_graph_types:
-            bar_data = [
-                [jsonify(value), count]
-                for value, count in self.session.execute(
-                    sa.select([
-                        answer_cls.main_answer,
-                        sa.func.count(answer_cls.main_answer)
-                    ])
-                    .select_from(Answer.__table__.join(
-                        answer_cls.__table__, Answer.id == answer_cls.id
-                    ))
-                    .where(where)
-                    .group_by(answer_cls.main_answer)
-                    .order_by(answer_cls.main_answer)
-                )
-            ]
-
-        if type_constraint in {'location', 'facility'}:
-            map_data = [
-                {
-                    'submission_id': answer.submission_id,
-                    'coordinates': answer.response['response']
-                }
-                for answer in (
-                    self.session
-                    .query(answer_cls)
-                    .filter(where)
-                )
-            ]
-
-        self.render(
-            'view_visualize.html',
-            time_data=time_data,
-            bar_data=bar_data,
-            map_data=map_data,
         )

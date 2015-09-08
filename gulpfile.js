@@ -1,18 +1,14 @@
 var gulp = require('gulp'),
     uglify = require('gulp-uglify'),
-    htmlreplace = require('gulp-html-replace'),
     rename = require('gulp-rename'),
     source = require('vinyl-source-stream'),
-    buffer = require('vinyl-buffer'),
     concat = require('gulp-concat'),
-    order = require('gulp-order'),
     browserify = require('browserify'),
-    watchify = require('watchify'),
     reactify = require('reactify'),
     streamify = require('gulp-streamify'),
-    underscorify = require("node-underscorify"),
+    underscorify = require('node-underscorify'),
     less = require('gulp-less'),
-    sourcemaps = require('gulp-sourcemaps'),
+    // sourcemaps = require('gulp-sourcemaps'),
     replace = require('gulp-replace'),
     livereload = require('gulp-livereload'),
     es = require('event-stream');
@@ -92,7 +88,8 @@ var path = {
     // they get concat'ed with ADMIN_JS_SRC_DIR in the bundling process
     ADMIN_JS_ENTRY_POINTS: [
         'account-overview.js',
-        'view-data.js'
+        'view-data.js',
+        'view-survey.js'
     ],
     ADMIN_JS_DIST: admin_dist_path + '/js',
 

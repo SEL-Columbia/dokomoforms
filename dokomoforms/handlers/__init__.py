@@ -2,9 +2,8 @@
 from dokomoforms.handlers.root import Index, NotFound
 from dokomoforms.handlers.auth import Login, Logout, GenerateToken
 from dokomoforms.handlers.view.admin import (
-    ViewHandler, ViewSurveyHandler, ViewSurveyDataHandler,
-    ViewSubmissionHandler,
-    VisualizationHandler,
+    ViewSurveyHandler, ViewSurveyDataHandler,
+    ViewSubmissionHandler
 )
 from dokomoforms.handlers.view.enumerate import Enumerate, EnumerateTitle
 from dokomoforms.handlers.debug import (
@@ -15,9 +14,8 @@ from dokomoforms.handlers.debug import (
 __all__ = (
     'Index', 'NotFound',
     'Login', 'Logout', 'GenerateToken',
-    'ViewHandler', 'ViewSurveyHandler', 'ViewSurveyDataHandler',
-    'ViewSubmissionHandler', 'VisualizationHandler',
-    'Enumerate', 'EnumerateTitle',
+    'ViewSurveyHandler', 'ViewSurveyDataHandler',
+    'ViewSubmissionHandler', 'Enumerate', 'EnumerateTitle',
     'DebugUserCreationHandler', 'DebugLoginHandler', 'DebugLogoutHandler',
     'DebugPersonaHandler', 'DebugRevisitHandler', 'DebugToggleRevisitHandler'
 )
