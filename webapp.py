@@ -145,7 +145,6 @@ class Application(tornado.web.Application):
 
             # Views
             # * Admin views
-            url(r'/view/?', handlers.ViewHandler, name='admin_view'),
             url(
                 r'/view/({})/?'.format(UUID_REGEX),
                 handlers.ViewSurveyHandler,
@@ -160,12 +159,6 @@ class Application(tornado.web.Application):
                 r'/view/submission/({})/?'.format(UUID_REGEX),
                 handlers.ViewSubmissionHandler,
                 name='admin_submission_view',
-            ),
-
-            url(
-                r'/visualize/({})/?'.format(UUID_REGEX),
-                handlers.VisualizationHandler,
-                name='admin_visualize',
             ),
 
             # * Regular views

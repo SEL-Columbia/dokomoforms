@@ -23,12 +23,12 @@
     </div>
     {% end %}
 </div>
-{% end %} 
+{% end %}
 
 {% block content %}
 <div class="content">
     <div class="container" role="main">
-        
+
         <div class="message"></div>
 
         <div class="row">
@@ -113,9 +113,9 @@
                         <!-- <div class="col-md-4"></div> -->
                         <div class="col-md-12">
                             <div class="pull-left">
-                                
+
                             </div>
-                            
+
                             <div class="pull-right">
                                 <!-- <a href="/view/data/{{ survey.id }}" class="btn btn-sm btn-secondary"><span class="glyphicon glyphicon-stats"></span>&nbsp;&nbsp; View Data</a> -->
                             <!-- </div>
@@ -194,7 +194,7 @@
 
             </div>
         </div>
-        
+
     </div>
 </div>
 {% end %}
@@ -202,219 +202,11 @@
 
 {% block extra_scripts %}
 
-<!-- Templates -->
-<script type="text/template" id="view-submission-btn-tpl">
-    <button class="btn btn-default btn-xs btn-view-submission" data-id="<%= submission_id %>"><span class="glyphicon glyphicon-list-alt"></span> View Submission Details</button>
-</script>
+<script type="text/javascript" src="/static/dist/admin/js/view-survey.bundle.js"></script>
 
 <script type="text/javascript">
-    
-    $(function () {
-
-        // Map
-        var map;
-
-        function createMap() {
-            if (!map) {
-                map = L.map('submissions-map-container', {
-                    dragging: true,
-                    zoom: 14,
-                    zoomControl: false,
-                    doubleClickZoom: false,
-                    attributionControl: false
-                });
-
-                L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
-            }
-        }
-
-        function drawMapData(submissions) {
-            if (!map) return;
-
-            var markers = [];
-
-            _.each(submissions, function(submission) {
-
-                var submission = submission.result,
-                    answers = submission.answers,
-                    location = _.find(answers, function(answer) {
-                        return answer.type_constraint_name == 'location'
-                    });
-                console.log(location);
-                if (!location || !location.answer) {
-                    return;
-                }
-                location = location.answer;
-                console.log(location);
-
-                console.log('location:', location);
-                // stored lon/lat in revisit, switch around
-                var marker = new L.marker([location[1], location[0]], {
-                    riseOnHover: true
-                });
-                marker.options.icon = new L.icon({iconUrl: "/static/img/icons/normal_base.png", iconAnchor: [15, 48]});
-                // marker.bindPopup();
-                marker.on('click', function() {
-                    window.location = '/view/submission/'+submission.submission_id;
-                });
-                markers.push(marker);
-
-            });
-            
-            if (markers.length) {
-                var markers_group = new L.featureGroup(markers);
-                markers_group.addTo(map);
-                map.fitBounds(markers_group.getBounds());
-            } else {
-                // TODO: do something user-facing.
-                console.log('No submissions include location.');
-            }
-        }
-
-        
-
-
-        $.getJSON('/api/v0/surveys/{{ survey.id }}/activity', function(data) {
-
-            var results = data.activity,
-                cats = [], 
-                data = [];
-
-            if (!results.length) {
-                $('.no-activity-message').removeClass('hide');
-                return;
-            }
-
-	    var sorted = _.sortBy(results, function(result) {
-	        return result.date;
-	    });
-
-            _.each(sorted, function(result) {
-	        var the_date = moment(result.date, "YYYY-MM-DD").format('MMM D');
-
-                console.log(the_date);
-
-                data.push(result.num_submissions);
-                cats.push(the_date);
-            });
-
-
-            $('.activity-graph').highcharts({
-                chart: {
-                    type: 'line'
-                },
-                title: {
-                    text: null
-                },
-                colors: [
-                    '#666'
-                ],
-                xAxis: {
-                    categories: cats
-                },
-                yAxis: {
-                    title: {
-                        text: '# of submissions'
-                    }
-                },
-                series: [{
-                    name: 'Submissions',
-                    data: data
-                }],
-                credits: {
-                    enabled: false
-                }
-            });
-        });
-
-    
-        var view_sub_btn_tpl = _.template($("#view-submission-btn-tpl").html());
-
-        $('#submissions').dataTable( {
-            language: {
-                search: "Search by submitter name:"
-            },
-            "lengthMenu": [[5, 20, 50], [5, 20, 50]],
-            "pagingType": "full_numbers",
-            "order": [[1, 'desc']],
-            "columnDefs": [
-                {
-                    data: 0,
-                    targets: 0    
-                },
-                {
-                    "data": 1,
-                    "render": function (data, type, row) {
-                        var datetime = moment(data);
-                        return datetime.format('MMM D, YYYY [at] HH:mm:ss');
-                    },
-                    "targets": 1
-                },
-                {
-                    "data": 2,
-                    "render": function (data, type, row) {
-                        var datetime = moment(data);
-                        return datetime.format('MMM D, YYYY [at] HH:mm:ss');
-                    },
-                    "targets": 2
-                },
-                {
-                    data: 3,
-                    "render": function (data, type, row) {
-                        return view_sub_btn_tpl({submission_id: data});
-                    },
-                    "targets": 3,
-		    "sortable": false,
-                }
-            ],
-            "columns": [
-                {"name": "submitter_name"},
-                {"name": "save_time"},
-                {"name": "submission_time"},
-                {"name": "id"}
-            ],
-            "processing": true,
-            "serverSide": true,
-	    "ajax": function(data, callback, settings) {
-	        $.ajax({
-		  "url": "/api/v0/surveys/{{ survey.id }}/submissions",
-		    "data": {
-		        draw: data.draw,
-			offset: data.start,
-			limit: data.length === -1 ? undefined : data.length,
-			order_by: data.order.map(function(ord) {
-			    return data.columns[ord.column].name + ':' + ord.dir;
-			}).join(','),
-			fields: data.columns.map(function(c) {return c.name}).join(','),
-			search: data.search.value,
-			regex: data.search.regex,
-			search_fields: 'submitter_name',
-		    },
-		    "success": function(json) {
-		        var response = {
-			    draw: json.draw,
-			    recordsTotal: json.total_entries,
-			    recordsFiltered: json.filtered_entries,
-			    data: json.submissions.map(function(submission) {
-			        return [
-				    submission.submitter_name,
-				    submission.save_time,
-				    submission.submission_time,
-				    submission.id,
-				];
-			    }),
-			};
-			callback(response);
-		    }
-		});
-	    }
-        }).on('xhr.dt', function ( e, settings, json ) {
-            console.log('data returned: ', json);
-            // for ( var i=0, ien=json.aaData.length ; i<ien ; i++ ) {
-            //     json.aaData[i].sum = json.aaData[i].one + json.aaData[i].two;
-            // }
-            // Note no return - manipulate the data directly in the JSON object.
-        });
-    } );
+    // bootstrap the ViewSurvey module with the survey id
+    ViewSurvey.init('{{ survey.id }}');
 </script>
+
 {% end %}

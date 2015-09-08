@@ -13,19 +13,6 @@ from dokomoforms.handlers.api import (
 )
 
 
-class ViewHandler(BaseHandler):
-
-    """Get all of a user's surveys."""
-
-    @tornado.web.authenticated
-    def get(self):
-        """GET a dashboard-like view."""
-        # TODO: remove this?
-        self.render(
-            'view_view.html', current_user_id=self.current_user_model.id
-        )
-
-
 class ViewSurveyHandler(BaseHandler):
 
     """The endpoint for getting a single survey's admin page."""
@@ -99,7 +86,11 @@ class ViewSubmissionHandler(BaseHandler):
 
 class VisualizationHandler(BaseHandler):
 
-    """Visualize answers to a SurveyNode or Question."""
+    """Visualize answers to a SurveyNode or Question.
+
+    NOTE: Currently unused.
+
+    """
 
     @tornado.web.authenticated
     def get(self, question_or_survey_node_id: str):
