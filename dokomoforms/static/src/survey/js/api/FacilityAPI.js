@@ -514,7 +514,7 @@ FacilityTree.prototype.getCount = function() {
  *
  * @facilityData: Facility data in dokomoforms submission form
  */
-FacilityTree.prototype.formatFacility = function(facilityData) {
+FacilityTree.prototype.formattedFacility = function(facilityData) {
     var facility = {};
     facility.uuid = facilityData.facility_id;
     facility.name = facilityData.facility_name;
