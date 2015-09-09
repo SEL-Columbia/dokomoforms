@@ -78,3 +78,18 @@ class ViewSubmissionHandler(BaseHandler):
         self.render(
             'view_submission.html', survey=survey, submission=submission
         )
+
+
+class ViewUserAdminHandler(BaseHandler):
+
+    """The endpoint for getting the user administration admin page."""
+
+    @tornado.web.authenticated
+    def get(self):
+        """GET the user admin page."""
+
+        # TODO: we could bootstrap with the initial data here, probably
+        # not worth it.
+        self.render(
+            'view_user_admin.html'
+        )

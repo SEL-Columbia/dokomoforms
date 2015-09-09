@@ -8,6 +8,7 @@
     "test": "tests"
   },
   "dependencies": {
+    "backbone": "^1.2.3",
     "bootstrap": "^3.3.5",
     "datatables": "https://github.com/DataTables/DataTables/archive/1.10.9.tar.gz",
     "gulp-replace": "^0.5.4",

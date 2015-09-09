@@ -4,7 +4,9 @@ var $ = require('jquery'),
     base = require('./base'),
     view_btn_tpl = require('../templates/button-view-data.tpl'),
     manage_btn_tpl = require('../templates/button-manage-survey.tpl'),
-    dl_btn_tpl = require('../templates/button-download-data.tpl');
+    dl_btn_tpl = require('../templates/button-download-data.tpl'),
+    Surveys = require('./models').Surveys,
+    Survey = require('./models').Survey;
 
 var AccountOverview = (function() {
 
@@ -12,7 +14,10 @@ var AccountOverview = (function() {
         base.init();
         if (window.CURRENT_USER_ID !== 'None') {
             loadActivityGraph();
-
+            Surveys.fetch()
+                .done(function(res) {
+                    console.log(res.surveys);
+                });
             setupDataTable();
         }
     }
