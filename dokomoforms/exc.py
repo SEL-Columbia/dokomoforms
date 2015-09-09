@@ -46,6 +46,11 @@ class NotAnAnswerTypeError(DokomoError):
     """
 
 
+class UserRequiresEmailError(DokomoError):
+
+    """A user must have at least one e-mail address."""
+
+
 class PhotoIdDoesNotExistError(DokomoError):
 
     """The submitted photo ID does not exist in the database."""

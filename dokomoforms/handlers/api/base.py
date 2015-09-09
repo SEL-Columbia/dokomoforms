@@ -17,7 +17,7 @@ import tornado.web
 
 from dokomoforms.handlers.api.serializer import ModelJSONSerializer
 from dokomoforms.handlers.util import BaseHandler, BaseAPIHandler
-from dokomoforms.models import SurveyCreator, Email, Survey, Submission
+from dokomoforms.models import Administrator, Email, Survey, Submission
 from dokomoforms.models.survey import (
     administrator_filter, _administrator_table
 )
@@ -159,7 +159,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
                 self._check_xsrf_cookie()
             return True
 
-        # A SurveyCreator can log in with a token.
+        # An Administrator can log in with a token.
         try:
             token = self.r_handler.request.headers['Token']
             email = self.r_handler.request.headers['Email']
@@ -169,7 +169,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         try:
             user = (
                 self.session
-                .query(SurveyCreator.token, SurveyCreator.token_expiration)
+                .query(Administrator.token, Administrator.token_expiration)
                 .join(Email)
                 .filter(Email.address == email)
                 .one()

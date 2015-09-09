@@ -27,7 +27,8 @@ class User(Base):
     )
     role = sa.Column(
         sa.Enum(
-            'enumerator', 'creator', name='user_roles', inherit_schema=True
+            'enumerator', 'administrator',
+            name='user_roles', inherit_schema=True
         ),
         nullable=False,
     )
@@ -61,15 +62,15 @@ class User(Base):
         ))
 
 
-class SurveyCreator(User):
+class Administrator(User):
 
-    """A User who can create Surveys.
+    """A User who can create Surveys and add Users.
 
-    Regular users can answer surveys, but only SurveyCreator instances can
+    Regular users can answer surveys, but only Administrator instances can
     create surveys.
     """
 
-    __tablename__ = 'survey_creator'
+    __tablename__ = 'administrator'
 
     id = util.pk('auth_user.id')
     surveys = relationship(
@@ -86,7 +87,7 @@ class SurveyCreator(User):
         server_default=current_timestamp(),
     )
 
-    __mapper_args__ = {'polymorphic_identity': 'creator'}
+    __mapper_args__ = {'polymorphic_identity': 'administrator'}
 
     def _asdict(self) -> OrderedDict:
         result = super()._asdict()
@@ -96,8 +97,25 @@ class SurveyCreator(User):
                 ('survey_title', survey.title),
             )) for survey in self.surveys
         ]
+        result['admin_surveys'] = [
+            OrderedDict((
+                ('survey_id', survey.id),
+                ('survey_title', survey.title),
+            )) for survey in self.admin_surveys
+        ]
         result['token_expiration'] = self.token_expiration
         return result
+
+
+def construct_user(*, user_type: str, **kwargs):
+    """Construct either an enumerator or an administrator."""
+    if user_type == 'enumerator':
+        user_constructor = User
+    elif user_type == 'administrator':
+        user_constructor = Administrator
+    else:
+        raise TypeError
+    return user_constructor(**kwargs)
 
 
 class Email(Base):

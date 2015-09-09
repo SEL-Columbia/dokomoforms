@@ -23,13 +23,13 @@ def load_fixtures(engine):
     session = Session(bind=engine, autocommit=True)
 
     with session.begin():
-        creator = models.SurveyCreator(
+        creator = models.Administrator(
             name='test_user',
             # known ID against which we can test
             id='b7becd02-1a3f-4c1d-a0e1-286ba121aef4',
             emails=[models.Email(address='test_creator@fixtures.com')],
         )
-        creator_b = models.SurveyCreator(
+        creator_b = models.Administrator(
             name='test_user_b',
             # known ID against which we can test
             id='e7becd02-1a3f-4c1d-a0e1-286ba121aef1',
