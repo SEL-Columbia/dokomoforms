@@ -35,7 +35,7 @@ SAUCE_ACCESS_KEY = getattr(config, 'SAUCE_ACCESS_KEY', None)
 DEFAULT_BROWSER = getattr(config, 'DEFAULT_BROWSER', None)
 
 from dokomoforms.models import (
-    Survey, Submission, Photo, SurveyCreator, Node, Choice, SubSurvey,
+    Survey, Submission, Photo, Administrator, Node, Choice, SubSurvey,
     construct_survey, construct_survey_node, construct_node, construct_bucket
 )
 
@@ -402,7 +402,7 @@ class TestEnumerate(DriverTest):
     def test_dont_know(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -745,7 +745,7 @@ class TestEnumerate(DriverTest):
     def test_single_multiple_choice_question(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -792,7 +792,7 @@ class TestEnumerate(DriverTest):
     def test_select_multiple(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -845,7 +845,7 @@ class TestEnumerate(DriverTest):
     def test_other(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -1005,7 +1005,7 @@ class TestEnumerate(DriverTest):
     def test_allow_multiple(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -1062,7 +1062,7 @@ class TestEnumerate(DriverTest):
     def test_allow_multiple_remove_an_answer(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -1134,7 +1134,7 @@ class TestEnumerate(DriverTest):
     def test_allow_multiple_bad_input(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -1189,7 +1189,7 @@ class TestEnumerate(DriverTest):
     def test_required_question_no_answer(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         node = (
@@ -1244,7 +1244,7 @@ class TestEnumerate(DriverTest):
     def test_required_question_bad_answer(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         node = (
@@ -1310,7 +1310,7 @@ class TestEnumerate(DriverTest):
     def test_allow_multiple_cant_fool_required(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -1401,7 +1401,7 @@ class TestEnumerate(DriverTest):
     def test_basic_branching(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -1503,7 +1503,7 @@ class TestEnumerate(DriverTest):
     def test_first_question_branching(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -1592,7 +1592,7 @@ class TestEnumerate(DriverTest):
     def test_last_question_branching_enter_branch(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -1681,7 +1681,7 @@ class TestEnumerate(DriverTest):
     def test_last_question_branching_do_not_enter_branch(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -1762,7 +1762,7 @@ class TestEnumerate(DriverTest):
     def test_branch_nesting(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -1935,7 +1935,7 @@ class TestEnumerate(DriverTest):
     def test_nesting_maintains_answers(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -2074,7 +2074,7 @@ class TestEnumerate(DriverTest):
     def test_multiple_buckets_for_same_branch(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -2157,7 +2157,7 @@ class TestEnumerate(DriverTest):
     def survey_with_branch(self, type_constraint, *buckets):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -2828,7 +2828,7 @@ class TestEnumerate(DriverTest):
     def test_multiple_choice_buckets(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -2908,7 +2908,7 @@ class TestEnumerate(DriverTest):
     def test_after_saving_branch_path_resets(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -3019,7 +3019,7 @@ class TestEnumerate(DriverTest):
     def test_logic_integer_min_max(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -3112,7 +3112,7 @@ class TestEnumerate(DriverTest):
     def test_logic_decimal_min_max(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -3205,7 +3205,7 @@ class TestEnumerate(DriverTest):
     def test_logic_date_min_max(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():

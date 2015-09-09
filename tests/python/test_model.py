@@ -193,7 +193,7 @@ class TestColumnProperties(DokoTest):
         with self.session.begin():
             survey = models.construct_survey(
                 survey_type='public',
-                creator=models.SurveyCreator(name='creator'),
+                creator=models.Administrator(name='creator'),
                 title={'English': 'survey'},
                 nodes=[
                     models.construct_survey_node(
@@ -227,7 +227,7 @@ class TestColumnProperties(DokoTest):
 
     def test_answer_mode(self):
         with self.session.begin():
-            creator = models.SurveyCreator(
+            creator = models.Administrator(
                 name='creator',
                 surveys=[
                     models.construct_survey(
@@ -422,6 +422,18 @@ class TestColumnProperties(DokoTest):
 
 
 class TestUser(DokoTest):
+    def test_construct_user(self):
+        enumerator = models.construct_user(user_type='enumerator', name='e')
+        self.assertIs(type(enumerator), models.User)
+
+        admin = models.construct_user(user_type='administrator', name='a')
+        self.assertIs(type(admin), models.Administrator)
+
+    def test_construct_user_bogus_type(self):
+        self.assertRaises(
+            TypeError, models.construct_user, user_type='bogus', name='b'
+        )
+
     def test_to_json(self):
         with self.session.begin():
             new_user = models.User(name='a')
@@ -479,9 +491,9 @@ class TestUser(DokoTest):
                 )
                 self.session.add(user)
 
-    def test_survey_creator_asdict(self):
+    def test_administrator_asdict(self):
         with self.session.begin():
-            new_user = models.SurveyCreator(name='a')
+            new_user = models.Administrator(name='a')
             new_user.emails = [models.Email(address='b@b')]
             new_user.surveys.append(
                 models.Survey(title={'English': 'some title'})
@@ -495,7 +507,7 @@ class TestUser(DokoTest):
                 ('deleted', False),
                 ('name', 'a'),
                 ('emails', ['b@b']),
-                ('role', 'creator'),
+                ('role', 'administrator'),
                 ('preferences', {'default_language': 'English'}),
                 ('allowed_surveys', []),
                 ('last_update_time', user.last_update_time),
@@ -509,8 +521,49 @@ class TestUser(DokoTest):
                         ('survey_title', {'English': 'some title'}),
                     ))]
                 ),
+                ('admin_surveys', []),
                 ('token_expiration', user.token_expiration),
             ))
+        )
+
+    def test_administrator_asdict_with_admin_survey(self):
+        with self.session.begin():
+            new_user = models.Administrator(name='a')
+            new_user.emails = [models.Email(address='b@b')]
+            new_user.surveys.append(
+                models.Survey(title={'English': 'some title'})
+            )
+            self.session.add(new_user)
+
+            admin = models.Administrator(name='admin')
+            admin.admin_surveys = [new_user.surveys[0]]
+            self.session.add(admin)
+
+        self.assertEqual(
+            admin._asdict(),
+            OrderedDict((
+                ('id', admin.id),
+                ('deleted', False),
+                ('name', 'admin'),
+                ('emails', []),
+                ('role', 'administrator'),
+                ('preferences', {'default_language': 'English'}),
+                ('allowed_surveys', []),
+                ('last_update_time', admin.last_update_time),
+                ('surveys', []),
+                (
+                    'admin_surveys',
+                    [OrderedDict((
+                        (
+                            'survey_id',
+                            self.session.query(models.Survey.id).scalar()
+                        ),
+                        ('survey_title', {'English': 'some title'}),
+                    ))]
+                ),
+                ('token_expiration', admin.token_expiration),
+            )),
+            msg=admin
         )
 
     def test_deleting_user_clears_email(self):
@@ -544,13 +597,13 @@ class TestUser(DokoTest):
     def test_most_recent_surveys(self):
         with self.session.begin():
             self.session.add_all((
-                models.SurveyCreator(
+                models.Administrator(
                     name='this one',
                     surveys=[
                         models.construct_survey(
                             survey_type='enumerator_only',
                             title={'English': 'survey'},
-                            administrators=[models.User(name='admin')],
+                            administrators=[models.Administrator(name='adm')],
                             enumerators=[models.User(name='enumerator')],
                         ),
                         models.construct_survey(
@@ -559,13 +612,13 @@ class TestUser(DokoTest):
                         ),
                     ],
                 ),
-                models.SurveyCreator(
+                models.Administrator(
                     name='not this one',
                     surveys=[
                         models.construct_survey(
                             survey_type='enumerator_only',
                             title={'English': 'not this survey'},
-                            administrators=[models.User(name='no admin')],
+                            administrators=[models.Administrator(name='no_a')],
                             enumerators=[models.User(name='no enumerator')],
                         ),
                     ],
@@ -588,7 +641,7 @@ class TestUser(DokoTest):
         admin_id = (
             self.session
             .query(models.User.id)
-            .filter_by(name='admin')
+            .filter_by(name='adm')
             .scalar()
         )
         self.assertEqual(
@@ -619,13 +672,13 @@ class TestUser(DokoTest):
     def test_most_recent_submissions(self):
         with self.session.begin():
             self.session.add_all((
-                models.SurveyCreator(
+                models.Administrator(
                     name='this one',
                     surveys=[
                         models.construct_survey(
                             survey_type='public',
                             title={'English': 'survey'},
-                            administrators=[models.User(name='admin')],
+                            administrators=[models.Administrator(name='adm')],
                             submissions=[
                                 models.construct_submission(
                                     submission_type='unauthenticated',
@@ -653,7 +706,7 @@ class TestUser(DokoTest):
                         ),
                     ],
                 ),
-                models.SurveyCreator(
+                models.Administrator(
                     name='not this one',
                     surveys=[
                         models.construct_survey(
@@ -698,7 +751,7 @@ class TestUser(DokoTest):
         admin_id = (
             self.session
             .query(models.User.id)
-            .filter_by(name='admin')
+            .filter_by(name='adm')
             .scalar()
         )
         self.assertEqual(
@@ -840,7 +893,7 @@ class TestNode(DokoTest):
     def test_enforce_non_answerable(self):
         with self.assertRaises(AssertionError):
             with self.session.begin():
-                creator = models.SurveyCreator(
+                creator = models.Administrator(
                     name='creator',
                     surveys=[
                         models.Survey(
@@ -861,7 +914,7 @@ class TestNode(DokoTest):
     def test_enforce_answerable(self):
         with self.assertRaises(AssertionError):
             with self.session.begin():
-                creator = models.SurveyCreator(
+                creator = models.Administrator(
                     name='creator',
                     surveys=[
                         models.Survey(
@@ -937,7 +990,7 @@ class TestNode(DokoTest):
         node = self.session.query(models.Node).one()
         with self.assertRaises(TypeError):
             with self.session.begin():
-                creator = models.SurveyCreator(
+                creator = models.Administrator(
                     name='creator',
                     surveys=[
                         models.Survey(
@@ -963,7 +1016,7 @@ class TestNode(DokoTest):
 
         node_id = self.session.query(models.Node.id).scalar()
         with self.session.begin():
-            creator = models.SurveyCreator(
+            creator = models.Administrator(
                 name='creator',
                 surveys=[
                     models.Survey(
@@ -987,7 +1040,7 @@ class TestNode(DokoTest):
 
     def test_note_asdict(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -1021,7 +1074,7 @@ class TestNode(DokoTest):
 
     def test_multiple_choice_question_asdict(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -1202,7 +1255,7 @@ class TestSurvey(DokoTest):
         cn = models.construct_node
         with self.session.begin():
             self.session.add(
-                models.SurveyCreator(
+                models.Administrator(
                     name='creator',
                     surveys=[
                         models.construct_survey(
@@ -1271,7 +1324,7 @@ class TestSurvey(DokoTest):
         cn = models.construct_node
         with self.session.begin():
             self.session.add(
-                models.SurveyCreator(
+                models.Administrator(
                     name='creator',
                     surveys=[
                         models.construct_survey(
@@ -1350,13 +1403,13 @@ class TestSurvey(DokoTest):
     def test_administrator_filter(self):
         with self.session.begin():
             self.session.add(
-                models.SurveyCreator(
+                models.Administrator(
                     name='creator',
                     surveys=[
                         models.construct_survey(
                             survey_type='enumerator_only',
                             title={'English': 'survey'},
-                            administrators=[models.User(name='admin')],
+                            administrators=[models.Administrator(name='adm')],
                             enumerators=[models.User(name='enumerator')],
                         ),
                     ],
@@ -1364,11 +1417,16 @@ class TestSurvey(DokoTest):
             )
 
         survey_query = self.session.query(func.count(models.Survey.id))
-        creator_id = self.session.query(models.SurveyCreator.id).scalar()
+        creator_id = (
+            self.session
+            .query(models.Administrator.id)
+            .filter_by(name='creator')
+            .scalar()
+        )
         admin_id = (
             self.session
             .query(models.User.id)
-            .filter_by(name='admin')
+            .filter_by(name='adm')
             .scalar()
         )
         enumerator_id = (
@@ -1396,7 +1454,7 @@ class TestSurvey(DokoTest):
     def test_num_submissions(self):
         with self.session.begin():
             self.session.add(
-                models.SurveyCreator(
+                models.Administrator(
                     name='creator',
                     surveys=[
                         models.construct_survey(
@@ -1432,7 +1490,7 @@ class TestSurvey(DokoTest):
     def test_earliest_submission_time(self):
         with self.session.begin():
             self.session.add(
-                models.SurveyCreator(
+                models.Administrator(
                     name='creator',
                     surveys=[
                         models.construct_survey(
@@ -1480,7 +1538,7 @@ class TestSurvey(DokoTest):
     def test_latest_submission_time(self):
         with self.session.begin():
             self.session.add(
-                models.SurveyCreator(
+                models.Administrator(
                     name='creator',
                     surveys=[
                         models.construct_survey(
@@ -1527,8 +1585,8 @@ class TestSurvey(DokoTest):
 
     def test_administrators(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
-            admin = models.User(name='admin')
+            creator = models.Administrator(name='creator')
+            admin = models.Administrator(name='admin')
             creator.surveys = [
                 models.EnumeratorOnlySurvey(
                     title={'English': 'survey'},
@@ -1546,8 +1604,8 @@ class TestSurvey(DokoTest):
     def test_unique_administrators(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
-                creator = models.SurveyCreator(name='creator')
-                admin = models.User(name='admin')
+                creator = models.Administrator(name='creator')
+                admin = models.Administrator(name='admin')
                 creator.surveys = [
                     models.EnumeratorOnlySurvey(
                         title={'English': 'survey'},
@@ -1560,7 +1618,7 @@ class TestSurvey(DokoTest):
     def test_unique_enumerators(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
-                creator = models.SurveyCreator(name='creator')
+                creator = models.Administrator(name='creator')
                 enmrtr = models.User(name='enmrtr')
                 creator.surveys = [
                     models.EnumeratorOnlySurvey(
@@ -1574,7 +1632,7 @@ class TestSurvey(DokoTest):
     def test_url_slug_empty(self):
         with self.session.begin():
             self.session.add(
-                models.SurveyCreator(
+                models.Administrator(
                     name='creator',
                     surveys=[
                         models.construct_survey(
@@ -1585,7 +1643,7 @@ class TestSurvey(DokoTest):
                 )
             )
             self.session.add(
-                models.SurveyCreator(
+                models.Administrator(
                     name='creator2',
                     surveys=[
                         models.construct_survey(
@@ -1604,7 +1662,7 @@ class TestSurvey(DokoTest):
     def test_url_slug_valid(self):
         with self.session.begin():
             self.session.add(
-                models.SurveyCreator(
+                models.Administrator(
                     name='creator',
                     surveys=[
                         models.construct_survey(
@@ -1623,7 +1681,7 @@ class TestSurvey(DokoTest):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
                 self.session.add(
-                    models.SurveyCreator(
+                    models.Administrator(
                         name='creator',
                         surveys=[
                             models.construct_survey(
@@ -1635,7 +1693,7 @@ class TestSurvey(DokoTest):
                     )
                 )
                 self.session.add(
-                    models.SurveyCreator(
+                    models.Administrator(
                         name='creator2',
                         surveys=[
                             models.construct_survey(
@@ -1653,7 +1711,7 @@ class TestSurvey(DokoTest):
                 with self.assertRaises(IntegrityError):
                     with self.session.begin():
                         self.session.add(
-                            models.SurveyCreator(
+                            models.Administrator(
                                 name='creator',
                                 surveys=[
                                     models.construct_survey(
@@ -1673,7 +1731,7 @@ class TestSurvey(DokoTest):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
                 self.session.add(
-                    models.SurveyCreator(
+                    models.Administrator(
                         name='creator',
                         surveys=[
                             models.construct_survey(
@@ -1688,7 +1746,7 @@ class TestSurvey(DokoTest):
     def test_one_node_surveys(self):
         number_of_questions = 11
         with self.session.begin():
-            creator = models.SurveyCreator(
+            creator = models.Administrator(
                 name='creator',
                 emails=[models.Email(address='email@email')],
             )
@@ -1727,7 +1785,7 @@ class TestSurvey(DokoTest):
                 creator.surveys.append(survey)
             self.session.add(creator)
 
-        the_creator = self.session.query(models.SurveyCreator).one()
+        the_creator = self.session.query(models.Administrator).one()
         self.assertEqual(
             len(the_creator.surveys),
             number_of_questions,
@@ -1752,7 +1810,7 @@ class TestSurvey(DokoTest):
                 title={'English': 'some node'},
                 type_constraint='integer',
             )
-            creator = models.SurveyCreator(
+            creator = models.Administrator(
                 name='creator',
             )
             self.session.add_all((node, creator))
@@ -1800,7 +1858,7 @@ class TestSurvey(DokoTest):
 
     def test_asdict(self):
         with self.session.begin():
-            creator = models.SurveyCreator(
+            creator = models.Administrator(
                 name='creator',
                 emails=[models.Email(address='email@email')],
             )
@@ -1831,7 +1889,7 @@ class TestSurvey(DokoTest):
                 ('version', 1),
                 (
                     'creator_id',
-                    self.session.query(models.SurveyCreator.id).scalar()
+                    self.session.query(models.Administrator.id).scalar()
                 ),
                 ('creator_name', 'creator'),
                 ('metadata', {}),
@@ -1844,7 +1902,7 @@ class TestSurvey(DokoTest):
     def test_title_in_default_language_must_exist(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
-                creator = models.SurveyCreator(
+                creator = models.Administrator(
                     name='creator',
                     surveys=[
                         models.Survey(
@@ -1857,7 +1915,7 @@ class TestSurvey(DokoTest):
     def test_title_in_default_language_must_not_be_empty(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
-                creator = models.SurveyCreator(
+                creator = models.Administrator(
                     name='creator',
                     surveys=[
                         models.Survey(
@@ -1869,7 +1927,7 @@ class TestSurvey(DokoTest):
 
     def test_title_in_default_language_must_be_unique_per_user(self):
         with self.session.begin():
-            good_creator = models.SurveyCreator(
+            good_creator = models.Administrator(
                 name='good',
                 surveys=[
                     models.Survey(
@@ -1879,7 +1937,7 @@ class TestSurvey(DokoTest):
             )
             self.session.add(good_creator)
 
-            bad_creator = models.SurveyCreator(
+            bad_creator = models.Administrator(
                 name='bad',
                 surveys=[
                     models.Survey(
@@ -1903,7 +1961,7 @@ class TestSurvey(DokoTest):
 
     def test_alternate_default_language(self):
         with self.session.begin():
-            creator = models.SurveyCreator(
+            creator = models.Administrator(
                 name='creator',
                 surveys=[
                     models.Survey(
@@ -1923,7 +1981,7 @@ class TestSurvey(DokoTest):
     def test_bad_default_language(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
-                creator = models.SurveyCreator(
+                creator = models.Administrator(
                     name='creator',
                     surveys=[
                         models.Survey(
@@ -1937,7 +1995,7 @@ class TestSurvey(DokoTest):
 
     def test_repeatable_sub_survey(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='a')
+            creator = models.Administrator(name='a')
             survey = models.Survey(title={'English': 'a'})
             survey.nodes = [
                 models.construct_survey_node(
@@ -1976,7 +2034,7 @@ class TestSurvey(DokoTest):
     def test_survey_nodes_in_a_repeatable_sub_survey_must_be_repeatable(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
-                creator = models.SurveyCreator(name='a')
+                creator = models.Administrator(name='a')
                 survey = models.Survey(title={'English': 'a'})
                 survey.nodes = [
                     models.construct_survey_node(
@@ -2010,7 +2068,7 @@ class TestSurvey(DokoTest):
 
     def test_answer_repeatable_but_not_allow_multiple(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='a')
+            creator = models.Administrator(name='a')
             survey = models.Survey(title={'English': 'a'})
             survey.nodes = [
                 models.construct_survey_node(
@@ -2078,7 +2136,7 @@ class TestSurvey(DokoTest):
 
     def test_answer_repeatable_but_allow_multiple(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='a')
+            creator = models.Administrator(name='a')
             survey = models.Survey(title={'English': 'a'})
             survey.nodes = [
                 models.construct_survey_node(
@@ -2153,7 +2211,7 @@ class TestSurveyNode(DokoTest):
     def test_answer_count(self):
         with self.session.begin():
             self.session.add(
-                models.SurveyCreator(
+                models.Administrator(
                     name='creator',
                     surveys=[
                         models.construct_survey(
@@ -2214,7 +2272,7 @@ class TestSurveyNode(DokoTest):
     def test_requested_translations_must_exist(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
-                creator = models.SurveyCreator(
+                creator = models.Administrator(
                     name='creator',
                     emails=[models.Email(address='email@email')],
                     surveys=[
@@ -2246,7 +2304,7 @@ class TestSurveyNode(DokoTest):
                     title={'German': 'german question'},
                     hint={'German': ''},
                 )
-                creator = models.SurveyCreator(
+                creator = models.Administrator(
                     name='creator',
                     emails=[models.Email(address='email@email')],
                     surveys=[
@@ -2292,7 +2350,7 @@ class TestSurveyNode(DokoTest):
                 title={'French': 'french question'},
                 hint={'French': ''},
             )
-            creator = models.SurveyCreator(
+            creator = models.Administrator(
                 name='creator',
                 emails=[models.Email(address='email@email')],
                 surveys=[
@@ -2341,7 +2399,7 @@ class TestSurveyNode(DokoTest):
 
     def test_asdict(self):
         with self.session.begin():
-            creator = models.SurveyCreator(
+            creator = models.Administrator(
                 name='creator',
                 emails=[models.Email(address='email@email')],
             )
@@ -2381,7 +2439,7 @@ class TestSurveyNode(DokoTest):
 
     def test_asdict_with_sub_survey(self):
         with self.session.begin():
-            creator = models.SurveyCreator(
+            creator = models.Administrator(
                 name='creator',
                 emails=[models.Email(address='email@email')],
             )
@@ -2431,7 +2489,7 @@ class TestSurveyNode(DokoTest):
                 title={'French': 'French question'},
                 hint={'French': ''},
             )
-            creator = models.SurveyCreator(
+            creator = models.Administrator(
                 name='creator',
                 emails=[models.Email(address='email@email')],
                 surveys=[
@@ -2602,8 +2660,8 @@ class TestSurveyNode(DokoTest):
 
 
 class TestBucket(DokoTest):
-    def _create_blank_survey(self) -> (models.SurveyCreator, models.Survey):
-        creator = models.SurveyCreator(
+    def _create_blank_survey(self) -> (models.Administrator, models.Survey):
+        creator = models.Administrator(
             name='creator',
             emails=[models.Email(address='email@email')],
         )
@@ -3269,7 +3327,7 @@ class TestSubmission(DokoTest):
 
     def test_enumerator_submission(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             enumerator = models.User(name='enumerator')
             creator.surveys = [
                 models.EnumeratorOnlySurvey(
@@ -3294,7 +3352,7 @@ class TestSubmission(DokoTest):
 
     def test_enumerator_only_submission_asdict(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             enumerator = models.User(name='enumerator')
             creator.surveys = [
                 models.EnumeratorOnlySurvey(
@@ -3369,7 +3427,7 @@ class TestSubmission(DokoTest):
     def test_enumerator_only(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
-                creator = models.SurveyCreator(name='creator')
+                creator = models.Administrator(name='creator')
                 enumerator = models.User(name='enumerator')
                 creator.surveys = [
                     models.EnumeratorOnlySurvey(
@@ -3389,7 +3447,7 @@ class TestSubmission(DokoTest):
     def test_enumerator_only_submission_requires_enumerator(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
-                creator = models.SurveyCreator(name='creator')
+                creator = models.Administrator(name='creator')
                 enumerator = models.User(name='enumerator')
                 creator.surveys = [
                     models.EnumeratorOnlySurvey(
@@ -3409,7 +3467,7 @@ class TestSubmission(DokoTest):
     def test_non_enumerator_cannot_submit(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
-                creator = models.SurveyCreator(name='creator')
+                creator = models.Administrator(name='creator')
                 creator.surveys = [
                     models.EnumeratorOnlySurvey(
                         title={'English': 'survey'},
@@ -3430,7 +3488,7 @@ class TestSubmission(DokoTest):
 
     def test_authentication_not_required_for_regular_survey(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             authentic_user = models.User(name='enumerator')
             creator.surveys = [models.Survey(title={'English': 'survey'})]
 
@@ -3467,7 +3525,7 @@ class TestSubmission(DokoTest):
 
     def test_public_submission_asdict_non_enumerator(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             creator.surveys = [models.Survey(title={'English': 'survey'})]
 
             self.session.add(creator)
@@ -3499,7 +3557,7 @@ class TestSubmission(DokoTest):
     def test_submission_bad_email(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
-                creator = models.SurveyCreator(name='creator')
+                creator = models.Administrator(name='creator')
                 creator.surveys = [models.Survey(title={'English': 'survey'})]
 
                 self.session.add(creator)
@@ -3514,7 +3572,7 @@ class TestSubmission(DokoTest):
 
     def test_public_submission_asdict_enumerator(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             authentic_user = models.User(name='enumerator')
             creator.surveys = [models.Survey(title={'English': 'survey'})]
 
@@ -3558,7 +3616,7 @@ class TestAnswer(DokoTest):
 
     def test_basic_case(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -3604,7 +3662,7 @@ class TestAnswer(DokoTest):
 
     def test_asdict(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -3668,7 +3726,7 @@ class TestAnswer(DokoTest):
 
     def test_question_title(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -3707,7 +3765,7 @@ class TestAnswer(DokoTest):
     @dont_run_in_a_transaction
     def test_cannot_answer_a_note(self):
         with self.session.begin():
-            creator = models.SurveyCreator(
+            creator = models.Administrator(
                 name='creator',
                 surveys=[
                     models.Survey(
@@ -3756,7 +3814,7 @@ class TestAnswer(DokoTest):
 
     def test_answer_type_matches_question_type(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -3790,7 +3848,7 @@ class TestAnswer(DokoTest):
 
     def test_reject_incorrect_answer_syntax(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -3824,7 +3882,7 @@ class TestAnswer(DokoTest):
 
     def test_cannot_answer_survey_node_from_another_survey(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey1 = models.construct_survey(
                 survey_type='public',
                 title={'English': '1'},
@@ -3870,7 +3928,7 @@ class TestAnswer(DokoTest):
 
     def test_text_answer(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -3908,7 +3966,7 @@ class TestAnswer(DokoTest):
 
     def test_photo_answer_no_photo(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -3948,7 +4006,7 @@ class TestAnswer(DokoTest):
 
     def test_photo_answer_unique(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -3990,7 +4048,7 @@ class TestAnswer(DokoTest):
 
     def test_photo_answer_with_photo(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4050,7 +4108,7 @@ class TestAnswer(DokoTest):
 
     def test_add_new_photo_to_session(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4109,7 +4167,7 @@ class TestAnswer(DokoTest):
 
     def test_add_new_photo_to_session_bogus_id(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4159,7 +4217,7 @@ class TestAnswer(DokoTest):
 
     def test_integer_answer(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4197,7 +4255,7 @@ class TestAnswer(DokoTest):
 
     def test_decimal_answer(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4235,7 +4293,7 @@ class TestAnswer(DokoTest):
 
     def test_date_answer(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4273,7 +4331,7 @@ class TestAnswer(DokoTest):
 
     def test_time_answer(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4319,7 +4377,7 @@ class TestAnswer(DokoTest):
 
     def test_timestamp_answer(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4365,7 +4423,7 @@ class TestAnswer(DokoTest):
 
     def test_location_answer(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4403,7 +4461,7 @@ class TestAnswer(DokoTest):
 
     def test_facility_answer(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4457,7 +4515,7 @@ class TestAnswer(DokoTest):
 
     def test_multiple_choice_answer(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4498,7 +4556,7 @@ class TestAnswer(DokoTest):
 
     def test_answer_choice_belongs_to_question(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={"English": "survey"},
                 nodes=[
@@ -4545,7 +4603,7 @@ class TestAnswer(DokoTest):
 
     def test_cant_answer_other_by_default(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4580,7 +4638,7 @@ class TestAnswer(DokoTest):
     def test_only_MC_can_allow_other(self):
         with self.assertRaises(IntegrityError):
             with self.session.begin():
-                creator = models.SurveyCreator(name='creator')
+                creator = models.Administrator(name='creator')
                 survey = models.Survey(
                     title={'English': 'survey'},
                     nodes=[
@@ -4599,7 +4657,7 @@ class TestAnswer(DokoTest):
 
     def test_answer_other(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4642,7 +4700,7 @@ class TestAnswer(DokoTest):
 
     def test_answer_while_other_allowed(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4698,7 +4756,7 @@ class TestAnswer(DokoTest):
 
     def test_cant_give_answer_and_other(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4741,7 +4799,7 @@ class TestAnswer(DokoTest):
 
     def test_cant_answer_dont_know_by_default(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4775,7 +4833,7 @@ class TestAnswer(DokoTest):
 
     def test_answer_dont_know(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4818,7 +4876,7 @@ class TestAnswer(DokoTest):
 
     def test_answer_while_dont_know_allowed(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4861,7 +4919,7 @@ class TestAnswer(DokoTest):
 
     def test_cant_give_answer_and_dont_know(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4897,7 +4955,7 @@ class TestAnswer(DokoTest):
 
     def test_response_answer(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4942,7 +5000,7 @@ class TestAnswer(DokoTest):
 
     def test_response_other(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -4988,7 +5046,7 @@ class TestAnswer(DokoTest):
 
     def test_response_dont_know(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -5034,7 +5092,7 @@ class TestAnswer(DokoTest):
 
     def test_response_legitimate(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -5071,7 +5129,7 @@ class TestAnswer(DokoTest):
 
     def test_answer_multiple_not_allowed(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -5116,7 +5174,7 @@ class TestAnswer(DokoTest):
 
     def test_answer_multiple_allowed(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -5166,7 +5224,7 @@ class TestAnswer(DokoTest):
 
     def test_answer_multiple_allowed_choices(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[
@@ -5224,7 +5282,7 @@ class TestAnswer(DokoTest):
 
     def test_answer_multiple_same_choice_forbidden(self):
         with self.session.begin():
-            creator = models.SurveyCreator(name='creator')
+            creator = models.Administrator(name='creator')
             survey = models.Survey(
                 title={'English': 'survey'},
                 nodes=[

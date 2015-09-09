@@ -22,7 +22,7 @@ survey_type_enum = sa.Enum(
 
 
 _administrator_table = sa.Table(
-    'administrator',
+    'survey_administrator',
     Base.metadata,
     sa.Column(
         'survey_id',
@@ -30,7 +30,7 @@ _administrator_table = sa.Table(
         util.fk('survey.id'),
         nullable=False,
     ),
-    sa.Column('user_id', pg.UUID, util.fk('auth_user.id'), nullable=False),
+    sa.Column('user_id', pg.UUID, util.fk('administrator.id'), nullable=False),
     sa.UniqueConstraint('survey_id', 'user_id'),
 )
 
@@ -71,7 +71,7 @@ class Survey(Base):
     )
     survey_type = sa.Column(survey_type_enum, nullable=False)
     administrators = relationship(
-        'User',
+        'Administrator',
         secondary=_administrator_table,
         backref='admin_surveys',
         passive_deletes=True,
@@ -93,7 +93,7 @@ class Survey(Base):
     version = sa.Column(sa.Integer, nullable=False, server_default='1')
     # ODOT
     creator_id = sa.Column(
-        pg.UUID, util.fk('survey_creator.id'), nullable=False
+        pg.UUID, util.fk('administrator.id'), nullable=False
     )
 
     # This is survey_metadata rather than just metadata because all models

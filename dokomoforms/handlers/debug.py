@@ -5,7 +5,7 @@ import tornado.web
 from sqlalchemy.sql import exists
 from sqlalchemy.orm.exc import NoResultFound
 
-from dokomoforms.models import User, SurveyCreator, Email
+from dokomoforms.models import User, Administrator, Email
 from dokomoforms.handlers.util import BaseHandler
 
 
@@ -23,7 +23,7 @@ class DebugUserCreationHandler(BaseHandler):
         created = False
         if not email_exists:
             with self.session.begin():
-                creator = SurveyCreator(
+                creator = Administrator(
                     name='debug_user',
                     emails=[Email(address=email)],
                 )

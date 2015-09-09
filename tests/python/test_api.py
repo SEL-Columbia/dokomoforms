@@ -20,7 +20,7 @@ from tests.python.util import (
     DokoHTTPTest, setUpModule, tearDownModule
 )
 
-from dokomoforms.models import Submission, Survey, Node, SurveyCreator
+from dokomoforms.models import Submission, Survey, Node, Administrator, User
 import dokomoforms.models as models
 from dokomoforms.models.answer import PhotoAnswer
 from dokomoforms.handlers.api.base import BaseResource
@@ -97,7 +97,7 @@ class TestAuthentication(DokoHTTPTest):
     def test_is_authenticated_api_token(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -137,7 +137,7 @@ class TestAuthentication(DokoHTTPTest):
     def test_is_authenticated_missing_api_token(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -176,7 +176,7 @@ class TestAuthentication(DokoHTTPTest):
     def test_is_authenticated_wrong_api_token(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -201,7 +201,7 @@ class TestAuthentication(DokoHTTPTest):
     def test_is_authenticated_expired_api_token(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -2435,7 +2435,7 @@ class TestSubmissionApi(DokoHTTPTest):
     def test_cannot_skip_first_required_question_no_sub_surveys(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -2495,7 +2495,7 @@ class TestSubmissionApi(DokoHTTPTest):
     def test_legitimate_question_skip(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -2554,7 +2554,7 @@ class TestSubmissionApi(DokoHTTPTest):
     def test_cannot_skip_second_required_question_no_sub_surveys(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -2614,7 +2614,7 @@ class TestSubmissionApi(DokoHTTPTest):
     def test_must_answer_both_required_questions(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -2675,7 +2675,7 @@ class TestSubmissionApi(DokoHTTPTest):
     def test_cannot_skip_sub_survey(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -2767,7 +2767,7 @@ class TestSubmissionApi(DokoHTTPTest):
     def test_can_skip_sub_survey_outside_bucket(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -2858,7 +2858,7 @@ class TestSubmissionApi(DokoHTTPTest):
     def test_required_questions_with_sub_surveys(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -3601,7 +3601,7 @@ class TestSubmissionApi(DokoHTTPTest):
     def test_repeatable_required_valid(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -3726,7 +3726,7 @@ class TestSubmissionApi(DokoHTTPTest):
     def test_repeatable_required_not_enough_responses(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -3838,7 +3838,7 @@ class TestSubmissionApi(DokoHTTPTest):
     def test_repeatable_required_valid_with_optional_subquestion(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():
@@ -5119,15 +5119,107 @@ class TestNodeApi(DokoHTTPTest):
 
 
 class TestUserApi(DokoHTTPTest):
+    def test_create_enumerator(self):
+        url = self.api_root + '/users'
+        method = 'POST'
+        body = {
+            'user_type': 'enumerator',
+            'name': 'a',
+            'emails': ['a@a.com'],
+            'allowed_surveys': ['c0816b52-204f-41d4-aaf0-ac6ae2970925'],
+        }
+        encoded_body = json_encode(body)
+        response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201, msg=response.body)
+
+        user = self.session.query(User).filter_by(name='a').one()
+        self.assertEqual(user.name, 'a')
+        self.assertEqual(len(user.emails), 1)
+        self.assertEqual(user.emails[0].address, 'a@a.com')
+        self.assertEqual(user.role, 'enumerator')
+        self.assertEqual(len(user.allowed_surveys), 1)
+        self.assertEqual(
+            user.allowed_surveys[0].id,
+            'c0816b52-204f-41d4-aaf0-ac6ae2970925'
+        )
+
+    def test_create_enumerator_wrong_survey_type(self):
+        url = self.api_root + '/users'
+        method = 'POST'
+        body = {
+            'user_type': 'enumerator',
+            'name': 'a',
+            'emails': ['a@a.com'],
+            'allowed_surveys': ['b0816b52-204f-41d4-aaf0-ac6ae2970923'],
+        }
+        encoded_body = json_encode(body)
+        response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 400, msg=response.body)
+
+    def test_an_enumerator_is_not_an_admin(self):
+        url = self.api_root + '/users'
+        method = 'POST'
+        body = {
+            'user_type': 'enumerator',
+            'name': 'a',
+            'emails': ['a@a.com'],
+            'admin_surveys': ['c0816b52-204f-41d4-aaf0-ac6ae2970925'],
+        }
+        encoded_body = json_encode(body)
+        response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 400, msg=response.body)
+
+    def test_create_user_no_emails(self):
+        url = self.api_root + '/users'
+        method = 'POST'
+        body = {
+            'user_type': 'enumerator',
+            'name': 'a',
+        }
+        encoded_body = json_encode(body)
+        response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 400, msg=response.body)
+
+    def test_create_admin(self):
+        url = self.api_root + '/users'
+        method = 'POST'
+        body = {
+            'user_type': 'administrator',
+            'name': 'a',
+            'emails': ['a@a.com'],
+            'admin_surveys': ['b0816b52-204f-41d4-aaf0-ac6ae2970923'],
+        }
+        encoded_body = json_encode(body)
+        response = self.fetch(url, method=method, body=encoded_body)
+        self.assertEqual(response.code, 201, msg=response.body)
+        user = self.session.query(Administrator).filter_by(name='a').one()
+        self.assertEqual(user.name, 'a')
+        self.assertEqual(len(user.emails), 1)
+        self.assertEqual(user.emails[0].address, 'a@a.com')
+        self.assertEqual(user.role, 'administrator')
+        self.assertEqual(len(user.admin_surveys), 1)
+        self.assertEqual(
+            user.admin_surveys[0].id,
+            'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        )
+
+        survey = (
+            self.session
+            .query(Survey)
+            .get('b0816b52-204f-41d4-aaf0-ac6ae2970923')
+        )
+        self.assertEqual(len(survey.administrators), 1)
+        self.assertEqual(survey.administrators[0].name, 'a')
+
     def test_create_api_token(self):
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         self.assertIsNone(user.token)
         # url to test
-        url = self.api_root + '/user/generate-api-token'
+        url = self.api_root + '/users/generate-api-token'
         # http method (just for clarity)
         method = 'GET'
         # make request
@@ -5145,7 +5237,7 @@ class TestUserApi(DokoHTTPTest):
 
     def test_use_api_token_to_get(self):
         # url to test
-        url = self.api_root + '/user/generate-api-token'
+        url = self.api_root + '/users/generate-api-token'
         # http method (just for clarity)
         method = 'GET'
         # make request
@@ -5163,7 +5255,7 @@ class TestUserApi(DokoHTTPTest):
 
     def test_use_api_token_to_post(self):
         # url to test
-        url = self.api_root + '/user/generate-api-token'
+        url = self.api_root + '/users/generate-api-token'
         # http method (just for clarity)
         method = 'GET'
         # make request
@@ -5221,7 +5313,7 @@ class TestUserApi(DokoHTTPTest):
 
     def test_use_expired_api_token(self):
         # url to test
-        url = self.api_root + '/user/generate-api-token'
+        url = self.api_root + '/users/generate-api-token'
         # http method (just for clarity)
         method = 'GET'
         # make request
@@ -5230,7 +5322,7 @@ class TestUserApi(DokoHTTPTest):
 
         user = (
             self.session
-            .query(SurveyCreator)
+            .query(Administrator)
             .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
         )
         with self.session.begin():

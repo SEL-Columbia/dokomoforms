@@ -35,7 +35,8 @@ if __name__ == '__main__':  # pragma: no cover
 import dokomoforms.handlers as handlers
 from dokomoforms.models import create_engine, Base, UUID_REGEX
 from dokomoforms.handlers.api import (
-    SurveyResource, SubmissionResource, PhotoResource, NodeResource
+    SurveyResource, SubmissionResource, PhotoResource, NodeResource,
+    UserResource
 )
 
 
@@ -212,6 +213,7 @@ class Application(tornado.web.Application):
                 '/submissions/({uuid})/?', SubmissionResource.as_detail(),
                 name='submission'
             ),
+            # * * Photos
             api_url('/photos/?', PhotoResource.as_list(), name='photos'),
             api_url(
                 '/photos/({uuid})/?', PhotoResource.as_detail(), name='photo'
@@ -224,8 +226,12 @@ class Application(tornado.web.Application):
             ),
 
             # * Users
+            api_url('/users/?', UserResource.as_list(), name='users'),
             api_url(
-                '/user/generate-api-token/?', handlers.GenerateToken,
+                '/users/({uuid})/?', UserResource.as_detail(), name='user'
+            ),
+            api_url(
+                '/users/generate-api-token/?', handlers.GenerateToken,
                 name='generate_token'
             ),
         ]
