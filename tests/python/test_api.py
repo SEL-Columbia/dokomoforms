@@ -5240,6 +5240,60 @@ class TestUserApi(DokoHTTPTest):
         self.assertEqual(len(user.emails), 1)
         self.assertEqual(user.emails[0].address, 'a@a.com')
 
+    def test_update_user_allowed_surveys(self):
+        with self.session.begin():
+            admin = Administrator(name='a1')
+            enumerator1 = User(name='e1')
+            enumerator2 = User(name='e2')
+            survey1 = models.construct_survey(
+                survey_type='enumerator_only',
+                title={'English': 'survey1'},
+                enumerators=[enumerator1],
+            )
+            survey2 = models.construct_survey(
+                survey_type='enumerator_only',
+                title={'English': 'survey2'},
+            )
+            admin.surveys.extend([survey1, survey2])
+            self.session.add_all((admin, enumerator1, enumerator2))
+
+        url = self.api_root + '/users/' + enumerator2.id
+        body = {'allowed_surveys': [survey1.id, survey2.id]}
+        response = self.fetch(url, method='PUT', body=json_encode(body))
+        self.assertEqual(response.code, 202, msg=response.body)
+
+        new_allowed_surveys = (
+            self.session
+            .query(User)
+            .filter_by(name='e2')
+            .one()
+            .allowed_surveys
+        )
+        self.assertEqual(len(new_allowed_surveys), 2)
+        self.assertIs(new_allowed_surveys[0], survey1)
+        self.assertIs(new_allowed_surveys[1], survey2)
+
+        new_enumerators_1 = (
+            self.session
+            .query(Survey)
+            .filter(Survey.title['English'].astext == 'survey1')
+            .one()
+            .enumerators
+        )
+        self.assertEqual(len(new_enumerators_1), 2)
+        self.assertIs(new_enumerators_1[0], enumerator1)
+        self.assertIs(new_enumerators_1[1], enumerator2)
+
+        new_enumerators_2 = (
+            self.session
+            .query(Survey)
+            .filter(Survey.title['English'].astext == 'survey2')
+            .one()
+            .enumerators
+        )
+        self.assertEqual(len(new_enumerators_2), 1)
+        self.assertIs(new_enumerators_2[0], enumerator2)
+
     def test_create_api_token(self):
         user = (
             self.session
