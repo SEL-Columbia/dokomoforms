@@ -5211,6 +5211,21 @@ class TestUserApi(DokoHTTPTest):
         self.assertEqual(len(survey.administrators), 1)
         self.assertEqual(survey.administrators[0].name, 'a')
 
+    def test_update_user(self):
+        user_id = 'b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+        url = self.api_root + '/users/' + user_id
+        body = {'emails': ['a@a.com']}
+        response = self.fetch(url, method='PUT', body=json_encode(body))
+        self.assertEqual(response.code, 202, msg=response.body)
+
+        user = (
+            self.session
+            .query(Administrator)
+            .get(user_id)
+        )
+        self.assertEqual(len(user.emails), 1)
+        self.assertEqual(user.emails[0].address, 'a@a.com')
+
     def test_create_api_token(self):
         user = (
             self.session
