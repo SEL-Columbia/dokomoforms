@@ -28,6 +28,25 @@
                                 <option <%= (data.preferences && data.preferences.default_language === 'English') ? "selected" : "" %>>English</option>
                             </select>
                         </div>
+
+                        <!-- Surveys for enumerators -->
+                        <% if (data.role === 'enumerator') { %>
+                        <div class="form-group">
+                            <label for="user-surveys">Surveys</label>
+                            <select multiple class="form-control" id="user-surveys">
+                                <% data.all_surveys.forEach(function(survey) { %>
+                                    <option
+                                        value="<%= survey.id %>"
+                                        <% if (data.allowed_surveys.indexOf(survey.id) !== -1) { %>
+                                            selected
+                                        <% } %>
+                                    >
+                                        <%= survey.title.English %>
+                                    </option>
+                                <% }); %>
+                            </select>
+                        </div>
+                        <% } %>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>

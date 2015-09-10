@@ -4,32 +4,37 @@ var $ = require('jquery'),
     base = require('./base'),
     Users = require('./models').Users,
     User = require('./models').User,
+    Surveys = require('./models').Surveys,
     UserModal = require('./modals/user-modal'),
     edit_btn_tpl = require('../templates/button-edit-user.tpl'),
     email_link_tpl = require('../templates/email-link.tpl');
 
 var UserAdmin = (function() {
-    var datatable;
+    var datatable,
+        allSurveys = new Surveys();
 
     function init() {
         base.init();
         if (window.CURRENT_USER_ID !== 'None') {
             setupDataTable();
-
-            setupEventHandlers();
+            fetchSurveys().done(setupEventHandlers);
         }
     }
 
     function setupEventHandlers() {
         $(document).on('click', '.btn-edit-user, .btn-add-user', function() {
             var user_id = $(this).data('id') || null;
-            new UserModal(user_id);
+            new UserModal(user_id, allSurveys);
         });
 
         ps.subscribe('user:saved', function() {
             console.log('handled user:saved', datatable);
             datatable.api().ajax.reload();
         });
+    }
+
+    function fetchSurveys() {
+        return allSurveys.fetch();
     }
 
     function setupDataTable() {

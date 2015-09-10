@@ -4,8 +4,8 @@ var $ = require('jquery'),
     User = require('../models').User,
     tpl = require('../../templates/user-modal.tpl');
 
-var UserModal = function(user_id) {
-    console.log(user_id);
+var UserModal = function(user_id, surveys) {
+    console.log('UserModal', user_id, surveys.toJSON());
     var user = new User(),
         $modal;
     // TODO: this could come from the collection, it's obviously already been fetched.
@@ -21,7 +21,9 @@ var UserModal = function(user_id) {
 
     function open() {
         console.log('open', user.toJSON());
-        $modal = $(tpl(user.toJSON())).modal();
+        var dataForDisplay = $.extend(user.toJSON(), {all_surveys: surveys.toJSON()});
+        console.log('dataForDisplay', dataForDisplay);
+        $modal = $(tpl(dataForDisplay)).modal();
         $modal.on('shown.bs.modal', function() {
             $modal.first('input').focus();
             $modal.find('.btn-save-user').click(saveUser);
@@ -48,6 +50,10 @@ var UserModal = function(user_id) {
                 default_language: $modal.find('#user-default-lang').val()
             }
         };
+
+        if (changeset.role === 'enumerator') {
+            changeset.allowed_surveys = $modal.find('#user-surveys').val();
+        }
 
         console.log('CHANGESET ---->', changeset);
 
