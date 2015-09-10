@@ -511,19 +511,10 @@ class TestUser(DokoTest):
                 ('preferences', {'default_language': 'English'}),
                 ('allowed_surveys', []),
                 ('last_update_time', user.last_update_time),
-                (
-                    'surveys',
-                    [OrderedDict((
-                        (
-                            'survey_id',
-                            self.session.query(models.Survey.id).scalar()
-                        ),
-                        ('survey_title', {'English': 'some title'}),
-                    ))]
-                ),
-                ('admin_surveys', []),
+                ('surveys', [self.session.query(models.Survey.id).scalar()]),
                 ('token_expiration', user.token_expiration),
-            ))
+            )),
+            msg=user
         )
 
     def test_administrator_asdict_with_admin_survey(self):
@@ -551,16 +542,6 @@ class TestUser(DokoTest):
                 ('allowed_surveys', []),
                 ('last_update_time', admin.last_update_time),
                 ('surveys', []),
-                (
-                    'admin_surveys',
-                    [OrderedDict((
-                        (
-                            'survey_id',
-                            self.session.query(models.Survey.id).scalar()
-                        ),
-                        ('survey_title', {'English': 'some title'}),
-                    ))]
-                ),
                 ('token_expiration', admin.token_expiration),
             )),
             msg=admin

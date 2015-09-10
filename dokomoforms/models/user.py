@@ -57,7 +57,7 @@ class User(Base):
             ('emails', [email.address for email in self.emails]),
             ('role', self.role),
             ('preferences', self.preferences),
-            ('allowed_surveys', self.allowed_surveys),
+            ('allowed_surveys', [s.id for s in self.allowed_surveys]),
             ('last_update_time', self.last_update_time),
         ))
 
@@ -91,18 +91,7 @@ class Administrator(User):
 
     def _asdict(self) -> OrderedDict:
         result = super()._asdict()
-        result['surveys'] = [
-            OrderedDict((
-                ('survey_id', survey.id),
-                ('survey_title', survey.title),
-            )) for survey in self.surveys
-        ]
-        result['admin_surveys'] = [
-            OrderedDict((
-                ('survey_id', survey.id),
-                ('survey_title', survey.title),
-            )) for survey in self.admin_surveys
-        ]
+        result['surveys'] = [s.id for s in self.surveys]
         result['token_expiration'] = self.token_expiration
         return result
 
