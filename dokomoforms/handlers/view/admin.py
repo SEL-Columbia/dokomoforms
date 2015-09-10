@@ -87,7 +87,6 @@ class ViewUserAdminHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self):
         """GET the user admin page."""
-
         # TODO: we could bootstrap with the initial data here, probably
         # not worth it.
         self.render(
