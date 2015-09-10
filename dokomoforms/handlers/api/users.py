@@ -1,5 +1,5 @@
 """TornadoResource class for dokomoforms.models.user.User."""
-from sqlalchemy.sql import exists
+from sqlalchemy.orm.exc import NoResultFound
 
 from dokomoforms.handlers.api import BaseResource
 from dokomoforms.exc import UserRequiresEmailError
@@ -17,60 +17,40 @@ class UserResource(BaseResource):
     def _survey(self, survey_id: str) -> Survey:
         return get_model(self.session, Survey, survey_id)
 
+    def _email(self, address: str) -> Email:
+        """Get or create an Email."""
+        try:
+            return self.session.query(Email).filter_by(address=address).one()
+        except NoResultFound:
+            return Email(address=address)
+
+    def _modify_survey_data(self, field_name: str):
+        """The API asks for survey id, but the model wants Survey objects."""
+        if field_name in self.data:
+            self.data[field_name] = [
+                self._survey(s_id) for s_id in self.data[field_name]
+            ]
+
     def create(self):
         """Create a new user."""
+        if not self.data.get('emails'):
+            raise UserRequiresEmailError()
+        self.data['emails'] = [
+            Email(address=address) for address in self.data['emails']
+        ]
+        self._modify_survey_data('allowed_surveys')
+        self._modify_survey_data('admin_surveys')
         with self.session.begin():
-            if not self.data.get('emails'):
-                raise UserRequiresEmailError()
-            self.data['emails'] = [
-                Email(address=address) for address in self.data['emails']
-            ]
-            if 'allowed_surveys' in self.data:
-                self.data['allowed_surveys'] = [
-                    self._survey(s_id) for s_id in self.data['allowed_surveys']
-                ]
-            if 'admin_surveys' in self.data:
-                self.data['admin_surveys'] = [
-                    self._survey(s_id) for s_id in self.data['admin_surveys']
-                ]
             user = construct_user(**self.data)
             self.session.add(user)
         return user
 
     def update(self, user_id):
         """Update a user."""
-        user = self._get_model(user_id)
-
-        with self.session.begin():
-            if 'emails' in self.data:
-                self.data['emails'] = [
-                    self._getEmail(address) for address in self.data['emails']
-                ]
-            if 'allowed_surveys' in self.data:
-                self.data['allowed_surveys'] = [
-                    self._survey(s_id) for s_id in self.data['allowed_surveys']
-                ]
-            if 'surveys' in self.data:
-                self.data['surveys'] = [
-                    self._survey(s_id) for s_id in self.data['surveys']
-                ]
-
-            for attribute, value in self.data.items():
-                print('------------------- \n')
-                print('setting: ' + attribute)
-                print('------------------- \n')
-                setattr(user, attribute, value)
-        return user
-
-    def _getEmail(self, email_address):
-        """Get an existing or create an Email from email_address"""
-
-        email = (
-            self.session.query(Email).filter(
-                Email.address == email_address).one()
-        )
-
-        if email is not None:
-            return email
-        else:
-            return Email(address=email_address)
+        if 'emails' in self.data:
+            self.data['emails'] = [
+                self._email(address) for address in self.data['emails']
+            ]
+        self._modify_survey_data('allowed_surveys')
+        self._modify_survey_data('admin_surveys')
+        return super().update(user_id)
