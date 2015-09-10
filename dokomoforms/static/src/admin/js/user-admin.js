@@ -20,9 +20,8 @@ var UserAdmin = (function() {
     }
 
     function setupEventHandlers() {
-        $(document).on('click', 'btn-edit-user', function() {
-            var user_id = $(this).data('id');
-
+        $(document).on('click', '.btn-edit-user, .btn-add-user', function() {
+            var user_id = $(this).data('id') || null;
             modal = new UserModal(user_id);
         });
     }
@@ -42,7 +41,7 @@ var UserAdmin = (function() {
                 ],
                 'pagingType': 'full_numbers',
                 'order': [
-                    [2, 'desc']
+                    [0, 'asc']
                 ],
                 'columnDefs': [{
                     'data': 0,
@@ -66,9 +65,9 @@ var UserAdmin = (function() {
                     'targets': 3,
                     'sortable': false
                 }, {
-                    'data': 3,
+                    'data': 4,
                     'render': function(data) {
-                        // console.log(data);
+                        console.log(data);
                         return edit_btn_tpl({
                             user_id: data
                         });
@@ -80,11 +79,13 @@ var UserAdmin = (function() {
                 'columns': [{
                     'name': 'name'
                 }, {
-                    'name': 'email'
+                    'name': 'emails'
                 }, {
                     'name': 'role'
                 }, {
                     'name': 'allowed_surveys'
+                }, {
+                    'name': 'id'
                 }],
                 'processing': true,
                 'serverSide': true,
@@ -93,7 +94,7 @@ var UserAdmin = (function() {
                         // This does not handle searching in the exact way specified by
                         // the DataTables documentation. Instead, it searches in the way
                         // that the API expects (search_term, search_fields).
-                        'url': '/api/v0/users?user_id=' + window.CURRENT_USER_ID,
+                        'url': '/api/v0/users',
                         'data': {
                             draw: data.draw,
                             offset: data.start,
@@ -107,19 +108,20 @@ var UserAdmin = (function() {
                             search: data.search.value,
                             regex: data.search.regex,
                             // TODO: search language???
-                            search_fields: 'name,email'
+                            search_fields: 'name'
                         },
                         'success': function(json) {
                             var response = {
                                 draw: json.draw,
                                 recordsTotal: json.total_entries,
                                 recordsFiltered: json.filtered_entries,
-                                data: json.surveys.map(function(survey) {
+                                data: json.users.map(function(user) {
                                     return [
-                                        JSON.stringify(survey.title),
-                                        survey.num_submissions,
-                                        survey.latest_submission_time,
-                                        survey.id
+                                        user.name,
+                                        user.emails[0],
+                                        user.role,
+                                        user.allowed_surveys,
+                                        user.id
                                     ];
                                 })
                             };

@@ -21,6 +21,13 @@
     <div class="container" role="main">
         <div class="message"></div>
         <div class="row">
+        <div class="col-md-12">
+            <button class="btn btn-secondary btn-large btn-add-user pull-right">
+                <span class="glyphicon glyphicon-plus"></span> Add User
+            </button>
+        </div>
+        </div>
+        <div class="row">
             <div class="col-md-12">
                 <h4>Users</h4>
                 <table id="users" class="table-view display table table-striped table-bordered" width="100%" cellspacing="0">
@@ -38,13 +45,12 @@
         </div>
     </div>
 </div>
-
 {% end %}
 
 
 {% block extra_scripts %}
 
-        <script type="text/javascript" src="/static/dist/admin/js/user-admin.bundle.js"></script>
+    <script type="text/javascript" src="/static/dist/admin/js/user-admin.bundle.js"></script>
 
 {% end %}
 

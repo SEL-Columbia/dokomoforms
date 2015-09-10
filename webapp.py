@@ -243,8 +243,7 @@ class Application(tornado.web.Application):
             'xsrf_cookies': True,
             'cookie_secret': get_cookie_secret(),
             'login_url': '/',
-            'debug': options.dev or options.debug,
-            'autoreload': options.dev or options.autoreload,
+            'debug': options.debug
         }
 
         # Debug

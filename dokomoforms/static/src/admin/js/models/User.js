@@ -1,7 +1,8 @@
-var Backbone = require('backbone');
+var $ = require('jquery'),
+    Backbone = require('backbone');
 
 var User = Backbone.Model.extend({
-
+    urlRoot: '/api/v0/users'
 });
 
 var Users = Backbone.Collection.extend({
