@@ -53,4 +53,5 @@ class UserResource(BaseResource):
             ]
         self._modify_survey_data('allowed_surveys')
         self._modify_survey_data('admin_surveys')
+        self._modify_survey_data('surveys')
         return super().update(user_id)
