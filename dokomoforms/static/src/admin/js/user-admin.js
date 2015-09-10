@@ -1,5 +1,6 @@
 var $ = require('jquery'),
     _ = require('lodash'),
+    ps = require('./pubsub'),
     base = require('./base'),
     Users = require('./models').Users,
     User = require('./models').User,
@@ -8,7 +9,7 @@ var $ = require('jquery'),
     email_link_tpl = require('../templates/email-link.tpl');
 
 var UserAdmin = (function() {
-    var modal;
+    var datatable;
 
     function init() {
         base.init();
@@ -22,7 +23,12 @@ var UserAdmin = (function() {
     function setupEventHandlers() {
         $(document).on('click', '.btn-edit-user, .btn-add-user', function() {
             var user_id = $(this).data('id') || null;
-            modal = new UserModal(user_id);
+            new UserModal(user_id);
+        });
+
+        ps.subscribe('user:saved', function() {
+            console.log('handled user:saved', datatable);
+            datatable.api().ajax.reload();
         });
     }
 
@@ -31,7 +37,7 @@ var UserAdmin = (function() {
         var $users = $('#users');
 
         if ($users.length > 0) {
-            $users.dataTable({
+            datatable = $users.dataTable({
                 language: {
                     search: 'Search users:'
                 },

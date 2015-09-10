@@ -8,23 +8,23 @@
                 </div>
                 <div class="modal-body">
                         <div class="form-group">
-                            <label for="name">Name</label>
-                            <input type="text" class="form-control" id="name" placeholder="Name" value="<%= data.name %>">
+                            <label for="user-name">Name</label>
+                            <input type="text" class="form-control" id="user-name" placeholder="Name" value="<%= data.name %>">
                         </div>
                         <div class="form-group">
-                            <label for="email">Email</label>
-                            <input type="email" class="form-control" id="email" placeholder="Email" value="<%= data.emails ? data.emails[0] : '' %>">
+                            <label for="user-email">Email</label>
+                            <input type="email" class="form-control" id="user-email" placeholder="Email" value="<%= data.emails ? data.emails[0] : '' %>">
                         </div>
                         <div class="form-group">
-                            <label for="role">Role</label>
-                            <select class="form-control" id="role">
+                            <label for="user-role">Role</label>
+                            <select class="form-control" id="user-role">
                                 <option <%= (data.role === 'enumerator') ? "selected" : "" %>>enumerator</option>
                                 <option <%= (data.role === 'administrator') ? "selected" : "" %>>administrator</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="default-lang">Default Language</label>
-                            <select class="form-control" id="default-lang">
+                            <label for="user-default-lang">Default Language</label>
+                            <select class="form-control" id="user-default-lang">
                                 <option <%= (data.preferences && data.preferences.default_language === 'English') ? "selected" : "" %>>English</option>
                             </select>
                         </div>

@@ -1,54 +1,60 @@
 var $ = require('jquery'),
+    ps = require('../pubsub'),
     // Users = require('./models').Users,
     User = require('../models').User,
     tpl = require('../../templates/user-modal.tpl');
 
 var UserModal = function(user_id) {
-    this.user = new User();
+    console.log(user_id);
+    var user = new User(),
+        $modal;
     // TODO: this could come from the collection, it's obviously already been fetched.
     if (user_id) {
         // We are editing...
-        this.user.set('id', user_id);
-        this.user.fetch()
-            .done(this.open.bind(this));
+        user.set('id', user_id);
+        user.fetch()
+            .done(open);
     } else {
         // we are adding, no uuid
-        this.open();
+        open();
     }
-};
 
+    function open() {
+        console.log('open', user.toJSON());
+        $modal = $(tpl(user.toJSON())).modal();
+        $modal.on('shown.bs.modal', function() {
+            $modal.first('input').focus();
+        });
 
-UserModal.prototype.open = function() {
-    console.log('open', this.user.toJSON());
-    // console.log(this.user.toJSON());
-    this.$modal = $(tpl(this.user.toJSON())).modal();
-    this.$modal.on('shown.bs.modal', function() {
-        console.log(this);
-        $(this).first('input').focus();
-    });
+        $modal.find('.btn-save-user').click(saveUser);
+    }
 
-    this.$modal.find('.btn-save-user').click(this.saveUser.bind(this));
-};
+    function close() {
+        $modal.modal('hide');
+        ps.publish('user:saved');
+    }
 
-UserModal.prototype.saveUser = function() {
-    console.log('saveUser', this.user.toJSON());
+    function saveUser() {
+        console.log('saveUser', user.toJSON());
 
-    this.user.set({
-        name: $('#name').val(),
-        email: [$('#email').val()],
-        role: $('#role').val(),
-        preferences: {
-            default_language: $('#default-lang').val()
-        }
-    });
+        user.set({
+            name: $('#user-name').val(),
+            emails: [$('#user-email').val()],
+            role: $('#user-role').val(),
+            preferences: {
+                default_language: $('#user-default-lang').val()
+            }
+        });
 
-    this.user.save()
-        .done(this.close.bind(this));
-};
+        user.save()
+            .done(close);
+    }
 
+    return {
+        open: open,
+        close: close
+    };
 
-UserModal.prototype.close = function() {
-    this.$modal.modal('hide');
 };
 
 
