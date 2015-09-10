@@ -423,15 +423,15 @@ class TestColumnProperties(DokoTest):
 
 class TestUser(DokoTest):
     def test_construct_user(self):
-        enumerator = models.construct_user(user_type='enumerator', name='e')
+        enumerator = models.construct_user(role='enumerator', name='e')
         self.assertIs(type(enumerator), models.User)
 
-        admin = models.construct_user(user_type='administrator', name='a')
+        admin = models.construct_user(role='administrator', name='a')
         self.assertIs(type(admin), models.Administrator)
 
     def test_construct_user_bogus_type(self):
         self.assertRaises(
-            TypeError, models.construct_user, user_type='bogus', name='b'
+            TypeError, models.construct_user, role='bogus', name='b'
         )
 
     def test_to_json(self):

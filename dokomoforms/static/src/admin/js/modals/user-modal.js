@@ -24,12 +24,15 @@ var UserModal = function(user_id) {
         $modal = $(tpl(user.toJSON())).modal();
         $modal.on('shown.bs.modal', function() {
             $modal.first('input').focus();
+            $modal.find('.btn-save-user').click(saveUser);
         });
 
-        $modal.find('.btn-save-user').click(saveUser);
     }
 
     function close() {
+        $modal.on('hidden.bs.modal', function() {
+            $modal.remove();
+        });
         $modal.modal('hide');
         ps.publish('user:saved');
     }
@@ -37,14 +40,18 @@ var UserModal = function(user_id) {
     function saveUser() {
         console.log('saveUser', user.toJSON());
 
-        user.set({
-            name: $('#user-name').val(),
-            emails: [$('#user-email').val()],
-            role: $('#user-role').val(),
+        var changeset = {
+            name: $modal.find('#user-name').val(),
+            emails: [$modal.find('#user-email').val()],
+            role: $modal.find('#user-role').val(),
             preferences: {
-                default_language: $('#user-default-lang').val()
+                default_language: $modal.find('#user-default-lang').val()
             }
-        });
+        };
+
+        console.log('CHANGESET ---->', changeset);
+
+        user.set(changeset);
 
         user.save()
             .done(close);
