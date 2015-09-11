@@ -107,6 +107,10 @@ class DriverTest(tests.python.util.DokoFixtureTest):
             signal.alarm(0)
 
     def setUp(self):
+        try:
+            urlopen(base)
+        except urllib.error.URLError:
+            self.fail('The webapp is not running on port 9999')
         super().setUp()
 
         self.passed = False
@@ -204,7 +208,11 @@ class DriverTest(tests.python.util.DokoFixtureTest):
 
     def tearDown(self):
         super().tearDown()
-        urlopen('http://localhost:9999/debug/toggle_facilities?state=true')
+
+        try:
+            urlopen('http://localhost:9999/debug/toggle_facilities?state=true')
+        except urllib.error.URLError:
+            pass
 
         try:
             self.drv.quit()

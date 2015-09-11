@@ -101,6 +101,7 @@ class Answer(Base):
         """A dictionary that abstracts over answer, other, and dont_know.
 
         {
+            'type_constraint': <self.answer_type>,
             'response_type': 'answer|other|dont_know',
             'response': <one of self.answer, self.other, self.dont_know>
         }
@@ -135,6 +136,7 @@ class Answer(Base):
             else:
                 response = self.answer
         return OrderedDict((
+            ('type_constraint', self.answer_type),
             ('response_type', response_type),
             ('response', response),
         ))
