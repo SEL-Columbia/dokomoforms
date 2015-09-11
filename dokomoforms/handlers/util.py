@@ -129,6 +129,9 @@ class BaseHandler(tornado.web.RequestHandler):
         Based on user's preference.
         Falls back to the first available translation if default_language
         is not available.
+
+        TODO: this should probably fallback to the survey's default, if the
+        string is coming from a survey...?
         """
         if self.current_user_model is not None:
             lang = self.current_user_model.preferences['default_language']
