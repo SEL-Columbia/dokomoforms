@@ -1,5 +1,6 @@
 var $ = require('jquery'),
     ps = require('../pubsub'),
+    utils = require('../utils'),
     // Users = require('./models').Users,
     User = require('../models').User,
     tpl = require('../../templates/user-modal.tpl');
@@ -27,6 +28,7 @@ var UserModal = function(user_id, surveys) {
         $modal.on('shown.bs.modal', function() {
             $modal.first('input').focus();
             $modal.find('.btn-save-user').click(saveUser);
+            utils.initTooltips('.modal');
         });
 
     }
@@ -52,7 +54,7 @@ var UserModal = function(user_id, surveys) {
         };
 
         if (changeset.role === 'enumerator') {
-            changeset.allowed_surveys = $modal.find('#user-surveys').val();
+            changeset.allowed_surveys = $modal.find('#user-surveys').val() || [];
         }
 
         console.log('CHANGESET ---->', changeset);

@@ -17,7 +17,9 @@
                         </div>
                         <div class="form-group">
                             <label for="user-role">Role</label>
-                            <select class="form-control" id="user-role">
+                            <select class="form-control" id="user-role"
+                            <%= data.id ? 'disabled' : '' %>
+                            >
                                 <option <%= (data.role === 'enumerator') ? "selected" : "" %>>enumerator</option>
                                 <option <%= (data.role === 'administrator') ? "selected" : "" %>>administrator</option>
                             </select>
@@ -32,17 +34,21 @@
                         <!-- Surveys for enumerators -->
                         <% if (data.role === 'enumerator') { %>
                         <div class="form-group">
-                            <label for="user-surveys">Surveys</label>
+                            <label for="user-surveys">Allowed Surveys
+                                <span class="info-icon" data-toggle="tooltip" data-placement="right" title="" data-original-title="This enumerator will only be allowed to submit to the surveys selected here.">i</span>
+                            </label>
                             <select multiple class="form-control" id="user-surveys">
                                 <% data.all_surveys.forEach(function(survey) { %>
-                                    <option
-                                        value="<%= survey.id %>"
-                                        <% if (data.allowed_surveys.indexOf(survey.id) !== -1) { %>
-                                            selected
-                                        <% } %>
-                                    >
-                                        <%= survey.title.English %>
-                                    </option>
+                                    <% if (survey.survey_type === 'enumerator_only') { %>
+                                        <option
+                                            value="<%= survey.id %>"
+                                            <% if (data.allowed_surveys.indexOf(survey.id) !== -1) { %>
+                                                selected
+                                            <% } %>
+                                        >
+                                            <%= survey.title.English %>
+                                        </option>
+                                    <% } %>
                                 <% }); %>
                             </select>
                         </div>

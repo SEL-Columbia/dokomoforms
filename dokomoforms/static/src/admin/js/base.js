@@ -1,24 +1,13 @@
 var $ = require('jquery'),
     cookies = require('../../common/js/cookies'),
     submissionModals = require('./submission-modal'),
-    persona = require('../../common/js/persona');
+    persona = require('../../common/js/persona'),
+    utils = require('./utils');
 
 module.exports = (function() {
 
-    /**
-     * [_initTooltips description]
-     * @return {[type]} [description]
-     */
-    function _initTooltips() {
-        // enable tooltips
-        $('[data-toggle="tooltip"]').tooltip({
-            container: 'body'
-        });
-    }
-
-
     function init() {
-        _initTooltips();
+        utils.initTooltips();
         _globalAjaxSetup();
 
         // setup handlers for submission modals
