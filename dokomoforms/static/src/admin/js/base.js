@@ -2,7 +2,8 @@ var $ = require('jquery'),
     cookies = require('../../common/js/cookies'),
     submissionModals = require('./submission-modal'),
     persona = require('../../common/js/persona'),
-    utils = require('./utils');
+    utils = require('./utils'),
+    _t = require('./lang');
 
 module.exports = (function() {
 
@@ -11,12 +12,16 @@ module.exports = (function() {
         _globalAjaxSetup();
 
         // setup handlers for submission modals
+        // TODO: refactor submission modals to a proper module.
         submissionModals.init();
 
         // setup handlers for persona events
         persona.init();
     }
 
+    /**
+     * Attach CSRF token header to all requests.
+     */
     function _globalAjaxSetup() {
         $.ajaxPrefilter(function(options, originalOptions, jqXHR) {
             var _xsrf = cookies.getCookie('_xsrf');

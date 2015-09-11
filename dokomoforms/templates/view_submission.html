@@ -36,7 +36,7 @@
                     survey
                 </div>
                 <div class="stat-value stat-created-on">
-                    {{ survey.title }}
+                    {{ _t(survey.title) }}
                 </div>
             </div> -->
         </div>
@@ -48,7 +48,7 @@
 {% block content %}
     <div class="content">
         <div class="container-fluid" role="main">
-            
+
             <div class="message">
             </div>
 
@@ -58,9 +58,9 @@
 		        <!-- TODO: make this prettier -->
                         {% for answer in submission.answers %}
                             <li>
-                            
+
                                 <div class="response-title-bar">
-				    {{ answer.question_title }}
+				    {{ _t(answer.question_title) }}
                                     <span class="question-type pull-right">{{ answer.type_constraint }}</span>
                                 </div>
 
@@ -75,7 +75,7 @@
 				        {{ json_encode(answer.response) }}
 				    {% end %}
                                 </div>
-                                
+
                             </li>
                         {% end %}
                     </ul>
@@ -89,5 +89,5 @@
 
 {% block extra_scripts %}
 
-    
+
 {% end %}

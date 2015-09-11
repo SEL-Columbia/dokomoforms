@@ -2,10 +2,9 @@ var $ = require('jquery'),
     _ = require('lodash'),
     ps = require('./pubsub'),
     base = require('./base'),
-    Users = require('./models').Users,
-    User = require('./models').User,
     Surveys = require('./models').Surveys,
     UserModal = require('./modals/user-modal'),
+    Notification = require('./notification'),
     edit_btn_tpl = require('../templates/button-edit-user.tpl'),
     email_link_tpl = require('../templates/email-link.tpl');
 
@@ -28,8 +27,13 @@ var UserAdmin = (function() {
         });
 
         ps.subscribe('user:saved', function() {
-            console.log('handled user:saved', datatable);
             datatable.api().ajax.reload();
+            new Notification('User saved.', 'success');
+        });
+
+        ps.subscribe('user:deleted', function() {
+            datatable.api().ajax.reload();
+            new Notification('User deleted.', 'success');
         });
     }
 
@@ -71,7 +75,8 @@ var UserAdmin = (function() {
                 }, {
                     'data': 3,
                     'render': function(data) {
-                        return '...'; // TODO: ask @jmwohl about this.
+                        console.log('allowed_surveys', data);
+                        return data.length; // TODO: ask @jmwohl about this.
                     },
                     'targets': 3,
                     'sortable': false

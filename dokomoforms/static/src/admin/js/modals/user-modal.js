@@ -2,6 +2,7 @@ var $ = require('jquery'),
     ps = require('../pubsub'),
     utils = require('../utils'),
     // Users = require('./models').Users,
+    _t = require('../lang'),
     User = require('../models').User,
     tpl = require('../../templates/user-modal.tpl');
 
@@ -22,12 +23,13 @@ var UserModal = function(user_id, surveys) {
 
     function open() {
         console.log('open', user.toJSON());
-        var dataForDisplay = $.extend(user.toJSON(), {all_surveys: surveys.toJSON()});
+        var dataForDisplay = $.extend(user.toJSON(), {all_surveys: surveys.toJSON(), _t: _t});
         console.log('dataForDisplay', dataForDisplay);
         $modal = $(tpl(dataForDisplay)).modal();
         $modal.on('shown.bs.modal', function() {
             $modal.first('input').focus();
             $modal.find('.btn-save-user').click(saveUser);
+            $modal.find('.btn-delete-user').click(deleteUser);
             utils.initTooltips('.modal');
         });
 
@@ -35,10 +37,11 @@ var UserModal = function(user_id, surveys) {
 
     function close() {
         $modal.on('hidden.bs.modal', function() {
+            console.log('closed?');
             $modal.remove();
+
         });
         $modal.modal('hide');
-        ps.publish('user:saved');
     }
 
     function saveUser() {
@@ -57,12 +60,31 @@ var UserModal = function(user_id, surveys) {
             changeset.allowed_surveys = $modal.find('#user-surveys').val() || [];
         }
 
-        console.log('CHANGESET ---->', changeset);
-
         user.set(changeset);
 
         user.save()
-            .done(close);
+            .done(function() {
+                close();
+                ps.publish('user:saved');
+            })
+            .fail(function() {
+                ps.publish('user:save-error');
+            });
+    }
+
+    function deleteUser() {
+        console.log('saveUser', user.toJSON());
+        if(!confirm('Are you certain you want to remove this user from the system?')) {
+            return;
+        }
+        user.destroy()
+            .done(function() {
+                close();
+                ps.publish('user:deleted');
+            })
+            .fail(function() {
+                ps.publish('user:delete-error');
+            });
     }
 
     return {
