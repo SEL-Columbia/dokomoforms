@@ -5123,7 +5123,7 @@ class TestUserApi(DokoHTTPTest):
         url = self.api_root + '/users'
         method = 'POST'
         body = {
-            'user_type': 'enumerator',
+            'role': 'enumerator',
             'name': 'a',
             'emails': ['a@a.com'],
             'allowed_surveys': ['c0816b52-204f-41d4-aaf0-ac6ae2970925'],
@@ -5147,7 +5147,7 @@ class TestUserApi(DokoHTTPTest):
         url = self.api_root + '/users'
         method = 'POST'
         body = {
-            'user_type': 'enumerator',
+            'role': 'enumerator',
             'name': 'a',
             'emails': ['a@a.com'],
             'allowed_surveys': ['b0816b52-204f-41d4-aaf0-ac6ae2970923'],
@@ -5160,7 +5160,7 @@ class TestUserApi(DokoHTTPTest):
         url = self.api_root + '/users'
         method = 'POST'
         body = {
-            'user_type': 'enumerator',
+            'role': 'enumerator',
             'name': 'a',
             'emails': ['a@a.com'],
             'admin_surveys': ['c0816b52-204f-41d4-aaf0-ac6ae2970925'],
@@ -5173,7 +5173,7 @@ class TestUserApi(DokoHTTPTest):
         url = self.api_root + '/users'
         method = 'POST'
         body = {
-            'user_type': 'enumerator',
+            'role': 'enumerator',
             'name': 'a',
         }
         encoded_body = json_encode(body)
@@ -5184,7 +5184,7 @@ class TestUserApi(DokoHTTPTest):
         url = self.api_root + '/users'
         method = 'POST'
         body = {
-            'user_type': 'administrator',
+            'role': 'administrator',
             'name': 'a',
             'emails': ['a@a.com'],
             'admin_surveys': ['b0816b52-204f-41d4-aaf0-ac6ae2970923'],
