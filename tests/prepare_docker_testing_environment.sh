@@ -8,7 +8,7 @@ set -e
 apt-get update
 apt-get -y install xvfb iceweasel npm nodejs-legacy
 pip install tox
-Xvfb :1 -screen 0 1024x768x16 &>/dev/null  &
+Xvfb :1 -screen 0 1024x768x16 &>/dev/null &
 export DISPLAY=:1.0
 printf "====================================================\n"
 printf "If you didn't source this file, execute\n"
