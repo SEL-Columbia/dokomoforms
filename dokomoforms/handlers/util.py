@@ -124,9 +124,9 @@ class BaseHandler(tornado.web.RequestHandler):
         return json_encode(prefs)
 
     def _t(self, field):
-        """Pick a translation from a trasnlatable field based on
-        user's preferences.
+        """Pick a translation from a translatable field.
 
+        Base on user's preference.
         Falls back to the first available translation if default_language
         is not available.
         """
