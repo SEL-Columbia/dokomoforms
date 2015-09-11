@@ -126,7 +126,7 @@ class BaseHandler(tornado.web.RequestHandler):
     def _t(self, field):
         """Pick a translation from a translatable field.
 
-        Base on user's preference.
+        Based on user's preference.
         Falls back to the first available translation if default_language
         is not available.
         """
