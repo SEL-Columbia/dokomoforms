@@ -3,6 +3,7 @@ var $ = require('jquery'),
     L = require('leaflet'),
     moment = require('moment'),
     base = require('./base'),
+    submissionModal = require('./submission-modal'),
     view_btn_tpl = require('../templates/button-view-data.tpl'),
     manage_btn_tpl = require('../templates/button-manage-survey.tpl'),
     dl_btn_tpl = require('../templates/button-download-data.tpl'),
@@ -52,12 +53,12 @@ var AccountOverview = (function() {
                                 riseOnHover: true
                             });
                             marker.options.icon = new L.icon({
-                                iconUrl: '/static/img/icons/normal_base.png',
+                                iconUrl: '/static/dist/admin/img/icons/normal_base.png',
                                 iconAnchor: [15, 48]
                             });
                             // marker.bindPopup();
                             marker.on('click', function() {
-                                base.openSubmissionDetailModal(submission.submission_id);
+                                submissionModal.openSubmissionDetailModal(submission.id);
                             });
                             markers.push(marker);
                         });
