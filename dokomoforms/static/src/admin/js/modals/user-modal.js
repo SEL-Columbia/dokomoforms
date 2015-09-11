@@ -29,6 +29,7 @@ var UserModal = function(user_id, surveys) {
         $modal.on('shown.bs.modal', function() {
             $modal.first('input').focus();
             $modal.find('.btn-save-user').click(saveUser);
+            $modal.find('.btn-delete-user').click(deleteUser);
             utils.initTooltips('.modal');
         });
 
@@ -38,7 +39,7 @@ var UserModal = function(user_id, surveys) {
         $modal.on('hidden.bs.modal', function() {
             console.log('closed?');
             $modal.remove();
-            ps.publish('user:saved');
+
         });
         $modal.modal('hide');
     }
@@ -59,12 +60,31 @@ var UserModal = function(user_id, surveys) {
             changeset.allowed_surveys = $modal.find('#user-surveys').val() || [];
         }
 
-        console.log('CHANGESET ---->', changeset);
-
         user.set(changeset);
 
         user.save()
-            .done(close);
+            .done(function() {
+                close();
+                ps.publish('user:saved');
+            })
+            .fail(function() {
+                ps.publish('user:save-error');
+            });
+    }
+
+    function deleteUser() {
+        console.log('saveUser', user.toJSON());
+        if(!confirm('Are you certain you want to remove this user from the system?')) {
+            return;
+        }
+        user.destroy()
+            .done(function() {
+                close();
+                ps.publish('user:deleted');
+            })
+            .fail(function() {
+                ps.publish('user:delete-error');
+            });
     }
 
     return {

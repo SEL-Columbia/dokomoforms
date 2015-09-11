@@ -56,6 +56,9 @@
                         <% } %>
                 </div>
                 <div class="modal-footer">
+                    <% if (data.id) { %>
+                        <button type="button" class="btn btn-danger btn-delete-user pull-left">Delete User</button>
+                    <% } %>
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary btn-save-user">Save</button>
                 </div>

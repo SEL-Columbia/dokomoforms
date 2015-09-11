@@ -27,9 +27,13 @@ var UserAdmin = (function() {
         });
 
         ps.subscribe('user:saved', function() {
-            console.log('handled user:saved', datatable);
             datatable.api().ajax.reload();
             new Notification('User saved.', 'success');
+        });
+
+        ps.subscribe('user:deleted', function() {
+            datatable.api().ajax.reload();
+            new Notification('User deleted.', 'success');
         });
     }
 
