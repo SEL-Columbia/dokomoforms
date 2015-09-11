@@ -110,7 +110,11 @@ class DriverTest(tests.python.util.DokoFixtureTest):
         try:
             urlopen(base)
         except urllib.error.URLError:
-            self.fail('The webapp is not running on port 9999')
+            self.fail(
+                'The webapp is not running on port 9999.\n'
+                'You may want to execute ./tests/python/selenium_webapp.py'
+                ' &>/dev/null &'
+            )
         super().setUp()
 
         self.passed = False
