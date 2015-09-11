@@ -2,6 +2,7 @@ var $ = require('jquery'),
     ps = require('../pubsub'),
     utils = require('../utils'),
     // Users = require('./models').Users,
+    _t = require('../lang'),
     User = require('../models').User,
     tpl = require('../../templates/user-modal.tpl');
 
@@ -22,7 +23,7 @@ var UserModal = function(user_id, surveys) {
 
     function open() {
         console.log('open', user.toJSON());
-        var dataForDisplay = $.extend(user.toJSON(), {all_surveys: surveys.toJSON()});
+        var dataForDisplay = $.extend(user.toJSON(), {all_surveys: surveys.toJSON(), _t: _t});
         console.log('dataForDisplay', dataForDisplay);
         $modal = $(tpl(dataForDisplay)).modal();
         $modal.on('shown.bs.modal', function() {
@@ -35,10 +36,11 @@ var UserModal = function(user_id, surveys) {
 
     function close() {
         $modal.on('hidden.bs.modal', function() {
+            console.log('closed?');
             $modal.remove();
+            ps.publish('user:saved');
         });
         $modal.modal('hide');
-        ps.publish('user:saved');
     }
 
     function saveUser() {

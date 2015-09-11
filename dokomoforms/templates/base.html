@@ -40,9 +40,9 @@
                         <li><a href="/">Account Overview</a></li>
                         <li>
                             <a href="#" class="dropdown-toggle" type="button" id="SurveysDropdown" data-toggle="dropdown" aria-expanded="true">Surveys <span class="caret"></span></a>
-                            <ul class="dropdown-menu" role="menu" aria-labelledby="SurveysDropdown">
+                            <ul class="dropdown-menu dropdown-menu-surveys" role="menu" aria-labelledby="SurveysDropdown">
                                 {% for the_survey in surveys_for_menu %}
-                                    <li role="presentation"><a role="menuitem" tabindex="-1" href="/view/{{ the_survey.id }}">{{ the_survey.title }}</a></li>
+                                    <li role="presentation"><a role="menuitem" tabindex="-1" href="/view/{{ the_survey.id }}">{{ _t(the_survey.title) }}</a></li>
                                 {% end %}
                             </ul>
                         </li>
@@ -71,7 +71,11 @@
         </div>
     </nav>
     {% block header %} {% end %}
-    {% block subheader %} {% end %}
+    {% block subheader %}
+    <div class="notification-container">
+
+    </div>
+    {% end %}
     {% block content %} {% end %}
     {% block footer %} {% end %}
 
@@ -107,6 +111,7 @@
 
     <script type="text/javascript">
         window.CURRENT_USER_ID = '{{ current_user_id }}';
+        window.CURRENT_USER_PREFS = {% raw current_user_prefs %};
     </script>
 
 
