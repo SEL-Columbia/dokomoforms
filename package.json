@@ -27,7 +27,6 @@
     "selectize": "^0.12.1"
   },
   "devDependencies": {
-    "jest-cli": "^0.5.0",
     "babelify": "^6.1.2",
     "browserify": "^10.2.3",
     "browserify-shim": "^3.8.7",
@@ -37,15 +36,17 @@
     "gulp": "^3.8.11",
     "gulp-concat": "^2.5.2",
     "gulp-html-replace": "^1.4.5",
+    "gulp-if": "^1.2.5",
     "gulp-less": "^3.0.3",
     "gulp-livereload": "^3.8.0",
     "gulp-order": "^1.1.1",
     "gulp-react": "^3.0.1",
     "gulp-rename": "^1.2.2",
     "gulp-sourcemaps": "^1.5.2",
-    "gulp-streamify": "0.0.5",
+    "gulp-streamify": "^1.0.2",
     "gulp-uglify": "1.1.0",
     "istanbul": "^0.3.13",
+    "jest-cli": "^0.5.0",
     "jsdom": "^5.1.0",
     "jshint": "^2.7.0",
     "mocha": "^2.2.4",
@@ -69,7 +70,9 @@
     "lodash": "global:_",
     "moment": "global:moment",
     "leaflet": "global:L",
-    "backbone": "global:Backbone"
+    "backbone": "global:Backbone",
+    "pouch": "global:PouchDB",
+    "pouchdb-upsert": "global:PouchDBUpsert"
   },
   "jest": {
     "testDirectoryName": "tests/js",
