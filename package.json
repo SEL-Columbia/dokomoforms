@@ -8,6 +8,7 @@
     "test": "tests"
   },
   "dependencies": {
+    "backbone": "^1.2.3",
     "bootstrap": "^3.3.5",
     "datatables": "https://github.com/DataTables/DataTables/archive/1.10.9.tar.gz",
     "gulp-replace": "^0.5.4",
@@ -22,7 +23,8 @@
     "pouchdb": "^3.6.0",
     "pouchdb-upsert": "^1.1.1",
     "ratchet": "https://github.com/twbs/ratchet/archive/v2.0.2.tar.gz",
-    "react": "^0.13.3"
+    "react": "^0.13.3",
+    "selectize": "^0.12.1"
   },
   "devDependencies": {
     "jest-cli": "^0.5.0",
@@ -66,7 +68,8 @@
     "react": "global:React",
     "lodash": "global:_",
     "moment": "global:moment",
-    "leaflet": "global:L"
+    "leaflet": "global:L",
+    "backbone": "global:Backbone"
   },
   "jest": {
     "testDirectoryName": "tests/js",

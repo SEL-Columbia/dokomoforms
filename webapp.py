@@ -162,6 +162,12 @@ class Application(tornado.web.Application):
                 name='admin_submission_view',
             ),
 
+            url(
+                r'/view/user-administration/?',
+                handlers.ViewUserAdminHandler,
+                name='admin_user_view',
+            ),
+
             # * Regular views
             url(
                 r'/enumerate/({})/?'.format(UUID_REGEX), handlers.Enumerate,
@@ -237,8 +243,7 @@ class Application(tornado.web.Application):
             'xsrf_cookies': True,
             'cookie_secret': get_cookie_secret(),
             'login_url': '/',
-            'debug': options.dev or options.debug,
-            'autoreload': options.dev or options.autoreload,
+            'debug': options.debug
         }
 
         # Debug
