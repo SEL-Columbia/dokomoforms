@@ -7,7 +7,7 @@ var React = require('react'),
 //XXX use this: navigator.vibrate(50);
 
 /*
- * Location question component
+ * Photo question component
  *
  * props:
  *     @question: node object from survey

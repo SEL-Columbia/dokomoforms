@@ -1,9 +1,10 @@
-var env = process.env.NODE_ENV;
+var env = process.env.NODE_ENV || 'development';
 
 
 var gulp = require('gulp'),
     gulpif = require('gulp-if'),
     uglify = require('gulp-uglify'),
+    minifyCss = require('gulp-minify-css'),
     rename = require('gulp-rename'),
     source = require('vinyl-source-stream'),
     concat = require('gulp-concat'),
@@ -15,6 +16,7 @@ var gulp = require('gulp'),
             variable: 'data'
         }
     }),
+    del = require('del'),
     less = require('gulp-less'),
     // sourcemaps = require('gulp-sourcemaps'),
     replace = require('gulp-replace'),
@@ -123,6 +125,15 @@ var admin_tasks = ['admin-less', 'admin-js-vendor', 'admin-js-app', 'admin-img',
 
 process.env.BROWSERIFYSHIM_DIAGNOSTICS = 1;
 
+
+//---------------------
+// GLOBAL TASKS
+
+gulp.task('clean', function(cb) {
+    // You can use multiple globbing patterns as you would with `gulp.src`
+    del.sync([dist_path], cb);
+});
+
 //---------------------
 // SURVEY TASKS
 
@@ -139,14 +150,15 @@ gulp.task('survey-app-cache', function() {
 gulp.task('survey-js-vendor', function() {
     gulp.src(path.SURVEY_JS_VENDOR_SRC)
         .pipe(concat('vendor.js'))
+        .pipe(gulpif(env === 'production', streamify(uglify())))
         .pipe(gulp.dest(path.SURVEY_JS_DIST));
 });
 
 gulp.task('survey-js-app', function() {
     return browserify({
-        debug: false,
-        entries: [path.SURVEY_JS_ENTRY_POINT]
-    })
+            debug: false,
+            entries: [path.SURVEY_JS_ENTRY_POINT]
+        })
         .transform(reactify)
         .bundle()
         .on('error', function(err) {
@@ -158,14 +170,14 @@ gulp.task('survey-js-app', function() {
         .pipe(rename({
             extname: '.bundle.js'
         }))
-        .pipe(gulpif(env === 'production', streamify(uglify())))
+        // .pipe(gulpif(env === 'production', streamify(uglify())))
         .on('error', function(err) {
             console.log(err.message);
             this.emit('end');
         })
-        .pipe(gulpif(env === 'production', rename({
-            extname: '.bundle.min.js'
-        })))
+        // .pipe(gulpif(env === 'production', rename({
+        //     extname: '.bundle.min.js'
+        // })))
         .pipe(gulp.dest(path.SURVEY_JS_DIST));
 });
 
@@ -179,6 +191,7 @@ gulp.task('survey-less', function() {
             console.log(err.message);
             this.emit('end');
         })
+        .pipe(gulpif(env === 'production', minifyCss()))
         .pipe(gulp.dest(path.SURVEY_CSS_DIST));
 });
 
@@ -203,6 +216,12 @@ gulp.task('survey-watch',
 
 
 
+
+
+
+
+
+
 //---------------------
 // ADMIN TASKS
 
@@ -210,6 +229,10 @@ gulp.task('survey-watch',
 gulp.task('admin-js-vendor', function() {
     gulp.src(path.ADMIN_JS_VENDOR_SRC)
         .pipe(concat('vendor.js'))
+        .pipe(gulpif(env === 'production', streamify(uglify())))
+        // .pipe(gulpif(env === 'production', rename({
+        //     extname: '.min.js'
+        // })))
         .pipe(gulp.dest(path.ADMIN_JS_DIST));
 });
 
@@ -232,9 +255,9 @@ gulp.task('admin-js-app', function() {
                 extname: '.bundle.js'
             }))
             .pipe(gulpif(env === 'production', streamify(uglify())))
-            .pipe(gulpif(env === 'production', rename({
-                extname: '.min.js'
-            })))
+            // .pipe(gulpif(env === 'production', rename({
+            //     extname: '.min.js'
+            // })))
             .pipe(gulp.dest(path.ADMIN_JS_DIST));
     });
     return es.merge.apply(null, tasks);
@@ -249,6 +272,10 @@ gulp.task('admin-less', function() {
             console.log(err.message);
             this.emit('end');
         })
+        .pipe(gulpif(env === 'production', minifyCss()))
+        // .pipe(gulpif(env === 'production', rename({
+        //     extname: '.min.css'
+        // })))
         .pipe(gulp.dest(path.ADMIN_CSS_DIST));
 });
 
@@ -272,37 +299,23 @@ gulp.task('admin-watch',
     });
 
 
+
+
+
+//---------------------
+// STATIC BUILD TASKS
+
 //
-// DEV TASKS
+// dev
 //
 gulp.task('dev-build', admin_tasks.concat(survey_tasks));
 
 
 //
-// PROD TASKS
+// prod (?)
 //
-gulp.task('admin-prod-js', admin_tasks, function() {
-    gulp.src(path.ADMIN_JS_DIST + '/vendor.js')
-        .pipe(uglify('vendor.min.js'))
-        .pipe(gulp.dest(path.ADMIN_JS_DIST));
-
-    gulp.src(path.ADMIN_JS_DIST + '/*.bundle.js')
-        .pipe(uglify('vendor.min.js'))
-        .pipe(gulp.dest(path.ADMIN_JS_DIST));
-});
-
-gulp.task('prod-build',
-    admin_tasks.concat(survey_tasks),
-    function() {
-        browserify({
-                entries: [path.JS_ENTRY_POINT],
-                transform: [reactify]
-            })
-            .bundle()
-            .pipe(source(path.JS_MINIFIED_BUILD_FILENAME))
-            .pipe(streamify(uglify(path.JS_MINIFIED_BUILD_FILENAME)))
-            .pipe(gulp.dest(path.JS_DEST_BUILD));
-    });
+gulp.task('admin-build', ['clean'].concat(admin_tasks));
+gulp.task('survey-build', ['clean'].concat(survey_tasks));
 
 
 
