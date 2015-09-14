@@ -48,7 +48,7 @@ class BaseHandler(tornado.web.RequestHandler):
             "style-src 'self' 'unsafe-inline'"
             " fonts.googleapis.com cdn.leafletjs.com;"
             "font-src 'self' fonts.googleapis.com fonts.gstatic.com;"
-            "img-src 'self' *.tile.openstreetmap.org;"
+            "img-src 'self' *.tile.openstreetmap.org; data "
             "default-src 'self';"
         )
 
