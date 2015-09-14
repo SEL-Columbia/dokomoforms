@@ -96,11 +96,11 @@ class Administrator(User):
         return result
 
 
-def construct_user(*, user_type: str, **kwargs):
+def construct_user(*, role: str, **kwargs):
     """Construct either an enumerator or an administrator."""
-    if user_type == 'enumerator':
+    if role == 'enumerator':
         user_constructor = User
-    elif user_type == 'administrator':
+    elif role == 'administrator':
         user_constructor = Administrator
     else:
         raise TypeError
