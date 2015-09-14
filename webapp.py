@@ -259,6 +259,11 @@ class Application(tornado.web.Application):
                     handlers.DebugToggleRevisitHandler),
             ]
 
+        if options.firstrun:
+            urls.append(
+                url(r'/firstrun/?', handlers.FirstRun, name='firstrun')
+            )
+
         super().__init__(urls, **settings)
 
         # Database setup
