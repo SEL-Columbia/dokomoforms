@@ -1,6 +1,7 @@
 var React = require('react'),
     PhotoField = require('./baseComponents/PhotoField'),
     LittleButton = require('./baseComponents/LittleButton'),
+    BigButton = require('./baseComponents/BigButton'),
     PhotoAPI = require('../api/PhotoAPI'),
     uuid = require('node-uuid');
 
@@ -62,7 +63,7 @@ module.exports = React.createClass({
                 src: src
             });
         }, function(err) {
-            console.log("Video failed:", err);
+            console.log('Video failed:', err);
         });
 
     },
@@ -79,7 +80,7 @@ module.exports = React.createClass({
         answers.forEach(function(answer, idx) {
             PhotoAPI.getPhoto(self.props.db, answer.response, function(err, photo) {
                 if (err) {
-                    console.log("DB query failed:", err);
+                    console.log('DB query failed:', err);
                     return;
                 }
 
@@ -101,7 +102,7 @@ module.exports = React.createClass({
         var answers = survey[this.props.question.id] || [];
         var length = answers.length;
         this.setState({
-            questionCount: length,
+            questionCount: length
         });
     },
 
@@ -113,13 +114,13 @@ module.exports = React.createClass({
         var answers = survey[this.props.question.id] || [];
         var length = answers.length;
 
-        console.log("Length:", length, "Count", this.state.questionCount);
+        console.log('Length:', length, 'Count', this.state.questionCount);
         if (answers[length] && answers[length].response_type
                 || length > 0 && length == this.state.questionCount) {
 
             this.setState({
                 questionCount: this.state.questionCount + 1
-            })
+            });
         }
     },
 
@@ -127,13 +128,11 @@ module.exports = React.createClass({
      * Remove input and update localStorage
      */
     removeInput: function(index) {
-        console.log("Remove", index);
+        console.log('Remove', index);
 
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
-        var length = answers.length;
         var photoID = answers[index] && answers[index].response || 0;
-        var self = this;
 
         // Removing an empty input
         if (photoID === 0) {
@@ -146,14 +145,14 @@ module.exports = React.createClass({
         localStorage[this.props.surveyID] = JSON.stringify(survey);
 
         // Remove from pouchDB
-        console.log("removing", photoID);
+        console.log('removing', photoID);
         this.state.photos.splice(index, 1);
         PhotoAPI.removePhoto(this.props.db, photoID, function(err, result) {
             if (err) {
-                console.log("Could not remove attachment?:", err);
+                console.log('Could not remove attachment?:', err);
                 return;
             }
-            console.log("Removed attachement:", result);
+            console.log('Removed attachement:', result);
         });
 
         var count = this.state.questionCount - 1;
@@ -161,18 +160,20 @@ module.exports = React.createClass({
         this.setState({
             photos: this.state.photos,
             questionCount: count
-        })
+        });
     },
 
     /*
-     * Retrieve location and record into localStorage on success.
+     * Capture still and record into localStorage.
      * Updates questionCount on success, triggering rerender of page
      * causing input fields to have values reloaded.
      *
      * Only updates the LAST active input field.
      */
-    onCapture: function() {
+    onCapture: function(e) {
+        console.log('onCapture ---- WEE!', e);
         var self = this;
+        navigator.vibrate(50);
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
         var index = answers.length === 0 ? 0 : this.refs[answers.length] ? answers.length : answers.length - 1; // So sorry
@@ -189,7 +190,7 @@ module.exports = React.createClass({
         // Extract photo from canvas and write it into pouchDB
         var photo = canvas.toDataURL('image/png');
         var photoID = uuid.v4();
-        PhotoAPI.addPhoto(this.props.db, photoID, photo)
+        PhotoAPI.addPhoto(this.props.db, photoID, photo);
 
         // Record the ID into localStorage
         answers[index] = {
@@ -200,6 +201,7 @@ module.exports = React.createClass({
         survey[self.props.question.id] = answers; // Update localstorage
         localStorage[self.props.surveyID] = JSON.stringify(survey);
 
+
         // Update state for count and in memory photos array
         var length = answers.length === 0 ? 1 : answers.length;
         self.state.photos[index] = photo;
@@ -208,50 +210,53 @@ module.exports = React.createClass({
             questionCount: length
         });
 
+        // If allow_multiple, add a new input after the capture.
+        if (this.props.question.allow_multiple) {
+            this.addNewInput();
+        }
     },
 
     render: function() {
-        var children = Array.apply(null, {length: this.state.questionCount})
         var self = this;
+        var children = Array.apply(null, {length: this.state.questionCount});
+        var classes = 'question__video';
+        // if (this.state.status === 'captured') {
+        //     classes += ' captured';
+        // }
+        console.log('STATE', this.state);
         return (
-                <span>
-                <LittleButton
-                    buttonFunction={this.onCapture}
-                    disabled={this.props.disabled}
-                    iconClass={'icon-star'}
-                    text={'take a photo'}
-                />
+            <span>
 
-                <canvas ref='canvas' className="question__canvas" />
+            <div className="video_container">
                 <video
                     autoPlay
                     ref='video'
-                    className="question__video"
+                    className={classes}
+                    onClick={this.onCapture}
                     src={this.state.src}
                 />
 
-                {children.map(function(child, idx) {
-                    return (
-                            <PhotoField
-                                buttonFunction={self.removeInput}
-                                type={self.props.questionType}
-                                key={Math.random()}
-                                index={idx}
-                                ref={idx}
-                                disabled={true}
-                                initValue={self.state.photos[idx]}
-                                showMinus={true}
-                            />
-                           )
-                })}
+                <div className="photo_shutter" onClick={this.onCapture}>
 
-                {this.props.question.allow_multiple
-                    ? <LittleButton buttonFunction={this.addNewInput}
-                        disabled={this.props.disabled}
-                        text={'add another answer'} />
-                    : null
-                }
-                </span>
-               )
+                </div>
+            </div>
+
+            <div className='photo_thumbnails'>
+            {children.map(function(child, idx) {
+                return (
+                        <PhotoField
+                            buttonFunction={self.removeInput}
+                            type={self.props.questionType}
+                            key={Math.random()}
+                            index={idx}
+                            ref={idx}
+                            disabled={true}
+                            initValue={self.state.photos[idx]}
+                        />
+                       );
+            })}
+            </div>
+            </span>
+        );
     }
 });
