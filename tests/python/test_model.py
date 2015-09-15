@@ -423,15 +423,15 @@ class TestColumnProperties(DokoTest):
 
 class TestUser(DokoTest):
     def test_construct_user(self):
-        enumerator = models.construct_user(user_type='enumerator', name='e')
+        enumerator = models.construct_user(role='enumerator', name='e')
         self.assertIs(type(enumerator), models.User)
 
-        admin = models.construct_user(user_type='administrator', name='a')
+        admin = models.construct_user(role='administrator', name='a')
         self.assertIs(type(admin), models.Administrator)
 
     def test_construct_user_bogus_type(self):
         self.assertRaises(
-            TypeError, models.construct_user, user_type='bogus', name='b'
+            TypeError, models.construct_user, role='bogus', name='b'
         )
 
     def test_to_json(self):
@@ -3382,6 +3382,7 @@ class TestSubmission(DokoTest):
                     'answers',
                     [
                         OrderedDict((
+                            ('type_constraint', 'location'),
                             ('response_type', 'answer'),
                             (
                                 'response',
@@ -3402,7 +3403,8 @@ class TestSubmission(DokoTest):
                     .scalar()
                 ),
                 ('enumerator_user_name', 'enumerator'),
-            ))
+            )),
+            msg=the_submission
         )
 
     def test_enumerator_only(self):
@@ -3638,7 +3640,11 @@ class TestAnswer(DokoTest):
         )
         self.assertDictEqual(
             self.session.query(models.Answer).one().response,
-            {'response_type': 'answer', 'response': 3}
+            {
+                'type_constraint': 'integer',
+                'response_type': 'answer',
+                'response': 3,
+            }
         )
 
     def test_asdict(self):
@@ -3698,11 +3704,14 @@ class TestAnswer(DokoTest):
                 (
                     'response',
                     OrderedDict((
-                        ('response_type', 'answer'), ('response', 3)
+                        ('type_constraint', 'integer'),
+                        ('response_type', 'answer'),
+                        ('response', 3),
                     ))
                 ),
                 ('metadata', {'a': 'b'}),
-            ))
+            )),
+            msg=answer
         )
 
     def test_question_title(self):
@@ -4676,7 +4685,11 @@ class TestAnswer(DokoTest):
         )
         self.assertDictEqual(
             self.session.query(models.Answer).one().response,
-            {'response_type': 'other', 'response': 'other answer'}
+            {
+                'type_constraint': 'multiple_choice',
+                'response_type': 'other',
+                'response': 'other answer',
+            }
         )
 
     def test_answer_while_other_allowed(self):
@@ -4726,6 +4739,7 @@ class TestAnswer(DokoTest):
         self.assertDictEqual(
             self.session.query(models.Answer).one().response,
             {
+                'type_constraint': 'multiple_choice',
                 'response_type': 'answer',
                 'response': {
                     'choice_number': 0,
@@ -4852,7 +4866,11 @@ class TestAnswer(DokoTest):
         )
         self.assertDictEqual(
             self.session.query(models.Answer).one().response,
-            {'response_type': 'dont_know', 'response': 'dont_know answer'}
+            {
+                'type_constraint': 'integer',
+                'response_type': 'dont_know',
+                'response': 'dont_know answer'
+            }
         )
 
     def test_answer_while_dont_know_allowed(self):
@@ -4895,7 +4913,11 @@ class TestAnswer(DokoTest):
         )
         self.assertDictEqual(
             self.session.query(models.Answer).one().response,
-            {'response_type': 'answer', 'response': 3}
+            {
+                'type_constraint': 'integer',
+                'response_type': 'answer',
+                'response': 3,
+            }
         )
 
     def test_cant_give_answer_and_dont_know(self):
@@ -4976,7 +4998,11 @@ class TestAnswer(DokoTest):
         )
         self.assertDictEqual(
             self.session.query(models.Answer).one().response,
-            {'response_type': 'answer', 'response': 3}
+            {
+                'type_constraint': 'integer',
+                'response_type': 'answer',
+                'response': 3,
+            }
         )
 
     def test_response_other(self):
@@ -5022,7 +5048,11 @@ class TestAnswer(DokoTest):
         )
         self.assertDictEqual(
             self.session.query(models.Answer).one().response,
-            {'response_type': 'other', 'response': 'other answer'}
+            {
+                'type_constraint': 'multiple_choice',
+                'response_type': 'other',
+                'response': 'other answer',
+            }
         )
 
     def test_response_dont_know(self):
@@ -5068,7 +5098,11 @@ class TestAnswer(DokoTest):
         )
         self.assertDictEqual(
             self.session.query(models.Answer).one().response,
-            {'response_type': 'dont_know', 'response': "I don't know!"}
+            {
+                'type_constraint': 'integer',
+                'response_type': 'dont_know',
+                'response': "I don't know!",
+            }
         )
 
     def test_response_legitimate(self):

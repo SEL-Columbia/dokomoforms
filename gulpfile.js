@@ -6,7 +6,11 @@ var gulp = require('gulp'),
     browserify = require('browserify'),
     reactify = require('reactify'),
     streamify = require('gulp-streamify'),
-    underscorify = require('node-underscorify'),
+    underscorify = require('node-underscorify').transform({
+        templateSettings: {
+            variable: 'data'
+        }
+    }),
     less = require('gulp-less'),
     // sourcemaps = require('gulp-sourcemaps'),
     replace = require('gulp-replace'),
@@ -47,7 +51,7 @@ var path = {
         node_modules_path + '/lodash/lodash.js',
         node_modules_path + '/react/dist/react.js'
     ],
-    SURVEY_JS_APP_SRC: survey_src_path + '/js',
+    SURVEY_JS_APP_SRC: survey_src_path + '/js/**/*.js',
     SURVEY_JS_ENTRY_POINT: survey_src_path + '/js/main.js',
     SURVEY_JS_DIST: survey_dist_path + '/js',
 
@@ -80,7 +84,8 @@ var path = {
         node_modules_path + '/lodash-compat/index.js',
         node_modules_path + '/moment/min/moment.min.js',
         node_modules_path + '/leaflet/dist/leaflet.js',
-        node_modules_path + '/highcharts-release/highcharts.js'
+        node_modules_path + '/highcharts-release/highcharts.js',
+        node_modules_path + '/backbone/backbone.js'
     ],
     ADMIN_JS_APP_SRC: admin_src_path + '/js/**/*.js',
     ADMIN_JS_ENTRY_POINT_PREFIX: admin_src_path + '/js/',
@@ -89,7 +94,8 @@ var path = {
     ADMIN_JS_ENTRY_POINTS: [
         'account-overview.js',
         'view-data.js',
-        'view-survey.js'
+        'view-survey.js',
+        'user-admin.js'
     ],
     ADMIN_JS_DIST: admin_dist_path + '/js',
 
@@ -99,7 +105,9 @@ var path = {
     ADMIN_FONT_SRC: [
         node_modules_path + '/bootstrap/fonts/*'
     ],
-    ADMIN_FONT_DIST: admin_dist_path + '/fonts'
+    ADMIN_FONT_DIST: admin_dist_path + '/fonts',
+
+    ADMIN_TEMPLATES_SRC: admin_src_path + '/templates/**/*'
 };
 
 
@@ -134,6 +142,7 @@ gulp.task('survey-js-app', function() {
         .bundle()
         .on('error', function (err) {
             console.log(err.message);
+            process.exit(1);
             this.emit('end');
         })
         .pipe(source(path.JS_BUILD_FILENAME))
@@ -193,11 +202,12 @@ gulp.task('admin-js-app', function() {
     var tasks = path.ADMIN_JS_ENTRY_POINTS.map(function(entry) {
         // note appending of root path to entry here
         return browserify({ entries: [path.ADMIN_JS_ENTRY_POINT_PREFIX + entry] })
-            .transform(underscorify.transform())
+            .transform(underscorify)
             .bundle()
             .on('error', function (err) {
                 console.log(err.message);
                 this.emit('end');
+                process.exit(1);
             })
             .pipe(source(entry))
             // rename them to have "bundle as postfix"
@@ -237,7 +247,7 @@ gulp.task('admin-watch',
     ['admin-less', 'admin-js-vendor', 'admin-js-app', 'admin-img', 'admin-fonts'],
     function() {
         livereload.listen();
-        gulp.watch([path.ADMIN_LESS_SRC, path.ADMIN_JS_APP_SRC],
+        gulp.watch([path.ADMIN_LESS_SRC, path.ADMIN_JS_APP_SRC, path.ADMIN_TEMPLATES_SRC],
             ['admin-less', 'admin-js-vendor', 'admin-js-app', 'admin-img', 'admin-fonts']);
     });
 

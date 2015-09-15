@@ -1,6 +1,6 @@
 """Useful reusable functions for handlers, plus the BaseHandler."""
 import tornado.web
-from tornado.escape import to_unicode, json_decode
+from tornado.escape import to_unicode, json_decode, json_encode
 
 from dokomoforms.models import User, Survey
 
@@ -48,7 +48,10 @@ class BaseHandler(tornado.web.RequestHandler):
             "style-src 'self' 'unsafe-inline'"
             " fonts.googleapis.com cdn.leafletjs.com;"
             "font-src 'self' fonts.googleapis.com fonts.gstatic.com;"
-            "img-src 'self' *.tile.openstreetmap.org; data "
+            "img-src 'self' *.tile.openstreetmap.org data: blob:;"
+            "object-src 'self' blob:;"
+            "media-src 'self' blob:;"
+            "connect-src 'self' blob:;"
             "default-src 'self';"
         )
 
@@ -113,6 +116,32 @@ class BaseHandler(tornado.web.RequestHandler):
             return None
         return self.current_user_model.id
 
+    def _get_current_user_prefs(self):
+        """Get the current user's preferences for the templates.
+
+        :return: a json string contain the currently logged in user's prefs.
+        """
+        prefs = {}
+        if self.current_user:
+            prefs = self.current_user_model.preferences
+        return json_encode(prefs)
+
+    def _t(self, field):
+        """Pick a translation from a translatable field.
+
+        Based on user's preference.
+        Falls back to the first available translation if default_language
+        is not available.
+
+        TODO: this should probably fallback to the survey's default, if the
+        string is coming from a survey...?
+        """
+        if self.current_user_model is not None:
+            lang = self.current_user_model.preferences['default_language']
+            if lang in field:
+                return field[lang]
+            return next(iter(field.values()))
+
     def get_template_namespace(self):
         """Template functions.
 
@@ -122,7 +151,9 @@ class BaseHandler(tornado.web.RequestHandler):
         namespace = super().get_template_namespace()
         namespace.update({
             'surveys_for_menu': self._get_surveys_for_menu(),
-            'current_user_id': self._get_current_user_id()
+            'current_user_id': self._get_current_user_id(),
+            '_t': self._t,
+            'current_user_prefs': self._get_current_user_prefs()
         })
         return namespace
 

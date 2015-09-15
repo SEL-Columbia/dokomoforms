@@ -1,10 +1,13 @@
 var $ = require('jquery'),
     _ = require('lodash'),
+    L = require('leaflet'),
     moment = require('moment'),
     base = require('./base'),
+    submissionModal = require('./submission-modal'),
     view_btn_tpl = require('../templates/button-view-data.tpl'),
     manage_btn_tpl = require('../templates/button-manage-survey.tpl'),
-    dl_btn_tpl = require('../templates/button-download-data.tpl');
+    dl_btn_tpl = require('../templates/button-download-data.tpl'),
+    _t = require('./lang');
 
 var AccountOverview = (function() {
 
@@ -12,9 +15,67 @@ var AccountOverview = (function() {
         base.init();
         if (window.CURRENT_USER_ID !== 'None') {
             loadActivityGraph();
-
+            loadMap();
             setupDataTable();
         }
+    }
+
+    function loadMap() {
+        console.log('loadMap');
+        // Map
+        var map,
+            limit = 5;
+        $.getJSON('/api/v0/submissions?order_by=save_time:DESC&limit=' + limit, function(data) {
+            var submissions = data.submissions;
+            if (submissions.length) {
+                $(document).on('shown.bs.tab', 'a[href="#recent-map"]', function() {
+                    if (!map) {
+                        map = L.map('recent-map-container', {
+                            dragging: true,
+                            zoom: 14,
+                            attributionControl: false
+                        });
+                        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
+                        var markers = [];
+                        _.each(submissions, function(submission) {
+                            console.log(submission);
+                            var answers = submission.answers,
+                                location = _.find(answers, function(answer) {
+                                    return answer.type_constraint == 'location';
+                                });
+                            if (!location || !location.response) {
+                                return;
+                            }
+                            location = location.response;
+                            // console.log('location:', location);
+                            // stored lon/lat in revisit, switch around
+                            var marker = new L.marker([location.lat, location.lng], {
+                                riseOnHover: true
+                            });
+                            marker.options.icon = new L.icon({
+                                iconUrl: '/static/dist/admin/img/icons/normal_base.png',
+                                iconAnchor: [15, 48]
+                            });
+                            // marker.bindPopup();
+                            marker.on('click', function() {
+                                submissionModal.openSubmissionDetailModal(submission.id);
+                            });
+                            markers.push(marker);
+                        });
+
+                        if (markers.length) {
+                            var markers_group = new L.featureGroup(markers);
+                            markers_group.addTo(map);
+                            map.fitBounds(markers_group.getBounds(), {
+                                padding: [40, 40]
+                            });
+                        } else {
+                            console.log('No submissions include location.');
+                        }
+                    }
+                });
+            }
+        });
     }
 
     function loadActivityGraph() {
@@ -175,7 +236,7 @@ var AccountOverview = (function() {
                                 recordsFiltered: json.filtered_entries,
                                 data: json.surveys.map(function(survey) {
                                     return [
-                                        JSON.stringify(survey.title),
+                                        _t(survey.title),
                                         survey.num_submissions,
                                         survey.latest_submission_time,
                                         survey.id
