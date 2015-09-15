@@ -57,6 +57,7 @@ class FirstRun(BaseHandler):
         username = self.get_body_argument('username')
         email = self.get_body_argument('email')
         organization = self.get_body_argument('organization')
+        db_password = self.get_body_argument('db_password')
         with self.session.begin():
             self.session.add(
                 Administrator(name=username, emails=[Email(address=email)])
@@ -68,8 +69,13 @@ class FirstRun(BaseHandler):
             )
             local_config.write('firstrun = False\n')
             local_config.write("organization = '{}'\n".format(organization))
+            local_config.write("db_password = '{}'\n".format(db_password))
             local_config.write(
                 '###############################################\n'
+            )
+        with self.session.begin():
+            self.session.execute(
+                "ALTER USER postgres WITH PASSWORD '{}'".format(db_password)
             )
         self.write('Created user and edited local_config.py')
 
