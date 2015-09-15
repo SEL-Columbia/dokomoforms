@@ -96,7 +96,7 @@ class DebugPersonaHandler(BaseHandler):
         self.write({'status': 'okay', 'email': 'test_creator@fixtures.com'})
 
 
-if options.dev or options.debug:  # pragma: no cover
+if options.debug:  # pragma: no cover
     import lzstring
     revisit_online = True
     facilities_file = 'tests/python/fake_revisit_facilities.json'

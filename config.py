@@ -4,6 +4,10 @@
 Treat this as a read-only file! It sets the defaults for the configuration
 values.
 
+To see definitions for these options, run
+
+    $ python3 webapp.py --help
+
 If you want to use different values, set them as command line arguments:
 
     $ python3 webappy.py --port=8889

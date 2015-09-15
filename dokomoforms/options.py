@@ -19,13 +19,9 @@ define('firstrun', default=True, help='whether to run app setup', type=bool)
 define('port', help='run on the given port', type=int)
 define('cookie_secret', help='string used to create session cookies')
 define('debug', default=False, help='whether to enable debug mode', type=bool)
-define('autoreload', default=False, help='whether to autoreload', type=bool)
-
-dev_help = 'turn on autoreload and debug, maybe some other dev options'
-define('dev', default=False, help=dev_help, type=bool)
 
 https_help = 'whether the application accepts https traffic'
-define('https', help=dev_help, type=bool)
+define('https', help=https_help, type=bool)
 
 define('organization', help='the name of your organization')
 
