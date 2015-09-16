@@ -44,7 +44,7 @@ TODO:
 # The numbers expected to be present via fixtures
 TOTAL_SURVEYS = 14
 TOTAL_SUBMISSIONS = 112
-TOTAL_NODES = 16
+TOTAL_NODES = 17
 
 
 class TestErrorHandling(DokoHTTPTest):
