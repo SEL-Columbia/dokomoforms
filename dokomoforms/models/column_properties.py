@@ -10,7 +10,7 @@ from sqlalchemy.orm import column_property, object_session
 from sqlalchemy.sql.functions import Function
 
 from dokomoforms.models import (
-    Answer, Node, Survey, Submission, AnswerableSurveyNode,
+    Answer, Node, Choice, Survey, Submission, AnswerableSurveyNode
 )
 from dokomoforms.models.answer import ANSWER_TYPES
 from dokomoforms.exc import InvalidTypeForOperation
@@ -121,7 +121,7 @@ def answer_mode(survey_node: AnswerableSurveyNode):
     if type_constraint not in allowable_types:
         raise InvalidTypeForOperation((type_constraint, 'mode'))
     answer_cls = ANSWER_TYPES[survey_node.the_type_constraint]
-    return (
+    result = (
         object_session(survey_node)
         .execute(
             sa.text(
@@ -137,6 +137,9 @@ def answer_mode(survey_node: AnswerableSurveyNode):
         )
         .scalar()
     )
+    if type_constraint == 'multiple_choice' and result:
+        result = object_session(survey_node).query(Choice).get(result)
+    return result
 
 
 def answer_stddev_pop(survey_node: AnswerableSurveyNode):
