@@ -1,5 +1,4 @@
 """Answer models."""
-
 import abc
 from collections import OrderedDict
 
@@ -12,7 +11,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.sql.functions import current_timestamp
 # from sqlalchemy.sql.type_api import UserDefinedType
 
-from tornado.escape import json_decode
+from tornado.escape import json_decode, json_encode
 
 from geoalchemy2 import Geometry
 
@@ -196,8 +195,8 @@ class Answer(Base):
         ),
     )
 
-    def _asdict(self) -> OrderedDict:
-        return OrderedDict((
+    def _asdict(self, mode='json') -> OrderedDict:
+        items = (
             ('id', self.id),
             ('deleted', self.deleted),
             ('answer_number', self.answer_number),
@@ -208,9 +207,20 @@ class Answer(Base):
             ('question_id', self.question_id),
             ('type_constraint', self.type_constraint),
             ('last_update_time', self.last_update_time),
-            ('response', self.response),
-            ('metadata', self.answer_metadata),
-        ))
+        )
+        if mode == 'csv':
+            response = self.response['response']
+            if isinstance(response, dict):
+                response = json_encode(response)
+            items += (
+                ('main_answer', self.main_answer),
+                ('response', response),
+                ('response_type', self.response['response_type']),
+            )
+        else:
+            items += (('response', self.response),)
+        items += (('metadata', self.answer_metadata),)
+        return OrderedDict(items)
 
 
 class _AnswerMixin:

@@ -71,6 +71,11 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         """The handler's current_user."""
         return self.r_handler.current_user
 
+    @property
+    def content_type(self):
+        """The format specified in the request."""
+        return self._query_arg('format', default='json').lower()
+
     def _get_model(self, model_id, model_cls=None, exception=None):
         """Get an instance of this model class by id."""
         if model_cls is None:
@@ -98,6 +103,21 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
             return output(arg)
 
         return arg
+
+    def build_response(self, data, status=200):
+        """Finish the Tornado response.
+
+        This takes into account non-JSON content-types.
+        """
+        if self.content_type == 'csv':
+            content_type = 'text/csv'
+        else:
+            content_type = 'application/json'
+        self.ref_rh.set_header(
+            'Content-Type', '{}; charset=UTF-8'.format(content_type)
+        )
+        self.ref_rh.set_status(status)
+        self.ref_rh.finish(data)
 
     def handle_error(self, err):
         """Generate a serialized error message.
