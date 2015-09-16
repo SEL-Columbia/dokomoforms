@@ -2,7 +2,7 @@
 var React = require('react'),
     $ = require('jquery'),
     moment = require('moment'),
-    PouchDB  = require('pouchdb/dist/pouchdb.min');
+    PouchDB = require('pouchdb/dist/pouchdb.min');
 
 // pouch plugin
 PouchDB.plugin(require('pouchdb-upsert'));
@@ -67,10 +67,10 @@ var Application = React.createClass({
             head: first_question,
             question: null,
             headStack: [], //XXX Stack of linked list heads
-            states : {
-                SPLASH : 1,
-                QUESTION : 2,
-                SUBMIT : 3
+            states: {
+                SPLASH: 1,
+                QUESTION: 2,
+                SUBMIT: 3
             },
             state: 1,
             trees: trees,
@@ -95,13 +95,13 @@ var Application = React.createClass({
         questions.forEach(function(node, idx) {
             if (node.type_constraint === 'facility') {
                 trees[node.id] = new FacilityTree(
-                        parseFloat(node.logic.nlat),
-                        parseFloat(node.logic.wlng),
-                        parseFloat(node.logic.slat),
-                        parseFloat(node.logic.elng),
-                        surveyDB,
-                        node.id
-                        );
+                    parseFloat(node.logic.nlat),
+                    parseFloat(node.logic.wlng),
+                    parseFloat(node.logic.slat),
+                    parseFloat(node.logic.elng),
+                    surveyDB,
+                    node.id
+                );
             }
 
             if (node.sub_surveys) {
@@ -135,25 +135,25 @@ var Application = React.createClass({
 
         console.log('Current Question', currentQuestion);
 
-        switch(currentState) {
+        switch (currentState) {
             // On Submit page and next was pressed
             case this.state.states.SUBMIT:
                 nextQuestion = null;
                 showDontKnow = false;
                 showDontKnowBox = false;
                 state = this.state.states.SPLASH
-                //XXX Fire Modal for submitting here
+                    //XXX Fire Modal for submitting here
                 this.onSave();
 
                 // Reset Survey Linked List
                 head = this.state.headStack[0] || head;
-                while(head.prev) {
+                while (head.prev) {
                     head = head.prev;
                 };
                 headStack = [];
                 break;
 
-            // On Splash page and next was pressed
+                // On Splash page and next was pressed
             case this.state.states.SPLASH:
                 nextQuestion = this.state.head;
                 showDontKnow = nextQuestion.allow_dont_know || false;
@@ -204,7 +204,9 @@ var Application = React.createClass({
                     // Check which subsurvey this answer buckets into
                     var BREAK = false;
                     sub_surveys.forEach(function(sub) {
-                        if (BREAK) {return;}
+                        if (BREAK) {
+                            return;
+                        }
                         console.log('Bucket:', sub.buckets, 'Type:', currentQuestion.type_constraint);
 
                         // Append all subsurveys to clone of current question, update head, update headStack if in bucket
@@ -241,7 +243,7 @@ var Application = React.createClass({
 
                             // Find the head
                             var newHead = clone;
-                            while(newHead.prev) {
+                            while (newHead.prev) {
                                 newHead = newHead.prev;
                             }
                             head = newHead;
@@ -249,7 +251,7 @@ var Application = React.createClass({
                             // Set current question to CLONE always
                             currentQuestion = clone;
 
-                            BREAK = true;// break
+                            BREAK = true; // break
                         }
 
                     });
@@ -314,7 +316,7 @@ var Application = React.createClass({
         var head = this.state.head;
         var headStack = this.state.headStack;
 
-        switch(currentState) {
+        switch (currentState) {
             // On Submit page and prev was pressed
             case this.state.states.SUBMIT:
                 nextQuestion = currentQuestion; // Tail was saved in current question
@@ -331,7 +333,7 @@ var Application = React.createClass({
                         console.log('RESET', nextQuestion.id, headStack.length);
                         // Find the head
                         var newHead = nextQuestion;
-                        while(newHead.prev) {
+                        while (newHead.prev) {
                             newHead = newHead.prev;
                         }
                         head = newHead;
@@ -351,7 +353,7 @@ var Application = React.createClass({
                 }
                 break;
 
-            // On Splash page and prev was pressed (IMPOSSIBLE)
+                // On Splash page and prev was pressed (IMPOSSIBLE)
             case this.state.states.SPLASH:
                 nextQuestion = null;
                 showDontKnowBox = false;
@@ -384,7 +386,7 @@ var Application = React.createClass({
                         console.log('RESET', nextQuestion.id, headStack.length);
                         // Find the head
                         var newHead = nextQuestion;
-                        while(newHead.prev) {
+                        while (newHead.prev) {
                             newHead = newHead.prev;
                         }
                         head = newHead;
@@ -431,14 +433,16 @@ var Application = React.createClass({
         if (response === null)
             return false;
 
-        switch(type) {
+        switch (type) {
             case 'integer':
             case 'decimal':
                 var inBee = 1; // Innocent untill proven guilty
                 // Split bucket into four sections, confirm that value in range, otherwise set inBee to false
                 var BREAK = false;
                 buckets.forEach(function(bucket) {
-                    if (BREAK) {return;}
+                    if (BREAK) {
+                        return;
+                    }
                     inBee = 1;
                     var left = bucket.split(',')[0];
                     var right = bucket.split(',')[1];
@@ -479,14 +483,16 @@ var Application = React.createClass({
 
                 return inBee;
 
-	    case 'timestamp': // TODO: We need moment.js for this to work properly
+            case 'timestamp': // TODO: We need moment.js for this to work properly
             case 'date':
                 var inBee = 1; // Innocent untill proven guilty
                 response = new Date(response); // Convert to date object for comparisons
                 var BREAK = false;
                 buckets.forEach(function(bucket) {
                     inBee = 1;
-                    if (BREAK) {return;}
+                    if (BREAK) {
+                        return;
+                    }
                     var left = bucket.split(',')[0];
                     var right = bucket.split(',')[1];
                     if (left[0] === '[') {
@@ -559,18 +565,18 @@ var Application = React.createClass({
             }
         });
 
-       // Mutable so next/prev pointers will be visible to all nodes that reference this dictionary
-       ids[node.id] = clone;
+        // Mutable so next/prev pointers will be visible to all nodes that reference this dictionary
+        ids[node.id] = clone;
 
-       if (node.next) {
-           var next = ids[node.next.id];
-           clone.next = next || self.cloneNode(node.next, ids);
-       }
+        if (node.next) {
+            var next = ids[node.next.id];
+            clone.next = next || self.cloneNode(node.next, ids);
+        }
 
-       if (node.prev) {
-           var prev = ids[node.prev.id];
-           clone.prev = prev || self.cloneNode(node.prev, ids);
-       }
+        if (node.prev) {
+            var prev = ids[node.prev.id];
+            clone.prev = prev || self.cloneNode(node.prev, ids);
+        }
 
         return clone;
     },
@@ -596,7 +602,7 @@ var Application = React.createClass({
         // Copy active questions into simple list;
         var questions = [];
         var head = this.state.head;
-        while(head) {
+        while (head) {
             questions.push(head);
             head = head.next;
         }
@@ -609,13 +615,13 @@ var Application = React.createClass({
                     return true; // continue;
                 }
 
-                // Photos need to synced independantly from survey
+                // Photos need to synced independently from survey
                 if (question.type_constraint === 'photo') {
-                   unsynced_photos.push({
-                       'surveyID': self.props.survey.id,
-                       'photoID': response.response,
-                       'questionID': question.id
-                   });
+                    unsynced_photos.push({
+                        'surveyID': self.props.survey.id,
+                        'photoID': response.response,
+                        'questionID': question.id
+                    });
                 }
 
                 // New facilities need to be stored seperatly from survey
@@ -655,7 +661,7 @@ var Application = React.createClass({
             answers: answers,
             save_time: new Date().toISOString(),
             submission_time: '' // For comparisions during submit ajax callback
-        }
+        };
 
         console.log('Submission', submission);
 
@@ -704,7 +710,7 @@ var Application = React.createClass({
             // Update submit time
             survey.submission_time = new Date().toISOString();
             $.ajax({
-                url: '/api/v0/surveys/'+survey.survey_id+'/submit',
+                url: '/api/v0/surveys/' + survey.survey_id + '/submit',
                 type: 'POST',
                 contentType: 'application/json',
                 processData: false,
@@ -748,20 +754,20 @@ var Application = React.createClass({
             });
 
             console.log('synced submission:', survey);
-            console.log('survey', '/api/v0/surveys/'+survey.survey_id+'/submit');
+            console.log('survey', '/api/v0/surveys/' + survey.survey_id + '/submit');
         });
 
         // Post photos to dokomoforms
         unsynced_photos.forEach(function(photo, idx) {
             if (photo.surveyID === self.props.survey.id) {
-                PhotoAPI.getBase64(self.state.db, photo.photoID, function(err, base64){
+                PhotoAPI.getBase64(self.state.db, photo.photoID, function(err, base64) {
                     $.ajax({
                         url: '/api/v0/photos',
                         type: 'POST',
                         contentType: 'application/json',
                         processData: false,
                         data: JSON.stringify({
-                            'id' : photo.photoID,
+                            'id': photo.photoID,
                             'mime_type': 'image/png',
                             'image': base64
                         }),
@@ -837,7 +843,7 @@ var Application = React.createClass({
 
                     // Error
                     function(err, facility) {
-		        console.log('Failed to post facility', err, facility);
+                        console.log('Failed to post facility', err, facility);
                     }
                 );
             }
@@ -852,13 +858,14 @@ var Application = React.createClass({
      */
     onCheckButton: function() {
         this.setState({
-            showDontKnowBox: this.state.showDontKnowBox ? false: true,
-            showDontKnow: this.state.showDontKnow,
+            showDontKnowBox: this.state.showDontKnowBox ? false : true,
+            showDontKnow: this.state.showDontKnow
         });
 
         // Force questions to update
-        if (this.state.state = this.state.states.QUESTION)
+        if (this.state.state === this.state.states.QUESTION) {
             this.refs.question.update();
+        }
 
     },
 
@@ -874,10 +881,10 @@ var Application = React.createClass({
         if (state === this.state.states.QUESTION) {
             var questionID = question.id;
             var questionType = question.type_constraint;
-            switch(questionType) {
+            switch (questionType) {
                 case 'multiple_choice':
                     return (
-                            <MultipleChoice
+                        <MultipleChoice
                                 ref='question'
                                 key={questionID}
                                 question={question}
@@ -886,10 +893,10 @@ var Application = React.createClass({
                                 surveyID={survey.id}
                                 disabled={this.state.showDontKnowBox}
                            />
-                       )
+                    );
                 case 'photo':
                     return (
-                            <Photo
+                        <Photo
                                 ref='question'
                                 key={questionID}
                                 question={question}
@@ -899,11 +906,11 @@ var Application = React.createClass({
                                 disabled={this.state.showDontKnowBox}
                                 db={this.state.db}
                            />
-                       )
+                    );
 
                 case 'location':
                     return (
-                            <Location
+                        <Location
                                 ref='question'
                                 key={questionID}
                                 question={question}
@@ -912,10 +919,10 @@ var Application = React.createClass({
                                 surveyID={survey.id}
                                 disabled={this.state.showDontKnowBox}
                            />
-                       )
+                    );
                 case 'facility':
                     return (
-                            <Facility
+                        <Facility
                                 ref='question'
                                 key={questionID}
                                 question={question}
@@ -926,10 +933,10 @@ var Application = React.createClass({
                                 db={this.state.db}
                                 tree={this.state.trees[questionID]}
                            />
-                       )
+                    );
                 case 'note':
                     return (
-                            <Note
+                        <Note
                                 ref='question'
                                 key={questionID}
                                 question={question}
@@ -938,10 +945,10 @@ var Application = React.createClass({
                                 surveyID={survey.id}
                                 disabled={this.state.showDontKnowBox}
                            />
-                       )
+                    );
                 default:
                     return (
-                            <Question
+                        <Question
                                 ref='question'
                                 key={questionID}
                                 question={question}
@@ -950,26 +957,26 @@ var Application = React.createClass({
                                 surveyID={survey.id}
                                 disabled={this.state.showDontKnowBox}
                            />
-                       )
+                    );
             }
         } else if (state === this.state.states.SUBMIT) {
             return (
-                    <Submit
+                <Submit
                         ref='submit'
                         surveyID={survey.id}
                         language={survey.default_language}
                     />
-                   )
+            );
         } else {
             return (
-                    <Splash
+                <Splash
                         ref='splash'
                         surveyID={survey.id}
                         surveyTitle={survey.title}
                         language={survey.default_language}
                         buttonFunction={this.onSubmit}
                     />
-                   )
+            );
         }
     },
 
@@ -982,11 +989,11 @@ var Application = React.createClass({
         var state = this.state.state;
 
         if (state === this.state.states.QUESTION) {
-            return question.title[survey.default_language]
+            return question.title[survey.default_language];
         } else if (state === this.state.states.SUBMIT) {
-            return 'Ready to Save?'
+            return 'Ready to Save?';
         } else {
-            return survey.title[survey.default_language]
+            return survey.title[survey.default_language];
         }
     },
 
@@ -999,9 +1006,9 @@ var Application = React.createClass({
         var state = this.state.state;
 
         if (state === this.state.states.QUESTION) {
-            return question.hint[survey.default_language]
+            return question.hint[survey.default_language];
         } else if (state === this.state.states.SUBMIT) {
-            return 'If youre satisfied with the answers to all the questions, you can save the survey now.'
+            return 'If youre satisfied with the answers to all the questions, you can save the survey now.';
         } else {
             return 'version ' + survey.version + ' | last updated ' + moment(survey.last_update_time).format('lll');
         }
@@ -1015,9 +1022,9 @@ var Application = React.createClass({
         if (state === this.state.states.QUESTION) {
             return 'Next Question';
         } else if (state === this.state.states.SUBMIT) {
-            return 'Save Survey'
+            return 'Save Survey';
         } else {
-            return 'Begin a New Survey'
+            return 'Begin a New Survey';
         }
     },
 
@@ -1032,7 +1039,7 @@ var Application = React.createClass({
         var number = -1;
         var length = 0;
         var head = this.state.head;
-        while(head) {
+        while (head) {
             if (head.id === questionID) {
                 number = length;
             }
@@ -1050,7 +1057,7 @@ var Application = React.createClass({
             contentClasses += ' content-shrunk content-super-shrunk';
 
         return (
-                <div id='wrapper'>
+            <div id='wrapper'>
                     <Header
                         ref='header'
                         buttonFunction={this.onPrevButton}
@@ -1078,7 +1085,7 @@ var Application = React.createClass({
                      />
 
                 </div>
-               );
+        );
     }
 });
 

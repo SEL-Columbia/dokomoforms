@@ -95,8 +95,7 @@ module.exports = React.createClass({
         } else {
             // No unsynced surveys
             return (
-                    <Card messages={[['Hi ', <b>{email}</b>, ' and welcome to the ', <span>{title}</span>, <br/>],
-                        ['If you have any questions regarding the survey, please ', <u>contact the survey adminstrator</u>]]}
+                    <Card messages={[['If you have any questions regarding the survey, please ', <u>contact the survey adminstrator</u>]]}
                     type={'message-primary'}/>
                    );
         }
