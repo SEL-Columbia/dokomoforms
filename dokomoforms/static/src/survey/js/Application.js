@@ -1,6 +1,7 @@
 // vendor
 var React = require('react'),
     $ = require('jquery'),
+    moment = require('moment'),
     PouchDB  = require('pouchdb/dist/pouchdb.min');
 
 // pouch plugin
@@ -1002,7 +1003,7 @@ var Application = React.createClass({
         } else if (state === this.state.states.SUBMIT) {
             return 'If youre satisfied with the answers to all the questions, you can save the survey now.'
         } else {
-            return 'version ' + survey.version + ' | last updated ' + survey.last_updated_time;
+            return 'version ' + survey.version + ' | last updated ' + moment(survey.last_update_time).format('lll');
         }
     },
 

@@ -49,9 +49,10 @@ var path = {
         node_modules_path + '/jquery/dist/jquery.js',
         node_modules_path + '/bootstrap/dist/js/bootstrap.js',
         node_modules_path + '/lodash/lodash.js',
+        node_modules_path + '/moment/min/moment.min.js',
         node_modules_path + '/react/dist/react.js'
     ],
-    SURVEY_JS_APP_SRC: survey_src_path + '/js',
+    SURVEY_JS_APP_SRC: survey_src_path + '/js/**/*.js',
     SURVEY_JS_ENTRY_POINT: survey_src_path + '/js/main.js',
     SURVEY_JS_DIST: survey_dist_path + '/js',
 
@@ -142,6 +143,7 @@ gulp.task('survey-js-app', function() {
         .bundle()
         .on('error', function (err) {
             console.log(err.message);
+            process.exit(1);
             this.emit('end');
         })
         .pipe(source(path.JS_BUILD_FILENAME))
