@@ -1,7 +1,10 @@
 """API tests"""
 from base64 import b64encode
 from collections import OrderedDict
+from contextlib import closing
+from csv import DictReader
 from datetime import datetime, date, timedelta
+from io import StringIO
 import json
 import os
 import uuid
@@ -1679,6 +1682,34 @@ class TestSurveyApi(DokoHTTPTest):
 
         self.assertFalse('error' in submission_list)
 
+        subs = submission_list['submissions']
+        self.assertEqual(len(subs), 101)
+        self.assertEqual(len([s['answers'] for s in subs if s['answers']]), 1)
+
+    def test_list_submissions_to_survey_csv(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = (
+            self.api_root + '/surveys/' + survey_id + '/submissions?format=csv'
+        )
+        # http method
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Content-Type'], 'text/csv; charset=UTF-8'
+        )
+
+        with closing(StringIO(response.body.decode())) as csv_data:
+            dr = DictReader(csv_data)
+            data = list(dr)
+
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['main_answer'], '3')
+        self.assertEqual(data[0]['response'], '3')
+
     def test_get_stats_for_survey(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
         # url to test
@@ -2014,11 +2045,70 @@ class TestSubmissionApi(DokoHTTPTest):
         submission_dict = json_decode(response.body)
 
         # check that the expected keys are present
-        self.assertTrue('submissions' in submission_dict)
+        self.assertTrue('submissions' in submission_dict, msg=submission_dict)
         self.assertEqual(
-            len(submission_dict['submissions']), TOTAL_SUBMISSIONS)
+            len(submission_dict['submissions']), TOTAL_SUBMISSIONS
+        )
 
         self.assertFalse("error" in submission_dict)
+
+    def test_list_submissions_csv(self):
+        decimal_survey = (
+            self.session
+            .query(Survey)
+            .filter(Survey.title['English'].astext == 'decimal_survey')
+            .one()
+        )
+        with self.session.begin():
+            self.session.add_all([
+                models.construct_submission(
+                    submission_type='unauthenticated',
+                    survey=decimal_survey,
+                    answers=[
+                        models.construct_answer(
+                            type_constraint='decimal',
+                            answer=3.3,
+                            survey_node=decimal_survey.nodes[0],
+                        ),
+                    ],
+                ),
+                models.construct_submission(
+                    submission_type='unauthenticated',
+                    survey=decimal_survey,
+                    answers=[
+                        models.construct_answer(
+                            type_constraint='decimal',
+                            answer=4.4,
+                            survey_node=decimal_survey.nodes[0],
+                        ),
+                    ],
+                ),
+            ])
+        # url to test
+        url = self.api_root + '/submissions?format=csv'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Content-Type'], 'text/csv; charset=UTF-8'
+        )
+
+        with closing(StringIO(response.body.decode())) as csv_data:
+            dr = DictReader(csv_data)
+            data = list(dr)
+
+        self.assertEqual(len(data), 3)
+        self.assertEqual(data[0]['main_answer'], '3')
+        self.assertEqual(data[0]['response'], '3')
+
+        self.assertEqual(data[1]['main_answer'], '3.3')
+        self.assertEqual(data[1]['response'], '3.3')
+
+        self.assertEqual(data[2]['main_answer'], '4.4')
+        self.assertEqual(data[2]['response'], '4.4')
 
     def test_list_submissions_search_submitter_name(self):
         search_term = 'singular'
@@ -2085,6 +2175,616 @@ class TestSubmissionApi(DokoHTTPTest):
         self.assertTrue('survey_id' in submission_dict)
 
         self.assertFalse("error" in submission_dict)
+
+    def test_get_single_submission_csv_excel_dialect(self):
+        submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = self.api_root + '/submissions/' + submission_id + '?format=csv'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Content-Type'], 'text/csv; charset=UTF-8'
+        )
+
+        self.assertIn('\r\n', response.body.decode())
+
+    def test_get_single_submission_csv_unix_dialect(self):
+        submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = self.api_root + '/submissions/' + submission_id
+        url += '?format=csv&dialect=unix'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Content-Type'], 'text/csv; charset=UTF-8'
+        )
+
+        self.assertNotIn('\r\n', response.body.decode())
+
+    def test_get_single_submission_csv_integer(self):
+        submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = self.api_root + '/submissions/' + submission_id + '?format=csv'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Content-Type'], 'text/csv; charset=UTF-8'
+        )
+
+        with closing(StringIO(response.body.decode())) as csv_data:
+            dr = DictReader(csv_data)
+            data = list(dr)
+
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['main_answer'], '3')
+        self.assertEqual(data[0]['response'], '3')
+
+    def test_get_single_submission_csv_dont_know(self):
+        integer_survey = (
+            self.session
+            .query(Survey)
+            .filter(Survey.title['English'].astext == 'integer_survey')
+            .one()
+        )
+        with self.session.begin():
+            integer_survey.nodes[0].allow_dont_know = True
+            submission = models.construct_submission(
+                submission_type='unauthenticated',
+                survey=integer_survey,
+                answers=[
+                    models.construct_answer(
+                        type_constraint='integer',
+                        dont_know='nan',
+                        survey_node=integer_survey.nodes[0],
+                    ),
+                ],
+            )
+            self.session.add(submission)
+        # url to test
+        url = self.api_root + '/submissions/' + submission.id + '?format=csv'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Content-Type'], 'text/csv; charset=UTF-8'
+        )
+
+        with closing(StringIO(response.body.decode())) as csv_data:
+            dr = DictReader(csv_data)
+            data = list(dr)
+
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['main_answer'], '')
+        self.assertEqual(data[0]['response'], 'nan')
+        self.assertEqual(data[0]['response_type'], 'dont_know')
+
+    def test_get_single_submission_csv_decimal(self):
+        decimal_survey = (
+            self.session
+            .query(Survey)
+            .filter(Survey.title['English'].astext == 'decimal_survey')
+            .one()
+        )
+        with self.session.begin():
+            submission = models.construct_submission(
+                submission_type='unauthenticated',
+                survey=decimal_survey,
+                answers=[
+                    models.construct_answer(
+                        type_constraint='decimal',
+                        answer=3.3,
+                        survey_node=decimal_survey.nodes[0],
+                    ),
+                ],
+            )
+            self.session.add(submission)
+        # url to test
+        url = self.api_root + '/submissions/' + submission.id + '?format=csv'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Content-Type'], 'text/csv; charset=UTF-8'
+        )
+
+        with closing(StringIO(response.body.decode())) as csv_data:
+            dr = DictReader(csv_data)
+            data = list(dr)
+
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['main_answer'], '3.3')
+        self.assertEqual(data[0]['response'], '3.3')
+
+    def test_get_single_submission_csv_text(self):
+        text_survey = (
+            self.session
+            .query(Survey)
+            .filter(Survey.title['English'].astext == 'text_survey')
+            .one()
+        )
+        with self.session.begin():
+            submission = models.construct_submission(
+                submission_type='unauthenticated',
+                survey=text_survey,
+                answers=[
+                    models.construct_answer(
+                        type_constraint='text',
+                        answer='some text',
+                        survey_node=text_survey.nodes[0],
+                    ),
+                ],
+            )
+            self.session.add(submission)
+        # url to test
+        url = self.api_root + '/submissions/' + submission.id + '?format=csv'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Content-Type'], 'text/csv; charset=UTF-8'
+        )
+
+        with closing(StringIO(response.body.decode())) as csv_data:
+            dr = DictReader(csv_data)
+            data = list(dr)
+
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['main_answer'], 'some text')
+        self.assertEqual(data[0]['response'], 'some text')
+
+    def test_get_single_submission_csv_photo_without_photo(self):
+        photo_survey = (
+            self.session
+            .query(Survey)
+            .filter(Survey.title['English'].astext == 'photo_survey')
+            .one()
+        )
+        fake_photo_id = str(uuid.uuid4())
+        with self.session.begin():
+            submission = models.construct_submission(
+                submission_type='unauthenticated',
+                survey=photo_survey,
+                answers=[
+                    models.construct_answer(
+                        type_constraint='photo',
+                        answer=fake_photo_id,
+                        survey_node=photo_survey.nodes[0],
+                    ),
+                ],
+            )
+            self.session.add(submission)
+        # url to test
+        url = self.api_root + '/submissions/' + submission.id + '?format=csv'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Content-Type'], 'text/csv; charset=UTF-8'
+        )
+
+        with closing(StringIO(response.body.decode())) as csv_data:
+            dr = DictReader(csv_data)
+            data = list(dr)
+
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['main_answer'], fake_photo_id)
+        self.assertEqual(data[0]['response'], '')
+
+    def test_get_single_submission_csv_photo_with_photo(self):
+        photo_survey = (
+            self.session
+            .query(Survey)
+            .filter(Survey.title['English'].astext == 'photo_survey')
+            .one()
+        )
+        real_photo_id = str(uuid.uuid4())
+        body = {
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [
+                {
+                    "survey_node_id": photo_survey.nodes[0].id,
+                    "type_constraint": "photo",
+                    "response": {
+                        "response_type": "answer",
+                        "response": real_photo_id,
+                    }
+                }
+            ]
+        }
+        # make request
+        submit_url = self.api_root + '/surveys/' + photo_survey.id + '/submit'
+        sub_r = self.fetch(submit_url, method='POST', body=json_encode(body))
+        submission_id = json_decode(sub_r.body)['id']
+        photo_url = self.api_root + '/photos'
+        photo_path = os.path.join(
+            os.path.abspath('.'),
+            'dokomoforms/static/src/common/img/favicon.png'
+        )
+        with open(photo_path, 'rb') as photo_file:
+            b64photo = b64encode(photo_file.read())
+        body = {
+            'id': real_photo_id,
+            'mime_type': 'png',
+            'image': b64photo.decode(),
+        }
+
+        self.fetch(
+            photo_url, method='POST', body=json_encode(body),
+            _logged_in_user=None
+        )
+
+        # url to test
+        url = self.api_root + '/submissions/' + submission_id + '?format=csv'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Content-Type'], 'text/csv; charset=UTF-8'
+        )
+
+        with closing(StringIO(response.body.decode())) as csv_data:
+            dr = DictReader(csv_data)
+            data = list(dr)
+
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['main_answer'], real_photo_id)
+        self.assertEqual(data[0]['response'], real_photo_id)
+
+    def test_get_single_submission_csv_date(self):
+        date_survey = (
+            self.session
+            .query(Survey)
+            .filter(Survey.title['English'].astext == 'date_survey')
+            .one()
+        )
+        with self.session.begin():
+            submission = models.construct_submission(
+                submission_type='unauthenticated',
+                survey=date_survey,
+                answers=[
+                    models.construct_answer(
+                        type_constraint='date',
+                        answer='2015-09-16',
+                        survey_node=date_survey.nodes[0],
+                    ),
+                ],
+            )
+            self.session.add(submission)
+        # url to test
+        url = self.api_root + '/submissions/' + submission.id + '?format=csv'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Content-Type'], 'text/csv; charset=UTF-8'
+        )
+
+        with closing(StringIO(response.body.decode())) as csv_data:
+            dr = DictReader(csv_data)
+            data = list(dr)
+
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['main_answer'], '2015-09-16')
+        self.assertEqual(data[0]['response'], '2015-09-16')
+
+    def test_get_single_submission_csv_timestamp(self):
+        timestamp_survey = (
+            self.session
+            .query(Survey)
+            .filter(Survey.title['English'].astext == 'timestamp_survey')
+            .one()
+        )
+        with self.session.begin():
+            submission = models.construct_submission(
+                submission_type='unauthenticated',
+                survey=timestamp_survey,
+                answers=[
+                    models.construct_answer(
+                        type_constraint='timestamp',
+                        answer='2015-09-16T2:00:00',
+                        survey_node=timestamp_survey.nodes[0],
+                    ),
+                ],
+            )
+            self.session.add(submission)
+        # url to test
+        url = self.api_root + '/submissions/' + submission.id + '?format=csv'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Content-Type'], 'text/csv; charset=UTF-8'
+        )
+
+        with closing(StringIO(response.body.decode())) as csv_data:
+            dr = DictReader(csv_data)
+            data = list(dr)
+
+        self.assertEqual(len(data), 1)
+        self.assertTrue(
+            data[0]['main_answer'].startswith('2015-09-16 02:00:00')
+        )
+        self.assertTrue(data[0]['response'].startswith('2015-09-16 02:00:00'))
+
+    def test_get_single_submission_csv_location(self):
+        location_survey = (
+            self.session
+            .query(Survey)
+            .filter(Survey.title['English'].astext == 'location_survey')
+            .one()
+        )
+        with self.session.begin():
+            submission = models.construct_submission(
+                submission_type='unauthenticated',
+                survey=location_survey,
+                answers=[
+                    models.construct_answer(
+                        type_constraint='location',
+                        answer={'lng': 0, 'lat': 1},
+                        survey_node=location_survey.nodes[0],
+                    ),
+                ],
+            )
+            self.session.add(submission)
+        # url to test
+        url = self.api_root + '/submissions/' + submission.id + '?format=csv'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Content-Type'], 'text/csv; charset=UTF-8'
+        )
+
+        with closing(StringIO(response.body.decode())) as csv_data:
+            dr = DictReader(csv_data)
+            data = list(dr)
+
+        self.assertEqual(len(data), 1)
+        self.assertEqual(
+            data[0]['main_answer'],
+            '01010000000000000000000000000000000000f03f'
+        )
+        self.assertEqual(
+            json_decode(data[0]['response']),
+            {'lng': 0, 'lat': 1}
+        )
+
+    def test_get_single_submission_csv_facility(self):
+        facility_survey = (
+            self.session
+            .query(Survey)
+            .filter(Survey.title['English'].astext == 'facility_survey')
+            .one()
+        )
+        with self.session.begin():
+            submission = models.construct_submission(
+                submission_type='unauthenticated',
+                survey=facility_survey,
+                answers=[
+                    models.construct_answer(
+                        type_constraint='facility',
+                        answer={
+                            'lng': 0,
+                            'lat': 1,
+                            'facility_id': '1',
+                            'facility_name': 'a',
+                            'facility_sector': 'health',
+                        },
+                        survey_node=facility_survey.nodes[0],
+                    ),
+                ],
+            )
+            self.session.add(submission)
+        # url to test
+        url = self.api_root + '/submissions/' + submission.id + '?format=csv'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Content-Type'], 'text/csv; charset=UTF-8'
+        )
+
+        with closing(StringIO(response.body.decode())) as csv_data:
+            dr = DictReader(csv_data)
+            data = list(dr)
+
+        self.assertEqual(len(data), 1)
+        self.assertEqual(
+            data[0]['main_answer'],
+            '01010000000000000000000000000000000000f03f'
+        )
+        self.assertEqual(
+            json_decode(data[0]['response']),
+            {
+                'lng': 0,
+                'lat': 1,
+                'facility_id': '1',
+                'facility_name': 'a',
+                'facility_sector': 'health',
+            },
+        )
+
+    def test_get_single_submission_csv_multiple_choice(self):
+        multiple_choice_survey = (
+            self.session
+            .query(Survey)
+            .filter(Survey.title['English'].astext == 'multiple_choice_survey')
+            .one()
+        )
+        with self.session.begin():
+            choice = models.Choice(
+                choice_text={'English': 'only choice'}
+            )
+            multiple_choice_survey.nodes[0].node.choices = [choice]
+            self.session.flush()
+            submission = models.construct_submission(
+                submission_type='unauthenticated',
+                survey=multiple_choice_survey,
+                answers=[
+                    models.construct_answer(
+                        type_constraint='multiple_choice',
+                        answer=choice.id,
+                        survey_node=multiple_choice_survey.nodes[0],
+                    ),
+                ],
+            )
+            self.session.add(submission)
+        # url to test
+        url = self.api_root + '/submissions/' + submission.id + '?format=csv'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Content-Type'], 'text/csv; charset=UTF-8'
+        )
+
+        with closing(StringIO(response.body.decode())) as csv_data:
+            dr = DictReader(csv_data)
+            data = list(dr)
+
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['main_answer'], choice.id)
+        self.assertEqual(
+            json_decode(data[0]['response']),
+            {
+                'choice_text': {'English': 'only choice'},
+                'id': choice.id,
+                'choice_number': 0,
+            },
+        )
+
+    def test_get_single_submission_csv_multiple_choice_other(self):
+        creator = self.session.query(models.Administrator).first()
+        with self.session.begin():
+            multiple_choice_survey = models.construct_survey(
+                creator=creator,
+                survey_type='public',
+                title={'English': 'mc_survey'},
+                nodes=[
+                    models.construct_survey_node(
+                        node=models.construct_node(
+                            type_constraint='multiple_choice',
+                            allow_other=True,
+                            title={'English': 'mc_question'},
+                        ),
+                    ),
+                ],
+            )
+            submission = models.construct_submission(
+                submission_type='unauthenticated',
+                survey=multiple_choice_survey,
+                answers=[
+                    models.construct_answer(
+                        type_constraint='multiple_choice',
+                        other='not a choice',
+                        survey_node=multiple_choice_survey.nodes[0],
+                    ),
+                ],
+            )
+            self.session.add(submission)
+        # url to test
+        url = self.api_root + '/submissions/' + submission.id + '?format=csv'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Content-Type'], 'text/csv; charset=UTF-8'
+        )
+
+        with closing(StringIO(response.body.decode())) as csv_data:
+            dr = DictReader(csv_data)
+            data = list(dr)
+
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['main_answer'], '')
+        self.assertEqual(data[0]['response'], 'not a choice')
+        self.assertEqual(data[0]['response_type'], 'other')
+
+    def test_get_single_submission_csv_time(self):
+        time_survey = (
+            self.session
+            .query(Survey)
+            .filter(Survey.title['English'].astext == 'time_survey')
+            .one()
+        )
+        with self.session.begin():
+            submission = models.construct_submission(
+                submission_type='unauthenticated',
+                survey=time_survey,
+                answers=[
+                    models.construct_answer(
+                        type_constraint='time',
+                        answer='2:00',
+                        survey_node=time_survey.nodes[0],
+                    ),
+                ],
+            )
+            self.session.add(submission)
+        # url to test
+        url = self.api_root + '/submissions/' + submission.id + '?format=csv'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Content-Type'], 'text/csv; charset=UTF-8'
+        )
+
+        with closing(StringIO(response.body.decode())) as csv_data:
+            dr = DictReader(csv_data)
+            data = list(dr)
+
+        self.assertEqual(len(data), 1)
+        self.assertTrue(data[0]['main_answer'].startswith('02:00:00'))
+        self.assertTrue(data[0]['response'].startswith('02:00:00'))
 
     def test_create_public_submission(self):
         # url to test
