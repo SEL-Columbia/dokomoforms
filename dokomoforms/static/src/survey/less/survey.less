@@ -176,6 +176,10 @@ a, .icon {
     margin-top: 20px;
 }
 
+.video_container {
+    position: relative;
+}
+
 .question__canvas {
     display: none;
     width: 320px;
@@ -187,7 +191,6 @@ a, .icon {
     background: white;
     display: block;
     margin: auto;
-    margin-bottom: 20px;
     height: 240px;
     width: 320px;
 }
@@ -264,16 +267,56 @@ a, .icon {
     position: relative;
 }
 
+.photo_thumbnails {
+    overflow-x: scroll;
+    overflow-y: hidden;
+    height: 80px;
+    padding: 10px;
+    white-space: nowrap;
+}
 .photo_container {
-    border: 1px solid #DDD;
-    position: relative;
-    margin: 0px auto;
-    width: 320px;
-    height: 240px;
-    background-color: white;
-    margin: 0px auto;
-    margin-bottom: 20px;
-    font-weight: 700;
+    // width: 320px;
+    // height: 60px;
+    display: inline-block;
+    padding-right: 10px;
+    img {
+        height: 60px;
+        box-shadow: 0px 0px 2px 1px #666;
+    }
+}
+
+.photo_shutter {
+    position: absolute;
+    bottom: 0px;
+    left: 50%;
+    width: 50px;
+    height: 50px;
+    background-image: url('/static/dist/survey/img/shutter_button.png');
+    background-size: contain;
+    background-position: center;
+    margin-left: -25px;
+}
+
+.photo_preview_container {
+    z-index: 1000;
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center;
+    padding: 20px;
+
+    .icon {
+        color: #ffffff;
+
+        &.icon-close {
+            float: right;
+        }
+    }
+
+    .btn-photo-delete {
+        background: #333;
+        border: none;
+        color: #ffffff;
+    }
 }
 
 .text_input {
@@ -287,6 +330,15 @@ a, .icon {
     position: absolute;
     top: 0;
     left: 0;
+}
+
+.dark_overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #111111;
 }
 
 .submitting_content {

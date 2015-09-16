@@ -553,13 +553,7 @@ class TestEnumerate(DriverTest):
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.wait_for_element('video', by=By.TAG_NAME, visible=True)
         self.sleep()
-        self.click(
-            self.drv
-            .find_element_by_css_selector(
-                '.content > span:nth-child(2) > div:nth-child(1)'
-                ' > button:nth-child(1)'
-            )
-        )
+        self.click(self.drv.find_element_by_tag_name('video'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_elements_by_tag_name('button')[0])

@@ -1,4 +1,5 @@
-var React = require('react');
+var React = require('react'),
+    PhotoPreview = require('./PhotoPreview');
 
 /*
  * ResponseField component
@@ -7,11 +8,16 @@ var React = require('react');
  * props:
  *  @onInput: What to do on valid input
  *  @index: What index value to send on valid input (i.e position in array of fields)
- *  @showMinus: Show the 'X' on the input
+ *  @showRetake: Show the 'retake' button
  *  @buttonFunction: What to do on 'X' click event, index value is bound to this function
  *  @initValue: Initial value for the input field
  */
 module.exports = React.createClass({
+    getInitialState: function() {
+        return {
+            showPreview: false
+        };
+    },
 
     /*
      * Validate the answer based on props.type
@@ -22,6 +28,25 @@ module.exports = React.createClass({
      */
     validate: function(answer) {
         return true;
+    },
+
+    showPreview: function() {
+        console.log('showPreview');
+        this.setState({
+            showPreview: true
+        });
+    },
+
+    hidePreview: function() {
+        console.log('hidePreview');
+        this.setState({
+            showPreview: false
+        });
+    },
+
+    onDelete: function() {
+        this.hidePreview();
+        this.props.buttonFunction(this.props.index);
     },
 
     /*
@@ -35,22 +60,28 @@ module.exports = React.createClass({
     // },
 
     render: function() {
+        var preview;
+        if (this.state.showPreview) {
+            preview = <PhotoPreview
+                url={this.props.initValue}
+                onDelete={this.onDelete}
+                onClose={this.hidePreview}
+            />;
+        }
         return (
-                <div className="photo_container">
-                    <img
-                        className="photo_input"
-                        src={this.props.initValue}
-                        disabled={this.props.disabled}
-                     >
-                     {this.props.showMinus ?
-                        <span
-                            onClick={this.props.buttonFunction.bind(null, this.props.index)}
+            <span>
+                {preview}
+                <div className="photo_container" onClick={this.showPreview}>
+                    { this.props.initValue ?
+                        <img
+                            className="photo_input"
+                            src={this.props.initValue}
                             disabled={this.props.disabled}
-                            className="icon icon-close question__minus">
-                        </span>
-                        : null}
-                    </img>
-                 </div>
-               );
+                         /> :
+                         ''
+                    }
+                </div>
+            </span>
+        );
     }
 });
