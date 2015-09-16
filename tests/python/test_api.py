@@ -3132,6 +3132,46 @@ class TestSubmissionApi(DokoHTTPTest):
             3
         )
 
+    def test_submit_to_blank_survey(self):
+        """Something of a bogus test."""
+        user = (
+            self.session
+            .query(Administrator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            user.surveys.append(
+                models.construct_survey(
+                    survey_type='public',
+                    title={'English': 'first question required'},
+                    nodes=[],
+                )
+            )
+            self.session.add(user)
+        survey = (
+            self.session
+            .query(Survey)
+            .filter(
+                Survey.title['English'].astext == 'first question required'
+            )
+            .one()
+        )
+
+        # url to test
+        url = self.api_root + '/submissions'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "survey_id": survey.id,
+            "submitter_name": "regular",
+            "submission_type": "unauthenticated",
+            "answers": [],
+        }
+        # make request
+        response = self.fetch(url, method=method, body=json_encode(body))
+        self.assertEqual(response.code, 201, msg=response.body)
+
     def test_cannot_skip_first_required_question_no_sub_surveys(self):
         user = (
             self.session
