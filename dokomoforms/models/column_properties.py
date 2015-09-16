@@ -138,7 +138,7 @@ def answer_mode(survey_node: AnswerableSurveyNode):
         .scalar()
     )
     if type_constraint == 'multiple_choice' and result:
-        result = object_session(survey_node).query(Choice).get(result)
+        result = object_session(survey_node).query(Choice).get(str(result))
     return result
 
 
