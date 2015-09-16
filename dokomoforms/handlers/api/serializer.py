@@ -23,4 +23,11 @@ class ModelJSONSerializer(JSONSerializer):
         :returns: A serialized version of the data
         :rtype: string
         """
+        try:
+            content_type = data.get('format', 'json').lower()
+        except AttributeError:  # Got a model rather than a dict
+            pass
+        else:
+            if content_type == 'csv':
+                return data['data']
         return json.dumps(data, cls=ModelJSONEncoder).replace('</', '<\\/')

@@ -1,4 +1,9 @@
 """TornadoResource class for dokomoforms.models.submission.Submission."""
+from contextlib import closing
+from csv import DictWriter
+from io import StringIO
+from itertools import chain
+
 import restless.exceptions as exc
 
 from dokomoforms.handlers.api import BaseResource
@@ -97,6 +102,28 @@ class SubmissionResource(BaseResource):
     default_sort_column_name = 'save_time'
     objects_key = 'submissions'
 
+    def _csv(self, raw_answers) -> dict:
+        """Return {'format': 'csv', 'data': <csv-formatted string>}."""
+        answers = [answer._asdict('csv') for answer in raw_answers]
+        dialect = self._query_arg('dialect', default='excel')
+        with closing(StringIO()) as out:
+            dw = DictWriter(out, fieldnames=answers[0].keys(), dialect=dialect)
+            dw.writeheader()
+            dw.writerows(answers)
+            return {'format': 'csv', 'data': out.getvalue()}
+
+    def wrap_list_response(self, data):
+        """Allow CSV export of submission data.
+
+        This method adds CSV export functionality on top of the JSON list
+        wrapping of BaseResource.wrap_list_response.
+        """
+        if self.content_type == 'csv':
+            sub_data = data[2]
+            raw_answers = chain.from_iterable(sub.answers for sub in sub_data)
+            return self._csv(raw_answers)
+        return super().wrap_list_response(data)
+
     def is_authenticated(self):
         """Allow unauthenticated POSTs under the right circumstances."""
         if self.request_method() == 'POST':
@@ -105,6 +132,12 @@ class SubmissionResource(BaseResource):
             # in the create method.
             return True
         return super().is_authenticated()
+
+    def detail(self, submission_id):
+        """Allow CSV export of a single submission."""
+        if self.content_type == 'csv':
+            return self._csv(self._get_model(submission_id).answers)
+        return super().detail(submission_id)
 
     # POST /api/submissions/
     def create(self):
