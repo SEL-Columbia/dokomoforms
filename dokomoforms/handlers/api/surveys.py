@@ -174,7 +174,15 @@ class SurveyResource(BaseResource):
         where = Submission.survey_id == survey_id
         result = sub_resource.list(where=where)
         response = sub_resource.wrap_list_response(result)
-        if sub_resource.content_type == 'json':
+        if sub_resource.content_type == 'csv':
+            title = (
+                self.session
+                .query(Survey.title[Survey.default_language])
+                .filter_by(id=survey_id)
+                .scalar()
+            )
+            self._set_filename('survey_{}_submissions'.format(title), 'csv')
+        else:
             response['total_entries'] = (
                 self.session
                 .query(func.count(Submission.id))

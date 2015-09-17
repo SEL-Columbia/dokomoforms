@@ -106,8 +106,14 @@ class SubmissionResource(BaseResource):
         """Return {'format': 'csv', 'data': <csv-formatted string>}."""
         answers = [answer._asdict('csv') for answer in raw_answers]
         dialect = self._query_arg('dialect', default='excel')
+        fieldnames = [
+            'id', 'deleted', 'answer_number', 'submission_id', 'save_time',
+            'survey_id', 'survey_node_id', 'question_id', 'type_constraint',
+            'last_update_time', 'main_answer', 'response', 'response_type',
+            'metadata'
+        ]
         with closing(StringIO()) as out:
-            dw = DictWriter(out, fieldnames=answers[0].keys(), dialect=dialect)
+            dw = DictWriter(out, fieldnames=fieldnames, dialect=dialect)
             dw.writeheader()
             dw.writerows(answers)
             return {'format': 'csv', 'data': out.getvalue()}
@@ -119,6 +125,7 @@ class SubmissionResource(BaseResource):
         wrapping of BaseResource.wrap_list_response.
         """
         if self.content_type == 'csv':
+            self._set_filename('submissions', 'csv')
             sub_data = data[2]
             raw_answers = chain.from_iterable(sub.answers for sub in sub_data)
             return self._csv(raw_answers)
@@ -136,6 +143,7 @@ class SubmissionResource(BaseResource):
     def detail(self, submission_id):
         """Allow CSV export of a single submission."""
         if self.content_type == 'csv':
+            self._set_filename('submission_{}'.format(submission_id), 'csv')
             return self._csv(self._get_model(submission_id).answers)
         return super().detail(submission_id)
 
