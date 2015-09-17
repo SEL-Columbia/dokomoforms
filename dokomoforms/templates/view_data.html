@@ -117,7 +117,7 @@
                                                     {{ stat['query'] }}
                                                 </div>
                                                 <div class="stat-value stat-created-on">
-                                                    {% if stat['query'] == 'mode' %}
+                                                    {% if stat['query'] == 'mode' and stat['result'] is not None %}
                                                         {{ _t(stat['result'].choice_text) }}
                                                     {% else %}
                                                         {{ stat['result'] }}
