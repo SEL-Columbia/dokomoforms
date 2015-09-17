@@ -1720,6 +1720,33 @@ class TestSurveyApi(DokoHTTPTest):
         self.assertEqual(data[0]['main_answer'], '3')
         self.assertEqual(data[0]['response'], '3')
 
+    def test_csv_filename_with_modifiers(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        # url to test
+        url = '{}/surveys/{}/submissions?format=csv&limit=1'.format(
+            self.api_root, survey_id
+        )
+        # http method
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Content-Type'], 'text/csv; charset=UTF-8'
+        )
+        cd = response.headers['Content-Disposition']
+        full_filename = cd.split()[1]
+        filename, extension = full_filename[9:-4], full_filename[-3:]
+        self.assertEqual(extension, 'csv')
+        first_chunk, rest = filename.split('_', 1)
+        self.assertEqual(first_chunk, 'survey')
+        chunks = rest.rsplit('_', 3)
+        self.assertEqual(len(chunks), 4)
+        self.assertEqual(chunks[0], 'single_survey')
+        self.assertEqual(chunks[1], 'submissions')
+        self.assertEqual(chunks[3], 'modified')
+
     def test_get_stats_for_survey(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
         # url to test

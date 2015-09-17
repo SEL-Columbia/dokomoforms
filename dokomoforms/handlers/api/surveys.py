@@ -182,7 +182,7 @@ class SurveyResource(BaseResource):
                 .scalar()
             )
             self._set_filename('survey_{}_submissions'.format(title), 'csv')
-        elif sub_resource.content_type == 'json':
+        else:
             response['total_entries'] = (
                 self.session
                 .query(func.count(Submission.id))
