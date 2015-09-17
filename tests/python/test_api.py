@@ -2209,6 +2209,7 @@ class TestSubmissionApi(DokoHTTPTest):
         submission_dict = json_decode(response.body)
 
         self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('start_time' in submission_dict)
         self.assertTrue('deleted' in submission_dict)
         self.assertTrue('id' in submission_dict)
         self.assertTrue('submitter_email' in submission_dict)
@@ -2856,6 +2857,7 @@ class TestSubmissionApi(DokoHTTPTest):
         submission_dict = json_decode(response.body)
 
         self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('start_time' in submission_dict)
         self.assertTrue('deleted' in submission_dict)
         self.assertTrue('id' in submission_dict)
         self.assertTrue('submitter_email' in submission_dict)
@@ -3153,6 +3155,7 @@ class TestSubmissionApi(DokoHTTPTest):
             "survey_id": "b0816b52-204f-41d4-aaf0-ac6ae2970923",
             "submitter_name": "regular",
             "submission_type": "unauthenticated",
+            "start_time": "2015-09-17T20:42:20.895000+00:00",
             "answers": [
                 {
                     "survey_node_id": "60e56824-910c-47aa-b5c0-71493277b43f",
@@ -3168,6 +3171,7 @@ class TestSubmissionApi(DokoHTTPTest):
         submission_dict = json_decode(response.body)
 
         self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('start_time' in submission_dict)
         self.assertTrue('deleted' in submission_dict)
         self.assertTrue('id' in submission_dict)
         self.assertTrue('submitter_email' in submission_dict)
@@ -3179,6 +3183,10 @@ class TestSubmissionApi(DokoHTTPTest):
 
         self.assertEqual(len(submission_dict['answers']), 1)
 
+        self.assertEqual(
+            submission_dict['start_time'],
+            "2015-09-17T20:42:20.895000+00:00"
+        )
         self.assertEqual(
             submission_dict['answers'][0]['response'],
             3

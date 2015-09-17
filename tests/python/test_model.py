@@ -3448,6 +3448,7 @@ class TestSubmission(DokoTest):
                 ('id', the_submission.id),
                 ('deleted', False),
                 ('survey_id', self.session.query(models.Survey.id).scalar()),
+                ('start_time', None),
                 ('save_time', the_submission.save_time),
                 ('submission_time', the_submission.submission_time),
                 ('last_update_time', the_submission.last_update_time),
@@ -3603,13 +3604,15 @@ class TestSubmission(DokoTest):
                 ('id', the_submission.id),
                 ('deleted', False),
                 ('survey_id', self.session.query(models.Survey.id).scalar()),
+                ('start_time', None),
                 ('save_time', the_submission.save_time),
                 ('submission_time', the_submission.submission_time),
                 ('last_update_time', the_submission.last_update_time),
                 ('submitter_name', 'not an enumerator'),
                 ('submitter_email', 'some@email'),
                 ('answers', []),
-            ))
+            )),
+            msg=the_submission
         )
 
     def test_submission_bad_email(self):
@@ -3650,6 +3653,7 @@ class TestSubmission(DokoTest):
                 ('id', the_submission.id),
                 ('deleted', False),
                 ('survey_id', self.session.query(models.Survey.id).scalar()),
+                ('start_time', None),
                 ('save_time', the_submission.save_time),
                 ('submission_time', the_submission.submission_time),
                 ('last_update_time', the_submission.last_update_time),
@@ -3664,7 +3668,8 @@ class TestSubmission(DokoTest):
                     .scalar()
                 ),
                 ('enumerator_user_name', 'enumerator'),
-            ))
+            )),
+            msg=the_submission
         )
 
 
