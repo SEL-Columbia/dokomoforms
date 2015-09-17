@@ -34,6 +34,8 @@ class Answer(Base):
     id = util.pk()
     answer_number = sa.Column(sa.Integer, nullable=False)
     submission_id = sa.Column(pg.UUID, nullable=False)
+    # save_time is here so that AnswerableSurveyNode can have a list of
+    # answers to that node ordered by save time of the submission
     save_time = sa.Column(pg.TIMESTAMP(timezone=True), nullable=False)
     survey_id = sa.Column(pg.UUID, nullable=False)
     survey_containing_id = sa.Column(pg.UUID, nullable=False)

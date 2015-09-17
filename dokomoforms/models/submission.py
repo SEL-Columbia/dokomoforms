@@ -32,6 +32,7 @@ class Submission(Base):
     survey_id = sa.Column(pg.UUID, nullable=False)
     survey_containing_id = sa.Column(pg.UUID, nullable=False)
     survey_type = sa.Column(survey_type_enum, nullable=False)
+    start_time = sa.Column(pg.TIMESTAMP(timezone=True))
     save_time = sa.Column(
         pg.TIMESTAMP(timezone=True),
         nullable=False,
@@ -76,6 +77,7 @@ class Submission(Base):
             ('id', self.id),
             ('deleted', self.deleted),
             ('survey_id', self.survey_id),
+            ('start_time', self.start_time),
             ('save_time', self.save_time),
             ('submission_time', self.submission_time),
             ('last_update_time', self.last_update_time),
