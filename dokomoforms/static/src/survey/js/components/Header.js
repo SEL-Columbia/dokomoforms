@@ -23,14 +23,14 @@ module.exports = React.createClass({
 
     render: function() {
         var headerClasses = "bar bar-nav bar-padded noselect";
-        if (this.state.showMenu) 
+        if (this.state.showMenu)
             headerClasses += " title-extended";
 
         return (
             <header className={headerClasses}>
             {this.props.splash ?
-                <h1 className="title align-left">independant</h1>
-             :   
+                <h1 className="title align-left">independent</h1>
+             :
                 <span>
                 <button onClick={this.props.buttonFunction}
                     className="btn btn-link btn-nav pull-left page_nav__prev">
