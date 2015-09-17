@@ -388,6 +388,10 @@ class TestEnumerate(DriverTest):
 
         self.assertIsNot(existing_submission, new_submission)
         self.assertEqual(new_submission.answers[0].answer, 3)
+        self.assertIsNotNone(new_submission.start_time)
+        self.assertNotEqual(
+            new_submission.start_time, new_submission.save_time
+        )
 
     @report_success_status
     def test_previous_and_next(self):
