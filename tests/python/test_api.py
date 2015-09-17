@@ -1701,6 +1701,16 @@ class TestSurveyApi(DokoHTTPTest):
         self.assertEqual(
             response.headers['Content-Type'], 'text/csv; charset=UTF-8'
         )
+        cd = response.headers['Content-Disposition']
+        full_filename = cd.split()[1]
+        filename, extension = full_filename[9:-4], full_filename[-3:]
+        self.assertEqual(extension, 'csv')
+        first_chunk, rest = filename.split('_', 1)
+        self.assertEqual(first_chunk, 'survey')
+        chunks = rest.rsplit('_', 2)
+        self.assertEqual(len(chunks), 3)
+        self.assertEqual(chunks[0], 'single_survey')
+        self.assertEqual(chunks[1], 'submissions')
 
         with closing(StringIO(response.body.decode())) as csv_data:
             dr = DictReader(csv_data)
@@ -2095,6 +2105,13 @@ class TestSubmissionApi(DokoHTTPTest):
         self.assertEqual(
             response.headers['Content-Type'], 'text/csv; charset=UTF-8'
         )
+        cd = response.headers['Content-Disposition']
+        full_filename = cd.split()[1]
+        filename, extension = full_filename[9:-4], full_filename[-3:]
+        self.assertEqual(extension, 'csv')
+        chunks = filename.split('_')
+        self.assertEqual(len(chunks), 2)
+        self.assertEqual(chunks[0], 'submissions')
 
         with closing(StringIO(response.body.decode())) as csv_data:
             dr = DictReader(csv_data)
@@ -2222,6 +2239,14 @@ class TestSubmissionApi(DokoHTTPTest):
         self.assertEqual(
             response.headers['Content-Type'], 'text/csv; charset=UTF-8'
         )
+        cd = response.headers['Content-Disposition']
+        full_filename = cd.split()[1]
+        filename, extension = full_filename[9:-4], full_filename[-3:]
+        self.assertEqual(extension, 'csv')
+        chunks = filename.split('_')
+        self.assertEqual(len(chunks), 3)
+        self.assertEqual(chunks[0], 'submission')
+        self.assertEqual(chunks[1], submission_id)
 
         with closing(StringIO(response.body.decode())) as csv_data:
             dr = DictReader(csv_data)
