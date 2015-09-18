@@ -523,7 +523,9 @@ class TestAdminUser(AdminTest):
         ))
         self.sleep(1)
         self.click(self.drv.find_element_by_class_name('btn-delete-user'))
+        self.sleep()
         alert = self.drv.switch_to.alert
+        self.sleep()
         alert.accept()
         self.sleep(1)
 
