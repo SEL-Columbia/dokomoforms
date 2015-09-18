@@ -77,6 +77,24 @@ def dummy_patch():
     yield lambda: None
 
 
+class DokoExternalDBTest(DokoTest):
+
+    """Tests in which the database is being accessed externally.
+
+    Use this for Selenium testing.
+    """
+
+    def setUp(self):
+        """Load the fixtures."""
+        load_fixtures(engine)
+        self.session = Session(bind=engine, autocommit=True)
+
+    def tearDown(self):
+        """Truncate all the tables."""
+        unload_fixtures(engine, 'doko_test')
+        self.session.close()
+
+
 class DokoFixtureTest(DokoTest):
 
     """Tests with fixtures."""

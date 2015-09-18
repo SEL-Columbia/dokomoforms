@@ -17,7 +17,7 @@ before_script:
   - python3 -m flake8 .
   - psql -c 'create database doko;' -U postgres
   - head -c 24 /dev/urandom > cookie_secret
-  - nvm install iojs
+  - nvm install stable
   - npm install
   - ./tests/python/selenium_webapp.py &>/dev/null &
   - sleep 2
