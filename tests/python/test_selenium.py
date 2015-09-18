@@ -101,7 +101,7 @@ def report_success_status(method):
     return set_passed
 
 
-class DriverTest(tests.python.util.DokoFixtureTest):
+class DriverTest(tests.python.util.DokoExternalDBTest):
     def start_remote_webdriver(self):
         signal.signal(signal.SIGALRM, too_long(DriverTakingTooLong))
         countdown = 120 if self.browser == 'android' else 60
@@ -468,6 +468,10 @@ class TestAdminUser(AdminTest):
         self.get('/view/user-administration')
 
         self.sleep()
+
+        rows = self.drv.find_elements_by_class_name('btn-edit-user')
+        self.assertEqual(len(rows), 3)
+
         self.click(self.drv.find_element_by_class_name('btn-add-user'))
         self.sleep(1)
         (
@@ -518,6 +522,10 @@ class TestAdminUser(AdminTest):
         self.get('/view/user-administration')
 
         self.sleep()
+
+        existing = self.drv.find_elements_by_class_name('btn-edit-user')
+        self.assertEqual(len(existing), 3)
+
         self.click(self.drv.find_element_by_css_selector(
             'tr.odd:nth-child(3) > td:nth-child(5) > button:nth-child(1)'
         ))
@@ -744,7 +752,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_dont_know(self):
         user = (
             self.session
@@ -1081,7 +1088,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_single_multiple_choice_question(self):
         user = (
             self.session
@@ -1128,7 +1134,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_select_multiple(self):
         user = (
             self.session
@@ -1181,7 +1186,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_other(self):
         user = (
             self.session
@@ -1341,7 +1345,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[0].answer, 3)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_allow_multiple(self):
         user = (
             self.session
@@ -1398,7 +1401,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[1].answer, 4)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_allow_multiple_remove_an_answer(self):
         user = (
             self.session
@@ -1470,7 +1472,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[1].answer, 5)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_allow_multiple_bad_input(self):
         user = (
             self.session
@@ -1525,7 +1526,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(len(new_submission.answers), 1)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_required_question_no_answer(self):
         user = (
             self.session
@@ -1580,7 +1580,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[0].answer, 3)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_required_question_bad_answer(self):
         user = (
             self.session
@@ -1646,7 +1645,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[0].answer, 3)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_allow_multiple_cant_fool_required(self):
         user = (
             self.session
@@ -1737,7 +1735,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[1].answer, 4)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_basic_branching(self):
         user = (
             self.session
@@ -1839,7 +1836,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[3].answer, 4)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_first_question_branching(self):
         user = (
             self.session
@@ -1928,7 +1924,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[2].answer, 4)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_last_question_branching_enter_branch(self):
         user = (
             self.session
@@ -2017,7 +2012,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[2].answer, 'in a branch')
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_last_question_branching_do_not_enter_branch(self):
         user = (
             self.session
@@ -2098,7 +2092,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[1].answer, 25)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_branch_nesting(self):
         user = (
             self.session
@@ -2271,7 +2264,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[2].answer, 3)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_nesting_maintains_answers(self):
         user = (
             self.session
@@ -2410,7 +2402,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[3].answer, 3)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_multiple_buckets_for_same_branch(self):
         user = (
             self.session
@@ -2542,7 +2533,6 @@ class TestEnumerate(DriverTest):
         return survey.id
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_integer_buckets(self):
         survey_id = self.survey_with_branch('integer', '(1, 3)', '[4, 5]')
 
@@ -2595,7 +2585,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_integer_buckets_open_ranges(self):
         survey_id = self.survey_with_branch('integer', '(, 0)', '[10,)')
 
@@ -2648,7 +2637,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_integer_buckets_total_open(self):
         survey_id = self.survey_with_branch('integer', '(,)')
 
@@ -2684,7 +2672,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_decimal_buckets(self):
         survey_id = self.survey_with_branch(
             'decimal',
@@ -2741,7 +2728,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_decimal_buckets_open_ranges(self):
         survey_id = self.survey_with_branch('decimal', '(, 0.1)', '[10.1,)')
 
@@ -2794,7 +2780,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_decimal_buckets_total_open(self):
         survey_id = self.survey_with_branch('decimal', '(,)')
 
@@ -2830,7 +2815,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_date_buckets(self):
         survey_id = self.survey_with_branch(
             'date',
@@ -2894,7 +2878,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_date_buckets_open_ranges(self):
         survey_id = self.survey_with_branch(
             'date',
@@ -2958,7 +2941,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_date_buckets_total_open(self):
         survey_id = self.survey_with_branch('date', '(,)')
 
@@ -2997,7 +2979,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_timestamp_buckets(self):
         survey_id = self.survey_with_branch(
             'timestamp',
@@ -3061,7 +3042,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_timestamp_buckets_open_ranges(self):
         survey_id = self.survey_with_branch(
             'timestamp',
@@ -3125,7 +3105,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_timestamp_buckets_total_open(self):
         survey_id = self.survey_with_branch('timestamp', '(,)')
 
@@ -3164,7 +3143,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_multiple_choice_buckets(self):
         user = (
             self.session
@@ -3244,7 +3222,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_after_saving_branch_path_resets(self):
         user = (
             self.session
@@ -3355,7 +3332,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_logic_integer_min_max(self):
         user = (
             self.session
@@ -3448,7 +3424,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(len(self.drv.find_elements_by_tag_name('button')), 1)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_logic_decimal_min_max(self):
         user = (
             self.session
@@ -3541,7 +3516,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(len(self.drv.find_elements_by_tag_name('button')), 1)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_logic_date_min_max(self):
         user = (
             self.session
