@@ -460,6 +460,7 @@ class TestAdminUser(AdminTest):
     def test_user_administration_renders_properly(self):
         self.get('/view/user-administration')
 
+        self.sleep(2)
         rows = self.drv.find_elements_by_css_selector('table#users tbody tr')
         self.assertEqual(len(rows), 3)
 
@@ -467,7 +468,7 @@ class TestAdminUser(AdminTest):
     def test_add_user(self):
         self.get('/view/user-administration')
 
-        self.sleep()
+        self.sleep(2)
 
         rows = self.drv.find_elements_by_class_name('btn-edit-user')
         self.assertEqual(len(rows), 3)
@@ -494,11 +495,11 @@ class TestAdminUser(AdminTest):
     def test_edit_user(self):
         self.get('/view/user-administration')
 
-        self.sleep()
+        self.sleep(2)
         self.click(self.drv.find_element_by_css_selector(
             'tr.odd:nth-child(3) > td:nth-child(5) > button:nth-child(1)'
         ))
-        self.sleep(1)
+        self.sleep(2)
         (
             self.drv
             .find_element_by_id('user-name')
@@ -521,7 +522,7 @@ class TestAdminUser(AdminTest):
     def test_delete_user(self):
         self.get('/view/user-administration')
 
-        self.sleep()
+        self.sleep(2)
 
         existing = self.drv.find_elements_by_class_name('btn-edit-user')
         self.assertEqual(len(existing), 3)
@@ -893,13 +894,14 @@ class TestEnumerate(DriverTest):
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.wait_for_element('video', by=By.TAG_NAME, visible=True)
-        self.sleep()
+        self.sleep(2)
         self.click(self.drv.find_element_by_tag_name('video'))
+        self.sleep(2)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_elements_by_tag_name('button')[0])
 
-        self.sleep()
+        self.sleep(3)
 
         new_submission = self.get_last_submission(survey_id)
 
@@ -1031,7 +1033,7 @@ class TestEnumerate(DriverTest):
                 ' > div:nth-child(1) > button:nth-child(1)'
             )
         )
-        self.sleep()
+        self.sleep(2)
         self.click(
             self.drv
             .find_elements_by_class_name('question__radio__label')[0]
