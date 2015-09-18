@@ -48,7 +48,7 @@ var path = {
     SURVEY_JS_VENDOR_SRC: [
         node_modules_path + '/jquery/dist/jquery.js',
         node_modules_path + '/bootstrap/dist/js/bootstrap.js',
-        node_modules_path + '/lodash/lodash.js',
+        node_modules_path + '/lodash-compat/index.js',
         node_modules_path + '/moment/min/moment.min.js',
         node_modules_path + '/react/dist/react.js'
     ],

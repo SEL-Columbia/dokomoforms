@@ -1,7 +1,8 @@
-var React = require('react');
+var React = require('react'),
+    ResponseField = require('./baseComponents/ResponseField.js'),
+    LittleButton = require('./baseComponents/LittleButton.js'),
 
-var ResponseField = require('./baseComponents/ResponseField.js');
-var LittleButton = require('./baseComponents/LittleButton.js');
+    locationService = require('../services/location');
 
 /*
  * Location question component
@@ -93,41 +94,71 @@ module.exports = React.createClass({
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
         var index = answers.length === 0 ? 0 : this.refs[answers.length] ? answers.length : answers.length - 1; // So sorry
+        // var position = locationService.getCurrentPosition();
 
-        navigator.geolocation.getCurrentPosition(
-            function success(position) {
-                var loc = {
-                    'lat': position.coords.latitude,
-                    'lng': position.coords.longitude
-                };
+        function positionFound(position) {
+            var loc = {
+                'lat': position.coords.latitude,
+                'lng': position.coords.longitude
+            };
 
-                // Record location for survey
-                localStorage['location'] = JSON.stringify(loc);
+            // Record location for survey
+            localStorage['location'] = JSON.stringify(loc);
 
-                answers[index] = {
-                    'response': loc,
-                    'response_type': 'answer'
-                };
+            answers[index] = {
+                'response': loc,
+                'response_type': 'answer'
+            };
 
-                survey[self.props.question.id] = answers; // Update localstorage
-                localStorage[self.props.surveyID] = JSON.stringify(survey);
+            survey[self.props.question.id] = answers; // Update localstorage
+            localStorage[self.props.surveyID] = JSON.stringify(survey);
 
-                var length = answers.length === 0 ? 1 : answers.length;
-                self.setState({
-                    questionCount: length
-                });
-            },
+            var length = answers.length === 0 ? 1 : answers.length;
+            self.setState({
+                questionCount: length
+            });
+        }
 
-            function error() {
-                console.log('Location could not be grabbed');
-            },
+        locationService.fetchPosition(positionFound);
+        // if (position) {
+        //     positionFound(position);
+        // } else {
+        // }
 
-            {
-                enableHighAccuracy: true,
-                timeout: 20000,
-                maximumAge: 0
-            }
-        );
+        // navigator.geolocation.getCurrentPosition(
+        //     function success(position) {
+        //         var loc = {
+        //             'lat': position.coords.latitude,
+        //             'lng': position.coords.longitude
+        //         };
+
+        //         // Record location for survey
+        //         localStorage['location'] = JSON.stringify(loc);
+
+        //         answers[index] = {
+        //             'response': loc,
+        //             'response_type': 'answer'
+        //         };
+
+        //         survey[self.props.question.id] = answers; // Update localstorage
+        //         localStorage[self.props.surveyID] = JSON.stringify(survey);
+
+        //         var length = answers.length === 0 ? 1 : answers.length;
+        //         self.setState({
+        //             questionCount: length
+        //         });
+        //     },
+
+        //     function error() {
+        //         console.log('Location could not be grabbed');
+        //     },
+
+        //     {
+        //         enableHighAccuracy: true,
+        //         timeout: 20000,
+        //         maximumAge: 0
+        //     }
+        // );
 
 
     },
