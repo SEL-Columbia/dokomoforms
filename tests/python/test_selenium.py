@@ -527,6 +527,8 @@ class TestAdminUser(AdminTest):
         alert.accept()
         self.sleep(1)
 
+        self.get('/view/user-administration')
+
         rows = self.drv.find_elements_by_class_name('btn-edit-user')
         self.assertEqual(len(rows), 2)
 
