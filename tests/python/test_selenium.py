@@ -558,7 +558,7 @@ class TestAdminManageSurvey(AdminTest):
         )
         self.assertEqual(
             dateutil.parser.parse(stats[1].text).date(),
-            datetime.date(2015, 6, 11)
+            datetime.datetime.now().date() - datetime.timedelta(days=99)
         )
         self.assertEqual(
             dateutil.parser.parse(stats[2].text).date(),
@@ -656,7 +656,7 @@ class TestAdminViewData(AdminTest):
         )
         self.assertEqual(
             dateutil.parser.parse(stats[1].text).date(),
-            datetime.date(2015, 6, 11)
+            datetime.datetime.now().date() - datetime.timedelta(days=99)
         )
         self.assertEqual(
             dateutil.parser.parse(stats[2].text).date(),
