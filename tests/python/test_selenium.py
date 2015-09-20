@@ -380,10 +380,15 @@ class TestAdminOverview(AdminTest):
     def test_recent_submissions(self):
         self.get('/')
 
+        self.wait_for_element(
+            'tr.submission-row:nth-child(1) > td:nth-child(1)',
+            by=By.CSS_SELECTOR
+        )
         self.click(self.drv.find_element_by_css_selector(
             'tr.submission-row:nth-child(1) > td:nth-child(1)'
         ))
-        self.sleep(1)
+
+        self.wait_for_element('stat-label', by=By.CLASS_NAME)
 
         self.assertGreater(
             len(self.drv.find_elements_by_class_name('stat-label')),
@@ -394,10 +399,15 @@ class TestAdminOverview(AdminTest):
     def test_view_data_button(self):
         self.get('/')
 
+        self.wait_for_element(
+            'tr.odd:nth-child(1) > td:nth-child(5) > a:nth-child(1)',
+            by=By.CSS_SELECTOR
+        )
         self.click(self.drv.find_element_by_css_selector(
             'tr.odd:nth-child(1) > td:nth-child(5) > a:nth-child(1)'
         ))
 
+        self.wait_for_element('h3', by=By.TAG_NAME)
         self.assertEqual(
             self.drv.find_element_by_tag_name('h3').text,
             'Survey Data'
@@ -456,11 +466,18 @@ class TestAdminOverview(AdminTest):
 
 
 class TestAdminUser(AdminTest):
+    def sleep(self, duration=None):
+        super().sleep(duration)
+
+        is_travis = os.environ.get('TRAVIS', 'f').startswith('t')
+        if is_travis and not SAUCE_CONNECT:
+            time.sleep(3)
+
     @report_success_status
     def test_user_administration_renders_properly(self):
         self.get('/view/user-administration')
 
-        self.sleep(2)
+        self.wait_for_element('table#users tbody tr', by=By.CSS_SELECTOR)
         rows = self.drv.find_elements_by_css_selector('table#users tbody tr')
         self.assertEqual(len(rows), 3)
 
@@ -468,13 +485,14 @@ class TestAdminUser(AdminTest):
     def test_add_user(self):
         self.get('/view/user-administration')
 
-        self.sleep(2)
+        self.wait_for_element('btn-edit-user', by=By.CLASS_NAME)
 
         rows = self.drv.find_elements_by_class_name('btn-edit-user')
         self.assertEqual(len(rows), 3)
 
-        self.click(self.drv.find_element_by_class_name('btn-add-user'))
         self.sleep(1)
+        self.click(self.drv.find_element_by_class_name('btn-add-user'))
+        self.wait_for_element('user-name')
         (
             self.drv
             .find_element_by_id('user-name')
@@ -485,7 +503,12 @@ class TestAdminUser(AdminTest):
             .find_element_by_id('user-email')
             .send_keys('new@email.com')
         )
-        self.click(self.drv.find_element_by_class_name('btn-save-user'))
+        save_btn = self.drv.find_element_by_class_name('btn-save-user')
+        self.sleep()
+        save_btn.click()
+        self.sleep()
+
+        self.get('/view/user-administration')
         self.sleep()
 
         rows = self.drv.find_elements_by_css_selector('table#users tbody tr')
@@ -495,11 +518,18 @@ class TestAdminUser(AdminTest):
     def test_edit_user(self):
         self.get('/view/user-administration')
 
-        self.sleep(2)
-        self.click(self.drv.find_element_by_css_selector(
+        self.sleep()
+        self.wait_for_element(
+            'tr.odd:nth-child(3) > td:nth-child(5) > button:nth-child(1)',
+            by=By.CSS_SELECTOR
+        )
+        edit_btn = self.drv.find_element_by_css_selector(
             'tr.odd:nth-child(3) > td:nth-child(5) > button:nth-child(1)'
-        ))
-        self.sleep(2)
+        )
+        self.sleep()
+        self.click(edit_btn)
+        self.sleep()
+        self.wait_for_element('user-name')
         (
             self.drv
             .find_element_by_id('user-name')
@@ -522,15 +552,23 @@ class TestAdminUser(AdminTest):
     def test_delete_user(self):
         self.get('/view/user-administration')
 
-        self.sleep(2)
+        self.wait_for_element('btn-edit-user', by=By.CLASS_NAME)
 
         existing = self.drv.find_elements_by_class_name('btn-edit-user')
         self.assertEqual(len(existing), 3)
 
-        self.click(self.drv.find_element_by_css_selector(
+        self.wait_for_element(
+            'tr.odd:nth-child(3) > td:nth-child(5) > button:nth-child(1)',
+            by=By.CSS_SELECTOR
+        )
+        edit_btn = self.drv.find_element_by_css_selector(
             'tr.odd:nth-child(3) > td:nth-child(5) > button:nth-child(1)'
-        ))
+        )
+        self.sleep()
+        self.click(edit_btn)
+        self.sleep()
         self.sleep(1)
+        self.wait_for_element('btn-delete-user', by=By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('btn-delete-user'))
         self.sleep()
         alert = self.drv.switch_to.alert
@@ -540,6 +578,7 @@ class TestAdminUser(AdminTest):
 
         self.get('/view/user-administration')
 
+        self.wait_for_element('btn-edit-user', by=By.CLASS_NAME)
         rows = self.drv.find_elements_by_class_name('btn-edit-user')
         self.assertEqual(len(rows), 2)
 
@@ -636,6 +675,7 @@ class TestAdminManageSurvey(AdminTest):
             'tr.odd:nth-child(1) > td:nth-child(4) > button:nth-child(1)'
         ))
 
+        self.wait_for_element('response-data', by=By.CLASS_NAME)
         self.assertEqual(
             self.drv.find_element_by_class_name('response-data').text,
             '3'
@@ -646,6 +686,7 @@ class TestAdminViewData(AdminTest):
     @report_success_status
     def test_view_data_renders_properly(self):
         self.get('/view/data/b0816b52-204f-41d4-aaf0-ac6ae2970923')
+        self.sleep()
 
         # Stats view
         stats = self.drv.find_elements_by_class_name('stat-value')
@@ -665,6 +706,7 @@ class TestAdminViewData(AdminTest):
         self.assertEqual(stats[3].text, '101')
 
         # Question data
+        self.wait_for_element('question-title-bar', by=By.CLASS_NAME)
         titles = self.drv.find_elements_by_class_name('question-title-bar')
         self.assertListEqual(
             [q.text for q in titles],
@@ -1070,6 +1112,7 @@ class TestEnumerate(DriverTest):
             )
         )
         self.sleep()
+        self.wait_for_element('question__radio__label', by=By.CLASS_NAME)
         self.click(
             self.drv
             .find_elements_by_class_name('question__radio__label')[0]
@@ -3741,6 +3784,7 @@ class TestEnumerate(DriverTest):
             )
         )
 
+        self.wait_for_element('question__radio__label', by=By.CLASS_NAME)
         new_facility_text = (
             self.drv
             .find_elements_by_class_name('question__radio__label')[0]

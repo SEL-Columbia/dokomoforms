@@ -2198,7 +2198,7 @@ class TestSubmissionApi(DokoHTTPTest):
         self.assertEqual(len(submissions), 1)
 
     def test_get_single_submission(self):
-        submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970924'
         # url to test
         url = self.api_root + '/submissions/' + submission_id
         # http method (just for clarity)
@@ -2208,7 +2208,7 @@ class TestSubmissionApi(DokoHTTPTest):
 
         submission_dict = json_decode(response.body)
 
-        self.assertTrue('save_time' in submission_dict)
+        self.assertTrue('save_time' in submission_dict, msg=submission_dict)
         self.assertTrue('start_time' in submission_dict)
         self.assertTrue('deleted' in submission_dict)
         self.assertTrue('id' in submission_dict)
@@ -2222,7 +2222,7 @@ class TestSubmissionApi(DokoHTTPTest):
         self.assertFalse("error" in submission_dict)
 
     def test_get_single_submission_csv_excel_dialect(self):
-        submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970924'
         # url to test
         url = self.api_root + '/submissions/' + submission_id + '?format=csv'
         # http method (just for clarity)
@@ -2238,7 +2238,7 @@ class TestSubmissionApi(DokoHTTPTest):
         self.assertIn('\r\n', response.body.decode())
 
     def test_get_single_submission_csv_unix_dialect(self):
-        submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970924'
         # url to test
         url = self.api_root + '/submissions/' + submission_id
         url += '?format=csv&dialect=unix'
@@ -2255,7 +2255,7 @@ class TestSubmissionApi(DokoHTTPTest):
         self.assertNotIn('\r\n', response.body.decode())
 
     def test_get_single_submission_csv_integer(self):
-        submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970924'
         # url to test
         url = self.api_root + '/submissions/' + submission_id + '?format=csv'
         # http method (just for clarity)
@@ -2472,7 +2472,10 @@ class TestSubmissionApi(DokoHTTPTest):
         # make request
         submit_url = self.api_root + '/surveys/' + photo_survey.id + '/submit'
         sub_r = self.fetch(submit_url, method='POST', body=json_encode(body))
-        submission_id = json_decode(sub_r.body)['id']
+        try:
+            submission_id = json_decode(sub_r.body)['id']
+        except KeyError:
+            self.fail(json_decode(sub_r.body))
         photo_url = self.api_root + '/photos'
         photo_path = os.path.join(
             os.path.abspath('.'),
@@ -4992,7 +4995,7 @@ class TestSubmissionApi(DokoHTTPTest):
     #    self.fail("Not yet implemented.")
 
     def test_delete_submission(self):
-        submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970924'
         # url to test
         url = self.api_root + '/submissions/' + submission_id
         # http method

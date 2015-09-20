@@ -199,7 +199,7 @@ def load_fixtures(engine):
 
         # Add another public submission with a known ID
         single_regular_submission = models.PublicSubmission(
-            id='b0816b52-204f-41d4-aaf0-ac6ae2970923',
+            id='b0816b52-204f-41d4-aaf0-ac6ae2970924',
             survey=single_survey,
             submitter_name='regular_singular',
             answers=[

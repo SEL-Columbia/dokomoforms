@@ -86,6 +86,7 @@ class DokoExternalDBTest(DokoTest):
 
     def setUp(self):
         """Load the fixtures."""
+        unload_fixtures(engine, 'doko_test')
         load_fixtures(engine)
         self.session = Session(bind=engine, autocommit=True)
 
