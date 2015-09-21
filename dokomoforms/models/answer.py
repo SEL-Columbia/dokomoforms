@@ -21,6 +21,10 @@ from dokomoforms.exc import (
 )
 
 
+def _is_response(possible_response):
+    return possible_response[1] is not None
+
+
 class Answer(Base):
 
     """An Answer is a response to a SurveyNode.
@@ -107,16 +111,12 @@ class Answer(Base):
             'response': <one of self.answer, self.other, self.dont_know>
         }
         """
-        possible_responses = [
+        possible_resps = [
             ('answer', self.main_answer),
             ('other', self.other),
             ('dont_know', self.dont_know),
         ]
-        response_type, response = next(
-            (possible_response, response)
-            for possible_response, response in possible_responses
-            if response is not None
-        )
+        response_type, response = next(filter(_is_response, possible_resps))
         if response_type == 'answer':
             if self.type_constraint == 'multiple_choice':
                 response = {
