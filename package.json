@@ -20,11 +20,10 @@
     "moment": "^2.10.6",
     "mpromise": "^0.5.5",
     "node-uuid": "^1.4.3",
-    "pouchdb": "^3.6.0",
+    "pouchdb": "^4.0.3",
     "pouchdb-upsert": "^1.1.1",
     "ratchet": "https://github.com/twbs/ratchet/archive/v2.0.2.tar.gz",
-    "react": "^0.13.3",
-    "selectize": "^0.12.1"
+    "react": "^0.13.3"
   },
   "devDependencies": {
     "jest-cli": "^0.5.0",

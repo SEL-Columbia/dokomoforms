@@ -1,5 +1,6 @@
 """Front end tests."""
 import base64
+import datetime
 from decimal import Decimal
 from distutils.version import StrictVersion
 import functools
@@ -13,6 +14,10 @@ import time
 import unittest
 from urllib.request import urlopen
 import urllib.error
+
+from bs4 import BeautifulSoup
+
+import dateutil.parser
 
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
@@ -96,7 +101,7 @@ def report_success_status(method):
     return set_passed
 
 
-class DriverTest(tests.python.util.DokoFixtureTest):
+class DriverTest(tests.python.util.DokoExternalDBTest):
     def start_remote_webdriver(self):
         signal.signal(signal.SIGALRM, too_long(DriverTakingTooLong))
         countdown = 120 if self.browser == 'android' else 60
@@ -245,9 +250,10 @@ class DriverTest(tests.python.util.DokoFixtureTest):
         WebDriverWait(self.drv, timeout).until(load)
 
     def sleep(self, duration=None):
+        default_duration = 1.25 if SAUCE_CONNECT else 0.25
         if duration is None:
-            duration = 1.25 if SAUCE_CONNECT else 0.25
-        time.sleep(duration)
+            duration = default_duration
+        time.sleep(max(duration, default_duration))
 
     def set_geolocation(self, lat=40, lng=-70):
         self.sleep()
@@ -346,6 +352,381 @@ class TestAuth(DriverTest):
         self.assertIn('Recent Submissions', self.drv.page_source)
 
 
+class AdminTest(DriverTest):
+    def setUp(self):
+        super().setUp()
+        self.get('/debug/login/test_creator@fixtures.com')
+
+
+class TestAdminOverview(AdminTest):
+    @report_success_status
+    def test_account_overview_renders_properly(self):
+        self.get('/')
+        # Recent submissions table
+        self.assertEqual(
+            len(self.drv.find_elements_by_class_name('submission-row')),
+            5
+        )
+        # Activity graph
+        self.assertEqual(
+            len(self.drv.find_elements_by_tag_name('path')),
+            58
+        )
+        # Surveys table
+        rows = self.drv.find_elements_by_css_selector('table#surveys tbody tr')
+        self.assertEqual(len(rows), 13)
+
+    @report_success_status
+    def test_recent_submissions(self):
+        self.get('/')
+
+        self.wait_for_element(
+            'tr.submission-row:nth-child(1) > td:nth-child(1)',
+            by=By.CSS_SELECTOR
+        )
+        self.click(self.drv.find_element_by_css_selector(
+            'tr.submission-row:nth-child(1) > td:nth-child(1)'
+        ))
+
+        self.wait_for_element('stat-label', by=By.CLASS_NAME)
+
+        self.assertGreater(
+            len(self.drv.find_elements_by_class_name('stat-label')),
+            0
+        )
+
+    @report_success_status
+    def test_view_data_button(self):
+        self.get('/')
+
+        self.wait_for_element(
+            'tr.odd:nth-child(1) > td:nth-child(5) > a:nth-child(1)',
+            by=By.CSS_SELECTOR
+        )
+        self.click(self.drv.find_element_by_css_selector(
+            'tr.odd:nth-child(1) > td:nth-child(5) > a:nth-child(1)'
+        ))
+
+        self.wait_for_element('h3', by=By.TAG_NAME)
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'Survey Data'
+        )
+
+    @report_success_status
+    def test_manage_survey_button(self):
+        self.get('/')
+
+        self.click(self.drv.find_element_by_css_selector(
+            'tr.odd:nth-child(1) > td:nth-child(5) > a:nth-child(3)'
+        ))
+
+        self.assertEqual(
+            self.drv.find_elements_by_tag_name('h4')[0].text,
+            'SURVEY INFO'
+        )
+
+    @report_success_status
+    def test_download_json_button(self):
+        self.get('/')
+
+        self.click(self.drv.find_element_by_css_selector(
+            'tr.odd:nth-child(1) > td:nth-child(5) > div:nth-child(2) >'
+            ' button:nth-child(1)'
+        ))
+        self.click(self.drv.find_element_by_css_selector(
+            '.open > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
+        ))
+
+        self.switch_window()
+        response = BeautifulSoup(self.drv.page_source, 'html.parser')
+        json_str = response.find('pre').text
+        data = json.loads(json_str)
+        self.assertIn('survey_id', data)
+
+    @report_success_status
+    def test_download_csv_button(self):
+        self.get('/')
+
+        self.click(self.drv.find_element_by_css_selector(
+            'tr.odd:nth-child(1) > td:nth-child(5) > div:nth-child(2) >'
+            ' button:nth-child(1)'
+        ))
+
+        json_button = self.drv.find_element_by_css_selector(
+            '.open > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
+        )
+        csv_button = self.drv.find_element_by_css_selector(
+            '.open > ul:nth-child(2) > li:nth-child(2) > a:nth-child(1)'
+        )
+        self.assertEqual(
+            json_button.get_attribute('href') + '?format=csv',
+            csv_button.get_attribute('href')
+        )
+
+
+class TestAdminUser(AdminTest):
+    def sleep(self, duration=None):
+        super().sleep(duration)
+
+        is_travis = os.environ.get('TRAVIS', 'f').startswith('t')
+        if is_travis and not SAUCE_CONNECT:
+            time.sleep(3)
+
+    @report_success_status
+    def test_user_administration_renders_properly(self):
+        self.get('/view/user-administration')
+
+        self.wait_for_element('table#users tbody tr', by=By.CSS_SELECTOR)
+        rows = self.drv.find_elements_by_css_selector('table#users tbody tr')
+        self.assertEqual(len(rows), 3)
+
+    @report_success_status
+    def test_add_user(self):
+        self.get('/view/user-administration')
+
+        self.wait_for_element('btn-edit-user', by=By.CLASS_NAME)
+
+        rows = self.drv.find_elements_by_class_name('btn-edit-user')
+        self.assertEqual(len(rows), 3)
+
+        self.sleep(1)
+        self.click(self.drv.find_element_by_class_name('btn-add-user'))
+        self.wait_for_element('user-name')
+        (
+            self.drv
+            .find_element_by_id('user-name')
+            .send_keys('new_user')
+        )
+        (
+            self.drv
+            .find_element_by_id('user-email')
+            .send_keys('new@email.com')
+        )
+        save_btn = self.drv.find_element_by_class_name('btn-save-user')
+        self.sleep()
+        save_btn.click()
+        self.sleep()
+
+        self.get('/view/user-administration')
+        self.sleep()
+
+        rows = self.drv.find_elements_by_css_selector('table#users tbody tr')
+        self.assertEqual(len(rows), 4)
+
+    @report_success_status
+    def test_edit_user(self):
+        self.get('/view/user-administration')
+
+        self.sleep()
+        self.wait_for_element(
+            'tr.odd:nth-child(3) > td:nth-child(5) > button:nth-child(1)',
+            by=By.CSS_SELECTOR
+        )
+        edit_btn = self.drv.find_element_by_css_selector(
+            'tr.odd:nth-child(3) > td:nth-child(5) > button:nth-child(1)'
+        )
+        self.sleep()
+        self.click(edit_btn)
+        self.sleep()
+        self.wait_for_element('user-name')
+        (
+            self.drv
+            .find_element_by_id('user-name')
+            .send_keys('_edit')
+        )
+        self.click(self.drv.find_element_by_class_name('btn-save-user'))
+        self.sleep()
+
+        self.assertEqual(
+            (
+                self.drv
+                .find_element_by_css_selector(
+                    'tr.odd:nth-child(3) > td:nth-child(1)'
+                ).text
+            ),
+            'test_user_b_edit'
+        )
+
+    @report_success_status
+    def test_delete_user(self):
+        self.get('/view/user-administration')
+
+        self.wait_for_element('btn-edit-user', by=By.CLASS_NAME)
+
+        existing = self.drv.find_elements_by_class_name('btn-edit-user')
+        self.assertEqual(len(existing), 3)
+
+        self.wait_for_element(
+            'tr.odd:nth-child(3) > td:nth-child(5) > button:nth-child(1)',
+            by=By.CSS_SELECTOR
+        )
+        edit_btn = self.drv.find_element_by_css_selector(
+            'tr.odd:nth-child(3) > td:nth-child(5) > button:nth-child(1)'
+        )
+        self.sleep()
+        self.click(edit_btn)
+        self.sleep()
+        self.sleep(1)
+        self.wait_for_element('btn-delete-user', by=By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('btn-delete-user'))
+        self.sleep()
+        alert = self.drv.switch_to.alert
+        self.sleep()
+        alert.accept()
+        self.sleep(1)
+
+        self.get('/view/user-administration')
+
+        self.wait_for_element('btn-edit-user', by=By.CLASS_NAME)
+        rows = self.drv.find_elements_by_class_name('btn-edit-user')
+        self.assertEqual(len(rows), 2)
+
+
+class TestAdminManageSurvey(AdminTest):
+    @report_success_status
+    def test_manage_renders_properly(self):
+        self.get('/view/b0816b52-204f-41d4-aaf0-ac6ae2970923')
+
+        # Stats view
+        stats = self.drv.find_elements_by_class_name('stat-value')
+
+        self.assertEqual(
+            dateutil.parser.parse(stats[0].text).date(),
+            datetime.datetime.now().date()
+        )
+        self.assertEqual(
+            dateutil.parser.parse(stats[1].text).date(),
+            datetime.datetime.now().date() - datetime.timedelta(days=99)
+        )
+        self.assertEqual(
+            dateutil.parser.parse(stats[2].text).date(),
+            datetime.datetime.now().date()
+        )
+        self.assertEqual(stats[3].text, '101')
+
+        # Enumerate URL
+        self.assertEqual(
+            (
+                self.drv
+                .find_element_by_id('shareable-link')
+                .get_attribute('value')
+            ),
+            (
+                'http://localhost:9999/enumerate'
+                '/b0816b52-204f-41d4-aaf0-ac6ae2970923'
+            )
+        )
+
+        # Activity graph
+        self.assertEqual(
+            len(self.drv.find_elements_by_tag_name('path')),
+            59
+        )
+
+        # Submissions table
+        rows = (
+            self.drv
+            .find_elements_by_css_selector('table#submissions tbody tr')
+        )
+        self.assertEqual(len(rows), 5)
+
+    @report_success_status
+    def test_download_json_button(self):
+        self.get('/view/b0816b52-204f-41d4-aaf0-ac6ae2970923')
+
+        self.click(self.drv.find_element_by_class_name('btn-sm'))
+        self.click(self.drv.find_element_by_css_selector(
+            '.btn-group > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
+        ))
+
+        self.switch_window()
+        response = BeautifulSoup(self.drv.page_source, 'html.parser')
+        json_str = response.find('pre').text
+        data = json.loads(json_str)
+
+        self.assertEqual(data['total_entries'], 101)
+        self.assertEqual(data['total_entries'], 101)
+        self.assertEqual(len(data['submissions']), 101)
+
+    @report_success_status
+    def test_download_csv_button(self):
+        self.get('/view/b0816b52-204f-41d4-aaf0-ac6ae2970923')
+
+        self.click(self.drv.find_element_by_class_name('btn-sm'))
+
+        json_button = self.drv.find_element_by_css_selector(
+            '.btn-group > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
+        )
+        csv_button = self.drv.find_element_by_css_selector(
+            '.btn-group > ul:nth-child(2) > li:nth-child(2) > a:nth-child(1)'
+        )
+
+        self.assertEqual(
+            json_button.get_attribute('href') + '?format=csv',
+            csv_button.get_attribute('href')
+        )
+
+    @report_success_status
+    def test_submission_details_button(self):
+        self.get('/view/b0816b52-204f-41d4-aaf0-ac6ae2970923')
+
+        self.click(self.drv.find_element_by_css_selector(
+            'tr.odd:nth-child(1) > td:nth-child(4) > button:nth-child(1)'
+        ))
+
+        self.wait_for_element('response-data', by=By.CLASS_NAME)
+        self.assertEqual(
+            self.drv.find_element_by_class_name('response-data').text,
+            '3'
+        )
+
+
+class TestAdminViewData(AdminTest):
+    @report_success_status
+    def test_view_data_renders_properly(self):
+        self.get('/view/data/b0816b52-204f-41d4-aaf0-ac6ae2970923')
+        self.sleep()
+
+        # Stats view
+        stats = self.drv.find_elements_by_class_name('stat-value')
+
+        self.assertEqual(
+            dateutil.parser.parse(stats[0].text).date(),
+            datetime.datetime.now().date()
+        )
+        self.assertEqual(
+            dateutil.parser.parse(stats[1].text).date(),
+            datetime.datetime.now().date() - datetime.timedelta(days=99)
+        )
+        self.assertEqual(
+            dateutil.parser.parse(stats[2].text).date(),
+            datetime.datetime.now().date()
+        )
+        self.assertEqual(stats[3].text, '101')
+
+        # Question data
+        self.wait_for_element('question-title-bar', by=By.CLASS_NAME)
+        titles = self.drv.find_elements_by_class_name('question-title-bar')
+        self.assertListEqual(
+            [q.text for q in titles],
+            [
+                '0. integer node\nINTEGER',
+                '1. decimal node\nDECIMAL',
+                '2. integer node\nINTEGER',
+                '3. date node\nDATE',
+                '4. Mutliple Choices\nMULTIPLE_CHOICE',
+            ]
+        )
+
+        self.click(titles[0])
+        q0_stats = self.drv.find_elements_by_class_name('stat-value')[4:12]
+        self.assertListEqual(
+            [s.text for s in q0_stats],
+            ['1', '3', '3', '3', '3.0000000000000000', '3', '0', 'None']
+        )
+
+
 class TestEnumerate(DriverTest):
     def get_single_node_survey_id(self, question_type):
         title = question_type + '_survey'
@@ -414,7 +795,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_dont_know(self):
         user = (
             self.session
@@ -556,13 +936,14 @@ class TestEnumerate(DriverTest):
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.wait_for_element('video', by=By.TAG_NAME, visible=True)
-        self.sleep()
+        self.sleep(2)
         self.click(self.drv.find_element_by_tag_name('video'))
+        self.sleep(2)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_elements_by_tag_name('button')[0])
 
-        self.sleep()
+        self.sleep(3)
 
         new_submission = self.get_last_submission(survey_id)
 
@@ -694,7 +1075,7 @@ class TestEnumerate(DriverTest):
                 ' > div:nth-child(1) > button:nth-child(1)'
             )
         )
-        self.sleep()
+        self.sleep(2)
         self.click(
             self.drv
             .find_elements_by_class_name('question__radio__label')[0]
@@ -731,6 +1112,7 @@ class TestEnumerate(DriverTest):
             )
         )
         self.sleep()
+        self.wait_for_element('question__radio__label', by=By.CLASS_NAME)
         self.click(
             self.drv
             .find_elements_by_class_name('question__radio__label')[0]
@@ -751,7 +1133,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_single_multiple_choice_question(self):
         user = (
             self.session
@@ -798,7 +1179,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_select_multiple(self):
         user = (
             self.session
@@ -851,7 +1231,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_other(self):
         user = (
             self.session
@@ -1011,7 +1390,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[0].answer, 3)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_allow_multiple(self):
         user = (
             self.session
@@ -1068,7 +1446,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[1].answer, 4)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_allow_multiple_remove_an_answer(self):
         user = (
             self.session
@@ -1140,7 +1517,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[1].answer, 5)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_allow_multiple_bad_input(self):
         user = (
             self.session
@@ -1195,7 +1571,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(len(new_submission.answers), 1)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_required_question_no_answer(self):
         user = (
             self.session
@@ -1250,7 +1625,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[0].answer, 3)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_required_question_bad_answer(self):
         user = (
             self.session
@@ -1316,7 +1690,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[0].answer, 3)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_allow_multiple_cant_fool_required(self):
         user = (
             self.session
@@ -1407,7 +1780,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[1].answer, 4)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_basic_branching(self):
         user = (
             self.session
@@ -1509,7 +1881,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[3].answer, 4)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_first_question_branching(self):
         user = (
             self.session
@@ -1598,7 +1969,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[2].answer, 4)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_last_question_branching_enter_branch(self):
         user = (
             self.session
@@ -1687,7 +2057,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[2].answer, 'in a branch')
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_last_question_branching_do_not_enter_branch(self):
         user = (
             self.session
@@ -1768,7 +2137,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[1].answer, 25)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_branch_nesting(self):
         user = (
             self.session
@@ -1941,7 +2309,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[2].answer, 3)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_nesting_maintains_answers(self):
         user = (
             self.session
@@ -2080,7 +2447,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(new_submission.answers[3].answer, 3)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_multiple_buckets_for_same_branch(self):
         user = (
             self.session
@@ -2212,7 +2578,6 @@ class TestEnumerate(DriverTest):
         return survey.id
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_integer_buckets(self):
         survey_id = self.survey_with_branch('integer', '(1, 3)', '[4, 5]')
 
@@ -2265,7 +2630,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_integer_buckets_open_ranges(self):
         survey_id = self.survey_with_branch('integer', '(, 0)', '[10,)')
 
@@ -2318,7 +2682,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_integer_buckets_total_open(self):
         survey_id = self.survey_with_branch('integer', '(,)')
 
@@ -2354,7 +2717,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_decimal_buckets(self):
         survey_id = self.survey_with_branch(
             'decimal',
@@ -2411,7 +2773,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_decimal_buckets_open_ranges(self):
         survey_id = self.survey_with_branch('decimal', '(, 0.1)', '[10.1,)')
 
@@ -2464,7 +2825,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_decimal_buckets_total_open(self):
         survey_id = self.survey_with_branch('decimal', '(,)')
 
@@ -2500,7 +2860,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_date_buckets(self):
         survey_id = self.survey_with_branch(
             'date',
@@ -2564,7 +2923,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_date_buckets_open_ranges(self):
         survey_id = self.survey_with_branch(
             'date',
@@ -2628,7 +2986,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_date_buckets_total_open(self):
         survey_id = self.survey_with_branch('date', '(,)')
 
@@ -2667,7 +3024,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_timestamp_buckets(self):
         survey_id = self.survey_with_branch(
             'timestamp',
@@ -2731,7 +3087,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_timestamp_buckets_open_ranges(self):
         survey_id = self.survey_with_branch(
             'timestamp',
@@ -2795,7 +3150,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_timestamp_buckets_total_open(self):
         survey_id = self.survey_with_branch('timestamp', '(,)')
 
@@ -2834,7 +3188,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_multiple_choice_buckets(self):
         user = (
             self.session
@@ -2914,7 +3267,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_after_saving_branch_path_resets(self):
         user = (
             self.session
@@ -3025,7 +3377,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_logic_integer_min_max(self):
         user = (
             self.session
@@ -3118,7 +3469,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(len(self.drv.find_elements_by_tag_name('button')), 1)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_logic_decimal_min_max(self):
         user = (
             self.session
@@ -3211,7 +3561,6 @@ class TestEnumerate(DriverTest):
         self.assertEqual(len(self.drv.find_elements_by_tag_name('button')), 1)
 
     @report_success_status
-    @tests.python.util.dont_run_in_a_transaction
     def test_logic_date_min_max(self):
         user = (
             self.session
@@ -3435,6 +3784,7 @@ class TestEnumerate(DriverTest):
             )
         )
 
+        self.wait_for_element('question__radio__label', by=By.CLASS_NAME)
         new_facility_text = (
             self.drv
             .find_elements_by_class_name('question__radio__label')[0]

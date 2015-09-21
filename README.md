@@ -13,7 +13,7 @@ Dokomo Forms is a self-hosted data collection and analysis platform, and is the 
 
 [![Documentation Status](https://readthedocs.org/projects/dokomoforms/badge/?version=latest)](https://readthedocs.org/projects/dokomoforms/?badge=latest)
 
-# Phoenix
+# Staging
 
 1. Organization owns instance, and all users belong to the organization. (TODO)
 
