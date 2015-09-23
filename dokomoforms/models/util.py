@@ -172,24 +172,16 @@ class ModelJSONEncoder(json.JSONEncoder):
             return super().default(obj)
 
 
-def create_engine(echo: bool=None,
-                  pool_size: int=None,
-                  max_overflow: int=None) -> sqlalchemy.engine.Engine:
+def create_engine(pool_size: int=None,
+                  max_overflow: int=None,
+                  echo: bool=None) -> sqlalchemy.engine.Engine:
     """Get a connection to the database.
 
     Return a sqlalchemy.engine.Engine configured with the options set in
     dokomoforms.options.options
 
-    :param echo: whether to print to the command line all of the SQL generated
-                 by SQLAlchemy. Defaults to None, which defers to the
-                 options.debug setting. Setting this parameter to True or False
-                 (or 'debug') overrides the echo setting of options.debug.
     :return: a SQLAlchemy engine
     """
-    if echo is None:
-        # This causes duplicate log messages, but I can't figure out how to get
-        # the same level of logging otherwise...
-        echo = 'debug' if options.debug else False
     connection_string = 'postgresql+psycopg2://{}:{}@{}:{}/{}'.format(
         options.db_user,
         options.db_password,
@@ -199,7 +191,9 @@ def create_engine(echo: bool=None,
     )
     pool_size = pool_size or options.pool_size
     max_overflow = max_overflow or options.max_overflow
-    engine_params = {'echo': echo}
+    engine_params = dict()
+    if echo is not None:
+        engine_params['echo'] = echo
     if pool_size is not None:
         engine_params['pool_size'] = pool_size
     if max_overflow is not None:
