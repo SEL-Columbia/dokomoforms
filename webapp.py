@@ -319,7 +319,7 @@ def start_http_server(http_server, port):  # pragma: no cover
             raise
 
 
-def setup_file_loggers(log_level: str):
+def setup_file_loggers(log_level: str):  # pragma: no cover
     """Handles application, Tornado, and SQLAlchemy logging configuration."""
     os.makedirs('log', exist_ok=True)
     timed_handler = logging.handlers.TimedRotatingFileHandler

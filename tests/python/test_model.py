@@ -58,15 +58,22 @@ class TestBase(unittest.TestCase):
         )
 
     def test_create_engine(self):
-        regular_engine = models.create_engine()
+        engine1 = models.create_engine()
+        self.assertEqual(engine1.echo, None)
 
-        self.assertEqual(regular_engine.pool.size(), 5)
-        engine1 = models.create_engine(pool_size=10)
-        self.assertEqual(engine1.pool.size(), 10)
+        engine2 = models.create_engine(echo=True)
+        self.assertEqual(engine2.echo, True)
 
-        self.assertEqual(regular_engine.pool._max_overflow, 10)
-        engine2 = models.create_engine(max_overflow=20)
-        self.assertEqual(engine2.pool._max_overflow, 20)
+        engine3 = models.create_engine(echo=False)
+        self.assertEqual(engine3.echo, False)
+
+        self.assertEqual(engine3.pool.size(), 5)
+        engine4 = models.create_engine(pool_size=10)
+        self.assertEqual(engine4.pool.size(), 10)
+
+        self.assertEqual(engine3.pool._max_overflow, 10)
+        engine5 = models.create_engine(max_overflow=20)
+        self.assertEqual(engine5.pool._max_overflow, 20)
 
 
 class TestUtil(DokoTest):
