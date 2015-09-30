@@ -60,7 +60,7 @@ var UserModal = function(user_id, surveys) {
         if (changeset.role === 'enumerator') {
             changeset.allowed_surveys = surveys;
         } else if (changeset.role === 'administrator') {
-            changeset.surveys = surveys;
+            changeset.admin_surveys = surveys;
         }
 
         user.set(changeset);
