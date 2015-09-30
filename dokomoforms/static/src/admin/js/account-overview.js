@@ -41,7 +41,7 @@ var AccountOverview = (function() {
                             console.log(submission);
                             var answers = submission.answers,
                                 location = _.find(answers, function(answer) {
-                                    return answer.type_constraint == 'location';
+                                    return answer.type_constraint === 'location';
                                 });
                             if (!location || !location.response) {
                                 return;
