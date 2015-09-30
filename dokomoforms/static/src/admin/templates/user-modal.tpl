@@ -33,8 +33,8 @@
                         </div>
 
                         <!-- Surveys for enumerators -->
-                        <% if (data.role === 'enumerator') { %>
                         <div class="form-group">
+                            <% if (data.role === 'enumerator') { %>
                             <label for="user-surveys">Allowed Surveys
                                 <span class="info-icon" data-toggle="tooltip" data-placement="right" title="" data-original-title="This enumerator will only be allowed to submit to the surveys selected here.">i</span>
                             </label>
@@ -52,8 +52,24 @@
                                     <% } %>
                                 <% }); %>
                             </select>
+                            <% } else if(data.role === 'administrator') { %>
+                            <label for="user-surveys">Admin Surveys
+                                <span class="info-icon" data-toggle="tooltip" data-placement="right" title="" data-original-title="This user will be able to administer the surveys selected here.">i</span>
+                            </label>
+                            <select multiple class="form-control" id="user-surveys">
+                                <% data.all_surveys.forEach(function(survey) { %>
+                                    <option
+                                        value="<%= survey.id %>"
+                                        <% if (data.surveys.indexOf(survey.id) !== -1) { %>
+                                            selected
+                                        <% } %>
+                                    >
+                                        <%= data._t(survey.title) %>
+                                    </option>
+                                <% }); %>
+                            </select>
+                            <% } %>
                         </div>
-                        <% } %>
                 </div>
                 <div class="modal-footer">
                     <% if (data.id) { %>
