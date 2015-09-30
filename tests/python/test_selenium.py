@@ -3691,6 +3691,10 @@ class TestEnumerate(DriverTest):
             )
         )
         self.sleep()
+        self.wait_for_element(
+            'div.content-padded:nth-child(3) > button:nth-child(1)',
+            by=By.CSS_SELECTOR
+        )
         self.click(
             self.drv
             .find_element_by_css_selector(
