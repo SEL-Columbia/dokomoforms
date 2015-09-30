@@ -29,7 +29,7 @@
                             <span class="input-group-btn">
                                 <button type="button" class="btn btn-default btn-api-key"><span class="glyphicon glyphicon-refresh"></span> Generate Token </button>
                             </span>
-                            <input type="text" class="form-control" id="user-api-token" placeholder="API Token" value="">
+                            <input type="text" class="form-control" id="user-api-token" placeholder="API Token">
                         </div>
                     </div>
                 </div>

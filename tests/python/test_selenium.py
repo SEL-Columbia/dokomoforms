@@ -465,6 +465,85 @@ class TestAdminOverview(AdminTest):
         )
 
 
+class TestAdminSettings(AdminTest):
+    def sleep(self, duration=None):
+        super().sleep(duration)
+
+        is_travis = os.environ.get('TRAVIS', 'f').startswith('t')
+        if is_travis and not SAUCE_CONNECT:
+            time.sleep(3)
+
+    @report_success_status
+    def test_update_settings(self):
+        self.get('/')
+
+        self.wait_for_element('UserDropdown')
+        self.click(self.drv.find_element_by_id('UserDropdown'))
+        self.sleep()
+
+        nav = self.drv.find_elements_by_class_name('nav-settings')
+        self.assertEqual(len(nav), 1)
+
+        self.sleep(1)
+        self.click(self.drv.find_element_by_class_name('nav-settings'))
+        self.wait_for_element('user-name')
+        (
+            self.drv
+            .find_element_by_id('user-name')
+            .send_keys('new_user')
+        )
+        (
+            self.drv
+            .find_element_by_id('user-email')
+            .send_keys('new@email.com')
+        )
+        save_btn = self.drv.find_element_by_class_name('btn-save-user')
+        self.sleep()
+        save_btn.click()
+        self.sleep(5)
+
+        self.click(nav)
+        self.wait_for_element('user-name')
+        name_val = (
+            self.drv
+            .find_element_by_id('user-name')
+            .get_attribute('value')
+        )
+        email_val = (
+            self.drv
+            .find_element_by_id('user-email')
+            .get_attribute('value')
+        )
+        self.assertEqual(name_val, 'new_user')
+        self.assertEqual(email_val, 'new@email.com')
+
+    @report_success_status
+    def test_fetch_api_key(self):
+        self.get('/')
+
+        self.wait_for_element('UserDropdown')
+        self.click(self.drv.find_element_by_id('UserDropdown'))
+        self.sleep()
+
+        nav = self.drv.find_elements_by_class_name('nav-settings')
+        self.assertEqual(len(nav), 1)
+
+        self.sleep(1)
+        self.click(self.drv.find_element_by_class_name('nav-settings'))
+        self.wait_for_element('btn-api-key', by=By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('btn-api-key'))
+        # not sure if there's a better way to wait for field population...
+        # couldn't find it?
+        self.sleep(20)
+
+        self.assertIsNot(
+            self.drv
+            .find_element_by_id('user-api-token')
+            .get_attribute('value'),
+            ''
+        )
+
+
 class TestAdminUser(AdminTest):
     def sleep(self, duration=None):
         super().sleep(duration)
