@@ -532,8 +532,16 @@ class TestAdminSettings(AdminTest):
         self.click(self.drv.find_element_by_class_name('nav-settings'))
         self.wait_for_element('btn-api-key', by=By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('btn-api-key'))
-        # not sure if there's a better way to wait for field population...
-        # couldn't find it?
+
+        # TODO: This isn't working... need to figure out how to test
+        # whether or not the input field is populated, without knowing
+        # its exact value.
+        #
+        # Maybe a custom EC?
+        # http://stackoverflow.com/questions/19377437/python-selenium-webdriver-writing-my-own-expected-condition/29377790#29377790
+        #
+        # Or can we use regex with EC.text_to_be_present_in_element_value?
+
         self.sleep(20)
 
         self.assertIsNot(
