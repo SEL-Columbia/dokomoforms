@@ -50,6 +50,20 @@ with session.begin():
             ),
             models.construct_survey_node(
                 node=models.construct_node(
+                    type_constraint='facility',
+                    title={'English': 'Facility'},
+                    hint={'English': 'Select the facility from the list,'
+                          ' or add a new one.'},
+                    logic={
+                        'slat': -85,
+                        'nlat': 85,
+                        'wlng': -180,
+                        'elng': 180,
+                    }
+                )
+            ),
+            models.construct_survey_node(
+                node=models.construct_node(
                     type_constraint='text',
                     title={'English': 'Community Name'}
                 )

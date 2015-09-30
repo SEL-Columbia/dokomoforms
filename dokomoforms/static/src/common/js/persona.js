@@ -8,10 +8,13 @@ var Persona = (function() {
      * Set up browser event handlers for login/logout buttons.
      */
     function setupBrowserEvents() {
-        $(document).on('click', '.btn-login', function() {
+        console.log('setupBrowserEvents');
+        $(document).on('click', '.btn-login', function(e) {
+            e.preventDefault();
             navigator.id.request();
         });
-        $(document).on('click', '.btn-logout', function() {
+        $(document).on('click', '.btn-logout', function(e) {
+            e.preventDefault();
             navigator.id.logout();
         });
     }
