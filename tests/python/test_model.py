@@ -587,6 +587,7 @@ class TestUser(DokoTest):
                 ('allowed_surveys', []),
                 ('last_update_time', user.last_update_time),
                 ('surveys', [self.session.query(models.Survey.id).scalar()]),
+                ('admin_surveys', []),
                 ('token_expiration', user.token_expiration),
             )),
             msg=user
@@ -617,6 +618,10 @@ class TestUser(DokoTest):
                 ('allowed_surveys', []),
                 ('last_update_time', admin.last_update_time),
                 ('surveys', []),
+                (
+                    'admin_surveys',
+                    [self.session.query(models.Survey.id).scalar()]
+                ),
                 ('token_expiration', admin.token_expiration),
             )),
             msg=admin
