@@ -60,7 +60,7 @@
                                 <% data.all_surveys.forEach(function(survey) { %>
                                     <option
                                         value="<%= survey.id %>"
-                                        <% if (data.surveys.indexOf(survey.id) !== -1) { %>
+                                        <% if (data.admin_surveys && data.admin_surveys.indexOf(survey.id) !== -1) { %>
                                             selected
                                         <% } %>
                                     >
