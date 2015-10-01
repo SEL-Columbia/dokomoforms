@@ -483,28 +483,40 @@ class TestAdminSettings(AdminTest):
         self.click(self.drv.find_element_by_id('UserDropdown'))
         self.sleep()
 
-        nav = self.drv.find_elements_by_class_name('nav-settings')
-        self.assertEqual(len(nav), 1)
+        nav_list = self.drv.find_elements_by_class_name('nav-settings')
+        self.assertEqual(len(nav_list), 1)
 
-        self.sleep(1)
+        self.sleep()
         self.click(self.drv.find_element_by_class_name('nav-settings'))
         self.wait_for_element('user-name')
         (
-            self.drv
-            .find_element_by_id('user-name')
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_id('user-name')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
             .send_keys('new_user')
+            .perform()
         )
         (
-            self.drv
-            .find_element_by_id('user-email')
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_id('user-email')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
             .send_keys('new@email.com')
+            .perform()
         )
         save_btn = self.drv.find_element_by_class_name('btn-save-user')
         self.sleep()
         save_btn.click()
-        self.sleep(5)
 
-        self.click(nav)
+        self.click(self.drv.find_element_by_id('UserDropdown'))
+        self.click(self.drv.find_element_by_class_name('nav-settings'))
         self.wait_for_element('user-name')
         name_val = (
             self.drv
@@ -518,6 +530,16 @@ class TestAdminSettings(AdminTest):
         )
         self.assertEqual(name_val, 'new_user')
         self.assertEqual(email_val, 'new@email.com')
+
+        # Check that the values have been updated in the database.
+        user = (
+            self.session
+            .query(Administrator)
+            .filter_by(id='b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+            .one()
+        )
+        self.assertEqual(user.name, 'new_user')
+        self.assertEqual(user.emails[0].address, 'new@email.com')
 
     @report_success_status
     def test_fetch_api_key(self):
