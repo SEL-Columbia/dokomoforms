@@ -19,6 +19,8 @@ from bs4 import BeautifulSoup
 
 import dateutil.parser
 
+from passlib.hash import bcrypt_sha256
+
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver import ActionChains
@@ -519,37 +521,47 @@ class TestAdminSettings(AdminTest):
 
     @report_success_status
     def test_fetch_api_key(self):
+        def get_user_token():
+            return (
+                self.session
+                .query(Administrator.token)
+                .filter_by(id='b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+                .scalar()
+            )
         self.get('/')
 
-        self.wait_for_element('UserDropdown')
+        self.wait_for_element('UserDropdown', visible=True)
         self.click(self.drv.find_element_by_id('UserDropdown'))
         self.sleep()
 
         nav = self.drv.find_elements_by_class_name('nav-settings')
         self.assertEqual(len(nav), 1)
 
-        self.sleep(1)
+        self.sleep()
         self.click(self.drv.find_element_by_class_name('nav-settings'))
         self.wait_for_element('btn-api-key', by=By.CLASS_NAME)
+        self.sleep()
         self.click(self.drv.find_element_by_class_name('btn-api-key'))
+        self.sleep()
 
-        # TODO: This isn't working... need to figure out how to test
-        # whether or not the input field is populated, without knowing
-        # its exact value.
-        #
-        # Maybe a custom EC?
-        # http://stackoverflow.com/questions/19377437/python-selenium-webdriver-writing-my-own-expected-condition/29377790#29377790
-        #
-        # Or can we use regex with EC.text_to_be_present_in_element_value?
+        # Test that the displayed API token is the correct one.
+        api_token_field = self.drv.find_element_by_id('user-api-token')
+        api_token = api_token_field.get_attribute('value')
+        self.assertNotEqual(api_token, '')
 
-        self.sleep(20)
+        user_token = get_user_token()
+        self.assertTrue(bcrypt_sha256.verify(api_token, user_token))
 
-        self.assertIsNot(
-            self.drv
-            .find_element_by_id('user-api-token')
-            .get_attribute('value'),
-            ''
-        )
+        # Test that generating a new token invalidates the old one.
+        self.click(self.drv.find_element_by_class_name('btn-api-key'))
+        self.sleep()
+        new_token = api_token_field.get_attribute('value')
+        self.assertNotEqual(new_token, '')
+
+        new_user_token = get_user_token()
+
+        self.assertFalse(bcrypt_sha256.verify(api_token, new_user_token))
+        self.assertTrue(bcrypt_sha256.verify(new_token, new_user_token))
 
 
 class TestAdminUser(AdminTest):
