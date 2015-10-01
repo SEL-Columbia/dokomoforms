@@ -370,9 +370,8 @@ class TestAdminOverview(AdminTest):
             5
         )
         # Activity graph
-        self.assertEqual(
-            len(self.drv.find_elements_by_tag_name('path')),
-            58
+        self.assertIsNotNone(
+            self.drv.find_element_by_css_selector('path:nth-child(30)')
         )
         # Surveys table
         rows = self.drv.find_elements_by_css_selector('table#surveys tbody tr')
@@ -740,9 +739,8 @@ class TestAdminManageSurvey(AdminTest):
         )
 
         # Activity graph
-        self.assertEqual(
-            len(self.drv.find_elements_by_tag_name('path')),
-            59
+        self.assertIsNotNone(
+            self.drv.find_element_by_css_selector('path:nth-child(30)')
         )
 
         # Submissions table
