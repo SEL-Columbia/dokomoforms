@@ -33,6 +33,7 @@ var path = {
     // COMMON PATH NAMES
     JS_BUILD_FILENAME: 'build.js',
     JS_MINIFIED_BUILD_FILENAME: 'build.min.js',
+    COMMON_JS_SRC: common_src_path + '/js/**/*',
     COMMON_IMG_SRC: common_src_path + '/img/**/*',
 
 
@@ -183,7 +184,7 @@ gulp.task('survey-watch',
     ['survey-less', 'survey-js-vendor', 'survey-js-app', 'survey-img', 'survey-fonts', 'survey-app-cache'],
     function() {
         livereload.listen();
-        gulp.watch([path.SURVEY_LESS_SRC, path.SURVEY_JS_APP_SRC, path.APP_CACHE_SRC],
+        gulp.watch([path.SURVEY_LESS_SRC, path.SURVEY_JS_APP_SRC, path.APP_CACHE_SRC, path.COMMON_JS_SRC],
             ['survey-less', 'survey-js-vendor', 'survey-js-app', 'survey-img', 'survey-fonts', 'survey-app-cache']);
     });
 
@@ -248,7 +249,7 @@ gulp.task('admin-watch',
     ['admin-less', 'admin-js-vendor', 'admin-js-app', 'admin-img', 'admin-fonts'],
     function() {
         livereload.listen();
-        gulp.watch([path.ADMIN_LESS_SRC, path.ADMIN_JS_APP_SRC, path.ADMIN_TEMPLATES_SRC],
+        gulp.watch([path.ADMIN_LESS_SRC, path.ADMIN_JS_APP_SRC, path.ADMIN_TEMPLATES_SRC, path.COMMON_JS_SRC],
             ['admin-less', 'admin-js-vendor', 'admin-js-app', 'admin-img', 'admin-fonts']);
     });
 

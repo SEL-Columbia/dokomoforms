@@ -69,3 +69,7 @@
     https://facebook.github.io/react/docs/working-with-the-browser.html
     #browser-support-and-polyfills
 20. Rate limiting for public API endpoints (view survey and submit).
+21. Don't provide a default password in docker-compose.yml?
+    https://docs.docker.com/compose/yml/#environment
+22. We should use subresource integrity.
+    https://hacks.mozilla.org/2015/09/subresource-integrity-in-firefox-43/

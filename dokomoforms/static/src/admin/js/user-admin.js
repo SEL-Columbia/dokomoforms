@@ -1,5 +1,4 @@
 var $ = require('jquery'),
-    _ = require('lodash'),
     ps = require('./pubsub'),
     base = require('./base'),
     Surveys = require('./models').Surveys,
