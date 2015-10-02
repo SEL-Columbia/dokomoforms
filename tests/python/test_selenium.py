@@ -513,6 +513,7 @@ class TestAdminSettings(AdminTest):
         save_btn = self.drv.find_element_by_class_name('btn-save-user')
         self.sleep()
         save_btn.click()
+        self.sleep()
 
         self.click(self.drv.find_element_by_id('UserDropdown'))
         self.click(self.drv.find_element_by_class_name('nav-settings'))
