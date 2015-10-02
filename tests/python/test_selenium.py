@@ -430,6 +430,7 @@ class TestAdminOverview(AdminTest):
     @report_success_status
     def test_download_json_button(self):
         self.get('/')
+        self.sleep()
 
         self.click(self.drv.find_element_by_css_selector(
             'tr.odd:nth-child(1) > td:nth-child(5) > div:nth-child(2) >'
@@ -448,6 +449,7 @@ class TestAdminOverview(AdminTest):
     @report_success_status
     def test_download_csv_button(self):
         self.get('/')
+        self.sleep()
 
         self.click(self.drv.find_element_by_css_selector(
             'tr.odd:nth-child(1) > td:nth-child(5) > div:nth-child(2) >'
