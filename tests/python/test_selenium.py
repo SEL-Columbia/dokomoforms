@@ -759,10 +759,15 @@ class TestAdminManageSurvey(AdminTest):
         self.click(self.drv.find_element_by_css_selector(
             '.btn-group > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
         ))
+        self.sleep()
 
         self.switch_window()
+        self.sleep()
         response = BeautifulSoup(self.drv.page_source, 'html.parser')
-        json_str = response.find('pre').text
+        try:
+            json_str = response.find('pre').text
+        except AttributeError:
+            self.fail(self.drv.page_source)
         data = json.loads(json_str)
 
         self.assertEqual(data['total_entries'], 101)
