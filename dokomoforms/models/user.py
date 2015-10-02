@@ -92,6 +92,7 @@ class Administrator(User):
     def _asdict(self) -> OrderedDict:
         result = super()._asdict()
         result['surveys'] = [s.id for s in self.surveys]
+        result['admin_surveys'] = [s.id for s in self.admin_surveys]
         result['token_expiration'] = self.token_expiration
         return result
 

@@ -19,6 +19,8 @@ from bs4 import BeautifulSoup
 
 import dateutil.parser
 
+from passlib.hash import bcrypt_sha256
+
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver import ActionChains
@@ -368,9 +370,8 @@ class TestAdminOverview(AdminTest):
             5
         )
         # Activity graph
-        self.assertEqual(
-            len(self.drv.find_elements_by_tag_name('path')),
-            58
+        self.assertIsNotNone(
+            self.drv.find_element_by_css_selector('path:nth-child(30)')
         )
         # Surveys table
         rows = self.drv.find_elements_by_css_selector('table#surveys tbody tr')
@@ -429,6 +430,7 @@ class TestAdminOverview(AdminTest):
     @report_success_status
     def test_download_json_button(self):
         self.get('/')
+        self.sleep()
 
         self.click(self.drv.find_element_by_css_selector(
             'tr.odd:nth-child(1) > td:nth-child(5) > div:nth-child(2) >'
@@ -447,6 +449,7 @@ class TestAdminOverview(AdminTest):
     @report_success_status
     def test_download_csv_button(self):
         self.get('/')
+        self.sleep()
 
         self.click(self.drv.find_element_by_css_selector(
             'tr.odd:nth-child(1) > td:nth-child(5) > div:nth-child(2) >'
@@ -463,6 +466,126 @@ class TestAdminOverview(AdminTest):
             json_button.get_attribute('href') + '?format=csv',
             csv_button.get_attribute('href')
         )
+
+
+class TestAdminSettings(AdminTest):
+    def sleep(self, duration=None):
+        super().sleep(duration)
+
+        is_travis = os.environ.get('TRAVIS', 'f').startswith('t')
+        if is_travis and not SAUCE_CONNECT:
+            time.sleep(3)
+
+    @report_success_status
+    def test_update_settings(self):
+        self.get('/')
+
+        self.wait_for_element('UserDropdown')
+        self.click(self.drv.find_element_by_id('UserDropdown'))
+        self.sleep()
+
+        nav_list = self.drv.find_elements_by_class_name('nav-settings')
+        self.assertEqual(len(nav_list), 1)
+
+        self.sleep()
+        self.click(self.drv.find_element_by_class_name('nav-settings'))
+        self.wait_for_element('user-name')
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_id('user-name')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('new_user')
+            .perform()
+        )
+        (
+            ActionChains(self.drv)
+            .key_down(
+                self.control_key,
+                self.drv.find_element_by_id('user-email')
+            )
+            .send_keys('a')
+            .key_up(self.control_key)
+            .send_keys('new@email.com')
+            .perform()
+        )
+        save_btn = self.drv.find_element_by_class_name('btn-save-user')
+        self.sleep()
+        save_btn.click()
+        self.sleep()
+
+        self.click(self.drv.find_element_by_id('UserDropdown'))
+        self.click(self.drv.find_element_by_class_name('nav-settings'))
+        self.wait_for_element('user-name')
+        name_val = (
+            self.drv
+            .find_element_by_id('user-name')
+            .get_attribute('value')
+        )
+        email_val = (
+            self.drv
+            .find_element_by_id('user-email')
+            .get_attribute('value')
+        )
+        self.assertEqual(name_val, 'new_user')
+        self.assertEqual(email_val, 'new@email.com')
+
+        # Check that the values have been updated in the database.
+        user = (
+            self.session
+            .query(Administrator)
+            .filter_by(id='b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+            .one()
+        )
+        self.assertEqual(user.name, 'new_user')
+        self.assertEqual(user.emails[0].address, 'new@email.com')
+
+    @report_success_status
+    def test_fetch_api_key(self):
+        def get_user_token():
+            return (
+                self.session
+                .query(Administrator.token)
+                .filter_by(id='b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+                .scalar()
+            )
+        self.get('/')
+
+        self.wait_for_element('UserDropdown', visible=True)
+        self.click(self.drv.find_element_by_id('UserDropdown'))
+        self.sleep()
+
+        nav = self.drv.find_elements_by_class_name('nav-settings')
+        self.assertEqual(len(nav), 1)
+
+        self.sleep()
+        self.click(self.drv.find_element_by_class_name('nav-settings'))
+        self.wait_for_element('btn-api-key', by=By.CLASS_NAME)
+        self.sleep()
+        self.click(self.drv.find_element_by_class_name('btn-api-key'))
+        self.sleep()
+
+        # Test that the displayed API token is the correct one.
+        api_token_field = self.drv.find_element_by_id('user-api-token')
+        api_token = api_token_field.get_attribute('value')
+        self.assertNotEqual(api_token, '')
+
+        user_token = get_user_token()
+        self.assertTrue(bcrypt_sha256.verify(api_token, user_token))
+
+        # Test that generating a new token invalidates the old one.
+        self.click(self.drv.find_element_by_class_name('btn-api-key'))
+        self.sleep()
+        new_token = api_token_field.get_attribute('value')
+        self.assertNotEqual(new_token, '')
+
+        new_user_token = get_user_token()
+
+        self.assertFalse(bcrypt_sha256.verify(api_token, new_user_token))
+        self.assertTrue(bcrypt_sha256.verify(new_token, new_user_token))
 
 
 class TestAdminUser(AdminTest):
@@ -619,9 +742,8 @@ class TestAdminManageSurvey(AdminTest):
         )
 
         # Activity graph
-        self.assertEqual(
-            len(self.drv.find_elements_by_tag_name('path')),
-            59
+        self.assertIsNotNone(
+            self.drv.find_element_by_css_selector('path:nth-child(30)')
         )
 
         # Submissions table
@@ -639,10 +761,15 @@ class TestAdminManageSurvey(AdminTest):
         self.click(self.drv.find_element_by_css_selector(
             '.btn-group > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
         ))
+        self.sleep()
 
         self.switch_window()
+        self.sleep()
         response = BeautifulSoup(self.drv.page_source, 'html.parser')
-        json_str = response.find('pre').text
+        try:
+            json_str = response.find('pre').text
+        except AttributeError:
+            self.fail(self.drv.page_source)
         data = json.loads(json_str)
 
         self.assertEqual(data['total_entries'], 101)
