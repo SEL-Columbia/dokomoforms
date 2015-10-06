@@ -552,6 +552,15 @@ class TestAdminSettings(AdminTest):
                 .filter_by(id='b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
                 .scalar()
             )
+
+        def get_token_expiration():
+            return (
+                self.session
+                .query(Administrator.token_expiration)
+                .filter_by(id='b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+                .scalar()
+            )
+
         self.get('/')
 
         self.wait_for_element('UserDropdown', visible=True)
@@ -575,6 +584,22 @@ class TestAdminSettings(AdminTest):
 
         user_token = get_user_token()
         self.assertTrue(bcrypt_sha256.verify(api_token, user_token))
+
+        # Test that the expiration date displays
+        api_exp_field = self.drv.find_element_by_class_name(
+            'token-expiration-text'
+        )
+        token_expiration = get_token_expiration()
+        exp_formated = (
+            token_expiration
+            .strftime('%b %d, %Y')
+            .lstrip("0")
+            .replace(" 0", " ")
+        )
+        self.assertEqual(
+            'Token will expire on ' + exp_formated + '.',
+            api_exp_field.text
+        )
 
         # Test that generating a new token invalidates the old one.
         self.click(self.drv.find_element_by_class_name('btn-api-key'))
