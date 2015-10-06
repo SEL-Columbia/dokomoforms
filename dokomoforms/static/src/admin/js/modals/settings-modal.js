@@ -1,4 +1,5 @@
 var $ = require('jquery'),
+    moment = require('moment'),
     ps = require('../pubsub'),
     utils = require('../utils'),
     // Users = require('./models').Users,
@@ -74,6 +75,9 @@ var SettingsModal = function(user_id) {
         $.getJSON('/api/v0/users/generate-api-token', function(resp) {
             console.log(resp);
             $modal.find('#user-api-token').val(resp.token);
+            var expires = moment(resp.expires_on);
+            $modal.find('.token-expiration-text').text('Token will expire on ' + expires.format('MMM D, YYYY') + '.');
+            $modal.find('.alert-token-expiration').removeClass('hide');
         });
     }
 
