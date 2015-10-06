@@ -128,4 +128,4 @@ class TestApplication(unittest.TestCase):
         webapp.logging.info = lambda text: None
         app = webapp.Application()
         self.assertIsNotNone(app.session)
-        self.assertIn('debug', app.handlers[0][1][-1].regex.pattern)
+        self.assertIn('debug', app.handlers[0][1][-2].regex.pattern)
