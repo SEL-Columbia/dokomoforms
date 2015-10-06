@@ -417,7 +417,12 @@ class TestAdminOverview(AdminTest):
     @report_success_status
     def test_manage_survey_button(self):
         self.get('/')
+        self.sleep()
 
+        self.wait_for_element(
+            'tr.odd:nth-child(1) > td:nth-child(5) > a:nth-child(3)',
+            by=By.CSS_SELECTOR
+        )
         self.click(self.drv.find_element_by_css_selector(
             'tr.odd:nth-child(1) > td:nth-child(5) > a:nth-child(3)'
         ))
