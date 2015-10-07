@@ -1,5 +1,5 @@
 webapp:
-  build: .
+  image: "selcolumbia/dokomoforms"
   command: python webapp.py
   links:
     - "db:db"
