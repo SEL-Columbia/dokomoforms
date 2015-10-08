@@ -1,3 +1,4 @@
+{% from dokomoforms.options import options %}
 <!DOCTYPE html>
 <html manifest="/static/dist/survey/cache.appcache">
     <head>
@@ -26,6 +27,7 @@
         <script src="/static/dist/survey/js/build.bundle.js"></script>
 	    <!-- pass in the revisit url -->
         <script>
+            window.ORGANIZATION = '{{ options.organization }}';
             window.init({% raw survey %}, '{% raw revisit_url %}');
         </script>
     </body>
