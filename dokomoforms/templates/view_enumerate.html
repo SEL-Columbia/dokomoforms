@@ -21,13 +21,16 @@
 
     <body>
         <div id="wrapper"></div>
+        <!-- Bootstrapped Variables -->
+        <script type="text/javascript">
+            window.ORGANIZATION = '{{ options.organization }}';
+        </script>
         <!-- Vendor libs (jquery, react, lodash, etc.) -->
         <script src="/static/dist/survey/js/vendor.js"></script>
         <!-- App -->
         <script src="/static/dist/survey/js/build.bundle.js"></script>
 	    <!-- pass in the revisit url -->
         <script>
-            window.ORGANIZATION = '{{ options.organization }}';
             window.init({% raw survey %}, '{% raw revisit_url %}');
         </script>
     </body>
