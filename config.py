@@ -16,8 +16,15 @@ import os
 
 port = 8888
 schema = 'doko'
+
+# The environment variables used here are for the docker-compose up case
+# using the regular docker-compose.yml file.
+#
+# If you are using docker-compose-dev.yml, make sure your local_config.py
+# file refers to DB_DEV_PORT_5432_TCP_ADDR and DB_DEV_PORT_5432_TCP_PORT.
 db_host = os.environ.get('DB_PORT_5432_TCP_ADDR', 'localhost')
 db_port = os.environ.get('DB_PORT_5432_TCP_PORT', '5432')
+
 db_database = 'doko'
 db_user = 'postgres'
 db_password = os.environ.get('DB_ENV_POSTGRES_PASSWORD', 'database password')
