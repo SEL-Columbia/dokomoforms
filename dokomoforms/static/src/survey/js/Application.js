@@ -37,6 +37,10 @@ var Application = React.createClass({
         var surveyDB = new PouchDB(this.props.survey.id, {
             'auto_compaction': true
         });
+
+        // loading state, unless there are no facility nodes
+        var init_state = 0;
+
         window.surveyDB = surveyDB;
 
         // Build initial linked list
@@ -61,7 +65,11 @@ var Application = React.createClass({
         });
 
         // Recursively construct trees
-        this.buildTrees(questions, trees);
+        var has_facility_node = this.buildTrees(questions, trees);
+
+        if (!has_facility_node) {
+            init_state = 1;
+        }
 
         return {
             showDontKnow: false,
@@ -75,7 +83,7 @@ var Application = React.createClass({
                 QUESTION: 2,
                 SUBMIT: 3
             },
-            state: 0,
+            state: init_state,
             trees: trees,
             db: surveyDB
         };
@@ -106,11 +114,13 @@ var Application = React.createClass({
      * i.e: Multiple trees with same bounds do not increase memory usage (network usage does increase though)
      */
     buildTrees: function(questions, trees) {
-        var self = this;
+        var self = this,
+            has_facility_node = false;
         questions = questions || [];
 
         questions.forEach(function(node) {
             if (node.type_constraint === 'facility') {
+                has_facility_node = true;
                 trees[node.id] = new FacilityTree(
                     parseFloat(node.logic.nlat),
                     parseFloat(node.logic.wlng),
@@ -123,10 +133,12 @@ var Application = React.createClass({
 
             if (node.sub_surveys) {
                 node.sub_surveys.forEach(function(subs) {
-                    self.buildTrees(subs.nodes, trees);
+                    has_facility_node = self.buildTrees(subs.nodes, trees);
                 });
             }
         });
+
+        return has_facility_node;
     },
 
     /**

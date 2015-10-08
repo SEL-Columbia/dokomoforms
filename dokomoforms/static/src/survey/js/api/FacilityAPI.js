@@ -186,14 +186,18 @@ var FacilityTree = function(nlat, wlng, slat, elng, db, id) {
             self.total = data.total;
             self.root = new facilityNode(data.facilities);
             self.storeTree();
-            ps.publish('loading:complete');
         },
         error: function() {
             console.log('Failed to retrieve data, building from local');
             var facilities = self.loadTree();
-            if (facilities)
+            if (facilities) {
                 self.root = new facilityNode(facilities);
-
+            }
+        },
+        complete: function() {
+            // The ajax request attempted whether we have network or not,
+            // so we should publish the loading:complete event on success or fail.
+            ps.publish('loading:complete');
         }
     });
 
