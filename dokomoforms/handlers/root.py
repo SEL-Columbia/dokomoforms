@@ -1,11 +1,11 @@
 """Administrative handlers."""
-
 import tornado.web
 import tornado.gen
 import tornado.httpclient
 
 from dokomoforms.handlers.util import BaseHandler
 from dokomoforms.models import most_recent_surveys, most_recent_submissions
+from dokomoforms.options import options
 
 
 class Index(BaseHandler):
@@ -29,7 +29,8 @@ class Index(BaseHandler):
             'index.html',
             message=msg,
             surveys=surveys,
-            recent_submissions=recent_submissions
+            recent_submissions=recent_submissions,
+            demo=options.demo,
         )
 
 
