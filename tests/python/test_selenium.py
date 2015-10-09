@@ -1297,6 +1297,42 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
+    def test_single_facility_question_loading(self):
+        survey_id = self.get_single_node_survey_id('facility')
+        existing_submission = self.get_last_submission(survey_id)
+
+        self.get('/enumerate/{}'.format(survey_id))
+
+        self.wait_for_element('loading-overlay', By.CLASS_NAME)
+
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.set_geolocation()
+        self.click(
+            self.drv
+            .find_element_by_css_selector(
+                '.content > span:nth-child(2) > span:nth-child(1)'
+                ' > div:nth-child(1) > button:nth-child(1)'
+            )
+        )
+        self.sleep(2)
+        self.click(
+            self.drv
+            .find_elements_by_class_name('question__radio__label')[0]
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertIsNot(existing_submission, new_submission)
+        self.assertEqual(
+            new_submission.answers[0].response['response']['facility_name'],
+            'Queensborough Community College - City University of New York'
+        )
+
+    @report_success_status
     def test_single_multiple_choice_question(self):
         user = (
             self.session
