@@ -1,14 +1,9 @@
 """Pages pertaining to demo mode functionality."""
 import uuid
 
-from tornado.escape import json_encode, json_decode
-import tornado.web
+from tornado.escape import json_encode
 
-from sqlalchemy.sql import exists
-from sqlalchemy.orm.exc import NoResultFound
-
-from dokomoforms.options import options
-from dokomoforms.models import User, Administrator, Email
+from dokomoforms.models import Administrator, Email
 from dokomoforms.handlers.util import BaseHandler
 
 
