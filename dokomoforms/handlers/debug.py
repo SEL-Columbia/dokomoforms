@@ -122,7 +122,6 @@ class DebugRevisitHandler(BaseHandler):
         if not revisit_online:
             raise tornado.web.HTTPError(502)
         if slow_mode:
-            print('pausing... for... 2... seconds...')
             sleep(2)
         self.write(compressed_facilities)
         self.set_header('Content-Type', 'application/json')

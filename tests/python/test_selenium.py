@@ -3996,14 +3996,11 @@ class TestEnumerateSlowRevisit(DriverTest):
     def test_single_facility_question_loading(self):
         survey_id = self.get_single_node_survey_id('facility')
 
+        start_time = time.time()
         self.get('/enumerate/{}'.format(survey_id))
+        finish_time = time.time()
 
-        self.drv.save_screenshot('loading.png')
-
-        # overlay should be present - throws exception if overloay not present
-        self.wait_for_element('loading-overlay', By.CLASS_NAME)
-
-        self.sleep(3)
+        self.assertGreater(finish_time - start_time, 2)
 
         overlay = self.drv.find_elements_by_class_name('loading-overlay')
 
