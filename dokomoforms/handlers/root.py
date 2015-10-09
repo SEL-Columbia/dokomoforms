@@ -18,6 +18,7 @@ class Index(BaseHandler):
         recent_submissions = None
         current_user_id = None
         if self.current_user:
+            current_user_id = self.current_user_model.id
             surveys = most_recent_surveys(
                 self.session, current_user_id, 10
             )
