@@ -48,14 +48,9 @@ class DebugLoginHandler(BaseHandler):
                 .one()
             )
             cookie_options = {
-                'expires_days': None,
                 'httponly': True,
             }
-            self.set_secure_cookie(
-                'user',
-                json_encode({'user_id': user.id, 'user_name': user.name}),
-                **cookie_options
-            )
+            self.set_secure_cookie('user', user.id, **cookie_options)
             response = {
                 'email': email,
                 'created': created,
