@@ -1097,6 +1097,7 @@ class TestEnumerate(DriverTest):
         existing_submission = self.get_last_submission(survey_id)
 
         self.get('/enumerate/{}'.format(survey_id))
+
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.wait_for_element('video', by=By.TAG_NAME, visible=True)
@@ -3982,38 +3983,29 @@ class TestEnumerateSlowRevisit(DriverTest):
         except urllib.error.URLError:
             pass
 
+    def get_single_node_survey_id(self, question_type):
+        title = question_type + '_survey'
+        return (
+            self.session
+            .query(Survey.id)
+            .filter(Survey.title['English'].astext == title)
+            .scalar()
+        )
+
     @report_success_status
     def test_single_facility_question_loading(self):
         survey_id = self.get_single_node_survey_id('facility')
-        existing_submission = self.get_last_submission(survey_id)
 
         self.get('/enumerate/{}'.format(survey_id))
 
+        self.drv.save_screenshot('loading.png')
+
+        # overlay should be present - throws exception if overloay not present
         self.wait_for_element('loading-overlay', By.CLASS_NAME)
 
-        self.wait_for_element('navigate-right', By.CLASS_NAME)
-        self.click(self.drv.find_element_by_class_name('navigate-right'))
-        self.set_geolocation()
-        self.click(
-            self.drv
-            .find_element_by_css_selector(
-                '.content > span:nth-child(2) > span:nth-child(1)'
-                ' > div:nth-child(1) > button:nth-child(1)'
-            )
-        )
-        self.sleep(2)
-        self.click(
-            self.drv
-            .find_elements_by_class_name('question__radio__label')[0]
-        )
-        self.click(self.drv.find_element_by_class_name('navigate-right'))
-        self.click(self.drv.find_element_by_class_name('navigate-right'))
-        self.click(self.drv.find_elements_by_tag_name('button')[0])
+        self.sleep(3)
 
-        new_submission = self.get_last_submission(survey_id)
+        overlay = self.drv.find_elements_by_class_name('loading-overlay')
 
-        self.assertIsNot(existing_submission, new_submission)
-        self.assertEqual(
-            new_submission.answers[0].response['response']['facility_name'],
-            'Queensborough Community College - City University of New York'
-        )
+        # overlay should not be present
+        self.assertEqual(len(overlay), 0)
