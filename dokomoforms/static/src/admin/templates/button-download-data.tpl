@@ -3,8 +3,7 @@
         <span class="glyphicon glyphicon-cloud-download"></span> Download Data <span class="caret"></span>
     </button>
     <ul class="dropdown-menu dropdown-menu-right" role="menu">
-        <li><a target="_blank" href="/api/v0/surveys/<%= data.survey_id %>/submissions?user_id=<%= data.current_user_id %>">JSON</a></li>
-        <li><a href="#">CSV (coming soon)</a></li>
-        <li><a href="#">KML (maybe someday)</a></li>
+        <li><a target="_blank" href="/api/v0/surveys/<%= data.survey_id %>/submissions">JSON</a></li>
+        <li><a target="_blank" href="/api/v0/surveys/<%= data.survey_id %>/submissions?format=csv">CSV</a></li>
     </ul>
 </div>

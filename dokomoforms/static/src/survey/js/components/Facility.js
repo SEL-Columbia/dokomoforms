@@ -1,11 +1,11 @@
-var React = require('react');
-var Promise = require('mpromise');
+var $ = require('jquery'),
+    React = require('react'),
 
-var ResponseField = require('./baseComponents/ResponseField.js');
-var LittleButton = require('./baseComponents/LittleButton.js');
+    ResponseField = require('./baseComponents/ResponseField.js'),
+    LittleButton = require('./baseComponents/LittleButton.js'),
 
-var FacilityRadios = require('./baseComponents/FacilityRadios.js');
-var Select = require('./baseComponents/Select.js');
+    FacilityRadios = require('./baseComponents/FacilityRadios.js'),
+    Select = require('./baseComponents/Select.js');
 
 /*
  * Facilities question component
@@ -42,7 +42,7 @@ module.exports = React.createClass({
     componentWillMount: function() {
         var loc = JSON.parse(localStorage['location'] || '{}');
         var self = this;
-        self.getFacilities(loc).onResolve(function(err, facilities) {
+        self.getFacilities(loc).done(function(facilities) {
             self.setState({
                 loc: loc,
                 facilities: facilities
@@ -79,7 +79,7 @@ module.exports = React.createClass({
      * @data: I have no idea why i have this?
      */
     selectFacility: function(option, data) {
-        console.log("Selected facility");
+        console.log('Selected facility');
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
         answers = [];
@@ -112,13 +112,13 @@ module.exports = React.createClass({
      * @loc: The location ({lat: NUM, lng: NUM}) to query around
      */
     getFacilities: function(loc) {
+        var d = $.Deferred();
         if (!loc || !loc.lat || !loc.lng || !this.props.tree || !this.props.tree.root) {
-            var p = new Promise;
-            p.fulfill([]);
-            return p;
+            d.resolve([]);
+            return d;
         }
 
-        console.log("Getting facilities ...");
+        console.log('Getting facilities ...');
         return this.props.tree.getNNearestFacilities(loc.lat, loc.lng, 1000, 10);
     },
 
@@ -128,7 +128,7 @@ module.exports = React.createClass({
     getAnswer: function() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
-        console.log("Selected facility", answers[0]);
+        console.log('Selected facility', answers[0]);
         if (answers[0]) return answers[0];
     },
 
@@ -151,10 +151,9 @@ module.exports = React.createClass({
      * @value: newly supplied input
      */
     onInput: function(type, value) {
-        console.log("Dealing with input", value, type);
+        console.log('Dealing with input', value, type);
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
-        var self = this;
         if (answers[0] && (!answers[0].metadata || !answers[0].metadata.is_new)) {
             answers = [];
         }
@@ -193,7 +192,7 @@ module.exports = React.createClass({
             }
         }];
 
-        console.log("Built response", answers);
+        console.log('Built response', answers);
 
         survey[this.props.question.id] = answers;
         localStorage[this.props.surveyID] = JSON.stringify(survey);
@@ -209,13 +208,13 @@ module.exports = React.createClass({
             function success(position) {
                 var loc = {
                     'lat': position.coords.latitude,
-                    'lng': position.coords.longitude,
-                }
+                    'lng': position.coords.longitude
+                };
 
                 // Record location for survey
                 localStorage['location'] = JSON.stringify(loc);
 
-                self.getFacilities(loc).onResolve(function(err, facilities) {
+                self.getFacilities(loc).done(function(facilities) {
                     self.setState({
                         loc: loc,
                         facilities: facilities
@@ -224,7 +223,7 @@ module.exports = React.createClass({
             },
 
             function error() {
-                console.log("Location could not be grabbed");
+                console.log('Location could not be grabbed');
             },
 
             {
@@ -240,7 +239,7 @@ module.exports = React.createClass({
     render: function() {
         // Retrieve respone for initValues
         var answer = this.getAnswer();
-        var choiceOptions = this.state.choices.map(function(choice) { return choice.value });
+        var choiceOptions = this.state.choices.map(function(choice) { return choice.value; });
 
         var hasLocation = this.state.loc && this.state.loc.lat && this.state.loc.lng;
         var isNew = answer && answer.metadata && answer.metadata.is_new;
@@ -309,6 +308,6 @@ module.exports = React.createClass({
                     </span>
                 }
                 </span>
-               )
+               );
     }
 });

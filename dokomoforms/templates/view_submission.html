@@ -66,16 +66,19 @@
 
                                 <div class="response-data">
 				    {% if answer.type_constraint in {'date', 'time', 'timestamp'} %}
-				        {"response_type": {{ answer.response['response_type'] }}, "response": {{ answer.response['response'].isoformat() }} }
+				        {{ answer.response['response'].isoformat() }}
 				    {% elif answer.type_constraint == 'decimal' %}
-				        {"response_type": {{ answer.response['response_type'] }}, "response": {{ float(answer.response['response']) }} }
+				        {{ float(answer.response['response']) }}
 				    {% elif answer.type_constraint == 'photo' %}
-				        {"response_type": {{ answer.response['response_type'] }}, "response": <img src="data:image/png;base64,{{ answer.photo.image }}"> }
+				        <img src="data:image/png;base64,{{ answer.photo.image }}">
+                    {% elif answer.type_constraint == 'location' %}
+                        {{ answer.response['response']['lat'] }}, {{ answer.response['response']['lng'] }}
+                    {% elif answer.type_constraint == 'multiple_choice' %}
+                        {{ _t(answer.response['response']['choice_text']) }}
 				    {% else %}
-				        {{ json_encode(answer.response) }}
+				        {{ answer.response['response'] }}
 				    {% end %}
                                 </div>
-
                             </li>
                         {% end %}
                     </ul>

@@ -103,7 +103,7 @@
                             <div class="">
                                 <div class="input-group">
 				    <!-- TODO: make this a different element, highlight all on click, and set readonly without crazy styling. -->
-                                    <input spellcheck="false" type="text" class="form-control" id="shareable-link" aria-describedby="shareable-link" value="http://dokomoforms.org/enumerate/{{ survey.id }}">
+                                    <input spellcheck="false" type="text" class="form-control" id="shareable-link" aria-describedby="shareable-link" value="...">
                                     <div class="input-group-addon"><a target="_blank" href="/enumerate/{{ survey.id }}"><span class="glyphicon glyphicon-new-window"></span></a></div>
                                 </div>
                             </div>
@@ -127,7 +127,8 @@
                                     <ul class="dropdown-menu dropdown-menu-right" role="menu">
                                         <!-- <li><a href="#">CSV (.csv)</a></li>
                                         <li><a href="#">KML (.kml)</a></li> -->
-                                        <li><a target="_blank" href="/api/v0/surveys/{{ survey.id }}/submissions">JSON (.json)</a></li>
+                                        <li><a target="_blank" href="/api/v0/surveys/{{ survey.id }}/submissions">JSON</a></li>
+                                        <li><a target="_blank" href="/api/v0/surveys/{{ survey.id }}/submissions?format=csv">CSV</a></li>
                                     </ul>
                                 </div>
                             </div>

@@ -1,5 +1,4 @@
 """Answer models."""
-
 import abc
 from collections import OrderedDict
 
@@ -12,7 +11,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.sql.functions import current_timestamp
 # from sqlalchemy.sql.type_api import UserDefinedType
 
-from tornado.escape import json_decode
+from tornado.escape import json_decode, json_encode
 
 from geoalchemy2 import Geometry
 
@@ -20,6 +19,10 @@ from dokomoforms.models import util, Base, node_type_enum
 from dokomoforms.exc import (
     NotAnAnswerTypeError, NotAResponseTypeError, PhotoIdDoesNotExistError
 )
+
+
+def _is_response(possible_response):
+    return possible_response[1] is not None
 
 
 class Answer(Base):
@@ -35,6 +38,8 @@ class Answer(Base):
     id = util.pk()
     answer_number = sa.Column(sa.Integer, nullable=False)
     submission_id = sa.Column(pg.UUID, nullable=False)
+    # save_time is here so that AnswerableSurveyNode can have a list of
+    # answers to that node ordered by save time of the submission
     save_time = sa.Column(pg.TIMESTAMP(timezone=True), nullable=False)
     survey_id = sa.Column(pg.UUID, nullable=False)
     survey_containing_id = sa.Column(pg.UUID, nullable=False)
@@ -106,16 +111,12 @@ class Answer(Base):
             'response': <one of self.answer, self.other, self.dont_know>
         }
         """
-        possible_responses = [
+        possible_resps = [
             ('answer', self.main_answer),
             ('other', self.other),
             ('dont_know', self.dont_know),
         ]
-        response_type, response = next(
-            (possible_response, response)
-            for possible_response, response in possible_responses
-            if response is not None
-        )
+        response_type, response = next(filter(_is_response, possible_resps))
         if response_type == 'answer':
             if self.type_constraint == 'multiple_choice':
                 response = {
@@ -196,8 +197,8 @@ class Answer(Base):
         ),
     )
 
-    def _asdict(self) -> OrderedDict:
-        return OrderedDict((
+    def _asdict(self, mode='json') -> OrderedDict:
+        items = (
             ('id', self.id),
             ('deleted', self.deleted),
             ('answer_number', self.answer_number),
@@ -208,9 +209,20 @@ class Answer(Base):
             ('question_id', self.question_id),
             ('type_constraint', self.type_constraint),
             ('last_update_time', self.last_update_time),
-            ('response', self.response),
-            ('metadata', self.answer_metadata),
-        ))
+        )
+        if mode == 'csv':
+            response = self.response['response']
+            if isinstance(response, dict):
+                response = json_encode(response)
+            items += (
+                ('main_answer', self.main_answer),
+                ('response', response),
+                ('response_type', self.response['response_type']),
+            )
+        else:
+            items += (('response', self.response),)
+        items += (('metadata', self.answer_metadata),)
+        return OrderedDict(items)
 
 
 class _AnswerMixin:

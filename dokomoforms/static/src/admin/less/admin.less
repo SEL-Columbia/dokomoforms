@@ -96,6 +96,18 @@ h4 {
 	font-family: @font-family-serif;
 }
 
+.icon-inline-right {
+	padding-left: 5px;
+	position: relative;
+	top: 2px;
+}
+
+.icon-inline-left {
+	padding-right: 5px;
+	position: relative;
+	top: 2px;
+}
+
 .subheader {
 	background-color: @gray-lighter;
 
@@ -112,7 +124,15 @@ h4 {
 	height: 47px;
 	.notification {
 		display:none;
+		border-radius: 0px;
+		text-align: center;
 	}
+}
+
+// SETTINGS
+.alert-token-expiration {
+	margin-top: 5px;
+	padding: 5px 10px;
 }
 
 .content {
@@ -300,4 +320,10 @@ ul.survey-responses {
 			color: @gray;
 		}
 	}
+}
+
+
+// General Forms
+.form-group {
+	margin-bottom: 30px;
 }

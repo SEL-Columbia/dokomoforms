@@ -1,13 +1,14 @@
 var $ = require('jquery'),
+    moment = require('moment'),
     ps = require('../pubsub'),
     utils = require('../utils'),
     // Users = require('./models').Users,
     _t = require('../lang'),
     User = require('../models').User,
-    tpl = require('../../templates/user-modal.tpl');
+    tpl = require('../../templates/settings-modal.tpl');
 
-var UserModal = function(user_id, surveys) {
-    console.log('UserModal', user_id, surveys.toJSON());
+var SettingsModal = function(user_id) {
+    console.log('SettingsModal', user_id);
     var user = new User(),
         $modal;
     // TODO: this could come from the collection, it's obviously already been fetched.
@@ -16,20 +17,17 @@ var UserModal = function(user_id, surveys) {
         user.set('id', user_id);
         user.fetch()
             .done(open);
-    } else {
-        // we are adding, no uuid
-        open();
     }
 
     function open() {
         console.log('open', user.toJSON());
-        var dataForDisplay = $.extend(user.toJSON(), {all_surveys: surveys.toJSON(), _t: _t});
+        var dataForDisplay = $.extend(user.toJSON(), {_t: _t});
         console.log('dataForDisplay', dataForDisplay);
         $modal = $(tpl(dataForDisplay)).modal();
         $modal.on('shown.bs.modal', function() {
             $modal.first('input').focus();
-            $modal.find('.btn-save-user').click(saveUser);
-            $modal.find('.btn-delete-user').click(deleteUser);
+            $modal.find('.btn-save-user').click(saveSettings);
+            $modal.find('.btn-api-key').click(refreshApiKey);
             utils.initTooltips('.modal');
         });
 
@@ -37,15 +35,14 @@ var UserModal = function(user_id, surveys) {
 
     function close() {
         $modal.on('hidden.bs.modal', function() {
-            console.log('closed?');
             $modal.remove();
 
         });
         $modal.modal('hide');
     }
 
-    function saveUser() {
-        console.log('saveUser', user.toJSON());
+    function saveSettings() {
+        console.log('saveSettings', user.toJSON());
 
         var changeset = {
             name: $modal.find('#user-name').val(),
@@ -55,12 +52,9 @@ var UserModal = function(user_id, surveys) {
                 default_language: $modal.find('#user-default-lang').val()
             }
         };
-        var surveys = $modal.find('#user-surveys').val() || [];
-        console.log('surveys', surveys);
+
         if (changeset.role === 'enumerator') {
-            changeset.allowed_surveys = surveys;
-        } else if (changeset.role === 'administrator') {
-            changeset.admin_surveys = surveys;
+            changeset.allowed_surveys = $modal.find('#user-surveys').val() || [];
         }
 
         user.set(changeset);
@@ -68,26 +62,23 @@ var UserModal = function(user_id, surveys) {
         user.save()
             .done(function() {
                 close();
-                ps.publish('user:saved');
+                ps.publish('settings:saved');
             })
             .fail(function() {
-                ps.publish('user:save-error');
+                close();
+                ps.publish('settings:save-error');
             });
     }
 
-    function deleteUser() {
-        console.log('saveUser', user.toJSON());
-        if(!confirm('Are you certain you want to remove this user from the system?')) {
-            return;
-        }
-        user.destroy()
-            .done(function() {
-                close();
-                ps.publish('user:deleted');
-            })
-            .fail(function() {
-                ps.publish('user:delete-error');
-            });
+    function refreshApiKey() {
+        console.log('refreshApiKey');
+        $.getJSON('/api/v0/users/generate-api-token', function(resp) {
+            console.log(resp);
+            $modal.find('#user-api-token').val(resp.token);
+            var expires = moment(resp.expires_on);
+            $modal.find('.token-expiration-text').text('Token will expire on ' + expires.format('MMM D, YYYY') + '.');
+            $modal.find('.alert-token-expiration').removeClass('hide');
+        });
     }
 
     return {
@@ -98,4 +89,4 @@ var UserModal = function(user_id, surveys) {
 };
 
 
-module.exports = UserModal;
+module.exports = SettingsModal;

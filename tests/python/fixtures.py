@@ -178,7 +178,20 @@ def load_fixtures(engine):
         single_enum_survey = models.EnumeratorOnlySurvey(
             id='c0816b52-204f-41d4-aaf0-ac6ae2970925',
             title={'English': 'enumerator_only_single_survey'},
-            nodes=[],
+            nodes=[
+                models.construct_survey_node(
+                    allow_dont_know=True,
+                    node=models.construct_node(
+                        title={'English': 'Engine Room Photo'},
+                        hint={'English': (
+                            'Tap the image to capture a photo. Tap a '
+                            'thumbnail to preview/delete captured photos.'
+                        )},
+                        type_constraint='photo',
+                        allow_multiple=True
+                    )
+                ),
+            ],
             enumerators=[
                 creator
             ]
@@ -186,7 +199,7 @@ def load_fixtures(engine):
 
         # Add another public submission with a known ID
         single_regular_submission = models.PublicSubmission(
-            id='b0816b52-204f-41d4-aaf0-ac6ae2970923',
+            id='b0816b52-204f-41d4-aaf0-ac6ae2970924',
             survey=single_survey,
             submitter_name='regular_singular',
             answers=[

@@ -11,9 +11,15 @@ var ViewSurvey = (function() {
         survey_id = _survey_id;
         base.init();
         if (window.CURRENT_USER_ID !== 'None') {
+            populateSurveyUrl(survey_id);
             loadActivityGraph();
             setupDataTable();
         }
+    }
+
+    function populateSurveyUrl(survey_id) {
+        var domain = document.location.origin;
+        $('#shareable-link').val(domain + '/enumerate/' + survey_id);
     }
 
     function loadActivityGraph() {
@@ -21,8 +27,9 @@ var ViewSurvey = (function() {
         $.getJSON('/api/v0/surveys/' + survey_id + '/activity', function(data) {
 
             var results = data.activity,
-                cats = [],
-                data = [];
+                cats = [];
+
+            data = [];
 
             if (!results.length) {
                 $('.no-activity-message').removeClass('hide');

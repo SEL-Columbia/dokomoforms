@@ -502,7 +502,12 @@ class TestView(DokoHTTPTest):
         submission_id = (
             self.session.query(models.Submission.id).limit(1).scalar()
         )
-        submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970924'
         url = '/view/submission/' + submission_id
         response = self.fetch(url, method='GET').body.decode()
         self.assertIn('Submission Detail', response)
+
+    def test_view_user_administration(self):
+        url = '/view/user-administration'
+        response = self.fetch(url, method='GET').body.decode()
+        self.assertIn('Users', response)

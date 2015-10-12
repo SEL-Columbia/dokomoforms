@@ -24,16 +24,16 @@ module.exports = React.createClass({
         var interval = window.setInterval(function() {
             if (self.state.online !== navigator.onLine) {
                 self.setState({
-                    online: navigator.onLine,
+                    online: navigator.onLine
                 });
             }
         }, 1000);
 
-        return { 
+        return {
             count: unsynced_submissions.length,
             online: navigator.onLine,
-            interval: interval,
-        }
+            interval: interval
+        };
     },
 
     // Force react to update
@@ -43,9 +43,9 @@ module.exports = React.createClass({
         // Get array of unsynced submissions to this survey
         var unsynced_submissions = unsynced_surveys[this.props.surveyID] || [];
 
-        this.setState({ 
+        this.setState({
             count: unsynced_submissions.length,
-            online: navigator.onLine,
+            online: navigator.onLine
         });
     },
 
@@ -58,51 +58,50 @@ module.exports = React.createClass({
         // Get array of unsynced submissions to this survey
         var unsynced_submissions = unsynced_surveys[this.props.surveyID] || [];
 
-        this.setState({ 
+        this.setState({
             count: unsynced_submissions.length,
-            online: navigator.onLine,
+            online: navigator.onLine
         });
 
     },
 
     componentWillUnmount: function() {
-       window.clearInterval(this.state.interval);
+        window.clearInterval(this.state.interval);
     },
 
     getCard: function() {
-        var email = localStorage['submitter_email'] || "anon@anon.org";
+        var email = localStorage['submitter_email'] || 'anon@anon.org';
         var title = this.props.surveyTitle[this.props.language];
         if (this.state.count) {
             if (this.state.online) {
                 // Unsynced and online
                 return (
                         <span>
-                        <Card messages={[['You have ',  <b>{this.state.count}</b>, ' unsynced surveys.', ' Please submit them now.'], 
-                            ]} type={"message-warning"}/>
-                        <BigButton text={"Submit Completed Surveys"} buttonFunction={this.buttonFunction} /> 
+                        <Card messages={[['You have ',  <b>{this.state.count}</b>, ' unsynced surveys.', ' Please submit them now.']
+                            ]} type={'message-warning'}/>
+                        <BigButton text={'Submit Completed Surveys'} buttonFunction={this.buttonFunction} />
                         </span>
-                       )
+                       );
             } else {
                 // Unsynced and offline
                 return (
-                        <Card messages={[['You have ',  <b>{this.state.count}</b>, ' unsynced surveys.'], 
+                        <Card messages={[['You have ',  <b>{this.state.count}</b>, ' unsynced surveys.'],
                             '',
-                            'At present, you do not have a network connection — please remember to submit' 
+                            'At present, you do not have a network connection — please remember to submit'
                                 + ' these surveys the next time you do have access to the internet.'
-                        ]} type={"message-warning"}/>
-                       )
+                        ]} type={'message-warning'}/>
+                       );
             }
         } else {
             // No unsynced surveys
             return (
-                    <Card messages={[['Hi ', <b>{email}</b>, ' and welcome to the ', {title}, <br/>], 
-                        ['If you have any questions regarding the survey, please ', <u>contact the survey adminstrator</u>]]} 
-                    type={"message-primary"}/>
-                   )
+                    <Card messages={[['If you have any questions regarding the survey, please ', <u>contact the survey adminstrator</u>]]}
+                    type={'message-primary'}/>
+                   );
         }
     },
 
     render: function() {
-        return this.getCard()
+        return this.getCard();
     }
 });
