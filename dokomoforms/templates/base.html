@@ -38,6 +38,7 @@
                 <ul class="nav navbar-nav">
                     {% if current_user %}
                         <li><a href="/">Account Overview</a></li>
+                        <li><a href="/view/user-administration">User Administration</a></li>
                         <li>
                             <a href="#" class="dropdown-toggle" type="button" id="SurveysDropdown" data-toggle="dropdown" aria-expanded="true">Surveys <span class="caret"></span></a>
                             <ul class="dropdown-menu dropdown-menu-surveys" role="menu" aria-labelledby="SurveysDropdown">
@@ -46,7 +47,6 @@
                                 {% end %}
                             </ul>
                         </li>
-                        <li><a href="/view/user-administration">User Administration</a></li>
                     {% end %}
                 </ul>
             </div>
@@ -54,10 +54,10 @@
                 <ul class="nav navbar-nav">
                     {% if current_user %}
                     <li>
-                        <a href="#" class="dropdown-toggle" type="button" id="UserDropdown" data-toggle="dropdown" aria-expanded="true">{{ current_user }} <span class="caret"></span></a>
+                        <a href="#" class="dropdown-toggle" type="button" id="UserDropdown" data-toggle="dropdown" aria-expanded="true"><span class="glyphicon glyphicon-user icon-inline-left"></span>{{ current_user }} <span class="caret"></span></a>
                         <ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="UserDropdown">
-                            <li role="presentation"><a role="menuitem" tabindex="-1" href="#"><span class="glyphicon glyphicon-cog"></span> Settings</a></li>
-                            <li role="presentation"><a class="btn-logout" role="menuitem" tabindex="-1"href="#"><span class="glyphicon glyphicon-log-out" id="logout"></span> Log Out</a></li>
+                            <li role="presentation"><a class="nav-settings" role="menuitem" tabindex="-1" href="#"><span class="glyphicon glyphicon-cog icon-inline-left"></span> Settings</a></li>
+                            <li role="presentation"><a class="btn-logout" role="menuitem" tabindex="-1"href="#"><span class="glyphicon glyphicon-log-out icon-inline-left" id="logout"></span> Log Out</a></li>
                         </ul>
                     </li>
 

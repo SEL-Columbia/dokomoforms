@@ -1,6 +1,7 @@
 """The base class of the TornadoResource classes in the api module."""
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
+import datetime
 from time import localtime
 
 from passlib.hash import bcrypt_sha256
@@ -16,6 +17,7 @@ from sqlalchemy.orm.exc import NoResultFound
 import tornado.web
 
 from dokomoforms.handlers.api.serializer import ModelJSONSerializer
+from dokomoforms.handlers.api.util import filename_safe
 from dokomoforms.handlers.util import BaseHandler, BaseAPIHandler
 from dokomoforms.models import Administrator, Email, Survey, Submission
 from dokomoforms.models.survey import (
@@ -71,6 +73,31 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         """The handler's current_user."""
         return self.r_handler.current_user
 
+    @property
+    def content_type(self):
+        """The format specified in the request."""
+        return self._query_arg('format', default='json').lower()
+
+    @property
+    def query_modifiers_applied(self):
+        """Whether there were any modifiers applied to the query."""
+        modifiers = set(self.request.arguments)
+        modifiers.discard('format')
+        modifiers.discard('dialect')
+        return bool(modifiers)
+
+    def _set_filename(self, filename, extension):
+        now = datetime.datetime.now().isoformat()
+        filename += '_' + now
+        if self.query_modifiers_applied:
+            filename += '_modified'
+        self.ref_rh.set_header(
+            'Content-Disposition',
+            'inline; filename={}.{}'.format(
+                filename_safe(filename), extension
+            )
+        )
+
     def _get_model(self, model_id, model_cls=None, exception=None):
         """Get an instance of this model class by id."""
         if model_cls is None:
@@ -98,6 +125,21 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
             return output(arg)
 
         return arg
+
+    def build_response(self, data, status=200):
+        """Finish the Tornado response.
+
+        This takes into account non-JSON content-types.
+        """
+        if self.content_type == 'csv':
+            content_type = 'text/csv'
+        else:
+            content_type = 'application/json'
+        self.ref_rh.set_header(
+            'Content-Type', '{}; charset=UTF-8'.format(content_type)
+        )
+        self.ref_rh.set_status(status)
+        self.ref_rh.finish(data)
 
     def handle_error(self, err):
         """Generate a serialized error message.

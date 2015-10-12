@@ -110,7 +110,21 @@
                                         <div class="col-md-12">
                                             <div class="location-map" id="location-map-{{ stats['survey_node'].id }}"></div>
                                         </div>
-
+                                    {% elif stats['survey_node'].type_constraint == "multiple_choice" %}
+                                        {% for stat in stats['stats'] %}
+                                            <div class="col-md-3 question-stat">
+                                                <div class="stat-label">
+                                                    {{ stat['query'] }}
+                                                </div>
+                                                <div class="stat-value stat-created-on">
+                                                    {% if stat['query'] == 'mode' and stat['result'] is not None %}
+                                                        {{ _t(stat['result'].choice_text) }}
+                                                    {% else %}
+                                                        {{ stat['result'] }}
+                                                    {% end %}
+                                                </div>
+                                            </div>
+                                        {% end %}
                                     {% else %}
                                         {% for stat in stats['stats'] %}
                                             <div class="col-md-3 question-stat">

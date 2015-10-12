@@ -317,6 +317,81 @@ class TestColumnProperties(DokoTest):
         sn = self.session.query(models.SurveyNode).one()
         self.assertEqual(models.answer_mode(sn), 3)
 
+    def test_answer_mode_multiple_choice(self):
+        with self.session.begin():
+            creator = models.Administrator(
+                name='creator',
+                surveys=[
+                    models.construct_survey(
+                        survey_type='public',
+                        title={'English': 'survey'},
+                        nodes=[
+                            models.construct_survey_node(
+                                node=models.construct_node(
+                                    type_constraint='multiple_choice',
+                                    title={'English': 'mc'},
+                                    allow_multiple=True,
+                                    choices=[
+                                        models.Choice(
+                                            choice_text={'English': '1'},
+                                        ),
+                                        models.Choice(
+                                            choice_text={'English': '2'},
+                                        ),
+                                    ],
+                                ),
+                            ),
+                        ],
+                    ),
+                ],
+            )
+
+            self.session.add(creator)
+            self.session.flush()
+
+            submission = models.construct_submission(
+                submission_type='unauthenticated',
+                survey=creator.surveys[0],
+                answers=[
+                    models.construct_answer(
+                        type_constraint='multiple_choice',
+                        survey_node=creator.surveys[0].nodes[0],
+                        answer=creator.surveys[0].nodes[0].node.choices[0].id,
+                    ),
+                ],
+            )
+
+            self.session.add(submission)
+
+        sn = self.session.query(models.SurveyNode).one()
+        self.assertEqual(
+            models.answer_mode(sn),
+            creator.surveys[0].nodes[0].node.choices[0]
+        )
+
+        with self.session.begin():
+            survey = self.session.query(models.Survey).one()
+            survey.submissions.extend(
+                models.construct_submission(
+                    submission_type='unauthenticated',
+                    survey=survey,
+                    answers=[
+                        models.construct_answer(
+                            type_constraint='multiple_choice',
+                            survey_node=survey.nodes[0],
+                            answer=survey.nodes[0].node.choices[1].id,
+                        ),
+                    ],
+                ) for _ in range(2)
+            )
+            self.session.add(survey)
+
+        sn = self.session.query(models.SurveyNode).one()
+        self.assertEqual(
+            models.answer_mode(sn),
+            creator.surveys[0].nodes[0].node.choices[1]
+        )
+
     def test_answer_mode_wrong_type(self):
         sn = self._create_survey_node('photo')
         self.assertRaises(exc.InvalidTypeForOperation, models.answer_mode, sn)
@@ -512,6 +587,7 @@ class TestUser(DokoTest):
                 ('allowed_surveys', []),
                 ('last_update_time', user.last_update_time),
                 ('surveys', [self.session.query(models.Survey.id).scalar()]),
+                ('admin_surveys', []),
                 ('token_expiration', user.token_expiration),
             )),
             msg=user
@@ -542,6 +618,10 @@ class TestUser(DokoTest):
                 ('allowed_surveys', []),
                 ('last_update_time', admin.last_update_time),
                 ('surveys', []),
+                (
+                    'admin_surveys',
+                    [self.session.query(models.Survey.id).scalar()]
+                ),
                 ('token_expiration', admin.token_expiration),
             )),
             msg=admin
@@ -3373,6 +3453,7 @@ class TestSubmission(DokoTest):
                 ('id', the_submission.id),
                 ('deleted', False),
                 ('survey_id', self.session.query(models.Survey.id).scalar()),
+                ('start_time', None),
                 ('save_time', the_submission.save_time),
                 ('submission_time', the_submission.submission_time),
                 ('last_update_time', the_submission.last_update_time),
@@ -3528,13 +3609,15 @@ class TestSubmission(DokoTest):
                 ('id', the_submission.id),
                 ('deleted', False),
                 ('survey_id', self.session.query(models.Survey.id).scalar()),
+                ('start_time', None),
                 ('save_time', the_submission.save_time),
                 ('submission_time', the_submission.submission_time),
                 ('last_update_time', the_submission.last_update_time),
                 ('submitter_name', 'not an enumerator'),
                 ('submitter_email', 'some@email'),
                 ('answers', []),
-            ))
+            )),
+            msg=the_submission
         )
 
     def test_submission_bad_email(self):
@@ -3575,6 +3658,7 @@ class TestSubmission(DokoTest):
                 ('id', the_submission.id),
                 ('deleted', False),
                 ('survey_id', self.session.query(models.Survey.id).scalar()),
+                ('start_time', None),
                 ('save_time', the_submission.save_time),
                 ('submission_time', the_submission.submission_time),
                 ('last_update_time', the_submission.last_update_time),
@@ -3589,7 +3673,8 @@ class TestSubmission(DokoTest):
                     .scalar()
                 ),
                 ('enumerator_user_name', 'enumerator'),
-            ))
+            )),
+            msg=the_submission
         )
 
 

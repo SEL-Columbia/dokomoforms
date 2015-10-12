@@ -1,4 +1,4 @@
-var env = process.env.NODE_ENV || 'development';
+var env = process.env.NODE_ENV || 'production';
 
 
 var gulp = require('gulp'),
@@ -39,6 +39,7 @@ var path = {
     // COMMON PATH NAMES
     JS_BUILD_FILENAME: 'build.js',
     JS_MINIFIED_BUILD_FILENAME: 'build.min.js',
+    COMMON_JS_SRC: common_src_path + '/js/**/*',
     COMMON_IMG_SRC: common_src_path + '/img/**/*',
 
 
@@ -54,12 +55,15 @@ var path = {
     SURVEY_JS_VENDOR_SRC: [
         node_modules_path + '/jquery/dist/jquery.js',
         node_modules_path + '/bootstrap/dist/js/bootstrap.js',
-        node_modules_path + '/lodash/lodash.js',
+        node_modules_path + '/lodash-compat/index.js',
+        node_modules_path + '/moment/min/moment.min.js',
         node_modules_path + '/react/dist/react.js',
-        node_modules_path + '/pouchdb/dist/pouchdb.js',
-        node_modules_path + '/pouchdb-upsert/dist/pouchdb.upsert.js'
+        node_modules_path + '/lz-string/libs/lz-string.min.js',
+        node_modules_path + '/pouchdb/dist/pouchdb.min.js',
+        node_modules_path + '/pouchdb-upsert/dist/pouchdb.upsert.min.js',
+        node_modules_path + '/node-uuid/uuid.js'
     ],
-    SURVEY_JS_APP_SRC: survey_src_path + '/js',
+    SURVEY_JS_APP_SRC: survey_src_path + '/js/**/*.js',
     SURVEY_JS_ENTRY_POINT: survey_src_path + '/js/main.js',
     SURVEY_JS_DIST: survey_dist_path + '/js',
 
@@ -150,19 +154,20 @@ gulp.task('survey-app-cache', function() {
 gulp.task('survey-js-vendor', function() {
     gulp.src(path.SURVEY_JS_VENDOR_SRC)
         .pipe(concat('vendor.js'))
-        .pipe(gulpif(env === 'production', streamify(uglify())))
+        .pipe(gulpif(env !== 'development', streamify(uglify())))
         .pipe(gulp.dest(path.SURVEY_JS_DIST));
 });
 
 gulp.task('survey-js-app', function() {
     return browserify({
-            debug: false,
-            entries: [path.SURVEY_JS_ENTRY_POINT]
-        })
+        debug: false,
+        entries: [path.SURVEY_JS_ENTRY_POINT]
+    })
         .transform(reactify)
         .bundle()
         .on('error', function(err) {
             console.log(err.message);
+            process.exit(1);
             this.emit('end');
         })
         .pipe(source(path.JS_BUILD_FILENAME))
@@ -170,12 +175,12 @@ gulp.task('survey-js-app', function() {
         .pipe(rename({
             extname: '.bundle.js'
         }))
-        // .pipe(gulpif(env === 'production', streamify(uglify())))
+        .pipe(gulpif(env !== 'development', streamify(uglify())))
         .on('error', function(err) {
             console.log(err.message);
             this.emit('end');
         })
-        // .pipe(gulpif(env === 'production', rename({
+        // .pipe(gulpif(env !== 'development', rename({
         //     extname: '.bundle.min.js'
         // })))
         .pipe(gulp.dest(path.SURVEY_JS_DIST));
@@ -191,7 +196,7 @@ gulp.task('survey-less', function() {
             console.log(err.message);
             this.emit('end');
         })
-        .pipe(gulpif(env === 'production', minifyCss()))
+        .pipe(gulpif(env !== 'development', minifyCss()))
         .pipe(gulp.dest(path.SURVEY_CSS_DIST));
 });
 
@@ -211,7 +216,8 @@ gulp.task('survey-watch',
     survey_tasks,
     function() {
         livereload.listen();
-        gulp.watch([path.SURVEY_LESS_SRC, path.SURVEY_JS_APP_SRC, path.APP_CACHE_SRC], ['survey-less', 'survey-js-vendor', 'survey-js-app', 'survey-img', 'survey-fonts', 'survey-app-cache']);
+        gulp.watch([path.SURVEY_LESS_SRC, path.SURVEY_JS_APP_SRC, path.APP_CACHE_SRC, path.COMMON_JS_SRC],
+            ['survey-less', 'survey-js-vendor', 'survey-js-app', 'survey-img', 'survey-fonts', 'survey-app-cache']);
     });
 
 
@@ -229,8 +235,8 @@ gulp.task('survey-watch',
 gulp.task('admin-js-vendor', function() {
     gulp.src(path.ADMIN_JS_VENDOR_SRC)
         .pipe(concat('vendor.js'))
-        .pipe(gulpif(env === 'production', streamify(uglify())))
-        // .pipe(gulpif(env === 'production', rename({
+        .pipe(gulpif(env !== 'development', streamify(uglify())))
+        // .pipe(gulpif(env !== 'development', rename({
         //     extname: '.min.js'
         // })))
         .pipe(gulp.dest(path.ADMIN_JS_DIST));
@@ -240,8 +246,8 @@ gulp.task('admin-js-app', function() {
     var tasks = path.ADMIN_JS_ENTRY_POINTS.map(function(entry) {
         // note appending of root path to entry here
         return browserify({
-                entries: [path.ADMIN_JS_ENTRY_POINT_PREFIX + entry]
-            })
+            entries: [path.ADMIN_JS_ENTRY_POINT_PREFIX + entry]
+        })
             .transform(underscorify)
             .bundle()
             .on('error', function(err) {
@@ -254,8 +260,8 @@ gulp.task('admin-js-app', function() {
             .pipe(rename({
                 extname: '.bundle.js'
             }))
-            .pipe(gulpif(env === 'production', streamify(uglify())))
-            // .pipe(gulpif(env === 'production', rename({
+            .pipe(gulpif(env !== 'development', streamify(uglify())))
+            // .pipe(gulpif(env !== 'development', rename({
             //     extname: '.min.js'
             // })))
             .pipe(gulp.dest(path.ADMIN_JS_DIST));
@@ -272,8 +278,8 @@ gulp.task('admin-less', function() {
             console.log(err.message);
             this.emit('end');
         })
-        .pipe(gulpif(env === 'production', minifyCss()))
-        // .pipe(gulpif(env === 'production', rename({
+        .pipe(gulpif(env !== 'development', minifyCss()))
+        // .pipe(gulpif(env !== 'development', rename({
         //     extname: '.min.css'
         // })))
         .pipe(gulp.dest(path.ADMIN_CSS_DIST));
@@ -295,9 +301,9 @@ gulp.task('admin-watch',
     admin_tasks,
     function() {
         livereload.listen();
-        gulp.watch([path.ADMIN_LESS_SRC, path.ADMIN_JS_APP_SRC, path.ADMIN_TEMPLATES_SRC], ['admin-less', 'admin-js-vendor', 'admin-js-app', 'admin-img', 'admin-fonts']);
+        gulp.watch([path.ADMIN_LESS_SRC, path.ADMIN_JS_APP_SRC, path.ADMIN_TEMPLATES_SRC, path.COMMON_JS_SRC],
+            ['admin-less', 'admin-js-vendor', 'admin-js-app', 'admin-img', 'admin-fonts']);
     });
-
 
 
 
@@ -306,16 +312,21 @@ gulp.task('admin-watch',
 // STATIC BUILD TASKS
 
 //
-// dev
-//
-gulp.task('dev-build', admin_tasks.concat(survey_tasks));
-
-
-//
 // prod (?)
 //
 gulp.task('admin-build', ['clean'].concat(admin_tasks));
 gulp.task('survey-build', ['clean'].concat(survey_tasks));
+
+gulp.task('build', ['clean', 'admin-build', 'survey-build']);
+
+//
+// dev
+//
+gulp.task('dev-build', function() {
+    console.log('dev building?');
+    env = 'development';
+    gulp.start('clean', 'build');
+});
 
 
 
