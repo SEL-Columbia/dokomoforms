@@ -259,6 +259,13 @@ class Application(tornado.web.Application):
                     handlers.DebugToggleRevisitHandler),
             ]
 
+        # Demo
+        if options.demo:
+            urls += [
+                url(r'/demo/login/?', handlers.DemoUserCreationHandler),
+                url(r'/demo/logout/?', handlers.DemoLogoutHandler),
+            ]
+
         super().__init__(urls, **settings)
 
         # Database setup

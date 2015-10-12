@@ -63,7 +63,8 @@ class Submission(Base):
     __table_args__ = (
         sa.ForeignKeyConstraint(
             ['survey_id', 'survey_containing_id', 'survey_type'],
-            ['survey.id', 'survey.containing_id', 'survey.survey_type']
+            ['survey.id', 'survey.containing_id', 'survey.survey_type'],
+            onupdate='CASCADE', ondelete='CASCADE'
         ),
         sa.UniqueConstraint('id', 'survey_type'),
         sa.UniqueConstraint('id', 'survey_id'),
@@ -142,7 +143,8 @@ class PublicSubmission(Submission):
     __table_args__ = (
         sa.ForeignKeyConstraint(
             ['id', 'survey_type'],
-            ['submission.id', 'submission.survey_type']
+            ['submission.id', 'submission.survey_type'],
+            onupdate='CASCADE', ondelete='CASCADE'
         ),
         sa.CheckConstraint("survey_type::TEXT = 'public'"),
     )
