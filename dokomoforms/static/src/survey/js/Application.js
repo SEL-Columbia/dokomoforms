@@ -2,10 +2,10 @@
 var React = require('react'),
     $ = require('jquery'),
     moment = require('moment'),
-    PouchDB = require('pouchdb/dist/pouchdb.min');
+    PouchDB = require('pouchdb');
 
 // pouch plugin
-PouchDB.plugin(require('pouchdb-upsert'));
+// PouchDB.plugin(require('pouchdb-upsert'));
 
 // components
 var Title = require('./components/baseComponents/Title'),

@@ -68,7 +68,10 @@
     "lodash": "global:_",
     "moment": "global:moment",
     "leaflet": "global:L",
-    "backbone": "global:Backbone"
+    "backbone": "global:Backbone",
+    "lz-string": "global:LZString",
+    "pouchdb": "global:PouchDB",
+    "node-uuid": "global:uuid"
   },
   "jest": {
     "testDirectoryName": "tests/js",
