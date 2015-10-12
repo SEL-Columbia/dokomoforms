@@ -7,7 +7,7 @@ import uuid
 
 from sqlalchemy.orm.exc import NoResultFound
 
-from tornado.escape import json_decode, json_encode
+from tornado.escape import json_decode
 import tornado.concurrent
 import tornado.web
 import tornado.gen
@@ -92,11 +92,7 @@ class Login(BaseHandler):
         }
         if options.https:
             cookie_options['secure'] = True
-        self.set_secure_cookie(
-            'user',
-            json_encode({'user_id': user.id, 'user_name': user.name}),
-            **cookie_options
-        )
+        self.set_secure_cookie('user', user.id, **cookie_options)
         self.write({'email': data['email']})
         self.finish()
 

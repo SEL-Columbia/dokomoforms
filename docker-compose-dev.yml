@@ -2,7 +2,7 @@ webapp-dev:
   build: .
   command: python webapp.py
   volumes:
-      - ./:/dokomo
+    - ./:/dokomo
   links:
     - "db-dev:db-dev"
   ports:

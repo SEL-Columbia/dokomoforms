@@ -22,7 +22,9 @@ import dateutil.parser
 from passlib.hash import bcrypt_sha256
 
 from selenium import webdriver
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import (
+    TimeoutException, ElementNotVisibleException
+)
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -523,7 +525,12 @@ class TestAdminSettings(AdminTest):
         self.sleep()
 
         self.click(self.drv.find_element_by_id('UserDropdown'))
-        self.click(self.drv.find_element_by_class_name('nav-settings'))
+        try:
+            self.click(self.drv.find_element_by_class_name('nav-settings'))
+        except ElementNotVisibleException:
+            # Don't ask me... xvfb weirdness
+            self.click(self.drv.find_element_by_id('UserDropdown'))
+            self.click(self.drv.find_element_by_class_name('nav-settings'))
         self.wait_for_element('user-name')
         name_val = (
             self.drv
