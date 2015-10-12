@@ -1,8 +1,6 @@
 """Pages pertaining to demo mode functionality."""
 import uuid
 
-from tornado.escape import json_encode
-
 import dokomoforms.models as models
 from dokomoforms.models import Administrator, Email
 from dokomoforms.handlers.util import BaseHandler
@@ -104,11 +102,7 @@ class DemoUserCreationHandler(BaseHandler):
             'expires_days': None,
             'httponly': True,
         }
-        self.set_secure_cookie(
-            'user',
-            json_encode({'user_id': user.id, 'user_name': user.name}),
-            **cookie_options
-        )
+        self.set_secure_cookie('user', user.id, **cookie_options)
         self.redirect('/')
 
 
