@@ -3,7 +3,6 @@
 
 var $ = require('jquery'),
     LZString = require('lz-string'),
-    Promise = require('mpromise'),
     ps = require('../../../common/js/pubsub'),
     config = require('../conf/config');
 
