@@ -7,5 +7,5 @@ RUN cp -a /tmp/node_modules /dokomo/
 ADD . /dokomo/
 RUN pip install -r requirements.txt
 RUN head -c 24 /dev/urandom > cookie_secret
-RUN nodejs node_modules/gulp/bin/gulp.js dev-build
+RUN nodejs node_modules/gulp/bin/gulp.js build
 EXPOSE 8888
