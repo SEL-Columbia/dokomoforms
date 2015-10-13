@@ -1,4 +1,5 @@
 var React = require('react'),
+    screenfull = require('screenfull'),
     PhotoAPI = require('../../api/PhotoAPI.js');
 
 /*
@@ -66,10 +67,22 @@ module.exports = React.createClass({
         });
     },
 
+    toggleFullscreen: function() {
+        console.log('screenfull', screenfull.enabled);
+        if (screenfull.enabled) {
+            screenfull.toggle();
+        }
+    },
+
     render: function() {
         var self = this;
         return (
             <div className='title_menu'>
+                <div className='title_menu_option menu_fullscreen'
+                    onClick={self.toggleFullscreen}
+                >
+                    Toggle fullscreen
+                </div>
                 <div className='title_menu_option menu_restart'
                     onClick={self.wipeActive}
                 >
