@@ -55,7 +55,7 @@ class BaseHandler(tornado.web.RequestHandler):
             "font-src 'self' fonts.googleapis.com fonts.gstatic.com;"
             "img-src 'self' *.tile.openstreetmap.org data: blob:;"
             "object-src 'self' blob:;"
-            "media-src 'self' blob:;"
+            "media-src 'self' blob: mediastream:;"
             "connect-src 'self' blob: *.revisit.global localhost;"
             "default-src 'self';"
         )

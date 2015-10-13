@@ -1,6 +1,6 @@
 var $ = require('jquery'),
     cookies = require('../../common/js/cookies'),
-    ps = require('./pubsub'),
+    ps = require('../../common/js/pubsub'),
     submissionModals = require('./submission-modal'),
     SettingsModal = require('./modals/settings-modal'),
     Notification = require('./notification'),
