@@ -74,7 +74,11 @@
                     {% elif answer.type_constraint == 'location' %}
                         {{ answer.response['response']['lat'] }}, {{ answer.response['response']['lng'] }}
                     {% elif answer.type_constraint == 'multiple_choice' %}
-                        {{ _t(answer.response['response']['choice_text']) }}
+		        {% if 'choice_text' in answer.response['response'] %}
+                          {{ _t(answer.response['response']['choice_text']) }}
+			{% else %}
+			  {{ answer.response['response'] }}
+			{% end %}
 				    {% else %}
 				        {{ answer.response['response'] }}
 				    {% end %}
