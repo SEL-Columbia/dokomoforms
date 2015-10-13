@@ -212,6 +212,7 @@ var Application = React.createClass({
 
             // On Splash page and next was pressed
             case this.state.states.SPLASH:
+
                 nextQuestion = this.state.head;
                 showDontKnow = nextQuestion.allow_dont_know || false;
                 showDontKnowBox = false;

@@ -23,7 +23,8 @@
     "pouchdb": "^4.0.3",
     "pouchdb-upsert": "^1.1.1",
     "ratchet": "https://github.com/twbs/ratchet/archive/v2.0.2.tar.gz",
-    "react": "^0.13.3"
+    "react": "^0.13.3",
+    "screenfull": "^2.0.0"
   },
   "devDependencies": {
     "jest-cli": "^0.5.0",
@@ -68,7 +69,8 @@
     "lodash": "global:_",
     "moment": "global:moment",
     "leaflet": "global:L",
-    "backbone": "global:Backbone"
+    "backbone": "global:Backbone",
+    "screenfull": "global:screenfull"
   },
   "jest": {
     "testDirectoryName": "tests/js",
