@@ -120,22 +120,22 @@ var FacilityTree = function(nlat, wlng, slat, elng, db, id) {
     /*
      * Get facilities for this node
      *
-     * returns mpromise style promise that will contain an array of uncompressed facilities
+     * returns jquery deferred that will resolve to an array of uncompressed facilities
      */
     facilityNode.prototype.getFacilities = function() {
         var id = this.en[1]+''+this.ws[0]+''+this.ws[1]+''+this.en[0];
-        var p = new Promise;
+        var d = $.Deferred();
         db.get(id).then(function(facilitiesDoc) {
             console.log('Get:', id);
             var facilitiesLZ = facilitiesDoc.facilities[0]; // Why an array? WHO KNOWS
             var facilities = JSON.parse(LZString.decompressFromUTF16(facilitiesLZ));
-            p.fulfill(facilities);
+            d.resolve(facilities);
         }).catch(function (err) {
             console.log('Failed to Get:', err);
-            p.reject();
+            d.reject();
         });
 
-        return p;
+        return d;
     };
 
     facilityNode.prototype.within = function(lat, lng) {
@@ -354,7 +354,7 @@ FacilityTree.prototype.getRNodesRad = function(lat, lng, r) {
  */
 FacilityTree.prototype.getNNearestFacilities = function(lat, lng, r, n) {
     var self = this;
-    var p = new Promise; // Sorted facilities promise
+    var d = $.Deferred(); // Sorted facilities deferred (i.e. promise)
 
     // Calculates meter distance between facilities and center of node
     function dist(coordinates, clat, clng) {
@@ -378,10 +378,10 @@ FacilityTree.prototype.getNNearestFacilities = function(lat, lng, r, n) {
     // Sort X Nodes Data
     var nodes = self.getRNodesRad(lat, lng, r);
     var nodeFacilities = []; // Each Pouch promise writes into here
-    var nodeFacilitiesPromise = new Promise; //Pouch db retrival and sorting promise
+    var nodeFacilitiesDfd = $.Deferred(); //Pouch db retrival and sorting promise
 
     // Merge X Nodes Sorted Data AFTER promise resolves (read this second)
-    nodeFacilitiesPromise.onResolve(function() {
+    nodeFacilitiesDfd.done(function() {
         var facilities = [];
         while(n > 0 && nodeFacilities.length > 0) {
             nodeFacilities = nodeFacilities.filter(function(facilities) {
@@ -411,12 +411,12 @@ FacilityTree.prototype.getNNearestFacilities = function(lat, lng, r, n) {
             facility.distance = dist(facility.coordinates, lat, lng);
         });
 
-        return p.fulfill(facilities);
+        return d.resolve(facilities);
     });
 
     // Sort each nodes facilities (read this first)
     nodes.forEach(function(node, idx) {
-        node.getFacilities().onResolve(function(err, facilities) {
+        node.getFacilities().done(function(facilities) {
             facilities.sort(function (facilityA, facilityB) {
                 var lengthA = dist(facilityA.coordinates, lat, lng);
                 var lengthB = dist(facilityB.coordinates, lat, lng);
@@ -426,13 +426,13 @@ FacilityTree.prototype.getNNearestFacilities = function(lat, lng, r, n) {
             nodeFacilities.push(facilities);
             console.log('Current facilities length', nodeFacilities.length, nodes.length);
             if (nodeFacilities.length === nodes.length) {
-                nodeFacilitiesPromise.fulfill();
+                nodeFacilitiesDfd.resolve();
             }
         });
     });
 
 
-    return p;
+    return d;
 };
 
 FacilityTree.prototype.print = function() {
@@ -545,24 +545,25 @@ FacilityTree.prototype.addFacility = function(lat, lng, facilityData, formatted)
     var facility = formatted ? facilityData : self.formattedFacility(facilityData);
 
     console.log('Before', leaf.count, leaf.uncompressedSize, leaf.compressedSize);
-    leaf.getFacilities().onResolve(function(err, facilities) {
-        if (err) {
-            console.log('Failed to add facility', err);
-            return;
-        }
+    leaf.getFacilities()
+        .done(function(facilities) {
+            console.log('Got facilities:', facilities.length);
+            facilities.push(facility);
+            var facilitiesStr = JSON.stringify(facilities);
+            var facilitiesLZ = [LZString.compressToUTF16(facilitiesStr)]; // mongoose_quadtree does this in [] for a reason i do not remember
+            leaf.setFacilities(facilitiesLZ);
 
-        console.log('Got facilities:', facilities.length);
-        facilities.push(facility);
-        var facilitiesStr = JSON.stringify(facilities);
-        var facilitiesLZ = [LZString.compressToUTF16(facilitiesStr)]; // mongoose_quadtree does this in [] for a reason i do not remember
-        leaf.setFacilities(facilitiesLZ);
+            leaf.count++;
+            leaf.uncompressedSize = facilitiesStr.length || 0;
+            leaf.compressedSize = facilitiesLZ.length || 0;
+            console.log('After', leaf.count, leaf.uncompressedSize, leaf.compressedSize);
 
-        leaf.count++;
-        leaf.uncompressedSize = facilitiesStr.length || 0;
-        leaf.compressedSize = facilitiesLZ.length || 0;
-        console.log('After', leaf.count, leaf.uncompressedSize, leaf.compressedSize);
-
-    });
+        })
+        .fail(function(err) {
+            if (err) {
+                console.log('Failed to add facility', err);
+            }
+        });
 };
 
 /*

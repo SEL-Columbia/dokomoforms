@@ -70,6 +70,9 @@
     "moment": "global:moment",
     "leaflet": "global:L",
     "backbone": "global:Backbone",
+    "lz-string": "global:LZString",
+    "pouchdb": "global:PouchDB",
+    "node-uuid": "global:uuid",
     "screenfull": "global:screenfull"
   },
   "jest": {
