@@ -4,6 +4,7 @@
 var $ = require('jquery'),
     LZString = require('lz-string'),
     Promise = require('mpromise'),
+    ps = require('../../../common/js/pubsub'),
     config = require('../conf/config');
 
 /*
@@ -150,7 +151,7 @@ var FacilityTree = function(nlat, wlng, slat, elng, db, id) {
             return false;
 
         if ((wlng > self.en[0]) || (elng < self.ws[0]))
-           return false;
+            return false;
 
         return true;
     };
@@ -177,7 +178,7 @@ var FacilityTree = function(nlat, wlng, slat, elng, db, id) {
         url: config.revisit_url,
         data: {
             within: self.nlat + ',' + self.wlng + ',' + self.slat + ',' + self.elng,
-            compressed: 'anything can be here',
+            compressed: true
             //fields: 'name,uuid,coordinates,properties:sector',
         },
         success: function(data) {
@@ -189,9 +190,14 @@ var FacilityTree = function(nlat, wlng, slat, elng, db, id) {
         error: function() {
             console.log('Failed to retrieve data, building from local');
             var facilities = self.loadTree();
-            if (facilities)
+            if (facilities) {
                 self.root = new facilityNode(facilities);
-
+            }
+        },
+        complete: function() {
+            // The ajax request attempted whether we have network or not,
+            // so we should publish the loading:complete event on success or fail.
+            ps.publish('loading:complete');
         }
     });
 
