@@ -257,7 +257,17 @@ class Application(tornado.web.Application):
                 url(r'/debug/facilities/?', handlers.DebugRevisitHandler),
                 url(r'/debug/toggle_facilities/?',
                     handlers.DebugToggleRevisitHandler),
+                url(r'/debug/toggle_revisit_slow/?',
+                    handlers.DebugToggleRevisitSlowModeHandler),
             ]
+
+        # Demo
+        if options.demo:
+            urls += [
+                url(r'/demo/login/?', handlers.DemoUserCreationHandler),
+                url(r'/demo/logout/?', handlers.DemoLogoutHandler),
+            ]
+            options.organization = 'Demo Mode'
 
         super().__init__(urls, **settings)
 

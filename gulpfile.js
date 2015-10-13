@@ -61,7 +61,8 @@ var path = {
         node_modules_path + '/lz-string/libs/lz-string.min.js',
         node_modules_path + '/pouchdb/dist/pouchdb.min.js',
         node_modules_path + '/pouchdb-upsert/dist/pouchdb.upsert.min.js',
-        node_modules_path + '/node-uuid/uuid.js'
+        node_modules_path + '/node-uuid/uuid.js',
+        node_modules_path + '/screenfull/dist/screenfull.js'
     ],
     SURVEY_JS_APP_SRC: survey_src_path + '/js/**/*.js',
     SURVEY_JS_ENTRY_POINT: survey_src_path + '/js/main.js',

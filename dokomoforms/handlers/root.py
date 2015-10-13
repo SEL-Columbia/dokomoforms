@@ -1,5 +1,4 @@
 """Administrative handlers."""
-
 import tornado.web
 import tornado.gen
 import tornado.httpclient
@@ -29,7 +28,7 @@ class Index(BaseHandler):
             'index.html',
             message=msg,
             surveys=surveys,
-            recent_submissions=recent_submissions
+            recent_submissions=recent_submissions,
         )
 
 

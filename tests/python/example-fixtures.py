@@ -54,11 +54,12 @@ with session.begin():
                     title={'English': 'Facility'},
                     hint={'English': 'Select the facility from the list,'
                           ' or add a new one.'},
+                    # NYC
                     logic={
-                        'slat': -85,
-                        'nlat': 85,
-                        'wlng': -180,
-                        'elng': 180,
+                        'slat': 40.477398,
+                        'nlat': 40.91758,
+                        'wlng': -74.259094,
+                        'elng': -73.700165,
                     }
                 )
             ),

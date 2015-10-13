@@ -1,3 +1,4 @@
+{% from dokomoforms.options import options %}
 <!DOCTYPE html>
 <html manifest="/static/dist/survey/cache.appcache">
     <head>
@@ -20,6 +21,10 @@
 
     <body>
         <div id="wrapper"></div>
+        <!-- Bootstrapped Variables -->
+        <script type="text/javascript">
+            window.ORGANIZATION = '{{ options.organization }}';
+        </script>
         <!-- Vendor libs (jquery, react, lodash, etc.) -->
         <script src="/static/dist/survey/js/vendor.js"></script>
         <!-- App -->

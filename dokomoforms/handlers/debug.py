@@ -1,4 +1,6 @@
 """Pages pertaining to debug-specific functionality."""
+from time import sleep
+
 from tornado.escape import json_encode, json_decode
 import tornado.web
 
@@ -12,7 +14,7 @@ from dokomoforms.handlers.util import BaseHandler
 
 class DebugUserCreationHandler(BaseHandler):
 
-    """User this page to create a user."""
+    """Use this page to create a user."""
 
     def get(self, email='test@test_email.com'):
         """Log in for any user (creating one if necessary)."""
@@ -91,9 +93,10 @@ class DebugPersonaHandler(BaseHandler):
         self.write({'status': 'okay', 'email': 'test_creator@fixtures.com'})
 
 
-if options.dev or options.debug:  # pragma: no cover
+if options.debug:  # pragma: no cover
     import lzstring
     revisit_online = True
+    slow_mode = False
     facilities_file = 'tests/python/fake_revisit_facilities.json'
     with open(facilities_file, 'rb') as facilities:
         compressed_facilities = facilities.read()
@@ -110,8 +113,11 @@ class DebugRevisitHandler(BaseHandler):
 
     def get(self):
         """Get dummy facilities."""
+        global slow_mode
         if not revisit_online:
             raise tornado.web.HTTPError(502)
+        if slow_mode:
+            sleep(2)
         self.write(compressed_facilities)
         self.set_header('Content-Type', 'application/json')
 
@@ -168,3 +174,17 @@ class DebugToggleRevisitHandler(BaseHandler):
                 revisit_online = False
         else:
             revisit_online = not revisit_online
+
+
+class DebugToggleRevisitSlowModeHandler(BaseHandler):
+
+    """For toggling slow mode."""
+
+    def get(self):
+        """Toggle the 'slow' state of the GET endpoint."""
+        global slow_mode
+        state_arg = self.get_argument('state', None)
+        if state_arg:
+            slow_mode = state_arg == 'true'
+        else:
+            slow_mode = not slow_mode

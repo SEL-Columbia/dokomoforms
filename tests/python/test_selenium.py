@@ -806,7 +806,9 @@ class TestAdminManageSurvey(AdminTest):
         try:
             json_str = response.find('pre').text
         except AttributeError:
-            self.fail(self.drv.page_source)
+            self.sleep()
+            response = BeautifulSoup(self.drv.page_source, 'html.parser')
+            json_str = response.find('pre').text
         data = json.loads(json_str)
 
         self.assertEqual(data['total_entries'], 101)
@@ -1097,6 +1099,7 @@ class TestEnumerate(DriverTest):
         existing_submission = self.get_last_submission(survey_id)
 
         self.get('/enumerate/{}'.format(survey_id))
+
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.wait_for_element('video', by=By.TAG_NAME, visible=True)
@@ -3959,3 +3962,49 @@ class TestEnumerate(DriverTest):
             .text
         )
         self.assertEqual(new_facility_text.split('\n')[0], 'new facility')
+
+
+class TestEnumerateSlowRevisit(DriverTest):
+    def setUp(self):
+        super().setUp()
+
+        try:
+            urlopen(
+                'http://localhost:9999/debug/toggle_revisit_slow?state=true'
+            )
+        except urllib.error.URLError:
+            pass
+
+    def tearDown(self):
+        super().tearDown()
+
+        try:
+            urlopen(
+                'http://localhost:9999/debug/toggle_revisit_slow?state=false'
+            )
+        except urllib.error.URLError:
+            pass
+
+    def get_single_node_survey_id(self, question_type):
+        title = question_type + '_survey'
+        return (
+            self.session
+            .query(Survey.id)
+            .filter(Survey.title['English'].astext == title)
+            .scalar()
+        )
+
+    @report_success_status
+    def test_single_facility_question_loading(self):
+        survey_id = self.get_single_node_survey_id('facility')
+
+        start_time = time.time()
+        self.get('/enumerate/{}'.format(survey_id))
+        finish_time = time.time()
+
+        self.assertGreater(finish_time - start_time, 2)
+
+        overlay = self.drv.find_elements_by_class_name('loading-overlay')
+
+        # overlay should not be present
+        self.assertEqual(len(overlay), 0)
