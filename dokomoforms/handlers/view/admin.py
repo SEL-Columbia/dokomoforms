@@ -40,14 +40,26 @@ class ViewSurveyDataHandler(BaseHandler):
                 .filter(answer_cls.main_answer.isnot(None))
             )
             result = {
-                'survey_node_id': survey_node.id,
-                'map_data': [
+                'survey_node_id': survey_node.id
+            }
+            if survey_node.type_constraint == 'location':
+                result['map_data'] = [
                     {
                         'submission_id': answer.submission_id,
                         'coordinates': answer.response['response'],
                     } for answer in answers
-                ],
-            }
+                ]
+            if survey_node.type_constraint == 'facility':
+                result['map_data'] = [
+                    {
+                        'submission_id': answer.submission_id,
+                        'facility_name':
+                            answer.response['response']['facility_name'],
+                        'coordinates': {
+                            'lat': answer.response['response']['lat'],
+                            'lng': answer.response['response']['lng']}
+                    } for answer in answers
+                ]
             yield result  # pragma: no branch
 
     @tornado.web.authenticated
