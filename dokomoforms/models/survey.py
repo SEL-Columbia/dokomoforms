@@ -581,7 +581,8 @@ class SurveyNode(Base):
             ['root_survey_id', 'containing_survey_id',
                 'root_survey_languages'],
             ['survey.id', 'survey.containing_id',
-                'survey.languages']
+                'survey.languages'],
+            onupdate='CASCADE', ondelete='CASCADE'
         ),
         sa.ForeignKeyConstraint(
             ['sub_survey_id', 'root_survey_languages',
@@ -699,7 +700,8 @@ class AnswerableSurveyNode(SurveyNode):
                 'survey_node.node_id',
                 'survey_node.type_constraint',
                 'survey_node.non_null_repeatable',
-            ]
+            ],
+            onupdate='CASCADE', ondelete='CASCADE'
         ),
         sa.ForeignKeyConstraint(
             [

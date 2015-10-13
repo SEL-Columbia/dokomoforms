@@ -15,6 +15,7 @@ __all__ = ('options',)
 _arg = None
 
 # Application options
+define('demo', default=False, help='whether to run in demo mode', type=bool)
 define('port', help='run on the given port', type=int)
 define('cookie_secret', help='string used to create session cookies')
 define('debug', default=False, help='whether to enable debug mode', type=bool)

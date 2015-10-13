@@ -1,4 +1,6 @@
 """Useful reusable functions for handlers, plus the BaseHandler."""
+from sqlalchemy.exc import StatementError
+
 import tornado.web
 from tornado.escape import to_unicode, json_encode
 
@@ -25,7 +27,11 @@ class BaseHandler(tornado.web.RequestHandler):
         """Return the current logged in User, or None."""
         current_user_id = self._current_user_cookie()
         if current_user_id:
-            return self.session.query(User).get(to_unicode(current_user_id))
+            cuid = to_unicode(current_user_id)
+            try:
+                return self.session.query(User).get(cuid)
+            except StatementError:
+                self.clear_cookie('user')
         return None
 
     def set_default_headers(self):
@@ -85,11 +91,9 @@ class BaseHandler(tornado.web.RequestHandler):
 
         :return: a string containing the user name.
         """
-        current_user_id = self._current_user_cookie()
-        if current_user_id:
-            user = self.session.query(User).get(to_unicode(current_user_id))
-            if user:
-                return user.name
+        user = self.current_user_model
+        if user:
+            return user.name
         return None
 
     def _get_surveys_for_menu(self):

@@ -806,7 +806,9 @@ class TestAdminManageSurvey(AdminTest):
         try:
             json_str = response.find('pre').text
         except AttributeError:
-            self.fail(self.drv.page_source)
+            self.sleep()
+            response = BeautifulSoup(self.drv.page_source, 'html.parser')
+            json_str = response.find('pre').text
         data = json.loads(json_str)
 
         self.assertEqual(data['total_entries'], 101)
