@@ -165,7 +165,8 @@ class Answer(Base):
             ['submission_id', 'survey_containing_id',
                 'save_time', 'survey_id'],
             ['submission.id', 'submission.survey_containing_id',
-                'submission.save_time', 'submission.survey_id']
+                'submission.save_time', 'submission.survey_id'],
+            onupdate='CASCADE', ondelete='CASCADE',
         ),
         sa.ForeignKeyConstraint(
             [
@@ -238,7 +239,8 @@ def _answer_mixin_table_args():
     return (
         sa.ForeignKeyConstraint(
             ['id', 'the_allow_other', 'the_allow_dont_know'],
-            ['answer.id', 'answer.allow_other', 'answer.allow_dont_know']
+            ['answer.id', 'answer.allow_other', 'answer.allow_dont_know'],
+            onupdate='CASCADE', ondelete='CASCADE'
         ),
         sa.CheckConstraint(
             # other is null if "other" responses are not allowed
@@ -541,7 +543,8 @@ class MultipleChoiceAnswer(_AnswerMixin, Answer):
                 'answer.survey_node_id',
                 'answer.question_id',
                 'answer.submission_id',
-            ]
+            ],
+            onupdate='CASCADE', ondelete='CASCADE'
         ),
         sa.ForeignKeyConstraint(
             ['main_answer', 'the_question_id'],

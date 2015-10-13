@@ -11,6 +11,9 @@ from dokomoforms.handlers.debug import (
     DebugPersonaHandler, DebugRevisitHandler, DebugToggleRevisitHandler,
     DebugToggleRevisitSlowModeHandler
 )
+from dokomoforms.handlers.demo import (
+    DemoUserCreationHandler, DemoLogoutHandler
+)
 
 __all__ = (
     'Index', 'NotFound',
@@ -19,5 +22,6 @@ __all__ = (
     'ViewSubmissionHandler', 'Enumerate', 'EnumerateTitle',
     'DebugUserCreationHandler', 'DebugLoginHandler', 'DebugLogoutHandler',
     'DebugPersonaHandler', 'DebugRevisitHandler', 'DebugToggleRevisitHandler',
-    'DebugToggleRevisitSlowModeHandler'
+    'DebugToggleRevisitSlowModeHandler',
+    'DemoUserCreationHandler', 'DemoLogoutHandler'
 )

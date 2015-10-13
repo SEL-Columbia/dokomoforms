@@ -14,7 +14,7 @@ from dokomoforms.handlers.util import BaseHandler
 
 class DebugUserCreationHandler(BaseHandler):
 
-    """User this page to create a user."""
+    """Use this page to create a user."""
 
     def get(self, email='test@test_email.com'):
         """Log in for any user (creating one if necessary)."""
