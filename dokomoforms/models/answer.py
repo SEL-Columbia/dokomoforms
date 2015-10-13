@@ -543,7 +543,8 @@ class MultipleChoiceAnswer(_AnswerMixin, Answer):
                 'answer.survey_node_id',
                 'answer.question_id',
                 'answer.submission_id',
-            ]
+            ],
+            onupdate='CASCADE', ondelete='CASCADE'
         ),
         sa.ForeignKeyConstraint(
             ['main_answer', 'the_question_id'],
