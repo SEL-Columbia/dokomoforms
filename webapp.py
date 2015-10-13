@@ -267,6 +267,7 @@ class Application(tornado.web.Application):
                 url(r'/demo/login/?', handlers.DemoUserCreationHandler),
                 url(r'/demo/logout/?', handlers.DemoLogoutHandler),
             ]
+            options.organization = 'Demo Mode'
 
         super().__init__(urls, **settings)
 
