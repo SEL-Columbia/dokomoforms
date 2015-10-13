@@ -8,7 +8,8 @@ from dokomoforms.handlers.view.admin import (
 from dokomoforms.handlers.view.enumerate import Enumerate, EnumerateTitle
 from dokomoforms.handlers.debug import (
     DebugUserCreationHandler, DebugLoginHandler, DebugLogoutHandler,
-    DebugPersonaHandler, DebugRevisitHandler, DebugToggleRevisitHandler
+    DebugPersonaHandler, DebugRevisitHandler, DebugToggleRevisitHandler,
+    DebugToggleRevisitSlowModeHandler
 )
 from dokomoforms.handlers.demo import (
     DemoUserCreationHandler, DemoLogoutHandler
@@ -21,5 +22,6 @@ __all__ = (
     'ViewSubmissionHandler', 'Enumerate', 'EnumerateTitle',
     'DebugUserCreationHandler', 'DebugLoginHandler', 'DebugLogoutHandler',
     'DebugPersonaHandler', 'DebugRevisitHandler', 'DebugToggleRevisitHandler',
+    'DebugToggleRevisitSlowModeHandler',
     'DemoUserCreationHandler', 'DemoLogoutHandler'
 )

@@ -1,6 +1,6 @@
 var $ = require('jquery'),
     moment = require('moment'),
-    ps = require('../pubsub'),
+    ps = require('../../../common/js/pubsub'),
     utils = require('../utils'),
     // Users = require('./models').Users,
     _t = require('../lang'),

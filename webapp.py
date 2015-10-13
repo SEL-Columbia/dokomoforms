@@ -257,6 +257,8 @@ class Application(tornado.web.Application):
                 url(r'/debug/facilities/?', handlers.DebugRevisitHandler),
                 url(r'/debug/toggle_facilities/?',
                     handlers.DebugToggleRevisitHandler),
+                url(r'/debug/toggle_revisit_slow/?',
+                    handlers.DebugToggleRevisitSlowModeHandler),
             ]
 
         # Demo
