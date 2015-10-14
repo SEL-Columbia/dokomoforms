@@ -37,7 +37,7 @@ input[type] {
     padding-right: 50px;
 }
 
-input[type]:hover,input[type]:active, input[type]:focus {
+input[type]:active, input[type]:focus {
     border-color: rgb(84, 216, 90);
     box-shadow: none;
 }
@@ -47,16 +47,19 @@ input[type]:invalid {
     box-shadow: none;
 }
 
+input:disabled {
+    background-color: #eee;
+    font-style: italic;
+}
+
 input[type=checkbox] {
     /* Double-sized Checkboxes */
-/*    -ms-transform: scale(2); /* IE */
-/*    -moz-transform: scale(2); /* FF */
-/*    -webkit-transform: scale(2); /* Safari and Chrome */
-/*    -o-transform: scale(2); /* Opera */
-    margin-left: 2px;
-    margin-right: 5px;
-    margin-top: 8px;
-    min-height: 0px;
+    // -ms-transform: scale(2); /* IE */
+    // -moz-transform: scale(2); /* FF */
+    // -webkit-transform: scale(2); /* Safari and Chrome */
+    // -o-transform: scale(2); /* Opera */
+    // transform: scale(2);
+    margin: 10px 10px 20px 2px;
 }
 
 input[type=radio]:not(old) {
