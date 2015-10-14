@@ -49,6 +49,13 @@ with session.begin():
                 )
             ),
             models.construct_survey_node(
+                allow_dont_know=True,
+                node=models.construct_node(
+                    type_constraint='text',
+                    title={'English': 'Community Name'}
+                )
+            ),
+            models.construct_survey_node(
                 node=models.construct_node(
                     type_constraint='facility',
                     title={'English': 'Facility'},
@@ -61,18 +68,6 @@ with session.begin():
                         'wlng': -74.259094,
                         'elng': -73.700165,
                     }
-                )
-            ),
-            models.construct_survey_node(
-                node=models.construct_node(
-                    type_constraint='text',
-                    title={'English': 'Community Name'}
-                )
-            ),
-            models.construct_survey_node(
-                node=models.construct_node(
-                    type_constraint='text',
-                    title={'English': 'Facility Name'}
                 )
             ),
             models.construct_survey_node(
