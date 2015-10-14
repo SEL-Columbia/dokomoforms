@@ -523,8 +523,14 @@ FacilityTree.prototype.formattedFacility = function(facilityData) {
     var facility = {};
     facility.uuid = facilityData.facility_id;
     facility.name = facilityData.facility_name;
-    facility.properties = {sector: facilityData.facility_sector};
+    facility.properties = {
+        sector: facilityData.facility_sector,
+        grid_power: !!facilityData.grid_power,
+        improved_water_supply: !!facilityData.improved_water_supply,
+        improved_sanitation: !!facilityData.improved_sanitation
+    };
     facility.coordinates = [facilityData.lng, facilityData.lat];
+    console.log('formattedFacility', facility);
     return facility;
 };
 
@@ -577,8 +583,9 @@ FacilityTree.prototype.postFacility = function(facilityData, successCB, errorCB,
     var self = this;
 
     formatted = Boolean(formatted) || false;
-    console.log('formatted?', formatted);
     var facility = formatted ? facilityData : self.formattedFacility(facilityData);
+
+    console.log('formatted?', formatted, facility);
 
     $.ajax({
         url: config.revisit_url,
@@ -594,7 +601,7 @@ FacilityTree.prototype.postFacility = function(facilityData, successCB, errorCB,
              //XXX Obsecure basic auth in bundlejs somehow? Force https after?
         },
 
-        error: errorCB,
+        error: errorCB
     });
 };
 
@@ -604,7 +611,6 @@ FacilityTree.prototype.postFacility = function(facilityData, successCB, errorCB,
  * XXX function is copied in a few places with mild alterations, prob should be merged
  */
 FacilityTree.prototype.distance = function(lat, lng, center) {
-    var self = this;
     var R = 6371000; // metres
     var e = center.lat * Math.PI/180;
     var f = lat * Math.PI/180;

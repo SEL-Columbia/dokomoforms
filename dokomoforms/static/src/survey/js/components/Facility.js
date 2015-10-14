@@ -179,6 +179,18 @@ module.exports = React.createClass({
                 console.log('Other v', value);
                 response.facility_sector = value;
                 break;
+            case 'has_grid_power':
+                console.log('Has grid power', value);
+                response.grid_power = value;
+                break;
+            case 'has_improved_water_supply':
+                console.log('Has improved water', value);
+                response.improved_water_supply = value;
+                break;
+            case 'has_improved_sanitation':
+                console.log('Has improved santiation', value);
+                response.improved_sanitation = value;
+                break;
         }
 
         //XXX Failed validation messes up facility question
@@ -198,6 +210,18 @@ module.exports = React.createClass({
         localStorage[this.props.surveyID] = JSON.stringify(survey);
     },
 
+    onChangeGrid: function(e) {
+        console.log(e);
+        this.onInput('has_grid_power', e.target.checked);
+    },
+    onChangeWater: function(e) {
+        console.log(e);
+        this.onInput('has_improved_water_supply', e.target.checked);
+    },
+    onChangeSanitation: function(e) {
+        console.log(e);
+        this.onInput('has_improved_sanitation', e.target.checked);
+    },
 
     /*
      * Retrieve location and record into state on success.
@@ -249,6 +273,11 @@ module.exports = React.createClass({
         var isOther = choiceOptions.indexOf(sector) === -1;
         sector = isOther ? sector && 'other' : sector;
 
+        var locStr;
+        if (hasLocation) {
+            locStr = this.state.loc.lat + ', ' + this.state.loc.lng;
+        }
+
         return (
                 <span>
                 {this.state.selectFacility ?
@@ -281,14 +310,16 @@ module.exports = React.createClass({
                         onInput={this.onInput.bind(null, 'text')}
                         initValue={isNew && answer.response.facility_name}
                         type={'text'}
+                        placeholder="Facility name"
                         disabled={this.props.disabled}
                     />
                     <ResponseField
-                        initValue={JSON.stringify(this.state.loc)}
+                        initValue={locStr}
                         type={'location'}
                         disabled={true}
                     />
                     <Select
+                        placeholder='Choose a sector...'
                         choices={this.state.choices}
                         initValue={isNew && isOther ? answer.response.facility_sector : null}
                         initSelect={isNew && [sector]}
@@ -298,6 +329,39 @@ module.exports = React.createClass({
                         onSelect={this.onInput.bind(null, 'select')}
                         disabled={this.props.disabled}
                     />
+                    <div className='content-padded'>
+                        <div className='has-grid-power'>
+                            <input
+                                type='checkbox'
+                                id='has-grid-power'
+                                name='has-grid-power'
+                                onChange={this.onInput.bind(null, 'has_grid_power')}
+                                onChange={this.onChangeGrid}
+                            />
+                            <label htmlFor='has-grid-power'>has grid power</label>
+                        </div>
+
+                        <div className='has-improved-water-supply'>
+                            <input
+                                type='checkbox'
+                                id='has-improved-water-supply'
+                                name='has-improved-water-supply'
+                                onChange={this.onChangeWater}
+                            />
+                            <label htmlFor='has-improved-water-supply'>has improved water supply</label>
+                        </div>
+
+                        <div className='has-improved-sanitation'>
+                            <input
+                                type='checkbox'
+                                id='has-improved-sanitation'
+                                name='has-improved-sanitation'
+                                onChange={this.onChangeSanitation}
+                            />
+                            <label htmlFor='has-improved-sanitation'>has improved sanitation</label>
+                        </div>
+                    </div>
+
 
                     <LittleButton
                         buttonFunction={this.toggleAddFacility}

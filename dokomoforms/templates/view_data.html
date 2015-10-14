@@ -97,7 +97,7 @@
                         <li>
 
                             <div class="question-title-bar question-type-{{ stats['survey_node'].type_constraint }} {% if stats['survey_node'].type_constraint == "location" %} question-location {% end %}"
-                            {% if stats['survey_node'].type_constraint == "location" %} rel="location-map-{{ stats['survey_node'].id }}" {% end %}>
+                            {% if stats['survey_node'].type_constraint == "location" or stats['survey_node'].type_constraint == "facility" %} rel="location-map-{{ stats['survey_node'].id }}" {% end %}>
 
                                 {{ index }}. {{ _t(stats['survey_node'].node.title) }}
                                 <span class="question-type pull-right">{{ stats['survey_node'].type_constraint }}</span>
@@ -105,7 +105,7 @@
 
                             <div class="question-stats">
                                 <div class="row">
-                                    {% if stats['survey_node'].type_constraint == "location" %}
+                                    {% if stats['survey_node'].type_constraint == "location" or stats['survey_node'].type_constraint == "facility" %}
                                         <!-- This is a location question, show the map -->
                                         <div class="col-md-12">
                                             <div class="location-map" id="location-map-{{ stats['survey_node'].id }}"></div>
@@ -162,7 +162,7 @@
     var map_data = {};
 
     {% for survey_node_data in location_stats %}
-    map_data['location-map-{{ survey_node_data["survey_node_id"] }}'] = {% raw survey_node_data %};
+        map_data['location-map-{{ survey_node_data["survey_node_id"] }}'] = {% raw survey_node_data %};
     {% end %}
 
     ViewData.init(map_data);

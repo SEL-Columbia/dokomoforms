@@ -40,27 +40,29 @@ var AccountOverview = (function() {
                         _.each(submissions, function(submission) {
                             console.log(submission);
                             var answers = submission.answers,
-                                location = _.find(answers, function(answer) {
-                                    return answer.type_constraint === 'location';
+                                locations = _.filter(answers, function(answer) {
+                                    return answer.type_constraint === 'location' || answer.type_constraint === 'facility';
                                 });
-                            if (!location || !location.response) {
+                            // if no locations/facilties found, return
+                            if (!locations || !locations.length) {
                                 return;
                             }
-                            location = location.response;
-                            // console.log('location:', location);
-                            // stored lon/lat in revisit, switch around
-                            var marker = new L.marker([location.lat, location.lng], {
-                                riseOnHover: true
+                            locations.forEach(function(location) {
+                                location = location.response;
+                                // stored lon/lat in revisit, switch around
+                                var marker = new L.marker([location.lat, location.lng], {
+                                    riseOnHover: true
+                                });
+                                marker.options.icon = new L.icon({
+                                    iconUrl: '/static/dist/admin/img/icons/normal_base.png',
+                                    iconAnchor: [15, 48]
+                                });
+                                // marker.bindPopup();
+                                marker.on('click', function() {
+                                    submissionModal.openSubmissionDetailModal(submission.id);
+                                });
+                                markers.push(marker);
                             });
-                            marker.options.icon = new L.icon({
-                                iconUrl: '/static/dist/admin/img/icons/normal_base.png',
-                                iconAnchor: [15, 48]
-                            });
-                            // marker.bindPopup();
-                            marker.on('click', function() {
-                                submissionModal.openSubmissionDetailModal(submission.id);
-                            });
-                            markers.push(marker);
                         });
 
                         if (markers.length) {

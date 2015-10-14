@@ -26,7 +26,7 @@ module.exports = React.createClass({
     },
 
     render: function() {
-        var headerClasses = 'bar bar-nav bar-padded noselect';
+        var headerClasses = 'bar bar-nav bar-nav-padded noselect';
         if (this.state.showMenu) {
             headerClasses += ' title-extended';
         }
