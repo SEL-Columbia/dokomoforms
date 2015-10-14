@@ -102,6 +102,9 @@ def _create_demo_user(session):
                 submission_time=(
                     datetime.datetime.now() - datetime.timedelta(days=1)
                 ),
+                save_time=(
+                    datetime.datetime.now() - datetime.timedelta(days=1)
+                ),
                 answers=[
                     models.construct_answer(
                         survey_node=survey.nodes[1],
@@ -135,6 +138,9 @@ def _create_demo_user(session):
                 submission_type='unauthenticated',
                 submitter_name='Demo Submitter 2',
                 submission_time=(
+                    datetime.datetime.now() - datetime.timedelta(days=4)
+                ),
+                save_time=(
                     datetime.datetime.now() - datetime.timedelta(days=4)
                 ),
                 answers=[
