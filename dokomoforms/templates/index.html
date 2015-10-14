@@ -48,7 +48,7 @@
                                         <tr class="submission-row btn-view-submission" data-id="{{ submission.id }}">
                                             <td>{{ submission.save_time.strftime("%b %d, %Y at %H:%M") }}</td>
                                             <td>{{ submission.submitter_name }}</td>
-                                            <td>{{ submission.survey_id }}</td>
+                                            <td>{{ _t(submission.survey.title) }}</td>
                                         </tr>
                                     {% end %}
                                 </tbody>
