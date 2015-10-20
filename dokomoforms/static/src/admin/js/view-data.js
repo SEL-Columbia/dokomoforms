@@ -63,7 +63,7 @@ var ViewData = (function() {
                 });
             marker.options.icon = new L.icon({
                 iconUrl: '/static/dist/admin/img/icons/normal_base.png',
-                iconAnchor: [13, 30]
+                iconAnchor: [15, 48]
             });
             marker.on('click', function() {
                 sub_modals.openSubmissionDetailModal(answer.submission_id);
