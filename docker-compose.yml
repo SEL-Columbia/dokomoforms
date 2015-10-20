@@ -1,6 +1,6 @@
 webapp:
   image: "selcolumbia/dokomoforms"
-  command: python webapp.py
+  command: bash -c "head -c 24 /dev/urandom > cookie_secret && python webapp.py"
   links:
     - "db:db"
   ports:
