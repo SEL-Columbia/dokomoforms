@@ -55,6 +55,7 @@ class Survey(Base):
     url_slug = sa.Column(
         pg.TEXT,
         sa.CheckConstraint(
+            "url_slug != '' AND "
             "url_slug !~ '[%%#;/?:@&=+$,\s]' AND "
             "url_slug !~ '{}'".format(util.UUID_REGEX),
             name='url_safe_slug'
