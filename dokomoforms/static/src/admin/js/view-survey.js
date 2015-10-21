@@ -54,7 +54,8 @@ var ViewSurvey = (function() {
             }
         });
 
-        $(document).on('keyup', '.shareable-url-slug', function(e) {
+        // TODO: is on input better?
+        $(document).on('keyup input', '.shareable-url-slug', function(e) {
             var slug = e.target.value,
                 $input = $(e.target),
                 $saveBtn = $('.save-survey-url');
@@ -78,6 +79,21 @@ var ViewSurvey = (function() {
                     }
                 });
         });
+
+        $(document).on('paste', '.shareable-url-slug', function(e) {
+            setTimeout(function() {
+                var slug = cleanSlug(e.target.value),
+                    $input = $(e.target);
+                $input.val(slug);
+                // do something with text
+            }, 1);
+        });
+    }
+
+    function cleanSlug(slug) {
+        slug = slug.trim().replace(/[;/?:@&=+$,\s#%]+/g, '-');
+        console.log('cleanSlug: ', slug);
+        return slug;
     }
 
     function populateSurveyUrl() {
@@ -90,13 +106,13 @@ var ViewSurvey = (function() {
         // $('.survey-permalink-icon').tooltip('destroy');
         $('.survey-permalink-icon')
             .attr('title', domain + '/enumerate/' + survey_id);
-            // .tooltip();
+        // .tooltip();
     }
 
     function testSurveySlug(slug) {
         return $.ajax({
             type: 'GET',
-            url: '/enumerate/'+slug
+            url: '/enumerate/' + slug
         });
     }
 
@@ -113,7 +129,7 @@ var ViewSurvey = (function() {
     function saveSurveyUrl(slug) {
         return $.ajax({
             type: 'PUT',
-            url: '/api/v0/surveys/'+survey_id,
+            url: '/api/v0/surveys/' + survey_id,
             data: JSON.stringify({
                 url_slug: slug
             })
