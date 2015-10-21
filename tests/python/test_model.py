@@ -1767,7 +1767,7 @@ class TestSurvey(DokoTest):
                 )
 
     def test_url_slug_invalid_character(self):
-        for bad_character in ';/?:@&=+$, ':
+        for bad_character in '%#;/?:@&=+$, ':
             with self.subTest(bad_character=bad_character):
                 with self.assertRaises(IntegrityError):
                     with self.session.begin():
@@ -1799,6 +1799,22 @@ class TestSurvey(DokoTest):
                                 survey_type='public',
                                 title={'English': 'url_slug'},
                                 url_slug=str(uuid.uuid4()),
+                            ),
+                        ],
+                    )
+                )
+
+    def test_url_slug_is_not_empty_string(self):
+        with self.assertRaises(IntegrityError):
+            with self.session.begin():
+                self.session.add(
+                    models.Administrator(
+                        name='creator',
+                        surveys=[
+                            models.construct_survey(
+                                survey_type='public',
+                                title={'English': 'url_slug'},
+                                url_slug='',
                             ),
                         ],
                     )
@@ -4437,16 +4453,11 @@ class TestAnswer(DokoTest):
 
             self.session.add(submission)
 
-        local_offset = (
-            dateutil.tz.tzlocal()
-            .utcoffset(datetime.datetime.now())
-            .total_seconds() / 60
-        )
         self.assertEqual(
             self.session.query(models.Answer).one().answer,
             datetime.time(
                 13, 57,
-                tzinfo=psycopg2.tz.FixedOffsetTimezone(offset=local_offset)
+                tzinfo=psycopg2.tz.FixedOffsetTimezone(offset=0)
             )
         )
 
@@ -4483,16 +4494,11 @@ class TestAnswer(DokoTest):
 
             self.session.add(submission)
 
-        local_offset = (
-            dateutil.tz.tzlocal()
-            .utcoffset(datetime.datetime.now())
-            .total_seconds() / 60
-        )
         self.assertEqual(
             self.session.query(models.Answer).one().answer,
             datetime.datetime(
                 2015, 6, 22, 13, 57,
-                tzinfo=psycopg2.tz.FixedOffsetTimezone(offset=local_offset)
+                tzinfo=psycopg2.tz.FixedOffsetTimezone(offset=0)
             )
         )
 
