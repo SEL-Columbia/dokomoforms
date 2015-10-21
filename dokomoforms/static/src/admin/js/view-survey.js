@@ -131,7 +131,7 @@ var ViewSurvey = (function() {
             type: 'PUT',
             url: '/api/v0/surveys/' + survey_id,
             data: JSON.stringify({
-                url_slug: slug
+                url_slug: slug || null
             })
         });
     }
