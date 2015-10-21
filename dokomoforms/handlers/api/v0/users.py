@@ -1,7 +1,7 @@
 """TornadoResource class for dokomoforms.models.user.User."""
 from sqlalchemy.orm.exc import NoResultFound
 
-from dokomoforms.handlers.api import BaseResource
+from dokomoforms.handlers.api.v0 import BaseResource
 from dokomoforms.exc import UserRequiresEmailError
 from dokomoforms.models import User, Email, Survey, construct_user, get_model
 

@@ -8,8 +8,8 @@ from restless.constants import CREATED
 from sqlalchemy import cast, Date
 from sqlalchemy.sql import func
 
-from dokomoforms.handlers.api import BaseResource
-from dokomoforms.handlers.api.submissions import (
+from dokomoforms.handlers.api.v0 import BaseResource
+from dokomoforms.handlers.api.v0.submissions import (
     SubmissionResource, _create_submission
 )
 from dokomoforms.models import (

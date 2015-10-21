@@ -26,8 +26,8 @@ from tests.python.util import (
 from dokomoforms.models import Submission, Survey, Node, Administrator, User
 import dokomoforms.models as models
 from dokomoforms.models.answer import PhotoAnswer
-from dokomoforms.handlers.api.base import BaseResource
-from dokomoforms.handlers.api.nodes import NodeResource
+from dokomoforms.handlers.api.v0.base import BaseResource
+from dokomoforms.handlers.api.v0.nodes import NodeResource
 
 utils = (setUpModule, tearDownModule)
 

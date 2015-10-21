@@ -30,7 +30,7 @@ from dokomoforms.models.answer import IntegerAnswer
 import dokomoforms.exc as exc
 from dokomoforms.models.survey import Bucket
 from dokomoforms.models.util import column_search
-from dokomoforms.handlers.api.serializer import ModelJSONSerializer
+from dokomoforms.handlers.api.v0.serializer import ModelJSONSerializer
 
 
 class TestBase(unittest.TestCase):

@@ -34,7 +34,7 @@ if __name__ == '__main__':  # pragma: no cover
 
 import dokomoforms.handlers as handlers
 from dokomoforms.models import create_engine, Base, UUID_REGEX
-from dokomoforms.handlers.api import (
+from dokomoforms.handlers.api.v0 import (
     SurveyResource, SubmissionResource, PhotoResource, NodeResource,
     UserResource
 )

@@ -4,7 +4,7 @@ import tornado.web
 from dokomoforms.models import generate_question_stats
 from dokomoforms.models.answer import ANSWER_TYPES
 from dokomoforms.handlers.util import BaseHandler
-from dokomoforms.handlers.api import (
+from dokomoforms.handlers.api.v0 import (
     get_survey_for_handler, get_submission_for_handler
 )
 

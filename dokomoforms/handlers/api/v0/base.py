@@ -16,8 +16,8 @@ from sqlalchemy.orm.exc import NoResultFound
 
 import tornado.web
 
-from dokomoforms.handlers.api.serializer import ModelJSONSerializer
-from dokomoforms.handlers.api.util import filename_safe
+from dokomoforms.handlers.api.v0.serializer import ModelJSONSerializer
+from dokomoforms.handlers.api.v0.util import filename_safe
 from dokomoforms.handlers.util import BaseHandler, BaseAPIHandler
 from dokomoforms.models import Administrator, Email, Survey, Submission
 from dokomoforms.models.survey import (
