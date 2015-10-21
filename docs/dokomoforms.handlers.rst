@@ -6,7 +6,7 @@ Subpackages
 
 .. toctree::
 
-    dokomoforms.handlers.api.v0
+    dokomoforms.handlers.api
     dokomoforms.handlers.view
 
 Submodules
