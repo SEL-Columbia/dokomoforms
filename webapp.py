@@ -332,7 +332,8 @@ def setup_file_loggers(log_level: str):  # pragma: no cover
     for log in ('access', 'application', 'general'):
         logger = logging.getLogger('tornado.{}'.format(log))
         handler = timed_handler('log/tornado.{}.log'.format(log), when='D')
-        handler.setFormatter(tornado.log.LogFormatter(datefmt=None))
+        formatter = tornado.log.LogFormatter(color=False, datefmt=None)
+        handler.setFormatter(formatter)
         logger.addHandler(handler)
     sql_logger = logging.getLogger('sqlalchemy')
     sql_logger.propagate = False
