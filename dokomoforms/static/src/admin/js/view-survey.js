@@ -2,24 +2,122 @@ var $ = require('jquery'),
     _ = require('lodash'),
     base = require('./base'),
     moment = require('moment'),
-    view_sub_btn_tpl = require('../templates/button-view-submission.tpl');
+    view_sub_btn_tpl = require('../templates/button-view-submission.tpl'),
+    shareable_link_tpl = require('../templates/shareable-link.tpl'),
+    edit_link_tpl = require('../templates/edit-shareable-link.tpl');
 
 var ViewSurvey = (function() {
-    var survey_id;
+    var survey_id,
+        survey_slug,
+        good_slug = false,
+        domain = document.location.origin;
 
-    function init(_survey_id) {
+    function init(_survey_id, _survey_slug) {
         survey_id = _survey_id;
+        survey_slug = _survey_slug !== 'None' ? _survey_slug : '';
         base.init();
         if (window.CURRENT_USER_ID !== 'None') {
-            populateSurveyUrl(survey_id);
+            populateSurveyUrl();
+            setupEventHandlers();
             loadActivityGraph();
             setupDataTable();
         }
+
     }
 
-    function populateSurveyUrl(survey_id) {
-        var domain = document.location.origin;
-        $('#shareable-link').val(domain + '/enumerate/' + survey_id);
+    function setupEventHandlers() {
+        $(document).on('click', '.edit-survey-url', function() {
+            editSurveyUrl();
+        });
+
+        $(document).on('click', '.save-survey-url', function() {
+            if (!good_slug) {
+                return;
+            }
+            var slug = $('.shareable-url-slug').val();
+            saveSurveyUrl(slug)
+                .done(function() {
+                    slug = slug || survey_id;
+                    var url = domain + '/enumerate/' + slug;
+                    $('.shareable-link-wrap').html(shareable_link_tpl({
+                        shareable_link: url
+                    }));
+                    survey_slug = slug;
+                });
+        });
+
+        $(document).on('keypress', '.shareable-url-slug', function(e) {
+            var char = String.fromCharCode(e.charCode),
+                re = new RegExp(/[;/?:@&=+$,\s#%]/);
+            if (re.test(char)) {
+                return false;
+            }
+        });
+
+        $(document).on('keyup', '.shareable-url-slug', function(e) {
+            var slug = e.target.value,
+                $input = $(e.target),
+                $saveBtn = $('.save-survey-url');
+
+            testSurveySlug(slug)
+                .done(function() {
+                    // good only if it's the current slug... the ajax request will return not error,
+                    // but we should still be able to save.
+                    good_slug = slug === survey_slug;
+                })
+                .fail(function(jqXHR) {
+                    good_slug = jqXHR.status === 404;
+                })
+                .always(function() {
+                    if (!good_slug) {
+                        $saveBtn.addClass('disabled');
+                        $saveBtn.html('URL unavailable');
+                    } else {
+                        $saveBtn.removeClass('disabled');
+                        $saveBtn.text('Save');
+                    }
+                });
+        });
+    }
+
+    function populateSurveyUrl() {
+        var slug = survey_slug || survey_id;
+        var url = domain + '/enumerate/' + slug;
+        $('.shareable-link-wrap').html(shareable_link_tpl({
+            shareable_link: url
+        }));
+
+        // $('.survey-permalink-icon').tooltip('destroy');
+        $('.survey-permalink-icon')
+            .attr('title', domain + '/enumerate/' + survey_id);
+            // .tooltip();
+    }
+
+    function testSurveySlug(slug) {
+        return $.ajax({
+            type: 'GET',
+            url: '/enumerate/'+slug
+        });
+    }
+
+    function editSurveyUrl() {
+        var shaLinWra = $('.shareable-link-wrap');
+        shaLinWra.html(edit_link_tpl({
+            domain: domain,
+            slug: survey_slug
+        }));
+        var slutInput = shaLinWra.find('.shareable-url-slug').focus();
+        slutInput[0].setSelectionRange(0, slutInput.val().length);
+    }
+
+    function saveSurveyUrl(slug) {
+        return $.ajax({
+            type: 'PUT',
+            url: '/api/v0/surveys/'+survey_id,
+            data: JSON.stringify({
+                url_slug: slug
+            })
+        });
     }
 
     function loadActivityGraph() {
@@ -42,8 +140,6 @@ var ViewSurvey = (function() {
 
             _.each(sorted, function(result) {
                 var the_date = moment(result.date, 'YYYY-MM-DD').format('MMM D');
-
-                console.log(the_date);
 
                 data.push(result.num_submissions);
                 cats.push(the_date);
