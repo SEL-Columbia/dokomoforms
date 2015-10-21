@@ -58,14 +58,13 @@ class TestBase(unittest.TestCase):
         )
 
     def test_create_engine(self):
-        from dokomoforms.options import options
         engine1 = models.create_engine()
-        self.assertEqual(engine1.echo, 'debug' if options.debug else False)
+        self.assertEqual(engine1.echo, None)
 
-        engine2 = models.create_engine(True)
+        engine2 = models.create_engine(echo=True)
         self.assertEqual(engine2.echo, True)
 
-        engine3 = models.create_engine(False)
+        engine3 = models.create_engine(echo=False)
         self.assertEqual(engine3.echo, False)
 
         self.assertEqual(engine3.pool.size(), 5)
