@@ -791,6 +791,139 @@ class TestAdminManageSurvey(AdminTest):
         self.assertEqual(len(rows), 5)
 
     @report_success_status
+    def test_change_url_slug(self):
+        user = (
+            self.session
+            .query(Administrator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'slug playground'},
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/view/' + survey_id)
+
+        link = self.drv.find_element_by_id('shareable-link').text
+        self.assertEqual(link, 'http://localhost:9999/enumerate/' + survey_id)
+
+        edit_btn = self.drv.find_element_by_class_name('glyphicon-pencil')
+        self.click(edit_btn)
+
+        slug_field = self.drv.find_element_by_class_name('shareable-url-slug')
+        # Try to put in bad characters as well
+        slug_field.send_keys('slug%#;/?:@&=+$, ')
+        self.click(self.drv.find_element_by_class_name('save-survey-url'))
+
+        new_link = self.drv.find_element_by_id('shareable-link').text
+        self.assertEqual(new_link, 'http://localhost:9999/enumerate/slug')
+
+        self.get('/enumerate/slug')
+        slug_src = self.drv.page_source
+        self.get('/enumerate/' + survey_id)
+        id_src = self.drv.page_source
+        self.assertEqual(slug_src, id_src)
+
+    @report_success_status
+    def test_remove_url_slug(self):
+        user = (
+            self.session
+            .query(Administrator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'slug playground'},
+            )
+            self.session.add(survey)
+
+        survey_id = survey.id
+
+        self.get('/view/' + survey_id)
+
+        edit_btn = self.drv.find_element_by_class_name('glyphicon-pencil')
+        self.click(edit_btn)
+
+        slug_field = self.drv.find_element_by_class_name('shareable-url-slug')
+        slug_field.send_keys('slug')
+        self.click(self.drv.find_element_by_class_name('save-survey-url'))
+
+        new_link = self.drv.find_element_by_id('shareable-link').text
+        self.assertEqual(new_link, 'http://localhost:9999/enumerate/slug')
+
+        edit_btn = self.drv.find_element_by_class_name('glyphicon-pencil')
+        self.click(edit_btn)
+        slug_field = self.drv.find_element_by_class_name('shareable-url-slug')
+        slug_field.send_keys(Keys.DELETE)
+        self.click(self.drv.find_element_by_class_name('save-survey-url'))
+
+        new_old_link = self.drv.find_element_by_id('shareable-link').text
+        self.assertEqual(
+            new_old_link,
+            'http://localhost:9999/enumerate/' + survey_id
+        )
+
+        self.get('/enumerate/slug')
+        self.assertIn('404', self.drv.page_source)
+
+    @report_success_status
+    def test_url_slug_collision(self):
+        user = (
+            self.session
+            .query(Administrator)
+            .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+        )
+        with self.session.begin():
+            survey = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'slug playground'},
+            )
+            survey2 = construct_survey(
+                creator=user,
+                survey_type='public',
+                title={'English': 'slug already'},
+                url_slug='slug',
+            )
+            self.session.add_all([survey, survey2])
+
+        survey_id = survey.id
+
+        self.get('/view/' + survey_id)
+
+        edit_btn = self.drv.find_element_by_class_name('glyphicon-pencil')
+        self.click(edit_btn)
+
+        slug_field = self.drv.find_element_by_class_name('shareable-url-slug')
+        slug_field.send_keys('slu')
+        self.sleep()
+        slug_field.send_keys('g')
+        self.sleep()
+
+        self.assertIn(
+            'disabled',
+            (
+                self.drv
+                .find_element_by_class_name('save-survey-url')
+                .get_attribute('class')
+            )
+        )
+        self.click(self.drv.find_element_by_class_name('save-survey-url'))
+
+        self.get('/enumerate/slug')
+        self.assertEqual(
+            self.drv.find_element_by_tag_name('h3').text,
+            'slug already'
+        )
+
+    @report_success_status
     def test_download_json_button(self):
         self.get('/view/b0816b52-204f-41d4-aaf0-ac6ae2970923')
 
