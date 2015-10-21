@@ -1,53 +1,53 @@
-dokomoforms.handlers.api package
+dokomoforms.handlers.api.v0 package
 ================================
 
 Submodules
 ----------
 
-dokomoforms.handlers.api.base module
+dokomoforms.handlers.api.v0.base module
 ------------------------------------
 
-.. automodule:: dokomoforms.handlers.api.base
+.. automodule:: dokomoforms.handlers.api.v0.base
     :members:
     :undoc-members:
     :show-inheritance:
 
-dokomoforms.handlers.api.nodes module
+dokomoforms.handlers.api.v0.nodes module
 -------------------------------------
 
-.. automodule:: dokomoforms.handlers.api.nodes
+.. automodule:: dokomoforms.handlers.api.v0.nodes
     :members:
     :undoc-members:
     :show-inheritance:
 
-dokomoforms.handlers.api.photos module
+dokomoforms.handlers.api.v0.photos module
 --------------------------------------
 
-.. automodule:: dokomoforms.handlers.api.photos
+.. automodule:: dokomoforms.handlers.api.v0.photos
     :members:
     :undoc-members:
     :show-inheritance:
 
-dokomoforms.handlers.api.serializer module
+dokomoforms.handlers.api.v0.serializer module
 ------------------------------------------
 
-.. automodule:: dokomoforms.handlers.api.serializer
+.. automodule:: dokomoforms.handlers.api.v0.serializer
     :members:
     :undoc-members:
     :show-inheritance:
 
-dokomoforms.handlers.api.submissions module
+dokomoforms.handlers.api.v0.submissions module
 -------------------------------------------
 
-.. automodule:: dokomoforms.handlers.api.submissions
+.. automodule:: dokomoforms.handlers.api.v0.submissions
     :members:
     :undoc-members:
     :show-inheritance:
 
-dokomoforms.handlers.api.surveys module
+dokomoforms.handlers.api.v0.surveys module
 ---------------------------------------
 
-.. automodule:: dokomoforms.handlers.api.surveys
+.. automodule:: dokomoforms.handlers.api.v0.surveys
     :members:
     :undoc-members:
     :show-inheritance:
@@ -56,7 +56,7 @@ dokomoforms.handlers.api.surveys module
 Module contents
 ---------------
 
-.. automodule:: dokomoforms.handlers.api
+.. automodule:: dokomoforms.handlers.api.v0
     :members:
     :undoc-members:
     :show-inheritance:
