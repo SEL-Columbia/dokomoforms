@@ -4436,16 +4436,11 @@ class TestAnswer(DokoTest):
 
             self.session.add(submission)
 
-        local_offset = (
-            dateutil.tz.tzlocal()
-            .utcoffset(datetime.datetime.now())
-            .total_seconds() / 60
-        )
         self.assertEqual(
             self.session.query(models.Answer).one().answer,
             datetime.time(
                 13, 57,
-                tzinfo=psycopg2.tz.FixedOffsetTimezone(offset=local_offset)
+                tzinfo=psycopg2.tz.FixedOffsetTimezone(offset=0)
             )
         )
 
@@ -4482,16 +4477,11 @@ class TestAnswer(DokoTest):
 
             self.session.add(submission)
 
-        local_offset = (
-            dateutil.tz.tzlocal()
-            .utcoffset(datetime.datetime.now())
-            .total_seconds() / 60
-        )
         self.assertEqual(
             self.session.query(models.Answer).one().answer,
             datetime.datetime(
                 2015, 6, 22, 13, 57,
-                tzinfo=psycopg2.tz.FixedOffsetTimezone(offset=local_offset)
+                tzinfo=psycopg2.tz.FixedOffsetTimezone(offset=0)
             )
         )
 
