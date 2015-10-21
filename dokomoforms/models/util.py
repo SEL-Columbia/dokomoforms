@@ -100,6 +100,7 @@ sa.event.listen(
     # Creating extensions in pg_catalog makes them available to the entire
     # database without any prefix.
     sa.DDL(
+        'ALTER DATABASE {db} SET TIMEZONE TO "UTC";'
         'CREATE SCHEMA IF NOT EXISTS public;'
         'CREATE SCHEMA IF NOT EXISTS {schema};'
         'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'  # UUID columns
@@ -109,7 +110,7 @@ sa.event.listen(
         'CREATE EXTENSION IF NOT EXISTS "postgis";'  # Geometry columns
         'CREATE EXTENSION IF NOT EXISTS "btree_gist"'  # Exclusion constraints
         ' WITH SCHEMA pg_catalog;'
-        .format(schema=options.schema)
+        .format(db=options.db_database, schema=options.schema)
     ),
 )
 
