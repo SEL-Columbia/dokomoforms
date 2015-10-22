@@ -770,7 +770,7 @@ class TestAdminManageSurvey(AdminTest):
             (
                 self.drv
                 .find_element_by_id('shareable-link')
-                .get_attribute('value')
+                .text
             ),
             (
                 'http://localhost:9999/enumerate'
