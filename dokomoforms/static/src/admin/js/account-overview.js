@@ -24,18 +24,22 @@ var AccountOverview = (function() {
         }
     }
 
-    function drawRecentSubs(recentSubs) {
-        console.log('drawRecentSubs');
-
-        recentSubs.forEach(function(sub) {
-            console.log(sub);
-
+    function drawRecentSubs(data) {
+        console.log('drawRecentSubs', data);
+        var submissions = data.submissions,
+            $table = $('#recent-list table tbody');
+        submissions.forEach(function(sub) {
+            sub.submission_time = moment(sub.submission_time).format('MMM d, YYYY [at] HH:mm');
+            var displayData = _.extend(sub, { _t: _t});
+            console.log(displayData);
+            $table.append(recent_sub_tpl(displayData));
         });
     }
 
     function loadRecentSubmissions() {
         var limit = 5;
-        return $.getJSON('/api/v0/submissions?order_by=save_time:DESC&limit=' + limit);
+        return $.getJSON('/api/v0/submissions?order_by=save_time:DESC&limit=' + limit +
+            '&fields=id,submission_time,submitter_name,survey_title,answers');
     }
 
     function drawMap(data) {

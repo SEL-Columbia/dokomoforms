@@ -1,5 +1,5 @@
-<tr class="submission-row btn-view-submission" data-id="<%= data.submission.id %>">
-    <td><%= data.submission.save_time %></td>
-    <td><%= data.submission.submitter_name %></td>
-    <td><%= _t(data.submission.survey.title) %></td>
+<tr class="submission-row btn-view-submission" data-id="<%= data.id %>">
+    <td><%= data.submission_time %></td>
+    <td><%= data.submitter_name %></td>
+    <td><%= data._t(data.survey_title) %></td>
 </tr>
