@@ -18,6 +18,7 @@ import urllib.error
 from bs4 import BeautifulSoup
 
 import dateutil.parser
+from dateutil.tz import tzlocal
 
 from passlib.hash import bcrypt_sha256
 
@@ -994,9 +995,15 @@ class TestAdminViewData(AdminTest):
             dateutil.parser.parse(stats[0].text).date(),
             datetime.datetime.now().date()
         )
+        earliest_utc = (
+            self.session
+            .query(Survey.earliest_submission_time)
+            .filter_by(id='b0816b52-204f-41d4-aaf0-ac6ae2970923')
+            .scalar()
+        )
         self.assertEqual(
             dateutil.parser.parse(stats[1].text).date(),
-            datetime.datetime.now().date() - datetime.timedelta(days=99)
+            earliest_utc.astimezone(tzlocal()).date()
         )
         self.assertEqual(
             dateutil.parser.parse(stats[2].text).date(),
