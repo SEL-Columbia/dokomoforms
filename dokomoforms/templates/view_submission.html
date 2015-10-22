@@ -19,16 +19,14 @@
                 <div class="stat-label">
                     conducted on
                 </div>
-                <div class="stat-value stat-created-on">
-                    {{ submission.save_time.strftime("%b %d, %Y at %H:%M:%S") }}
+                <div class="stat-value stat-save-time">
                 </div>
             </div>
             <div class="col-md-2">
                 <div class="stat-label">
                     submitted on
                 </div>
-                <div class="stat-value stat-created-on">
-                    {{ submission.submission_time.strftime("%b %d, %Y at %H:%M:%S") }}
+                <div class="stat-value stat-submission-time">
                 </div>
             </div>
             <!-- <div class="col-md-2">
@@ -110,5 +108,13 @@
 
 {% block extra_scripts %}
 
+<script type="text/javascript">
+
+    window.SUB_DATETIMES = {
+        '.stat-save-time': '{{ submission.save_time }}',
+        '.stat-submission-time': '{{ submission.submission_time }}'
+    };
+
+</script>
 
 {% end %}
