@@ -1,5 +1,6 @@
 var $ = require('jquery'),
     _ = require('lodash'),
+    utils = require('./utils'),
     L = require('leaflet'),
     base = require('./base'),
     sub_modals = require('./submission-modal');
@@ -13,6 +14,7 @@ var ViewData = (function() {
         // TODO: is this check necessary?
         if (window.CURRENT_USER_ID !== 'None') {
             map_data = _map_data;
+            utils.populateDates(window.DATETIMES);
             setupEventHandlers();
         }
     }
