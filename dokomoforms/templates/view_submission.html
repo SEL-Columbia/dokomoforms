@@ -60,25 +60,43 @@
                             <li>
 
                                 <div class="response-title-bar">
-				    {{ _t(answer.question_title) }}
+            				        {{ _t(answer.question_title) }}
                                     <span class="question-type pull-right">{{ answer.type_constraint }}</span>
                                 </div>
 
                                 <div class="response-data">
-				    {% if answer.type_constraint in {'date', 'time', 'timestamp'} %}
-				        {{ answer.response['response'].isoformat() }}
-				    {% elif answer.type_constraint == 'decimal' %}
-				        {{ float(answer.response['response']) }}
-				    {% elif answer.type_constraint == 'photo' %}
-				        <img src="data:image/png;base64,{{ answer.photo.image }}">
-                    {% elif answer.type_constraint == 'location' %}
-                        {{ answer.response['response']['lat'] }}, {{ answer.response['response']['lng'] }}
-                    {% elif answer.type_constraint == 'multiple_choice' %}
-                        {{ _t(answer.response['response']['choice_text']) }}
-				    {% else %}
-				        {{ answer.response['response'] }}
-				    {% end %}
+            				    {% if answer.type_constraint in {'date', 'time', 'timestamp'} %}
+            				        {{ answer.response['response'].isoformat() }}
+            				    {% elif answer.type_constraint == 'decimal' %}
+            				        {{ float(answer.response['response']) }}
+            				    {% elif answer.type_constraint == 'photo' %}
+            				        <img src="data:image/png;base64,{{ answer.photo.image }}">
+                                {% elif answer.type_constraint == 'location' %}
+                                    {{ answer.response['response']['lat'] }}, {{ answer.response['response']['lng'] }}
+                                {% elif answer.type_constraint == 'multiple_choice' %}
+                                    {% if 'choice_text' in answer.response['response'] %}
+                                        {{ _t(answer.response['response']['choice_text']) }}
+                                    {% else %}
+                                        {{ answer.response['response'] }}
+                                    {% end %}
+                                {% elif answer.type_constraint == 'facility' %}
+                                    <div class="response-facility-name">
+                                        {{ answer.response['response']['facility_name'] }}
+                                        <span class="response-facility-meta response-facility-id">
+                                            ({{ answer.response['response']['facility_id'] }})
+                                        </span>
+                                    </div>
+                                    <div class="response-facility-meta response-facility-sector">
+                                        <strong>sector:</strong> {{ answer.response['response']['facility_sector'] }}
+                                    </div>
+                                    <div class="response-facility-meta response-facility-coords">
+                                        <strong>location:</strong> {{ answer.response['response']['lat'] }}, {{ answer.response['response']['lng'] }}
+                                    </div>
+                                {% else %}
+                                    {{ answer.response['response'] }}
+                                {% end %}
                                 </div>
+
                             </li>
                         {% end %}
                     </ul>

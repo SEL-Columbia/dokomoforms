@@ -1,5 +1,10 @@
+var env = process.env.NODE_ENV || 'production';
+
+
 var gulp = require('gulp'),
+    gulpif = require('gulp-if'),
     uglify = require('gulp-uglify'),
+    minifyCss = require('gulp-minify-css'),
     rename = require('gulp-rename'),
     source = require('vinyl-source-stream'),
     concat = require('gulp-concat'),
@@ -11,6 +16,7 @@ var gulp = require('gulp'),
             variable: 'data'
         }
     }),
+    del = require('del'),
     less = require('gulp-less'),
     // sourcemaps = require('gulp-sourcemaps'),
     replace = require('gulp-replace'),
@@ -51,7 +57,12 @@ var path = {
         node_modules_path + '/bootstrap/dist/js/bootstrap.js',
         node_modules_path + '/lodash-compat/index.js',
         node_modules_path + '/moment/min/moment.min.js',
-        node_modules_path + '/react/dist/react.js'
+        node_modules_path + '/react/dist/react.js',
+        node_modules_path + '/lz-string/libs/lz-string.min.js',
+        node_modules_path + '/pouchdb/dist/pouchdb.min.js',
+        node_modules_path + '/pouchdb-upsert/dist/pouchdb.upsert.min.js',
+        node_modules_path + '/node-uuid/uuid.js',
+        node_modules_path + '/screenfull/dist/screenfull.js'
     ],
     SURVEY_JS_APP_SRC: survey_src_path + '/js/**/*.js',
     SURVEY_JS_ENTRY_POINT: survey_src_path + '/js/main.js',
@@ -117,7 +128,16 @@ var admin_tasks = ['admin-less', 'admin-js-vendor', 'admin-js-app', 'admin-img',
     survey_tasks = ['survey-less', 'survey-js-vendor', 'survey-js-app', 'survey-img', 'survey-fonts', 'survey-app-cache'];
 
 
-process.env.BROWSERIFYSHIM_DIAGNOSTICS=1;
+process.env.BROWSERIFYSHIM_DIAGNOSTICS = 1;
+
+
+//---------------------
+// GLOBAL TASKS
+
+gulp.task('clean', function(cb) {
+    // You can use multiple globbing patterns as you would with `gulp.src`
+    del.sync([dist_path], cb);
+});
 
 //---------------------
 // SURVEY TASKS
@@ -133,16 +153,20 @@ gulp.task('survey-app-cache', function() {
 
 // Concat all vendor dependencies
 gulp.task('survey-js-vendor', function() {
-    gulp.src( path.SURVEY_JS_VENDOR_SRC )
-       .pipe(concat('vendor.js'))
-       .pipe(gulp.dest(path.SURVEY_JS_DIST));
+    gulp.src(path.SURVEY_JS_VENDOR_SRC)
+        .pipe(concat('vendor.js'))
+        .pipe(gulpif(env !== 'development', streamify(uglify())))
+        .pipe(gulp.dest(path.SURVEY_JS_DIST));
 });
 
 gulp.task('survey-js-app', function() {
-    return browserify({ entries: [path.SURVEY_JS_ENTRY_POINT] })
+    return browserify({
+        debug: false,
+        entries: [path.SURVEY_JS_ENTRY_POINT]
+    })
         .transform(reactify)
         .bundle()
-        .on('error', function (err) {
+        .on('error', function(err) {
             console.log(err.message);
             process.exit(1);
             this.emit('end');
@@ -152,6 +176,14 @@ gulp.task('survey-js-app', function() {
         .pipe(rename({
             extname: '.bundle.js'
         }))
+        .pipe(gulpif(env !== 'development', streamify(uglify())))
+        .on('error', function(err) {
+            console.log(err.message);
+            this.emit('end');
+        })
+        // .pipe(gulpif(env !== 'development', rename({
+        //     extname: '.bundle.min.js'
+        // })))
         .pipe(gulp.dest(path.SURVEY_JS_DIST));
 });
 
@@ -161,10 +193,11 @@ gulp.task('survey-less', function() {
     gulp.src(path.SURVEY_LESS_ENTRY_POINT)
         .pipe(less())
         // handle errors so the compiler doesn't stop
-        .on('error', function (err) {
+        .on('error', function(err) {
             console.log(err.message);
             this.emit('end');
         })
+        .pipe(gulpif(env !== 'development', minifyCss()))
         .pipe(gulp.dest(path.SURVEY_CSS_DIST));
 });
 
@@ -181,7 +214,7 @@ gulp.task('survey-fonts', function() {
 });
 
 gulp.task('survey-watch',
-    ['survey-less', 'survey-js-vendor', 'survey-js-app', 'survey-img', 'survey-fonts', 'survey-app-cache'],
+    survey_tasks,
     function() {
         livereload.listen();
         gulp.watch([path.SURVEY_LESS_SRC, path.SURVEY_JS_APP_SRC, path.APP_CACHE_SRC, path.COMMON_JS_SRC],
@@ -190,23 +223,35 @@ gulp.task('survey-watch',
 
 
 
+
+
+
+
+
+
 //---------------------
 // ADMIN TASKS
 
 // Concat all vendor dependencies
 gulp.task('admin-js-vendor', function() {
-    gulp.src( path.ADMIN_JS_VENDOR_SRC )
-       .pipe(concat('vendor.js'))
-       .pipe(gulp.dest(path.ADMIN_JS_DIST));
+    gulp.src(path.ADMIN_JS_VENDOR_SRC)
+        .pipe(concat('vendor.js'))
+        .pipe(gulpif(env !== 'development', streamify(uglify())))
+        // .pipe(gulpif(env !== 'development', rename({
+        //     extname: '.min.js'
+        // })))
+        .pipe(gulp.dest(path.ADMIN_JS_DIST));
 });
 
 gulp.task('admin-js-app', function() {
     var tasks = path.ADMIN_JS_ENTRY_POINTS.map(function(entry) {
         // note appending of root path to entry here
-        return browserify({ entries: [path.ADMIN_JS_ENTRY_POINT_PREFIX + entry] })
+        return browserify({
+            entries: [path.ADMIN_JS_ENTRY_POINT_PREFIX + entry]
+        })
             .transform(underscorify)
             .bundle()
-            .on('error', function (err) {
+            .on('error', function(err) {
                 console.log(err.message);
                 this.emit('end');
                 process.exit(1);
@@ -216,6 +261,10 @@ gulp.task('admin-js-app', function() {
             .pipe(rename({
                 extname: '.bundle.js'
             }))
+            .pipe(gulpif(env !== 'development', streamify(uglify())))
+            // .pipe(gulpif(env !== 'development', rename({
+            //     extname: '.min.js'
+            // })))
             .pipe(gulp.dest(path.ADMIN_JS_DIST));
     });
     return es.merge.apply(null, tasks);
@@ -226,10 +275,14 @@ gulp.task('admin-less', function() {
     gulp.src(path.ADMIN_LESS_ENTRY_POINT)
         .pipe(less())
         // handle errors so the compiler doesn't stop
-        .on('error', function (err) {
+        .on('error', function(err) {
             console.log(err.message);
             this.emit('end');
         })
+        .pipe(gulpif(env !== 'development', minifyCss()))
+        // .pipe(gulpif(env !== 'development', rename({
+        //     extname: '.min.css'
+        // })))
         .pipe(gulp.dest(path.ADMIN_CSS_DIST));
 });
 
@@ -246,7 +299,7 @@ gulp.task('admin-fonts', function() {
 });
 
 gulp.task('admin-watch',
-    ['admin-less', 'admin-js-vendor', 'admin-js-app', 'admin-img', 'admin-fonts'],
+    admin_tasks,
     function() {
         livereload.listen();
         gulp.watch([path.ADMIN_LESS_SRC, path.ADMIN_JS_APP_SRC, path.ADMIN_TEMPLATES_SRC, path.COMMON_JS_SRC],
@@ -254,24 +307,26 @@ gulp.task('admin-watch',
     });
 
 
-//
-// DEV TASKS
-//
-gulp.task('dev-build', admin_tasks.concat(survey_tasks));
 
 
+//---------------------
+// STATIC BUILD TASKS
+
 //
-// PROD TASKS
+// prod (?)
 //
-gulp.task('build', function() {
-    browserify({
-        entries: [path.JS_ENTRY_POINT],
-        transform: [reactify]
-    })
-    .bundle()
-    .pipe(source(path.JS_MINIFIED_BUILD_FILENAME))
-    .pipe(streamify(uglify(path.JS_MINIFIED_BUILD_FILENAME)))
-    .pipe(gulp.dest(path.JS_DEST_BUILD));
+gulp.task('admin-build', ['clean'].concat(admin_tasks));
+gulp.task('survey-build', ['clean'].concat(survey_tasks));
+
+gulp.task('build', ['clean', 'admin-build', 'survey-build']);
+
+//
+// dev
+//
+gulp.task('dev-build', function() {
+    console.log('dev building?');
+    env = 'development';
+    gulp.start('clean', 'build');
 });
 
 

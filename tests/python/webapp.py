@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Webapp script for testing purposes."""
-import json
 import sys
 import os
 sys.path.insert(0, os.path.abspath('.'))
@@ -37,7 +36,7 @@ Logging in as:
 FOR TESTING PURPOSES ONLY!
 FOR TESTING PURPOSES ONLY!
 FOR TESTING PURPOSES ONLY!
-'''.format(json.dumps(TEST_USER, indent=4))
+'''.format(TEST_USER, indent=4)
 with patch.object(BaseHandler, '_current_user_cookie') as p:
-    p.return_value = json.dumps(TEST_USER)
+    p.return_value = TEST_USER
     main(modify_text(msg, green))

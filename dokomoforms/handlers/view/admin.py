@@ -4,7 +4,7 @@ import tornado.web
 from dokomoforms.models import generate_question_stats
 from dokomoforms.models.answer import ANSWER_TYPES
 from dokomoforms.handlers.util import BaseHandler
-from dokomoforms.handlers.api import (
+from dokomoforms.handlers.api.v0 import (
     get_survey_for_handler, get_submission_for_handler
 )
 
@@ -40,14 +40,26 @@ class ViewSurveyDataHandler(BaseHandler):
                 .filter(answer_cls.main_answer.isnot(None))
             )
             result = {
-                'survey_node_id': survey_node.id,
-                'map_data': [
+                'survey_node_id': survey_node.id
+            }
+            if survey_node.type_constraint == 'location':
+                result['map_data'] = [
                     {
                         'submission_id': answer.submission_id,
                         'coordinates': answer.response['response'],
                     } for answer in answers
-                ],
-            }
+                ]
+            if survey_node.type_constraint == 'facility':
+                result['map_data'] = [
+                    {
+                        'submission_id': answer.submission_id,
+                        'facility_name':
+                            answer.response['response']['facility_name'],
+                        'coordinates': {
+                            'lat': answer.response['response']['lat'],
+                            'lng': answer.response['response']['lng']}
+                    } for answer in answers
+                ]
             yield result  # pragma: no branch
 
     @tornado.web.authenticated

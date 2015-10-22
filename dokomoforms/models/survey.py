@@ -55,7 +55,8 @@ class Survey(Base):
     url_slug = sa.Column(
         pg.TEXT,
         sa.CheckConstraint(
-            "url_slug !~ '[;/?:@&=+$,\s]' AND "
+            "url_slug != '' AND "
+            "url_slug !~ '[%%#;/?:@&=+$,\s]' AND "
             "url_slug !~ '{}'".format(util.UUID_REGEX),
             name='url_safe_slug'
         ),
@@ -581,7 +582,8 @@ class SurveyNode(Base):
             ['root_survey_id', 'containing_survey_id',
                 'root_survey_languages'],
             ['survey.id', 'survey.containing_id',
-                'survey.languages']
+                'survey.languages'],
+            onupdate='CASCADE', ondelete='CASCADE'
         ),
         sa.ForeignKeyConstraint(
             ['sub_survey_id', 'root_survey_languages',
@@ -699,7 +701,8 @@ class AnswerableSurveyNode(SurveyNode):
                 'survey_node.node_id',
                 'survey_node.type_constraint',
                 'survey_node.non_null_repeatable',
-            ]
+            ],
+            onupdate='CASCADE', ondelete='CASCADE'
         ),
         sa.ForeignKeyConstraint(
             [

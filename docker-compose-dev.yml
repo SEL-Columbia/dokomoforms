@@ -1,8 +1,8 @@
 webapp-dev:
   build: .
-  command: python webapp.py
+  command: bash -c "head -c 24 /dev/urandom > cookie_secret && python webapp.py"
   volumes:
-      - ./:/dokomo
+    - ./:/dokomo
   links:
     - "db-dev:db-dev"
   ports:

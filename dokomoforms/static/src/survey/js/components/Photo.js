@@ -8,7 +8,7 @@ var React = require('react'),
 //XXX use this: navigator.vibrate(50);
 
 /*
- * Location question component
+ * Photo question component
  *
  * props:
  *     @question: node object from survey
@@ -64,14 +64,24 @@ module.exports = React.createClass({
             navigator.mozGetUserMedia ||
             navigator.msGetUserMedia;
 
-        navigator.getUserMedia({
-            video: {
-                optional: [{
-                    // facingMode: 'environment', <--- not implemented in chrome for Android
-                    sourceId: self.state.camera
-                }]
-            }
-        }, function(stream) {
+        var config;
+
+        if (self.state.nosources) {
+            config = {
+                video: true
+            };
+        } else {
+            config = {
+                video: {
+                    optional: [{
+                        // facingMode: 'environment', <--- not implemented in chrome for Android
+                        sourceId: self.state.camera
+                    }]
+                }
+            };
+        }
+
+        navigator.getUserMedia(config, function(stream) {
             // store the stream on this component so that we can stop it later...
             self.stream = stream;
             console.log('STREAM: ', stream);
@@ -89,17 +99,30 @@ module.exports = React.createClass({
     getCameraSources: function() {
         if (typeof MediaStreamTrack === 'undefined' ||
             typeof MediaStreamTrack.getSources === 'undefined') {
-            console.log('This browser does not support MediaStreamTrack... try Chrome.');
+            console.log('This browser does not support MediaStreamTrack... trying MediaStream.enumerateDevices()');
+            // try MediaStream.enumerateDevices()
+            if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                console.log('This browser does not support MediaStream.enumerateDevices() either... use basic video capture');
+                this.setState({nosources: true}, this.startStream);
+                return;
+            } else {
+                navigator.mediaDevices.enumerateDevices()
+                    .then(this.getMediaStreamSourcesSuccess)
+                    .catch(function(err) {
+                        console.log(err.name + ': ' + err.message);
+                    });
+            }
         } else {
-            MediaStreamTrack.getSources(this.getSourcesSuccess);
+            MediaStreamTrack.getSources(this.getMediaStreamTrackSourcesSuccess);
         }
     },
 
-    getSourcesSuccess: function(sourceInfos) {
+    getMediaStreamTrackSourcesSuccess: function(sourceInfos) {
         var self = this,
             cameraSources = [],
             cameraIdx = 0,
             camera = null;
+
         sourceInfos.forEach(function(sourceInfo) {
             if (sourceInfo.kind === 'video') {
                 var cameraSource = {
@@ -111,6 +134,39 @@ module.exports = React.createClass({
                 cameraIdx += 1;
             } else {
                 console.log('Some other kind of source: ', sourceInfo);
+            }
+        });
+
+        // set the last camera found to the selected camera.
+        if (cameraSources.length) {
+            camera = cameraSources[cameraSources.length - 1].value;
+            cameraSources[cameraSources.length - 1].selected = 'selected';
+        }
+
+        this.setState({
+            camera: camera,
+            sources: cameraSources
+        }, function() {
+            self.startStream();
+        });
+    },
+
+    getMediaStreamSourcesSuccess: function(devices) {
+        var self = this,
+            cameraSources = [],
+            cameraIdx = 0,
+            camera = null;
+        devices.forEach(function(device) {
+            if (device.kind === 'videoinput') {
+                var cameraSource = {
+                    selected: '',
+                    value: device.id,
+                    text: device.label || 'camera ' + cameraIdx
+                };
+                cameraSources.push(cameraSource);
+                cameraIdx += 1;
+            } else {
+                console.log('Some other kind of source: ', device);
             }
         });
 
@@ -181,7 +237,7 @@ module.exports = React.createClass({
         var length = answers.length;
 
         console.log('Length:', length, 'Count', this.state.questionCount);
-        if (answers[length] && answers[length].response_type || length > 0 && length == this.state.questionCount) {
+        if (answers[length] && answers[length].response_type || length > 0 && length === this.state.questionCount) {
 
             this.setState({
                 questionCount: this.state.questionCount + 1
@@ -295,6 +351,18 @@ module.exports = React.createClass({
         //     classes += ' captured';
         // }
         console.log('STATE', this.state);
+        var select_source = null;
+        if (!this.state.nosources) {
+            select_source = (
+                <select className="camera_select" onChange={this.changeCamera}>
+                    {this.state.sources.map(function(source) {
+                        return (
+                            <option value={source.value} selected={source.selected}>{source.text}</option>
+                        );
+                    })}
+                </select>
+            );
+        }
         return (
             <span>
             <div className="video_container">
@@ -327,13 +395,8 @@ module.exports = React.createClass({
             })}
             </div>
 
-            <select className="camera_select" onChange={this.changeCamera}>
-                {this.state.sources.map(function(source) {
-                    return (
-                        <option value={source.value} selected={source.selected}>{source.text}</option>
-                    );
-                })}
-            </select>
+            {select_source}
+
             </span>
         );
     }

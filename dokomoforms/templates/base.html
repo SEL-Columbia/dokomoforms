@@ -57,11 +57,17 @@
                         <a href="#" class="dropdown-toggle" type="button" id="UserDropdown" data-toggle="dropdown" aria-expanded="true"><span class="glyphicon glyphicon-user icon-inline-left"></span>{{ current_user }} <span class="caret"></span></a>
                         <ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="UserDropdown">
                             <li role="presentation"><a class="nav-settings" role="menuitem" tabindex="-1" href="#"><span class="glyphicon glyphicon-cog icon-inline-left"></span> Settings</a></li>
-                            <li role="presentation"><a class="btn-logout" role="menuitem" tabindex="-1"href="#"><span class="glyphicon glyphicon-log-out icon-inline-left" id="logout"></span> Log Out</a></li>
+			    {% if options.demo %}
+			    <li role="presentation"><a class="demo-logout" role="menuitem" tabindex="-1" href="/demo/logout"><span class="glyphicon glyphicon-log-out icon-inline-left" id="logout"></span> Log Out</a></li>
+			    {% else %}
+			    <li role="presentation"><a class="btn-logout" role="menuitem" tabindex="-1" href="#"><span class="glyphicon glyphicon-log-out icon-inline-left" id="logout"></span> Log Out</a></li>
+			    {% end %}
                         </ul>
                     </li>
 
 
+		    {% elif options.demo %}
+                    <li><a class="btn btn-block demo-login" href="/demo/login" id="login">Login or Register</a></li>
                     {% else %}
                     <li><a class="btn btn-block btn-login" href="#" id="login">Login or Register</a></li>
                     {% end %}

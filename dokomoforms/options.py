@@ -16,9 +16,15 @@ _arg = None
 
 # Application options
 define('firstrun', default=True, help='whether to run app setup', type=bool)
+define('demo', default=False, help='whether to run in demo mode', type=bool)
 define('port', help='run on the given port', type=int)
+
+log_help = 'whether to write logs to files in logs/'
+define('log_to_file', default=True, help=log_help, type=bool)
+
 define('cookie_secret', help='string used to create session cookies')
 define('debug', default=False, help='whether to enable debug mode', type=bool)
+define('autoreload', default=False, help='whether to autoreload', type=bool)
 
 https_help = 'whether the application accepts https traffic'
 define('https', help=https_help, type=bool)
