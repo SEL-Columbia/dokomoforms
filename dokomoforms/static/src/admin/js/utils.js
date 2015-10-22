@@ -14,7 +14,19 @@ module.exports = (function() {
         });
     }
 
+    /**
+     * Enable popover within the element defined by selector
+     * @param  {String} selector [description]
+     */
+    function _initPopovers(selector) {
+        selector = selector || 'body';
+        $('[data-toggle="popover"]').popover({
+            container: selector
+        });
+    }
+
     return {
-        initTooltips: _initTooltips
+        initTooltips: _initTooltips,
+        initPopovers: _initPopovers
     };
 })();

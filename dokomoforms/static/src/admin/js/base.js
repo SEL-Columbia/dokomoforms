@@ -11,6 +11,7 @@ module.exports = (function() {
 
     function init() {
         utils.initTooltips();
+        utils.initPopovers();
         _globalAjaxSetup();
         _setupGlobalEventHandlers();
 
@@ -28,7 +29,6 @@ module.exports = (function() {
     function _globalAjaxSetup() {
         $.ajaxPrefilter(function(options, originalOptions, jqXHR) {
             var _xsrf = cookies.getCookie('_xsrf');
-            console.log(_xsrf);
             jqXHR.setRequestHeader('X-XSRFToken', _xsrf);
         });
     }

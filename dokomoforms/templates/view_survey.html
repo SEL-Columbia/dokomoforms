@@ -99,14 +99,15 @@
                         <div class="col-md-12">
                             <div class="stat-label">
                                 <span class="glyphicon glyphicon-phone"></span> mobile survey link
+                                <a target="_blank" href="/enumerate/{{ survey.id }}">
+                                    <span class="glyphicon glyphicon-link icon-inline-right survey-permalink-icon" title="..."></span>
+                                </a>
                             </div>
-                            <div class="">
-                                <div class="input-group">
-				    <!-- TODO: make this a different element, highlight all on click, and set readonly without crazy styling. -->
-                                    <input spellcheck="false" type="text" class="form-control" id="shareable-link" aria-describedby="shareable-link" value="...">
-                                    <div class="input-group-addon"><a target="_blank" href="/enumerate/{{ survey.id }}"><span class="glyphicon glyphicon-new-window"></span></a></div>
-                                </div>
+                            <div class="shareable-link-wrap">
+
                             </div>
+
+
                         </div>
                     </div>
                     <div class="row row-stat">
@@ -207,7 +208,7 @@
 
 <script type="text/javascript">
     // bootstrap the ViewSurvey module with the survey id
-    ViewSurvey.init('{{ survey.id }}');
+    ViewSurvey.init('{{ survey.id }}', '{{ survey.url_slug }}');
 </script>
 
 {% end %}
