@@ -1,13 +1,10 @@
 """Administrative handlers."""
-import json
-
 import tornado.web
 import tornado.gen
 import tornado.httpclient
 
 from dokomoforms.handlers.util import BaseHandler
-from dokomoforms.models import most_recent_surveys, most_recent_submissions
-from dokomoforms.models import ModelJSONEncoder
+from dokomoforms.models import most_recent_surveys
 
 
 class Index(BaseHandler):
