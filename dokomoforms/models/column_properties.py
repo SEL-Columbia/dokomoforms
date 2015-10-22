@@ -28,6 +28,7 @@ Answer.question_title = column_property(
 Submission.survey_title = column_property(
     sa.select([Survey.title])
     .where(Survey.id == Submission.survey_id)
+    .correlate_except(Survey)
     .label('survey_title')
 )
 
