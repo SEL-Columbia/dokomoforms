@@ -120,12 +120,16 @@ var AccountOverview = (function() {
                 yAxis: {
                     title: {
                         text: '# of submissions'
-                    }
+                    },
+                    allowDecimals: false
                 },
                 series: [{
                     name: 'Submissions',
                     data: data
                 }],
+                legend: {
+                    enabled: false
+                },
                 credits: {
                     enabled: false
                 }
