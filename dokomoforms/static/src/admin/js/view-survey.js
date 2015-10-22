@@ -57,7 +57,7 @@ var ViewSurvey = (function() {
         });
 
         // TODO: is on input better?
-        $(document).on('keyup input', '.shareable-url-slug', function(e) {
+        $(document).on('input', '.shareable-url-slug', function(e) {
             var slug = e.target.value,
                 $input = $(e.target),
                 $saveBtn = $('.save-survey-url');

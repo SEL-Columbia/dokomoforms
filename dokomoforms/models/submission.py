@@ -32,6 +32,8 @@ class Submission(Base):
     survey_id = sa.Column(pg.UUID, nullable=False)
     survey_containing_id = sa.Column(pg.UUID, nullable=False)
     survey_type = sa.Column(survey_type_enum, nullable=False)
+    # dokomoforms.models.column_properties
+    # survey_title
     start_time = sa.Column(pg.TIMESTAMP(timezone=True))
     save_time = sa.Column(
         pg.TIMESTAMP(timezone=True),

@@ -52,7 +52,7 @@ class Answer(Base):
     allow_dont_know = sa.Column(sa.Boolean, nullable=False)
     question_id = sa.Column(pg.UUID, nullable=False)
     # dokomoforms.models.column_properties
-    # question title
+    # question_title
 
     type_constraint = sa.Column(node_type_enum, nullable=False)
     answer_type = sa.Column(
