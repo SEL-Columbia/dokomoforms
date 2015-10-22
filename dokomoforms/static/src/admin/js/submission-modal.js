@@ -1,4 +1,5 @@
-var $ = require('jquery');
+var $ = require('jquery'),
+    utils = require('./utils');
 
 module.exports = (function() {
 
@@ -8,8 +9,12 @@ module.exports = (function() {
      */
     function openSubmissionDetailModal(submission_id) {
         var url = '/view/submission/' + submission_id;
-        $('.modal-submission .modal-content').load(url);
-        $('.modal-submission').modal();
+        $('.modal-submission .modal-content').load(url, function() {
+            $('.modal-submission').modal();
+            if (window.SUB_DATETIMES) {
+                utils.populateDates(window.SUB_DATETIMES, 'MMM d, YYYY HH:mm');
+            }
+        });
     }
 
     function initSubmissionModalHandler() {

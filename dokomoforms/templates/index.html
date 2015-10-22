@@ -44,13 +44,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for submission in recent_submissions %}
-                                        <tr class="submission-row btn-view-submission" data-id="{{ submission.id }}">
-                                            <td>{{ submission.save_time.strftime("%b %d, %Y at %H:%M") }}</td>
-                                            <td>{{ submission.submitter_name }}</td>
-                                            <td>{{ _t(submission.survey.title) }}</td>
-                                        </tr>
-                                    {% end %}
+
                                 </tbody>
                             </table>
                         </div>
@@ -113,7 +107,7 @@
 
 {% block extra_scripts %}
 
-        <script type="text/javascript" src="/static/dist/admin/js/account-overview.bundle.js"></script>
+    <script type="text/javascript" src="/static/dist/admin/js/account-overview.bundle.js"></script>
 
     {% if message %}
     <script>

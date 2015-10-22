@@ -1,6 +1,7 @@
 var $ = require('jquery'),
     _ = require('lodash'),
     base = require('./base'),
+    utils = require('./utils'),
     moment = require('moment'),
     view_sub_btn_tpl = require('../templates/button-view-submission.tpl'),
     shareable_link_tpl = require('../templates/shareable-link.tpl'),
@@ -18,6 +19,7 @@ var ViewSurvey = (function() {
         base.init();
         if (window.CURRENT_USER_ID !== 'None') {
             populateSurveyUrl();
+            utils.populateDates(window.DATETIMES);
             setupEventHandlers();
             loadActivityGraph();
             setupDataTable();

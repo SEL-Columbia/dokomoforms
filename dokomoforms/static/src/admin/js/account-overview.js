@@ -7,6 +7,7 @@ var $ = require('jquery'),
     view_btn_tpl = require('../templates/button-view-data.tpl'),
     manage_btn_tpl = require('../templates/button-manage-survey.tpl'),
     dl_btn_tpl = require('../templates/button-download-data.tpl'),
+    recent_sub_tpl = require('../templates/recent-submission-row.tpl'),
     _t = require('./lang');
 
 var AccountOverview = (function() {
@@ -15,69 +16,87 @@ var AccountOverview = (function() {
         base.init();
         if (window.CURRENT_USER_ID !== 'None') {
             loadActivityGraph();
-            loadMap();
+            loadRecentSubmissions()
+                .done(drawMap)
+                .done(drawRecentSubs);
+            // drawMap();
             setupDataTable();
         }
     }
 
-    function loadMap() {
-        console.log('loadMap');
-        // Map
-        var map,
-            limit = 5;
-        $.getJSON('/api/v0/submissions?order_by=save_time:DESC&limit=' + limit, function(data) {
-            var submissions = data.submissions;
-            if (submissions.length) {
-                $(document).on('shown.bs.tab', 'a[href="#recent-map"]', function() {
-                    if (!map) {
-                        map = L.map('recent-map-container', {
-                            dragging: true,
-                            zoom: 14,
-                            attributionControl: false
-                        });
-                        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
-                        var markers = [];
-                        _.each(submissions, function(submission) {
-                            console.log(submission);
-                            var answers = submission.answers,
-                                locations = _.filter(answers, function(answer) {
-                                    return answer.type_constraint === 'location' || answer.type_constraint === 'facility';
-                                });
-                            // if no locations/facilties found, return
-                            if (!locations || !locations.length) {
-                                return;
-                            }
-                            locations.forEach(function(location) {
-                                location = location.response;
-                                // stored lon/lat in revisit, switch around
-                                var marker = new L.marker([location.lat, location.lng], {
-                                    riseOnHover: true
-                                });
-                                marker.options.icon = new L.icon({
-                                    iconUrl: '/static/dist/admin/img/icons/normal_base.png',
-                                    iconAnchor: [15, 48]
-                                });
-                                // marker.bindPopup();
-                                marker.on('click', function() {
-                                    submissionModal.openSubmissionDetailModal(submission.id);
-                                });
-                                markers.push(marker);
-                            });
-                        });
-
-                        if (markers.length) {
-                            var markers_group = new L.featureGroup(markers);
-                            markers_group.addTo(map);
-                            map.fitBounds(markers_group.getBounds(), {
-                                padding: [40, 40]
-                            });
-                        } else {
-                            console.log('No submissions include location.');
-                        }
-                    }
-                });
-            }
+    function drawRecentSubs(data) {
+        console.log('drawRecentSubs', data);
+        var submissions = data.submissions,
+            $table = $('#recent-list table tbody');
+        submissions.forEach(function(sub) {
+            sub.submission_time = moment(sub.submission_time).format('MMM d, YYYY [at] HH:mm');
+            var displayData = _.extend(sub, { _t: _t});
+            console.log(displayData);
+            $table.append(recent_sub_tpl(displayData));
         });
+    }
+
+    function loadRecentSubmissions() {
+        var limit = 5;
+        return $.getJSON('/api/v0/submissions?order_by=save_time:DESC&limit=' + limit +
+            '&fields=id,submission_time,submitter_name,survey_title,answers');
+    }
+
+    function drawMap(data) {
+        console.log('drawMap');
+        // Map
+        var map;
+        var submissions = data.submissions;
+        if (submissions.length) {
+            $(document).on('shown.bs.tab', 'a[href="#recent-map"]', function() {
+                if (!map) {
+                    map = L.map('recent-map-container', {
+                        dragging: true,
+                        zoom: 14,
+                        attributionControl: false
+                    });
+                    L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
+                    var markers = [];
+                    _.each(submissions, function(submission) {
+                        console.log(submission);
+                        var answers = submission.answers,
+                            locations = _.filter(answers, function(answer) {
+                                return answer.type_constraint === 'location' || answer.type_constraint === 'facility';
+                            });
+                        // if no locations/facilties found, return
+                        if (!locations || !locations.length) {
+                            return;
+                        }
+                        locations.forEach(function(location) {
+                            location = location.response;
+                            // stored lon/lat in revisit, switch around
+                            var marker = new L.marker([location.lat, location.lng], {
+                                riseOnHover: true
+                            });
+                            marker.options.icon = new L.icon({
+                                iconUrl: '/static/dist/admin/img/icons/normal_base.png',
+                                iconAnchor: [15, 48]
+                            });
+                            // marker.bindPopup();
+                            marker.on('click', function() {
+                                submissionModal.openSubmissionDetailModal(submission.id);
+                            });
+                            markers.push(marker);
+                        });
+                    });
+
+                    if (markers.length) {
+                        var markers_group = new L.featureGroup(markers);
+                        markers_group.addTo(map);
+                        map.fitBounds(markers_group.getBounds(), {
+                            padding: [40, 40]
+                        });
+                    } else {
+                        console.log('No submissions include location.');
+                    }
+                }
+            });
+        }
     }
 
     function loadActivityGraph() {
