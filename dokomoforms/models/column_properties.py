@@ -24,6 +24,14 @@ Answer.question_title = column_property(
 )
 
 
+# Submission
+Submission.survey_title = column_property(
+    sa.select([Survey.title])
+    .where(Survey.id == Submission.survey_id)
+    .label('survey_title')
+)
+
+
 # Survey
 Survey.num_submissions = column_property(
     sa.select([sa.func.count(Submission.id)])
