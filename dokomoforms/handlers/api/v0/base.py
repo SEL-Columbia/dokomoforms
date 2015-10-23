@@ -87,7 +87,10 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
     @property
     def current_user(self):
         """The handler's current_user."""
-        return self.r_handler.current_user
+        user = self.current_user_model
+        if user:
+            return user.name
+        return None
 
     @property
     def content_type(self):
