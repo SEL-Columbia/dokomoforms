@@ -66,7 +66,23 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
     @property
     def current_user_model(self):
         """The handler's current_user_model."""
-        return self.r_handler.current_user_model
+        logged_in_user = self.r_handler.current_user_model
+        if logged_in_user:
+            return logged_in_user
+        try:
+            email = self.r_handler.request.headers['Email']
+        except KeyError:
+            return None
+        try:
+            return (
+                self.session
+                .query(Administrator)
+                .join(Email)
+                .filter(Email.address == email)
+                .one()
+            )
+        except NoResultFound:
+            return None
 
     @property
     def current_user(self):

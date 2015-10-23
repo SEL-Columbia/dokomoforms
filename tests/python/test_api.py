@@ -494,6 +494,65 @@ class TestSurveyApi(DokoHTTPTest):
 
         self.assertFalse("error" in survey_dict)
 
+    def test_create_survey_using_api_token(self):
+        token_url = self.api_root + '/users/generate-api-token'
+        token_response = self.fetch(token_url)
+        token = json_decode(token_response.body)['token']
+
+        # url to test
+        url = self.api_root + '/surveys'
+        # http method
+        method = 'POST'
+        # body
+        body = {
+            "metadata": {},
+            "survey_type": "public",
+            "default_language": "English",
+            "title": {"English": "Test_Survey"},
+            "nodes": [
+                {
+                    'node': {
+                        "title": {"English": "test_time_node"},
+                        "hint": {
+                            "English": ""
+                        },
+                        "allow_multiple": False,
+                        "allow_other": False,
+                        "type_constraint": "time",
+                        "logic": {},
+                        "deleted": False
+                    },
+                }
+            ]
+        }
+
+        encoded_body = json_encode(body)
+
+        # make request
+        response = self.fetch(
+            url,
+            method=method,
+            body=encoded_body,
+            _logged_in_user=None,
+            headers={'Email': 'test_creator@fixtures.com', 'Token': token}
+        )
+        self.assertEqual(response.code, 201, msg=response.body)
+
+        # test response
+        # check that response is valid parseable json
+        survey_dict = json_decode(response.body)
+
+        # check that expected keys are present
+        self.assertTrue('id' in survey_dict)
+        self.assertTrue('metadata' in survey_dict)
+        self.assertTrue('nodes' in survey_dict)
+        self.assertTrue('title' in survey_dict)
+        self.assertTrue('version' in survey_dict)
+        self.assertTrue('created_on' in survey_dict)
+        self.assertTrue('last_update_time' in survey_dict)
+
+        self.assertFalse("error" in survey_dict)
+
     def test_create_survey_with_node_definition(self):
         # url to test
         url = self.api_root + '/surveys'
@@ -2920,7 +2979,7 @@ class TestSubmissionApi(DokoHTTPTest):
         response = self.fetch(
             url, method=method, body=json_encode(body), _logged_in_user=None
         )
-        self.assertEqual(response.code, 201)
+        self.assertEqual(response.code, 201, msg=response.body)
 
         submission_dict = json_decode(response.body)
 
