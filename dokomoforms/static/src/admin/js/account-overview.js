@@ -3,7 +3,7 @@ var $ = require('jquery'),
     L = require('leaflet'),
     moment = require('moment'),
     base = require('./base'),
-    submissionModal = require('./submission-modal'),
+    SubmissionModal = require('./modals/submission-modal'),
     view_btn_tpl = require('../templates/button-view-data.tpl'),
     manage_btn_tpl = require('../templates/button-manage-survey.tpl'),
     dl_btn_tpl = require('../templates/button-download-data.tpl'),
@@ -19,8 +19,14 @@ var AccountOverview = (function() {
             loadRecentSubmissions()
                 .done(drawMap)
                 .done(drawRecentSubs);
-            // drawMap();
             setupDataTable();
+
+            $(document).on('click', '.btn-view-submission', function() {
+                // select this row in the datatable
+                var submission_id = $(this).data('id');
+                new SubmissionModal(submission_id).open();
+            });
+
         }
     }
 
@@ -79,7 +85,8 @@ var AccountOverview = (function() {
                             });
                             // marker.bindPopup();
                             marker.on('click', function() {
-                                submissionModal.openSubmissionDetailModal(submission.id);
+                                new SubmissionModal(submission.id).open();
+                                // submissionModal.openSubmissionDetailModal(submission.id);
                             });
                             markers.push(marker);
                         });

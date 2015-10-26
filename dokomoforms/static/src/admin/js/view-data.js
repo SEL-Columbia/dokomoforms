@@ -3,7 +3,7 @@ var $ = require('jquery'),
     utils = require('./utils'),
     L = require('leaflet'),
     base = require('./base'),
-    sub_modals = require('./submission-modal');
+    SubmissionModal = require('./modals/submission-modal');
 
 var ViewData = (function() {
     var maps = {},
@@ -68,7 +68,7 @@ var ViewData = (function() {
                 iconAnchor: [15, 48]
             });
             marker.on('click', function() {
-                sub_modals.openSubmissionDetailModal(answer.submission_id);
+                new SubmissionModal(answer.submission_id).open();
             });
             markers.push(marker);
         });
