@@ -29,7 +29,7 @@ var AccountOverview = (function() {
         var submissions = data.submissions,
             $table = $('#recent-list table tbody');
         submissions.forEach(function(sub) {
-            sub.submission_time = moment(sub.submission_time).format('MMM d, YYYY [at] HH:mm');
+            sub.submission_time = moment(sub.submission_time).format('MMM D, YYYY [at] HH:mm');
             var displayData = _.extend(sub, { _t: _t});
             console.log(displayData);
             $table.append(recent_sub_tpl(displayData));
