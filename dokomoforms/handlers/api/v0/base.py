@@ -2,6 +2,7 @@
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 import datetime
+import logging
 from time import localtime
 
 from passlib.hash import bcrypt_sha256
@@ -180,6 +181,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
             err = exc.NotFound()
         elif isinstance(err, understood):
             err = exc.BadRequest(err)
+        logging.exception(err)
         return super().handle_error(err)
 
     def wrap_list_response(self, data):
