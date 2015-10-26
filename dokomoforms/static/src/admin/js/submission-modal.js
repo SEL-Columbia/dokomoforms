@@ -12,7 +12,7 @@ module.exports = (function() {
         $('.modal-submission .modal-content').load(url, function() {
             $('.modal-submission').modal();
             if (window.SUB_DATETIMES) {
-                utils.populateDates(window.SUB_DATETIMES, 'MMM d, YYYY HH:mm');
+                utils.populateDates(window.SUB_DATETIMES, 'MMM D, YYYY HH:mm');
             }
         });
     }
