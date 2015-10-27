@@ -7,24 +7,21 @@ var $ = require('jquery'),
 /**
  * Submission modal module.
  *
- * If submission_data is String, assume it's a submission id and load the submission.
- *
- * If submission_data is an array of submission IDs
- * @param {[type]} submission_data [description]
+ * @param {Object} options
  */
-var SubmissionModal = function(dataTable, initialRow) {
-    console.log('SubmissionModal');
+var SubmissionModal = function(opts) {
+    console.log('SubmissionModal', opts);
 
-    var selectedRow = initialRow,
-        submission_id,
+    var selectedRow = opts.initialRow,
+        dataTable = opts.dataTable,
+        submission_id = opts.submission_id,
         $modal = $(tpl()),
         $next = $modal.find('.btn-next'),
         $prev = $modal.find('.btn-prev'),
         $loading = $modal.find('.loading-overlay');
 
-    if (_.isString(dataTable)) {
-        // assume we're passing a submission UUID
-        submission_id = dataTable;
+    if (submission_id) {
+        // show single submission, no browsing
         $modal.find('.modal-header').empty();
     } else {
         submission_id = selectedRow.data().id;
@@ -141,18 +138,17 @@ var SubmissionModal = function(dataTable, initialRow) {
 
     function _updateData(sub_id) {
         // remove listener to draw (it gets re-bound on demand as needed)
-        if (selectedRow) dataTable.off('draw.dt');
+        if (dataTable) dataTable.off('draw.dt');
 
         // load the new submission
         loadSubmission(sub_id)
             .done(function() {
-                if (selectedRow) {
+                if (dataTable) {
                     // update the '[current]/[total]' text in the modal header
                     _updatePositionIndicator(selectedRow.index());
                     // publish select event
                     console.log($(selectedRow.node()));
                     ps.publish('submissions:select_row', selectedRow.node());
-
                 }
                 // render dates using moment.js
                 utils.populateDates(window.SUB_DATETIMES, 'MMM D, YYYY HH:mm');

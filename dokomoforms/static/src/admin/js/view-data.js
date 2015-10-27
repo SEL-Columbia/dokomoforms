@@ -68,7 +68,7 @@ var ViewData = (function() {
                 iconAnchor: [15, 48]
             });
             marker.on('click', function() {
-                new SubmissionModal(answer.submission_id).open();
+                new SubmissionModal({submission_id: answer.submission_id}).open();
             });
             markers.push(marker);
         });

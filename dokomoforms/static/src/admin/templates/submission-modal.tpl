@@ -21,6 +21,16 @@
                 </div>
             </div>
             <div class="modal-footer">
+                <!-- <button type="button" class="btn btn-default btn-sm btn-prev pull-left">
+                    <span class="glyphicon glyphicon-menu-left"></span> Previous
+                </button>
+                <button type="button" class="btn btn-default btn-sm btn-next pull-right">
+                    Next
+                    <span class="glyphicon glyphicon-menu-right"></span>
+                </button>
+                <div class="submission-position centered">
+                ...
+                </div> -->
             </div>
         </div>
     </div>

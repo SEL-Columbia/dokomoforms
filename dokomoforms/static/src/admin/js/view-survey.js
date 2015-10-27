@@ -94,7 +94,7 @@ var ViewSurvey = (function() {
         $(document).on('click', 'table#submissions tbody tr', function() {
             // select this row in the datatable and open detail modal
             var selectedRow = selectSubmissionRow($(this));
-            new SubmissionModal($datatable, selectedRow).open();
+            new SubmissionModal({dataTable: $datatable, initialRow: selectedRow}).open();
         });
 
         ps.subscribe('submissions:select_row', function(e, el) {

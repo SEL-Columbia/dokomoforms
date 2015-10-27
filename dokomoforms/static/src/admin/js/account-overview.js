@@ -24,7 +24,7 @@ var AccountOverview = (function() {
             $(document).on('click', '.btn-view-submission', function() {
                 // select this row in the datatable
                 var submission_id = $(this).data('id');
-                new SubmissionModal(submission_id).open();
+                new SubmissionModal({submission_id: submission_id}).open();
             });
 
         }
@@ -85,7 +85,7 @@ var AccountOverview = (function() {
                             });
                             // marker.bindPopup();
                             marker.on('click', function() {
-                                new SubmissionModal(submission.id).open();
+                                new SubmissionModal({submission_id: submission.id}).open();
                             });
                             markers.push(marker);
                         });
