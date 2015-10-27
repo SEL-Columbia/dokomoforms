@@ -85,10 +85,10 @@ class TestApiBase(unittest.TestCase):
     def test_current_user(self):
         """Doesn't really test anything... it might in the future."""
         fake_r_handler = lambda: None
-        fake_r_handler.current_user = 'test'
+        fake_r_handler.current_user_model = 'test'
         br = NodeResource()
         br.ref_rh = fake_r_handler
-        self.assertEqual(br.current_user, 'test')
+        self.assertEqual(br.current_user_model, 'test')
 
 
 class TestAuthentication(DokoHTTPTest):
