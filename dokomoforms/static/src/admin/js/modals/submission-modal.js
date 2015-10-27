@@ -131,11 +131,16 @@ var SubmissionModal = function(opts) {
             selectedRow = dataTable.row( indexes[ currentPosition + 1 ] );
             _updateData(selectedRow.data().id);
         } else if (pageInfo.page < pageInfo.pages - 1) {
+            // unbind event handlers for buttons so we don't skip pages
+            $next.off('click', _next);
+            $prev.off('click', _prev);
             dataTable.page(pageInfo.page + 1).draw(false);
             dataTable.on('draw.dt', function() {
-                console.log('page updated');
                 selectedRow = dataTable.row(0);
                 _updateData(selectedRow.data().id);
+                // re-bind event handlers for buttons
+                $next.on('click', _next);
+                $prev.on('click', _prev);
             });
         }
     }
