@@ -86,7 +86,6 @@ var AccountOverview = (function() {
                             // marker.bindPopup();
                             marker.on('click', function() {
                                 new SubmissionModal(submission.id).open();
-                                // submissionModal.openSubmissionDetailModal(submission.id);
                             });
                             markers.push(marker);
                         });

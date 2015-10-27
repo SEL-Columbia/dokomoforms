@@ -27,13 +27,11 @@ var SubmissionModal = function(dataTable, initialRow) {
         submission_id = dataTable;
         $modal.find('.modal-header').empty();
     } else {
-        submission_id = selectedRow.data()[3];
+        submission_id = selectedRow.data().id;
         // setup event handlers for buttons
         $next.on('click', _next);
         $prev.on('click', _prev);
     }
-
-
 
     function open() {
         console.log('opening modal');
@@ -111,13 +109,13 @@ var SubmissionModal = function(dataTable, initialRow) {
 
         if ( currentPosition < indexes.length-1 ) {
             selectedRow = dataTable.row( indexes[ currentPosition + 1 ] );
-            _updateData(selectedRow.data()[3]);
+            _updateData(selectedRow.data().id);
         } else if (pageInfo.page < pageInfo.pages - 1) {
             dataTable.page(pageInfo.page + 1).draw(false);
             dataTable.on('draw.dt', function() {
                 console.log('page updated');
                 selectedRow = dataTable.row(0);
-                _updateData(selectedRow.data()[3]);
+                _updateData(selectedRow.data().id);
             });
         }
     }
@@ -130,13 +128,13 @@ var SubmissionModal = function(dataTable, initialRow) {
 
         if ( currentPosition > 0 ) {
             selectedRow = dataTable.row( indexes[ currentPosition - 1 ] );
-            _updateData(selectedRow.data()[3]);
+            _updateData(selectedRow.data().id);
         } else if (pageInfo.page > 0) {
             dataTable.page(pageInfo.page - 1).draw(false);
             dataTable.on('draw.dt', function() {
                 console.log('page updated');
                 selectedRow = dataTable.row(pageInfo.length - 1);
-                _updateData(selectedRow.data()[3]);
+                _updateData(selectedRow.data().id);
             });
         }
     }
@@ -148,8 +146,14 @@ var SubmissionModal = function(dataTable, initialRow) {
         // load the new submission
         loadSubmission(sub_id)
             .done(function() {
-                // update the '[current]/[total]' text in the modal header
-                if (selectedRow) _updatePositionIndicator(selectedRow.index());
+                if (selectedRow) {
+                    // update the '[current]/[total]' text in the modal header
+                    _updatePositionIndicator(selectedRow.index());
+                    // publish select event
+                    console.log($(selectedRow.node()));
+                    ps.publish('submissions:select_row', selectedRow.node());
+
+                }
                 // render dates using moment.js
                 utils.populateDates(window.SUB_DATETIMES, 'MMM D, YYYY HH:mm');
             });

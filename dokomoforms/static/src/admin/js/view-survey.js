@@ -3,8 +3,8 @@ var $ = require('jquery'),
     moment = require('moment'),
     base = require('./base'),
     utils = require('./utils'),
+    ps = require('../../common/js/pubsub'),
     SubmissionModal = require('./modals/submission-modal'),
-    view_sub_btn_tpl = require('../templates/button-view-submission.tpl'),
     shareable_link_tpl = require('../templates/shareable-link.tpl'),
     edit_link_tpl = require('../templates/edit-shareable-link.tpl');
 
@@ -60,7 +60,6 @@ var ViewSurvey = (function() {
 
         $(document).on('input', '.shareable-url-slug', function(e) {
             var slug = e.target.value,
-                $input = $(e.target),
                 $saveBtn = $('.save-survey-url');
 
             testSurveySlug(slug)
@@ -92,11 +91,22 @@ var ViewSurvey = (function() {
             }, 1);
         });
 
-        $(document).on('click', '.btn-view-submission', function() {
-            // select this row in the datatable
-            var selectedRow = $datatable.row($(this).closest('tr'));
+        $(document).on('click', 'table#submissions tbody tr', function() {
+            // select this row in the datatable and open detail modal
+            var selectedRow = selectSubmissionRow($(this));
             new SubmissionModal($datatable, selectedRow).open();
         });
+
+        ps.subscribe('submissions:select_row', function(e, el) {
+            console.log(el);
+            selectSubmissionRow($(el));
+        });
+    }
+
+    function selectSubmissionRow($el) {
+        $('table#submissions tbody tr').removeClass('selected');
+        $el.addClass('selected');
+        return $datatable.row($el);
     }
 
     function cleanSlug(slug) {
@@ -216,31 +226,26 @@ var ViewSurvey = (function() {
                 [1, 'desc']
             ],
             'columnDefs': [{
-                data: 0,
+                data: 'submitter_name',
                 targets: 0
             }, {
-                'data': 1,
+                'data': 'save_time',
                 'render': function(data) {
                     var datetime = moment(data);
                     return datetime.format('MMM D, YYYY [at] HH:mm:ss');
                 },
                 'targets': 1
             }, {
-                'data': 2,
+                'data': 'submission_time',
                 'render': function(data) {
                     var datetime = moment(data);
                     return datetime.format('MMM D, YYYY [at] HH:mm:ss');
                 },
                 'targets': 2
             }, {
-                data: 3,
-                'render': function(data) {
-                    return view_sub_btn_tpl({
-                        submission_id: data
-                    });
-                },
+                'data': 'id',
                 'targets': 3,
-                'sortable': false
+                'visible': false
             }],
             'columns': [{
                 'name': 'submitter_name'
@@ -285,12 +290,18 @@ var ViewSurvey = (function() {
                             recordsTotal: json.total_entries,
                             recordsFiltered: json.filtered_entries,
                             data: json.submissions.map(function(submission) {
-                                return [
-                                    submission.submitter_name,
-                                    submission.save_time,
-                                    submission.submission_time,
-                                    submission.id
-                                ];
+                                // return [
+                                //     submission.submitter_name,
+                                //     submission.save_time,
+                                //     submission.submission_time,
+                                //     submission.id
+                                // ];
+                                return {
+                                    submitter_name: submission.submitter_name,
+                                    save_time: submission.save_time,
+                                    submission_time: submission.submission_time,
+                                    id: submission.id
+                                };
                             })
                         };
                         callback(response);
