@@ -15,6 +15,9 @@ var SubmissionModal = function(opts) {
     var selectedRow = opts.initialRow,
         dataTable = opts.dataTable,
         submission_id = opts.submission_id,
+        submissions = opts.submissions,
+        initialIndex = opts.initialIndex || 0,
+        currentIndex = initialIndex,
         $modal = $(tpl()),
         $next = $modal.find('.btn-next'),
         $prev = $modal.find('.btn-prev'),
@@ -24,7 +27,12 @@ var SubmissionModal = function(opts) {
         // show single submission, no browsing
         $modal.find('.modal-header').empty();
     } else {
-        submission_id = selectedRow.data().id;
+        if (submissions) {
+            // an array of submisssions was passed, use this for browsing
+            submission_id = initialIndex ? submissions[initialIndex] : submissions[0];
+        } else {
+            submission_id = selectedRow.data().id;
+        }
         // setup event handlers for buttons
         $next.on('click', _next);
         $prev.on('click', _prev);
@@ -73,11 +81,8 @@ var SubmissionModal = function(opts) {
         $modal.modal('hide');
     }
 
-    function _updatePositionIndicator(currentIndex) {
-        var pageInfo = dataTable.page.info(),
-            total = pageInfo.recordsDisplay,
-            curPos = pageInfo.page * pageInfo.length + currentIndex + 1,
-            posText = curPos + '/' + total;
+    function _updatePositionIndicator(curPos, total) {
+        var posText = curPos + '/' + total;
 
         // if at the start or end, disable buttons as needed
         $prev.removeClass('disabled');
@@ -95,14 +100,32 @@ var SubmissionModal = function(opts) {
     }
 
     function _next() {
+        if (dataTable) {
+            _nextDataTables();
+        } else if (submissions) {
+            if (currentIndex < submissions.length - 1) {
+                currentIndex += 1;
+                _updateData(submissions[currentIndex]);
+            }
+        }
+    }
+
+    function _prev() {
+        if (dataTable) {
+            _prevDataTables();
+        } else {
+            if (currentIndex > 0) {
+                currentIndex -= 1;
+                _updateData(submissions[currentIndex]);
+            }
+        }
+    }
+
+    function _nextDataTables() {
         var pageInfo = dataTable.page.info(),
             indexes = dataTable.rows( {search: 'applied'} ).indexes(),
             currentIndex = selectedRow.index(),
             currentPosition = indexes.indexOf( currentIndex );
-
-        console.log(currentIndex, currentPosition);
-
-
 
         if ( currentPosition < indexes.length-1 ) {
             selectedRow = dataTable.row( indexes[ currentPosition + 1 ] );
@@ -117,7 +140,7 @@ var SubmissionModal = function(opts) {
         }
     }
 
-    function _prev(submission) {
+    function _prevDataTables() {
         var pageInfo = dataTable.page.info(),
             indexes = dataTable.rows( {search: 'applied'} ).indexes(),
             currentIndex = selectedRow.index(),
@@ -143,12 +166,23 @@ var SubmissionModal = function(opts) {
         // load the new submission
         loadSubmission(sub_id)
             .done(function() {
+                var curPos, total, el;
                 if (dataTable) {
+                    var pageInfo = dataTable.page.info();
+                    total = pageInfo.recordsDisplay;
+                    curPos = pageInfo.page * pageInfo.length + selectedRow.index() + 1;
+                    console.log(curPos, total);
+                    el = selectedRow.node();
+                } else if (submissions) {
+                    total = submissions.length;
+                    curPos = currentIndex + 1;
+                    el = $('.submission-row[data-id="' + submissions[currentIndex] + '"]');
+                }
+                if (el) {
                     // update the '[current]/[total]' text in the modal header
-                    _updatePositionIndicator(selectedRow.index());
+                    _updatePositionIndicator(curPos, total);
                     // publish select event
-                    console.log($(selectedRow.node()));
-                    ps.publish('submissions:select_row', selectedRow.node());
+                    ps.publish('submissions:select_row', el);
                 }
                 // render dates using moment.js
                 utils.populateDates(window.SUB_DATETIMES, 'MMM D, YYYY HH:mm');
