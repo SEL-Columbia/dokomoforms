@@ -171,19 +171,27 @@ var AccountOverview = (function() {
                 ],
                 'pagingType': 'full_numbers',
                 'order': [
-                    [2, 'desc']
+                    [1, 'desc']
                 ],
                 'columnDefs': [{
-                    'data': 0,
-                    'render': function(data, type, row) {
-                        return data;
-                    },
+                    'data': 'title',
                     'targets': 0
                 }, {
-                    'data': 1,
-                    targets: 1
+                    'data': 'created_on',
+                    targets: 1,
+                    'render': function(data, type, row) {
+                        if (data) {
+                            var datetime = moment(data);
+                            return datetime.format('MMM D, YYYY');
+                        } else {
+                            return '';
+                        }
+                    }
                 }, {
-                    'data': 2,
+                    'data': 'num_submissions',
+                    'targets': 2
+                }, {
+                    'data': 'latest_submission_time',
                     'render': function(data, type, row) {
                         if (data) {
                             var datetime = moment(data);
@@ -192,16 +200,9 @@ var AccountOverview = (function() {
                             return '';
                         }
                     },
-                    'targets': 2
+                    'targets': 3
                 }, {
-                    'data': 3,
-                    'render': function(data, type, row) {
-                        return '...'; // TODO: ask @jmwohl about this.
-                    },
-                    'targets': 3,
-                    'sortable': false
-                }, {
-                    'data': 3,
+                    'data': 'id',
                     'render': function(data, type, row) {
                         // console.log(data);
                         var view = view_btn_tpl({
@@ -224,6 +225,8 @@ var AccountOverview = (function() {
                 }],
                 'columns': [{
                     'name': 'title'
+                },  {
+                    'name': 'created_on'
                 }, {
                     'name': 'num_submissions'
                 }, {
@@ -260,12 +263,13 @@ var AccountOverview = (function() {
                                 recordsTotal: json.total_entries,
                                 recordsFiltered: json.filtered_entries,
                                 data: json.surveys.map(function(survey) {
-                                    return [
-                                        _t(survey.title),
-                                        survey.num_submissions,
-                                        survey.latest_submission_time,
-                                        survey.id
-                                    ];
+                                    return {
+                                        title: _t(survey.title),
+                                        created_on: survey.created_on,
+                                        num_submissions: survey.num_submissions,
+                                        latest_submission_time: survey.latest_submission_time,
+                                        id: survey.id
+                                    };
                                 })
                             };
                             callback(response);
