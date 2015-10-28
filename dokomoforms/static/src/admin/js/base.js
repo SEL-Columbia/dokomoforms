@@ -1,7 +1,6 @@
 var $ = require('jquery'),
     cookies = require('../../common/js/cookies'),
     ps = require('../../common/js/pubsub'),
-    submissionModals = require('./submission-modal'),
     SettingsModal = require('./modals/settings-modal'),
     Notification = require('./notification'),
     persona = require('../../common/js/persona'),
@@ -14,10 +13,6 @@ module.exports = (function() {
         utils.initPopovers();
         _globalAjaxSetup();
         _setupGlobalEventHandlers();
-
-        // setup handlers for submission modals
-        // TODO: refactor submission modals to a proper module.
-        submissionModals.init();
 
         // setup handlers for persona events
         persona.init();

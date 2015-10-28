@@ -3,7 +3,8 @@ var $ = require('jquery'),
     L = require('leaflet'),
     moment = require('moment'),
     base = require('./base'),
-    submissionModal = require('./submission-modal'),
+    ps = require('../../common/js/pubsub'),
+    SubmissionModal = require('./modals/submission-modal'),
     view_btn_tpl = require('../templates/button-view-data.tpl'),
     manage_btn_tpl = require('../templates/button-manage-survey.tpl'),
     dl_btn_tpl = require('../templates/button-download-data.tpl'),
@@ -11,17 +12,44 @@ var $ = require('jquery'),
     _t = require('./lang');
 
 var AccountOverview = (function() {
+    var recentSubmissions = [];
 
     function init() {
         base.init();
         if (window.CURRENT_USER_ID !== 'None') {
             loadActivityGraph();
             loadRecentSubmissions()
+                .done(function(data) {
+                    // store recent subs for detail modal browsing
+                    recentSubmissions = _.pluck(data.submissions, 'id');
+                    console.log('recentSubmissions', recentSubmissions);
+                })
                 .done(drawMap)
                 .done(drawRecentSubs);
-            // drawMap();
             setupDataTable();
+            setupEventHandlers();
+
         }
+    }
+
+    function setupEventHandlers() {
+        $(document).on('click', 'tr.submission-row', function() {
+            // select this row in the datatable
+            selectSubmissionRow($(this));
+            var submission_id = $(this).data('id');
+            var idx = recentSubmissions.indexOf(submission_id);
+            new SubmissionModal({submissions: recentSubmissions, initialIndex: idx}).open();
+        });
+
+        ps.subscribe('submissions:select_row', function(e, el) {
+            console.log(el);
+            selectSubmissionRow($(el));
+        });
+    }
+
+    function selectSubmissionRow($el) {
+        $('tr.submission-row').removeClass('selected');
+        $el.addClass('selected');
     }
 
     function drawRecentSubs(data) {
@@ -79,7 +107,7 @@ var AccountOverview = (function() {
                             });
                             // marker.bindPopup();
                             marker.on('click', function() {
-                                submissionModal.openSubmissionDetailModal(submission.id);
+                                new SubmissionModal({submission_id: submission.id}).open();
                             });
                             markers.push(marker);
                         });
