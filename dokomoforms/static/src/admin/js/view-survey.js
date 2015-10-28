@@ -1,17 +1,19 @@
 var $ = require('jquery'),
     _ = require('lodash'),
+    moment = require('moment'),
     base = require('./base'),
     utils = require('./utils'),
-    moment = require('moment'),
-    view_sub_btn_tpl = require('../templates/button-view-submission.tpl'),
+    ps = require('../../common/js/pubsub'),
+    SubmissionModal = require('./modals/submission-modal'),
     shareable_link_tpl = require('../templates/shareable-link.tpl'),
     edit_link_tpl = require('../templates/edit-shareable-link.tpl');
 
 var ViewSurvey = (function() {
     var survey_id,
         survey_slug,
-        good_slug = false,
-        domain = document.location.origin;
+        good_slug = true,
+        domain = document.location.origin,
+        $datatable;
 
     function init(_survey_id, _survey_slug) {
         survey_id = _survey_id;
@@ -56,10 +58,8 @@ var ViewSurvey = (function() {
             }
         });
 
-        // TODO: is on input better?
         $(document).on('input', '.shareable-url-slug', function(e) {
             var slug = e.target.value,
-                $input = $(e.target),
                 $saveBtn = $('.save-survey-url');
 
             testSurveySlug(slug)
@@ -83,13 +83,30 @@ var ViewSurvey = (function() {
         });
 
         $(document).on('paste', '.shareable-url-slug', function(e) {
+            // hack, seems necessary though (in order to wait for redraw?)
             setTimeout(function() {
                 var slug = cleanSlug(e.target.value),
                     $input = $(e.target);
                 $input.val(slug);
-                // do something with text
             }, 1);
         });
+
+        $(document).on('click', 'table#submissions tbody tr', function() {
+            // select this row in the datatable and open detail modal
+            var selectedRow = selectSubmissionRow($(this));
+            new SubmissionModal({dataTable: $datatable, initialRow: selectedRow}).open();
+        });
+
+        ps.subscribe('submissions:select_row', function(e, el) {
+            console.log(el);
+            selectSubmissionRow($(el));
+        });
+    }
+
+    function selectSubmissionRow($el) {
+        $('table#submissions tbody tr').removeClass('selected');
+        $el.addClass('selected');
+        return $datatable.row($el);
     }
 
     function cleanSlug(slug) {
@@ -196,44 +213,39 @@ var ViewSurvey = (function() {
     function setupDataTable() {
         // DataTables
 
-        $('#submissions').dataTable({
+        $datatable = $('#submissions').DataTable({
             language: {
                 search: 'Search by submitter name:'
             },
             'lengthMenu': [
-                [5, 20, 50],
-                [5, 20, 50]
+                [20, 50, 100],
+                [20, 50, 100]
             ],
             'pagingType': 'full_numbers',
             'order': [
                 [1, 'desc']
             ],
             'columnDefs': [{
-                data: 0,
+                data: 'submitter_name',
                 targets: 0
             }, {
-                'data': 1,
+                'data': 'save_time',
                 'render': function(data) {
                     var datetime = moment(data);
                     return datetime.format('MMM D, YYYY [at] HH:mm:ss');
                 },
                 'targets': 1
             }, {
-                'data': 2,
+                'data': 'submission_time',
                 'render': function(data) {
                     var datetime = moment(data);
                     return datetime.format('MMM D, YYYY [at] HH:mm:ss');
                 },
                 'targets': 2
             }, {
-                data: 3,
-                'render': function(data) {
-                    return view_sub_btn_tpl({
-                        submission_id: data
-                    });
-                },
+                'data': 'id',
                 'targets': 3,
-                'sortable': false
+                'visible': false
             }],
             'columns': [{
                 'name': 'submitter_name'
@@ -264,17 +276,32 @@ var ViewSurvey = (function() {
                         search_fields: 'submitter_name'
                     },
                     'success': function(json) {
-                        var response = {
-                            draw: json.draw,
-                            recordsTotal: json.total_entries,
-                            recordsFiltered: json.filtered_entries,
-                            data: json.submissions.map(function(submission) {
+                        var data = json.submissions.map(function(submission) {
                                 return [
                                     submission.submitter_name,
                                     submission.save_time,
                                     submission.submission_time,
                                     submission.id
                                 ];
+                            });
+                        console.log('data: ', data);
+                        var response = {
+                            draw: json.draw,
+                            recordsTotal: json.total_entries,
+                            recordsFiltered: json.filtered_entries,
+                            data: json.submissions.map(function(submission) {
+                                // return [
+                                //     submission.submitter_name,
+                                //     submission.save_time,
+                                //     submission.submission_time,
+                                //     submission.id
+                                // ];
+                                return {
+                                    submitter_name: submission.submitter_name,
+                                    save_time: submission.save_time,
+                                    submission_time: submission.submission_time,
+                                    id: submission.id
+                                };
                             })
                         };
                         callback(response);
