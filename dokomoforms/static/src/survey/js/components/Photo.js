@@ -47,7 +47,11 @@ module.exports = React.createClass({
         // window.addEventListener('deviceorientation', this.updateOrientation, true);
     },
 
-    componentWillMount: function() {},
+    componentWillUnmount: function() {
+        if (this.stream) {
+            this.stream.stop();
+        }
+    },
 
     updateOrientation: function(e) {
         // console.log('orientation updated: ', e, window.orientation);
