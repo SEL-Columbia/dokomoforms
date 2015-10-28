@@ -1065,6 +1065,34 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
+    def test_change_language(self):
+        survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('menu', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('menu'))
+        self.click(
+            self.drv
+            .find_element_by_class_name('language_select')
+        )
+
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector(
+                '.language_select option'), 2))
+
+        self.click(self.drv.find_elements_by_css_selector(
+            '.language_select option')[1])
+
+        self.sleep()
+
+        # self.assertIsNot(existing_submission, new_submission)
+        # self.assertEqual(new_submission.answers[0].answer, 3)
+        # self.assertIsNotNone(new_submission.start_time)
+        # self.assertNotEqual(
+        #     new_submission.start_time, new_submission.save_time
+        # )
+
+    @report_success_status
     def test_single_integer_question(self):
         survey_id = self.get_single_node_survey_id('integer')
         existing_submission = self.get_last_submission(survey_id)

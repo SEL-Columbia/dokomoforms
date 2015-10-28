@@ -2,7 +2,7 @@
 var React = require('react'),
     $ = require('jquery'),
     moment = require('moment'),
-    PouchDB = require('pouchdb');
+    PouchDB = require('pouchdb'),
     ps = require('../../common/js/pubsub');
 
 // pouch plugin
@@ -71,6 +71,15 @@ var Application = React.createClass({
             init_state = 1;
         }
 
+        // set default lang -- use user pref stored in localStorage,
+        // falling back to survey default if the user pref is not available
+        // for this survey
+        var language = this.props.survey.default_language;
+        if (localStorage['default_language']
+            && this.props.survey.languages.indexOf(localStorage['default_language']) !== -1) {
+            language = localStorage['default_language'];
+        }
+
         return {
             showDontKnow: false,
             showDontKnowBox: false,
@@ -83,6 +92,7 @@ var Application = React.createClass({
                 QUESTION: 2,
                 SUBMIT: 3
             },
+            language: language,
             state: init_state,
             trees: trees,
             db: surveyDB
@@ -100,6 +110,13 @@ var Application = React.createClass({
             self.setState({
                 state: 1
             });
+        });
+
+        ps.subscribe('settings:language_changed', function(e, lang) {
+            self.setState({
+                language: lang
+            });
+            localStorage['default_language'] = lang;
         });
     },
 
@@ -960,7 +977,7 @@ var Application = React.createClass({
                                 key={questionID}
                                 question={question}
                                 questionType={questionType}
-                                language={survey.default_language}
+                                language={this.state.language}
                                 surveyID={survey.id}
                                 disabled={this.state.showDontKnowBox}
                            />
@@ -972,7 +989,7 @@ var Application = React.createClass({
                                 key={questionID}
                                 question={question}
                                 questionType={questionType}
-                                language={survey.default_language}
+                                language={this.state.language}
                                 surveyID={survey.id}
                                 disabled={this.state.showDontKnowBox}
                                 db={this.state.db}
@@ -986,7 +1003,7 @@ var Application = React.createClass({
                                 key={questionID}
                                 question={question}
                                 questionType={questionType}
-                                language={survey.default_language}
+                                language={this.state.language}
                                 surveyID={survey.id}
                                 disabled={this.state.showDontKnowBox}
                            />
@@ -998,7 +1015,7 @@ var Application = React.createClass({
                                 key={questionID}
                                 question={question}
                                 questionType={questionType}
-                                language={survey.default_language}
+                                language={this.state.language}
                                 surveyID={survey.id}
                                 disabled={this.state.showDontKnowBox}
                                 db={this.state.db}
@@ -1012,7 +1029,7 @@ var Application = React.createClass({
                                 key={questionID}
                                 question={question}
                                 questionType={questionType}
-                                language={survey.default_language}
+                                language={this.state.language}
                                 surveyID={survey.id}
                                 disabled={this.state.showDontKnowBox}
                            />
@@ -1024,7 +1041,7 @@ var Application = React.createClass({
                                 key={questionID}
                                 question={question}
                                 questionType={questionType}
-                                language={survey.default_language}
+                                language={this.state.language}
                                 surveyID={survey.id}
                                 disabled={this.state.showDontKnowBox}
                            />
@@ -1035,7 +1052,7 @@ var Application = React.createClass({
                 <Submit
                         ref='submit'
                         surveyID={survey.id}
-                        language={survey.default_language}
+                        language={this.state.language}
                     />
             );
         } else {
@@ -1044,7 +1061,7 @@ var Application = React.createClass({
                         ref='splash'
                         surveyID={survey.id}
                         surveyTitle={survey.title}
-                        language={survey.default_language}
+                        language={this.state.language}
                         buttonFunction={this.onSubmit}
                     />
             );
@@ -1060,11 +1077,11 @@ var Application = React.createClass({
         var state = this.state.state;
 
         if (state === this.state.states.QUESTION) {
-            return question.title[survey.default_language];
+            return question.title[this.state.language];
         } else if (state === this.state.states.SUBMIT) {
             return 'Ready to Save?';
         } else {
-            return survey.title[survey.default_language];
+            return survey.title[this.state.language];
         }
     },
 
@@ -1077,7 +1094,7 @@ var Application = React.createClass({
         var state = this.state.state;
 
         if (state === this.state.states.QUESTION) {
-            return question.hint[survey.default_language];
+            return question.hint[this.state.language];
         } else if (state === this.state.states.SUBMIT) {
             return 'If you are satisfied with the answers to all the questions, you can save the survey now.';
         } else {
@@ -1144,6 +1161,8 @@ var Application = React.createClass({
                     total={length + 1}
                     db={this.state.db}
                     surveyID={surveyID}
+                    survey={this.props.survey}
+                    language={this.state.language}
                     splash={state === this.state.states.SPLASH}/>
                 <div
                     className={contentClasses}>

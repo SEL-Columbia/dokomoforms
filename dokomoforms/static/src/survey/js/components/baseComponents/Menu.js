@@ -1,6 +1,7 @@
 var React = require('react'),
     screenfull = require('screenfull'),
-    PhotoAPI = require('../../api/PhotoAPI.js');
+    PhotoAPI = require('../../api/PhotoAPI.js'),
+    ps = require('../../../../common/js/pubsub');
 
 /*
  * Header Menu component
@@ -14,21 +15,28 @@ var React = require('react'),
  */
 module.exports = React.createClass({
 
+    componentWillMount: function() {
+        console.log('=======> componentWillMount');
+        // this.survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+    },
+
     wipeActive: function() {
+        var self = this;
         // Confirm their intent
         var nuke = confirm('Warning: Active survey and photos will be lost.');
         if (!nuke)
             return;
-
-        var self = this;
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
+
+        // we're storing the start_time on the survey, which we don't want to include
+        // in the iteration here...
+        delete survey.start_time;
+
         var questionIDs = Object.keys(survey);
-        console.log('questionIDs', questionIDs);
         questionIDs.forEach(function(questionID) {
             var responses = survey[questionID] || [];
-            console.log('responses', responses);
+
             responses.forEach(function(response) {
-                console.log('response', response);
                 //XXX response object does not contain type_constraint, would need to pass in question nodes
                 //if (response.type_constraint === 'photo') {
                 //XXX hack for now
@@ -39,7 +47,6 @@ module.exports = React.createClass({
                             console.log('Couldnt remove from db:', err);
                             return;
                         }
-
                         console.log('Removed:', result);
                     });
                 }
@@ -74,26 +81,55 @@ module.exports = React.createClass({
         }
     },
 
+    selectLanguage: function(e) {
+        console.log('selectLanguage', e.target.value);
+        ps.publish('settings:language_changed', e.target.value);
+    },
+
     render: function() {
         var self = this;
+        var langOpts,
+            langMenuItem;
+
+        console.log('render...', self.props.survey);
+
+        // XXX - maybe we don't display the select box if there's only one lang available?
+        // if (self.props.survey.languages && self.props.survey.languages.length > 1) {
+        if (self.props.survey.languages) {
+            langOpts = self.props.survey.languages.map(function(lang) {
+                var selected = (self.props.language === lang);
+                return (
+                    <option value={lang} selected={selected}>{lang}</option>
+                );
+            });
+        }
+
+        if (langOpts) {
+            langMenuItem = (
+                <div className='title_menu_option menu_language'>
+                    Language:
+                    <select className='language_select' onChange={self.selectLanguage}>
+                        {langOpts}
+                    </select>
+                </div>
+            );
+        }
+
         return (
             <div className='title_menu'>
-                <div className='title_menu_option menu_fullscreen'
-                    onClick={self.toggleFullscreen}
-                >
+                <div className='title_menu_option menu_fullscreen' onClick={self.toggleFullscreen} >
                     Toggle fullscreen
                 </div>
-                <div className='title_menu_option menu_restart'
-                    onClick={self.wipeActive}
-                >
+
+                {langMenuItem}
+
+                <div className='title_menu_option menu_restart' onClick={self.wipeActive} >
                     Cancel survey
                 </div>
-                <div className='title_menu_option menu_clear'
-                    onClick={self.wipeAll}
-                >
+                <div className='title_menu_option menu_clear' onClick={self.wipeAll} >
                     Clear all saved surveys
                 </div>
             </div>
-       )
+       );
     }
 });
