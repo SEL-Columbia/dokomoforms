@@ -982,7 +982,7 @@ class TestAdminManageSurvey(AdminTest):
         self.sleep(2)
 
         self.click(self.drv.find_element_by_css_selector(
-            'tr.odd:nth-child(1) > td:nth-child(4) > button:nth-child(1)'
+            '#submissions > tbody > tr:nth-of-type(1)'
         ))
 
         self.wait_for_element('response-data', by=By.CLASS_NAME)

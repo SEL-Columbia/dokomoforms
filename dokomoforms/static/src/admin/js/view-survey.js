@@ -11,7 +11,7 @@ var $ = require('jquery'),
 var ViewSurvey = (function() {
     var survey_id,
         survey_slug,
-        good_slug = false,
+        good_slug = true,
         domain = document.location.origin,
         $datatable;
 
