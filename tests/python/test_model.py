@@ -1958,6 +1958,7 @@ class TestSurvey(DokoTest):
             OrderedDict((
                 ('id', the_survey.id),
                 ('deleted', False),
+                ('languages', ('English',)),
                 ('title', OrderedDict((('English', 'some survey'),))),
                 ('url_slug', None),
                 ('default_language', 'English'),
@@ -2626,6 +2627,7 @@ class TestSurveyNode(DokoTest):
             OrderedDict((
                 ('id', survey.id),
                 ('deleted', False),
+                ('languages', ['French']),
                 ('title', OrderedDict((('French', 'french title'),))),
                 ('url_slug', None),
                 ('default_language', 'French'),

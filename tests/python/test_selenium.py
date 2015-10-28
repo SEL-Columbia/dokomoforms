@@ -787,15 +787,18 @@ class TestAdminManageSurvey(AdminTest):
 
         # Activity graph
         self.assertIsNotNone(
-            self.drv.find_element_by_css_selector('path:nth-child(30)')
+            self.drv.find_element_by_class_name('activity-graph')
         )
+
+        self.sleep(2)
 
         # Submissions table
         rows = (
             self.drv
             .find_elements_by_css_selector('table#submissions tbody tr')
         )
-        self.assertEqual(len(rows), 5)
+
+        self.assertEqual(len(rows), 20)
 
     @report_success_status
     def test_change_url_slug(self):
@@ -976,9 +979,10 @@ class TestAdminManageSurvey(AdminTest):
     @report_success_status
     def test_submission_details_button(self):
         self.get('/view/b0816b52-204f-41d4-aaf0-ac6ae2970923')
+        self.sleep(2)
 
         self.click(self.drv.find_element_by_css_selector(
-            'tr.odd:nth-child(1) > td:nth-child(4) > button:nth-child(1)'
+            '#submissions > tbody > tr:nth-of-type(1)'
         ))
 
         self.wait_for_element('response-data', by=By.CLASS_NAME)

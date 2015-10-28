@@ -1,4 +1,3 @@
-{% block subheader %}
 <div class="subheader submission-detail-header">
     <div class="container-fluid">
         <div class="row">
@@ -29,84 +28,77 @@
                 <div class="stat-value stat-submission-time">
                 </div>
             </div>
-            <!-- <div class="col-md-2">
+            <div class="col-md-2">
                 <div class="stat-label">
                     survey
                 </div>
                 <div class="stat-value stat-created-on">
                     {{ _t(survey.title) }}
                 </div>
-            </div> -->
+            </div>
         </div>
     </div>
 </div>
-{% end %}
 
 
-{% block content %}
-    <div class="content">
-        <div class="container-fluid" role="main">
+<div class="content">
+    <div class="container-fluid" role="main">
 
-            <div class="message">
-            </div>
+        <div class="message">
+        </div>
 
-            <div class="row">
-                <div class="col-md-12">
-                    <ul class="survey-responses">
-		        <!-- TODO: make this prettier -->
-                        {% for answer in submission.answers %}
-                            <li>
+        <div class="row">
+            <div class="col-md-12">
+                <ul class="survey-responses">
+            <!-- TODO: make this prettier -->
+                    {% for answer in submission.answers %}
+                        <li>
 
-                                <div class="response-title-bar">
-            				        {{ _t(answer.question_title) }}
-                                    <span class="question-type pull-right">{{ answer.type_constraint }}</span>
-                                </div>
+                            <div class="response-title-bar">
+                                {{ _t(answer.question_title) }}
+                                <span class="question-type pull-right">{{ answer.type_constraint }}</span>
+                            </div>
 
-                                <div class="response-data">
-            				    {% if answer.type_constraint in {'date', 'time', 'timestamp'} %}
-            				        {{ answer.response['response'].isoformat() }}
-            				    {% elif answer.type_constraint == 'decimal' %}
-            				        {{ float(answer.response['response']) }}
-            				    {% elif answer.type_constraint == 'photo' %}
-            				        <img src="data:image/png;base64,{{ answer.photo.image }}">
-                                {% elif answer.type_constraint == 'location' %}
-                                    {{ answer.response['response']['lat'] }}, {{ answer.response['response']['lng'] }}
-                                {% elif answer.type_constraint == 'multiple_choice' %}
-                                    {% if 'choice_text' in answer.response['response'] %}
-                                        {{ _t(answer.response['response']['choice_text']) }}
-                                    {% else %}
-                                        {{ answer.response['response'] }}
-                                    {% end %}
-                                {% elif answer.type_constraint == 'facility' %}
-                                    <div class="response-facility-name">
-                                        {{ answer.response['response']['facility_name'] }}
-                                        <span class="response-facility-meta response-facility-id">
-                                            ({{ answer.response['response']['facility_id'] }})
-                                        </span>
-                                    </div>
-                                    <div class="response-facility-meta response-facility-sector">
-                                        <strong>sector:</strong> {{ answer.response['response']['facility_sector'] }}
-                                    </div>
-                                    <div class="response-facility-meta response-facility-coords">
-                                        <strong>location:</strong> {{ answer.response['response']['lat'] }}, {{ answer.response['response']['lng'] }}
-                                    </div>
+                            <div class="response-data">
+                            {% if answer.type_constraint in {'date', 'time', 'timestamp'} %}
+                                {{ answer.response['response'].isoformat() }}
+                            {% elif answer.type_constraint == 'decimal' %}
+                                {{ float(answer.response['response']) }}
+                            {% elif answer.type_constraint == 'photo' %}
+                                <img src="data:image/png;base64,{{ answer.photo.image }}">
+                            {% elif answer.type_constraint == 'location' %}
+                                {{ answer.response['response']['lat'] }}, {{ answer.response['response']['lng'] }}
+                            {% elif answer.type_constraint == 'multiple_choice' %}
+                                {% if 'choice_text' in answer.response['response'] %}
+                                    {{ _t(answer.response['response']['choice_text']) }}
                                 {% else %}
                                     {{ answer.response['response'] }}
                                 {% end %}
+                            {% elif answer.type_constraint == 'facility' %}
+                                <div class="response-facility-name">
+                                    {{ answer.response['response']['facility_name'] }}
+                                    <span class="response-facility-meta response-facility-id">
+                                        ({{ answer.response['response']['facility_id'] }})
+                                    </span>
                                 </div>
+                                <div class="response-facility-meta response-facility-sector">
+                                    <strong>sector:</strong> {{ answer.response['response']['facility_sector'] }}
+                                </div>
+                                <div class="response-facility-meta response-facility-coords">
+                                    <strong>location:</strong> {{ answer.response['response']['lat'] }}, {{ answer.response['response']['lng'] }}
+                                </div>
+                            {% else %}
+                                {{ answer.response['response'] }}
+                            {% end %}
+                            </div>
 
-                            </li>
-                        {% end %}
-                    </ul>
-                </div>
+                        </li>
+                    {% end %}
+                </ul>
             </div>
         </div>
     </div>
-{% end %}
-
-
-
-{% block extra_scripts %}
+</div>
 
 <script type="text/javascript">
 
@@ -117,4 +109,5 @@
 
 </script>
 
-{% end %}
+
+

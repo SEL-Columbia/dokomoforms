@@ -143,6 +143,7 @@ class Survey(Base):
         return OrderedDict((
             ('id', self.id),
             ('deleted', self.deleted),
+            ('languages', self.languages),
             ('title', OrderedDict(sorted(self.title.items()))),
             ('url_slug', self.url_slug),
             ('default_language', self.default_language),

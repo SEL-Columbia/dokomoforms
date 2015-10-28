@@ -2,7 +2,6 @@ var $ = require('jquery'),
     moment = require('moment'),
     ps = require('../../../common/js/pubsub'),
     utils = require('../utils'),
-    // Users = require('./models').Users,
     _t = require('../lang'),
     User = require('../models').User,
     tpl = require('../../templates/settings-modal.tpl');
@@ -36,7 +35,6 @@ var SettingsModal = function(user_id) {
     function close() {
         $modal.on('hidden.bs.modal', function() {
             $modal.remove();
-
         });
         $modal.modal('hide');
     }

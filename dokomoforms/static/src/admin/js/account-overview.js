@@ -3,7 +3,8 @@ var $ = require('jquery'),
     L = require('leaflet'),
     moment = require('moment'),
     base = require('./base'),
-    submissionModal = require('./submission-modal'),
+    ps = require('../../common/js/pubsub'),
+    SubmissionModal = require('./modals/submission-modal'),
     view_btn_tpl = require('../templates/button-view-data.tpl'),
     manage_btn_tpl = require('../templates/button-manage-survey.tpl'),
     dl_btn_tpl = require('../templates/button-download-data.tpl'),
@@ -11,17 +12,44 @@ var $ = require('jquery'),
     _t = require('./lang');
 
 var AccountOverview = (function() {
+    var recentSubmissions = [];
 
     function init() {
         base.init();
         if (window.CURRENT_USER_ID !== 'None') {
             loadActivityGraph();
             loadRecentSubmissions()
+                .done(function(data) {
+                    // store recent subs for detail modal browsing
+                    recentSubmissions = _.pluck(data.submissions, 'id');
+                    console.log('recentSubmissions', recentSubmissions);
+                })
                 .done(drawMap)
                 .done(drawRecentSubs);
-            // drawMap();
             setupDataTable();
+            setupEventHandlers();
+
         }
+    }
+
+    function setupEventHandlers() {
+        $(document).on('click', 'tr.submission-row', function() {
+            // select this row in the datatable
+            selectSubmissionRow($(this));
+            var submission_id = $(this).data('id');
+            var idx = recentSubmissions.indexOf(submission_id);
+            new SubmissionModal({submissions: recentSubmissions, initialIndex: idx}).open();
+        });
+
+        ps.subscribe('submissions:select_row', function(e, el) {
+            console.log(el);
+            selectSubmissionRow($(el));
+        });
+    }
+
+    function selectSubmissionRow($el) {
+        $('tr.submission-row').removeClass('selected');
+        $el.addClass('selected');
     }
 
     function drawRecentSubs(data) {
@@ -79,7 +107,7 @@ var AccountOverview = (function() {
                             });
                             // marker.bindPopup();
                             marker.on('click', function() {
-                                submissionModal.openSubmissionDetailModal(submission.id);
+                                new SubmissionModal({submission_id: submission.id}).open();
                             });
                             markers.push(marker);
                         });
@@ -171,19 +199,27 @@ var AccountOverview = (function() {
                 ],
                 'pagingType': 'full_numbers',
                 'order': [
-                    [2, 'desc']
+                    [1, 'desc']
                 ],
                 'columnDefs': [{
-                    'data': 0,
-                    'render': function(data, type, row) {
-                        return data;
-                    },
+                    'data': 'title',
                     'targets': 0
                 }, {
-                    'data': 1,
-                    targets: 1
+                    'data': 'created_on',
+                    targets: 1,
+                    'render': function(data, type, row) {
+                        if (data) {
+                            var datetime = moment(data);
+                            return datetime.format('MMM D, YYYY');
+                        } else {
+                            return '';
+                        }
+                    }
                 }, {
-                    'data': 2,
+                    'data': 'num_submissions',
+                    'targets': 2
+                }, {
+                    'data': 'latest_submission_time',
                     'render': function(data, type, row) {
                         if (data) {
                             var datetime = moment(data);
@@ -192,16 +228,9 @@ var AccountOverview = (function() {
                             return '';
                         }
                     },
-                    'targets': 2
+                    'targets': 3
                 }, {
-                    'data': 3,
-                    'render': function(data, type, row) {
-                        return '...'; // TODO: ask @jmwohl about this.
-                    },
-                    'targets': 3,
-                    'sortable': false
-                }, {
-                    'data': 3,
+                    'data': 'id',
                     'render': function(data, type, row) {
                         // console.log(data);
                         var view = view_btn_tpl({
@@ -224,6 +253,8 @@ var AccountOverview = (function() {
                 }],
                 'columns': [{
                     'name': 'title'
+                },  {
+                    'name': 'created_on'
                 }, {
                     'name': 'num_submissions'
                 }, {
@@ -260,12 +291,13 @@ var AccountOverview = (function() {
                                 recordsTotal: json.total_entries,
                                 recordsFiltered: json.filtered_entries,
                                 data: json.surveys.map(function(survey) {
-                                    return [
-                                        _t(survey.title),
-                                        survey.num_submissions,
-                                        survey.latest_submission_time,
-                                        survey.id
-                                    ];
+                                    return {
+                                        title: _t(survey.title),
+                                        created_on: survey.created_on,
+                                        num_submissions: survey.num_submissions,
+                                        latest_submission_time: survey.latest_submission_time,
+                                        id: survey.id
+                                    };
                                 })
                             };
                             callback(response);

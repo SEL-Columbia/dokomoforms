@@ -2,6 +2,7 @@
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 import datetime
+import logging
 from time import localtime
 
 from passlib.hash import bcrypt_sha256
@@ -66,12 +67,31 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
     @property
     def current_user_model(self):
         """The handler's current_user_model."""
-        return self.r_handler.current_user_model
+        logged_in_user = self.r_handler.current_user_model
+        if logged_in_user:
+            return logged_in_user
+        try:
+            email = self.r_handler.request.headers['Email']
+        except KeyError:
+            return None
+        try:
+            return (
+                self.session
+                .query(Administrator)
+                .join(Email)
+                .filter(Email.address == email)
+                .one()
+            )
+        except NoResultFound:
+            return None
 
     @property
     def current_user(self):
         """The handler's current_user."""
-        return self.r_handler.current_user
+        user = self.current_user_model
+        if user:
+            return user.name
+        return None
 
     @property
     def content_type(self):
@@ -161,6 +181,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
             err = exc.NotFound()
         elif isinstance(err, understood):
             err = exc.BadRequest(err)
+        logging.exception(err)
         return super().handle_error(err)
 
     def wrap_list_response(self, data):
