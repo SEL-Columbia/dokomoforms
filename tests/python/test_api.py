@@ -2119,12 +2119,11 @@ class TestSurveyApi(DokoHTTPTest):
                     ],
                 ),
                 ('total_entries', 14),
-                ('filtered_entries', 6),
+                ('filtered_entries', 7),
                 ('fields', 'deleted,creator_name'),
                 ('limit', 2),
                 ('search', 'a'),
-            )),
-            msg=survey_dict
+            ))
         )
 
 
