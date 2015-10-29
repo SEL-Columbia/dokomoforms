@@ -1068,7 +1068,13 @@ class TestEnumerate(DriverTest):
     def test_change_language(self):
         survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
 
+        # login as enumerator
+        self.get('/debug/login/test_enumerator@fixtures.com')
+
         self.get('/enumerate/{}'.format(survey_id))
+
+        # self.drv.save_screenshot('language_select.png')
+
         self.wait_for_element('menu', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('menu'))
         self.click(
@@ -1078,19 +1084,17 @@ class TestEnumerate(DriverTest):
 
         self.assertEqual(
             len(self.drv.find_elements_by_css_selector(
-                '.language_select option'), 2))
+                '.language_select option')), 2)
 
         self.click(self.drv.find_elements_by_css_selector(
             '.language_select option')[1])
 
         self.sleep()
 
-        # self.assertIsNot(existing_submission, new_submission)
-        # self.assertEqual(new_submission.answers[0].answer, 3)
-        # self.assertIsNotNone(new_submission.start_time)
-        # self.assertNotEqual(
-        #     new_submission.start_time, new_submission.save_time
-        # )
+        title = self.drv.find_element_by_css_selector(
+            '.content-padded h3').text
+
+        self.assertEqual(title, 'ENUMERATOR_ONLY_SINGLE_SURVEY')
 
     @report_success_status
     def test_single_integer_question(self):
