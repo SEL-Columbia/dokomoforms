@@ -9,7 +9,8 @@ var $ = require('jquery'),
 var SettingsModal = function(user_id) {
     console.log('SettingsModal', user_id);
     var user = new User(),
-        $modal;
+        $modal,
+        langUpdated = false;
     // TODO: this could come from the collection, it's obviously already been fetched.
     if (user_id) {
         // We are editing...
@@ -27,8 +28,13 @@ var SettingsModal = function(user_id) {
             $modal.first('input').focus();
             $modal.find('.btn-save-user').click(saveSettings);
             $modal.find('.btn-api-key').click(refreshApiKey);
+            $modal.find('#user-default-lang').on('change', function(e) {
+                console.log(e);
+                langUpdated = true;
+            });
             utils.initTooltips('.modal');
         });
+
 
     }
 
@@ -59,8 +65,14 @@ var SettingsModal = function(user_id) {
 
         user.save()
             .done(function() {
-                close();
-                ps.publish('settings:saved');
+                // if the language has been updated, we need to reload the page
+                // for the change to be visible in server-rendered templates
+                if (langUpdated) {
+                    window.location.reload();
+                } else {
+                    close();
+                    ps.publish('settings:saved');
+                }
             })
             .fail(function() {
                 close();
