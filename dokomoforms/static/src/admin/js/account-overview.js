@@ -292,7 +292,7 @@ var AccountOverview = (function() {
                                 recordsFiltered: json.filtered_entries,
                                 data: json.surveys.map(function(survey) {
                                     return {
-                                        title: _t(survey.title),
+                                        title: _t(survey.title, survey.default_language),
                                         created_on: survey.created_on,
                                         num_submissions: survey.num_submissions,
                                         latest_submission_time: survey.latest_submission_time,
