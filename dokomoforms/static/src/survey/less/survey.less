@@ -557,12 +557,23 @@ header {
 }
 
 .title_menu_option {
-    padding-top: 10px;
+    padding: 10px;
     border-top: 1px solid #A9A9A9;
-    height: 44px;
     width: 100%;
     background-color: #FFF;
     cursor: pointer;
+
+    &:hover {
+        background-color: #eee;
+    }
+
+    &.menu_language {
+        cursor: auto;
+    }
+
+    select {
+        margin-top: 5px;
+    }
 }
 
 .btn {

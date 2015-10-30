@@ -2085,7 +2085,7 @@ class TestSurveyApi(DokoHTTPTest):
         )
         self.assertEqual(len(survey_dict['surveys']), 6)
         self.assertEqual(survey_dict['total_entries'], 14)
-        self.assertEqual(survey_dict['filtered_entries'], 6)
+        self.assertEqual(survey_dict['filtered_entries'], 7)
 
     def test_list_surveys_with_specific_fields_and_filter_and_limit(self):
         # url to tests
@@ -2119,12 +2119,11 @@ class TestSurveyApi(DokoHTTPTest):
                     ],
                 ),
                 ('total_entries', 14),
-                ('filtered_entries', 6),
+                ('filtered_entries', 7),
                 ('fields', 'deleted,creator_name'),
                 ('limit', 2),
                 ('search', 'a'),
-            )),
-            msg=survey_dict
+            ))
         )
 
 
