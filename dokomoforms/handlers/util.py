@@ -169,7 +169,7 @@ class BaseHandler(tornado.web.RequestHandler):
         return namespace
 
     def write_error(self, status_code, **kwargs):
-        """"""
+        """Deal with 404 errors."""
         if 'exc_info' in kwargs and kwargs['exc_info'][0] is NoResultFound:
             self.set_status(404)
             status_code = 404
