@@ -1152,7 +1152,7 @@ class TestEnumerate(DriverTest):
 
         self.assertEqual(
             len(self.drv.find_elements_by_css_selector(
-                '.language_select option')), 2)
+                '.language_select option')), 3)
 
         self.click(self.drv.find_elements_by_css_selector(
             '.language_select option')[1])
