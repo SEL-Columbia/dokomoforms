@@ -1,5 +1,4 @@
 var $ = require('jquery'),
-    ps = require('./pubsub'),
     tpl = require('../templates/notification.tpl');
 
 var Notification = function(message, type) {

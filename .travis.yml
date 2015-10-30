@@ -25,7 +25,7 @@ before_script:
 
 script:
   - npm test
-  - xvfb-run --server-args="-screen 0, 1024x768x16" tests/python/coverage_run.sh
+  - xvfb-run --server-args="-screen 0, 1280x1280x16" tests/python/coverage_run.sh
 
 after_success:
   - coveralls

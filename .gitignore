@@ -25,5 +25,6 @@ _templates
 *.sublime-project
 *.sublime-workspace
 *.log
+log/
 bower
 dokomoforms/static/dist

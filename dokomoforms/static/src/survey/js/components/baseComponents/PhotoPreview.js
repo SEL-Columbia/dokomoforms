@@ -41,7 +41,9 @@ module.exports = React.createClass({
 
         return (
             <div className="photo_preview_container dark_overlay" style={divStyle} >
-                <span className="icon icon-close" onClick={this.props.onClose}></span>
+                <button className="btn btn-photo-close" onClick={this.props.onClose}>
+                    <span className="icon icon-close" ></span>
+                </button>
 
                 <button className="btn btn-photo-delete" onClick={this.props.onDelete}>
                     <span className="icon icon-trash"></span> Delete

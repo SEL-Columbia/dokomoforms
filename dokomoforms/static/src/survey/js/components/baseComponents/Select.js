@@ -17,29 +17,31 @@ module.exports = React.createClass({
     getInitialState: function() {
         return {
             showOther: this.props.initSelect && this.props.initSelect.indexOf('other') > -1
-        }
+        };
     },
 
     onChange: function(e) {
         var foundOther = false;
         var options = [];
         for (var i = 0; i < e.target.selectedOptions.length; i++) {
-            option = e.target.selectedOptions[i];
-            foundOther = foundOther | option.value === "other";
+            var option = e.target.selectedOptions[i];
+            foundOther = foundOther | option.value === 'other';
             options[i] = option.value;
         }
 
         if (this.props.onSelect)
             this.props.onSelect(options);
 
-        this.setState({showOther: foundOther})
+        this.setState({
+            showOther: foundOther
+        });
     },
 
     render: function() {
-       var size = this.props.multiSelect ?
-           this.props.choices.length + 1 + 1*this.props.withOther : 1;
+        var size = this.props.multiSelect ?
+            this.props.choices.length + 1 + 1 * this.props.withOther : 1;
         return (
-                <div className="content-padded">
+            <div className="content-padded">
                     <select className="noselect" onChange={this.onChange}
                             multiple={this.props.multiSelect}
                             size={size}
@@ -52,13 +54,15 @@ module.exports = React.createClass({
                             disabled={this.props.disabled}
                     >
 
-                    <option key="null" value="null">Please choose an option</option>
+                    <option key="null" value="null">
+                        {this.props.placeholder || 'Please choose an option...'}
+                    </option>
                     {this.props.choices.map(function(choice) {
                         return (
                                 <option key={choice.value} value={choice.value}>
                                     { choice.text }
                                 </option>
-                                )
+                            );
                     })}
                     {this.props.withOther ?
                         <option key="other" value="other"> Other </option>
@@ -73,8 +77,7 @@ module.exports = React.createClass({
                         :   null
                     }
                 </div>
-               )
+        );
 
     }
 });
-

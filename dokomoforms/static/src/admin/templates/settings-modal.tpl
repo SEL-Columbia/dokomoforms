@@ -27,9 +27,13 @@
                         <p class="help-block">Generating a new token will invalidate the existing token.</p>
                         <div class="input-group">
                             <span class="input-group-btn">
-                                <button type="button" class="btn btn-default btn-api-key"><span class="glyphicon glyphicon-refresh"></span> Generate Token </button>
+                                <button type="button" class="btn btn-secondary btn-api-key"><span class="glyphicon glyphicon-refresh icon-inline-left"></span> Generate Token </button>
                             </span>
                             <input type="text" class="form-control" id="user-api-token" placeholder="API Token">
+                        </div>
+                        <div class="alert alert-info alert-token-expiration hide">
+                            <span class="glyphicon glyphicon-exclamation-sign icon-inline-left"></span>
+                            <span class="token-expiration-text"></span>
                         </div>
                     </div>
                 </div>

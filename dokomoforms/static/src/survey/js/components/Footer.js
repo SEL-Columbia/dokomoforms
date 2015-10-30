@@ -1,7 +1,7 @@
-var React = require('react'); 
+var React = require('react');
 var BigButton = require('./baseComponents/BigButton.js');
 var DontKnow = require('./baseComponents/DontKnow.js');
-var ResponseField = require('./baseComponents/ResponseField.js'); 
+var ResponseField = require('./baseComponents/ResponseField.js');
 
 /*
  * Footer component
@@ -19,26 +19,28 @@ var ResponseField = require('./baseComponents/ResponseField.js');
 module.exports = React.createClass({
     getDontKnow: function() {
         if (this.props.showDontKnow)
-            return (<DontKnow 
-                        checkBoxFunction={this.onCheck} 
-                        key={this.props.questionID}
-                        checked={this.props.showDontKnowBox}
-                    />)
+            return (
+                <DontKnow
+                    checkBoxFunction={this.onCheck}
+                    key={this.props.questionID}
+                    checked={this.props.showDontKnowBox}
+                />
+            );
 
         return null;
     },
 
     /*
      * Record new response into localStorage, response has been validated
-     * if this callback is fired 
+     * if this callback is fired
      */
     onInput: function(value, index) {
 
-        console.log("Hey", index, value);
+        console.log('Hey', index, value);
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
 
-        answers = [{
-            'response': value, 
+        var answers = [{
+            'response': value,
             'response_type': 'dont_know'
         }];
 
@@ -52,7 +54,7 @@ module.exports = React.createClass({
      * Call checkBoxFunction if supplied
      *
      * @event: click event on checkbox
-     */ 
+     */
     onCheck: function(event) {
         // Clear responses
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
@@ -75,29 +77,29 @@ module.exports = React.createClass({
 
 
     render: function() {
-        var FooterClasses = "bar bar-standard bar-footer";
-        if (this.props.showDontKnow) 
-            FooterClasses += " bar-footer-extended";
-        if (this.props.showDontKnowBox) 
-            FooterClasses += " bar-footer-extended bar-footer-super-extended";
+        var FooterClasses = 'bar bar-standard bar-footer';
+        if (this.props.showDontKnow)
+            FooterClasses += ' bar-footer-extended';
+        if (this.props.showDontKnowBox)
+            FooterClasses += ' bar-footer-extended bar-footer-super-extended';
 
         var self = this;
         return (
-                <div className={FooterClasses}>
-                    <BigButton text={this.props.buttonText} 
-                    type={this.props.buttonType}
-                    buttonFunction={this.props.buttonFunction} />
-                    { this.getDontKnow() }
-                    { this.props.showDontKnowBox ? 
-                        <ResponseField 
-                                index={0}
-                                onInput={self.onInput}
-                                initValue={self.getAnswer(self.props.questionID)} 
-                                type={'text'}
-                        /> 
-                    : null}
-                </div>
-               )
+            <div className={FooterClasses}>
+                <BigButton text={this.props.buttonText}
+                type={this.props.buttonType}
+                buttonFunction={this.props.buttonFunction} />
+                { this.getDontKnow() }
+                { this.props.showDontKnowBox ?
+                    <ResponseField
+                            placeholder='Please explain...'
+                            index={0}
+                            onInput={self.onInput}
+                            initValue={self.getAnswer(self.props.questionID)}
+                            type={'text'}
+                    />
+                : null}
+            </div>
+        );
     }
 });
-

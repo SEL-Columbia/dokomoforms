@@ -1,12 +1,12 @@
 var $ = require('jquery'),
     _ = require('lodash'),
+    utils = require('./utils'),
     L = require('leaflet'),
     base = require('./base'),
-    sub_modals = require('./submission-modal');
+    SubmissionModal = require('./modals/submission-modal');
 
 var ViewData = (function() {
-    var map,
-        maps = {},
+    var maps = {},
         map_data = {};
 
     function init(_map_data) {
@@ -14,22 +14,26 @@ var ViewData = (function() {
         // TODO: is this check necessary?
         if (window.CURRENT_USER_ID !== 'None') {
             map_data = _map_data;
+            utils.populateDates(window.DATETIMES);
             setupEventHandlers();
         }
     }
 
     function setupEventHandlers() {
         $(document).on('click', '.question-title-bar', function() {
-            var $el = $(this);
+            var $el = $(this),
+                id = $el.attr('rel');
+
             if ($el.hasClass('open')) {
                 $el.removeClass('open');
             } else {
                 $el.addClass('open');
             }
+
             $el.siblings('.question-stats').slideToggle();
-            if ($el.hasClass('question-location')) {
-                if (!map) {
-                    var id = $el.attr('rel');
+
+            if ($el.hasClass('question-type-location') || $el.hasClass('question-type-facility')) {
+                if (!maps[id]) {
                     console.log(id);
                     drawMap(id, map_data[id]);
                 }
@@ -40,7 +44,7 @@ var ViewData = (function() {
     function drawMap(element_id, map_data) {
         var markers = [];
 
-        map = L.map(element_id, {
+        var map = L.map(element_id, {
             dragging: true,
             zoom: 14,
             // zoomControl: false,
@@ -61,10 +65,10 @@ var ViewData = (function() {
                 });
             marker.options.icon = new L.icon({
                 iconUrl: '/static/dist/admin/img/icons/normal_base.png',
-                iconAnchor: [13, 30]
+                iconAnchor: [15, 48]
             });
             marker.on('click', function() {
-                sub_modals.openSubmissionDetailModal(answer.submission_id);
+                new SubmissionModal({submission_id: answer.submission_id}).open();
             });
             markers.push(marker);
         });

@@ -1,25 +1,158 @@
 var $ = require('jquery'),
     _ = require('lodash'),
-    base = require('./base'),
     moment = require('moment'),
-    view_sub_btn_tpl = require('../templates/button-view-submission.tpl');
+    base = require('./base'),
+    utils = require('./utils'),
+    ps = require('../../common/js/pubsub'),
+    SubmissionModal = require('./modals/submission-modal'),
+    shareable_link_tpl = require('../templates/shareable-link.tpl'),
+    edit_link_tpl = require('../templates/edit-shareable-link.tpl');
 
 var ViewSurvey = (function() {
-    var survey_id;
+    var survey_id,
+        survey_slug,
+        good_slug = true,
+        domain = document.location.origin,
+        $datatable;
 
-    function init(_survey_id) {
+    function init(_survey_id, _survey_slug) {
         survey_id = _survey_id;
+        survey_slug = _survey_slug !== 'None' ? _survey_slug : '';
         base.init();
         if (window.CURRENT_USER_ID !== 'None') {
-            populateSurveyUrl(survey_id);
+            populateSurveyUrl();
+            utils.populateDates(window.DATETIMES);
+            setupEventHandlers();
             loadActivityGraph();
             setupDataTable();
         }
+
     }
 
-    function populateSurveyUrl(survey_id) {
-        var domain = document.location.origin;
-        $('#shareable-link').val(domain + '/enumerate/' + survey_id);
+    function setupEventHandlers() {
+        $(document).on('click', '.edit-survey-url', function() {
+            editSurveyUrl();
+        });
+
+        $(document).on('click', '.save-survey-url', function() {
+            if (!good_slug) {
+                return;
+            }
+            var slug = $('.shareable-url-slug').val();
+            saveSurveyUrl(slug)
+                .done(function() {
+                    slug = slug || survey_id;
+                    var url = domain + '/enumerate/' + slug;
+                    $('.shareable-link-wrap').html(shareable_link_tpl({
+                        shareable_link: url
+                    }));
+                    survey_slug = slug;
+                });
+        });
+
+        $(document).on('keypress', '.shareable-url-slug', function(e) {
+            var char = String.fromCharCode(e.charCode),
+                re = new RegExp(/[;/?:@&=+$,\s#%]/);
+            if (re.test(char)) {
+                return false;
+            }
+        });
+
+        $(document).on('input', '.shareable-url-slug', function(e) {
+            var slug = e.target.value,
+                $saveBtn = $('.save-survey-url');
+
+            testSurveySlug(slug)
+                .done(function() {
+                    // good only if it's the current slug... the ajax request will return not error,
+                    // but we should still be able to save.
+                    good_slug = slug === survey_slug;
+                })
+                .fail(function(jqXHR) {
+                    good_slug = jqXHR.status === 404;
+                })
+                .always(function() {
+                    if (!good_slug) {
+                        $saveBtn.addClass('disabled');
+                        $saveBtn.html('URL unavailable');
+                    } else {
+                        $saveBtn.removeClass('disabled');
+                        $saveBtn.text('Save');
+                    }
+                });
+        });
+
+        $(document).on('paste', '.shareable-url-slug', function(e) {
+            // hack, seems necessary though (in order to wait for redraw?)
+            setTimeout(function() {
+                var slug = cleanSlug(e.target.value),
+                    $input = $(e.target);
+                $input.val(slug);
+            }, 1);
+        });
+
+        $(document).on('click', 'table#submissions tbody tr', function() {
+            // select this row in the datatable and open detail modal
+            var selectedRow = selectSubmissionRow($(this));
+            new SubmissionModal({dataTable: $datatable, initialRow: selectedRow}).open();
+        });
+
+        ps.subscribe('submissions:select_row', function(e, el) {
+            console.log(el);
+            selectSubmissionRow($(el));
+        });
+    }
+
+    function selectSubmissionRow($el) {
+        $('table#submissions tbody tr').removeClass('selected');
+        $el.addClass('selected');
+        return $datatable.row($el);
+    }
+
+    function cleanSlug(slug) {
+        slug = slug.trim().replace(/[;/?:@&=+$,\s#%]+/g, '-');
+        console.log('cleanSlug: ', slug);
+        return slug;
+    }
+
+    function populateSurveyUrl() {
+        var slug = survey_slug || survey_id;
+        var url = domain + '/enumerate/' + slug;
+        $('.shareable-link-wrap').html(shareable_link_tpl({
+            shareable_link: url
+        }));
+
+        // $('.survey-permalink-icon').tooltip('destroy');
+        $('.survey-permalink-icon')
+            .attr('title', domain + '/enumerate/' + survey_id);
+        // .tooltip();
+    }
+
+    function testSurveySlug(slug) {
+        return $.ajax({
+            type: 'GET',
+            url: '/enumerate/' + slug
+        });
+    }
+
+    function editSurveyUrl() {
+        var shaLinWra = $('.shareable-link-wrap');
+        shaLinWra.html(edit_link_tpl({
+            domain: domain,
+            slug: survey_slug
+        }));
+        var slutInput = shaLinWra.find('.shareable-url-slug').focus();
+        slutInput[0].setSelectionRange(0, slutInput.val().length);
+    }
+
+    function saveSurveyUrl(slug) {
+        return $.ajax({
+            type: 'PUT',
+            url: '/api/v0/surveys/' + survey_id,
+            data: JSON.stringify({
+                url_slug: slug || null
+            })
+        });
     }
 
     function loadActivityGraph() {
@@ -42,8 +175,6 @@ var ViewSurvey = (function() {
 
             _.each(sorted, function(result) {
                 var the_date = moment(result.date, 'YYYY-MM-DD').format('MMM D');
-
-                console.log(the_date);
 
                 data.push(result.num_submissions);
                 cats.push(the_date);
@@ -82,44 +213,39 @@ var ViewSurvey = (function() {
     function setupDataTable() {
         // DataTables
 
-        $('#submissions').dataTable({
+        $datatable = $('#submissions').DataTable({
             language: {
                 search: 'Search by submitter name:'
             },
             'lengthMenu': [
-                [5, 20, 50],
-                [5, 20, 50]
+                [20, 50, 100],
+                [20, 50, 100]
             ],
             'pagingType': 'full_numbers',
             'order': [
                 [1, 'desc']
             ],
             'columnDefs': [{
-                data: 0,
+                data: 'submitter_name',
                 targets: 0
             }, {
-                'data': 1,
+                'data': 'save_time',
                 'render': function(data) {
                     var datetime = moment(data);
                     return datetime.format('MMM D, YYYY [at] HH:mm:ss');
                 },
                 'targets': 1
             }, {
-                'data': 2,
+                'data': 'submission_time',
                 'render': function(data) {
                     var datetime = moment(data);
                     return datetime.format('MMM D, YYYY [at] HH:mm:ss');
                 },
                 'targets': 2
             }, {
-                data: 3,
-                'render': function(data) {
-                    return view_sub_btn_tpl({
-                        submission_id: data
-                    });
-                },
+                'data': 'id',
                 'targets': 3,
-                'sortable': false
+                'visible': false
             }],
             'columns': [{
                 'name': 'submitter_name'
@@ -150,17 +276,32 @@ var ViewSurvey = (function() {
                         search_fields: 'submitter_name'
                     },
                     'success': function(json) {
-                        var response = {
-                            draw: json.draw,
-                            recordsTotal: json.total_entries,
-                            recordsFiltered: json.filtered_entries,
-                            data: json.submissions.map(function(submission) {
+                        var data = json.submissions.map(function(submission) {
                                 return [
                                     submission.submitter_name,
                                     submission.save_time,
                                     submission.submission_time,
                                     submission.id
                                 ];
+                            });
+                        console.log('data: ', data);
+                        var response = {
+                            draw: json.draw,
+                            recordsTotal: json.total_entries,
+                            recordsFiltered: json.filtered_entries,
+                            data: json.submissions.map(function(submission) {
+                                // return [
+                                //     submission.submitter_name,
+                                //     submission.save_time,
+                                //     submission.submission_time,
+                                //     submission.id
+                                // ];
+                                return {
+                                    submitter_name: submission.submitter_name,
+                                    save_time: submission.save_time,
+                                    submission_time: submission.submission_time,
+                                    id: submission.id
+                                };
                             })
                         };
                         callback(response);

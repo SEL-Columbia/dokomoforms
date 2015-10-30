@@ -437,7 +437,7 @@ class TestEnumerate(DokoHTTPTest):
             url,
             method='GET',
             follow_redirects=False,
-            _logged_in_user={'user_id': some_user.id, 'user_name': 'some_user'}
+            _logged_in_user=some_user.id,
         )
 
         self.assertEqual(response.code, 403)
@@ -457,7 +457,7 @@ class TestEnumerate(DokoHTTPTest):
             url,
             method='GET',
             follow_redirects=False,
-            _logged_in_user={'user_id': some_user.id, 'user_name': 'some_user'}
+            _logged_in_user=some_user.id,
         )
 
         self.assertEqual(response.code, 403)

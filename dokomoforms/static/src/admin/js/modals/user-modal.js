@@ -1,5 +1,5 @@
 var $ = require('jquery'),
-    ps = require('../pubsub'),
+    ps = require('../../../common/js/pubsub'),
     utils = require('../utils'),
     // Users = require('./models').Users,
     _t = require('../lang'),

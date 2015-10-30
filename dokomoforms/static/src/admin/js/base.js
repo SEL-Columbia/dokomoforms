@@ -1,7 +1,6 @@
 var $ = require('jquery'),
     cookies = require('../../common/js/cookies'),
-    ps = require('./pubsub'),
-    submissionModals = require('./submission-modal'),
+    ps = require('../../common/js/pubsub'),
     SettingsModal = require('./modals/settings-modal'),
     Notification = require('./notification'),
     persona = require('../../common/js/persona'),
@@ -11,12 +10,9 @@ module.exports = (function() {
 
     function init() {
         utils.initTooltips();
+        utils.initPopovers();
         _globalAjaxSetup();
         _setupGlobalEventHandlers();
-
-        // setup handlers for submission modals
-        // TODO: refactor submission modals to a proper module.
-        submissionModals.init();
 
         // setup handlers for persona events
         persona.init();
@@ -28,7 +24,6 @@ module.exports = (function() {
     function _globalAjaxSetup() {
         $.ajaxPrefilter(function(options, originalOptions, jqXHR) {
             var _xsrf = cookies.getCookie('_xsrf');
-            console.log(_xsrf);
             jqXHR.setRequestHeader('X-XSRFToken', _xsrf);
         });
     }

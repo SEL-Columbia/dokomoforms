@@ -1,7 +1,7 @@
 var $ = require('jquery'),
-    ps = require('../pubsub'),
+    moment = require('moment'),
+    ps = require('../../../common/js/pubsub'),
     utils = require('../utils'),
-    // Users = require('./models').Users,
     _t = require('../lang'),
     User = require('../models').User,
     tpl = require('../../templates/settings-modal.tpl');
@@ -35,7 +35,6 @@ var SettingsModal = function(user_id) {
     function close() {
         $modal.on('hidden.bs.modal', function() {
             $modal.remove();
-
         });
         $modal.modal('hide');
     }
@@ -74,6 +73,9 @@ var SettingsModal = function(user_id) {
         $.getJSON('/api/v0/users/generate-api-token', function(resp) {
             console.log(resp);
             $modal.find('#user-api-token').val(resp.token);
+            var expires = moment(resp.expires_on);
+            $modal.find('.token-expiration-text').text('Token will expire on ' + expires.format('MMM D, YYYY') + '.');
+            $modal.find('.alert-token-expiration').removeClass('hide');
         });
     }
 

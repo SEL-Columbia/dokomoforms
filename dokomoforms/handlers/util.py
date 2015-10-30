@@ -1,6 +1,8 @@
 """Useful reusable functions for handlers, plus the BaseHandler."""
+from sqlalchemy.exc import StatementError
+
 import tornado.web
-from tornado.escape import to_unicode, json_decode, json_encode
+from tornado.escape import to_unicode, json_encode
 
 from dokomoforms.models import User, Survey
 
@@ -23,10 +25,13 @@ class BaseHandler(tornado.web.RequestHandler):
     @property
     def current_user_model(self):
         """Return the current logged in User, or None."""
-        current_user = self._current_user_cookie()
-        if current_user:
-            user_id = json_decode(current_user)['user_id']
-            return self.session.query(User).get(user_id)
+        current_user_id = self._current_user_cookie()
+        if current_user_id:
+            cuid = to_unicode(current_user_id)
+            try:
+                return self.session.query(User).get(cuid)
+            except StatementError:
+                self.clear_cookie('user')
         return None
 
     def set_default_headers(self):
@@ -46,12 +51,12 @@ class BaseHandler(tornado.web.RequestHandler):
             " momentjs.com cdn.datatables.net https://login.persona.org; "
             "frame-src login.persona.org; "
             "style-src 'self' 'unsafe-inline'"
-            " fonts.googleapis.com cdn.leafletjs.com;"
+            " fonts.googleapis.com cdn.leafletjs.com *.cloudfront.net;"
             "font-src 'self' fonts.googleapis.com fonts.gstatic.com;"
             "img-src 'self' *.tile.openstreetmap.org data: blob:;"
             "object-src 'self' blob:;"
-            "media-src 'self' blob:;"
-            "connect-src 'self' blob: *.revisit.global localhost;"
+            "media-src 'self' blob: mediastream:;"
+            "connect-src 'self' blob: *.revisit.global localhost:3000;"
             "default-src 'self';"
         )
 
@@ -86,9 +91,9 @@ class BaseHandler(tornado.web.RequestHandler):
 
         :return: a string containing the user name.
         """
-        current_user = self._current_user_cookie()
-        if current_user:
-            return to_unicode(json_decode(current_user)['user_name'])
+        user = self.current_user_model
+        if user:
+            return user.name
         return None
 
     def _get_surveys_for_menu(self):

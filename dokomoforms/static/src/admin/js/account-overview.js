@@ -3,51 +3,100 @@ var $ = require('jquery'),
     L = require('leaflet'),
     moment = require('moment'),
     base = require('./base'),
-    submissionModal = require('./submission-modal'),
+    ps = require('../../common/js/pubsub'),
+    SubmissionModal = require('./modals/submission-modal'),
     view_btn_tpl = require('../templates/button-view-data.tpl'),
     manage_btn_tpl = require('../templates/button-manage-survey.tpl'),
     dl_btn_tpl = require('../templates/button-download-data.tpl'),
+    recent_sub_tpl = require('../templates/recent-submission-row.tpl'),
     _t = require('./lang');
 
 var AccountOverview = (function() {
+    var recentSubmissions = [];
 
     function init() {
         base.init();
         if (window.CURRENT_USER_ID !== 'None') {
             loadActivityGraph();
-            loadMap();
+            loadRecentSubmissions()
+                .done(function(data) {
+                    // store recent subs for detail modal browsing
+                    recentSubmissions = _.pluck(data.submissions, 'id');
+                    console.log('recentSubmissions', recentSubmissions);
+                })
+                .done(drawMap)
+                .done(drawRecentSubs);
             setupDataTable();
+            setupEventHandlers();
+
         }
     }
 
-    function loadMap() {
-        console.log('loadMap');
+    function setupEventHandlers() {
+        $(document).on('click', 'tr.submission-row', function() {
+            // select this row in the datatable
+            selectSubmissionRow($(this));
+            var submission_id = $(this).data('id');
+            var idx = recentSubmissions.indexOf(submission_id);
+            new SubmissionModal({submissions: recentSubmissions, initialIndex: idx}).open();
+        });
+
+        ps.subscribe('submissions:select_row', function(e, el) {
+            console.log(el);
+            selectSubmissionRow($(el));
+        });
+    }
+
+    function selectSubmissionRow($el) {
+        $('tr.submission-row').removeClass('selected');
+        $el.addClass('selected');
+    }
+
+    function drawRecentSubs(data) {
+        console.log('drawRecentSubs', data);
+        var submissions = data.submissions,
+            $table = $('#recent-list table tbody');
+        submissions.forEach(function(sub) {
+            sub.submission_time = moment(sub.submission_time).format('MMM d, YYYY [at] HH:mm');
+            var displayData = _.extend(sub, { _t: _t});
+            console.log(displayData);
+            $table.append(recent_sub_tpl(displayData));
+        });
+    }
+
+    function loadRecentSubmissions() {
+        var limit = 5;
+        return $.getJSON('/api/v0/submissions?order_by=save_time:DESC&limit=' + limit +
+            '&fields=id,submission_time,submitter_name,survey_title,answers');
+    }
+
+    function drawMap(data) {
+        console.log('drawMap');
         // Map
-        var map,
-            limit = 5;
-        $.getJSON('/api/v0/submissions?order_by=save_time:DESC&limit=' + limit, function(data) {
-            var submissions = data.submissions;
-            if (submissions.length) {
-                $(document).on('shown.bs.tab', 'a[href="#recent-map"]', function() {
-                    if (!map) {
-                        map = L.map('recent-map-container', {
-                            dragging: true,
-                            zoom: 14,
-                            attributionControl: false
-                        });
-                        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
-                        var markers = [];
-                        _.each(submissions, function(submission) {
-                            console.log(submission);
-                            var answers = submission.answers,
-                                location = _.find(answers, function(answer) {
-                                    return answer.type_constraint === 'location';
-                                });
-                            if (!location || !location.response) {
-                                return;
-                            }
+        var map;
+        var submissions = data.submissions;
+        if (submissions.length) {
+            $(document).on('shown.bs.tab', 'a[href="#recent-map"]', function() {
+                if (!map) {
+                    map = L.map('recent-map-container', {
+                        dragging: true,
+                        zoom: 14,
+                        attributionControl: false
+                    });
+                    L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
+                    var markers = [];
+                    _.each(submissions, function(submission) {
+                        console.log(submission);
+                        var answers = submission.answers,
+                            locations = _.filter(answers, function(answer) {
+                                return answer.type_constraint === 'location' || answer.type_constraint === 'facility';
+                            });
+                        // if no locations/facilties found, return
+                        if (!locations || !locations.length) {
+                            return;
+                        }
+                        locations.forEach(function(location) {
                             location = location.response;
-                            // console.log('location:', location);
                             // stored lon/lat in revisit, switch around
                             var marker = new L.marker([location.lat, location.lng], {
                                 riseOnHover: true
@@ -58,24 +107,24 @@ var AccountOverview = (function() {
                             });
                             // marker.bindPopup();
                             marker.on('click', function() {
-                                submissionModal.openSubmissionDetailModal(submission.id);
+                                new SubmissionModal({submission_id: submission.id}).open();
                             });
                             markers.push(marker);
                         });
+                    });
 
-                        if (markers.length) {
-                            var markers_group = new L.featureGroup(markers);
-                            markers_group.addTo(map);
-                            map.fitBounds(markers_group.getBounds(), {
-                                padding: [40, 40]
-                            });
-                        } else {
-                            console.log('No submissions include location.');
-                        }
+                    if (markers.length) {
+                        var markers_group = new L.featureGroup(markers);
+                        markers_group.addTo(map);
+                        map.fitBounds(markers_group.getBounds(), {
+                            padding: [40, 40]
+                        });
+                    } else {
+                        console.log('No submissions include location.');
                     }
-                });
-            }
-        });
+                }
+            });
+        }
     }
 
     function loadActivityGraph() {
@@ -118,12 +167,16 @@ var AccountOverview = (function() {
                 yAxis: {
                     title: {
                         text: '# of submissions'
-                    }
+                    },
+                    allowDecimals: false
                 },
                 series: [{
                     name: 'Submissions',
                     data: data
                 }],
+                legend: {
+                    enabled: false
+                },
                 credits: {
                     enabled: false
                 }
@@ -146,19 +199,27 @@ var AccountOverview = (function() {
                 ],
                 'pagingType': 'full_numbers',
                 'order': [
-                    [2, 'desc']
+                    [1, 'desc']
                 ],
                 'columnDefs': [{
-                    'data': 0,
-                    'render': function(data, type, row) {
-                        return data;
-                    },
+                    'data': 'title',
                     'targets': 0
                 }, {
-                    'data': 1,
-                    targets: 1
+                    'data': 'created_on',
+                    targets: 1,
+                    'render': function(data, type, row) {
+                        if (data) {
+                            var datetime = moment(data);
+                            return datetime.format('MMM D, YYYY');
+                        } else {
+                            return '';
+                        }
+                    }
                 }, {
-                    'data': 2,
+                    'data': 'num_submissions',
+                    'targets': 2
+                }, {
+                    'data': 'latest_submission_time',
                     'render': function(data, type, row) {
                         if (data) {
                             var datetime = moment(data);
@@ -167,16 +228,9 @@ var AccountOverview = (function() {
                             return '';
                         }
                     },
-                    'targets': 2
+                    'targets': 3
                 }, {
-                    'data': 3,
-                    'render': function(data, type, row) {
-                        return '...'; // TODO: ask @jmwohl about this.
-                    },
-                    'targets': 3,
-                    'sortable': false
-                }, {
-                    'data': 3,
+                    'data': 'id',
                     'render': function(data, type, row) {
                         // console.log(data);
                         var view = view_btn_tpl({
@@ -199,6 +253,8 @@ var AccountOverview = (function() {
                 }],
                 'columns': [{
                     'name': 'title'
+                },  {
+                    'name': 'created_on'
                 }, {
                     'name': 'num_submissions'
                 }, {
@@ -235,12 +291,13 @@ var AccountOverview = (function() {
                                 recordsTotal: json.total_entries,
                                 recordsFiltered: json.filtered_entries,
                                 data: json.surveys.map(function(survey) {
-                                    return [
-                                        _t(survey.title),
-                                        survey.num_submissions,
-                                        survey.latest_submission_time,
-                                        survey.id
-                                    ];
+                                    return {
+                                        title: _t(survey.title),
+                                        created_on: survey.created_on,
+                                        num_submissions: survey.num_submissions,
+                                        latest_submission_time: survey.latest_submission_time,
+                                        id: survey.id
+                                    };
                                 })
                             };
                             callback(response);
