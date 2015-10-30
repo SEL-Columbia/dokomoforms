@@ -14,8 +14,10 @@ from tornado.web import RequestHandler
 
 from dokomoforms.options import inject_options, parse_options
 
-inject_options(schema='doko_test', debug='True', demo='False')
+inject_options(schema='doko_test')
 parse_options()
+
+from dokomoforms.options import options
 
 from sqlalchemy import DDL
 from sqlalchemy.orm import sessionmaker
@@ -140,7 +142,9 @@ class DokoHTTPTest(DokoFixtureTest, LogTrapTestCase, AsyncHTTPTestCase):
 
     def get_app(self):
         """Return an instance of the application to be tested."""
-        self.app = Application(self.session)
+        options.debug = True
+        options.demo = False
+        self.app = Application(self.session, options=options)
         return self.app
 
     def append_query_params(self, url, params_dict):

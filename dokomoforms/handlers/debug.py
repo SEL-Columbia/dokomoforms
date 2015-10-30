@@ -7,7 +7,6 @@ import tornado.web
 from sqlalchemy.sql import exists
 from sqlalchemy.orm.exc import NoResultFound
 
-from dokomoforms.options import options
 from dokomoforms.models import User, Administrator, Email
 from dokomoforms.handlers.util import BaseHandler
 
@@ -93,7 +92,16 @@ class DebugPersonaHandler(BaseHandler):
         self.write({'status': 'okay', 'email': 'test_creator@fixtures.com'})
 
 
-if options.debug:  # pragma: no cover
+revisit_online = slow_mode = None
+facilities_file = compressed_facilities = lzs = None
+
+
+def revisit_debug():  # pragma: no cover
+    global revisit_online
+    global slow_mode
+    global facilities_file
+    global compressed_facilities
+    global lzs
     import lzstring
     revisit_online = True
     slow_mode = False
@@ -116,7 +124,7 @@ class DebugRevisitHandler(BaseHandler):
         global slow_mode
         if not revisit_online:
             raise tornado.web.HTTPError(502)
-        if slow_mode:
+        if slow_mode:  # pragma: no cover
             sleep(2)
         self.write(compressed_facilities)
         self.set_header('Content-Type', 'application/json')
@@ -176,7 +184,7 @@ class DebugToggleRevisitHandler(BaseHandler):
             revisit_online = not revisit_online
 
 
-class DebugToggleRevisitSlowModeHandler(BaseHandler):
+class DebugToggleRevisitSlowModeHandler(BaseHandler):  # pragma: no cover
 
     """For toggling slow mode."""
 

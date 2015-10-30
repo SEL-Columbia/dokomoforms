@@ -1,5 +1,6 @@
-var React = require('react');
-var Menu = require('./baseComponents/Menu.js');
+var React = require('react'),
+    ps = require('../../../common/js/pubsub'),
+    Menu = require('./baseComponents/Menu.js');
 
 /*
  * Header component
@@ -17,6 +18,15 @@ module.exports = React.createClass({
         return {
             showMenu: false
         };
+    },
+
+    componentWillMount: function() {
+        var self = this;
+        ps.subscribe('settings:language_changed', function() {
+            self.setState({
+                showMenu: false
+            });
+        });
     },
 
     onClick: function() {
@@ -47,7 +57,7 @@ module.exports = React.createClass({
 
             <a className='icon icon-bars pull-right menu' onClick = {this.onClick} ></a>
 
-            { this.state.showMenu ? <Menu surveyID={this.props.surveyID} db={this.props.db}/> : null }
+            { this.state.showMenu ? <Menu language={this.props.language} survey={this.props.survey} surveyID={this.props.surveyID} db={this.props.db}/> : null }
             </header>
         );
     }
