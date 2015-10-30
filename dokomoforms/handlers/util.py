@@ -1,5 +1,6 @@
 """Useful reusable functions for handlers, plus the BaseHandler."""
 from sqlalchemy.exc import StatementError
+from sqlalchemy.orm.exc import NoResultFound
 
 import tornado.web
 from tornado.escape import to_unicode, json_encode
@@ -162,12 +163,15 @@ class BaseHandler(tornado.web.RequestHandler):
         })
         return namespace
 
-    # def write_error(self, status_code, **kwargs):
-    #     if status_code == 422 and 'exc_info' in kwargs:
-    #         assert False, kwargs['exc_info'][0].args
-    #         self.write(kwargs)
-    #     else:
-    #         super().write_error(status_code, **kwargs)
+    def write_error(self, status_code, **kwargs):
+        """"""
+        if 'exc_info' in kwargs and kwargs['exc_info'][0] is NoResultFound:
+            self.set_status(404)
+            status_code = 404
+        if status_code == 404:
+            self.render('404.html')
+            return
+        super().write_error(status_code, **kwargs)
 
 
 class BaseAPIHandler(BaseHandler):
