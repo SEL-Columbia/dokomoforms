@@ -992,6 +992,39 @@ class TestAdminManageSurvey(AdminTest):
             '3'
         )
 
+    @report_success_status
+    def test_change_language(self):
+        self.get('/view/c0816b52-204f-41d4-aaf0-ac6ae2970925')
+        self.sleep(2)
+
+        self.click(self.drv.find_element_by_css_selector(
+            '#submissions > tbody > tr:nth-of-type(1)'
+        ))
+
+        self.wait_for_element('response-data', by=By.CLASS_NAME)
+        self.assertEqual(
+            self.drv.find_element_by_class_name('response-data').text,
+            '3'
+        )
+
+    @report_success_status
+    def test_language_defaults_to_survey_default(self):
+        """If the user's prefered language isn't available,
+        default to the survey's default_language"""
+
+        self.get('/view/b0816b52-204f-41d4-aaf0-ac6ae2970923')
+        self.sleep(2)
+
+        self.click(self.drv.find_element_by_css_selector(
+            '#submissions > tbody > tr:nth-of-type(1)'
+        ))
+
+        self.wait_for_element('response-data', by=By.CLASS_NAME)
+        self.assertEqual(
+            self.drv.find_element_by_class_name('response-data').text,
+            '3'
+        )
+
 
 class TestAdminViewData(AdminTest):
     @report_success_status
