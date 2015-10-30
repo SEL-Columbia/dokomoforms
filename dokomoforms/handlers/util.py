@@ -132,26 +132,18 @@ class BaseHandler(tornado.web.RequestHandler):
             prefs = self.current_user_model.preferences
         return json_encode(prefs)
 
-    def _t(self, field, default_language=None):
+    def _t(self, field, default_language):
         """Pick a translation from a translatable field.
 
         Based on user's preference.
 
-        Falls back to the first available translation if default_language
-        is not available.
-
-        TODO: this should probably fallback to the survey's default, if the
-        string is coming from a survey...?
+        Falls back to default_language.
         """
-
         if self.current_user_model is not None:
             lang = self.current_user_model.preferences['default_language']
             if lang in field:
                 return field[lang]
-            elif default_language is not None:
-                if default_language in field:
-                    return field[default_language]
-            return next(iter(field.values()))
+        return field[default_language]
 
     def get_template_namespace(self):
         """Template functions.
