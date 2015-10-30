@@ -56,7 +56,7 @@ var ViewData = (function() {
 
         markers = [];
 
-        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
 
         _.each(map_data.map_data, function(answer) {
             var coordinates = answer.coordinates,
