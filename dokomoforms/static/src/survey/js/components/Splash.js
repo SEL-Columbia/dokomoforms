@@ -70,8 +70,8 @@ module.exports = React.createClass({
     },
 
     getCard: function() {
-        var email = localStorage['submitter_email'] || 'anon@anon.org';
-        var title = this.props.surveyTitle[this.props.language];
+        var admin_email = window.ADMIN_EMAIL || '';
+        var admin_email_link = 'mailto:' + admin_email;
         if (this.state.count) {
             if (this.state.online) {
                 // Unsynced and online
@@ -95,8 +95,12 @@ module.exports = React.createClass({
         } else {
             // No unsynced surveys
             return (
-                    <Card messages={[['If you have any questions regarding the survey, please ', <u>contact the survey adminstrator</u>]]}
-                    type={'message-primary'}/>
+                    <Card
+                        messages={[
+                            ['If you have any questions regarding the survey, please ',
+                                <a href={admin_email_link}>contact the survey adminstrator.</a>]
+                        ]}
+                        type={'message-primary'} />
                    );
         }
     },
