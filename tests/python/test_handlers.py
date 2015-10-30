@@ -1,5 +1,6 @@
 """Handler tests"""
 from unittest.mock import patch
+import uuid
 
 from bs4 import BeautifulSoup
 
@@ -21,7 +22,7 @@ utils = (setUpModule, tearDownModule)
 
 import dokomoforms.handlers as handlers
 import dokomoforms.handlers.auth
-from dokomoforms.handlers.util import BaseAPIHandler
+from dokomoforms.handlers.util import BaseHandler, BaseAPIHandler
 import dokomoforms.models as models
 
 
@@ -274,6 +275,23 @@ class TestAuth(DokoHTTPTest):
         self.assertEqual(response.code, 400, msg=response.body)
 
 
+class TestBaseHandler(DokoHTTPTest):
+    def test_clear_user_cookie_if_not_uuid(self):
+        dummy_request = lambda: None
+        cookie_object = lambda: None
+        cookie_object.value = str(uuid.uuid4())
+        dummy_request.cookies = {'user': cookie_object}
+        dummy_connection = lambda: None
+        dummy_close_callback = lambda _: None
+        dummy_connection.set_close_callback = dummy_close_callback
+        dummy_request.connection = dummy_connection
+        with patch.object(BaseHandler, '_current_user_cookie') as p:
+            p.return_value = 'not a UUID'
+            handler = BaseHandler(self.app, dummy_request)
+            self.assertEqual(handler.get_cookie('user'), cookie_object.value)
+            self.assertIsNone(handler.current_user_model)
+
+
 class TestBaseAPIHandler(DokoHTTPTest):
     def test_api_version(self):
         dummy_request = lambda: None
@@ -481,7 +499,7 @@ class TestView(DokoHTTPTest):
         questions = response_soup.findAll('div', {'class': 'question-stats'})
         self.assertEqual(len(questions), 5)
 
-    def test_view_data_with_map(self):
+    def test_view_data_with_map_location(self):
         survey_id = (
             self.session
             .query(models.SurveyNode.root_survey_id)
@@ -489,6 +507,23 @@ class TestView(DokoHTTPTest):
                 sa.cast(
                     models.SurveyNode.type_constraint, pg.TEXT
                 ) == 'location'
+            )
+            .scalar()
+        )
+        url = '/view/data/' + survey_id
+        response = self.fetch(url, method='GET')
+        response_soup = BeautifulSoup(response.body, 'html.parser')
+        questions = response_soup.findAll('div', {'class': 'question-stats'})
+        self.assertEqual(len(questions), 1)
+
+    def test_view_data_with_map_facility(self):
+        survey_id = (
+            self.session
+            .query(models.SurveyNode.root_survey_id)
+            .filter(
+                sa.cast(
+                    models.SurveyNode.type_constraint, pg.TEXT
+                ) == 'facility'
             )
             .scalar()
         )

@@ -121,8 +121,19 @@ class TestApplication(unittest.TestCase):
         app = webapp.Application()
         self.assertIsNotNone(app.session)
 
+    def test_init_no_kill_demo(self):
+        webapp.options.debug = False
+        webapp.options.demo = True
+        webapp.options.kill = False
+        webapp.create_engine = create_fake_engine
+        webapp.logging.info = lambda text: None
+        app = webapp.Application()
+        self.assertIsNotNone(app.session)
+        self.assertIn('demo', app.handlers[0][1][-1].regex.pattern)
+
     def test_init_no_kill_debug(self):
         webapp.options.debug = True
+        webapp.options.demo = False
         webapp.options.kill = False
         webapp.create_engine = create_fake_engine
         webapp.logging.info = lambda text: None

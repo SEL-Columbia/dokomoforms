@@ -8,7 +8,6 @@ from io import StringIO
 import json
 import os
 import uuid
-import unittest
 
 import dateutil.parser
 
@@ -20,7 +19,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as pg
 
 from tests.python.util import (
-    DokoHTTPTest, setUpModule, tearDownModule
+    DokoFixtureTest, DokoHTTPTest, setUpModule, tearDownModule
 )
 
 from dokomoforms.models import Submission, Survey, Node, Administrator, User
@@ -81,14 +80,62 @@ class TestErrorHandling(DokoHTTPTest):
         self.assertIn('not found', json_decode(response.body)['error'])
 
 
-class TestApiBase(unittest.TestCase):
+class TestApiBase(DokoFixtureTest):
     def test_current_user(self):
+        """Doesn't really test anything... it might in the future."""
+        fake_r_handler = lambda: None
+        fake_r_handler.current_user_model = lambda: None
+        fake_r_handler.current_user_model.name = 'test'
+        br = NodeResource()
+        br.ref_rh = fake_r_handler
+        self.assertEqual(br.current_user, 'test')
+
+    def test_current_user_none(self):
+        fake_r_handler = lambda: None
+        fake_r_handler.current_user_model = None
+        fake_r_handler.request = lambda: None
+        fake_r_handler.request.headers = {}
+        br = NodeResource()
+        br.ref_rh = fake_r_handler
+        self.assertIsNone(br.current_user)
+
+    def test_current_user_model(self):
         """Doesn't really test anything... it might in the future."""
         fake_r_handler = lambda: None
         fake_r_handler.current_user_model = 'test'
         br = NodeResource()
         br.ref_rh = fake_r_handler
         self.assertEqual(br.current_user_model, 'test')
+
+    def test_current_user_model_from_token(self):
+        fake_r_handler = lambda: None
+        fake_r_handler.session = self.session
+        fake_r_handler.current_user_model = None
+        fake_r_handler.request = lambda: None
+        fake_r_handler.request.headers = {'Email': 'test_creator@fixtures.com'}
+        br = NodeResource()
+        br.ref_rh = fake_r_handler
+        Email = models.Email
+        self.assertIs(
+            br.current_user_model,
+            (
+                self.session
+                .query(Administrator)
+                .join(Email)
+                .filter(Email.address == 'test_creator@fixtures.com')
+                .one()
+            )
+        )
+
+    def test_current_user_model_from_bogus_token(self):
+        fake_r_handler = lambda: None
+        fake_r_handler.session = self.session
+        fake_r_handler.current_user_model = None
+        fake_r_handler.request = lambda: None
+        fake_r_handler.request.headers = {'Email': 'bogus'}
+        br = NodeResource()
+        br.ref_rh = fake_r_handler
+        self.assertIs(br.current_user_model, None)
 
 
 class TestAuthentication(DokoHTTPTest):

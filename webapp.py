@@ -127,7 +127,7 @@ class Application(tornado.web.Application):
 
     """The tornado.web.Application for Dokomo Forms."""
 
-    def __init__(self, session=None):
+    def __init__(self, session=None, options=options):
         """Set up the application with handlers and a db connection.
 
         Defines the URLs (with associated handlers) and settings for the
@@ -249,6 +249,8 @@ class Application(tornado.web.Application):
 
         # Debug
         if settings['debug']:  # pragma: no cover
+            from dokomoforms.handlers.debug import revisit_debug
+            revisit_debug()
             urls += [
                 url(r'/debug/create/(.+)/?',
                     handlers.DebugUserCreationHandler),
