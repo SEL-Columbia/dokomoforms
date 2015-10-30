@@ -2130,6 +2130,7 @@ class TestSurveyApi(DokoHTTPTest):
         survey_dict = json.loads(
             response.body.decode(), object_pairs_hook=OrderedDict
         )
+        self.assertIn('surveys', survey_dict, msg=survey_dict)
         self.assertEqual(len(survey_dict['surveys']), 6)
         self.assertEqual(survey_dict['total_entries'], 14)
         self.assertEqual(survey_dict['filtered_entries'], 6)
@@ -5182,8 +5183,8 @@ class TestNodeApi(DokoHTTPTest):
         # check that no error is present
         self.assertFalse("error" in node_dict)
 
-    def test_list_nodes_with_title_search(self):
-        search_term = 'integer'
+    def test_list_nodes_no_language_specified(self):
+        search_term = 'not going to work'
         # url to test
         url = self.api_root + '/nodes'
         query_params = {
@@ -5197,38 +5198,8 @@ class TestNodeApi(DokoHTTPTest):
         # make request
         response = self.fetch(url, method=method)
         # test response
-        response_body = json_decode(response.body)
-        self.assertIn('nodes', response_body, msg=response_body)
-        nodes = response_body['nodes']
-
-        self.assertEqual(len(nodes), 3)
-        self.assertListEqual(
-            ['integer' in nodes[i]['title']['English'] for i in range(3)],
-            [True] * 3,
-            msg="Some of the returned titles don't contain the search term."
-        )
-
-    def test_list_nodes_none_matching(self):
-        search_term = 'not going to find this'
-        # url to test
-        url = self.api_root + '/nodes'
-        query_params = {
-            'search': search_term,
-            'search_fields': 'title'
-        }
-        # append query params
-        url = self.append_query_params(url, query_params)
-        # http method (just for clarity)
-        method = 'GET'
-        # make request
-        response = self.fetch(url, method=method)
-        # test response
-        response_body = json_decode(response.body)
-        self.assertIn('nodes', response_body, msg=response_body)
-        nodes = response_body['nodes']
-
-        self.assertEqual(len(nodes), 0, msg=nodes)
-        self.assertEqual(response_body['filtered_entries'], 0)
+        self.assertEqual(response.code, 400)
+        self.assertIn('default_language', json_decode(response.body)['error'])
 
     def test_list_nodes_order_by_title(self):
         with self.session.begin():
@@ -5314,7 +5285,7 @@ class TestNodeApi(DokoHTTPTest):
         self.assertEqual(len(nodes), 1)
         self.assertEqual(nodes[0]['title'], {'French': 'integer'})
 
-    def test_list_nodes_with_regex_search(self):
+    def test_list_nodes_with_regex_no_language_specified(self):
         with self.session.begin():
             self.session.add_all((
                 models.construct_node(
@@ -5347,12 +5318,8 @@ class TestNodeApi(DokoHTTPTest):
         response = self.fetch(url, method=method)
         # test response
         response_body = json_decode(response.body)
-        self.assertIn('nodes', response_body, msg=response_body)
-        nodes = response_body['nodes']
-
-        self.assertEqual(len(nodes), 2)
-        self.assertEqual(nodes[0]['title'], {'French': '345'})
-        self.assertEqual(nodes[1]['title'], {'German': '678'})
+        self.assertEqual(response.code, 400)
+        self.assertIn('default_language', response_body['error'])
 
     def test_list_nodes_with_regex_and_language_search(self):
         with self.session.begin():
