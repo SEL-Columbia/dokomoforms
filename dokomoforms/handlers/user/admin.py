@@ -1,9 +1,7 @@
 """Admin view handlers."""
-import tornado.web
-
 from dokomoforms.models import generate_question_stats, most_recent_surveys
 from dokomoforms.models.answer import ANSWER_TYPES
-from dokomoforms.handlers.util import BaseHandler
+from dokomoforms.handlers.util import BaseHandler, authenticated_admin
 from dokomoforms.handlers.api.v0 import (
     get_survey_for_handler, get_submission_for_handler
 )
@@ -13,7 +11,7 @@ class AdminHomepageHandler(BaseHandler):
 
     """The endpoint for the main Administrator interface."""
 
-    @tornado.web.authenticated
+    @authenticated_admin
     def get(self):
         """GET the admin interface."""
         self.render(
@@ -28,7 +26,7 @@ class ViewSurveyHandler(BaseHandler):
 
     """The endpoint for getting a single survey's admin page."""
 
-    @tornado.web.authenticated
+    @authenticated_admin
     def get(self, survey_id: str):
         """GET the admin page for a survey."""
         # TODO: should this be done in JS?
@@ -77,7 +75,7 @@ class ViewSurveyDataHandler(BaseHandler):
                 ]
             yield result  # pragma: no branch
 
-    @tornado.web.authenticated
+    @authenticated_admin
     def get(self, survey_id: str):
         """GET the data page."""
         survey = get_survey_for_handler(self, survey_id)
@@ -97,7 +95,7 @@ class ViewSubmissionHandler(BaseHandler):
 
     """The endpoint for viewing a submission."""
 
-    @tornado.web.authenticated
+    @authenticated_admin
     def get(self, submission_id: str):
         """GET the visualization page."""
         submission = get_submission_for_handler(self, submission_id)
@@ -111,7 +109,7 @@ class ViewUserAdminHandler(BaseHandler):
 
     """The endpoint for getting the user administration admin page."""
 
-    @tornado.web.authenticated
+    @authenticated_admin
     def get(self):
         """GET the user admin page."""
         # TODO: we could bootstrap with the initial data here, probably

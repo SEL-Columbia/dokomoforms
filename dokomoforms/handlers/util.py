@@ -1,11 +1,46 @@
 """Useful reusable functions for handlers, plus the BaseHandler."""
+from functools import wraps
+
+import urllib.parse as urlparse
+from urllib.parse import urlencode
+
 from sqlalchemy.exc import StatementError
 from sqlalchemy.orm.exc import NoResultFound
 
 import tornado.web
 from tornado.escape import to_unicode, json_encode
 
-from dokomoforms.models import User, Survey
+from dokomoforms.models import User, Administrator, Survey
+
+
+def auth_redirect(self):
+    """The URL redirect logic extracted from tornado.web.authenticated."""
+    url = self.get_login_url()
+    if '?' not in url:
+        if urlparse.urlsplit(url).scheme:  # pragma: no cover
+            next_url = self.request.full_url()
+        else:
+            next_url = self.request.uri
+        url += '?' + urlencode({'next': next_url})
+    self.redirect(url)
+    return
+
+
+def authenticated_admin(method):
+    """A copy of tornado.web.authenticated for Administrator access."""
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        if not self.current_user:
+            if self.request.method in ('GET', 'HEAD'):
+                return auth_redirect(self)
+            raise tornado.web.HTTPError(403)
+        # Custom #
+        user = self.current_user_model
+        if isinstance(user, Administrator):
+            return method(self, *args, **kwargs)
+        # Custom #
+        raise tornado.web.HTTPError(403)
+    return wrapper
 
 
 class BaseHandler(tornado.web.RequestHandler):

@@ -16,7 +16,7 @@ import tornado.httpclient
 from passlib.hash import bcrypt_sha256
 
 from dokomoforms.options import options
-from dokomoforms.handlers.util import BaseHandler
+from dokomoforms.handlers.util import BaseHandler, authenticated_admin
 from dokomoforms.models import User, Email
 
 
@@ -114,7 +114,7 @@ class GenerateToken(BaseHandler):  # We should probably do this in JS
 
     """GET your token here. GETting twice resets the token."""
 
-    @tornado.web.authenticated
+    @authenticated_admin
     def get(self):
         """Set a new token for the logged in user and return the token."""
         token = uuid.uuid4().hex
