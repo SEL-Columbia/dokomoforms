@@ -830,6 +830,7 @@ class TestAdminManageSurvey(AdminTest):
         slug_field.send_keys('slug%#;/?:@&=+$, ')
         self.click(self.drv.find_element_by_class_name('save-survey-url'))
 
+        self.wait_for_element('shareable-link')
         new_link = self.drv.find_element_by_id('shareable-link').text
         self.assertEqual(new_link, 'http://localhost:9999/enumerate/slug')
 
@@ -1063,6 +1064,38 @@ class TestEnumerate(DriverTest):
             .limit(1)
             .one()
         )
+
+    @report_success_status
+    def test_change_language(self):
+        survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
+
+        # login as enumerator
+        self.get('/debug/login/test_enumerator@fixtures.com')
+
+        self.get('/enumerate/{}'.format(survey_id))
+
+        # self.drv.save_screenshot('language_select.png')
+
+        self.wait_for_element('menu', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('menu'))
+        self.click(
+            self.drv
+            .find_element_by_class_name('language_select')
+        )
+
+        self.assertEqual(
+            len(self.drv.find_elements_by_css_selector(
+                '.language_select option')), 2)
+
+        self.click(self.drv.find_elements_by_css_selector(
+            '.language_select option')[1])
+
+        self.sleep()
+
+        title = self.drv.find_element_by_css_selector(
+            '.content-padded h3').text
+
+        self.assertEqual(title, 'ENUMERATOR_ONLY_SINGLE_SURVEY')
 
     @report_success_status
     def test_single_integer_question(self):
