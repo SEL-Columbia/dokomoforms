@@ -57,7 +57,7 @@ def _create_submission(self, survey):
             ]
             self.data['answers'] = answers
 
-        self.data['submission_type'] = survey.survey_type + '_submissions'
+        self.data['submission_type'] = survey.survey_type + '_submission'
 
         submission = construct_submission(**self.data)
 
