@@ -830,6 +830,7 @@ class TestAdminManageSurvey(AdminTest):
         slug_field.send_keys('slug%#;/?:@&=+$, ')
         self.click(self.drv.find_element_by_class_name('save-survey-url'))
 
+        self.wait_for_element('shareable-link')
         new_link = self.drv.find_element_by_id('shareable-link').text
         self.assertEqual(new_link, 'http://localhost:9999/enumerate/slug')
 
