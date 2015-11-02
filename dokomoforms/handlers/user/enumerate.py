@@ -12,6 +12,16 @@ from dokomoforms.options import options
 from dokomoforms.models import Survey
 
 
+class EnumerateHomepageHandler(BaseHandler):
+
+    """The endpoint for the main Enumerator interface."""
+
+    @tornado.web.authenticated
+    def get(self):
+        """Get the enumerate interface."""
+        self.render('enumerate_homepage.html')
+
+
 class Enumerate(BaseHandler):
 
     """View and submit to a survey."""

@@ -4,7 +4,7 @@ import tornado.gen
 import tornado.httpclient
 
 from dokomoforms.handlers.util import BaseHandler
-from dokomoforms.models import most_recent_surveys
+from dokomoforms.models import Administrator, User
 
 
 class Index(BaseHandler):
@@ -13,17 +13,14 @@ class Index(BaseHandler):
 
     def get(self, msg=''):
         """GET /."""
-        surveys = None
-        current_user_id = None
-        if self.current_user:
-            current_user_id = self.current_user_model.id
-            surveys = most_recent_surveys(
-                self.session, current_user_id, 10
-            )
+        user = self.current_user_model
+        if isinstance(user, Administrator):
+            self.redirect('/admin')
+        if isinstance(user, User):
+            self.redirect('/enumerate')
         self.render(
             'index.html',
             message=msg,
-            surveys=surveys,
         )
 
 

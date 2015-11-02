@@ -1,12 +1,27 @@
 """Admin view handlers."""
 import tornado.web
 
-from dokomoforms.models import generate_question_stats
+from dokomoforms.models import generate_question_stats, most_recent_surveys
 from dokomoforms.models.answer import ANSWER_TYPES
 from dokomoforms.handlers.util import BaseHandler
 from dokomoforms.handlers.api.v0 import (
     get_survey_for_handler, get_submission_for_handler
 )
+
+
+class AdminHomepageHandler(BaseHandler):
+
+    """The endpoint for the main Administrator interface."""
+
+    @tornado.web.authenticated
+    def get(self):
+        """GET the admin interface."""
+        self.render(
+            'admin_homepage.html',
+            surveys=most_recent_surveys(
+                self.session, self.current_user_model.id, 10
+            ),
+        )
 
 
 class ViewSurveyHandler(BaseHandler):
@@ -15,7 +30,7 @@ class ViewSurveyHandler(BaseHandler):
 
     @tornado.web.authenticated
     def get(self, survey_id: str):
-        """GET the admin page."""
+        """GET the admin page for a survey."""
         # TODO: should this be done in JS?
         survey = get_survey_for_handler(self, survey_id)
         self.render(

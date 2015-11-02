@@ -2,10 +2,13 @@
 from dokomoforms.handlers.root import Index, NotFound
 from dokomoforms.handlers.auth import Login, Logout, GenerateToken
 from dokomoforms.handlers.user.admin import (
+    AdminHomepageHandler,
     ViewSurveyHandler, ViewSurveyDataHandler,
     ViewSubmissionHandler, ViewUserAdminHandler
 )
-from dokomoforms.handlers.user.enumerate import Enumerate, EnumerateTitle
+from dokomoforms.handlers.user.enumerate import (
+    EnumerateHomepageHandler, Enumerate, EnumerateTitle
+)
 from dokomoforms.handlers.debug import (
     DebugUserCreationHandler, DebugLoginHandler, DebugLogoutHandler,
     DebugPersonaHandler, DebugRevisitHandler, DebugToggleRevisitHandler,
@@ -18,8 +21,10 @@ from dokomoforms.handlers.demo import (
 __all__ = (
     'Index', 'NotFound',
     'Login', 'Logout', 'GenerateToken',
+    'AdminHomepageHandler',
     'ViewSurveyHandler', 'ViewSurveyDataHandler', 'ViewUserAdminHandler',
-    'ViewSubmissionHandler', 'Enumerate', 'EnumerateTitle',
+    'ViewSubmissionHandler',
+    'EnumerateHomepageHandler', 'Enumerate', 'EnumerateTitle',
     'DebugUserCreationHandler', 'DebugLoginHandler', 'DebugLogoutHandler',
     'DebugPersonaHandler', 'DebugRevisitHandler', 'DebugToggleRevisitHandler',
     'DebugToggleRevisitSlowModeHandler',
