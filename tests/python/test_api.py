@@ -1752,26 +1752,6 @@ class TestSurveyApi(DokoHTTPTest):
         self.assertEqual(response.code, 403, msg=response.body)
         self.assertIn('xsrf', response.body.decode())
 
-    def test_error_public_submission_to_enum_only_survey(self):
-        survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
-        # url to test
-        url = self.api_root + '/surveys/' + survey_id + '/submit'
-        # http method
-        method = 'POST'
-        # body
-        body = {
-            "submitter_name": "regular",
-            "submission_type": "public_submission"
-        }
-        # make request
-        response = self.fetch(url, method=method, body=json_encode(body))
-
-        submission_dict = json_decode(response.body)
-
-        self.assertTrue('error' in submission_dict)
-
-        self.assertEqual(response.code, 400)
-
     def test_list_submissions_to_survey(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
         # url to test
