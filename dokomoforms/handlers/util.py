@@ -147,8 +147,10 @@ class BaseHandler(tornado.web.RequestHandler):
 
         Falls back to default_language.
         """
-        user_lang = self.user_default_language
-        return field[user_lang or default_language]
+        user_language = self.user_default_language
+        if user_language and user_language in field:
+            return field[user_language]
+        return field[default_language]
 
     def get_template_namespace(self):
         """Template functions.
