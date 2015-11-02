@@ -16,14 +16,7 @@ module.exports = (function() {
             throw new Error('lang_obj must be a plain object with keys indicating language');
         }
 
-        if (lang_obj[selected_lang]) {
-            return lang_obj[selected_lang];
-        } else if(default_lang && lang_obj[default_lang]) {
-            // if a default lang is specified, fall back that
-            return lang_obj[default_lang];
-        }
-        // finally, fall back to first available language
-        return lang_obj[_.keys(lang_obj)[0]];
+        return lang_obj[selected_lang || default_lang];
     }
 
     function setSelectedLanguage(lang) {
