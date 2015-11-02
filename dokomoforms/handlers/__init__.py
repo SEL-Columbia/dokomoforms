@@ -1,11 +1,11 @@
 """All the Tornado RequestHandlers used in Dokomo Forms."""
 from dokomoforms.handlers.root import Index, NotFound
 from dokomoforms.handlers.auth import Login, Logout, GenerateToken
-from dokomoforms.handlers.view.admin import (
+from dokomoforms.handlers.user.admin import (
     ViewSurveyHandler, ViewSurveyDataHandler,
     ViewSubmissionHandler, ViewUserAdminHandler
 )
-from dokomoforms.handlers.view.enumerate import Enumerate, EnumerateTitle
+from dokomoforms.handlers.user.enumerate import Enumerate, EnumerateTitle
 from dokomoforms.handlers.debug import (
     DebugUserCreationHandler, DebugLoginHandler, DebugLogoutHandler,
     DebugPersonaHandler, DebugRevisitHandler, DebugToggleRevisitHandler,
