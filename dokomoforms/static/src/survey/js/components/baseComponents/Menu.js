@@ -1,7 +1,9 @@
 var React = require('react'),
     screenfull = require('screenfull'),
+    uuid = require('node-uuid'),
     PhotoAPI = require('../../api/PhotoAPI.js'),
-    ps = require('../../../../common/js/pubsub');
+    ps = require('../../../../common/js/pubsub'),
+    auth = require('../../services/auth');
 
 /*
  * Header Menu component
@@ -86,10 +88,25 @@ module.exports = React.createClass({
         ps.publish('settings:language_changed', e.target.value);
     },
 
+    logOut: function() {
+        console.log('log out');
+        auth.logOut().done(function() {
+            console.log('logged out.');
+            var curUrl = window.location.href;
+            window.location.href = curUrl + '?logged-out=' + uuid.v4();
+        });
+    },
+
+    logIn: function() {
+        console.log('log in');
+        auth.logIn();
+    },
+
     render: function() {
         var self = this;
         var langOpts,
-            langMenuItem;
+            langMenuItem,
+            logOut;
 
         console.log('render...', self.props.survey);
 
@@ -115,6 +132,24 @@ module.exports = React.createClass({
             );
         }
 
+        console.log('loggedIn: ', this.props.loggedIn);
+
+        if (navigator.onLine) {
+            if (this.props.loggedIn) {
+                logOut = (
+                    <div className='title_menu_option menu_logout' onClick={self.logOut} >
+                        Log Out
+                    </div>
+                );
+            } else {
+                logOut = (
+                    <div className='title_menu_option menu_logout' onClick={self.logIn} >
+                        Log In
+                    </div>
+                );
+            }
+        }
+
         return (
             <div className='title_menu'>
                 <div className='title_menu_option menu_fullscreen' onClick={self.toggleFullscreen} >
@@ -129,6 +164,8 @@ module.exports = React.createClass({
                 <div className='title_menu_option menu_clear' onClick={self.wipeAll} >
                     Clear all saved surveys
                 </div>
+
+                {logOut}
             </div>
        );
     }
