@@ -60,7 +60,7 @@ def _create_submission(self, survey):
         # pass submission props as kwargs
         if 'submission_type' not in self.data:
             # by default fall to authenticated (i.e. EnumOnlySubmission)
-            self.data['submission_type'] = 'authenticated'
+            self.data['submission_type'] = 'enumerator_only_submission'
 
         submission = construct_submission(**self.data)
 

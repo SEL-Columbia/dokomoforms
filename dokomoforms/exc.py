@@ -30,7 +30,7 @@ class NoSuchSubmissionTypeError(DokomoError):
     Raised when dokomoforms.models.submission.construct_submission
     is called with an invalid submission_type.
 
-    The valid types are 'unathenticated' and 'authenticated'
+    The valid types are 'unathenticated' and 'enumerator_only_submission'
     """
 
 

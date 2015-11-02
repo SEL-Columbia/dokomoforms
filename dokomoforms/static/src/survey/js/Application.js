@@ -743,7 +743,7 @@ var Application = React.createClass({
         var submission = {
             submitter_name: localStorage['submitter_name'] || 'anon',
             submitter_email: localStorage['submitter_email'] || 'anon@anon.org',
-            submission_type: 'unauthenticated', //XXX
+            submission_type: 'public_submission', //XXX
             survey_id: this.props.survey.id,
             answers: answers,
             start_time: survey.start_time || null,
