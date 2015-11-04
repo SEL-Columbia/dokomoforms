@@ -460,8 +460,8 @@ class TestAdminOverview(AdminTest):
         self.sleep()
 
         self.click(self.drv.find_element_by_css_selector(
-            'tr.odd:nth-child(1) > td:nth-child(5) > div:nth-child(2) >'
-            ' button:nth-child(1)'
+            '#surveys > tbody > tr:nth-child(1) > td.text-center > '
+            'div > button'
         ))
 
         json_button = self.drv.find_element_by_css_selector(
