@@ -992,6 +992,73 @@ class TestAdminManageSurvey(AdminTest):
             '3'
         )
 
+    @report_success_status
+    def test_change_language(self):
+        self.get('/view/c0816b52-204f-41d4-aaf0-ac6ae2970925')
+        self.sleep(2)
+
+        self.wait_for_element('UserDropdown')
+        self.click(self.drv.find_element_by_id('UserDropdown'))
+        self.sleep()
+
+        nav_list = self.drv.find_elements_by_class_name('nav-settings')
+        self.assertEqual(len(nav_list), 1)
+
+        self.sleep()
+        self.click(self.drv.find_element_by_class_name('nav-settings'))
+        self.wait_for_element('user-default-lang')
+        self.click(self.drv.find_element_by_css_selector(
+            '#user-default-lang option:nth-of-type(2)'))
+
+        save_btn = self.drv.find_element_by_class_name('btn-save-user')
+        self.sleep()
+        save_btn.click()
+        self.sleep()
+
+        # refresh the page
+        self.get('/view/c0816b52-204f-41d4-aaf0-ac6ae2970925')
+        self.sleep()
+
+        self.assertEqual(
+            self.drv.find_element_by_class_name('survey-title').text,
+            'ENUMERATOR_ONLY_SINGLE_SURVEY'
+        )
+
+    @report_success_status
+    def test_language_defaults_to_survey_default(self):
+        """If the user's prefered language isn't available,
+        default to the survey's default_language"""
+
+        self.get('/view/c0816b52-204f-41d4-aaf0-ac6ae2970925')
+        self.sleep(2)
+
+        self.wait_for_element('UserDropdown')
+        self.click(self.drv.find_element_by_id('UserDropdown'))
+        self.sleep()
+
+        nav_list = self.drv.find_elements_by_class_name('nav-settings')
+        self.assertEqual(len(nav_list), 1)
+
+        self.sleep()
+        self.click(self.drv.find_element_by_class_name('nav-settings'))
+        self.wait_for_element('user-default-lang')
+        self.click(self.drv.find_element_by_css_selector(
+            '#user-default-lang option:nth-of-type(3)'))
+
+        save_btn = self.drv.find_element_by_class_name('btn-save-user')
+        self.sleep()
+        save_btn.click()
+        self.sleep()
+
+        # refresh the page
+        self.get('/view/c0816b52-204f-41d4-aaf0-ac6ae2970925')
+        self.sleep()
+
+        self.assertEqual(
+            self.drv.find_element_by_class_name('survey-title').text,
+            'enumerator_only_single_survey (Russian)'
+        )
+
 
 class TestAdminViewData(AdminTest):
     @report_success_status
@@ -1085,7 +1152,7 @@ class TestEnumerate(DriverTest):
 
         self.assertEqual(
             len(self.drv.find_elements_by_css_selector(
-                '.language_select option')), 2)
+                '.language_select option')), 3)
 
         self.click(self.drv.find_elements_by_css_selector(
             '.language_select option')[1])

@@ -47,7 +47,7 @@
                                                 selected
                                             <% } %>
                                         >
-                                            <%= data._t(survey.title) %>
+                                            <%= data._t(survey.title, survey.default_language) %>
                                         </option>
                                     <% } %>
                                 <% }); %>
@@ -64,7 +64,7 @@
                                             selected
                                         <% } %>
                                     >
-                                        <%= data._t(survey.title) %>
+                                        <%= data._t(survey.title, survey.default_language) %>
                                     </option>
                                 <% }); %>
                             </select>
