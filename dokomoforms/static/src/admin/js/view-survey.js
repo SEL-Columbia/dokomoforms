@@ -99,9 +99,16 @@ var ViewSurvey = (function() {
 
         $(document).on('click', 'a.survey-language', function(e) {
             var lang = $(e.target).data('surveylang');
-            window.CURRENT_USER_PREFS[survey_id] = {
-                display_language: lang
-            };
+            if (lang === 'default') {
+                if (window.CURRENT_USER_PREFS[survey_id]
+                    && window.CURRENT_USER_PREFS[survey_id]['display_language']) {
+                    delete window.CURRENT_USER_PREFS[survey_id]['display_language'];
+                }
+            } else {
+                window.CURRENT_USER_PREFS[survey_id] = {
+                    display_language: lang
+                };
+            }
             savePreferences().done(function() {
                 console.log('prefs saved, refresh');
                 window.location.reload();
@@ -120,6 +127,8 @@ var ViewSurvey = (function() {
         var userObj = {
             preferences: window.CURRENT_USER_PREFS
         };
+
+        console.log('saving prefs... ', userObj.preferences);
 
         return $.ajax({
             url: '/api/v0/users/' + window.CURRENT_USER_ID,
@@ -315,12 +324,6 @@ var ViewSurvey = (function() {
                             recordsTotal: json.total_entries,
                             recordsFiltered: json.filtered_entries,
                             data: json.submissions.map(function(submission) {
-                                // return [
-                                //     submission.submitter_name,
-                                //     submission.save_time,
-                                //     submission.submission_time,
-                                //     submission.id
-                                // ];
                                 return {
                                     submitter_name: submission.submitter_name,
                                     save_time: submission.save_time,

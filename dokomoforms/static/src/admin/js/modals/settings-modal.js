@@ -21,8 +21,7 @@ var SettingsModal = function(user_id) {
 
     function open() {
         console.log('open', user.toJSON());
-        var dataForDisplay = $.extend(user.toJSON(), {_t: _t});
-        console.log('dataForDisplay', dataForDisplay);
+        var dataForDisplay = user.toJSON();
         $modal = $(tpl(dataForDisplay)).modal();
         $modal.on('shown.bs.modal', function() {
             $modal.first('input').focus();

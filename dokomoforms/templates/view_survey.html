@@ -110,21 +110,30 @@
                             <div class="pull-left">
                                 <div class="btn-group">
                                     <button class="btn btn-sm btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                                        View Translation <span class="caret"></span>
+                                        View In Language... <span class="caret"></span>
                                     </button>
                                     <ul class="dropdown-menu" role="menu">
-                                        <!-- <li><a href="#">CSV (.csv)</a></li>
-                                        <li><a href="#">KML (.kml)</a></li> -->
+                                        <li>
+                                            <a href="#" class="survey-language" data-surveylang="default">
+                                            {% if not (survey.id in current_user_model.preferences
+                                                        and 'display_language' in current_user_model.preferences[survey.id])
+                                            %}
+                                            <span class="glyphicon glyphicon-ok icon-inline-left"></span>
+                                            {% end %}
+                                            Default
+                                            </a>
+                                        </li>
                                         {% for lang in survey.languages %}
                                             <li>
                                                 <a href="#" class="survey-language" data-surveylang="{{ lang }}">
-                                                {% if (survey.id in current_user_model.preferences
-                                                        and  'display_language' in current_user_model.preferences[survey.id]
-                                                        and current_user_model.preferences[survey.id]['display_language'] == lang)
+                                                {% if ((survey.id in current_user_model.preferences
+                                                            and  'display_language' in current_user_model.preferences[survey.id]
+                                                            and current_user_model.preferences[survey.id]['display_language'] == lang)
+                                                        or (
+                                                            len(survey.languages) == 1
+                                                        ))
                                                 %}
                                                 <span class="glyphicon glyphicon-ok icon-inline-left"></span>
-                                                {% else %}
-                                                <span class="icon-inline-left">&nbsp;&nbsp;&nbsp;&nbsp;</span>
                                                 {% end %}
                                                 {{ lang }}
                                                 </a>
