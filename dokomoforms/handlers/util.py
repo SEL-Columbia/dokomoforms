@@ -43,6 +43,16 @@ class BaseHandler(tornado.web.RequestHandler):
             return user.preferences['default_language']
         return None
 
+    def user_survey_language(self, survey):
+        """Return the logged-in User's selected language
+        for the given survey, or None if they do not have one."""
+        user = self.current_user_model
+        if (user
+                and survey.id in user.preferences
+                and 'display_language' in user.preferences[survey.id]):
+            return user.preferences[survey.id]['display_language']
+        return None
+
     def set_default_headers(self):
         """Add some security-flavored headers.
 
@@ -118,7 +128,7 @@ class BaseHandler(tornado.web.RequestHandler):
             .query(Survey)
             .filter_by(creator_id=self.current_user_model.id)
             .order_by(Survey.created_on.desc())
-            .limit(10)
+            .limit(20)
         )
 
     def _get_current_user_id(self):
@@ -140,17 +150,27 @@ class BaseHandler(tornado.web.RequestHandler):
             prefs = self.current_user_model.preferences
         return json_encode(prefs)
 
-    def _t(self, field, default_language):
+    def _t(self, field, survey=None):
         """Pick a translation from a translatable field.
 
         Based on user's preference.
 
         Falls back to default_language.
         """
-        user_language = self.user_default_language
-        if user_language and user_language in field:
-            return field[user_language]
-        return field[default_language]
+        # user's preferred survey language
+        user_preferred_language = self.user_default_language
+
+        if survey is not None:
+            # see if user has selected a display language for this survey,
+            # if so, use it.
+            user_survey_language = self.user_survey_language(survey)
+            if user_survey_language and user_survey_language in field:
+                return field[user_survey_language]
+
+        if user_preferred_language and user_preferred_language in field:
+            return field[user_preferred_language]
+
+        return field[survey.default_language]
 
     def get_template_namespace(self):
         """Template functions.
@@ -163,6 +183,7 @@ class BaseHandler(tornado.web.RequestHandler):
             'surveys_for_menu': self._get_surveys_for_menu(),
             'current_user_id': self._get_current_user_id(),
             '_t': self._t,
+            'current_user_model': self.current_user_model,
             'current_user_prefs': self._get_current_user_prefs()
         })
         return namespace

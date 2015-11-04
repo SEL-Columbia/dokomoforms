@@ -97,9 +97,34 @@ var ViewSurvey = (function() {
             new SubmissionModal({dataTable: $datatable, initialRow: selectedRow}).open();
         });
 
+        $(document).on('click', 'a.survey-language', function(e) {
+            var lang = $(e.target).data('surveylang');
+            window.CURRENT_USER_PREFS[survey_id] = {
+                display_language: lang
+            };
+            savePreferences().done(function() {
+                console.log('prefs saved, refresh');
+                window.location.reload();
+            });
+        });
+
         ps.subscribe('submissions:select_row', function(e, el) {
             console.log(el);
             selectSubmissionRow($(el));
+        });
+    }
+
+    // TODO: We're already using backbone model for user, why not here too?
+    function savePreferences() {
+        // quick and dirty, post to API
+        var userObj = {
+            preferences: window.CURRENT_USER_PREFS
+        };
+
+        return $.ajax({
+            url: '/api/v0/users/' + window.CURRENT_USER_ID,
+            method: 'PUT',
+            data: JSON.stringify(userObj)
         });
     }
 

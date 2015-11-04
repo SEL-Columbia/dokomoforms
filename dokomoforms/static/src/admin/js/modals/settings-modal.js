@@ -28,7 +28,7 @@ var SettingsModal = function(user_id) {
             $modal.first('input').focus();
             $modal.find('.btn-save-user').click(saveSettings);
             $modal.find('.btn-api-key').click(refreshApiKey);
-            $modal.find('#user-default-lang').on('change', function(e) {
+            $modal.find('#user-preferred-lang, #user-ui-lang').on('change', function(e) {
                 console.log(e);
                 langUpdated = true;
             });
@@ -47,14 +47,14 @@ var SettingsModal = function(user_id) {
 
     function saveSettings() {
         console.log('saveSettings', user.toJSON());
-
+        var prefs = window.CURRENT_USER_PREFS;
+        prefs.ui_language = $modal.find('#user-ui-lang').val();
+        prefs.default_language = $modal.find('#user-preferred-lang').val();
         var changeset = {
             name: $modal.find('#user-name').val(),
             emails: [$modal.find('#user-email').val()],
-            role: $modal.find('#user-role').val(),
-            preferences: {
-                default_language: $modal.find('#user-default-lang').val()
-            }
+            // role: $modal.find('#user-role').val(),
+            preferences: prefs
         };
 
         if (changeset.role === 'enumerator') {

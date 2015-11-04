@@ -16,8 +16,17 @@
                         <input type="email" class="form-control" id="user-email" placeholder="Email" value="<%= data.emails ? data.emails[0] : '' %>">
                     </div>
                     <div class="form-group">
-                        <label for="user-default-lang">Default Language</label>
-                        <select class="form-control" id="user-default-lang">
+                        <label for="user-ui-lang">Admin User Interface Language</label>
+                        <select class="form-control" id="user-ui-lang">
+                            <option <%= (data.preferences && data.preferences.ui_language === 'English') ? "selected" : "" %>>English</option>
+                            <option <%= (data.preferences && data.preferences.ui_language === 'Español') ? "selected" : "" %> value="Español">Español (not yet available)</option>
+                            <option <%= (data.preferences && data.preferences.ui_language === 'French') ? "selected" : "" %> value="French">French (not yet available)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-preferred-lang">Preferred Survey Language</label>
+                        <span class="help-block">If available for a given Survey, this language will be used to display the translatable fields. If not available, the default language for the Survey will be used.</span>
+                        <select class="form-control" id="user-preferred-lang">
                             <option <%= (data.preferences && data.preferences.default_language === 'English') ? "selected" : "" %>>English</option>
                             <option <%= (data.preferences && data.preferences.default_language === 'Español') ? "selected" : "" %> value="Español">Español (not yet available)</option>
                             <option <%= (data.preferences && data.preferences.default_language === 'French') ? "selected" : "" %> value="French">French (not yet available)</option>
