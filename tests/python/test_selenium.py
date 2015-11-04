@@ -4250,11 +4250,10 @@ class TestEnumerateSlowRevisit(DriverTest):
 
         start_time = time.time()
         self.get('/enumerate/{}'.format(survey_id))
+        overlay = self.drv.find_elements_by_class_name('loading-overlay')
         finish_time = time.time()
 
         self.assertGreater(finish_time - start_time, 2)
-
-        overlay = self.drv.find_elements_by_class_name('loading-overlay')
 
         # overlay should not be present
         self.assertEqual(len(overlay), 0)
