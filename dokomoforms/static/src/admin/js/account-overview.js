@@ -202,8 +202,16 @@ var AccountOverview = (function() {
                     [1, 'desc']
                 ],
                 'columnDefs': [{
-                    'data': 'title',
-                    'targets': 0
+                    'data': function(row) {
+                        return {
+                            title: row.title,
+                            id: row.id
+                        };
+                    },
+                    'targets': 0,
+                    'render': function(data) {
+                        return '<a href="/view/' + data.id + '">' + data.title + '</a>';
+                    }
                 }, {
                     'data': 'created_on',
                     targets: 1,
