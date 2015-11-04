@@ -215,7 +215,7 @@ class TestColumnProperties(DokoTest):
             survey = self.session.query(models.Survey).one()
             survey.submissions.append(
                 models.construct_submission(
-                    submission_type='unauthenticated',
+                    submission_type='public_submission',
                     answers=[
                         models.construct_answer(
                             survey_node=survey.nodes[0],
@@ -251,7 +251,7 @@ class TestColumnProperties(DokoTest):
             self.session.add(creator)
 
             submission = models.construct_submission(
-                submission_type='unauthenticated',
+                submission_type='public_submission',
                 survey=creator.surveys[0],
                 answers=[
                     models.construct_answer(
@@ -281,7 +281,7 @@ class TestColumnProperties(DokoTest):
             survey = self.session.query(models.Survey).one()
             survey.submissions.append(
                 models.construct_submission(
-                    submission_type='unauthenticated',
+                    submission_type='public_submission',
                     survey=survey,
                     answers=[
                         models.construct_answer(
@@ -303,7 +303,7 @@ class TestColumnProperties(DokoTest):
             survey = self.session.query(models.Survey).one()
             survey.submissions.append(
                 models.construct_submission(
-                    submission_type='unauthenticated',
+                    submission_type='public_submission',
                     survey=survey,
                     answers=[
                         models.construct_answer(
@@ -352,7 +352,7 @@ class TestColumnProperties(DokoTest):
             self.session.flush()
 
             submission = models.construct_submission(
-                submission_type='unauthenticated',
+                submission_type='public_submission',
                 survey=creator.surveys[0],
                 answers=[
                     models.construct_answer(
@@ -375,7 +375,7 @@ class TestColumnProperties(DokoTest):
             survey = self.session.query(models.Survey).one()
             survey.submissions.extend(
                 models.construct_submission(
-                    submission_type='unauthenticated',
+                    submission_type='public_submission',
                     survey=survey,
                     answers=[
                         models.construct_answer(
@@ -744,11 +744,11 @@ class TestUser(DokoTest):
                             administrators=[models.Administrator(name='adm')],
                             submissions=[
                                 models.construct_submission(
-                                    submission_type='unauthenticated',
+                                    submission_type='public_submission',
                                     submitter_name='sub1',
                                 ),
                                 models.construct_submission(
-                                    submission_type='unauthenticated',
+                                    submission_type='public_submission',
                                     submitter_name='sub2',
                                 ),
                             ],
@@ -758,11 +758,11 @@ class TestUser(DokoTest):
                             title={'English': 'public survey too'},
                             submissions=[
                                 models.construct_submission(
-                                    submission_type='unauthenticated',
+                                    submission_type='public_submission',
                                     submitter_name='sub3',
                                 ),
                                 models.construct_submission(
-                                    submission_type='unauthenticated',
+                                    submission_type='public_submission',
                                     submitter_name='sub4',
                                 ),
                             ],
@@ -777,11 +777,11 @@ class TestUser(DokoTest):
                             title={'English': 'not this survey'},
                             submissions=[
                                 models.construct_submission(
-                                    submission_type='unauthenticated',
+                                    submission_type='public_submission',
                                     submitter_name='sub5',
                                 ),
                                 models.construct_submission(
-                                    submission_type='unauthenticated',
+                                    submission_type='public_submission',
                                     submitter_name='sub6',
                                 ),
                             ],
@@ -1537,10 +1537,10 @@ class TestSurvey(DokoTest):
             survey = self.session.query(models.Survey).one()
             survey.submissions.extend([
                 models.construct_submission(
-                    submission_type='unauthenticated'
+                    submission_type='public_submission'
                 ),
                 models.construct_submission(
-                    submission_type='unauthenticated'
+                    submission_type='public_submission'
                 ),
             ])
             self.session.add(survey)
@@ -1577,11 +1577,11 @@ class TestSurvey(DokoTest):
             survey = self.session.query(models.Survey).one()
             survey.submissions.extend([
                 models.construct_submission(
-                    submission_type='unauthenticated',
+                    submission_type='public_submission',
                     save_time=dateutil.parser.parse('2015/7/29 1:00'),
                 ),
                 models.construct_submission(
-                    submission_type='unauthenticated',
+                    submission_type='public_submission',
                     save_time=dateutil.parser.parse('2015/7/29 2:00'),
                 ),
             ])
@@ -1625,11 +1625,11 @@ class TestSurvey(DokoTest):
             survey = self.session.query(models.Survey).one()
             survey.submissions.extend([
                 models.construct_submission(
-                    submission_type='unauthenticated',
+                    submission_type='public_submission',
                     save_time=dateutil.parser.parse('2015/7/29 1:00'),
                 ),
                 models.construct_submission(
-                    submission_type='unauthenticated',
+                    submission_type='public_submission',
                     save_time=dateutil.parser.parse('2015/7/29 2:00'),
                 ),
             ])
@@ -2189,7 +2189,7 @@ class TestSurvey(DokoTest):
         with self.session.begin():
             survey.submissions.append(
                 models.construct_submission(
-                    submission_type='unauthenticated',
+                    submission_type='public_submission',
                     answers=[
                         models.construct_answer(
                             type_constraint='integer',
@@ -2258,7 +2258,7 @@ class TestSurvey(DokoTest):
         with self.session.begin():
             survey.submissions.append(
                 models.construct_submission(
-                    submission_type='unauthenticated',
+                    submission_type='public_submission',
                     answers=[
                         models.construct_answer(
                             type_constraint='integer',
@@ -2324,7 +2324,7 @@ class TestSurveyNode(DokoTest):
             survey = self.session.query(models.Survey).one()
             survey.submissions.append(
                 models.construct_submission(
-                    submission_type='unauthenticated',
+                    submission_type='public_submission',
                     answers=[
                         models.construct_answer(
                             survey_node=survey.nodes[0],
@@ -4009,7 +4009,7 @@ class TestAnswer(DokoTest):
             with self.session.begin():
                 survey1.submissions.append(
                     models.construct_submission(
-                        submission_type='unauthenticated',
+                        submission_type='public_submission',
                         answers=[
                             models.construct_answer(
                                 survey_node=survey2.nodes[0],
