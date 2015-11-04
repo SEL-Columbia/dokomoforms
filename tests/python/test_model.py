@@ -114,7 +114,8 @@ class TestUtil(DokoTest):
 
         like_search = column_search(
             self.session.query(models.Node),
-            model_cls=models.Node, column_name='title', search_term='%'
+            model_cls=models.Node, column_name='title', search_term='%',
+            language='English',
         ).all()
         self.assertEqual(len(like_search), 1, msg=like_search)
         found_node = like_search[0]
@@ -143,7 +144,8 @@ class TestUtil(DokoTest):
 
         like_search = column_search(
             self.session.query(models.Node),
-            model_cls=models.Node, column_name='title', search_term='_'
+            model_cls=models.Node, column_name='title', search_term='_',
+            language='English',
         ).all()
         self.assertEqual(len(like_search), 1, msg=like_search)
         found_node = like_search[0]
@@ -172,7 +174,8 @@ class TestUtil(DokoTest):
 
         like_search = column_search(
             self.session.query(models.Node),
-            model_cls=models.Node, column_name='title', search_term='\\'
+            model_cls=models.Node, column_name='title', search_term='\\',
+            language='English',
         ).all()
         self.assertEqual(len(like_search), 1, msg=like_search)
         found_node = like_search[0]

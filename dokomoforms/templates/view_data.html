@@ -5,7 +5,7 @@
     {% if current_user %}
     <div class="row header-main-nav">
         <div class="container">
-            <div class="col-md-6"><h1>{{ _t(survey.title) }}</h1></div>
+            <div class="col-md-6"><h1>{{ _t(survey.title, survey.default_language) }}</h1></div>
             <div class="col-md-6">
                 <ul class="pull-right">
                     <li>
@@ -91,7 +91,7 @@
                             <div class="question-title-bar question-type-{{ stats['survey_node'].type_constraint }} {% if stats['survey_node'].type_constraint == "location" %} question-location {% end %}"
                             {% if stats['survey_node'].type_constraint == "location" or stats['survey_node'].type_constraint == "facility" %} rel="location-map-{{ stats['survey_node'].id }}" {% end %}>
 
-                                {{ index }}. {{ _t(stats['survey_node'].node.title) }}
+                                {{ index }}. {{ _t(stats['survey_node'].node.title, survey.default_language) }}
                                 <span class="question-type pull-right">{{ stats['survey_node'].type_constraint }}</span>
                             </div>
 
@@ -110,7 +110,7 @@
                                                 </div>
                                                 <div class="stat-value">
                                                     {% if stat['query'] == 'mode' and stat['result'] is not None %}
-                                                        {{ _t(stat['result'].choice_text) }}
+                                                        {{ _t(stat['result'].choice_text, survey.default_language) }}
                                                     {% else %}
                                                         {{ stat['result'] }}
                                                     {% end %}

@@ -35,6 +35,14 @@ class BaseHandler(tornado.web.RequestHandler):
                 self.clear_cookie('user')
         return None
 
+    @property
+    def user_default_language(self):
+        """Return the logged-in User's default language, or None."""
+        user = self.current_user_model
+        if user:
+            return user.preferences['default_language']
+        return None
+
     def set_default_headers(self):
         """Add some security-flavored headers.
 
@@ -132,21 +140,17 @@ class BaseHandler(tornado.web.RequestHandler):
             prefs = self.current_user_model.preferences
         return json_encode(prefs)
 
-    def _t(self, field):
+    def _t(self, field, default_language):
         """Pick a translation from a translatable field.
 
         Based on user's preference.
-        Falls back to the first available translation if default_language
-        is not available.
 
-        TODO: this should probably fallback to the survey's default, if the
-        string is coming from a survey...?
+        Falls back to default_language.
         """
-        if self.current_user_model is not None:
-            lang = self.current_user_model.preferences['default_language']
-            if lang in field:
-                return field[lang]
-            return next(iter(field.values()))
+        user_language = self.user_default_language
+        if user_language and user_language in field:
+            return field[user_language]
+        return field[default_language]
 
     def get_template_namespace(self):
         """Template functions.

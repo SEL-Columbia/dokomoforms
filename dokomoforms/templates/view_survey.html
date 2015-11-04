@@ -6,7 +6,7 @@
     <div class="header-main-nav">
         <div class="container">
             <div class="row">
-                <div class="col-md-6"><h1 class="survey-title">{{ _t(survey.title) }}</h1></div>
+                <div class="col-md-6"><h1 class="survey-title">{{ _t(survey.title, survey.default_language) }}</h1></div>
                 <div class="col-md-6">
                     <ul class="pull-right">
                         <li>
@@ -69,7 +69,7 @@
                                 total submissions
                             </div>
                             <div class="stat-value stat-total-submissions">
-			        {{ survey.num_submissions }}
+			                     {{ survey.num_submissions }}
                             </div>
                         </div>
                         <!-- <div class="col-md-4">
