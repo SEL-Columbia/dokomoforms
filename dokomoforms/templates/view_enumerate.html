@@ -24,6 +24,7 @@
         <!-- Bootstrapped Variables -->
         <script type="text/javascript">
             window.ORGANIZATION = '{{ options.organization }}';
+            window.ADMIN_EMAIL = '{{ survey.creator.emails[0].address }}';
             {% if current_user_model is not None %}
                 window.CURRENT_USER = {
                     name: '{{ current_user_model.name }}',

@@ -177,10 +177,12 @@ def load_fixtures(engine):
         # Add an enumerator only survey with known ID
         single_enum_survey = models.EnumeratorOnlySurvey(
             id='c0816b52-204f-41d4-aaf0-ac6ae2970925',
-            languages=['English', 'Español'],
+            languages=['English', 'Español', 'Russian'],
+            default_language='Russian',
             title={
                 'English': 'enumerator_only_single_survey',
-                'Español': 'ENUMERATOR_ONLY_SINGLE_SURVEY'
+                'Español': 'ENUMERATOR_ONLY_SINGLE_SURVEY',
+                'Russian': 'enumerator_only_single_survey (Russian)'
             },
             nodes=[
                 models.construct_survey_node(
@@ -188,13 +190,16 @@ def load_fixtures(engine):
                     node=models.construct_node(
                         title={
                             'English': 'Engine Room Photo',
+                            'Russian': 'Engine Room Photo (Russian)',
                             'Español': 'Photo de Engine Room'
                         },
                         hint={'English': (
-                            'Tap the image to capture a photo. Tap a '
-                            'thumbnail to preview/delete captured photos.'
+                            'Tap the image to capture a photo.'
                         ), 'Español': (
                             'Marca la imagen para grabar una photo.'
+                        ), 'Russian': (
+                            'Tap the image to capture a photo.'
+                            ' (Russian)'
                         )},
                         type_constraint='photo',
                         allow_multiple=True
