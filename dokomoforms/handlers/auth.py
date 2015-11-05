@@ -126,3 +126,13 @@ class GenerateToken(BaseHandler):  # We should probably do this in JS
             ('token', token),
             ('expires_on', user.token_expiration.isoformat()),
         )))
+
+
+class CheckLoginStatus(BaseHandler):
+
+    """An endpoint for the application to check login status."""
+
+    @tornado.web.authenticated
+    def post(self):
+        """2xx good, 5xx bad."""
+        self.finish()

@@ -1,6 +1,8 @@
 """All the Tornado RequestHandlers used in Dokomo Forms."""
 from dokomoforms.handlers.root import Index, NotFound
-from dokomoforms.handlers.auth import Login, Logout, GenerateToken
+from dokomoforms.handlers.auth import (
+    Login, Logout, GenerateToken, CheckLoginStatus
+)
 from dokomoforms.handlers.view.admin import (
     ViewSurveyHandler, ViewSurveyDataHandler,
     ViewSubmissionHandler, ViewUserAdminHandler
@@ -17,7 +19,7 @@ from dokomoforms.handlers.demo import (
 
 __all__ = (
     'Index', 'NotFound',
-    'Login', 'Logout', 'GenerateToken',
+    'Login', 'Logout', 'GenerateToken', 'CheckLoginStatus',
     'ViewSurveyHandler', 'ViewSurveyDataHandler', 'ViewUserAdminHandler',
     'ViewSubmissionHandler', 'Enumerate', 'EnumerateTitle',
     'DebugUserCreationHandler', 'DebugLoginHandler', 'DebugLogoutHandler',
