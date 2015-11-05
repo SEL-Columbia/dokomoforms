@@ -143,7 +143,7 @@ module.exports = React.createClass({
                 );
             } else {
                 logOut = (
-                    <div className='title_menu_option menu_logout' onClick={self.logIn} >
+                    <div className='title_menu_option menu_login' onClick={self.logIn} >
                         Log In
                     </div>
                 );
