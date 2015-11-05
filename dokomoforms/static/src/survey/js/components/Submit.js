@@ -46,7 +46,7 @@ module.exports = React.createClass({
                     key={'name'}
                     placeholder={"Enumerator Name"}
                     index={0}
-                    disabled={logged_in}
+                    // disabled={logged_in}
                     initValue={name}
                     showMinus={false}
                 />
@@ -57,7 +57,7 @@ module.exports = React.createClass({
                     key={'email'}
                     placeholder={"Enumerator Email"}
                     index={1}
-                    disabled={logged_in}
+                    // disabled={logged_in}
                     initValue={email}
                     showMinus={false}
                 />

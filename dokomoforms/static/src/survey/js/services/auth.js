@@ -1,4 +1,5 @@
 var $ = require('jquery'),
+    uuid = require('node-uuid'),
     cookies = require('../../../common/js/cookies');
 
 
@@ -16,9 +17,12 @@ function logOut() {
 
 function logIn() {
     var curUrl = window.location.pathname,
-        loginUrl = '/?next=' + encodeURIComponent(curUrl);
+        loginUrl = '/?next=' + encodeURIComponent(curUrl) + '&logged-in=' + uuid.v4();
+
+    console.log('logIn: ', loginUrl);
 
     logOut().done(function() {
+        console.log('logIn: ', loginUrl);
         window.location.href = loginUrl;
     });
 }

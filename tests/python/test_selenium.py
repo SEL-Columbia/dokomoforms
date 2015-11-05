@@ -1154,13 +1154,14 @@ class TestEnumerate(DriverTest):
         self.get('/debug/login/test_enumerator@fixtures.com')
         self.sleep()
 
-        self.drv.save_screenshot('login.png')
-
         # return to survey and check that the logout option is there
-        self.get('/enumerate/{}'.format(survey_id))
+        # NOTE: logged-in query string gets appended in order to
+        # avoid caching issue.
+        self.get('/enumerate/{}?logged-in={}'.format(survey_id, 'cc'))
+        self.sleep()
+
         self.wait_for_element('menu', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('menu'))
-        self.drv.save_screenshot('menu.png')
         self.drv.find_element_by_class_name('menu_logout')
 
     @report_success_status
