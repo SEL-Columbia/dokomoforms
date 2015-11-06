@@ -1082,6 +1082,7 @@ class TestAdminManageSurvey(AdminTest):
 
         # select a different language for this specific survey
         self.wait_for_element('survey-language-dropdown')
+        self.sleep()
         self.click(self.drv.find_element_by_id('survey-language-dropdown'))
         lang_list = self.drv.find_elements_by_class_name('survey-language')
         self.assertEqual(len(lang_list), 4)
