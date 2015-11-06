@@ -1,5 +1,5 @@
 """Admin view handlers."""
-from dokomoforms.models import generate_question_stats, most_recent_surveys
+from dokomoforms.models import generate_question_stats
 from dokomoforms.models.answer import ANSWER_TYPES
 from dokomoforms.handlers.util import BaseHandler, authenticated_admin
 from dokomoforms.handlers.api.v0 import (
@@ -14,12 +14,7 @@ class AdminHomepageHandler(BaseHandler):
     @authenticated_admin
     def get(self):
         """GET the admin interface."""
-        self.render(
-            'admin_homepage.html',
-            surveys=most_recent_surveys(
-                self.session, self.current_user_model.id, 10
-            ),
-        )
+        self.render('admin_homepage.html')
 
 
 class ViewSurveyHandler(BaseHandler):

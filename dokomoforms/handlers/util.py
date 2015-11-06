@@ -10,7 +10,8 @@ from sqlalchemy.orm.exc import NoResultFound
 import tornado.web
 from tornado.escape import to_unicode, json_encode
 
-from dokomoforms.models import User, Administrator, Survey
+from dokomoforms.models import User, Administrator
+from dokomoforms.models.survey import most_recent_surveys
 
 
 def auth_redirect(self):
@@ -152,22 +153,6 @@ class BaseHandler(tornado.web.RequestHandler):
             return user.name
         return None
 
-    def _get_surveys_for_menu(self):
-        """The menu bar needs access to surveys.
-
-        TODO: Get rid of this
-        @jmwohl
-        """
-        if not self.current_user:
-            return None
-        return (
-            self.session
-            .query(Survey)
-            .filter(Survey.administrators.contains(self.current_user_model))
-            .order_by(Survey.created_on.desc())
-            .limit(self.num_surveys_for_menu)
-        )
-
     def _get_current_user_id(self):
         """Get the current user's id for the templates.
 
@@ -216,8 +201,12 @@ class BaseHandler(tornado.web.RequestHandler):
         @jmwohl
         """
         namespace = super().get_template_namespace()
+        user = self.current_user_model
+        surveys_for_menu = most_recent_surveys(
+            self.session, user.id, self.num_surveys_for_menu
+        ) if user else None
         namespace.update({
-            'surveys_for_menu': self._get_surveys_for_menu(),
+            'surveys_for_menu': surveys_for_menu,
             'current_user_id': self._get_current_user_id(),
             '_t': self._t,
             'current_user_model': self.current_user_model,

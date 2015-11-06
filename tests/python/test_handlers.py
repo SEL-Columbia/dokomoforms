@@ -34,7 +34,7 @@ class TestIndex(DokoHTTPTest):
         links = response_soup.select('a.btn-login.btn-large')
         self.assertEqual(len(links), 1, msg=response.body)
 
-    def test_get_logged_in(self):
+    def test_get_logged_in_admin(self):
         num_surveys = (
             self.session
             .query(count(models.Survey.id))

@@ -16,8 +16,10 @@ class Index(BaseHandler):
         user = self.current_user_model
         if isinstance(user, Administrator):
             self.redirect('/admin')
+            return
         if isinstance(user, User):
             self.redirect('/enumerate')
+            return
         self.render(
             'index.html',
             message=msg,
