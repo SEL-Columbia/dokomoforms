@@ -938,9 +938,9 @@ class TestAdminManageSurvey(AdminTest):
     def test_download_json_button(self):
         self.get('/view/b0816b52-204f-41d4-aaf0-ac6ae2970923')
 
-        self.click(self.drv.find_element_by_class_name('btn-sm'))
+        self.click(self.drv.find_element_by_class_name('btn-primary'))
         self.click(self.drv.find_element_by_css_selector(
-            '.btn-group > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
+            '.open > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
         ))
         self.sleep()
 
@@ -963,13 +963,13 @@ class TestAdminManageSurvey(AdminTest):
     def test_download_csv_button(self):
         self.get('/view/b0816b52-204f-41d4-aaf0-ac6ae2970923')
 
-        self.click(self.drv.find_element_by_class_name('btn-sm'))
+        self.click(self.drv.find_element_by_class_name('btn-primary'))
 
         json_button = self.drv.find_element_by_css_selector(
-            '.btn-group > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
+            '.open > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
         )
         csv_button = self.drv.find_element_by_css_selector(
-            '.btn-group > ul:nth-child(2) > li:nth-child(2) > a:nth-child(1)'
+            '.open > ul:nth-child(2) > li:nth-child(2) > a:nth-child(1)'
         )
 
         self.assertEqual(
