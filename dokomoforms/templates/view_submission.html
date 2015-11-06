@@ -33,7 +33,7 @@
                     survey
                 </div>
                 <div class="stat-value stat-created-on">
-                    {{ _t(survey.title, survey.default_language) }}
+                    {{ _t(survey.title, survey=survey) }}
                 </div>
             </div>
         </div>
@@ -55,7 +55,7 @@
                         <li>
 
                             <div class="response-title-bar">
-                                {{ _t(answer.question_title, survey.default_language) }}
+                                {{ _t(answer.question_title, survey=survey) }}
                                 <span class="question-type pull-right">{{ answer.type_constraint }}</span>
                             </div>
 
@@ -70,7 +70,7 @@
                                 {{ answer.response['response']['lat'] }}, {{ answer.response['response']['lng'] }}
                             {% elif answer.type_constraint == 'multiple_choice' %}
                                 {% if 'choice_text' in answer.response['response'] %}
-                                    {{ _t(answer.response['response']['choice_text'], survey.default_language) }}
+                                    {{ _t(answer.response['response']['choice_text'], survey=survey) }}
                                 {% else %}
                                     {{ answer.response['response'] }}
                                 {% end %}

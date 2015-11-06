@@ -43,7 +43,7 @@
                             <a href="#" class="dropdown-toggle" type="button" id="SurveysDropdown" data-toggle="dropdown" aria-expanded="true">Surveys <span class="caret"></span></a>
                             <ul class="dropdown-menu dropdown-menu-surveys" role="menu" aria-labelledby="SurveysDropdown">
                                 {% for the_survey in surveys_for_menu %}
-                                    <li role="presentation"><a role="menuitem" tabindex="-1" href="/view/{{ the_survey.id }}">{{ _t(the_survey.title, the_survey.default_language) }}</a></li>
+                                    <li role="presentation"><a role="menuitem" tabindex="-1" href="/view/{{ the_survey.id }}">{{ _t(the_survey.title, survey=the_survey) }}</a></li>
                                 {% end %}
                             </ul>
                         </li>

@@ -938,9 +938,9 @@ class TestAdminManageSurvey(AdminTest):
     def test_download_json_button(self):
         self.get('/view/b0816b52-204f-41d4-aaf0-ac6ae2970923')
 
-        self.click(self.drv.find_element_by_class_name('btn-sm'))
+        self.click(self.drv.find_element_by_class_name('btn-primary'))
         self.click(self.drv.find_element_by_css_selector(
-            '.btn-group > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
+            '.open > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
         ))
         self.sleep()
 
@@ -963,13 +963,13 @@ class TestAdminManageSurvey(AdminTest):
     def test_download_csv_button(self):
         self.get('/view/b0816b52-204f-41d4-aaf0-ac6ae2970923')
 
-        self.click(self.drv.find_element_by_class_name('btn-sm'))
+        self.click(self.drv.find_element_by_class_name('btn-primary'))
 
         json_button = self.drv.find_element_by_css_selector(
-            '.btn-group > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
+            '.open > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
         )
         csv_button = self.drv.find_element_by_css_selector(
-            '.btn-group > ul:nth-child(2) > li:nth-child(2) > a:nth-child(1)'
+            '.open > ul:nth-child(2) > li:nth-child(2) > a:nth-child(1)'
         )
 
         self.assertEqual(
@@ -993,7 +993,7 @@ class TestAdminManageSurvey(AdminTest):
         )
 
     @report_success_status
-    def test_change_language(self):
+    def test_language_change(self):
         self.get('/view/c0816b52-204f-41d4-aaf0-ac6ae2970925')
         self.sleep(2)
 
@@ -1006,9 +1006,9 @@ class TestAdminManageSurvey(AdminTest):
 
         self.sleep()
         self.click(self.drv.find_element_by_class_name('nav-settings'))
-        self.wait_for_element('user-default-lang')
+        self.wait_for_element('user-preferred-lang')
         self.click(self.drv.find_element_by_css_selector(
-            '#user-default-lang option:nth-of-type(2)'))
+            '#user-preferred-lang option:nth-of-type(2)'))
 
         save_btn = self.drv.find_element_by_class_name('btn-save-user')
         self.sleep()
@@ -1041,12 +1041,11 @@ class TestAdminManageSurvey(AdminTest):
 
         self.sleep()
         self.click(self.drv.find_element_by_class_name('nav-settings'))
-        self.wait_for_element('user-default-lang')
+        self.wait_for_element('user-preferred-lang')
         self.click(self.drv.find_element_by_css_selector(
-            '#user-default-lang option:nth-of-type(3)'))
+            '#user-preferred-lang option:nth-of-type(3)'))
 
         save_btn = self.drv.find_element_by_class_name('btn-save-user')
-        self.sleep()
         save_btn.click()
         self.sleep()
 
@@ -1058,6 +1057,51 @@ class TestAdminManageSurvey(AdminTest):
             self.drv.find_element_by_class_name('survey-title').text,
             'enumerator_only_single_survey (Russian)'
         )
+
+    @report_success_status
+    def test_language_survey_specific(self):
+        """Check that a user's selection for a specific survey
+        overrides their preferred default language and the survey's
+        default_language."""
+
+        self.get('/view/c0816b52-204f-41d4-aaf0-ac6ae2970925')
+        self.sleep(2)
+
+        # Set user preferred language
+        self.wait_for_element('UserDropdown')
+        self.click(self.drv.find_element_by_id('UserDropdown'))
+        self.sleep()
+        self.click(self.drv.find_element_by_class_name('nav-settings'))
+        self.wait_for_element('user-preferred-lang')
+        self.click(self.drv.find_element_by_css_selector(
+            '#user-preferred-lang option:nth-of-type(2)'))
+        save_btn = self.drv.find_element_by_class_name('btn-save-user')
+        self.sleep()
+        save_btn.click()
+        self.sleep()
+
+        # select a different language for this specific survey
+        self.wait_for_element('survey-language-dropdown')
+        self.sleep()
+        self.click(self.drv.find_element_by_id('survey-language-dropdown'))
+        lang_list = self.drv.find_elements_by_class_name('survey-language')
+        self.assertEqual(len(lang_list), 4)
+        self.click(lang_list[3])
+        self.sleep()
+
+        # test that the survey-specific language is displayed
+        self.assertEqual(
+            self.drv.find_element_by_class_name('survey-title').text,
+            'enumerator_only_single_survey (Russian)'
+        )
+
+        # navigate to overview page and check that the
+        # russian translation is present
+        self.get('/')
+        self.sleep(2)
+        self.drv.find_elements_by_xpath(
+            "//*[contains(text(),"
+            " 'enumerator_only_single_survey (Russian)')]")
 
 
 class TestAdminViewData(AdminTest):
