@@ -55,6 +55,7 @@ class Enumerate(BaseHandler):
         # pass in the revisit url
         self.render(
             'view_enumerate.html',
+            current_user_model=self.current_user_model,
             survey=survey,
             revisit_url=options.revisit_url
         )

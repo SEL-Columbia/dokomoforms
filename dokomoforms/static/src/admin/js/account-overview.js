@@ -210,7 +210,7 @@ var AccountOverview = (function() {
                     },
                     'targets': 0,
                     'render': function(data) {
-                        return '<a href="/view/' + data.id + '">' + data.title + '</a>';
+                        return '<a href="/admin/' + data.id + '">' + data.title + '</a>';
                     }
                 }, {
                     'data': 'created_on',

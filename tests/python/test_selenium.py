@@ -1133,6 +1133,66 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
+    def test_login(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        self.get('/enumerate/{}'.format(survey_id))
+        # self.drv.save_screenshot('language_select.png')
+
+        # clicking login should bring user to login page
+        self.wait_for_element('menu', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('menu'))
+        self.click(
+            self.drv
+            .find_element_by_class_name('menu_login')
+        )
+        self.sleep()
+        # on login page there should be two login buttons:
+        login_btn = self.drv.find_elements_by_class_name('btn-login')
+        self.assertEqual(len(login_btn), 2)
+
+        # login as enumerator
+        self.get('/debug/login/test_enumerator@fixtures.com')
+        self.sleep()
+
+        # return to survey and check that the logout option is there
+        # NOTE: logged-in query string gets appended in order to
+        # avoid caching issue.
+        self.get('/enumerate/{}?logged-in={}'.format(survey_id, 'cc'))
+        self.sleep()
+
+        self.wait_for_element('menu', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('menu'))
+        self.drv.find_element_by_class_name('menu_logout')
+
+    @report_success_status
+    def test_logout(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+
+        # login as enumerator
+        self.get('/debug/login/test_enumerator@fixtures.com')
+        self.sleep()
+
+        # open survey
+        self.get('/enumerate/{}'.format(survey_id))
+        # self.drv.save_screenshot('language_select.png')
+
+        # clicking logout should refresh the page
+        self.wait_for_element('menu', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('menu'))
+        self.click(
+            self.drv
+            .find_element_by_class_name('menu_logout')
+        )
+        self.sleep()
+
+        # return to survey and check that the logout option is there
+        # self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('menu', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('menu'))
+
+        self.drv.find_element_by_class_name('menu_login')
+
+    @report_success_status
     def test_change_language(self):
         survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
 

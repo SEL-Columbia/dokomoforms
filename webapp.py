@@ -144,6 +144,11 @@ class Application(tornado.web.Application):
             url(r'/', handlers.Index, name='index'),
             url(r'/user/login/?', handlers.Login, name='login'),
             url(r'/user/logout/?', handlers.Logout, name='logout'),
+            url(
+                r'/user/authenticated/?',
+                handlers.CheckLoginStatus,
+                name='check_login'
+            ),
 
             # Views
             # * Admin views
