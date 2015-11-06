@@ -3,7 +3,8 @@ var React = require('react'),
     $ = require('jquery'),
     moment = require('moment'),
     PouchDB = require('pouchdb'),
-    ps = require('../../common/js/pubsub');
+    ps = require('../../common/js/pubsub'),
+    cookies = require('../../common/js/cookies');
 
 // pouch plugin
 // PouchDB.plugin(require('pouchdb-upsert'));
@@ -80,6 +81,13 @@ var Application = React.createClass({
             language = localStorage['default_language'];
         }
 
+        // user stuff
+        var logged_in = window.CURRENT_USER !== undefined;
+        if (logged_in) {
+            localStorage['submitter_name'] = window.CURRENT_USER.name;
+            localStorage['submitter_email'] = window.CURRENT_USER.email;
+        }
+
         return {
             showDontKnow: false,
             showDontKnowBox: false,
@@ -95,12 +103,14 @@ var Application = React.createClass({
             language: language,
             state: init_state,
             trees: trees,
+            loggedIn: logged_in,
             db: surveyDB
         };
     },
 
     componentWillMount: function() {
         var self = this;
+
         ps.subscribe('loading:progress', function() {
             // unused as of this moment, since we can't know the content-length
             // due to gzipping.
@@ -776,11 +786,6 @@ var Application = React.createClass({
      * Only modifies localStorage on success
      */
     onSubmit: function() {
-        function getCookie(name) {
-            var r = document.cookie.match('\\b' + name + '=([^;]*)\\b');
-            return r ? r[1] : undefined;
-        }
-
         var self = this;
 
         // Get all unsynced surveys
@@ -803,7 +808,7 @@ var Application = React.createClass({
                 processData: false,
                 data: JSON.stringify(survey),
                 headers: {
-                    'X-XSRFToken': getCookie('_xsrf')
+                    'X-XSRFToken': cookies.getCookie('_xsrf')
                 },
                 dataType: 'json',
                 success: function(survey, anything, hey) {
@@ -859,7 +864,7 @@ var Application = React.createClass({
                             'image': base64
                         }),
                         headers: {
-                            'X-XSRFToken': getCookie('_xsrf')
+                            'X-XSRFToken': cookies.getCookie('_xsrf')
                         },
                         dataType: 'json',
                         success: function(photo) {
@@ -1051,6 +1056,7 @@ var Application = React.createClass({
                 <Submit
                         ref='submit'
                         surveyID={survey.id}
+                        loggedIn={this.state.loggedIn}
                         language={this.state.language}
                     />
             );
@@ -1162,6 +1168,7 @@ var Application = React.createClass({
                     surveyID={surveyID}
                     survey={this.props.survey}
                     language={this.state.language}
+                    loggedIn={this.state.loggedIn}
                     splash={state === this.state.states.SPLASH}/>
                 <div
                     className={contentClasses}>
