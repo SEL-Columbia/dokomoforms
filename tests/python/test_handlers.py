@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import lzstring
 
 import sqlalchemy as sa
+from sqlalchemy.sql.functions import count
 from sqlalchemy.dialects import postgresql as pg
 
 from tornado.escape import json_decode, json_encode, url_escape
@@ -34,6 +35,12 @@ class TestIndex(DokoHTTPTest):
         self.assertEqual(len(links), 1, msg=response.body)
 
     def test_get_logged_in(self):
+        num_surveys = (
+            self.session
+            .query(count(models.Survey.id))
+            .filter_by(creator_id='b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+            .scalar()
+        )
         response = self.fetch('/', method='GET')
         response_soup = BeautifulSoup(response.body, 'html.parser')
         links = response_soup.select('a.btn-login.btn-large')
@@ -44,7 +51,11 @@ class TestIndex(DokoHTTPTest):
         survey_dropdown = (
             response_soup.find('ul', {'aria-labelledby': 'SurveysDropdown'})
         )
-        self.assertEqual(len(survey_dropdown.findAll('li')), 10)
+        self.assertEqual(
+            len(survey_dropdown.findAll('li')),
+            min(num_surveys, BaseHandler.num_surveys_for_menu),
+            msg=survey_dropdown
+        )
 
 
 class TestNotFound(DokoHTTPTest):

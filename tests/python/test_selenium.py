@@ -938,9 +938,9 @@ class TestAdminManageSurvey(AdminTest):
     def test_download_json_button(self):
         self.get('/admin/b0816b52-204f-41d4-aaf0-ac6ae2970923')
 
-        self.click(self.drv.find_element_by_class_name('btn-sm'))
+        self.click(self.drv.find_element_by_class_name('btn-primary'))
         self.click(self.drv.find_element_by_css_selector(
-            '.btn-group > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
+            '.open > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
         ))
         self.sleep()
 
@@ -963,13 +963,13 @@ class TestAdminManageSurvey(AdminTest):
     def test_download_csv_button(self):
         self.get('/admin/b0816b52-204f-41d4-aaf0-ac6ae2970923')
 
-        self.click(self.drv.find_element_by_class_name('btn-sm'))
+        self.click(self.drv.find_element_by_class_name('btn-primary'))
 
         json_button = self.drv.find_element_by_css_selector(
-            '.btn-group > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
+            '.open > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
         )
         csv_button = self.drv.find_element_by_css_selector(
-            '.btn-group > ul:nth-child(2) > li:nth-child(2) > a:nth-child(1)'
+            '.open > ul:nth-child(2) > li:nth-child(2) > a:nth-child(1)'
         )
 
         self.assertEqual(
@@ -1006,9 +1006,9 @@ class TestAdminManageSurvey(AdminTest):
 
         self.sleep()
         self.click(self.drv.find_element_by_class_name('nav-settings'))
-        self.wait_for_element('user-default-lang')
+        self.wait_for_element('user-preferred-lang')
         self.click(self.drv.find_element_by_css_selector(
-            '#user-default-lang option:nth-of-type(2)'))
+            '#user-preferred-lang option:nth-of-type(2)'))
 
         save_btn = self.drv.find_element_by_class_name('btn-save-user')
         self.sleep()
@@ -1041,12 +1041,11 @@ class TestAdminManageSurvey(AdminTest):
 
         self.sleep()
         self.click(self.drv.find_element_by_class_name('nav-settings'))
-        self.wait_for_element('user-default-lang')
+        self.wait_for_element('user-preferred-lang')
         self.click(self.drv.find_element_by_css_selector(
-            '#user-default-lang option:nth-of-type(3)'))
+            '#user-preferred-lang option:nth-of-type(3)'))
 
         save_btn = self.drv.find_element_by_class_name('btn-save-user')
-        self.sleep()
         save_btn.click()
         self.sleep()
 
@@ -1058,6 +1057,51 @@ class TestAdminManageSurvey(AdminTest):
             self.drv.find_element_by_class_name('survey-title').text,
             'enumerator_only_single_survey (Russian)'
         )
+
+    @report_success_status
+    def test_language_survey_specific(self):
+        """Check that a user's selection for a specific survey
+        overrides their preferred default language and the survey's
+        default_language."""
+
+        self.get('/admin/c0816b52-204f-41d4-aaf0-ac6ae2970925')
+        self.sleep(2)
+
+        # Set user preferred language
+        self.wait_for_element('UserDropdown')
+        self.click(self.drv.find_element_by_id('UserDropdown'))
+        self.sleep()
+        self.click(self.drv.find_element_by_class_name('nav-settings'))
+        self.wait_for_element('user-preferred-lang')
+        self.click(self.drv.find_element_by_css_selector(
+            '#user-preferred-lang option:nth-of-type(2)'))
+        save_btn = self.drv.find_element_by_class_name('btn-save-user')
+        self.sleep()
+        save_btn.click()
+        self.sleep()
+
+        # select a different language for this specific survey
+        self.wait_for_element('survey-language-dropdown')
+        self.sleep()
+        self.click(self.drv.find_element_by_id('survey-language-dropdown'))
+        lang_list = self.drv.find_elements_by_class_name('survey-language')
+        self.assertEqual(len(lang_list), 4)
+        self.click(lang_list[3])
+        self.sleep()
+
+        # test that the survey-specific language is displayed
+        self.assertEqual(
+            self.drv.find_element_by_class_name('survey-title').text,
+            'enumerator_only_single_survey (Russian)'
+        )
+
+        # navigate to overview page and check that the
+        # russian translation is present
+        self.get('/')
+        self.sleep(2)
+        self.drv.find_elements_by_xpath(
+            "//*[contains(text(),"
+            " 'enumerator_only_single_survey (Russian)')]")
 
 
 class TestAdminViewData(AdminTest):
@@ -1131,6 +1175,66 @@ class TestEnumerate(DriverTest):
             .limit(1)
             .one()
         )
+
+    @report_success_status
+    def test_login(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        self.get('/enumerate/{}'.format(survey_id))
+        # self.drv.save_screenshot('language_select.png')
+
+        # clicking login should bring user to login page
+        self.wait_for_element('menu', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('menu'))
+        self.click(
+            self.drv
+            .find_element_by_class_name('menu_login')
+        )
+        self.sleep()
+        # on login page there should be two login buttons:
+        login_btn = self.drv.find_elements_by_class_name('btn-login')
+        self.assertEqual(len(login_btn), 2)
+
+        # login as enumerator
+        self.get('/debug/login/test_enumerator@fixtures.com')
+        self.sleep()
+
+        # return to survey and check that the logout option is there
+        # NOTE: logged-in query string gets appended in order to
+        # avoid caching issue.
+        self.get('/enumerate/{}?logged-in={}'.format(survey_id, 'cc'))
+        self.sleep()
+
+        self.wait_for_element('menu', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('menu'))
+        self.drv.find_element_by_class_name('menu_logout')
+
+    @report_success_status
+    def test_logout(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+
+        # login as enumerator
+        self.get('/debug/login/test_enumerator@fixtures.com')
+        self.sleep()
+
+        # open survey
+        self.get('/enumerate/{}'.format(survey_id))
+        # self.drv.save_screenshot('language_select.png')
+
+        # clicking logout should refresh the page
+        self.wait_for_element('menu', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('menu'))
+        self.click(
+            self.drv
+            .find_element_by_class_name('menu_logout')
+        )
+        self.sleep()
+
+        # return to survey and check that the logout option is there
+        # self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('menu', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('menu'))
+
+        self.drv.find_element_by_class_name('menu_login')
 
     @report_success_status
     def test_change_language(self):

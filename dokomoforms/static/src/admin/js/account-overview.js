@@ -58,8 +58,11 @@ var AccountOverview = (function() {
             $table = $('#recent-list table tbody');
         submissions.forEach(function(sub) {
             sub.submission_time = moment(sub.submission_time).format('MMM d, YYYY [at] HH:mm');
+            sub.survey = {
+                id: sub.survey_id,
+                default_language: sub.survey_default_language
+            };
             var displayData = _.extend(sub, { _t: _t});
-            console.log(displayData);
             $table.append(recent_sub_tpl(displayData));
         });
     }
@@ -67,7 +70,7 @@ var AccountOverview = (function() {
     function loadRecentSubmissions() {
         var limit = 5;
         return $.getJSON('/api/v0/submissions?order_by=save_time:DESC&limit=' + limit +
-            '&fields=id,submission_time,submitter_name,survey_title,survey_default_language,answers');
+            '&fields=id,submission_time,submitter_name,survey_title,survey_id,survey_default_language,answers');
     }
 
     function drawMap(data) {
@@ -258,6 +261,10 @@ var AccountOverview = (function() {
                     'width': '340px',
                     'class': 'text-center',
                     'sortable': false
+                }, {
+                    'data': 'id',
+                    'targets': 5,
+                    'visible': false
                 }],
                 'columns': [{
                     'name': 'title'
@@ -269,6 +276,8 @@ var AccountOverview = (function() {
                     'name': 'latest_submission_time'
                 }, {
                     'name': 'id'
+                }, {
+                    'name': 'default_language'
                 }],
                 'processing': true,
                 'serverSide': true,
@@ -300,7 +309,7 @@ var AccountOverview = (function() {
                                 recordsFiltered: json.filtered_entries,
                                 data: json.surveys.map(function(survey) {
                                     return {
-                                        title: _t(survey.title, survey.default_language),
+                                        title: _t(survey.title, survey),
                                         created_on: survey.created_on,
                                         num_submissions: survey.num_submissions,
                                         latest_submission_time: survey.latest_submission_time,

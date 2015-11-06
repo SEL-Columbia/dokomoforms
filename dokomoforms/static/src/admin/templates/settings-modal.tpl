@@ -16,8 +16,17 @@
                         <input type="email" class="form-control" id="user-email" placeholder="Email" value="<%= data.emails ? data.emails[0] : '' %>">
                     </div>
                     <div class="form-group">
-                        <label for="user-default-lang">Default Language</label>
-                        <select class="form-control" id="user-default-lang">
+                        <label for="user-ui-lang">Admin User Interface Language</label>
+                        <select class="form-control" id="user-ui-lang">
+                            <option <%= (data.preferences && data.preferences.ui_language === 'English') ? "selected" : "" %>>English</option>
+                            <option <%= (data.preferences && data.preferences.ui_language === 'Español') ? "selected" : "" %> value="Español">Español (not yet available)</option>
+                            <option <%= (data.preferences && data.preferences.ui_language === 'French') ? "selected" : "" %> value="French">French (not yet available)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-preferred-lang">Preferred Survey Language</label>
+                        <span class="help-block">If available, this language will be used as a default to display a Survey's translatable fields. If not available, the default language for the Survey will be used. <strong>Note that a display language can be set for each individual Survey, overriding this default preference.</strong></span>
+                        <select class="form-control" id="user-preferred-lang">
                             <option <%= (data.preferences && data.preferences.default_language === 'English') ? "selected" : "" %>>English</option>
                             <option <%= (data.preferences && data.preferences.default_language === 'Español') ? "selected" : "" %> value="Español">Español (not yet available)</option>
                             <option <%= (data.preferences && data.preferences.default_language === 'French') ? "selected" : "" %> value="French">French (not yet available)</option>
@@ -32,7 +41,7 @@
                             </span>
                             <input type="text" class="form-control" id="user-api-token" placeholder="API Token">
                         </div>
-                        <div class="alert alert-info alert-token-expiration hide">
+                        <div class="alert alert-warning alert-token-expiration hide">
                             <span class="glyphicon glyphicon-exclamation-sign icon-inline-left"></span>
                             <span class="token-expiration-text"></span>
                         </div>

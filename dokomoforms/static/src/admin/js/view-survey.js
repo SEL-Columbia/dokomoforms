@@ -97,9 +97,43 @@ var ViewSurvey = (function() {
             new SubmissionModal({dataTable: $datatable, initialRow: selectedRow}).open();
         });
 
+        $(document).on('click', 'a.survey-language', function(e) {
+            var lang = $(e.target).data('surveylang');
+            if (lang === 'default') {
+                if (window.CURRENT_USER_PREFS[survey_id]
+                    && window.CURRENT_USER_PREFS[survey_id]['display_language']) {
+                    delete window.CURRENT_USER_PREFS[survey_id]['display_language'];
+                }
+            } else {
+                window.CURRENT_USER_PREFS[survey_id] = {
+                    display_language: lang
+                };
+            }
+            savePreferences().done(function() {
+                console.log('prefs saved, refresh');
+                window.location.reload();
+            });
+        });
+
         ps.subscribe('submissions:select_row', function(e, el) {
             console.log(el);
             selectSubmissionRow($(el));
+        });
+    }
+
+    // TODO: We're already using backbone model for user, why not here too?
+    function savePreferences() {
+        // quick and dirty, post to API
+        var userObj = {
+            preferences: window.CURRENT_USER_PREFS
+        };
+
+        console.log('saving prefs... ', userObj.preferences);
+
+        return $.ajax({
+            url: '/api/v0/users/' + window.CURRENT_USER_ID,
+            method: 'PUT',
+            data: JSON.stringify(userObj)
         });
     }
 
@@ -290,12 +324,6 @@ var ViewSurvey = (function() {
                             recordsTotal: json.total_entries,
                             recordsFiltered: json.filtered_entries,
                             data: json.submissions.map(function(submission) {
-                                // return [
-                                //     submission.submitter_name,
-                                //     submission.save_time,
-                                //     submission.submission_time,
-                                //     submission.id
-                                // ];
                                 return {
                                     submitter_name: submission.submitter_name,
                                     save_time: submission.save_time,

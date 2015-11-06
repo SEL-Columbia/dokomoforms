@@ -6,7 +6,7 @@
     <div class="header-main-nav">
         <div class="container">
             <div class="row">
-                <div class="col-md-6"><h1 class="survey-title">{{ _t(survey.title, survey.default_language) }}</h1></div>
+                <div class="col-md-6"><h1 class="survey-title">{{ _t(survey.title, survey=survey) }}</h1></div>
                 <div class="col-md-6">
                     <ul class="pull-right">
                         <li>
@@ -106,15 +106,45 @@
                     </div>
                     <div class="row row-stat">
                         <!-- <div class="col-md-4"></div> -->
-                        <div class="col-md-12">
+                        <div class="col-md-6">
                             <div class="pull-left">
-
+                                <div class="btn-group">
+                                    <button id="survey-language-dropdown" class="btn btn-sm btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                                        View In Language... <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu" role="menu">
+                                        <li>
+                                            <a href="#" class="survey-language" data-surveylang="default">
+                                            {% if not (survey.id in current_user_model.preferences
+                                                        and 'display_language' in current_user_model.preferences[survey.id])
+                                            %}
+                                            <span class="glyphicon glyphicon-ok icon-inline-left"></span>
+                                            {% end %}
+                                            Default
+                                            </a>
+                                        </li>
+                                        {% for lang in survey.languages %}
+                                            <li>
+                                                <a href="#" class="survey-language" data-surveylang="{{ lang }}">
+                                                {% if ((survey.id in current_user_model.preferences
+                                                            and  'display_language' in current_user_model.preferences[survey.id]
+                                                            and current_user_model.preferences[survey.id]['display_language'] == lang)
+                                                        or (
+                                                            len(survey.languages) == 1
+                                                        ))
+                                                %}
+                                                <span class="glyphicon glyphicon-ok icon-inline-left"></span>
+                                                {% end %}
+                                                {{ lang }}
+                                                </a>
+                                            </li>
+                                        {% end %}
+                                    </ul>
+                                </div>
                             </div>
-
+                        </div>
+                        <div class="col-md-6">
                             <div class="pull-right">
-                                <!-- <a href="/admin/data/{{ survey.id }}" class="btn btn-sm btn-secondary"><span class="glyphicon glyphicon-stats"></span>&nbsp;&nbsp; View Data</a> -->
-                            <!-- </div>
-                            <div class="col-md-4"> -->
                                 <div class="btn-group">
                                     <button class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                                         <span class="glyphicon glyphicon-cloud-download"></span>&nbsp;&nbsp; Download Data <span class="caret"></span>
