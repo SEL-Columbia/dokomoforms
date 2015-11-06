@@ -22,8 +22,8 @@ from dokomoforms.handlers.demo import (
 
 __all__ = (
     'Index', 'NotFound',
-    'Login', 'Logout', 'GenerateToken', 'CheckLoginStatus',
-    'AdminHomepageHandler',
+    'Login', 'Logout', 'GenerateToken',
+    'AdminHomepageHandler', 'CheckLoginStatus',
     'ViewSurveyHandler', 'ViewSurveyDataHandler', 'ViewUserAdminHandler',
     'ViewSubmissionHandler',
     'EnumerateHomepageHandler', 'Enumerate', 'EnumerateTitle',

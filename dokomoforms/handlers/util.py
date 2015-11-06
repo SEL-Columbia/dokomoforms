@@ -163,7 +163,7 @@ class BaseHandler(tornado.web.RequestHandler):
         return (
             self.session
             .query(Survey)
-            .filter_by(creator_id=self.current_user_model.id)
+            .filter(Survey.administrators.contains(self.current_user_model))
             .order_by(Survey.created_on.desc())
             .limit(self.num_surveys_for_menu)
         )
