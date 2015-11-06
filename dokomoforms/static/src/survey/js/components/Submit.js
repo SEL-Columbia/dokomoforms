@@ -12,10 +12,6 @@ var ResponseField = require('./baseComponents/ResponseField.js');
  *     @surveyID: current survey id
  */
 module.exports = React.createClass({
-    getInitialState: function() {
-        return { 
-        }
-    },
 
     onInput: function(value, index) {
         if (index === 0) {
@@ -27,35 +23,49 @@ module.exports = React.createClass({
     },
 
     render: function() {
-        var self = this;
+        var self = this,
+            name = localStorage['submitter_name'],
+            email = localStorage['submitter_email'],
+            logged_in = this.props.loggedIn,
+            message;
+
+        if (logged_in) {
+            message = <Message text={'You are logged in as:'} />;
+        } else {
+            message = <Message text={'Please enter your name and email id:'} />;
+        }
+
         return (
-                <span>
-                
-                <Message text={'Enter your name and email id'} />
-                <ResponseField 
+            <span>
+
+                {message}
+
+                <ResponseField
                     onInput={self.onInput}
                     type={'text'}
-                    key={'name'} 
+                    key={'name'}
                     placeholder={"Enumerator Name"}
-                    index={0} 
-                    initValue={localStorage['submitter_name']} 
+                    index={0}
+                    // disabled={logged_in}
+                    initValue={name}
                     showMinus={false}
                 />
 
-                <ResponseField 
+                <ResponseField
                     onInput={self.onInput}
                     type={'email'}
-                    key={'email'} 
+                    key={'email'}
                     placeholder={"Enumerator Email"}
-                    index={1} 
-                    initValue={localStorage['submitter_email']} 
+                    index={1}
+                    // disabled={logged_in}
+                    initValue={email}
                     showMinus={false}
                 />
 
-                <Card messages={["Saved surveys must be uploaded when you next have network connectivity."]} 
-                    type={"message-primary"}/>
+                <Card messages={['Saved surveys must be uploaded when you next have network connectivity.']}
+                    type={'message-primary'}/>
 
-                </span>
-               )
+            </span>
+       );
     }
 });

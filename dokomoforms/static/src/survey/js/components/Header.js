@@ -57,7 +57,15 @@ module.exports = React.createClass({
 
             <a className='icon icon-bars pull-right menu' onClick = {this.onClick} ></a>
 
-            { this.state.showMenu ? <Menu language={this.props.language} survey={this.props.survey} surveyID={this.props.surveyID} db={this.props.db}/> : null }
+            { this.state.showMenu ?
+                <Menu
+                    language={this.props.language}
+                    survey={this.props.survey}
+                    surveyID={this.props.surveyID}
+                    db={this.props.db}
+                    loggedIn={this.props.loggedIn}
+                />
+                : null }
             </header>
         );
     }
