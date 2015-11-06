@@ -15,6 +15,8 @@ class BaseHandler(tornado.web.RequestHandler):
     Makes the database session and current user available.
     """
 
+    num_surveys_for_menu = 20
+
     @property
     def session(self):
         """The SQLAlchemy session for interacting with the models.
@@ -128,7 +130,7 @@ class BaseHandler(tornado.web.RequestHandler):
             .query(Survey)
             .filter_by(creator_id=self.current_user_model.id)
             .order_by(Survey.created_on.desc())
-            .limit(20)
+            .limit(self.num_surveys_for_menu)
         )
 
     def _get_current_user_id(self):
