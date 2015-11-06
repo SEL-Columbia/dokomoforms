@@ -1,11 +1,47 @@
 """Useful reusable functions for handlers, plus the BaseHandler."""
+from functools import wraps
+
+import urllib.parse as urlparse
+from urllib.parse import urlencode
+
 from sqlalchemy.exc import StatementError
 from sqlalchemy.orm.exc import NoResultFound
 
 import tornado.web
 from tornado.escape import to_unicode, json_encode
 
-from dokomoforms.models import User, Survey
+from dokomoforms.models import User, Administrator
+from dokomoforms.models.survey import most_recent_surveys
+
+
+def auth_redirect(self):
+    """The URL redirect logic extracted from tornado.web.authenticated."""
+    url = self.get_login_url()
+    if '?' not in url:
+        if urlparse.urlsplit(url).scheme:  # pragma: no cover
+            next_url = self.request.full_url()
+        else:
+            next_url = self.request.uri
+        url += '?' + urlencode({'next': next_url})
+    self.redirect(url)
+    return
+
+
+def authenticated_admin(method):
+    """A copy of tornado.web.authenticated for Administrator access."""
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        if not self.current_user:
+            if self.request.method in ('GET', 'HEAD'):
+                return auth_redirect(self)
+            raise tornado.web.HTTPError(403)
+        # Custom #
+        user = self.current_user_model
+        if isinstance(user, Administrator):
+            return method(self, *args, **kwargs)
+        # Custom #
+        raise tornado.web.HTTPError(403)
+    return wrapper
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -117,22 +153,6 @@ class BaseHandler(tornado.web.RequestHandler):
             return user.name
         return None
 
-    def _get_surveys_for_menu(self):
-        """The menu bar needs access to surveys.
-
-        TODO: Get rid of this
-        @jmwohl
-        """
-        if not self.current_user:
-            return None
-        return (
-            self.session
-            .query(Survey)
-            .filter_by(creator_id=self.current_user_model.id)
-            .order_by(Survey.created_on.desc())
-            .limit(self.num_surveys_for_menu)
-        )
-
     def _get_current_user_id(self):
         """Get the current user's id for the templates.
 
@@ -181,8 +201,12 @@ class BaseHandler(tornado.web.RequestHandler):
         @jmwohl
         """
         namespace = super().get_template_namespace()
+        user = self.current_user_model
+        surveys_for_menu = most_recent_surveys(
+            self.session, user.id, self.num_surveys_for_menu
+        ) if user else None
         namespace.update({
-            'surveys_for_menu': self._get_surveys_for_menu(),
+            'surveys_for_menu': surveys_for_menu,
             'current_user_id': self._get_current_user_id(),
             '_t': self._t,
             'current_user_model': self.current_user_model,

@@ -636,7 +636,7 @@ class TestAdminUser(AdminTest):
 
     @report_success_status
     def test_user_administration_renders_properly(self):
-        self.get('/view/user-administration')
+        self.get('/admin/user-administration')
 
         self.wait_for_element('table#users tbody tr', by=By.CSS_SELECTOR)
         rows = self.drv.find_elements_by_css_selector('table#users tbody tr')
@@ -644,7 +644,7 @@ class TestAdminUser(AdminTest):
 
     @report_success_status
     def test_add_user(self):
-        self.get('/view/user-administration')
+        self.get('/admin/user-administration')
 
         self.wait_for_element('btn-edit-user', by=By.CLASS_NAME)
 
@@ -669,7 +669,7 @@ class TestAdminUser(AdminTest):
         save_btn.click()
         self.sleep()
 
-        self.get('/view/user-administration')
+        self.get('/admin/user-administration')
         self.sleep()
 
         rows = self.drv.find_elements_by_css_selector('table#users tbody tr')
@@ -677,7 +677,7 @@ class TestAdminUser(AdminTest):
 
     @report_success_status
     def test_edit_user(self):
-        self.get('/view/user-administration')
+        self.get('/admin/user-administration')
 
         self.sleep()
         self.wait_for_element(
@@ -711,7 +711,7 @@ class TestAdminUser(AdminTest):
 
     @report_success_status
     def test_delete_user(self):
-        self.get('/view/user-administration')
+        self.get('/admin/user-administration')
 
         self.wait_for_element('btn-edit-user', by=By.CLASS_NAME)
 
@@ -737,7 +737,7 @@ class TestAdminUser(AdminTest):
         alert.accept()
         self.sleep(1)
 
-        self.get('/view/user-administration')
+        self.get('/admin/user-administration')
 
         self.wait_for_element('btn-edit-user', by=By.CLASS_NAME)
         rows = self.drv.find_elements_by_class_name('btn-edit-user')
@@ -747,7 +747,7 @@ class TestAdminUser(AdminTest):
 class TestAdminManageSurvey(AdminTest):
     @report_success_status
     def test_manage_renders_properly(self):
-        self.get('/view/b0816b52-204f-41d4-aaf0-ac6ae2970923')
+        self.get('/admin/b0816b52-204f-41d4-aaf0-ac6ae2970923')
 
         # Stats view
         stats = self.drv.find_elements_by_class_name('stat-value')
@@ -817,7 +817,7 @@ class TestAdminManageSurvey(AdminTest):
 
         survey_id = survey.id
 
-        self.get('/view/' + survey_id)
+        self.get('/admin/' + survey_id)
 
         link = self.drv.find_element_by_id('shareable-link').text
         self.assertEqual(link, 'http://localhost:9999/enumerate/' + survey_id)
@@ -857,7 +857,7 @@ class TestAdminManageSurvey(AdminTest):
 
         survey_id = survey.id
 
-        self.get('/view/' + survey_id)
+        self.get('/admin/' + survey_id)
 
         edit_btn = self.drv.find_element_by_class_name('glyphicon-pencil')
         self.click(edit_btn)
@@ -907,7 +907,7 @@ class TestAdminManageSurvey(AdminTest):
 
         survey_id = survey.id
 
-        self.get('/view/' + survey_id)
+        self.get('/admin/' + survey_id)
 
         edit_btn = self.drv.find_element_by_class_name('glyphicon-pencil')
         self.click(edit_btn)
@@ -936,7 +936,7 @@ class TestAdminManageSurvey(AdminTest):
 
     @report_success_status
     def test_download_json_button(self):
-        self.get('/view/b0816b52-204f-41d4-aaf0-ac6ae2970923')
+        self.get('/admin/b0816b52-204f-41d4-aaf0-ac6ae2970923')
 
         self.click(self.drv.find_element_by_class_name('btn-primary'))
         self.click(self.drv.find_element_by_css_selector(
@@ -961,7 +961,7 @@ class TestAdminManageSurvey(AdminTest):
 
     @report_success_status
     def test_download_csv_button(self):
-        self.get('/view/b0816b52-204f-41d4-aaf0-ac6ae2970923')
+        self.get('/admin/b0816b52-204f-41d4-aaf0-ac6ae2970923')
 
         self.click(self.drv.find_element_by_class_name('btn-primary'))
 
@@ -979,7 +979,7 @@ class TestAdminManageSurvey(AdminTest):
 
     @report_success_status
     def test_submission_details_button(self):
-        self.get('/view/b0816b52-204f-41d4-aaf0-ac6ae2970923')
+        self.get('/admin/b0816b52-204f-41d4-aaf0-ac6ae2970923')
         self.sleep(2)
 
         self.click(self.drv.find_element_by_css_selector(
@@ -993,8 +993,8 @@ class TestAdminManageSurvey(AdminTest):
         )
 
     @report_success_status
-    def test_language_change(self):
-        self.get('/view/c0816b52-204f-41d4-aaf0-ac6ae2970925')
+    def test_change_language(self):
+        self.get('/admin/c0816b52-204f-41d4-aaf0-ac6ae2970925')
         self.sleep(2)
 
         self.wait_for_element('UserDropdown')
@@ -1016,7 +1016,7 @@ class TestAdminManageSurvey(AdminTest):
         self.sleep()
 
         # refresh the page
-        self.get('/view/c0816b52-204f-41d4-aaf0-ac6ae2970925')
+        self.get('/admin/c0816b52-204f-41d4-aaf0-ac6ae2970925')
         self.sleep()
 
         self.assertEqual(
@@ -1029,7 +1029,7 @@ class TestAdminManageSurvey(AdminTest):
         """If the user's prefered language isn't available,
         default to the survey's default_language"""
 
-        self.get('/view/c0816b52-204f-41d4-aaf0-ac6ae2970925')
+        self.get('/admin/c0816b52-204f-41d4-aaf0-ac6ae2970925')
         self.sleep(2)
 
         self.wait_for_element('UserDropdown')
@@ -1050,7 +1050,7 @@ class TestAdminManageSurvey(AdminTest):
         self.sleep()
 
         # refresh the page
-        self.get('/view/c0816b52-204f-41d4-aaf0-ac6ae2970925')
+        self.get('/admin/c0816b52-204f-41d4-aaf0-ac6ae2970925')
         self.sleep()
 
         self.assertEqual(
@@ -1064,7 +1064,7 @@ class TestAdminManageSurvey(AdminTest):
         overrides their preferred default language and the survey's
         default_language."""
 
-        self.get('/view/c0816b52-204f-41d4-aaf0-ac6ae2970925')
+        self.get('/admin/c0816b52-204f-41d4-aaf0-ac6ae2970925')
         self.sleep(2)
 
         # Set user preferred language
@@ -1107,7 +1107,7 @@ class TestAdminManageSurvey(AdminTest):
 class TestAdminViewData(AdminTest):
     @report_success_status
     def test_view_data_renders_properly(self):
-        self.get('/view/data/b0816b52-204f-41d4-aaf0-ac6ae2970923')
+        self.get('/admin/data/b0816b52-204f-41d4-aaf0-ac6ae2970923')
         self.sleep()
 
         # Stats view
@@ -4354,11 +4354,10 @@ class TestEnumerateSlowRevisit(DriverTest):
 
         start_time = time.time()
         self.get('/enumerate/{}'.format(survey_id))
+        overlay = self.drv.find_elements_by_class_name('loading-overlay')
         finish_time = time.time()
 
         self.assertGreater(finish_time - start_time, 2)
-
-        overlay = self.drv.find_elements_by_class_name('loading-overlay')
 
         # overlay should not be present
         self.assertEqual(len(overlay), 0)

@@ -34,7 +34,7 @@ class TestIndex(DokoHTTPTest):
         links = response_soup.select('a.btn-login.btn-large')
         self.assertEqual(len(links), 1, msg=response.body)
 
-    def test_get_logged_in(self):
+    def test_get_logged_in_admin(self):
         num_surveys = (
             self.session
             .query(count(models.Survey.id))
@@ -495,7 +495,7 @@ class TestEnumerate(DokoHTTPTest):
 class TestView(DokoHTTPTest):
     def test_view_survey(self):
         survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
-        url = '/view/' + survey_id
+        url = '/admin/' + survey_id
         response = self.fetch(url, method='GET').body.decode()
 
         self.assertIn('Survey Info', response)
@@ -504,7 +504,7 @@ class TestView(DokoHTTPTest):
 
     def test_view_data(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
-        url = '/view/data/' + survey_id
+        url = '/admin/data/' + survey_id
         response = self.fetch(url, method='GET')
         response_soup = BeautifulSoup(response.body, 'html.parser')
         questions = response_soup.findAll('div', {'class': 'question-stats'})
@@ -521,7 +521,7 @@ class TestView(DokoHTTPTest):
             )
             .scalar()
         )
-        url = '/view/data/' + survey_id
+        url = '/admin/data/' + survey_id
         response = self.fetch(url, method='GET')
         response_soup = BeautifulSoup(response.body, 'html.parser')
         questions = response_soup.findAll('div', {'class': 'question-stats'})
@@ -538,7 +538,7 @@ class TestView(DokoHTTPTest):
             )
             .scalar()
         )
-        url = '/view/data/' + survey_id
+        url = '/admin/data/' + survey_id
         response = self.fetch(url, method='GET')
         response_soup = BeautifulSoup(response.body, 'html.parser')
         questions = response_soup.findAll('div', {'class': 'question-stats'})
@@ -549,11 +549,11 @@ class TestView(DokoHTTPTest):
             self.session.query(models.Submission.id).limit(1).scalar()
         )
         submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970924'
-        url = '/view/submission/' + submission_id
+        url = '/admin/submission/' + submission_id
         response = self.fetch(url, method='GET').body.decode()
         self.assertIn('Submission Detail', response)
 
     def test_view_user_administration(self):
-        url = '/view/user-administration'
+        url = '/admin/user-administration'
         response = self.fetch(url, method='GET').body.decode()
         self.assertIn('Users', response)

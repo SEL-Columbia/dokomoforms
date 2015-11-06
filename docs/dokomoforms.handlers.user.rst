@@ -1,21 +1,21 @@
-dokomoforms.handlers.view package
+dokomoforms.handlers.user package
 =================================
 
 Submodules
 ----------
 
-dokomoforms.handlers.view.admin module
+dokomoforms.handlers.user.admin module
 --------------------------------------
 
-.. automodule:: dokomoforms.handlers.view.admin
+.. automodule:: dokomoforms.handlers.user.admin
     :members:
     :undoc-members:
     :show-inheritance:
 
-dokomoforms.handlers.view.enumerate module
+dokomoforms.handlers.user.enumerate module
 ------------------------------------------
 
-.. automodule:: dokomoforms.handlers.view.enumerate
+.. automodule:: dokomoforms.handlers.user.enumerate
     :members:
     :undoc-members:
     :show-inheritance:
@@ -24,7 +24,7 @@ dokomoforms.handlers.view.enumerate module
 Module contents
 ---------------
 
-.. automodule:: dokomoforms.handlers.view
+.. automodule:: dokomoforms.handlers.user
     :members:
     :undoc-members:
     :show-inheritance:
