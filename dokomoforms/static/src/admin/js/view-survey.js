@@ -62,6 +62,13 @@ var ViewSurvey = (function() {
             var slug = e.target.value,
                 $saveBtn = $('.save-survey-url');
 
+            // if slug is empty, we're good... go no further.
+            if (slug === '') {
+                good_slug = true;
+                return;
+            }
+
+            // otherwise check if it's available...
             testSurveySlug(slug)
                 .done(function() {
                     // good only if it's the current slug... the ajax request will return not error,
@@ -69,6 +76,7 @@ var ViewSurvey = (function() {
                     good_slug = slug === survey_slug;
                 })
                 .fail(function(jqXHR) {
+                    // good only if 404 (i.e. no such url yet)
                     good_slug = jqXHR.status === 404;
                 })
                 .always(function() {
@@ -163,6 +171,9 @@ var ViewSurvey = (function() {
     }
 
     function testSurveySlug(slug) {
+        if (slug === '') {
+            return $.Deferred().resolve()
+        }
         return $.ajax({
             type: 'GET',
             url: '/enumerate/' + slug
