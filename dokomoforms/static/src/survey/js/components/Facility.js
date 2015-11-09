@@ -25,6 +25,7 @@ module.exports = React.createClass({
         var selectOff = answer && answer.metadata && answer.metadata.is_new;
         return {
             loc: null,
+            loading: true,
             selectFacility: !selectOff,
             facilities: [],
             choices: [
@@ -42,12 +43,19 @@ module.exports = React.createClass({
     componentWillMount: function() {
         var loc = JSON.parse(localStorage['location'] || '{}');
         var self = this;
-        self.getFacilities(loc).done(function(facilities) {
-            self.setState({
-                loc: loc,
-                facilities: facilities
+        // If we have a location fix, display the facilities,
+        // otherwise start fetching location fix
+        if (loc.lat) {
+            self.getFacilities(loc).done(function(facilities) {
+                self.setState({
+                    loc: loc,
+                    facilities: facilities,
+                    loading: false
+                });
             });
-        });
+        } else {
+            this.onLocate();
+        }
     },
     /*
      * Hack to force react to update child components
@@ -112,11 +120,13 @@ module.exports = React.createClass({
      * @loc: The location ({lat: NUM, lng: NUM}) to query around
      */
     getFacilities: function(loc) {
-        var d = $.Deferred();
-        if (!loc || !loc.lat || !loc.lng || !this.props.tree || !this.props.tree.root) {
-            d.resolve([]);
-            return d;
-        }
+        // console.log('getFacilities', this.props.tree);
+        // var d = $.Deferred();
+        // if (!loc || !loc.lat || !loc.lng || !this.props.tree || !this.props.tree.root) {
+
+        //     d.resolve([]);
+        //     return d;
+        // }
 
         console.log('Getting facilities ...');
         return this.props.tree.getNNearestFacilities(loc.lat, loc.lng, 1000, 10);
@@ -214,10 +224,12 @@ module.exports = React.createClass({
         console.log(e);
         this.onInput('has_grid_power', e.target.checked);
     },
+
     onChangeWater: function(e) {
         console.log(e);
         this.onInput('has_improved_water_supply', e.target.checked);
     },
+
     onChangeSanitation: function(e) {
         console.log(e);
         this.onInput('has_improved_sanitation', e.target.checked);
@@ -228,6 +240,9 @@ module.exports = React.createClass({
      */
     onLocate: function() {
         var self = this;
+        self.setState({
+            loading: true
+        });
         navigator.geolocation.getCurrentPosition(
             function success(position) {
                 var loc = {
@@ -241,13 +256,14 @@ module.exports = React.createClass({
                 self.getFacilities(loc).done(function(facilities) {
                     self.setState({
                         loc: loc,
-                        facilities: facilities
+                        facilities: facilities,
+                        loading: false
                     });
                 });
             },
 
             function error() {
-                console.log('Location could not be grabbed');
+                console.error('Location could not be grabbed');
             },
 
             {
@@ -278,34 +294,41 @@ module.exports = React.createClass({
             locStr = this.state.loc.lat + ', ' + this.state.loc.lng;
         }
 
-        return (
+        var isLoading = null;
+        if (this.state.loading) {
+            isLoading = (
+                <div className='content-padded'>Loading...</div>
+            );
+        }
+        var content = (
+            <span>
+                <LittleButton buttonFunction={this.onLocate}
+                    icon={'icon-star'}
+                    text={'find nearby facilities'}
+                    disabled={this.props.disabled}
+                />
+
+                <FacilityRadios
+                    key={this.props.disabled}
+                    selectFunction={this.selectFacility}
+                    facilities={this.state.facilities}
+                    initValue={answer && !isNew && answer.response.facility_id}
+                    disabled={this.props.disabled}
+                />
+
+                { hasLocation  ?
+                    <LittleButton buttonFunction={this.toggleAddFacility}
+                        disabled={this.props.disabled}
+                        text={'add new facility'}
+                    />
+                    : null
+                }
+            </span>
+        );
+
+        if (!this.state.selectFacility) {
+            content = (
                 <span>
-                {this.state.selectFacility ?
-                    <span>
-                    <LittleButton buttonFunction={this.onLocate}
-                        icon={'icon-star'}
-                        text={'find my location and show nearby facilities'}
-                        disabled={this.props.disabled}
-                    />
-
-                    <FacilityRadios
-                        key={this.props.disabled}
-                        selectFunction={this.selectFacility}
-                        facilities={this.state.facilities}
-                        initValue={answer && !isNew && answer.response.facility_id}
-                        disabled={this.props.disabled}
-                    />
-
-                    { hasLocation  ?
-                        <LittleButton buttonFunction={this.toggleAddFacility}
-                            disabled={this.props.disabled}
-                            text={'add new facility'}
-                        />
-                        : null
-                    }
-                    </span>
-                :
-                    <span>
                     <ResponseField
                         onInput={this.onInput.bind(null, 'text')}
                         initValue={isNew && answer.response.facility_name}
@@ -362,16 +385,19 @@ module.exports = React.createClass({
                         </div>
                     </div>
 
-
                     <LittleButton
                         buttonFunction={this.toggleAddFacility}
                             text={'cancel'}
                             disabled={this.props.disabled}
                      />
-
-                    </span>
-                }
                 </span>
-               );
+            );
+        }
+
+        return (
+            <span>
+                {this.state.loading ? isLoading : content}
+            </span>
+       );
     }
 });
