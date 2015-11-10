@@ -105,6 +105,7 @@ var path = {
     // note: these are file names only, not full paths...
     // they get concat'ed with ADMIN_JS_SRC_DIR in the bundling process
     ADMIN_JS_ENTRY_POINTS: [
+        'login-page.js',
         'account-overview.js',
         'view-data.js',
         'view-survey.js',

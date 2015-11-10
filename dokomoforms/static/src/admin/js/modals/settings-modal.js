@@ -9,7 +9,8 @@ var $ = require('jquery'),
 var SettingsModal = function(user_id) {
     console.log('SettingsModal', user_id);
     var user = new User(),
-        $modal;
+        $modal,
+        langUpdated = false;
     // TODO: this could come from the collection, it's obviously already been fetched.
     if (user_id) {
         // We are editing...
@@ -20,15 +21,19 @@ var SettingsModal = function(user_id) {
 
     function open() {
         console.log('open', user.toJSON());
-        var dataForDisplay = $.extend(user.toJSON(), {_t: _t});
-        console.log('dataForDisplay', dataForDisplay);
+        var dataForDisplay = user.toJSON();
         $modal = $(tpl(dataForDisplay)).modal();
         $modal.on('shown.bs.modal', function() {
             $modal.first('input').focus();
             $modal.find('.btn-save-user').click(saveSettings);
             $modal.find('.btn-api-key').click(refreshApiKey);
+            $modal.find('#user-preferred-lang, #user-ui-lang').on('change', function(e) {
+                console.log(e);
+                langUpdated = true;
+            });
             utils.initTooltips('.modal');
         });
+
 
     }
 
@@ -41,14 +46,14 @@ var SettingsModal = function(user_id) {
 
     function saveSettings() {
         console.log('saveSettings', user.toJSON());
-
+        var prefs = window.CURRENT_USER_PREFS;
+        prefs.ui_language = $modal.find('#user-ui-lang').val();
+        prefs.default_language = $modal.find('#user-preferred-lang').val();
         var changeset = {
             name: $modal.find('#user-name').val(),
             emails: [$modal.find('#user-email').val()],
-            role: $modal.find('#user-role').val(),
-            preferences: {
-                default_language: $modal.find('#user-default-lang').val()
-            }
+            // role: $modal.find('#user-role').val(),
+            preferences: prefs
         };
 
         if (changeset.role === 'enumerator') {
@@ -59,8 +64,14 @@ var SettingsModal = function(user_id) {
 
         user.save()
             .done(function() {
-                close();
-                ps.publish('settings:saved');
+                // if the language has been updated, we need to reload the page
+                // for the change to be visible in server-rendered templates
+                if (langUpdated) {
+                    window.location.reload();
+                } else {
+                    close();
+                    ps.publish('settings:saved');
+                }
             })
             .fail(function() {
                 close();

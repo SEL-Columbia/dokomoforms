@@ -66,7 +66,7 @@ var SubmissionModal = function(opts) {
      */
     function loadSubmission(submission_id) {
         var dfd = $.Deferred(),
-            url = '/view/submission/' + submission_id;
+            url = '/admin/submission/' + submission_id;
 
         $modal.find('.modal-body').load(url, function() {
             $('.modal-submission').modal();

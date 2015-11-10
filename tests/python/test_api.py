@@ -1014,7 +1014,7 @@ class TestSurveyApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated"
+            "submission_type": "public_submission"
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
@@ -1041,7 +1041,7 @@ class TestSurveyApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated"
+            "submission_type": "public_submission"
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
@@ -1056,7 +1056,7 @@ class TestSurveyApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": "60e56824-910c-47aa-b5c0-71493277b43f",
@@ -1107,7 +1107,7 @@ class TestSurveyApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey_node.id,
@@ -1159,7 +1159,7 @@ class TestSurveyApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey_node.id,
@@ -1226,7 +1226,7 @@ class TestSurveyApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
@@ -1276,7 +1276,7 @@ class TestSurveyApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
@@ -1330,7 +1330,7 @@ class TestSurveyApi(DokoHTTPTest):
         desired_id = str(uuid.uuid4())
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
@@ -1410,7 +1410,7 @@ class TestSurveyApi(DokoHTTPTest):
         desired_id = str(uuid.uuid4())
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
@@ -1489,7 +1489,7 @@ class TestSurveyApi(DokoHTTPTest):
         desired_id = str(uuid.uuid4())
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
@@ -1555,7 +1555,7 @@ class TestSurveyApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": "80e56824-910c-47aa-b5c0-71493277b439",
@@ -1601,7 +1601,7 @@ class TestSurveyApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": "80e56824-910c-47aa-b5c0-71493277b439",
@@ -1642,7 +1642,7 @@ class TestSurveyApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": "80e56824-910c-47aa-b5c0-71493277b439",
@@ -1685,7 +1685,7 @@ class TestSurveyApi(DokoHTTPTest):
             "submitter_name": "regular",
             # public survey, so unauthenticated submission type -- we'll check
             # that an enumerator_id comes back in the response
-            "submission_type": "unauthenticated"
+            "submission_type": "public_submission"
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
@@ -1716,7 +1716,7 @@ class TestSurveyApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "authenticated"
+            "submission_type": "enumerator_only_submission"
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
@@ -1743,7 +1743,7 @@ class TestSurveyApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "authenticated"
+            "submission_type": "enumerator_only_submission"
         }
         # make request
         response = self.fetch(
@@ -1751,26 +1751,6 @@ class TestSurveyApi(DokoHTTPTest):
         )
         self.assertEqual(response.code, 403, msg=response.body)
         self.assertIn('xsrf', response.body.decode())
-
-    def test_error_public_submission_to_enum_only_survey(self):
-        survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
-        # url to test
-        url = self.api_root + '/surveys/' + survey_id + '/submit'
-        # http method
-        method = 'POST'
-        # body
-        body = {
-            "submitter_name": "regular",
-            "submission_type": "unauthenticated"
-        }
-        # make request
-        response = self.fetch(url, method=method, body=json_encode(body))
-
-        submission_dict = json_decode(response.body)
-
-        self.assertTrue('error' in submission_dict)
-
-        self.assertEqual(response.code, 400)
 
     def test_list_submissions_to_survey(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
@@ -1937,7 +1917,7 @@ class TestSurveyApi(DokoHTTPTest):
         with self.session.begin():
             survey.submissions.append(
                 models.construct_submission(
-                    submission_type='unauthenticated'
+                    submission_type='public_submission'
                 )
             )
             self.session.add(survey)
@@ -2105,7 +2085,7 @@ class TestSurveyApi(DokoHTTPTest):
         with self.session.begin():
             survey.submissions.append(
                 models.construct_submission(
-                    submission_type='unauthenticated'
+                    submission_type='public_submission'
                 )
             )
             self.session.add(survey)
@@ -2130,9 +2110,10 @@ class TestSurveyApi(DokoHTTPTest):
         survey_dict = json.loads(
             response.body.decode(), object_pairs_hook=OrderedDict
         )
+        self.assertIn('surveys', survey_dict, msg=survey_dict)
         self.assertEqual(len(survey_dict['surveys']), 6)
         self.assertEqual(survey_dict['total_entries'], 14)
-        self.assertEqual(survey_dict['filtered_entries'], 7)
+        self.assertEqual(survey_dict['filtered_entries'], 6)
 
     def test_list_surveys_with_specific_fields_and_filter_and_limit(self):
         # url to tests
@@ -2166,7 +2147,7 @@ class TestSurveyApi(DokoHTTPTest):
                     ],
                 ),
                 ('total_entries', 14),
-                ('filtered_entries', 7),
+                ('filtered_entries', 6),
                 ('fields', 'deleted,creator_name'),
                 ('limit', 2),
                 ('search', 'a'),
@@ -2204,7 +2185,7 @@ class TestSubmissionApi(DokoHTTPTest):
         with self.session.begin():
             self.session.add_all([
                 models.construct_submission(
-                    submission_type='unauthenticated',
+                    submission_type='public_submission',
                     survey=decimal_survey,
                     answers=[
                         models.construct_answer(
@@ -2215,7 +2196,7 @@ class TestSubmissionApi(DokoHTTPTest):
                     ],
                 ),
                 models.construct_submission(
-                    submission_type='unauthenticated',
+                    submission_type='public_submission',
                     survey=decimal_survey,
                     answers=[
                         models.construct_answer(
@@ -2399,7 +2380,7 @@ class TestSubmissionApi(DokoHTTPTest):
         with self.session.begin():
             integer_survey.nodes[0].allow_dont_know = True
             submission = models.construct_submission(
-                submission_type='unauthenticated',
+                submission_type='public_submission',
                 survey=integer_survey,
                 answers=[
                     models.construct_answer(
@@ -2440,7 +2421,7 @@ class TestSubmissionApi(DokoHTTPTest):
         )
         with self.session.begin():
             submission = models.construct_submission(
-                submission_type='unauthenticated',
+                submission_type='public_submission',
                 survey=decimal_survey,
                 answers=[
                     models.construct_answer(
@@ -2480,7 +2461,7 @@ class TestSubmissionApi(DokoHTTPTest):
         )
         with self.session.begin():
             submission = models.construct_submission(
-                submission_type='unauthenticated',
+                submission_type='public_submission',
                 survey=text_survey,
                 answers=[
                     models.construct_answer(
@@ -2521,7 +2502,7 @@ class TestSubmissionApi(DokoHTTPTest):
         fake_photo_id = str(uuid.uuid4())
         with self.session.begin():
             submission = models.construct_submission(
-                submission_type='unauthenticated',
+                submission_type='public_submission',
                 survey=photo_survey,
                 answers=[
                     models.construct_answer(
@@ -2562,7 +2543,7 @@ class TestSubmissionApi(DokoHTTPTest):
         real_photo_id = str(uuid.uuid4())
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": photo_survey.nodes[0].id,
@@ -2628,7 +2609,7 @@ class TestSubmissionApi(DokoHTTPTest):
         )
         with self.session.begin():
             submission = models.construct_submission(
-                submission_type='unauthenticated',
+                submission_type='public_submission',
                 survey=date_survey,
                 answers=[
                     models.construct_answer(
@@ -2668,7 +2649,7 @@ class TestSubmissionApi(DokoHTTPTest):
         )
         with self.session.begin():
             submission = models.construct_submission(
-                submission_type='unauthenticated',
+                submission_type='public_submission',
                 survey=timestamp_survey,
                 answers=[
                     models.construct_answer(
@@ -2710,7 +2691,7 @@ class TestSubmissionApi(DokoHTTPTest):
         )
         with self.session.begin():
             submission = models.construct_submission(
-                submission_type='unauthenticated',
+                submission_type='public_submission',
                 survey=location_survey,
                 answers=[
                     models.construct_answer(
@@ -2756,7 +2737,7 @@ class TestSubmissionApi(DokoHTTPTest):
         )
         with self.session.begin():
             submission = models.construct_submission(
-                submission_type='unauthenticated',
+                submission_type='public_submission',
                 survey=facility_survey,
                 answers=[
                     models.construct_answer(
@@ -2819,7 +2800,7 @@ class TestSubmissionApi(DokoHTTPTest):
             multiple_choice_survey.nodes[0].node.choices = [choice]
             self.session.flush()
             submission = models.construct_submission(
-                submission_type='unauthenticated',
+                submission_type='public_submission',
                 survey=multiple_choice_survey,
                 answers=[
                     models.construct_answer(
@@ -2875,7 +2856,7 @@ class TestSubmissionApi(DokoHTTPTest):
                 ],
             )
             submission = models.construct_submission(
-                submission_type='unauthenticated',
+                submission_type='public_submission',
                 survey=multiple_choice_survey,
                 answers=[
                     models.construct_answer(
@@ -2916,7 +2897,7 @@ class TestSubmissionApi(DokoHTTPTest):
         )
         with self.session.begin():
             submission = models.construct_submission(
-                submission_type='unauthenticated',
+                submission_type='public_submission',
                 survey=time_survey,
                 answers=[
                     models.construct_answer(
@@ -2956,7 +2937,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": "b0816b52-204f-41d4-aaf0-ac6ae2970923",
             "submitter_name": "regular",
-            "submission_type": "unauthenticated"
+            "submission_type": "public_submission"
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
@@ -2988,7 +2969,7 @@ class TestSubmissionApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated"
+            "submission_type": "public_submission"
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
@@ -3019,7 +3000,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": "b0816b52-204f-41d4-aaf0-ac6ae2970923",
             "submitter_name": "regular",
-            "submission_type": "unauthenticated"
+            "submission_type": "public_submission"
         }
         # make request
         response = self.fetch(
@@ -3049,7 +3030,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": "b0816b52-204f-41d4-aaf0-ac6ae2970923",
             "submitter_name": "regular",
-            "submission_type": "unauthenticated"
+            "submission_type": "public_submission"
         }
         # make request
         response = self.fetch(
@@ -3071,7 +3052,7 @@ class TestSubmissionApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated"
+            "submission_type": "public_submission"
         }
         # make request
         response = self.fetch(
@@ -3101,7 +3082,7 @@ class TestSubmissionApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated"
+            "submission_type": "public_submission"
         }
         # make request
         response = self.fetch(
@@ -3122,7 +3103,7 @@ class TestSubmissionApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated"
+            "submission_type": "public_submission"
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
@@ -3137,7 +3118,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             'survey_id': str(uuid.uuid4()),
             "submitter_name": "regular",
-            "submission_type": "unauthenticated"
+            "submission_type": "public_submission"
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
@@ -3155,7 +3136,7 @@ class TestSubmissionApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated"
+            "submission_type": "public_submission"
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
@@ -3170,7 +3151,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": "b0816b52-204f-41d4-aaf0-ac6ae2970923",
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "type_constraint": "integer",
@@ -3191,7 +3172,7 @@ class TestSubmissionApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "type_constraint": "integer",
@@ -3212,7 +3193,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": "b0816b52-204f-41d4-aaf0-ac6ae2970923",
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     'survey_node_id': str(uuid.uuid4()),
@@ -3237,7 +3218,7 @@ class TestSubmissionApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     'survey_node_id': str(uuid.uuid4()),
@@ -3262,7 +3243,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": "b0816b52-204f-41d4-aaf0-ac6ae2970923",
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "start_time": "2015-09-17T20:42:20",
             "answers": [
                 {
@@ -3335,7 +3316,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": survey.id,
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [],
         }
         # make request
@@ -3388,7 +3369,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": survey.id,
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[1].id,
@@ -3448,7 +3429,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": survey.id,
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
@@ -3507,7 +3488,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": survey.id,
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
@@ -3568,7 +3549,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": survey.id,
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
@@ -3655,7 +3636,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": survey.id,
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
@@ -3747,7 +3728,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": survey.id,
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
@@ -3837,7 +3818,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": survey.id,
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
@@ -3955,7 +3936,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": survey.id,
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
@@ -4080,7 +4061,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": survey.id,
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
@@ -4205,7 +4186,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": survey.id,
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
@@ -4334,7 +4315,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": survey.id,
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
@@ -4476,7 +4457,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": survey.id,
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
@@ -4587,7 +4568,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": survey.id,
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
@@ -4712,7 +4693,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": survey.id,
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
@@ -4823,7 +4804,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "survey_id": survey.id,
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": survey.nodes[0].id,
@@ -4871,7 +4852,7 @@ class TestSubmissionApi(DokoHTTPTest):
         # body
         body = {
             "submitter_name": "regular",
-            "submission_type": "unauthenticated",
+            "submission_type": "public_submission",
             "answers": [
                 {
                     "survey_node_id": "60e56824-910c-47aa-b5c0-71493277b43f",
@@ -4913,7 +4894,7 @@ class TestSubmissionApi(DokoHTTPTest):
             "survey_id": "c0816b52-204f-41d4-aaf0-ac6ae2970925",
             "enumerator_user_id": "a7becd02-1a3f-4c1d-a0e1-286ba121aef3",
             "submitter_name": "regular",
-            "submission_type": "authenticated"
+            "submission_type": "enumerator_only_submission"
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
@@ -4941,7 +4922,7 @@ class TestSubmissionApi(DokoHTTPTest):
             "survey_id": "c0816b52-204f-41d4-aaf0-ac6ae2970925",
             "enumerator_user_id": "a7becd02-1a3f-4c1d-a0e1-286ba121aef3",
             "submitter_name": "regular",
-            "submission_type": "authenticated"
+            "submission_type": "enumerator_only_submission"
         }
         # make request
         response = self.fetch(
@@ -4960,7 +4941,7 @@ class TestSubmissionApi(DokoHTTPTest):
             "survey_id": "c0816b52-204f-41d4-aaf0-ac6ae2970925",
             "enumerator_user_id": "a7becd02-1a3f-4c1d-a0e1-286ba121aef3",
             "submitter_name": "regular",
-            "submission_type": "authenticated"
+            "submission_type": "enumerator_only_submission"
         }
         # make request
         response = self.fetch(
@@ -4979,7 +4960,7 @@ class TestSubmissionApi(DokoHTTPTest):
         body = {
             "enumerator_user_id": "a7becd02-1a3f-4c1d-a0e1-286ba121aef3",
             "submitter_name": "regular",
-            "submission_type": "authenticated"
+            "submission_type": "enumerator_only_submission"
         }
         # make request
         response = self.fetch(url, method=method, body=json_encode(body))
@@ -5182,8 +5163,8 @@ class TestNodeApi(DokoHTTPTest):
         # check that no error is present
         self.assertFalse("error" in node_dict)
 
-    def test_list_nodes_with_title_search(self):
-        search_term = 'integer'
+    def test_list_nodes_no_language_specified(self):
+        search_term = 'not going to work'
         # url to test
         url = self.api_root + '/nodes'
         query_params = {
@@ -5197,38 +5178,8 @@ class TestNodeApi(DokoHTTPTest):
         # make request
         response = self.fetch(url, method=method)
         # test response
-        response_body = json_decode(response.body)
-        self.assertIn('nodes', response_body, msg=response_body)
-        nodes = response_body['nodes']
-
-        self.assertEqual(len(nodes), 3)
-        self.assertListEqual(
-            ['integer' in nodes[i]['title']['English'] for i in range(3)],
-            [True] * 3,
-            msg="Some of the returned titles don't contain the search term."
-        )
-
-    def test_list_nodes_none_matching(self):
-        search_term = 'not going to find this'
-        # url to test
-        url = self.api_root + '/nodes'
-        query_params = {
-            'search': search_term,
-            'search_fields': 'title'
-        }
-        # append query params
-        url = self.append_query_params(url, query_params)
-        # http method (just for clarity)
-        method = 'GET'
-        # make request
-        response = self.fetch(url, method=method)
-        # test response
-        response_body = json_decode(response.body)
-        self.assertIn('nodes', response_body, msg=response_body)
-        nodes = response_body['nodes']
-
-        self.assertEqual(len(nodes), 0, msg=nodes)
-        self.assertEqual(response_body['filtered_entries'], 0)
+        self.assertEqual(response.code, 400)
+        self.assertIn('default_language', json_decode(response.body)['error'])
 
     def test_list_nodes_order_by_title(self):
         with self.session.begin():
@@ -5314,7 +5265,7 @@ class TestNodeApi(DokoHTTPTest):
         self.assertEqual(len(nodes), 1)
         self.assertEqual(nodes[0]['title'], {'French': 'integer'})
 
-    def test_list_nodes_with_regex_search(self):
+    def test_list_nodes_with_regex_no_language_specified(self):
         with self.session.begin():
             self.session.add_all((
                 models.construct_node(
@@ -5347,12 +5298,8 @@ class TestNodeApi(DokoHTTPTest):
         response = self.fetch(url, method=method)
         # test response
         response_body = json_decode(response.body)
-        self.assertIn('nodes', response_body, msg=response_body)
-        nodes = response_body['nodes']
-
-        self.assertEqual(len(nodes), 2)
-        self.assertEqual(nodes[0]['title'], {'French': '345'})
-        self.assertEqual(nodes[1]['title'], {'German': '678'})
+        self.assertEqual(response.code, 400)
+        self.assertIn('default_language', response_body['error'])
 
     def test_list_nodes_with_regex_and_language_search(self):
         with self.session.begin():

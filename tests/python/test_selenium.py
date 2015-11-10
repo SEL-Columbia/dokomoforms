@@ -460,8 +460,8 @@ class TestAdminOverview(AdminTest):
         self.sleep()
 
         self.click(self.drv.find_element_by_css_selector(
-            'tr.odd:nth-child(1) > td:nth-child(5) > div:nth-child(2) >'
-            ' button:nth-child(1)'
+            '#surveys > tbody > tr:nth-child(1) > td.text-center > '
+            'div > button'
         ))
 
         json_button = self.drv.find_element_by_css_selector(
@@ -636,7 +636,7 @@ class TestAdminUser(AdminTest):
 
     @report_success_status
     def test_user_administration_renders_properly(self):
-        self.get('/view/user-administration')
+        self.get('/admin/user-administration')
 
         self.wait_for_element('table#users tbody tr', by=By.CSS_SELECTOR)
         rows = self.drv.find_elements_by_css_selector('table#users tbody tr')
@@ -644,7 +644,7 @@ class TestAdminUser(AdminTest):
 
     @report_success_status
     def test_add_user(self):
-        self.get('/view/user-administration')
+        self.get('/admin/user-administration')
 
         self.wait_for_element('btn-edit-user', by=By.CLASS_NAME)
 
@@ -669,7 +669,7 @@ class TestAdminUser(AdminTest):
         save_btn.click()
         self.sleep()
 
-        self.get('/view/user-administration')
+        self.get('/admin/user-administration')
         self.sleep()
 
         rows = self.drv.find_elements_by_css_selector('table#users tbody tr')
@@ -677,7 +677,7 @@ class TestAdminUser(AdminTest):
 
     @report_success_status
     def test_edit_user(self):
-        self.get('/view/user-administration')
+        self.get('/admin/user-administration')
 
         self.sleep()
         self.wait_for_element(
@@ -711,7 +711,7 @@ class TestAdminUser(AdminTest):
 
     @report_success_status
     def test_delete_user(self):
-        self.get('/view/user-administration')
+        self.get('/admin/user-administration')
 
         self.wait_for_element('btn-edit-user', by=By.CLASS_NAME)
 
@@ -737,7 +737,7 @@ class TestAdminUser(AdminTest):
         alert.accept()
         self.sleep(1)
 
-        self.get('/view/user-administration')
+        self.get('/admin/user-administration')
 
         self.wait_for_element('btn-edit-user', by=By.CLASS_NAME)
         rows = self.drv.find_elements_by_class_name('btn-edit-user')
@@ -747,7 +747,7 @@ class TestAdminUser(AdminTest):
 class TestAdminManageSurvey(AdminTest):
     @report_success_status
     def test_manage_renders_properly(self):
-        self.get('/view/b0816b52-204f-41d4-aaf0-ac6ae2970923')
+        self.get('/admin/b0816b52-204f-41d4-aaf0-ac6ae2970923')
 
         # Stats view
         stats = self.drv.find_elements_by_class_name('stat-value')
@@ -817,7 +817,7 @@ class TestAdminManageSurvey(AdminTest):
 
         survey_id = survey.id
 
-        self.get('/view/' + survey_id)
+        self.get('/admin/' + survey_id)
 
         link = self.drv.find_element_by_id('shareable-link').text
         self.assertEqual(link, 'http://localhost:9999/enumerate/' + survey_id)
@@ -830,6 +830,7 @@ class TestAdminManageSurvey(AdminTest):
         slug_field.send_keys('slug%#;/?:@&=+$, ')
         self.click(self.drv.find_element_by_class_name('save-survey-url'))
 
+        self.wait_for_element('shareable-link')
         new_link = self.drv.find_element_by_id('shareable-link').text
         self.assertEqual(new_link, 'http://localhost:9999/enumerate/slug')
 
@@ -856,7 +857,7 @@ class TestAdminManageSurvey(AdminTest):
 
         survey_id = survey.id
 
-        self.get('/view/' + survey_id)
+        self.get('/admin/' + survey_id)
 
         edit_btn = self.drv.find_element_by_class_name('glyphicon-pencil')
         self.click(edit_btn)
@@ -906,7 +907,7 @@ class TestAdminManageSurvey(AdminTest):
 
         survey_id = survey.id
 
-        self.get('/view/' + survey_id)
+        self.get('/admin/' + survey_id)
 
         edit_btn = self.drv.find_element_by_class_name('glyphicon-pencil')
         self.click(edit_btn)
@@ -935,11 +936,11 @@ class TestAdminManageSurvey(AdminTest):
 
     @report_success_status
     def test_download_json_button(self):
-        self.get('/view/b0816b52-204f-41d4-aaf0-ac6ae2970923')
+        self.get('/admin/b0816b52-204f-41d4-aaf0-ac6ae2970923')
 
-        self.click(self.drv.find_element_by_class_name('btn-sm'))
+        self.click(self.drv.find_element_by_class_name('btn-primary'))
         self.click(self.drv.find_element_by_css_selector(
-            '.btn-group > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
+            '.open > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
         ))
         self.sleep()
 
@@ -960,15 +961,15 @@ class TestAdminManageSurvey(AdminTest):
 
     @report_success_status
     def test_download_csv_button(self):
-        self.get('/view/b0816b52-204f-41d4-aaf0-ac6ae2970923')
+        self.get('/admin/b0816b52-204f-41d4-aaf0-ac6ae2970923')
 
-        self.click(self.drv.find_element_by_class_name('btn-sm'))
+        self.click(self.drv.find_element_by_class_name('btn-primary'))
 
         json_button = self.drv.find_element_by_css_selector(
-            '.btn-group > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
+            '.open > ul:nth-child(2) > li:nth-child(1) > a:nth-child(1)'
         )
         csv_button = self.drv.find_element_by_css_selector(
-            '.btn-group > ul:nth-child(2) > li:nth-child(2) > a:nth-child(1)'
+            '.open > ul:nth-child(2) > li:nth-child(2) > a:nth-child(1)'
         )
 
         self.assertEqual(
@@ -978,7 +979,7 @@ class TestAdminManageSurvey(AdminTest):
 
     @report_success_status
     def test_submission_details_button(self):
-        self.get('/view/b0816b52-204f-41d4-aaf0-ac6ae2970923')
+        self.get('/admin/b0816b52-204f-41d4-aaf0-ac6ae2970923')
         self.sleep(2)
 
         self.click(self.drv.find_element_by_css_selector(
@@ -991,11 +992,122 @@ class TestAdminManageSurvey(AdminTest):
             '3'
         )
 
+    @report_success_status
+    def test_change_language(self):
+        self.get('/admin/c0816b52-204f-41d4-aaf0-ac6ae2970925')
+        self.sleep(2)
+
+        self.wait_for_element('UserDropdown')
+        self.click(self.drv.find_element_by_id('UserDropdown'))
+        self.sleep()
+
+        nav_list = self.drv.find_elements_by_class_name('nav-settings')
+        self.assertEqual(len(nav_list), 1)
+
+        self.sleep()
+        self.click(self.drv.find_element_by_class_name('nav-settings'))
+        self.wait_for_element('user-preferred-lang')
+        self.click(self.drv.find_element_by_css_selector(
+            '#user-preferred-lang option:nth-of-type(2)'))
+
+        save_btn = self.drv.find_element_by_class_name('btn-save-user')
+        self.sleep()
+        save_btn.click()
+        self.sleep()
+
+        # refresh the page
+        self.get('/admin/c0816b52-204f-41d4-aaf0-ac6ae2970925')
+        self.sleep()
+
+        self.assertEqual(
+            self.drv.find_element_by_class_name('survey-title').text,
+            'ENUMERATOR_ONLY_SINGLE_SURVEY'
+        )
+
+    @report_success_status
+    def test_language_defaults_to_survey_default(self):
+        """If the user's prefered language isn't available,
+        default to the survey's default_language"""
+
+        self.get('/admin/c0816b52-204f-41d4-aaf0-ac6ae2970925')
+        self.sleep(2)
+
+        self.wait_for_element('UserDropdown')
+        self.click(self.drv.find_element_by_id('UserDropdown'))
+        self.sleep()
+
+        nav_list = self.drv.find_elements_by_class_name('nav-settings')
+        self.assertEqual(len(nav_list), 1)
+
+        self.sleep()
+        self.click(self.drv.find_element_by_class_name('nav-settings'))
+        self.wait_for_element('user-preferred-lang')
+        self.click(self.drv.find_element_by_css_selector(
+            '#user-preferred-lang option:nth-of-type(3)'))
+
+        save_btn = self.drv.find_element_by_class_name('btn-save-user')
+        save_btn.click()
+        self.sleep()
+
+        # refresh the page
+        self.get('/admin/c0816b52-204f-41d4-aaf0-ac6ae2970925')
+        self.sleep()
+
+        self.assertEqual(
+            self.drv.find_element_by_class_name('survey-title').text,
+            'enumerator_only_single_survey (Russian)'
+        )
+
+    @report_success_status
+    def test_language_survey_specific(self):
+        """Check that a user's selection for a specific survey
+        overrides their preferred default language and the survey's
+        default_language."""
+
+        self.get('/admin/c0816b52-204f-41d4-aaf0-ac6ae2970925')
+        self.sleep(2)
+
+        # Set user preferred language
+        self.wait_for_element('UserDropdown')
+        self.click(self.drv.find_element_by_id('UserDropdown'))
+        self.sleep()
+        self.click(self.drv.find_element_by_class_name('nav-settings'))
+        self.wait_for_element('user-preferred-lang')
+        self.click(self.drv.find_element_by_css_selector(
+            '#user-preferred-lang option:nth-of-type(2)'))
+        save_btn = self.drv.find_element_by_class_name('btn-save-user')
+        self.sleep()
+        save_btn.click()
+        self.sleep()
+
+        # select a different language for this specific survey
+        self.wait_for_element('survey-language-dropdown')
+        self.sleep()
+        self.click(self.drv.find_element_by_id('survey-language-dropdown'))
+        lang_list = self.drv.find_elements_by_class_name('survey-language')
+        self.assertEqual(len(lang_list), 4)
+        self.click(lang_list[3])
+        self.sleep()
+
+        # test that the survey-specific language is displayed
+        self.assertEqual(
+            self.drv.find_element_by_class_name('survey-title').text,
+            'enumerator_only_single_survey (Russian)'
+        )
+
+        # navigate to overview page and check that the
+        # russian translation is present
+        self.get('/')
+        self.sleep(2)
+        self.drv.find_elements_by_xpath(
+            "//*[contains(text(),"
+            " 'enumerator_only_single_survey (Russian)')]")
+
 
 class TestAdminViewData(AdminTest):
     @report_success_status
     def test_view_data_renders_properly(self):
-        self.get('/view/data/b0816b52-204f-41d4-aaf0-ac6ae2970923')
+        self.get('/admin/data/b0816b52-204f-41d4-aaf0-ac6ae2970923')
         self.sleep()
 
         # Stats view
@@ -1065,6 +1177,66 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
+    def test_login(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        self.get('/enumerate/{}'.format(survey_id))
+        # self.drv.save_screenshot('language_select.png')
+
+        # clicking login should bring user to login page
+        self.wait_for_element('menu', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('menu'))
+        self.click(
+            self.drv
+            .find_element_by_class_name('menu_login')
+        )
+        self.sleep()
+        # on login page there should be two login buttons:
+        login_btn = self.drv.find_elements_by_class_name('btn-login')
+        self.assertEqual(len(login_btn), 2)
+
+        # login as enumerator
+        self.get('/debug/login/test_enumerator@fixtures.com')
+        self.sleep()
+
+        # return to survey and check that the logout option is there
+        # NOTE: logged-in query string gets appended in order to
+        # avoid caching issue.
+        self.get('/enumerate/{}?logged-in={}'.format(survey_id, 'cc'))
+        self.sleep()
+
+        self.wait_for_element('menu', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('menu'))
+        self.drv.find_element_by_class_name('menu_logout')
+
+    @report_success_status
+    def test_logout(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+
+        # login as enumerator
+        self.get('/debug/login/test_enumerator@fixtures.com')
+        self.sleep()
+
+        # open survey
+        self.get('/enumerate/{}'.format(survey_id))
+        # self.drv.save_screenshot('language_select.png')
+
+        # clicking logout should refresh the page
+        self.wait_for_element('menu', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('menu'))
+        self.click(
+            self.drv
+            .find_element_by_class_name('menu_logout')
+        )
+        self.sleep()
+
+        # return to survey and check that the logout option is there
+        # self.get('/enumerate/{}'.format(survey_id))
+        self.wait_for_element('menu', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('menu'))
+
+        self.drv.find_element_by_class_name('menu_login')
+
+    @report_success_status
     def test_change_language(self):
         survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
 
@@ -1084,7 +1256,7 @@ class TestEnumerate(DriverTest):
 
         self.assertEqual(
             len(self.drv.find_elements_by_css_selector(
-                '.language_select option')), 2)
+                '.language_select option')), 3)
 
         self.click(self.drv.find_elements_by_css_selector(
             '.language_select option')[1])
@@ -4182,11 +4354,10 @@ class TestEnumerateSlowRevisit(DriverTest):
 
         start_time = time.time()
         self.get('/enumerate/{}'.format(survey_id))
+        overlay = self.drv.find_elements_by_class_name('loading-overlay')
         finish_time = time.time()
 
         self.assertGreater(finish_time - start_time, 2)
-
-        overlay = self.drv.find_elements_by_class_name('loading-overlay')
 
         # overlay should not be present
         self.assertEqual(len(overlay), 0)

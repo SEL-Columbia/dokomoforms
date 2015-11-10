@@ -25,7 +25,7 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="user-default-lang">Default Language</label>
+                            <label for="user-default-lang">Preferred Survey Language</label>
                             <select class="form-control" id="user-default-lang">
                                 <option <%= (data.preferences && data.preferences.default_language === 'English') ? "selected" : "" %>>English</option>
                                 <option <%= (data.preferences && data.preferences.default_language === 'Español') ? "selected" : "" %>>Español</option>
@@ -47,7 +47,7 @@
                                                 selected
                                             <% } %>
                                         >
-                                            <%= data._t(survey.title) %>
+                                            <%= data._t(survey.title, survey) %>
                                         </option>
                                     <% } %>
                                 <% }); %>
@@ -64,7 +64,7 @@
                                             selected
                                         <% } %>
                                     >
-                                        <%= data._t(survey.title) %>
+                                        <%= data._t(survey.title, survey) %>
                                     </option>
                                 <% }); %>
                             </select>

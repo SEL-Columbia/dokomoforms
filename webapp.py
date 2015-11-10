@@ -144,32 +144,47 @@ class Application(tornado.web.Application):
             url(r'/', handlers.Index, name='index'),
             url(r'/user/login/?', handlers.Login, name='login'),
             url(r'/user/logout/?', handlers.Logout, name='logout'),
+            url(
+                r'/user/authenticated/?',
+                handlers.CheckLoginStatus,
+                name='check_login'
+            ),
 
             # Views
             # * Admin views
             url(
-                r'/view/({})/?'.format(UUID_REGEX),
+                r'/admin/?',
+                handlers.AdminHomepageHandler,
+                name='admin_homepage'
+            ),
+            url(
+                r'/admin/({})/?'.format(UUID_REGEX),
                 handlers.ViewSurveyHandler,
                 name='admin_survey_view',
             ),
             url(
-                r'/view/data/({})/?'.format(UUID_REGEX),
+                r'/admin/data/({})/?'.format(UUID_REGEX),
                 handlers.ViewSurveyDataHandler,
                 name='admin_data_view',
             ),
             url(
-                r'/view/submission/({})/?'.format(UUID_REGEX),
+                r'/admin/submission/({})/?'.format(UUID_REGEX),
                 handlers.ViewSubmissionHandler,
                 name='admin_submission_view',
             ),
 
             url(
-                r'/view/user-administration/?',
+                r'/admin/user-administration/?',
                 handlers.ViewUserAdminHandler,
                 name='admin_user_view',
             ),
 
-            # * Regular views
+            # * Enumerate views
+            url(
+                r'/enumerate/?',
+                handlers.EnumerateHomepageHandler,
+                name='enumerate_homepage'
+            ),
             url(
                 r'/enumerate/({})/?'.format(UUID_REGEX), handlers.Enumerate,
                 name='enumerate'

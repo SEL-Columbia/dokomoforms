@@ -97,7 +97,7 @@ def _create_demo_user(session):
         session.flush()
         survey.submissions.extend([
             models.construct_submission(
-                submission_type='unauthenticated',
+                submission_type='public_submission',
                 submitter_name='Demo Submitter 1',
                 submission_time=(
                     datetime.datetime.now() - datetime.timedelta(days=1)
@@ -135,7 +135,7 @@ def _create_demo_user(session):
                 ],
             ),
             models.construct_submission(
-                submission_type='unauthenticated',
+                submission_type='public_submission',
                 submitter_name='Demo Submitter 2',
                 submission_time=(
                     datetime.datetime.now() - datetime.timedelta(days=4)
