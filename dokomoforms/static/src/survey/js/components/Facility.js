@@ -320,6 +320,7 @@ module.exports = React.createClass({
                     <LittleButton buttonFunction={this.toggleAddFacility}
                         disabled={this.props.disabled}
                         text={'add new facility'}
+                        extraClasses='btn-add-facility'
                     />
                     : null
                 }
@@ -387,8 +388,9 @@ module.exports = React.createClass({
 
                     <LittleButton
                         buttonFunction={this.toggleAddFacility}
-                            text={'cancel'}
-                            disabled={this.props.disabled}
+                        text={'cancel'}
+                        disabled={this.props.disabled}
+                        extraClasses='btn-cancel'
                      />
                 </span>
             );

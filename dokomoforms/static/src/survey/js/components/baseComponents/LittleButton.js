@@ -12,9 +12,11 @@ var React = require('react');
 module.exports = React.createClass({
     render: function() {
         var iconClass = 'icon icon-inline-left ' + this.props.icon;
+        var classes = 'btn ';
+        classes += this.props.extraClasses || '';
         return (
-                <div className="content-padded">
-                    <button className="btn"
+                <div className='content-padded'>
+                    <button className={classes}
                         disabled={this.props.disabled}
                         onClick={this.props.buttonFunction} >
 
