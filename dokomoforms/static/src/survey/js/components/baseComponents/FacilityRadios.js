@@ -51,6 +51,14 @@ module.exports = React.createClass({
 
     render: function() {
         var self = this;
+        var noFacilities = null;
+
+        if (this.props.facilities.length === 0) {
+            noFacilities = (
+                <div className="content-padded">No nearby facilities located.</div>
+            );
+        }
+
         return (
                 <div className='question__radios'>
                 {this.props.facilities.map(function(facility) {
@@ -83,12 +91,13 @@ module.exports = React.createClass({
                                     {facility.properties.sector}
                                 </span>
                                 <span className='question__radio__span__meta'>
-                                    <em>{facility.distance && facility.distance.toFixed(2)}m</em>
+                                    <em>{isNaN(facility.distance) ? '' : facility.distance.toFixed(2) + 'm'}</em>
                                 </span>
                             </label>
                         </div>
                     );
                 })}
+                {noFacilities}
                 </div>
                );
     }

@@ -725,13 +725,24 @@ var Application = React.createClass({
                 if (question.type_constraint === 'facility') {
                     if (response.metadata && response.metadata.is_new) {
                         console.log('Facility:', response);
-                        self.state.trees[question.id]
-                            .addFacility(response.response.lat, response.response.lng, response.response);
+
+                        // if self.state.trees.[question.id] exists, the compressed data from Revisit
+                        // was successfully downloaded initially
+                        var in_tree = false;
+                        var tree = self.state.trees[question.id];
+                        if (tree && tree.root) {
+                            self.state.trees[question.id]
+                                .addFacility(response.response.lat, response.response.lng, response.response);
+                            in_tree = true;
+                        } else {
+                            console.log('Question ' + question.id + '\'s tree does not have a facility root node.');
+                        }
 
                         unsynced_facilities.push({
                             'surveyID': self.props.survey.id,
                             'facilityData': response.response,
-                            'questionID': question.id
+                            'questionID': question.id,
+                            'in_tree': in_tree
                         });
                     }
                 }

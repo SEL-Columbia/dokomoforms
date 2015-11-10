@@ -1581,79 +1581,6 @@ class TestEnumerate(DriverTest):
         )
 
     @report_success_status
-    def test_single_facility_question(self):
-        survey_id = self.get_single_node_survey_id('facility')
-        existing_submission = self.get_last_submission(survey_id)
-
-        self.get('/enumerate/{}'.format(survey_id))
-        self.wait_for_element('navigate-right', By.CLASS_NAME)
-        self.click(self.drv.find_element_by_class_name('navigate-right'))
-        self.set_geolocation()
-        self.click(
-            self.drv
-            .find_element_by_css_selector(
-                '.content > span:nth-child(2) > span:nth-child(1)'
-                ' > div:nth-child(1) > button:nth-child(1)'
-            )
-        )
-        self.sleep(2)
-        self.click(
-            self.drv
-            .find_elements_by_class_name('question__radio__label')[0]
-        )
-        self.click(self.drv.find_element_by_class_name('navigate-right'))
-        self.click(self.drv.find_element_by_class_name('navigate-right'))
-        self.click(self.drv.find_elements_by_tag_name('button')[0])
-
-        new_submission = self.get_last_submission(survey_id)
-
-        self.assertIsNot(existing_submission, new_submission)
-        self.assertEqual(
-            new_submission.answers[0].response['response']['facility_name'],
-            'Queensborough Community College - City University of New York'
-        )
-
-    @report_success_status
-    def test_offline_facility_tree(self):
-        survey_id = self.get_single_node_survey_id('facility')
-        existing_submission = self.get_last_submission(survey_id)
-
-        self.get('/enumerate/{}'.format(survey_id))
-
-        self.toggle_online()
-
-        self.wait_for_element('navigate-right', By.CLASS_NAME)
-        self.click(self.drv.find_element_by_class_name('navigate-right'))
-        self.set_geolocation()
-        self.click(
-            self.drv
-            .find_element_by_css_selector(
-                '.content > span:nth-child(2) > span:nth-child(1)'
-                ' > div:nth-child(1) > button:nth-child(1)'
-            )
-        )
-        self.sleep()
-        self.wait_for_element('question__radio__label', by=By.CLASS_NAME)
-        self.click(
-            self.drv
-            .find_elements_by_class_name('question__radio__label')[0]
-        )
-        self.click(self.drv.find_element_by_class_name('navigate-right'))
-        self.click(self.drv.find_element_by_class_name('navigate-right'))
-
-        self.toggle_online(revisit=False)
-
-        self.click(self.drv.find_elements_by_tag_name('button')[0])
-
-        new_submission = self.get_last_submission(survey_id)
-
-        self.assertIsNot(existing_submission, new_submission)
-        self.assertEqual(
-            new_submission.answers[0].response['response']['facility_name'],
-            'Queensborough Community College - City University of New York'
-        )
-
-    @report_success_status
     def test_single_multiple_choice_question(self):
         user = (
             self.session
@@ -4201,55 +4128,56 @@ class TestEnumerate(DriverTest):
         existing_submission = self.get_last_submission(survey_id)
 
         self.get('/enumerate/{}'.format(survey_id))
+        self.set_geolocation()
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
-        self.set_geolocation()
-        self.click(
-            self.drv
-            .find_element_by_css_selector(
-                '.content > span:nth-child(2) > span:nth-child(1)'
-                ' > div:nth-child(1) > button:nth-child(1)'
-            )
-        )
-        self.sleep()
+        # wait for add button
         self.wait_for_element(
-            'div.content-padded:nth-child(3) > button:nth-child(1)',
+            '.btn-add-facility',
             by=By.CSS_SELECTOR
         )
+        # click add button
         self.click(
             self.drv
-            .find_element_by_css_selector(
-                'div.content-padded:nth-child(3) > button:nth-child(1)'
-            )
+            .find_element_by_class_name('btn-add-facility')
         )
+        self.sleep()
+
+        # wait for form
+        self.wait_for_element(
+            '.btn-cancel',
+            by=By.CSS_SELECTOR
+        )
+        # enter new facility text
         (
             self.drv
             .find_elements_by_tag_name('input')[0]
             .send_keys('new facility')
         )
-        self.click(self.drv.find_elements_by_tag_name('option')[1])
 
+        # navigate to end of survey and save
+        self.click(self.drv.find_elements_by_tag_name('option')[1])
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        # click submit button on splash screen
         self.click(self.drv.find_elements_by_tag_name('button')[0])
 
+        # check that the new submission was added successfully
         new_submission = self.get_last_submission(survey_id)
-
         self.assertIsNot(existing_submission, new_submission)
         self.assertEqual(
             new_submission.answers[0].response['response']['facility_name'],
             'new facility'
         )
 
+        # navigate back to facility question, check that the new facility
+        # is there
         self.click(self.drv.find_element_by_class_name('navigate-right'))
-        self.click(
-            self.drv
-            .find_element_by_css_selector(
-                '.content > span:nth-child(2) > span:nth-child(1)'
-                ' > div:nth-child(1) > button:nth-child(1)'
-            )
+        self.wait_for_element(
+            '.btn-add-facility',
+            by=By.CSS_SELECTOR
         )
-
         new_facility_text = (
             self.drv
             .find_elements_by_class_name('question__radio__label')[0]
@@ -4263,31 +4191,77 @@ class TestEnumerate(DriverTest):
         existing_submission = self.get_last_submission(survey_id)
 
         self.get('/enumerate/{}'.format(survey_id))
+        self.set_geolocation()
         self.toggle_online(browser=False, revisit=True)
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
-        self.set_geolocation()
+        # wait for add button
+        self.wait_for_element(
+            '.btn-add-facility',
+            by=By.CSS_SELECTOR
+        )
+        # click add button
         self.click(
             self.drv
-            .find_element_by_css_selector(
-                '.content > span:nth-child(2) > span:nth-child(1)'
-                ' > div:nth-child(1) > button:nth-child(1)'
-            )
+            .find_element_by_class_name('btn-add-facility')
         )
         self.sleep()
-        self.click(
-            self.drv
-            .find_element_by_css_selector(
-                'div.content-padded:nth-child(3) > button:nth-child(1)'
-            )
-        )
+        # enter new facility text
         (
             self.drv
             .find_elements_by_tag_name('input')[0]
             .send_keys('new facility')
         )
+        # navigate to end of survey and save
         self.click(self.drv.find_elements_by_tag_name('option')[1])
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
 
+        # click submit button on splash screen
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        # check that the new submission was added successfully
+        new_submission = self.get_last_submission(survey_id)
+        self.assertIsNot(existing_submission, new_submission)
+        self.assertEqual(
+            new_submission.answers[0].response['response']['facility_name'],
+            'new facility'
+        )
+
+        # navigate back to facility question, check that the new facility
+        # is there
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.wait_for_element(
+            '.btn-add-facility',
+            by=By.CSS_SELECTOR
+        )
+        new_facility_text = (
+            self.drv
+            .find_elements_by_class_name('question__radio__label')[0]
+            .text
+        )
+        self.assertEqual(new_facility_text.split('\n')[0], 'new facility')
+
+    @report_success_status
+    def test_single_facility_question(self):
+        survey_id = self.get_single_node_survey_id('facility')
+        existing_submission = self.get_last_submission(survey_id)
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.set_geolocation()
+
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        # wait for add button
+        self.wait_for_element(
+            '.btn-add-facility',
+            by=By.CSS_SELECTOR
+        )
+
+        self.click(
+            self.drv
+            .find_elements_by_class_name('question__radio__label')[0]
+        )
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_elements_by_tag_name('button')[0])
@@ -4297,19 +4271,171 @@ class TestEnumerate(DriverTest):
         self.assertIsNot(existing_submission, new_submission)
         self.assertEqual(
             new_submission.answers[0].response['response']['facility_name'],
-            'new facility'
+            'Queensborough Community College - City University of New York'
         )
 
+    @report_success_status
+    def test_offline_facility_tree(self):
+        survey_id = self.get_single_node_survey_id('facility')
+        existing_submission = self.get_last_submission(survey_id)
+
+        self.get('/enumerate/{}'.format(survey_id))
+        self.set_geolocation()
+        self.toggle_online()
+
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
-        self.click(
-            self.drv
-            .find_element_by_css_selector(
-                '.content > span:nth-child(2) > span:nth-child(1)'
-                ' > div:nth-child(1) > button:nth-child(1)'
-            )
+        # wait for add button
+        self.wait_for_element(
+            '.btn-add-facility',
+            by=By.CSS_SELECTOR
         )
 
         self.wait_for_element('question__radio__label', by=By.CLASS_NAME)
+        self.click(
+            self.drv
+            .find_elements_by_class_name('question__radio__label')[0]
+        )
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        self.toggle_online(revisit=False)
+
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        new_submission = self.get_last_submission(survey_id)
+
+        self.assertIsNot(existing_submission, new_submission)
+        self.assertEqual(
+            new_submission.answers[0].response['response']['facility_name'],
+            'Queensborough Community College - City University of New York'
+        )
+
+    @report_success_status
+    def test_revisit_offline_entirely(self):
+        """If we start with revisit offline, no facility tree is created.
+        We should still be able to add a Facility, see the Facility in
+        the list later on, and save/submit the submission.
+        """
+        survey_id = self.get_single_node_survey_id('facility')
+        existing_submission = self.get_last_submission(survey_id)
+        # revisit is offline:
+        self.toggle_online(browser=False, revisit=True)
+        # navigate to page
+        self.get('/enumerate/{}'.format(survey_id))
+        self.set_geolocation()
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        # wait for add button
+        self.wait_for_element(
+            '.btn-add-facility',
+            by=By.CSS_SELECTOR
+        )
+        # click add button
+        self.click(
+            self.drv
+            .find_element_by_class_name('btn-add-facility')
+        )
+        self.sleep()
+        # enter new facility text
+        (
+            self.drv
+            .find_elements_by_tag_name('input')[0]
+            .send_keys('new facility')
+        )
+        # navigate to end of survey and save
+        self.click(self.drv.find_elements_by_tag_name('option')[1])
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        # click submit button on splash screen
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        # check that the new submission was added successfully
+        new_submission = self.get_last_submission(survey_id)
+        self.assertIsNot(existing_submission, new_submission)
+        self.assertEqual(
+            new_submission.answers[0].response['response']['facility_name'],
+            'new facility'
+        )
+
+        # navigate back to facility question, check that the new facility
+        # is there
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.wait_for_element(
+            '.btn-add-facility',
+            by=By.CSS_SELECTOR
+        )
+        new_facility_text = (
+            self.drv
+            .find_elements_by_class_name('question__radio__label')[0]
+            .text
+        )
+        self.assertEqual(new_facility_text.split('\n')[0], 'new facility')
+
+    @report_success_status
+    def test_revisit_offline_then_online(self):
+        """If we start with revisit offline, no facility tree is created.
+        We should still be able to add a Facility, and see the Facility in
+        the list later on.
+
+        If/when revisit comes back online later, the newly added Facility
+        should be included in the facility tree.
+        """
+        survey_id = self.get_single_node_survey_id('facility')
+        existing_submission = self.get_last_submission(survey_id)
+        # revisit is offline:
+        self.toggle_online(browser=False, revisit=True)
+        # navigate to page
+        self.get('/enumerate/{}'.format(survey_id))
+        self.set_geolocation()
+        self.wait_for_element('navigate-right', By.CLASS_NAME)
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        # wait for add button
+        self.wait_for_element(
+            '.btn-add-facility',
+            by=By.CSS_SELECTOR
+        )
+        # click add button
+        self.click(
+            self.drv
+            .find_element_by_class_name('btn-add-facility')
+        )
+        self.sleep()
+        # enter new facility text
+        (
+            self.drv
+            .find_elements_by_tag_name('input')[0]
+            .send_keys('new facility')
+        )
+        # navigate to end of survey and save
+        self.click(self.drv.find_elements_by_tag_name('option')[1])
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+
+        # click submit button on splash screen
+        self.click(self.drv.find_elements_by_tag_name('button')[0])
+
+        # check that the new submission was added successfully
+        new_submission = self.get_last_submission(survey_id)
+        self.assertIsNot(existing_submission, new_submission)
+        self.assertEqual(
+            new_submission.answers[0].response['response']['facility_name'],
+            'new facility'
+        )
+
+        # turn revisit back on:
+        self.toggle_online(browser=False, revisit=True)
+
+        # navigate back to facility question, check that the new facility
+        # is there
+        self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.wait_for_element(
+            '.btn-add-facility',
+            by=By.CSS_SELECTOR
+        )
         new_facility_text = (
             self.drv
             .find_elements_by_class_name('question__radio__label')[0]

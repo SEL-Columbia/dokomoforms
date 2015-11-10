@@ -2,6 +2,7 @@
 //var config.revisit_url = 'http://localhost:3000/api/v0/facilities.json';
 
 var $ = require('jquery'),
+    _ = require('lodash'),
     LZString = require('lz-string'),
     ps = require('../../../common/js/pubsub'),
     config = require('../conf/config');
@@ -26,6 +27,8 @@ var FacilityTree = function(nlat, wlng, slat, elng, db, id) {
     this.elng = elng;
     this.db = db;
     this.id = id;
+    this.total = 0;
+    this.count = 0;
 
     /*
      * FacilityNode class, node of the tree, knows how to access pouchDB to read compressed facilities
@@ -50,6 +53,9 @@ var FacilityTree = function(nlat, wlng, slat, elng, db, id) {
         this.isRoot = obj.isRoot;
         this.isLeaf = obj.isLeaf;
         this.children = {};
+        if (this.isRoot) {
+            self.total = obj.count;
+        }
         if (this.isLeaf && obj.data) {
             this.setFacilities(obj.data);
         }
@@ -103,7 +109,8 @@ var FacilityTree = function(nlat, wlng, slat, elng, db, id) {
      * facilities is a compressed LZString16 bit representation of facilities contained in an one entry array
      */
     facilityNode.prototype.setFacilities = function(facilities) {
-        var id = this.en[1]+''+this.ws[0]+''+this.ws[1]+''+this.en[0];
+        var id = this.en[1]+''+this.ws[0]+''+this.ws[1]+''+this.en[0],
+            node = this;
         // Upsert deals with put 409 conflict bs
         db.upsert(id, function(doc) {
             doc.facilities = facilities;
@@ -111,6 +118,12 @@ var FacilityTree = function(nlat, wlng, slat, elng, db, id) {
         })
             .then(function () {
                 console.log('Set:', id);
+                self.count += node.count;
+                if (self.count === self.total) {
+                    // we're done?
+                    console.log('we are done setting facilities, maybe?');
+                    self.reconcileFacilities();
+                }
             }).catch(function (err) {
                 console.log('Failed to Set:', err);
             });
@@ -185,12 +198,24 @@ var FacilityTree = function(nlat, wlng, slat, elng, db, id) {
             self.total = data.total;
             self.root = new facilityNode(data.facilities);
             self.storeTree();
+            // reconciliation happens after saving to pouch (async)
+            // self.reconcileFacilities();
         },
         error: function() {
-            console.log('Failed to retrieve data, building from local');
+            console.log('Failed to retrieve data, attempting to build from local');
             var facilities = self.loadTree();
             if (facilities) {
+                console.log('--> facilities loaded from localStorage.');
                 self.root = new facilityNode(facilities);
+                ps.publish('revisit:error:local_facilities');
+            } else {
+                console.log('//> facilities not found in localStorage.');
+                self.root = null;
+                // since we haven't been able to contact Revisit, we can't
+                // know where in the quadtree any newly added facilities
+                // should go. We'll save these facilities separately, and
+                // try to reconcile them with Revisit later.
+                ps.publish('revisit:error:no_facilities');
             }
         },
         complete: function() {
@@ -204,6 +229,55 @@ var FacilityTree = function(nlat, wlng, slat, elng, db, id) {
             self.nlat + ',' + self.wlng + ',' + self.slat + ',' + self.elng,
             '&compressed');
 
+};
+
+/**
+ * If there are orphan facilities (created when Revisit was down), add them to the tree.
+ */
+FacilityTree.prototype.reconcileFacilities = function() {
+    console.log('reconcileFacilities');
+    var self = this;
+
+    if (!localStorage['unsynced_facilities']) return;
+
+    var orphanFacilities = self.getOrphanFacilities();
+    console.log('orphanFacilities: ', orphanFacilities);
+
+    if (orphanFacilities && orphanFacilities.length) {
+        orphanFacilities.forEach(function(fac) {
+            self.addFacility(fac.facilityData.lat, fac.facilityData.lng, fac.facilityData);
+            fac.in_tree = true;
+        });
+    }
+
+    self.storeUnsyncedFacilities(orphanFacilities);
+};
+
+/**
+ * Get the orphan facilities (i.e. facilities created outside the quadtree due to Revisit being down)
+ * @param  {Boolean} formatted If true, return formatted facility data.
+ * @return {Array}  An array of either facility wrappers (data + meta) or formatted facility objects
+ */
+FacilityTree.prototype.getOrphanFacilities = function(formatted) {
+    var self = this;
+    var unsyncedFacilities = localStorage['unsynced_facilities'] ? JSON.parse(localStorage['unsynced_facilities']) : [];
+    var orphanFacilities = _.filter(unsyncedFacilities, function(fac) {
+        return fac.in_tree === false;
+    });
+
+    if (formatted === true) {
+        orphanFacilities = orphanFacilities.map(function(fac) {
+            return self.formattedFacility(fac.facilityData);
+        });
+    }
+
+    return orphanFacilities;
+};
+
+FacilityTree.prototype.storeUnsyncedFacilities = function(facilities) {
+    var unsyncedFacilities = localStorage['unsynced_facilities'] ? JSON.parse(localStorage['unsynced_facilities']) : [];
+    _.extend(unsyncedFacilities, facilities);
+    localStorage['unsynced_facilities'] = JSON.stringify(unsyncedFacilities);
 };
 
 /* Store facility tree in localStorage without children */
@@ -327,6 +401,7 @@ FacilityTree.prototype.getRNodesBox = function(nlat, wlng, slat, elng) {
  * Get all nodes that cross the circle defined by lat, lng and radius r
  */
 FacilityTree.prototype.getRNodesRad = function(lat, lng, r) {
+    console.log('getRNodesRad');
     var self = this;
 
     var R = 6378137;
@@ -338,7 +413,7 @@ FacilityTree.prototype.getRNodesRad = function(lat, lng, r) {
     var slat = lat - dlat * 180/Math.PI;
     var elng = lng + dlng * 180/Math.PI;
 
-    if (!self.root.crossesBound(nlat, wlng, slat, elng))
+    if (!self.root || !self.root.crossesBound(nlat, wlng, slat, elng))
         return null;
 
     var nodes = self._getRNodes(nlat, wlng, slat, elng, self.root);
@@ -352,6 +427,7 @@ FacilityTree.prototype.getRNodesRad = function(lat, lng, r) {
  * XXX: Basically the only function that matters
  */
 FacilityTree.prototype.getNNearestFacilities = function(lat, lng, r, n) {
+    console.log('getNNearestFacilities');
     var self = this;
     var d = $.Deferred(); // Sorted facilities deferred (i.e. promise)
 
@@ -359,6 +435,8 @@ FacilityTree.prototype.getNNearestFacilities = function(lat, lng, r, n) {
     function dist(coordinates, clat, clng) {
         var lat = coordinates[1];
         var lng = coordinates[0];
+
+        // console.log(coordinates, clat, clng);
 
         var R = 6371000;
         var e = clat * Math.PI/180;
@@ -374,21 +452,31 @@ FacilityTree.prototype.getNNearestFacilities = function(lat, lng, r, n) {
         return R * c;
     }
 
+    var orphanFacilities = self.getOrphanFacilities(true);
+    // Each Pouch promise writes into nodeFacilities
+    var nodeFacilities = orphanFacilities.length ? [orphanFacilities] : [];
+    // Pouch db retrival and sorting promise
+    var nodeFacilitiesDfd = $.Deferred();
+
     // Sort X Nodes Data
+    // var nodes = self.root ? self.getRNodesRad(lat, lng, r) : [];
     var nodes = self.getRNodesRad(lat, lng, r);
-    var nodeFacilities = []; // Each Pouch promise writes into here
-    var nodeFacilitiesDfd = $.Deferred(); //Pouch db retrival and sorting promise
+
+    console.log('nodes: ', nodes);
 
     // Merge X Nodes Sorted Data AFTER promise resolves (read this second)
     nodeFacilitiesDfd.done(function() {
+        console.log('sorting facilities');
         var facilities = [];
         while(n > 0 && nodeFacilities.length > 0) {
+            // filter out nodes which have zero facilities
             nodeFacilities = nodeFacilities.filter(function(facilities) {
                 return facilities.length;
             });
 
             var tops = [];
             nodeFacilities.forEach(function(facilities, idx) {
+                console.log('facilities[0]: ', facilities[0]);
                 tops.push({'fac': facilities[0], 'idx': idx});
             });
 
@@ -413,22 +501,35 @@ FacilityTree.prototype.getNNearestFacilities = function(lat, lng, r, n) {
         return d.resolve(facilities);
     });
 
-    // Sort each nodes facilities (read this first)
-    nodes.forEach(function(node, idx) {
-        node.getFacilities().done(function(facilities) {
-            facilities.sort(function (facilityA, facilityB) {
-                var lengthA = dist(facilityA.coordinates, lat, lng);
-                var lengthB = dist(facilityB.coordinates, lat, lng);
-                return (lengthA - lengthB);
-            });
+    // If nodes isn't null and isn't empty (i.e. we were able to fetch Facilities from Revisit)
+    // loop through the nodes and add the sorted facilities to the nodeFacilities array
+    if (nodes && nodes.length !== 0) {
+        // Sort each nodes facilities (read this first)
+        nodes.forEach(function(node) {
+            node.getFacilities().done(function(facilities) {
 
-            nodeFacilities.push(facilities);
-            console.log('Current facilities length', nodeFacilities.length, nodes.length);
-            if (nodeFacilities.length === nodes.length) {
-                nodeFacilitiesDfd.resolve();
-            }
+                console.log('facilities: ', facilities);
+
+                facilities.sort(function (facilityA, facilityB) {
+                    var lengthA = dist(facilityA.coordinates, lat, lng);
+                    var lengthB = dist(facilityB.coordinates, lat, lng);
+                    return (lengthA - lengthB);
+                });
+
+                nodeFacilities.push(facilities);
+                var endLength = orphanFacilities.length ? nodes.length + 1 : nodes.length;
+                console.log('Current facilities length', nodeFacilities.length, nodes.length, endLength);
+                if (nodeFacilities.length === endLength) {
+                    nodeFacilitiesDfd.resolve();
+                }
+            });
         });
-    });
+    } else {
+        // otherwise simply resolve, kicking off sorting for orphanFacilities, if the are present
+        console.log('resolving...');
+        nodeFacilitiesDfd.resolve();
+    }
+
 
 
     return d;
