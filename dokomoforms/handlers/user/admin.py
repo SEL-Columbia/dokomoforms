@@ -74,6 +74,12 @@ class ViewSurveyDataHandler(BaseHandler):
     def get(self, survey_id: str):
         """GET the data page."""
         survey = get_survey_for_handler(self, survey_id)
+
+        # Sometimes during a test run the session reports that the survey has
+        # no nodes (even though the database says otherwise). I haven't seen it
+        # occur in normal usage... but this seems safe enough.
+        self.session.refresh(survey)
+
         question_stats = list(generate_question_stats(survey))
         location_stats = self._get_map_data(
             stat['survey_node'] for stat in question_stats
