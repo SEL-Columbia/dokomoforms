@@ -5,6 +5,7 @@ var $ = require('jquery'),
     utils = require('./utils'),
     ps = require('../../common/js/pubsub'),
     SubmissionModal = require('./modals/submission-modal'),
+    activityGraph = require('./activity-graph'),
     shareable_link_tpl = require('../templates/shareable-link.tpl'),
     edit_link_tpl = require('../templates/edit-shareable-link.tpl');
 
@@ -172,7 +173,7 @@ var ViewSurvey = (function() {
 
     function testSurveySlug(slug) {
         if (slug === '') {
-            return $.Deferred().resolve()
+            return $.Deferred().resolve();
         }
         return $.ajax({
             type: 'GET',
@@ -201,58 +202,7 @@ var ViewSurvey = (function() {
     }
 
     function loadActivityGraph() {
-        // Activity Graph
-        $.getJSON('/api/v0/surveys/' + survey_id + '/activity', function(data) {
-
-            var results = data.activity,
-                cats = [];
-
-            data = [];
-
-            if (!results.length) {
-                $('.no-activity-message').removeClass('hide');
-                return;
-            }
-
-            var sorted = _.sortBy(results, function(result) {
-                return result.date;
-            });
-
-            _.each(sorted, function(result) {
-                var the_date = moment(result.date, 'YYYY-MM-DD').format('MMM D');
-
-                data.push(result.num_submissions);
-                cats.push(the_date);
-            });
-
-
-            $('.activity-graph').highcharts({
-                chart: {
-                    type: 'line'
-                },
-                title: {
-                    text: null
-                },
-                colors: [
-                    '#666'
-                ],
-                xAxis: {
-                    categories: cats
-                },
-                yAxis: {
-                    title: {
-                        text: '# of submissions'
-                    }
-                },
-                series: [{
-                    name: 'Submissions',
-                    data: data
-                }],
-                credits: {
-                    enabled: false
-                }
-            });
-        });
+        activityGraph('/api/v0/surveys/' + survey_id + '/activity', 30, '.activity-graph');
     }
 
     function setupDataTable() {
