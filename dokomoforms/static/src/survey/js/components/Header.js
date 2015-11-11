@@ -64,6 +64,7 @@ module.exports = React.createClass({
                     surveyID={this.props.surveyID}
                     db={this.props.db}
                     loggedIn={this.props.loggedIn}
+                    hasFacilities={this.props.hasFacilities}
                 />
                 : null }
             </header>

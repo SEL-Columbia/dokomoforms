@@ -65,12 +65,14 @@ var Application = React.createClass({
 
         });
 
-        // Recursively construct trees
-        var has_facility_node = this.buildTrees(questions, trees);
+        this.questions = questions;
 
-        if (!has_facility_node) {
-            init_state = 1;
-        }
+        // // Recursively construct trees
+        // var has_facility_node = this.buildTrees(questions, trees);
+
+        // if (!has_facility_node) {
+        //     init_state = 1;
+        // }
 
         // set default lang -- use user pref stored in localStorage,
         // falling back to survey default if the user pref is not available
@@ -104,6 +106,7 @@ var Application = React.createClass({
             state: init_state,
             trees: trees,
             loggedIn: logged_in,
+            hasFacilities: null,
             db: surveyDB
         };
     },
@@ -117,6 +120,7 @@ var Application = React.createClass({
         });
 
         ps.subscribe('loading:complete', function() {
+            console.log('LOADING COMPLETE');
             self.setState({
                 state: 1
             });
@@ -128,6 +132,31 @@ var Application = React.createClass({
             });
             localStorage['default_language'] = lang;
         });
+
+        // handle revisit:reload_facilities event by flushing existing facilities
+        // and refreshing page.
+        ps.subscribe('revisit:reload_facilities', function() {
+            localStorage.removeItem('facilities');
+            window.location.reload();
+        });
+    },
+
+    componentDidMount: function() {
+        // Recursively construct trees
+        var has_facility_node = this.buildTrees(this.questions, this.state.trees),
+            state = has_facility_node ? 0 : 1;
+
+        if (!has_facility_node) {
+            this.setState({
+                state: 1
+            });
+        } else {
+            this.setState({
+                hasFacilities: true
+            });
+        }
+
+
     },
 
     /*
@@ -1180,6 +1209,7 @@ var Application = React.createClass({
                     survey={this.props.survey}
                     language={this.state.language}
                     loggedIn={this.state.loggedIn}
+                    hasFacilities={this.state.hasFacilities}
                     splash={state === this.state.states.SPLASH}/>
                 <div
                     className={contentClasses}>
