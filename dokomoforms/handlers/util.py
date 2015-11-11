@@ -1,11 +1,47 @@
 """Useful reusable functions for handlers, plus the BaseHandler."""
+from functools import wraps
+
+import urllib.parse as urlparse
+from urllib.parse import urlencode
+
 from sqlalchemy.exc import StatementError
 from sqlalchemy.orm.exc import NoResultFound
 
 import tornado.web
 from tornado.escape import to_unicode, json_encode
 
-from dokomoforms.models import User, Survey
+from dokomoforms.models import User, Administrator
+from dokomoforms.models.survey import most_recent_surveys
+
+
+def auth_redirect(self):
+    """The URL redirect logic extracted from tornado.web.authenticated."""
+    url = self.get_login_url()
+    if '?' not in url:
+        if urlparse.urlsplit(url).scheme:  # pragma: no cover
+            next_url = self.request.full_url()
+        else:
+            next_url = self.request.uri
+        url += '?' + urlencode({'next': next_url})
+    self.redirect(url)
+    return
+
+
+def authenticated_admin(method):
+    """A copy of tornado.web.authenticated for Administrator access."""
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        if not self.current_user:
+            if self.request.method in ('GET', 'HEAD'):
+                return auth_redirect(self)
+            raise tornado.web.HTTPError(403)
+        # Custom #
+        user = self.current_user_model
+        if isinstance(user, Administrator):
+            return method(self, *args, **kwargs)
+        # Custom #
+        raise tornado.web.HTTPError(403)
+    return wrapper
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -14,6 +50,8 @@ class BaseHandler(tornado.web.RequestHandler):
 
     Makes the database session and current user available.
     """
+
+    num_surveys_for_menu = 20
 
     @property
     def session(self):
@@ -33,6 +71,24 @@ class BaseHandler(tornado.web.RequestHandler):
                 return self.session.query(User).get(cuid)
             except StatementError:
                 self.clear_cookie('user')
+        return None
+
+    @property
+    def user_default_language(self):
+        """Return the logged-in User's default language, or None."""
+        user = self.current_user_model
+        if user:
+            return user.preferences['default_language']
+        return None
+
+    def user_survey_language(self, survey):
+        """Return the logged-in User's selected language
+        for the given survey, or None if they do not have one."""
+        user = self.current_user_model
+        if (user
+                and survey.id in user.preferences
+                and 'display_language' in user.preferences[survey.id]):
+            return user.preferences[survey.id]['display_language']
         return None
 
     def set_default_headers(self):
@@ -97,22 +153,6 @@ class BaseHandler(tornado.web.RequestHandler):
             return user.name
         return None
 
-    def _get_surveys_for_menu(self):
-        """The menu bar needs access to surveys.
-
-        TODO: Get rid of this
-        @jmwohl
-        """
-        if not self.current_user:
-            return None
-        return (
-            self.session
-            .query(Survey)
-            .filter_by(creator_id=self.current_user_model.id)
-            .order_by(Survey.created_on.desc())
-            .limit(10)
-        )
-
     def _get_current_user_id(self):
         """Get the current user's id for the templates.
 
@@ -132,21 +172,27 @@ class BaseHandler(tornado.web.RequestHandler):
             prefs = self.current_user_model.preferences
         return json_encode(prefs)
 
-    def _t(self, field):
+    def _t(self, field, survey=None):
         """Pick a translation from a translatable field.
 
         Based on user's preference.
-        Falls back to the first available translation if default_language
-        is not available.
 
-        TODO: this should probably fallback to the survey's default, if the
-        string is coming from a survey...?
+        Falls back to default_language.
         """
-        if self.current_user_model is not None:
-            lang = self.current_user_model.preferences['default_language']
-            if lang in field:
-                return field[lang]
-            return next(iter(field.values()))
+        # user's preferred survey language
+        user_preferred_language = self.user_default_language
+
+        if survey is not None:
+            # see if user has selected a display language for this survey,
+            # if so, use it.
+            user_survey_language = self.user_survey_language(survey)
+            if user_survey_language and user_survey_language in field:
+                return field[user_survey_language]
+
+        if user_preferred_language and user_preferred_language in field:
+            return field[user_preferred_language]
+
+        return field[survey.default_language]
 
     def get_template_namespace(self):
         """Template functions.
@@ -155,10 +201,15 @@ class BaseHandler(tornado.web.RequestHandler):
         @jmwohl
         """
         namespace = super().get_template_namespace()
+        user = self.current_user_model
+        surveys_for_menu = most_recent_surveys(
+            self.session, user.id, self.num_surveys_for_menu
+        ) if user else None
         namespace.update({
-            'surveys_for_menu': self._get_surveys_for_menu(),
+            'surveys_for_menu': surveys_for_menu,
             'current_user_id': self._get_current_user_id(),
             '_t': self._t,
+            'current_user_model': self.current_user_model,
             'current_user_prefs': self._get_current_user_prefs()
         })
         return namespace

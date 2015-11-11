@@ -10,22 +10,14 @@
     <meta name="mobile-web-app-status-bar-style" content="black">
     <meta name="viewport" content="width=device-width, user-scalable=no,  initial-scale=1, maximum-scale=1">
 
-    <!-- TODO: consider not loading these from CDN, especially leaflet -->
-    <link href='http://fonts.googleapis.com/css?family=Roboto:100,300,500,700' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
-
-<!--
-    <link href="/static/bootstrap-3.3.4/dist/css/bootstrap.css" rel="stylesheet">
-    <link href='/static/css/dataTables.bootstrap.css' rel='stylesheet' type='text/css'>
- -->
+    <!-- TODO: consider not loading this from CDN-->
+    <link href='https://fonts.googleapis.com/css?family=Roboto:100,300,500,700' rel='stylesheet' type='text/css'>
 
     <link href="/static/dist/admin/css/admin.css" rel="stylesheet" type="text/css">
 
     <link rel="icon" href="/static/dist/admin/img/favicon.png">
 
     <title>{{ options.organization }} Surveys -- Powered by DokomoData</title>
-    <!--<script src="/static/ratchet-2.0.2/dist/js/ratchet.js"></script> -->
-    <!-- RIP <link href="/static/css/style.css" rel="stylesheet" type="text/css">-->
 </head>
 
 <body role="document">
@@ -38,12 +30,12 @@
                 <ul class="nav navbar-nav">
                     {% if current_user %}
                         <li><a href="/">Account Overview</a></li>
-                        <li><a href="/view/user-administration">User Administration</a></li>
+                        <li><a href="/admin/user-administration">User Administration</a></li>
                         <li>
                             <a href="#" class="dropdown-toggle" type="button" id="SurveysDropdown" data-toggle="dropdown" aria-expanded="true">Surveys <span class="caret"></span></a>
                             <ul class="dropdown-menu dropdown-menu-surveys" role="menu" aria-labelledby="SurveysDropdown">
                                 {% for the_survey in surveys_for_menu %}
-                                    <li role="presentation"><a role="menuitem" tabindex="-1" href="/view/{{ the_survey.id }}">{{ _t(the_survey.title) }}</a></li>
+                                    <li role="presentation"><a role="menuitem" tabindex="-1" href="/admin/{{ the_survey.id }}">{{ _t(the_survey.title, survey=the_survey) }}</a></li>
                                 {% end %}
                             </ul>
                         </li>

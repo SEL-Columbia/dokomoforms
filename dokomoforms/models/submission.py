@@ -24,7 +24,7 @@ class Submission(Base):
     id = util.pk()
     submission_type = sa.Column(
         sa.Enum(
-            'unauthenticated', 'authenticated',
+            'public_submission', 'enumerator_only_submission',
             name='submission_type_enum', inherit_schema=True
         ),
         nullable=False,
@@ -34,6 +34,7 @@ class Submission(Base):
     survey_type = sa.Column(survey_type_enum, nullable=False)
     # dokomoforms.models.column_properties
     # survey_title
+    # survey_default_language
     start_time = sa.Column(pg.TIMESTAMP(timezone=True))
     save_time = sa.Column(
         pg.TIMESTAMP(timezone=True),
@@ -110,7 +111,7 @@ class EnumeratorOnlySubmission(Submission):
     )
     enumerator = relationship('User')
 
-    __mapper_args__ = {'polymorphic_identity': 'authenticated'}
+    __mapper_args__ = {'polymorphic_identity': 'enumerator_only_submission'}
     __table_args__ = (
         sa.ForeignKeyConstraint(
             ['id', 'the_survey_id'], ['submission.id', 'submission.survey_id']
@@ -151,7 +152,7 @@ class PublicSubmission(Submission):
         sa.CheckConstraint("survey_type::TEXT = 'public'"),
     )
 
-    __mapper_args__ = {'polymorphic_identity': 'unauthenticated'}
+    __mapper_args__ = {'polymorphic_identity': 'public_submission'}
 
     def _asdict(self):
         result = super()._default_asdict()
@@ -171,14 +172,14 @@ def construct_submission(*, submission_type: str, **kwargs) -> Submission:
     See http://stackoverflow.com/q/30518484/1475412
 
     :param submission_type: the type of submission. Must be either
-                            'unauthenticated' or 'authenticated'
+                            'public_submission' or 'enumerator_only_submission'
     :param kwargs: the keyword arguments to pass to the constructor
     :returns: an instance of one of the Node subtypes
     :raises: dokomoforms.exc.NoSuchSubmissionTypeError
     """
-    if submission_type == 'authenticated':
+    if submission_type == 'enumerator_only_submission':
         submission_constructor = EnumeratorOnlySubmission
-    elif submission_type == 'unauthenticated':
+    elif submission_type == 'public_submission':
         submission_constructor = PublicSubmission
     else:
         raise NoSuchSubmissionTypeError(submission_type)

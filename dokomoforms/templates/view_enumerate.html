@@ -15,7 +15,7 @@
 
         <link href="/static/dist/survey/css/survey.css" rel="stylesheet" type="text/css">
 
-        <link href='http://fonts.googleapis.com/css?family=Roboto:400,300,500,700,100' rel='stylesheet' type='text/css'>
+        <link href='https://fonts.googleapis.com/css?family=Roboto:400,300,500,700,100' rel='stylesheet' type='text/css'>
         <link rel="icon" href="/static/dist/survey/img/favicon.png">
     </head>
 
@@ -24,6 +24,13 @@
         <!-- Bootstrapped Variables -->
         <script type="text/javascript">
             window.ORGANIZATION = '{{ options.organization }}';
+            window.ADMIN_EMAIL = '{{ survey.creator.emails[0].address }}';
+            {% if current_user_model is not None %}
+                window.CURRENT_USER = {
+                    name: '{{ current_user_model.name }}',
+                    email: '{{ current_user_model.emails[0].address }}'
+                };
+            {% end %}
         </script>
         <!-- Vendor libs (jquery, react, lodash, etc.) -->
         <script src="/static/dist/survey/js/vendor.js"></script>

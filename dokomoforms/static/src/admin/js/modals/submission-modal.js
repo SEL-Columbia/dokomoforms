@@ -36,6 +36,15 @@ var SubmissionModal = function(opts) {
         // setup event handlers for buttons
         $next.on('click', _next);
         $prev.on('click', _prev);
+
+        $(document).on('keydown', function(e) {
+            if (e.which === 37) {
+                _prev();
+            }
+            if (e.which === 39) {
+                _next();
+            }
+        });
     }
 
     function open() {
@@ -66,7 +75,7 @@ var SubmissionModal = function(opts) {
      */
     function loadSubmission(submission_id) {
         var dfd = $.Deferred(),
-            url = '/view/submission/' + submission_id;
+            url = '/admin/submission/' + submission_id;
 
         $modal.find('.modal-body').load(url, function() {
             $('.modal-submission').modal();

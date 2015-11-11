@@ -345,25 +345,9 @@ def column_search(query, *,
         ))
     # JSONB column
     if str(column.type) == 'JSONB':
-        # Search across languages
         if language is None:
-            query = (
-                query
-                .select_from(
-                    model_cls, func.jsonb_each_text(column).alias('search')
-                )
-            )
-            if regex:
-                return (
-                    query.
-                    filter(sa.text('search.value ~* :search_term'))
-                    .params(search_term=search_term)
-                )
-            return (
-                query
-                .filter(sa.text("search.value ILIKE :search_term"))
-                .params(search_term='%{}%'.format(search_term))
-            )
+            # note that Node has no default_language
+            language = model_cls.default_language
         # Search for a specific language
         if regex:
             return (

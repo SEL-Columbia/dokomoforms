@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+
+{% block header %}
+<div class="header header-account-overview light-shadow">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6"><h1>Account Overview</h1></div>
+        </div>
+    </div>
+</div>
+{% end %}
+
+{% block content %}
+<div class="content">
+    <div class="container" role="main">
+        <div class="message"></div>
+        <div class="row">
+            <div class="col-md-6">
+                <!-- Recent Submissions -->
+
+                <h4>Recent Submissions <span class="info-icon" data-toggle="tooltip" data-placement="right" title="Quickly view the five latest submissions.">i</span></h4>
+                <div class="recent-submissions" role="tabpanel">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li role="presentation" class="active"><a href="#recent-list" aria-controls="recent-list" role="tab" data-toggle="tab">List</a></li>
+                        <li role="presentation"><a href="#recent-map" aria-controls="recent-map" role="tab" data-toggle="tab">Map</a></li>
+                    </ul>
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane active recent-block" id="recent-list">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Submitted On</th>
+                                        <th>Submitted By</th>
+                                        <th>Survey</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+
+                                </tbody>
+                            </table>
+                        </div>
+                        <div role="tabpanel" class="tab-pane recent-block recent-map" id="recent-map">
+                            <div id="recent-map-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <!-- Activity Graph -->
+                <h4>Activity Graph <span class="info-icon" data-toggle="tooltip" data-placement="right" title="A plot of submissions over the past 30 days.">i</span></h4>
+                <div class="activity-graph">
+                    <div class="alert alert-info no-activity-message hide">
+                        <em>There has been no submission activity for any survey in the past 30 days.</em>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <h4>Surveys</h4>
+                <table id="surveys" class="table-view display table table-striped table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Created On</th>
+                            <th># of Submissions</th>
+                            <th>Latest Submission</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% end %}
+
+
+{% block extra_scripts %}
+
+    <script type="text/javascript" src="/static/dist/admin/js/account-overview.bundle.js"></script>
+
+{% end %}
+
+

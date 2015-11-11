@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import lzstring
 
 import sqlalchemy as sa
+from sqlalchemy.sql.functions import count
 from sqlalchemy.dialects import postgresql as pg
 
 from tornado.escape import json_decode, json_encode, url_escape
@@ -33,7 +34,13 @@ class TestIndex(DokoHTTPTest):
         links = response_soup.select('a.btn-login.btn-large')
         self.assertEqual(len(links), 1, msg=response.body)
 
-    def test_get_logged_in(self):
+    def test_get_logged_in_admin(self):
+        num_surveys = (
+            self.session
+            .query(count(models.Survey.id))
+            .filter_by(creator_id='b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+            .scalar()
+        )
         response = self.fetch('/', method='GET')
         response_soup = BeautifulSoup(response.body, 'html.parser')
         links = response_soup.select('a.btn-login.btn-large')
@@ -44,7 +51,11 @@ class TestIndex(DokoHTTPTest):
         survey_dropdown = (
             response_soup.find('ul', {'aria-labelledby': 'SurveysDropdown'})
         )
-        self.assertEqual(len(survey_dropdown.findAll('li')), 10)
+        self.assertEqual(
+            len(survey_dropdown.findAll('li')),
+            min(num_surveys, BaseHandler.num_surveys_for_menu),
+            msg=survey_dropdown
+        )
 
 
 class TestNotFound(DokoHTTPTest):
@@ -484,7 +495,7 @@ class TestEnumerate(DokoHTTPTest):
 class TestView(DokoHTTPTest):
     def test_view_survey(self):
         survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
-        url = '/view/' + survey_id
+        url = '/admin/' + survey_id
         response = self.fetch(url, method='GET').body.decode()
 
         self.assertIn('Survey Info', response)
@@ -493,7 +504,7 @@ class TestView(DokoHTTPTest):
 
     def test_view_data(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
-        url = '/view/data/' + survey_id
+        url = '/admin/data/' + survey_id
         response = self.fetch(url, method='GET')
         response_soup = BeautifulSoup(response.body, 'html.parser')
         questions = response_soup.findAll('div', {'class': 'question-stats'})
@@ -510,7 +521,7 @@ class TestView(DokoHTTPTest):
             )
             .scalar()
         )
-        url = '/view/data/' + survey_id
+        url = '/admin/data/' + survey_id
         response = self.fetch(url, method='GET')
         response_soup = BeautifulSoup(response.body, 'html.parser')
         questions = response_soup.findAll('div', {'class': 'question-stats'})
@@ -527,7 +538,7 @@ class TestView(DokoHTTPTest):
             )
             .scalar()
         )
-        url = '/view/data/' + survey_id
+        url = '/admin/data/' + survey_id
         response = self.fetch(url, method='GET')
         response_soup = BeautifulSoup(response.body, 'html.parser')
         questions = response_soup.findAll('div', {'class': 'question-stats'})
@@ -538,11 +549,11 @@ class TestView(DokoHTTPTest):
             self.session.query(models.Submission.id).limit(1).scalar()
         )
         submission_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970924'
-        url = '/view/submission/' + submission_id
+        url = '/admin/submission/' + submission_id
         response = self.fetch(url, method='GET').body.decode()
         self.assertIn('Submission Detail', response)
 
     def test_view_user_administration(self):
-        url = '/view/user-administration'
+        url = '/admin/user-administration'
         response = self.fetch(url, method='GET').body.decode()
         self.assertIn('Users', response)
