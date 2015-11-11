@@ -8,6 +8,7 @@ from restless.constants import CREATED
 from sqlalchemy import cast, Date
 from sqlalchemy.sql import func
 
+from dokomoforms.exc import SurveyAccessForbidden
 from dokomoforms.handlers.api.v0 import BaseResource
 from dokomoforms.handlers.api.v0.submissions import (
     SubmissionResource, _create_submission
@@ -136,14 +137,23 @@ class SurveyResource(BaseResource):
     def detail(self, survey_id):
         """Return the given survey.
 
-        Enforces authentication for EnumeratorOnlySurvey.
-        TODO: Check if that makes sense.
+        Public surveys don't require authentication.
+        Enumerator-only surveys do required authentication, and the user must
+        be one of the survey's enumerators or an administrator.
         """
-        survey = super().detail(survey_id)
+        result = super().detail(survey_id)
+        survey = self.session.query(Survey).get(survey_id)
+        if survey.survey_type == 'public':
+            return result
         authenticated = super().is_authenticated(admin_only=False)
-        if not authenticated and survey.survey_type != 'public':
+        if not authenticated:
             raise exc.Unauthorized()
-        return survey
+        user = self.current_user_model
+        if user.role == 'administrator':
+            return result
+        if user not in survey.enumerators:
+            raise SurveyAccessForbidden(survey.id)
+        return result
 
     def create(self):
         """Create a new survey.

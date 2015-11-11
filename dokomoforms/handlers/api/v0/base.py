@@ -17,6 +17,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 import tornado.web
 
+from dokomoforms.exc import SurveyAccessForbidden
 from dokomoforms.handlers.api.v0.serializer import ModelJSONSerializer
 from dokomoforms.handlers.api.v0.util import filename_safe
 from dokomoforms.handlers.util import BaseHandler, BaseAPIHandler
@@ -176,6 +177,10 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         if isinstance(err, tornado.web.HTTPError):
             restless_error = exc.HttpError(err.log_message)
             restless_error.status = err.status_code
+            err = restless_error
+        elif isinstance(err, SurveyAccessForbidden):
+            restless_error = exc.HttpError(str(err))
+            restless_error.status = 403
             err = restless_error
         elif isinstance(err, NoResultFound):
             err = exc.NotFound()

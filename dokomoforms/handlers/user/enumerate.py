@@ -3,6 +3,7 @@ from restless.exceptions import Unauthorized
 
 import tornado.web
 
+from dokomoforms.exc import SurveyAccessForbidden
 from dokomoforms.handlers.util import BaseHandler, auth_redirect
 from dokomoforms.handlers.api.v0 import get_survey_for_handler
 from dokomoforms.options import options
@@ -37,20 +38,8 @@ class Enumerate(BaseHandler):
             survey = get_survey_for_handler(self, survey_id)
         except Unauthorized:
             return auth_redirect(self)
-
-        # Raise a 403 if the logged-in user is not explicitly listed as an
-        # enumerator. This might not be the behavior we want, since this
-        # excludes the creator and any adminstrators who are not also
-        # enumerators.
-        # TODO: change the implementation (this does a naive check)
-        # TODO: rethink user permission structure
-        try:
-            enumerators = survey.enumerators
-        except AttributeError:
-            pass
-        else:
-            if self.current_user_model not in enumerators:
-                raise tornado.web.HTTPError(403)
+        except SurveyAccessForbidden:
+            raise tornado.web.HTTPError(403)
 
         # pass in the revisit url
         self.render(
