@@ -214,10 +214,16 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
     def _check_xsrf_cookie(self):
         return BaseHandler.check_xsrf_cookie(self.r_handler)
 
-    def is_authenticated(self):
+    def is_authenticated(self, admin_only=True):
         """Return whether the request has been authenticated."""
-        # A logged-in user has already authenticated.
+        # A logged-in user (or specifically Administrator) is authenticated.
         if self.r_handler.current_user is not None:
+            not_an_admin_but_should_be = (
+                admin_only and
+                self.r_handler.current_user_model.role != 'administrator'
+            )
+            if not_an_admin_but_should_be:
+                return False
             if self.request_method() not in {'GET', 'HEAD', 'OPTIONS'}:
                 self._check_xsrf_cookie()
             return True

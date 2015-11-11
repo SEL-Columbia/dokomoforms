@@ -273,6 +273,13 @@ class TestAuthentication(DokoHTTPTest):
 
         self.assertFalse(BaseResource.is_authenticated(fake_resource))
 
+    def test_enumerator_trying_to_access_admin_endpoint(self):
+        user_id = 'a7becd02-1a3f-4c1d-a0e1-286ba121aef3'
+        response = self.fetch(
+            self.api_root + '/surveys', _logged_in_user=user_id
+        )
+        self.assertEqual(response.code, 401)
+
 
 class TestSurveyApi(DokoHTTPTest):
     """These tests are made against the known fixture data."""

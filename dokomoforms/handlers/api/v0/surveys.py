@@ -118,6 +118,7 @@ class SurveyResource(BaseResource):
         """GET detail is allowed unauthenticated."""
         # TODO: always allowed unauthenticated?
         uri = self.request.uri
+        uri_parts = uri.rstrip('/').split('/')
         request_method = self.request_method()
         if request_method == 'GET':
             survey_id_index = -1
@@ -125,8 +126,8 @@ class SurveyResource(BaseResource):
         elif request_method == 'POST':
             survey_id_index = -2
             url_name = 'submit_to_survey'
-        if request_method in {'GET', 'POST'}:
-            survey_id = uri.rstrip('/').split('/')[survey_id_index]
+        if request_method in {'GET', 'POST'} and len(uri_parts) != 4:
+            survey_id = uri_parts[survey_id_index]
             url = self.application.reverse_url(url_name, survey_id)
             if uri == os.path.commonprefix((uri, url)):
                 return True
@@ -139,7 +140,8 @@ class SurveyResource(BaseResource):
         TODO: Check if that makes sense.
         """
         survey = super().detail(survey_id)
-        if not super().is_authenticated() and survey.survey_type != 'public':
+        authenticated = super().is_authenticated(admin_only=False)
+        if not authenticated and survey.survey_type != 'public':
             raise exc.Unauthorized()
         return survey
 
