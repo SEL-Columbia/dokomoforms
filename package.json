@@ -25,6 +25,7 @@
     "screenfull": "^2.0.0"
   },
   "devDependencies": {
+    "babel-jest": "^6.0.1",
     "babelify": "^6.1.2",
     "browserify": "^10.2.3",
     "browserify-shim": "^3.8.7",
