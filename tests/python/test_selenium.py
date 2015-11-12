@@ -24,8 +24,7 @@ from passlib.hash import bcrypt_sha256
 
 from selenium import webdriver
 from selenium.common.exceptions import (
-    TimeoutException, ElementNotVisibleException,
-    WebDriverException
+    TimeoutException, ElementNotVisibleException
 )
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
@@ -4571,7 +4570,7 @@ class TestEnumerateSlowRevisit(DriverTest):
 
         # second load, should be fast because revisit is not hit
         start_time = time.time()
-        self.get('/enumerate/{}'.format(survey_id))
+        self.drv.refresh()
         overlay = self.drv.find_elements_by_class_name('loading-overlay')
         finish_time = time.time()
 
