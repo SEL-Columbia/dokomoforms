@@ -6,6 +6,11 @@ class DokomoError(Exception):
     """The base class for all exceptions used in Dokomo Forms."""
 
 
+class SurveyAccessForbidden(DokomoError):
+
+    """The logged-in user does not have access to the survey."""
+
+
 class NotJSONifiableError(DokomoError):
 
     """The jsonify function encountered a strange object."""

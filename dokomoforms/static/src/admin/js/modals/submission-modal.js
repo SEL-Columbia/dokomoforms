@@ -36,6 +36,15 @@ var SubmissionModal = function(opts) {
         // setup event handlers for buttons
         $next.on('click', _next);
         $prev.on('click', _prev);
+
+        $(document).on('keydown', function(e) {
+            if (e.which === 37) {
+                _prev();
+            }
+            if (e.which === 39) {
+                _next();
+            }
+        });
     }
 
     function open() {

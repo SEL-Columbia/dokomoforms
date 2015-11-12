@@ -8,6 +8,7 @@ from restless.constants import CREATED
 from sqlalchemy import cast, Date
 from sqlalchemy.sql import func
 
+from dokomoforms.exc import SurveyAccessForbidden
 from dokomoforms.handlers.api.v0 import BaseResource
 from dokomoforms.handlers.api.v0.submissions import (
     SubmissionResource, _create_submission
@@ -118,6 +119,7 @@ class SurveyResource(BaseResource):
         """GET detail is allowed unauthenticated."""
         # TODO: always allowed unauthenticated?
         uri = self.request.uri
+        uri_parts = uri.rstrip('/').split('/')
         request_method = self.request_method()
         if request_method == 'GET':
             survey_id_index = -1
@@ -125,8 +127,8 @@ class SurveyResource(BaseResource):
         elif request_method == 'POST':
             survey_id_index = -2
             url_name = 'submit_to_survey'
-        if request_method in {'GET', 'POST'}:
-            survey_id = uri.rstrip('/').split('/')[survey_id_index]
+        if request_method in {'GET', 'POST'} and len(uri_parts) != 4:
+            survey_id = uri_parts[survey_id_index]
             url = self.application.reverse_url(url_name, survey_id)
             if uri == os.path.commonprefix((uri, url)):
                 return True
@@ -135,13 +137,23 @@ class SurveyResource(BaseResource):
     def detail(self, survey_id):
         """Return the given survey.
 
-        Enforces authentication for EnumeratorOnlySurvey.
-        TODO: Check if that makes sense.
+        Public surveys don't require authentication.
+        Enumerator-only surveys do required authentication, and the user must
+        be one of the survey's enumerators or an administrator.
         """
-        survey = super().detail(survey_id)
-        if not super().is_authenticated() and survey.survey_type != 'public':
+        result = super().detail(survey_id)
+        survey = self.session.query(Survey).get(survey_id)
+        if survey.survey_type == 'public':
+            return result
+        authenticated = super().is_authenticated(admin_only=False)
+        if not authenticated:
             raise exc.Unauthorized()
-        return survey
+        user = self.current_user_model
+        if user.role == 'administrator':
+            return result
+        if user not in survey.enumerators:
+            raise SurveyAccessForbidden(survey.id)
+        return result
 
     def create(self):
         """Create a new survey.
