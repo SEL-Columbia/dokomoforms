@@ -8,7 +8,7 @@ cache:
     - node_modules
 addons:
   postgresql: "9.4"
-  firefox: "39.0"
+  firefox: "latest"
 
 before_install:
   - pip install coveralls flake8 coverage beautifulsoup4 py-dateutil selenium
