@@ -253,15 +253,16 @@ class DriverTest(tests.python.util.DokoExternalDBTest):
         visibility = EC.visibility_of_element_located
         presence = EC.presence_of_element_located
         loader = visibility if visible else presence
-        load = loader((by, identifier))
-        try:
-            WebDriverWait(self.drv, timeout).until(load)
-        except TimeoutException:
-            if not self.attempted_wait_rescue:
+        num_attempts = 1 if self.attempted_wait_rescue else 3
+        for attempt in range(num_attempts):
+            load = loader((by, identifier))
+            try:
+                WebDriverWait(self.drv, timeout).until(load)
+            except TimeoutException:
                 self.attempted_wait_rescue = True
+                if attempt == num_attempts - 1:
+                    raise
                 self.drv.refresh()
-                new_load = loader((by, identifier))
-                WebDriverWait(self.drv, timeout).until(new_load)
 
     def sleep(self, duration=None):
         default_duration = 1.25 if SAUCE_CONNECT else 0.25
