@@ -519,17 +519,10 @@ class TestAdminSettings(AdminTest):
         self.sleep()
         self.click(self.drv.find_element_by_class_name('nav-settings'))
         self.wait_for_element('user-name')
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_id('user-name')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('new_user')
-            .perform()
-        )
+        name_field = self.drv.find_element_by_id('user-name')
+        self.click(name_field)
+        name_field.send_keys(Keys.BACK_SPACE * 9)
+        name_field.send_keys('new_user')
         (
             ActionChains(self.drv)
             .key_down(
@@ -1213,7 +1206,6 @@ class TestEnumerate(DriverTest):
     def test_login(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
         self.get('/enumerate/{}'.format(survey_id))
-        # self.drv.save_screenshot('language_select.png')
 
         # clicking login should bring user to login page
         self.wait_for_element('menu', By.CLASS_NAME)
@@ -1251,7 +1243,6 @@ class TestEnumerate(DriverTest):
 
         # open survey
         self.get('/enumerate/{}'.format(survey_id))
-        # self.drv.save_screenshot('language_select.png')
 
         # clicking logout should refresh the page
         self.wait_for_element('menu', By.CLASS_NAME)
@@ -1277,8 +1268,6 @@ class TestEnumerate(DriverTest):
         self.get('/debug/login/test_enumerator@fixtures.com')
 
         self.get('/enumerate/{}'.format(survey_id))
-
-        # self.drv.save_screenshot('language_select.png')
 
         self.wait_for_element('menu', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('menu'))
