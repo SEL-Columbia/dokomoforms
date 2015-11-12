@@ -11,6 +11,7 @@
     "backbone": "^1.2.3",
     "bootstrap": "^3.3.5",
     "datatables": "https://github.com/DataTables/DataTables/archive/1.10.9.tar.gz",
+    "es5-shim": "^4.3.1",
     "highcharts-release": "^4.1.8",
     "jquery": "^2.1.4",
     "leaflet": "^0.7.5",
