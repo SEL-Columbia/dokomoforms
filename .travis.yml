@@ -18,6 +18,7 @@ before_script:
   - psql -c 'create database doko;' -U postgres
   - head -c 24 /dev/urandom > cookie_secret
   - nvm install stable
+  - npm install npm -g
   - npm install
   - ./tests/python/selenium_webapp.py &>/dev/null &
   - sleep 2
