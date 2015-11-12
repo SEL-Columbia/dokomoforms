@@ -17,6 +17,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 import tornado.web
 
+from dokomoforms.exc import SurveyAccessForbidden
 from dokomoforms.handlers.api.v0.serializer import ModelJSONSerializer
 from dokomoforms.handlers.api.v0.util import filename_safe
 from dokomoforms.handlers.util import BaseHandler, BaseAPIHandler
@@ -177,6 +178,10 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
             restless_error = exc.HttpError(err.log_message)
             restless_error.status = err.status_code
             err = restless_error
+        elif isinstance(err, SurveyAccessForbidden):
+            restless_error = exc.HttpError(str(err))
+            restless_error.status = 403
+            err = restless_error
         elif isinstance(err, NoResultFound):
             err = exc.NotFound()
         elif isinstance(err, understood):
@@ -214,10 +219,16 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
     def _check_xsrf_cookie(self):
         return BaseHandler.check_xsrf_cookie(self.r_handler)
 
-    def is_authenticated(self):
+    def is_authenticated(self, admin_only=True):
         """Return whether the request has been authenticated."""
-        # A logged-in user has already authenticated.
+        # A logged-in user (or specifically Administrator) is authenticated.
         if self.r_handler.current_user is not None:
+            not_an_admin_but_should_be = (
+                admin_only and
+                self.r_handler.current_user_model.role != 'administrator'
+            )
+            if not_an_admin_but_should_be:
+                return False
             if self.request_method() not in {'GET', 'HEAD', 'OPTIONS'}:
                 self._check_xsrf_cookie()
             return True

@@ -24,12 +24,12 @@ before_script:
   - node_modules/gulp/bin/gulp.js dev-build
 
 script:
-  - npm test
+# - npm test
   - xvfb-run --server-args="-screen 0, 1280x1280x16" tests/python/coverage_run.sh
 
 after_success:
   - coveralls
-  - npm coveralls
+# - npm coveralls
 
 notifications:
   email:

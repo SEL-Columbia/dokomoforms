@@ -253,15 +253,16 @@ class DriverTest(tests.python.util.DokoExternalDBTest):
         visibility = EC.visibility_of_element_located
         presence = EC.presence_of_element_located
         loader = visibility if visible else presence
-        load = loader((by, identifier))
-        try:
-            WebDriverWait(self.drv, timeout).until(load)
-        except TimeoutException:
-            if not self.attempted_wait_rescue:
+        num_attempts = 1 if self.attempted_wait_rescue else 3
+        for attempt in range(num_attempts):
+            load = loader((by, identifier))
+            try:
+                WebDriverWait(self.drv, timeout).until(load)
+            except TimeoutException:
                 self.attempted_wait_rescue = True
+                if attempt == num_attempts - 1:
+                    raise
                 self.drv.refresh()
-                new_load = loader((by, identifier))
-                WebDriverWait(self.drv, timeout).until(new_load)
 
     def sleep(self, duration=None):
         default_duration = 1.25 if SAUCE_CONNECT else 0.25
@@ -384,9 +385,9 @@ class TestAdminOverview(AdminTest):
             5
         )
         # Activity graph
-        self.assertIsNotNone(
-            self.drv.find_element_by_css_selector('path:nth-child(30)')
-        )
+        self.assertIsNotNone(self.drv.find_element_by_css_selector(
+            '.highcharts-series > rect:nth-child(31)'
+        ))
         # Surveys table
         rows = self.drv.find_elements_by_css_selector('table#surveys tbody tr')
         self.assertEqual(len(rows), 13)
@@ -519,17 +520,10 @@ class TestAdminSettings(AdminTest):
         self.sleep()
         self.click(self.drv.find_element_by_class_name('nav-settings'))
         self.wait_for_element('user-name')
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_id('user-name')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('new_user')
-            .perform()
-        )
+        name_field = self.drv.find_element_by_id('user-name')
+        self.click(name_field)
+        name_field.send_keys(Keys.BACK_SPACE * 9)
+        name_field.send_keys('new_user')
         (
             ActionChains(self.drv)
             .key_down(
@@ -1213,7 +1207,6 @@ class TestEnumerate(DriverTest):
     def test_login(self):
         survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
         self.get('/enumerate/{}'.format(survey_id))
-        # self.drv.save_screenshot('language_select.png')
 
         # clicking login should bring user to login page
         self.wait_for_element('menu', By.CLASS_NAME)
@@ -1251,7 +1244,6 @@ class TestEnumerate(DriverTest):
 
         # open survey
         self.get('/enumerate/{}'.format(survey_id))
-        # self.drv.save_screenshot('language_select.png')
 
         # clicking logout should refresh the page
         self.wait_for_element('menu', By.CLASS_NAME)
@@ -1277,8 +1269,6 @@ class TestEnumerate(DriverTest):
         self.get('/debug/login/test_enumerator@fixtures.com')
 
         self.get('/enumerate/{}'.format(survey_id))
-
-        # self.drv.save_screenshot('language_select.png')
 
         self.wait_for_element('menu', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('menu'))
@@ -4561,3 +4551,28 @@ class TestEnumerateSlowRevisit(DriverTest):
 
         # overlay should not be present
         self.assertEqual(len(overlay), 0)
+
+    @report_success_status
+    def test_facilities_only_fetched_on_first_load(self):
+        """Facilities should only be fetched automatically from revisit on the
+        first page load. After that it should be manual.
+        """
+        survey_id = self.get_single_node_survey_id('facility')
+
+        # first load, should be slow because revisit is hit
+        start_time = time.time()
+        self.get('/enumerate/{}'.format(survey_id))
+        overlay = self.drv.find_elements_by_class_name('loading-overlay')
+        finish_time = time.time()
+
+        self.assertGreater(finish_time - start_time, 2)
+        # overlay should not be present
+        self.assertEqual(len(overlay), 0)
+
+        # second load, should be fast because revisit is not hit
+        start_time = time.time()
+        self.drv.refresh()
+        overlay = self.drv.find_elements_by_class_name('loading-overlay')
+        finish_time = time.time()
+
+        self.assertLess(finish_time - start_time, 2)

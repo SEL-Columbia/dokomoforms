@@ -273,6 +273,46 @@ class TestAuthentication(DokoHTTPTest):
 
         self.assertFalse(BaseResource.is_authenticated(fake_resource))
 
+    def test_enumerator_trying_to_access_admin_endpoint(self):
+        user_id = 'a7becd02-1a3f-4c1d-a0e1-286ba121aef3'
+        response = self.fetch(
+            self.api_root + '/surveys', _logged_in_user=user_id
+        )
+        self.assertEqual(response.code, 401)
+
+    def test_enumerator_trying_to_access_allowed_survey(self):
+        user_id = 'a7becd02-1a3f-4c1d-a0e1-286ba121aef3'
+        survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
+        response = self.fetch(
+            self.api_root + '/surveys/' + survey_id, _logged_in_user=user_id
+        )
+        self.assertEqual(response.code, 200)
+
+    def test_admin_can_access_any_survey_via_api(self):
+        with self.session.begin():
+            admin = Administrator(name='admin')
+            self.session.add(admin)
+        survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
+        response = self.fetch(
+            self.api_root + '/surveys/' + survey_id, _logged_in_user=admin.id
+        )
+        self.assertEqual(response.code, 200)
+
+    def test_enumerator_trying_to_access_non_allowed_survey(self):
+        user_id = 'a7becd02-1a3f-4c1d-a0e1-286ba121aef3'
+        with self.session.begin():
+            creator = Administrator(name='admin')
+            survey = models.construct_survey(
+                survey_type='enumerator_only',
+                title={'English': 'survey'},
+                creator=creator
+            )
+            self.session.add(survey)
+        response = self.fetch(
+            self.api_root + '/surveys/' + survey.id, _logged_in_user=user_id
+        )
+        self.assertEqual(response.code, 403)
+
 
 class TestSurveyApi(DokoHTTPTest):
     """These tests are made against the known fixture data."""
