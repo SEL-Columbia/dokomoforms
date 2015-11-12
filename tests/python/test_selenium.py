@@ -384,9 +384,9 @@ class TestAdminOverview(AdminTest):
             5
         )
         # Activity graph
-        self.assertIsNotNone(
-            self.drv.find_element_by_css_selector('path:nth-child(30)')
-        )
+        self.assertIsNotNone(self.drv.find_element_by_css_selector(
+            '.highcharts-series > rect:nth-child(31)'
+        ))
         # Surveys table
         rows = self.drv.find_elements_by_css_selector('table#surveys tbody tr')
         self.assertEqual(len(rows), 13)
