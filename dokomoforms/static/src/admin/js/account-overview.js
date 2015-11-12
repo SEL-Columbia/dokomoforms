@@ -9,7 +9,8 @@ var $ = require('jquery'),
     manage_btn_tpl = require('../templates/button-manage-survey.tpl'),
     dl_btn_tpl = require('../templates/button-download-data.tpl'),
     recent_sub_tpl = require('../templates/recent-submission-row.tpl'),
-    _t = require('./lang');
+    _t = require('./lang'),
+    activityGraph = require('./activity-graph');
 
 var AccountOverview = (function() {
     var recentSubmissions = [];
@@ -131,60 +132,63 @@ var AccountOverview = (function() {
     }
 
     function loadActivityGraph() {
-        // Activity Graph
-        $.getJSON('/api/v0/surveys/activity?user_id=' + window.CURRENT_USER_ID, function(resp) {
 
-            var results = resp.activity,
-                cats = [],
-                data = [];
+        activityGraph('/api/v0/surveys/activity?user_id=' + window.CURRENT_USER_ID, 30, '.activity-graph');
 
-            if (!results.length) {
-                $('.no-activity-message').removeClass('hide');
-                return;
-            }
+        // // Activity Graph
+        // $.getJSON('/api/v0/surveys/activity?user_id=' + window.CURRENT_USER_ID, function(resp) {
 
-            var sorted = _.sortBy(results, function(result) {
-                return result.date;
-            });
+        //     var results = resp.activity,
+        //         cats = [],
+        //         data = [];
 
-            _.each(sorted, function(result) {
-                var the_date = moment(result.date, 'YYYY-MM-DD').format('MMM D');
-                data.push(result.num_submissions);
-                cats.push(the_date);
-            });
+        //     if (!results.length) {
+        //         $('.no-activity-message').removeClass('hide');
+        //         return;
+        //     }
+
+        //     var sorted = _.sortBy(results, function(result) {
+        //         return result.date;
+        //     });
+
+        //     _.each(sorted, function(result) {
+        //         var the_date = moment(result.date, 'YYYY-MM-DD').format('MMM D');
+        //         data.push(result.num_submissions);
+        //         cats.push(the_date);
+        //     });
 
 
-            $('.activity-graph').highcharts({
-                chart: {
-                    type: 'line'
-                },
-                title: {
-                    text: null
-                },
-                colors: [
-                    '#666'
-                ],
-                xAxis: {
-                    categories: cats
-                },
-                yAxis: {
-                    title: {
-                        text: '# of submissions'
-                    },
-                    allowDecimals: false
-                },
-                series: [{
-                    name: 'Submissions',
-                    data: data
-                }],
-                legend: {
-                    enabled: false
-                },
-                credits: {
-                    enabled: false
-                }
-            });
-        });
+        //     $('.activity-graph').highcharts({
+        //         chart: {
+        //             type: 'column'
+        //         },
+        //         title: {
+        //             text: null
+        //         },
+        //         colors: [
+        //             '#666'
+        //         ],
+        //         xAxis: {
+        //             categories: cats
+        //         },
+        //         yAxis: {
+        //             title: {
+        //                 text: '# of submissions'
+        //             },
+        //             allowDecimals: false
+        //         },
+        //         series: [{
+        //             name: 'Submissions',
+        //             data: data
+        //         }],
+        //         legend: {
+        //             enabled: false
+        //         },
+        //         credits: {
+        //             enabled: false
+        //         }
+        //     });
+        // });
     }
 
     function setupDataTable() {
