@@ -24,7 +24,8 @@ from passlib.hash import bcrypt_sha256
 
 from selenium import webdriver
 from selenium.common.exceptions import (
-    TimeoutException, ElementNotVisibleException
+    TimeoutException, ElementNotVisibleException,
+    WebDriverException
 )
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
@@ -4550,3 +4551,28 @@ class TestEnumerateSlowRevisit(DriverTest):
 
         # overlay should not be present
         self.assertEqual(len(overlay), 0)
+
+    @report_success_status
+    def test_facilities_only_fetched_on_first_load(self):
+        """Facilities should only be fetched automatically from revisit on the
+        first page load. After that it should be manual.
+        """
+        survey_id = self.get_single_node_survey_id('facility')
+
+        # first load, should be slow because revisit is hit
+        start_time = time.time()
+        self.get('/enumerate/{}'.format(survey_id))
+        overlay = self.drv.find_elements_by_class_name('loading-overlay')
+        finish_time = time.time()
+
+        self.assertGreater(finish_time - start_time, 2)
+        # overlay should not be present
+        self.assertEqual(len(overlay), 0)
+
+        # second load, should be fast because revisit is not hit
+        start_time = time.time()
+        self.get('/enumerate/{}'.format(survey_id))
+        overlay = self.drv.find_elements_by_class_name('loading-overlay')
+        finish_time = time.time()
+
+        self.assertLess(finish_time - start_time, 2)
