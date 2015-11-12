@@ -1,0 +1,54 @@
+Quick description of application flow.
+
+
+There are three levels of components
+
+Application
+ |
+  ---> View Controllers
+         |
+         ---> Base Views
+
+The application consists of three main view controllers, Footer, Content,
+Header.
+
+Content can be one of a few View Controllers (Question, Splash, Submit, etc)
+
+Application can alter localStorage at whim, they handle all external
+communication and all initilization of databases.
+
+View Controllers only alter their own local states and localStorage for their
+specific question ID. They can also push to their designated database and
+facilityTree.
+
+Base Views are dumb, they do nothing other then handle their own localState and
+fire callbacks that are passed into them.
+
+The application also uses references to refer to active questions, footer and
+header sections. This is a react concept that lets you access class methods for
+active components. I rarely use this but it is something that can be done
+
+Almost all ram state in the View Controllers and below are just used for
+visiualization purposes, everything else is stored in localStorage.
+
+Application stores db accessors and facilityTree references in RAM however. This
+is not an issue mostly (accept for the facilityTree case which stores a copy in
+RAM as well as in localStorage, i.e tree is built and stored in ram either from
+a network request or last localStorage copy)
+
+Question logic like branching/required is only enforce on next/prev button
+checks. Validation is checked in the baseComponents as users type out values
+
+Branching is handled with a stack of doubly linked lists (pointers let you know
+what question is next and what is prev). On a branch, copy of the linked list is
+stored on the stack and the other is modified to add in all the nodes that are a
+part of this branch. When you move back into a branching question, the stack is
+popped and set as the active linked list, reverting any changes made to the
+surveys question ordering. Submission resets linked list entirely to original
+state. 
+
+Facilities are retrieved compressed from Revisit based on logic in facility
+question nodes, a new tree is created for every facility question. Overlaping
+tree nodes have their facilities stored in the same location so nothing is
+duplicated.
+

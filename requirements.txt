@@ -1,6 +1,8 @@
-tornado==4.1
-SQLAlchemy==0.9.9
-psycopg2==2.6
-py-bcrypt==0.4
-py-dateutil==2.2
-passlib==1.6.2
+tornado==4.2.1
+SQLAlchemy==1.0.9
+geoalchemy2==0.2.5
+psycopg2==2.6.1
+bcrypt==2.0.0
+passlib==1.6.5
+restless==2.0.1
+lzstring==1.0.3

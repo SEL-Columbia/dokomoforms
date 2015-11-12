@@ -1,0 +1,78 @@
+1. Encryption
+  - Column-level encryption doesn't work for our needs at all...
+  - Filesystem-level encryption looks best.
+2. Behavior-driven/baby's first test-drive development
+  - Want the application to conform to some behavior? Write a test stub!
+  - E.g. want administrative information to be inaccesible to a regular user?
+    - Here's a test stub...
+
+    /tests/user_test.py:
+
+    import unittest
+
+
+    class TestUser(unittest.TestCase):
+        def testRegularUserCannotSeeAdminInfo(self):
+            assert False
+3. DONE: Figure out clean way to deal with setting up the DB for SQLAlchemy
+   (extensions, etc).
+4. HTTPS/SSL
+  - As per convo with Chris Tan, just tell nginx to proxy 443 traffic to 8888.
+5. Internationalization (I18n) of the application
+  - Looks like the process has to go something like this:
+    1. From the top-level directory of Dokomo Forms run
+        $ locale/make_translations.sh {locale}
+      This will create-or-update locale/dokomoforms.po and
+      locale/{locale}/LC_MESSAGES/dokomoforms.po
+      It looks at all the *.py and *.html files for _() strings.
+    2. Add translations to locale/{locale}/LC_MESSAGES/dokomoforms.po where
+      there are empty strings (or modify existing translations).
+    3. Run $ locale/compile_translations.sh {locale}
+      This will create-or-update locale/{locale}/LC_MESSAGES/dokomoforms.mo
+  - Having done all that, if, say, you have generated
+    locale/es/LC_MESSAGES/dokomoforms.mo (Spanish), then someone visiting the
+    site with the browser language set to Spanish will get that translation.
+  - Maybe we want to do this in the JS instead?:
+    http://stackoverflow.com/a/3084798/1475412
+6. Internationalization of the surveys
+  - Firstly do we even want this?
+  - How best to store the different translations, keep them up-to-date, etc?
+  - Two scenarios I can see:
+    1. Send all the translations in the HTML and have a locale switcher
+       <select> (user can select language while offline).
+    2. Only send the requested translation based on browser settings. (User is
+       stuck with one translation).
+7. Should we develop the JS code under "use strict"; ?
+8. while(1); in JSON responses?
+  - http://stackoverflow.com/a/2669766/1475412
+9. Think about what happens to e-mails when account is deleted/inactive.
+10. readthedocs
+11. It looks like the various answer types might go in different tables for ORM
+    purposes... I should write a SQL view to abstract that detail away.
+12. When creating a survey, the creator should be forced to run through the
+    survey as a preview, and "submit" to create. This prevents graphs without
+    a terminal node, for instance.
+13. Consider adding range questions like
+    What is the valid age range? (10-20)
+    How long does this process take?
+14. Store images in the database?
+    Postgres has a lobject... thing but it's not mapped into SQLAlchemy
+    https://github.com/cms-dev/cms-debian/blob/master/cms/db/FSObject.py
+15. LRU cache for _asdict?
+16. Might want to change translatable columns from JSON to full-fledged tables
+    for constraint purposes.
+17. Adding a non-null reference to the "first" element of a one-to-many
+    relationship works as an n>1 constraint but might be too cumbersome.
+18. Allow API searchs on answers?
+19. Due to react (most likely) the enumerate page does not load at all on
+    AOSP browser.
+    https://facebook.github.io/react/docs/working-with-the-browser.html
+    #browser-support-and-polyfills
+20. Rate limiting for public API endpoints (view survey and submit).
+21. Don't provide a default password in docker-compose.yml?
+    https://docs.docker.com/compose/yml/#environment
+22. We should use subresource integrity.
+    https://hacks.mozilla.org/2015/09/subresource-integrity-in-firefox-43/
+23. http://khan.github.io/tota11y/
+24. https://github.com/w3c/manifest
+25. sphinx-apidoc -F -o docs dokomoforms

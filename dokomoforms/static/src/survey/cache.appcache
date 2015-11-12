@@ -1,0 +1,32 @@
+CACHE MANIFEST
+# Version $date
+
+/static/dist/survey/js/vendor.js
+/static/dist/survey/js/build.bundle.js
+
+/static/dist/survey/css/survey.css
+
+#/static/dist/survey/fonts/ratchicons.tff
+/static/dist/survey/fonts/ratchicons.woff
+/static/dist/survey/fonts/ratchicons.eot
+/static/dist/survey/fonts/ratchicons.svg
+
+/static/dist/survey/img/favicon.png
+/static/dist/survey/img/logo.svg
+/static/dist/survey/img/SEL_logo_sm.png
+/static/dist/survey/img/SEL_text_logo_sm.png
+/static/dist/survey/img/shutter_button.png
+
+/static/dist/survey/img/icons/added-point.png
+/static/dist/survey/img/icons/normal_base.png
+/static/dist/survey/img/icons/normal_education.png
+/static/dist/survey/img/icons/normal_health.png
+/static/dist/survey/img/icons/normal_water.png
+/static/dist/survey/img/icons/selected-point.png
+/static/dist/survey/img/icons/unsynced_base.png
+/static/dist/survey/img/icons/unsynced_education.png
+/static/dist/survey/img/icons/unsynced_health.png
+/static/dist/survey/img/icons/unsynced_water.png
+
+NETWORK:
+*

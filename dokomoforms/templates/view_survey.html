@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block header %}
+<div class="header light-shadow">
+    {% if current_user %}
+    <div class="header-main-nav">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6"><h1 class="survey-title">{{ _t(survey.title, survey=survey) }}</h1></div>
+                <div class="col-md-6">
+                    <ul class="pull-right">
+                        <li>
+                            <a class="active" href="/admin/{{ survey.id }}">Manage Survey</a>
+                        </li>
+                        <li>
+                            <a href="/admin/data/{{ survey.id }}">View Data</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="header-sub-nav">
+            <!-- Additional sub-navigation here in next version. -->
+        </div>
+    </div>
+    {% end %}
+</div>
+{% end %}
+
+{% block content %}
+<div class="content">
+    <div class="container" role="main">
+
+        <div class="message"></div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <h4>Survey Info</h4>
+                <div class="survey-info">
+                    <div class="row row-stat">
+                        <div class="col-md-4">
+                            <div class="stat-label">
+                                created on
+                            </div>
+                            <div class="stat-value stat-created-on">
+                            ...
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-label">
+                                first submission
+                            </div>
+                            <div class="stat-value stat-first-submission">
+                            ...
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-label">
+                                latest submission
+                            </div>
+                            <div class="stat-value stat-latest-submission">
+                            ...
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row row-stat">
+                        <div class="col-md-4">
+                        <div class="stat-label">
+                                total submissions
+                            </div>
+                            <div class="stat-value stat-total-submissions">
+			                     {{ survey.num_submissions }}
+                            </div>
+                        </div>
+                        <!-- <div class="col-md-4">
+                            <div class="stat-label">
+                                target submissions
+                            </div>
+                            <div class="stat-value stat-target-submissions">
+                                NA
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-label">
+                                percent complete
+                            </div>
+                            <div class="stat-value stat-percent-complete">
+                                NA
+                            </div>
+                        </div> -->
+                    </div>
+                    <div class="row row-stat">
+                        <div class="col-md-12">
+                            <div class="stat-label">
+                                <span class="glyphicon glyphicon-phone"></span> mobile survey link
+                                <a target="_blank" href="/enumerate/{{ survey.id }}">
+                                    <span class="glyphicon glyphicon-link icon-inline-right survey-permalink-icon" title="..."></span>
+                                </a>
+                            </div>
+                            <div class="shareable-link-wrap">
+                            ...
+                            </div>
+
+
+                        </div>
+                    </div>
+                    <div class="row row-stat">
+                        <!-- <div class="col-md-4"></div> -->
+                        <div class="col-md-6">
+                            <div class="pull-left">
+                                <div class="btn-group">
+                                    <button id="survey-language-dropdown" class="btn btn-sm btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                                        View In Language... <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu" role="menu">
+                                        <li>
+                                            <a href="#" class="survey-language" data-surveylang="default">
+                                            {% if not (survey.id in current_user_model.preferences
+                                                        and 'display_language' in current_user_model.preferences[survey.id])
+                                            %}
+                                            <span class="glyphicon glyphicon-ok icon-inline-left"></span>
+                                            {% end %}
+                                            Default
+                                            </a>
+                                        </li>
+                                        {% for lang in survey.languages %}
+                                            <li>
+                                                <a href="#" class="survey-language" data-surveylang="{{ lang }}">
+                                                {% if ((survey.id in current_user_model.preferences
+                                                            and  'display_language' in current_user_model.preferences[survey.id]
+                                                            and current_user_model.preferences[survey.id]['display_language'] == lang)
+                                                        or (
+                                                            len(survey.languages) == 1
+                                                        ))
+                                                %}
+                                                <span class="glyphicon glyphicon-ok icon-inline-left"></span>
+                                                {% end %}
+                                                {{ lang }}
+                                                </a>
+                                            </li>
+                                        {% end %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="pull-right">
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                                        <span class="glyphicon glyphicon-cloud-download"></span>&nbsp;&nbsp; Download Data <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                                        <!-- <li><a href="#">CSV (.csv)</a></li>
+                                        <li><a href="#">KML (.kml)</a></li> -->
+                                        <li><a target="_blank" href="/api/v0/surveys/{{ survey.id }}/submissions">JSON</a></li>
+                                        <li><a target="_blank" href="/api/v0/surveys/{{ survey.id }}/submissions?format=csv">CSV</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <!-- Activity Graph -->
+                <h4>Activity Graph <span class="info-icon" data-toggle="tooltip" data-placement="right" title="A plot of submissions over the past 30 days.">i</span></h4>
+                <div class="activity-graph">
+                    <div class="alert alert-info no-activity-message hide">
+                        <em>There has been no submission activity for this survey in the past 30 days.</em>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+
+
+            <div class="col-md-12">
+                <h4>Submissions</h4>
+
+                <table id="submissions" class="display table table-striped table-bordered table-submissions" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Conducted By</th>
+                            <th>Conducted On</th>
+                            <th>Submitted On</th>
+                        </tr>
+                    </thead>
+                </table>
+
+                {# Tabs between list/map commented out for now until we figure out a better way to do the map.
+
+                <div class="submissions" role="tabpanel">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li role="presentation" class="active"><a href="#submissions-list" aria-controls="submissions-list" role="tab" data-toggle="tab">List</a></li>
+                        <li role="presentation"><a href="#submissions-map" aria-controls="submissions-map" role="tab" data-toggle="tab">Map</a></li>
+                    </ul>
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane active tab-pane-submissions-list" id="submissions-list">
+                            <table id="submissions" class="display table table-striped table-bordered table-submissions" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Conducted By</th>
+                                        <th>Conducted On</th>
+                                        <th>Submitted On</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                        <div role="tabpanel" class="tab-pane submissions-block submissions-map" id="submissions-map">
+                            <div id="submissions-map-container"></div>
+                        </div>
+                    </div>
+                </div>
+
+                #}
+
+            </div>
+        </div>
+
+    </div>
+</div>
+{% end %}
+
+
+{% block extra_scripts %}
+
+<script type="text/javascript" src="/static/dist/admin/js/view-survey.bundle.js"></script>
+
+<script type="text/javascript">
+
+    window.DATETIMES = {
+        '.stat-created-on': '{{ survey.created_on }}',
+        '.stat-first-submission': '{{ survey.earliest_submission_time }}',
+        '.stat-latest-submission': '{{ survey.latest_submission_time }}'
+    };
+
+    // bootstrap the ViewSurvey module with the survey id
+    ViewSurvey.init('{{ survey.id }}', '{{ survey.url_slug }}');
+</script>
+
+{% end %}

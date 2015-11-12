@@ -1,0 +1,45 @@
+{% from dokomoforms.options import options %}
+<!DOCTYPE html>
+<html manifest="/static/dist/survey/cache.appcache">
+    <head>
+        <meta charset="utf-8">
+        <title>{% raw survey.title[survey.default_language] %} - Dokomoforms</title>
+
+        <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
+
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="mobile-web-app-status-bar-style" content="black">
+
+        <link href="/static/dist/survey/css/survey.css" rel="stylesheet" type="text/css">
+
+        <link href='https://fonts.googleapis.com/css?family=Roboto:400,300,500,700,100' rel='stylesheet' type='text/css'>
+        <link rel="icon" href="/static/dist/survey/img/favicon.png">
+    </head>
+
+    <body>
+        <div id="wrapper"></div>
+        <!-- Bootstrapped Variables -->
+        <script type="text/javascript">
+            window.ORGANIZATION = '{{ options.organization }}';
+            window.ADMIN_EMAIL = '{{ survey.creator.emails[0].address }}';
+            {% if current_user_model is not None %}
+                window.CURRENT_USER = {
+                    name: '{{ current_user_model.name }}',
+                    email: '{{ current_user_model.emails[0].address }}'
+                };
+            {% end %}
+        </script>
+        <!-- Vendor libs (jquery, react, lodash, etc.) -->
+        <script src="/static/dist/survey/js/vendor.js"></script>
+        <!-- App -->
+        <script src="/static/dist/survey/js/build.bundle.js"></script>
+	    <!-- pass in the revisit url -->
+        <script>
+            window.init({% raw survey %}, '{% raw revisit_url %}');
+        </script>
+    </body>
+
+</html>

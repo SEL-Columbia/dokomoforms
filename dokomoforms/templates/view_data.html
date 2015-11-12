@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block header %}
+<div class="header light-shadow">
+    {% if current_user %}
+    <div class="row header-main-nav">
+        <div class="container">
+            <div class="col-md-6"><h1>{{ _t(survey.title, survey=survey) }}</h1></div>
+            <div class="col-md-6">
+                <ul class="pull-right">
+                    <li>
+                        <a href="/admin/{{ survey.id }}">Manage Survey</a>
+                    </li>
+                    <li>
+                        <a class="active" href="/admin/data/{{ survey.id }}">View Data</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="row header-sub-nav">
+
+        </div>
+    </div>
+    {% end %}
+</div>
+{% end %}
+
+
+{% block subheader %}
+<div class="subheader">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h3>Survey Data</h3>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-2">
+                <div class="stat-label">
+                    created on
+                </div>
+                <div class="stat-value stat-created-on">
+                ...
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="stat-label">
+                    first submission
+                </div>
+                <div class="stat-value stat-first-submission">
+                ...
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="stat-label">
+                    latest submission
+                </div>
+                <div class="stat-value stat-latest-submission">
+                ...
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="stat-label">
+                    total submissions
+                </div>
+                <div class="stat-value">
+                    {{ survey.num_submissions }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% end %}
+
+
+
+{% block content %}
+<div class="content">
+    <div class="container" role="main">
+
+        <div class="message">
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <!-- <h4>Survey Questions</h4> -->
+                <ul class="survey-questions">
+                    {% for index, stats in enumerate(question_stats) %}
+                        <li>
+
+                            <div class="question-title-bar question-type-{{ stats['survey_node'].type_constraint }} {% if stats['survey_node'].type_constraint == "location" %} question-location {% end %}"
+                            {% if stats['survey_node'].type_constraint == "location" or stats['survey_node'].type_constraint == "facility" %} rel="location-map-{{ stats['survey_node'].id }}" {% end %}>
+
+                                {{ index }}. {{ _t(stats['survey_node'].node.title, survey=survey) }}
+                                <span class="question-type pull-right">{{ stats['survey_node'].type_constraint }}</span>
+                            </div>
+
+                            <div class="question-stats">
+                                <div class="row">
+                                    {% if stats['survey_node'].type_constraint == "location" or stats['survey_node'].type_constraint == "facility" %}
+                                        <!-- This is a location question, show the map -->
+                                        <div class="col-md-12">
+                                            <div class="location-map" id="location-map-{{ stats['survey_node'].id }}"></div>
+                                        </div>
+                                    {% elif stats['survey_node'].type_constraint == "multiple_choice" %}
+                                        {% for stat in stats['stats'] %}
+                                            <div class="col-md-3 question-stat">
+                                                <div class="stat-label">
+                                                    {{ stat['query'] }}
+                                                </div>
+                                                <div class="stat-value">
+                                                    {% if stat['query'] == 'mode' and stat['result'] is not None %}
+                                                        {{ _t(stat['result'].choice_text, survey=survey) }}
+                                                    {% else %}
+                                                        {{ stat['result'] }}
+                                                    {% end %}
+                                                </div>
+                                            </div>
+                                        {% end %}
+                                    {% else %}
+                                        {% for stat in stats['stats'] %}
+                                            <div class="col-md-3 question-stat">
+                                                <div class="stat-label">
+                                                    {{ stat['query'] }}
+                                                </div>
+                                                <div class="stat-value">
+                                                    {{ stat['result'] }}
+                                                </div>
+                                            </div>
+                                        {% end %}
+                                    {% end %}
+                                </div>
+                            </div>
+
+                            <!--<p>{{ index }}. {{ stats['survey_node'].node.title }} - {{ stats['survey_node'].id }}</p>-->
+                            <!-- <p><a href="/visualize/{{ stats['survey_node'].id }}">{{ index }}. {{ stats['survey_node'].node.title }}</a></p> -->
+
+                        </li>
+                    {% end %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% end %}
+
+
+{% block extra_scripts %}
+
+<script type="text/javascript" src="/static/dist/admin/js/view-data.bundle.js"></script>
+
+<script type="text/javascript">
+    // This page gets bootstraped with map data from the server...
+    var map_data = {};
+
+    {% for survey_node_data in location_stats %}
+        map_data['location-map-{{ survey_node_data["survey_node_id"] }}'] = {% raw survey_node_data %};
+    {% end %}
+
+    window.DATETIMES = {
+        '.stat-created-on': '{{ survey.created_on }}',
+        '.stat-first-submission': '{{ survey.earliest_submission_time }}',
+        '.stat-latest-submission': '{{ survey.latest_submission_time }}'
+    };
+
+    ViewData.init(map_data);
+</script>
+
+{% end %}

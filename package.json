@@ -1,44 +1,135 @@
 {
   "name": "dokomoforms",
   "version": "1.0.0",
-  "description": "Forms, everywhere",
-  "main": "static/app.js",
+  "description": "Frontend dependencies for Dokomoforms",
+  "main": "dokomoforms/static/bundle.js",
   "directories": {
     "doc": "docs",
     "test": "tests"
   },
-  "scripts": {
-    "test": "node_modules/.bin/mocha js_tests",
-    "posttest": "./node_modules/.bin/istanbul cover --report lcovonly --dir ./reports  ./node_modules/.bin/_mocha -- -R spec js_tests/ && cat reports/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
+  "dependencies": {
+    "backbone": "^1.2.3",
+    "bootstrap": "^3.3.5",
+    "datatables": "https://github.com/DataTables/DataTables/archive/1.10.9.tar.gz",
+    "highcharts-release": "^4.1.8",
+    "jquery": "^2.1.4",
+    "leaflet": "^0.7.5",
+    "lodash-compat": "^3.10.1",
+    "lz-string": "^1.4.4",
+    "moment": "^2.10.6",
+    "node-uuid": "^1.4.3",
+    "pouchdb": "^4.0.3",
+    "pouchdb-upsert": "^1.1.1",
+    "ratchet": "https://github.com/twbs/ratchet/archive/v2.0.2.tar.gz",
+    "react": "^0.13.3",
+    "screenfull": "^2.0.0"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/SEL-Columbia/dokomoforms.git"
-  },
-  "keywords": [
-    "dokomoforms",
-    "forms",
-    "formhub",
-    "frontend",
-    "testing"
-  ],
-  "author": "Abdi Dahir, Viktor Roytman, Chris Tan",
-  "license": "GPL",
-  "bugs": {
-    "url": "https://github.com/SEL-Columbia/dokomoforms/issues"
-  },
-  "homepage": "https://github.com/SEL-Columbia/dokomoforms",
   "devDependencies": {
+    "babelify": "^6.1.2",
+    "browserify": "^10.2.3",
+    "browserify-shim": "^3.8.7",
     "coveralls": "^2.11.2",
+    "del": "^2.0.2",
+    "eslint-plugin-react": "^3.3.0",
+    "event-stream": "^3.3.1",
+    "gulp": "^3.8.11",
+    "gulp-concat": "^2.5.2",
+    "gulp-html-replace": "^1.4.5",
+    "gulp-if": "^2.0.0",
+    "gulp-less": "^3.0.3",
+    "gulp-livereload": "^3.8.0",
+    "gulp-minify-css": "^1.2.1",
+    "gulp-order": "^1.1.1",
+    "gulp-react": "^3.0.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-replace": "^0.5.4",
+    "gulp-sourcemaps": "^1.5.2",
+    "gulp-streamify": "^1.0.2",
+    "gulp-uglify": "1.1.0",
     "istanbul": "^0.3.13",
-    "jsdom": "^5.3.0",
+    "jest-cli": "^0.5.0",
+    "jsdom": "^5.1.0",
     "jshint": "^2.7.0",
     "mocha": "^2.2.4",
     "mocha-istanbul": "^0.2.0",
+    "node-underscorify": "0.0.14",
+    "reactify": "^1.1.1",
     "should": "^6.0.1",
-    "supertest": "^0.15.0"
+    "supertest": "^0.15.0",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0",
+    "watchify": "^3.2.1"
   },
-  "dependencies": {
-    "browserify": "^10.2.3"
-  }
+  "browserify": {
+    "transform": [
+      "browserify-shim"
+    ]
+  },
+  "browserify-shim": {
+    "jquery": "global:jQuery",
+    "react": "global:React",
+    "lodash": "global:_",
+    "moment": "global:moment",
+    "leaflet": "global:L",
+    "backbone": "global:Backbone",
+    "lz-string": "global:LZString",
+    "pouchdb": "global:PouchDB",
+    "node-uuid": "global:uuid",
+    "screenfull": "global:screenfull"
+  },
+  "jest": {
+    "testDirectoryName": "tests/js",
+    "collectCoverage": true,
+    "collectCoverageOnlyFrom": {
+      "dokomoforms/static/Application.js": true,
+      "dokomoforms/static/FacilityAPI.js": true,
+      "dokomoforms/static/PhotoAPI.js": true,
+      "dokomoforms/static/persona.js": true,
+      "dokomoforms/static/visualizations.js": true,
+      "dokomoforms/static/components/Facility.js": true,
+      "dokomoforms/static/components/Footer.js": true,
+      "dokomoforms/static/components/Header.js": true,
+      "dokomoforms/static/components/Location.js": true,
+      "dokomoforms/static/components/MultipleChoice.js": true,
+      "dokomoforms/static/components/Note.js": true,
+      "dokomoforms/static/components/Photo.js": true,
+      "dokomoforms/static/components/Question.js": true,
+      "dokomoforms/static/components/Splash.js": true,
+      "dokomoforms/static/components/Submit.js": true,
+      "dokomoforms/static/components/baseComponents/BigButton.js": true,
+      "dokomoforms/static/components/baseComponents/Card.js": true,
+      "dokomoforms/static/components/baseComponents/DontKnow.js": true,
+      "dokomoforms/static/components/baseComponents/FacilityRadios.js": true,
+      "dokomoforms/static/components/baseComponents/LittleButton.js": true,
+      "dokomoforms/static/components/baseComponents/Menu.js": true,
+      "dokomoforms/static/components/baseComponents/Message.js": true,
+      "dokomoforms/static/components/baseComponents/PhotoField.js": true,
+      "dokomoforms/static/components/baseComponents/ResponseField.js": true,
+      "dokomoforms/static/components/baseComponents/ResponseFields.js": true,
+      "dokomoforms/static/components/baseComponents/Select.js": true,
+      "dokomoforms/static/components/baseComponents/Title.js": true
+    }
+  },
+  "scripts": {
+    "test": "jest",
+    "coveralls": "coveralls"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SEL-Columbia/dokomoforms.git"
+  },
+  "keywords": [
+    "Dokomoforms",
+    "React",
+    "Browserify",
+    "Survey",
+    "Data",
+    "Collection"
+  ],
+  "author": "Abdi Dahir Viktor Roytman Jon Wohl",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SEL-Columbia/dokomoforms/issues"
+  },
+  "homepage": "https://github.com/SEL-Columbia/dokomoforms#readme"
 }

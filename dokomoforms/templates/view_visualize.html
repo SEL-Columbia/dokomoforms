@@ -1,0 +1,54 @@
+<!-- CURRENTLY UNUSED -->
+
+{% extends "base.html" %}
+{% block content %}
+    <div class="content-padded">
+            <h4>Welcome {{ current_user }}</h4>
+            {% if time_data %}
+                <p>Value over time:</p>
+                <svg id="line_graph" width="1000" height="500"></svg>
+            {% end %}
+            {% if bar_data %}
+                <p>Bar graph:</p>
+                <svg id="bar_graph" width="1000" height="500"></svg>
+            {% end %}
+            {% if map_data %}
+                <p>Map:</p>
+                <div id="vis_map" height="500"></div>
+            {% end %}
+            {% if not(time_data or bar_data or map_data) %}
+                <p>No viewable submissions.</p>
+            {% end %}
+    </div>
+
+
+    <script src="/static/lib.js"></script>
+    <script src="https://login.persona.org/include.js"></script>
+    <script src="/static/persona.js"></script>
+    <script src="http://d3js.org/d3.v3.js"></script>
+    <script src="/static/visualizations.js"></script>
+    {% if time_data %}
+    <script>
+    drawLineGraph({% raw time_data %});
+    </script>
+    {% end %}
+    {% if bar_data %}
+    <script>
+        drawBarGraph({% raw bar_data %});
+    </script>
+    {% end %}
+    {% if map_data %}
+    <script>
+        drawMap({% raw map_data %});
+    </script>
+    {% end %}
+{% end %}
+{% block footer %}
+    <div class="bar bar-standard bar-footer">
+        <div class="bar-padded">
+            <a data-ignore="push" class="btn btn-block" href="#" id="logout">Logout</a>
+        </div>
+    </div>
+    <script src="https://login.persona.org/include.js"></script>
+    <script src="/static/persona.js"></script>
+{% end %}
