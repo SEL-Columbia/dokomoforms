@@ -102,11 +102,17 @@ module.exports = React.createClass({
         auth.logIn();
     },
 
+    reloadFacilities: function() {
+        console.log('reloadFacilities');
+        ps.publish('revisit:reload_facilities');
+    },
+
     render: function() {
         var self = this;
         var langOpts,
             langMenuItem,
-            logOut;
+            logOut,
+            reloadFacilities;
 
         console.log('render...', self.props.survey);
 
@@ -133,8 +139,16 @@ module.exports = React.createClass({
         }
 
         console.log('loggedIn: ', this.props.loggedIn);
+        console.log('hasFacilities: ', this.props.hasFacilities);
 
         if (navigator.onLine) {
+            if (this.props.hasFacilities) {
+                reloadFacilities = (
+                    <div className='title_menu_option menu_facilities' onClick={self.reloadFacilities} >
+                        Reload Facilities
+                    </div>
+                );
+            }
             if (this.props.loggedIn) {
                 logOut = (
                     <div className='title_menu_option menu_logout' onClick={self.logOut} >
@@ -165,7 +179,10 @@ module.exports = React.createClass({
                     Clear all saved surveys
                 </div>
 
+                {reloadFacilities}
+
                 {logOut}
+
             </div>
        );
     }

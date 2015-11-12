@@ -20,7 +20,8 @@ var $ = require('jquery'),
  */
 var FacilityTree = function(nlat, wlng, slat, elng, db, id) {
     // Ajax request made below node definition
-    var self = this;
+    var self = this,
+        loadingDfd = $.Deferred();
     this.nlat = nlat;
     this.wlng = wlng;
     this.slat = slat;
@@ -185,50 +186,97 @@ var FacilityTree = function(nlat, wlng, slat, elng, db, id) {
         return R * c;
     };
 
-    // Revisit ajax req
-    $.ajax({
-        url: config.revisit_url,
-        data: {
-            within: self.nlat + ',' + self.wlng + ',' + self.slat + ',' + self.elng,
-            compressed: true
-            //fields: 'name,uuid,coordinates,properties:sector',
-        },
-        success: function(data) {
-            console.log('Recieved Data traversing');
+
+    // If there are facilities in local storage for this survey,
+    // don't re-fetch them automatically. Otherwise attempt to load them.
+    var facilities = this.loadTreeFromLocalStorage();
+
+    if (facilities) {
+        console.log('Facilities loaded from localStorage.');
+        self.root = new facilityNode(facilities);
+        ps.publish('loading:complete');
+    } else {
+        console.log('Facilities not found in localStorage, try Revisit');
+        self.fetchFromRevisit()
+        .done(function(data) {
+            console.log('Recieved data from Revisit, traversing...');
             self.total = data.total;
             self.root = new facilityNode(data.facilities);
-            self.storeTree();
+            self.storeTreeToLocalStorage();
             // reconciliation happens after saving to pouch (async)
-            // self.reconcileFacilities();
-        },
-        error: function() {
-            console.log('Failed to retrieve data, attempting to build from local');
-            var facilities = self.loadTree();
-            if (facilities) {
-                console.log('--> facilities loaded from localStorage.');
-                self.root = new facilityNode(facilities);
-                ps.publish('revisit:error:local_facilities');
-            } else {
-                console.log('//> facilities not found in localStorage.');
-                self.root = null;
-                // since we haven't been able to contact Revisit, we can't
-                // know where in the quadtree any newly added facilities
-                // should go. We'll save these facilities separately, and
-                // try to reconcile them with Revisit later.
-                ps.publish('revisit:error:no_facilities');
-            }
-        },
-        complete: function() {
-            // The ajax request attempted whether we have network or not,
+        })
+        .fail(function() {
+            console.log('Failed to load from Revisit.');
+            self.root = null;
+            // since we haven't been able to contact Revisit, we can't
+            // know where in the quadtree any newly added facilities
+            // should go. We'll save these facilities separately, and
+            // try to reconcile them with Revisit later.
+            ps.publish('revisit:error:no_facilities');
+        })
+        .always(function() {
+            // The ajax request was attempted whether we have network or not,
             // so we should publish the loading:complete event on success or fail.
             ps.publish('loading:complete');
-        }
-    });
+        });
+    }
+    // Revisit ajax req
+    // $.ajax({
+    //     url: config.revisit_url,
+    //     data: {
+    //         within: self.nlat + ',' + self.wlng + ',' + self.slat + ',' + self.elng,
+    //         compressed: true
+    //         //fields: 'name,uuid,coordinates,properties:sector',
+    //     },
+    //     success: function(data) {
+    //         console.log('Recieved Data traversing');
+    //         self.total = data.total;
+    //         self.root = new facilityNode(data.facilities);
+    //         self.storeTreeToLocalStorage();
+    //         // reconciliation happens after saving to pouch (async)
+    //         // self.reconcileFacilities();
+    //     },
+    //     error: function() {
+    //         console.log('Failed to retrieve data, attempting to build from local');
+    //         var facilities = self.loadTreeFromLocalStorage();
+    //         if (facilities) {
+    //             console.log('--> facilities loaded from localStorage.');
+    //             self.root = new facilityNode(facilities);
+    //             ps.publish('revisit:error:local_facilities');
+    //         } else {
+    //             console.log('//> facilities not found in localStorage.');
+    //             self.root = null;
+    //             // since we haven't been able to contact Revisit, we can't
+    //             // know where in the quadtree any newly added facilities
+    //             // should go. We'll save these facilities separately, and
+    //             // try to reconcile them with Revisit later.
+    //             ps.publish('revisit:error:no_facilities');
+    //         }
+    //     },
+    //     complete: function() {
+    //         // The ajax request attempted whether we have network or not,
+    //         // so we should publish the loading:complete event on success or fail.
+    //         ps.publish('loading:complete');
+    //     }
+    // });
 
     console.log(config.revisit_url, '?within=',
             self.nlat + ',' + self.wlng + ',' + self.slat + ',' + self.elng,
             '&compressed');
 
+};
+
+FacilityTree.prototype.fetchFromRevisit = function() {
+    var self = this;
+    // Revisit ajax req
+    return $.ajax({
+        url: config.revisit_url,
+        data: {
+            within: self.nlat + ',' + self.wlng + ',' + self.slat + ',' + self.elng,
+            compressed: true
+            //fields: 'name,uuid,coordinates,properties:sector',
+        }
+    });
 };
 
 /**
@@ -281,7 +329,7 @@ FacilityTree.prototype.storeUnsyncedFacilities = function(facilities) {
 };
 
 /* Store facility tree in localStorage without children */
-FacilityTree.prototype.storeTree = function() {
+FacilityTree.prototype.storeTreeToLocalStorage = function() {
     // Data is never stored in object, stringifiying root should be sufficient
     var facilities = JSON.parse(localStorage['facilities'] || '{}');
     facilities[this.id] = this.root;
@@ -289,7 +337,7 @@ FacilityTree.prototype.storeTree = function() {
 };
 
 /* Load facility tree from localStorage */
-FacilityTree.prototype.loadTree = function() {
+FacilityTree.prototype.loadTreeFromLocalStorage = function() {
     var facilities = JSON.parse(localStorage['facilities'] || '{}');
     return facilities[this.id];
 };
