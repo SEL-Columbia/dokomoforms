@@ -21,7 +21,8 @@
     "pouchdb": "^4.0.3",
     "pouchdb-upsert": "^1.1.1",
     "ratchet": "https://github.com/twbs/ratchet/archive/v2.0.2.tar.gz",
-    "react": "^0.13.3",
+    "react": "^0.14.2",
+    "react-dom": "~0.14.2",
     "screenfull": "^2.0.0"
   },
   "devDependencies": {
@@ -48,7 +49,7 @@
     "gulp-streamify": "^1.0.2",
     "gulp-uglify": "1.1.0",
     "istanbul": "^0.3.13",
-    "jest-cli": "^0.5.0",
+    "jest-cli": "^0.5.10",
     "jsdom": "^5.1.0",
     "jshint": "^2.7.0",
     "mocha": "^2.2.4",
@@ -79,6 +80,15 @@
     "screenfull": "global:screenfull"
   },
   "jest": {
+    "scriptPreprocessor": "<rootDir>/node_modules/babel-jest",
+    "testFileExtensions": ["es6", "js"],
+    "moduleFileExtensions": ["js", "json", "es6"],
+    "unmockedModulePathPatterns": [
+      "<rootDir>/node_modules/react",
+      "<rootDir>/node_modules/react-dom",
+      "<rootDir>/node_modules/react-addons-test-utils",
+      "<rootDir>/node_modules/fbjs"
+    ],
     "testDirectoryName": "tests/js",
     "collectCoverage": true,
     "collectCoverageOnlyFrom": {
@@ -127,7 +137,7 @@
     "Data",
     "Collection"
   ],
-  "author": "Abdi Dahir Viktor Roytman Jon Wohl",
+  "author": "Abdi Dahir, Viktor Roytman, & Jonathan Wohl",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/SEL-Columbia/dokomoforms/issues"
