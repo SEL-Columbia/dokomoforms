@@ -373,6 +373,8 @@ class TestAuth(DriverTest):
 class AdminTest(DriverTest):
     def setUp(self):
         super().setUp()
+        if self.browser in {'android', 'iPhone'}:
+            self.skipTest('The admin interface has no mobile design (yet).')
         self.get('/debug/login/test_creator@fixtures.com')
         self.wait_for_element('html', by=By.TAG_NAME)
 
