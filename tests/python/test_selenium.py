@@ -24,13 +24,14 @@ from passlib.hash import bcrypt_sha256
 
 from selenium import webdriver
 from selenium.common.exceptions import (
-    TimeoutException, ElementNotVisibleException
+    TimeoutException, ElementNotVisibleException, WebDriverException
 )
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.select import Select
 
 import tests.python.util
 from tests.python.util import setUpModule, tearDownModule
@@ -301,6 +302,9 @@ class DriverTest(tests.python.util.DokoExternalDBTest):
         if revisit:
             urlopen('http://localhost:9999/debug/toggle_facilities')
         self.sleep(1)
+
+    def input_field(self):
+        return self.drv.find_element_by_tag_name('input')
 
     @property
     def control_key(self):
@@ -1038,7 +1042,8 @@ class TestAdminManageSurvey(AdminTest):
         self.click(self.drv.find_element_by_class_name('nav-settings'))
         self.wait_for_element('user-preferred-lang')
         self.click(self.drv.find_element_by_css_selector(
-            '#user-preferred-lang option:nth-of-type(2)'))
+            '#user-preferred-lang option:nth-of-type(2)'
+        ))
 
         save_btn = self.drv.find_element_by_class_name('btn-save-user')
         self.sleep()
@@ -1276,17 +1281,18 @@ class TestEnumerate(DriverTest):
 
         self.wait_for_element('menu', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('menu'))
-        self.click(
-            self.drv
-            .find_element_by_class_name('language_select')
-        )
-
-        self.assertEqual(
-            len(self.drv.find_elements_by_css_selector(
-                '.language_select option')), 3)
-
-        self.click(self.drv.find_elements_by_css_selector(
-            '.language_select option')[1])
+        lang = Select(self.drv.find_element_by_class_name('language_select'))
+        self.assertEqual(len(lang.options), 3)
+        # For some reason on Android selecting an option works but raises an
+        # exception...
+        # So... ignore the exception!
+        try:
+            lang.select_by_index(1)
+        except WebDriverException:
+            if self.browser == 'android':
+                pass
+            else:
+                raise
 
         self.sleep()
 
@@ -2177,17 +2183,7 @@ class TestEnumerate(DriverTest):
         alert = self.drv.switch_to.alert
         alert.accept()
 
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('3')
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE * 14, '3')
 
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
@@ -2254,28 +2250,14 @@ class TestEnumerate(DriverTest):
         # TODO: change this behavior
         alert = self.drv.switch_to.alert
         alert.accept()
+        if self.browser == 'android':
+            self.sleep()
 
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_elements_by_tag_name('input')[0]
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('3')
-            .perform()
+        self.drv.find_elements_by_tag_name('input')[0].send_keys(
+            Keys.BACK_SPACE * 14, '3'
         )
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_elements_by_tag_name('input')[-1]
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('4')
-            .perform()
+        self.drv.find_elements_by_tag_name('input')[-1].send_keys(
+            Keys.BACK_SPACE * 13, '4'
         )
 
         self.click(self.drv.find_element_by_class_name('navigate-right'))
@@ -2776,16 +2758,8 @@ class TestEnumerate(DriverTest):
             'integer_0'
         )
 
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('15')
-            .perform()
+        self.drv.find_element_by_tag_name('input').send_keys(
+            Keys.BACK_SPACE * 2, '15'
         )
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
@@ -3021,17 +2995,7 @@ class TestEnumerate(DriverTest):
             'branch'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('25')
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE, '25')
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
             self.drv.find_element_by_tag_name('h3').text,
@@ -3103,34 +3067,14 @@ class TestEnumerate(DriverTest):
             'b0'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('4')
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE, '4')
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
             self.drv.find_element_by_tag_name('h3').text,
             'b1'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('1')
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE, '1')
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
             self.drv.find_element_by_tag_name('h3').text,
@@ -3155,34 +3099,14 @@ class TestEnumerate(DriverTest):
             'b0'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('15')
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE * 2, '15')
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
             self.drv.find_element_by_tag_name('h3').text,
             'b1'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('5')
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE * 2, '5')
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
             self.drv.find_element_by_tag_name('h3').text,
@@ -3207,17 +3131,7 @@ class TestEnumerate(DriverTest):
             'b0'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('999')
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE * 4, '999')
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
             self.drv.find_element_by_tag_name('h3').text,
@@ -3246,34 +3160,14 @@ class TestEnumerate(DriverTest):
             'b0'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('4.2')
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE * 3, '4.2')
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
             self.drv.find_element_by_tag_name('h3').text,
             'b1'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('1.2')
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE * 3, '1.2')
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
             self.drv.find_element_by_tag_name('h3').text,
@@ -3298,34 +3192,14 @@ class TestEnumerate(DriverTest):
             'b0'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('15.1')
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE * 4, '15.1')
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
             self.drv.find_element_by_tag_name('h3').text,
             'b1'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('5.1')
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE * 4, '5.1')
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
             self.drv.find_element_by_tag_name('h3').text,
@@ -3350,17 +3224,7 @@ class TestEnumerate(DriverTest):
             'b0'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('999.1')
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE * 6, '999.1')
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
             self.drv.find_element_by_tag_name('h3').text,
@@ -3929,17 +3793,7 @@ class TestEnumerate(DriverTest):
             1
         )
 
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('2')
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE, '2')
 
         self.assertEqual(
             len(self.drv.find_elements_by_css_selector('input:invalid')),
@@ -3950,17 +3804,7 @@ class TestEnumerate(DriverTest):
             0
         )
 
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('12')
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE, '12')
 
         self.assertEqual(
             len(self.drv.find_elements_by_css_selector('input:invalid')),
@@ -4021,17 +3865,7 @@ class TestEnumerate(DriverTest):
             1
         )
 
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('2')
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE, '2')
 
         self.assertEqual(
             len(self.drv.find_elements_by_css_selector('input:invalid')),
@@ -4042,17 +3876,7 @@ class TestEnumerate(DriverTest):
             0
         )
 
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys('12')
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE, '12')
 
         self.assertEqual(
             len(self.drv.find_elements_by_css_selector('input:invalid')),
@@ -4120,17 +3944,7 @@ class TestEnumerate(DriverTest):
                 .send_keys(Keys.LEFT, Keys.LEFT)
             )
         else:
-            (
-                ActionChains(self.drv)
-                .key_down(
-                    self.control_key,
-                    self.drv.find_element_by_tag_name('input')
-                )
-                .send_keys('a')
-                .key_up(self.control_key)
-                .send_keys(Keys.DELETE)
-                .perform()
-            )
+            self.input_field().send_keys(Keys.BACK_SPACE * 10)
         self.enter_date(
             self.drv.find_element_by_tag_name('input'),
             '2015', '09', '02'
@@ -4152,17 +3966,7 @@ class TestEnumerate(DriverTest):
                 .send_keys(Keys.LEFT, Keys.LEFT)
             )
         else:
-            (
-                ActionChains(self.drv)
-                .key_down(
-                    self.control_key,
-                    self.drv.find_element_by_tag_name('input')
-                )
-                .send_keys('a')
-                .key_up(self.control_key)
-                .send_keys(Keys.DELETE)
-                .perform()
-            )
+            self.input_field().send_keys(Keys.BACK_SPACE * 10)
         self.enter_date(
             self.drv.find_element_by_tag_name('input'),
             '2015', '09', '12'
