@@ -18,12 +18,12 @@ module.exports = React.createClass({
         }
 
         return (
-                <div className='bar-padded'>
-                    <button onClick={this.props.buttonFunction} className={buttonClasses}>
-                        {this.props.text}
-                    </button>
-                </div>
-               );
+            <div className='bar-padded'>
+                <button onClick={this.props.buttonFunction} className={buttonClasses}>
+                    {this.props.text}
+                </button>
+            </div>
+       );
     }
 });
 

@@ -16,14 +16,13 @@ var React = require('react');
  */
 module.exports = React.createClass({
     getInitialState: function() {
-        return {
-        };
+        return {};
     },
 
     // Determine the input field type based on props.type
     getResponseType: function() {
         var type = this.props.type;
-        switch(type) {
+        switch (type) {
             case 'integer':
             case 'decimal':
                 return 'number';
@@ -43,7 +42,7 @@ module.exports = React.createClass({
     // Determine the input field step based on props.type
     getResponseStep: function() {
         var type = this.props.type;
-        switch(type) {
+        switch (type) {
             case 'decimal':
                 return 'any';
             case 'timestamp':
@@ -63,7 +62,7 @@ module.exports = React.createClass({
         var logic = this.props.logic;
         console.log('Enforcing: ', logic);
         var val = null;
-        switch(type) {
+        switch (type) {
             case 'integer':
                 val = parseInt(answer);
                 if (isNaN(val)) {
@@ -109,7 +108,7 @@ module.exports = React.createClass({
                 var month = ('0' + (resp.getMonth() + 1)).slice(-2);
                 var year = resp.getFullYear();
                 val = answer; //XXX Keep format?
-                if(isNaN(year) || isNaN(month) || isNaN(day))  {
+                if (isNaN(year) || isNaN(month) || isNaN(day)) {
                     val = null;
                 }
 
@@ -130,9 +129,9 @@ module.exports = React.createClass({
             case 'time':
                 //TODO: enforce
             default:
-              if (answer) {
-                  val = answer;
-              }
+                if (answer) {
+                    val = answer;
+                }
         }
 
         return val;
@@ -161,7 +160,7 @@ module.exports = React.createClass({
 
     render: function() {
         return (
-                <div className='input_container'>
+            <div className='input_container'>
                     <input
                         type={this.getResponseType()}
                         step={this.getResponseStep()}
@@ -179,6 +178,6 @@ module.exports = React.createClass({
                         : null}
                     </input>
                  </div>
-               );
+        );
     }
 });

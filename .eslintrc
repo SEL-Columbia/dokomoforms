@@ -33,6 +33,7 @@
         "jsx": true,
         "modules": true,
         "arrowFunctions": true,
+        "blockBindings": true,
         "experimentalObjectRestSpread": true
     },
     "plugins": [
