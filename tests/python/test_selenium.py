@@ -208,6 +208,8 @@ class DriverTest(tests.python.util.DokoExternalDBTest):
             time.sleep(10)
         if self.browser != 'android':
             self.drv.set_page_load_timeout(180)
+        if self.browser not in {'android', 'iPhone'}:
+            self.drv.set_window_size(1280, 1280)
         self.drv.set_script_timeout(180)
 
     def _set_sauce_status(self):
