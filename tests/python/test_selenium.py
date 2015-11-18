@@ -4367,20 +4367,25 @@ class TestEnumerateSlowRevisit(DriverTest):
         """
         survey_id = self.get_single_node_survey_id('facility')
 
-        # first load, should be slow because revisit is hit
-        start_time = time.time()
         self.get('/enumerate/{}'.format(survey_id))
-        overlay = self.drv.find_elements_by_class_name('loading-overlay')
-        finish_time = time.time()
+        if self.browser == 'android':
+            overlay = self.drv.find_elements_by_class_name('loading-overlay')
+            self.assertEqual(len(overlay), 1)
+            self.sleep(2)
+            noverlay = self.drv.find_elements_by_class_name('loading-overlay')
+            self.assertEqual(len(noverlay), 0)
 
-        self.assertGreater(finish_time - start_time, 2)
-        # overlay should not be present
-        self.assertEqual(len(overlay), 0)
+        else:
+            # first load, should be slow because revisit is hit
+            start_time = time.time()
+            overlay = self.drv.find_elements_by_class_name('loading-overlay')
+            finish_time = time.time()
+
+            self.assertGreater(finish_time - start_time, 2)
+            # overlay should not be present
+            self.assertEqual(len(overlay), 0)
 
         # second load, should be fast because revisit is not hit
-        start_time = time.time()
         self.drv.refresh()
-        overlay = self.drv.find_elements_by_class_name('loading-overlay')
-        finish_time = time.time()
-
-        self.assertLess(finish_time - start_time, 2)
+        nnoverlay = self.drv.find_elements_by_class_name('loading-overlay')
+        self.assertEqual(len(nnoverlay), 0)
