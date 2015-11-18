@@ -1,0 +1,229 @@
+"""Example for a local_config.py file."""
+import os
+
+#######################################
+## Application options ################
+#######################################
+
+# organization = 'Name of Organization'
+
+# Default: 'unconfigured organization'
+# Set organization to the name of your organization. This name will be
+# displayed in the HTML <title> elements across the various pages of the
+# application.
+
+#######################################
+
+# demo = True
+
+# Default: False
+# Set demo = True to run the webapp in demo mode. In demo mode anyone can log
+# in as a dummy administrator account with some prepopulated data.
+
+#######################################
+
+# port = 8888
+
+# Default: 8888
+# Set port = <integer> to run the webapp on the specified port. The port
+# specified in config.py is 8888, so you don't have to set this value yourself
+# unless you want to use a different port. Note that some of the tests in the
+# test suite assume that tests/python/selenium_webapp.py is running on port
+# 9999.
+
+#######################################
+
+# log_to_file = False
+
+# Default: True
+# Set log_to_file = False to display all log output to stdout/stderr. Otherwise
+# all the application logs will be in .log files in the log/ directory.
+
+#######################################
+
+# debug = True
+
+# Default: False
+# Set debug = True to run the webapp in debug mode. In debug mode a number of
+# /debug/ URL endpoints are available (defined in webapp.py) that allow any
+# user to do a number of potentially dangerous things, such as log in as any
+# user. This also sets Tornado's debug mode to True.
+#
+# WARNING:
+# Only enable debug mode if you are developing the Dokomo Forms software
+# itself. Never enable debug mode in production.
+#
+# NEVER ENABLE DEBUG MODE IN PRODUCTION!!!
+
+#######################################
+
+# https = False
+
+# Default: True
+# Set https = False to put the webapp into HTTP mode (can not serve HTTPS
+# traffic).
+
+#######################################
+
+# persona_verification_url = 'Some URL'
+
+# Default: 'https://verifier.login.persona.org/verify'
+# Under normal circumstances you should not change this setting.
+# persona_verification_url tells the application which server to use for
+# authentication using Mozilla Persona.
+
+#######################################
+
+# revisit_url = 'some URL'
+
+# Default: 'http://revisit.global/api/v0/facilities.json'
+# Set revisit_url to tell the application which Revisit server to use as a
+# registry for facility data. By default it will use the official
+# revisit.global server. You may wish to use staging.revisit.global instead
+# for testing purposes
+
+#######################################
+## Database options ###################
+#######################################
+
+# schema = 'schema name'
+
+# Default: 'doko'
+# The schema setting is the name of the PostgreSQL schema that will be used
+# for the application's database tables. The schema will be created if it does
+# not exist.
+
+#######################################
+
+db_host = os.environ.get('DB_DEV_PORT_5432_TCP_ADDR', 'localhost')
+
+# Default: os.environ.get('DB_PORT_5432_TCP_ADDR', 'localhost')
+# db_host is the database server address that the application will use.
+# If you are running the application and the database on the same bare metal
+# machine, the server address should be 'localhost'. If you are deploying to
+# production using Docker, the address should come from the
+# DB_PORT_5432_TCP_ADDR environment variable. If you are using Docker for local
+# development, the address should come from the
+# DB_DEV_PORT_5432_TCP_ADDR environment variable.
+
+#######################################
+
+db_port = os.environ.get('DB_DEV_PORT_5432_TCP_PORT', '5432')
+
+# Default: os.environ.get('DB_PORT_5432_TCP_PORT', '5432')
+# db_port is the database server port that the application will use. If you are
+# running the application and the database on the same bare metal machine, the
+# port should probably be '5432', which is the default port for PostgreSQL. If
+# you are deploying to production using Docker, the address should come from
+# the DB_PORT_5432_TCP_PORT environment variable. If you are using Docker for
+# local development, the address should come from the
+# DB_DEV_PORT_5432_TCP_PORT environment variable.
+
+#######################################
+
+# db_database = 'database name'
+
+# Default: 'doko'
+# The name of the PostgreSQL database (used when connecting).
+
+#######################################
+
+# db_user = 'user name'
+
+# Default: 'travis'
+# The PostgreSQL database user.
+
+#######################################
+
+db_password = os.environ.get(
+    'DB_DEV_ENV_POSTGRES_PASSWORD', 'database password'
+)
+
+# Default: os.environ.get('DB_ENV_POSTGRES_PASSWORD', 'database password')
+# db_password is the PostgreSQL database password for the user specified by
+# db_user. If you are running the application and the database on the same
+# bare metal machine, the password is whatever you set it to be. If you are
+# deploying to production using Docker, the address should come from the
+# DB_ENV_POSTGRES_PASSWORD environment variable. If you are using Docker for
+# local development, the address should come from the
+# DB_DEV_ENV_POSTGRES_PASSWORD environment variable.
+
+#######################################
+
+# pool_size = <integer>
+
+# Default: None
+# Set pool_size to specify the number of database connections to keep in the
+# pool. You can usually leave this alone.
+
+#######################################
+
+# max_overflow = <integer>
+
+# Default: None
+# Set max_overflow to specify the maximum number of database connections that
+# can be open at once. You can usually leave this alone.
+
+#######################################
+
+# kill = True
+
+# Default: False
+# Set kill = True to drop the schema (default 'doko') if it exists before
+# starting the application.
+#
+# WARNING:
+# This will permanently erase any and all data that exists in schema if it
+# exists. You should only use this if you are developing the application.
+#
+# THIS IS A DESTRUCTIVE OPTION
+# IT WILL ERASE DATA!!!
+
+#######################################
+## Testing options ####################
+#######################################
+
+# TEST_USER = 'a UUID4'
+
+# Set TEST_USER to a user ID to log in automatically as that user if you run
+# tests/python/webapp.py
+
+#######################################
+
+# SAUCE_CONNECT = True
+
+# Set SAUCE_CONNECT = True (if you don't want to set it as an environment
+# variable) in order to run the tests in tests/python/test_selenium.py on
+# Sauce Labs using their Sauce Connect software. The next few settings
+# will only apply if SAUCE_CONNECT = True (or the environment variable is set).
+
+#######################################
+
+# SAUCE_USERNAME = 'user name'
+
+# The Sauce Labs user account name.
+
+#######################################
+
+# SAUCE_ACCESS_KEY = 'access key'
+
+# The access key associated with SAUCE_USERNAME.
+
+#######################################
+
+# DEFAULT_BROWSER = 'firefox::Linux'
+
+# The browser to use when running a test on Sauce Labs. The format is
+# browser_name:version:platform:other
+# The default version is the latest browser version.
+# The default platform is Linux.
+# "other" is (for now) the deviceName for android or iPhone test runs.
+#
+# For instance, to run a test on an Android 5.0 emulator, use:
+# DEFAULT_BROWSER = 'android:5.0:Linux:AndroidEmulator'
+# To run a test on Chrome 45 on Windows 8.1:
+# DEFAULT_BROWSER = 'chrome:45.0:Windows 8.1'
+#
+# Take a look here for other examples:
+# https://github.com/dokomo-sauce-matrix/dokomoforms/blob/
+# e560cb97638f75001f4ccf94c6576678d0195169/.travis.yml#L14-L47
