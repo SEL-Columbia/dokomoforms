@@ -29,6 +29,14 @@ Instead of relying on platform-specific apps, Dokomo's surveys are conducted usi
 
 As an adminstrator of a surveying effort, it's important to know where, when, and by whom data is being submitted. Dokomo Forms lets administrators quickly see the current progress of an effort, providing a quick list and map of the latest submissions and a graph showing submissions/day for the recent past.
 
+![alt Dokomo Forms Admin - Manage](https://i.imgur.com/6z7UJt2.jpg)
+
+#### Submission Data Quick Views
+
+Administrators can quickly view data from individual submissions and get some basic statistics and aggregations from each question on a survey.
+
+![alt Dokomo Forms Admin - Data](https://i.imgur.com/hwYRf8e.jpg)
+
 #### Revisit Integration
 
 Dokomo Forms integrates with [Revisit](http://revisit.global), a global facility registry API built here at the Sustainable Engineering Lab. Leveraging Revisit, multiple surveys conducted at the same facility can be easily linked, enabling longitudinal studies and allowing progress towards targets be tracked in collected indicators.
