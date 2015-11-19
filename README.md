@@ -23,7 +23,7 @@ Several solutions exist to handle offline mobile data collection. While this typ
 
 #### Mobile-Web Technology
 
-Instead of relying on platform-specific apps, Dokomo's surveys are conducted using an offline-capable mobile web app. This makes for an easier workflow for enumerators and administrators — surveys can be accessed on anywhere via a normal web link, and can be conducted on (almost) any device.
+Instead of relying on platform-specific apps, Dokomo's surveys are conducted using an offline-capable mobile web app. This makes for an easier workflow for enumerators and administrators — surveys can be accessed via a normal web link, and can be conducted on (almost) any device that has a web browser.
 
 ![alt Dokomo Forms Admin - Manage](https://i.imgur.com/saW5zcB.jpg)
 
@@ -41,7 +41,7 @@ Administrators can quickly view data from individual submissions and get some ba
 
 #### Revisit Integration
 
-Dokomo Forms integrates with [Revisit](http://revisit.global), a global facility registry API built here at the Sustainable Engineering Lab. Leveraging Revisit, multiple surveys conducted at the same facility can be easily linked, enabling longitudinal studies and allowing progress towards targets be tracked in collected indicators.
+Dokomo Forms integrates with [Revisit](http://revisit.global), a global facility registry API built here at the Sustainable Engineering Lab. Leveraging Revisit, multiple surveys conducted at the same facility can be easily linked, allowing changes in data points at survey locations to be tracked over time.
 
 ## Under Development
 
@@ -53,7 +53,7 @@ Soon survey administrators will be able to quickly create surveys though a web-b
 
 #### Better Survey Administration
 
-- Publish surveys directly from the administration panel to enumerator's mobile devices.
+- Publish surveys directly from the administration panel to enumerators' mobile devices.
 - Send updates and communications to enumerators
 
 #### Data Visualization
