@@ -294,17 +294,28 @@ describe('PhotoPreview', () => {
 });
 
 describe('PhotoField', () => {
+    var sr;
 
-    it('preview not shown by default', () => {
+    beforeEach(function() {
+        sr = TestUtils.createRenderer();
+    });
+
+    it('does not show preview by default', () => {
 
         // Render a DontKnow in the document
-        var photo = TestUtils.renderIntoDocument(
+        sr.render(
             <PhotoField />
         );
 
-        var preview = TestUtils.scryRenderedComponentsWithType(photo, 'PhotoPreview');
+        var result = sr.getRenderOutput();
 
-        expect(preview.length).toEqual(0);
+        expect(result.type).toBe('span');
+
+        console.log(result.props.children[1]);
+        // expect(result.props.children).toEqual([
+
+        // ]);
+        // expect(preview.length).toEqual(0);
     });
 
     it('preview shown when showPreview prop is true', () => {
