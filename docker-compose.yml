@@ -11,8 +11,6 @@ webapp:
   command: bash -c "head -c 24 /dev/urandom > cookie_secret && python webapp.py"
   links:
     - "db:db"
-  ports:
-    - "8888:8888"
   volumes:
     - ./local_config.py:/dokomo/local_config.py
 db:
