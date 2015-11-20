@@ -22,9 +22,7 @@ define('port', help='run on the given port', type=int)
 log_help = 'whether to write logs to files in logs/'
 define('log_to_file', default=True, help=log_help, type=bool)
 
-define('cookie_secret', help='string used to create session cookies')
 define('debug', default=False, help='whether to enable debug mode', type=bool)
-define('autoreload', default=False, help='whether to autoreload', type=bool)
 
 https_help = 'whether the application accepts https traffic'
 define('https', help=https_help, type=bool)

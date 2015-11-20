@@ -58,7 +58,7 @@ var AccountOverview = (function() {
         var submissions = data.submissions,
             $table = $('#recent-list table tbody');
         submissions.forEach(function(sub) {
-            sub.submission_time = moment(sub.submission_time).format('MMM d, YYYY [at] HH:mm');
+            sub.submission_time = moment(sub.submission_time).format('MMM D, YYYY [at] HH:mm');
             sub.survey = {
                 id: sub.survey_id,
                 default_language: sub.survey_default_language

@@ -1,6 +1,6 @@
-tornado==4.2.1
+tornado==4.3
 SQLAlchemy==1.0.9
-geoalchemy2==0.2.5
+geoalchemy2==0.2.6
 psycopg2==2.6.1
 bcrypt==2.0.0
 passlib==1.6.5
