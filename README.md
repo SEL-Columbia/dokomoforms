@@ -19,7 +19,7 @@ Several solutions exist to handle offline mobile data collection. While this typ
 
 #### Mobile-Web Technology
 
-Instead of relying on platform-specific apps, Dokomo's surveys are conducted using an offline-capable mobile web app. This makes for an easier workflow for enumerators and administrators — surveys can be accessed via a normal web link, and can be conducted on (almost) any device that has a web browser.
+Instead of relying on platform-specific apps, Dokomo's surveys are conducted using an offline-capable mobile web app. This makes for an easier workflow for administrators and enumerators — surveys can be distributed and accessed via a normal web link, and can be conducted on (almost) any device that has a web browser.
 
 ![alt Dokomo Forms Admin - Manage](https://i.imgur.com/saW5zcB.jpg)
 
