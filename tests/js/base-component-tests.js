@@ -818,12 +818,12 @@ describe('ResponseField', () => {
     it('validates min and max values in date field', () => {
 
         var logic = {
-            min: '2014-01-01T00:00:00.000Z',
-            max: '2015-01-01T00:00:00.000Z'
+            min: '2014-01-01',
+            max: '2015-01-01'
         };
 
         var ResponseFieldInstance = TestUtils.renderIntoDocument(
-            <ResponseField onInput={callback} type='decimal' logic={logic} />
+            <ResponseField onInput={callback} type='date' logic={logic} />
         );
 
         var input = TestUtils.findRenderedDOMComponentWithTag(ResponseFieldInstance, 'input');
@@ -834,7 +834,7 @@ describe('ResponseField', () => {
             {
                 target: {
                     setCustomValidity: setCustomValidity,
-                    value: '2014-06-01T00:00:00.000Z'
+                    value: '2014-06-01'
                 }
             }
         );
@@ -848,7 +848,7 @@ describe('ResponseField', () => {
             {
                 target: {
                     setCustomValidity: setCustomValidity,
-                    value: '2013-01-01T00:00:00.000Z'
+                    value: '2013-01-01'
                 }
             }
         );
@@ -862,7 +862,7 @@ describe('ResponseField', () => {
             {
                 target: {
                     setCustomValidity: setCustomValidity,
-                    value: '2016-01-01T00:00:00.000Z'
+                    value: '2016-01-01'
                 }
             }
         );
@@ -871,6 +871,160 @@ describe('ResponseField', () => {
         expect(setCustomValidity.mock.calls.length).toEqual(5);
     });
 
+});
+
+describe('ResponseFields', () => {
+    var ResponseFields, ResponseField;
+
+    beforeEach(function() {
+        jest.dontMock('../../dokomoforms/static/src/survey/js/components/baseComponents/ResponseFields.js');
+        jest.dontMock('../../dokomoforms/static/src/survey/js/components/baseComponents/ResponseField.js');
+        ResponseFields = require('../../dokomoforms/static/src/survey/js/components/baseComponents/ResponseFields');
+        ResponseField = require('../../dokomoforms/static/src/survey/js/components/baseComponents/ResponseField');
+    });
+
+    it('renders multiple ResponseField components based on childCount prop', () => {
+        var ResponseFieldsInstance = TestUtils.renderIntoDocument(
+            <ResponseFields childCount='5' onInput={noop} buttonFunction={noop} type='date'/>
+        );
+
+        var ResponseFieldInstances = TestUtils.scryRenderedComponentsWithType(ResponseFieldsInstance, ResponseField);
+
+        expect(ResponseFieldInstances.length).toEqual(5);
+    });
+});
+
+describe('Select', () => {
+    var Select, ResponseField, callback;
+
+    beforeEach(function() {
+        jest.dontMock('../../dokomoforms/static/src/survey/js/components/baseComponents/Select.js');
+        jest.dontMock('../../dokomoforms/static/src/survey/js/components/baseComponents/ResponseField.js');
+        Select = require('../../dokomoforms/static/src/survey/js/components/baseComponents/Select');
+        ResponseField = require('../../dokomoforms/static/src/survey/js/components/baseComponents/ResponseField');
+        callback = jest.genMockFunction();
+    });
+
+    it('renders a single select dropdown', () => {
+        var choices = [{
+            value: 0,
+            text: 'Zero'
+        }];
+
+        var SelectInstance = TestUtils.renderIntoDocument(
+            <Select choices={choices} multiSelect={false} />
+        );
+
+        var select = TestUtils.findRenderedDOMComponentWithTag(SelectInstance, 'select');
+
+        expect(select.getAttribute('multiple')).toBeNull();
+
+        var options = TestUtils.scryRenderedDOMComponentsWithTag(SelectInstance, 'option');
+
+        // expect two, as placeholder is added to top
+        expect(options.length).toEqual(2);
+    });
+
+    it('renders a multi select dropdown', () => {
+        var choices = [{
+            value: 0,
+            text: 'Zero'
+        }];
+
+        var SelectInstance = TestUtils.renderIntoDocument(
+            <Select choices={choices} multiSelect={true} />
+        );
+
+        var select = TestUtils.findRenderedDOMComponentWithTag(SelectInstance, 'select');
+
+        expect(select.getAttribute('multiple')).toBeDefined();
+    });
+
+    it('renders other option', () => {
+        var choices = [{
+            value: 0,
+            text: 'Zero'
+        }];
+
+        var SelectInstance = TestUtils.renderIntoDocument(
+            <Select choices={choices} multiSelect={false} withOther={true} />
+        );
+
+        var options = TestUtils.scryRenderedDOMComponentsWithTag(SelectInstance, 'option');
+        // expect two, as placeholder is added to top
+        expect(options.length).toEqual(3);
+    });
+
+    it('renders other field when other option selected', () => {
+        var choices = [{
+            value: 0,
+            text: 'Zero'
+        }];
+
+        var SelectInstance = TestUtils.renderIntoDocument(
+            <Select choices={choices} multiSelect={false} withOther={true} />
+        );
+
+        var options = TestUtils.scryRenderedDOMComponentsWithTag(SelectInstance, 'option');
+        var select = TestUtils.findRenderedDOMComponentWithTag(SelectInstance, 'select');
+
+        TestUtils.Simulate.change(
+            select,
+            {
+                target: {
+                    selectedOptions: [
+                        options[2]
+                    ]
+                }
+            }
+        );
+
+        // make sure the response field is rendered
+        var ResponseFieldInstance = TestUtils.findRenderedComponentWithType(SelectInstance, ResponseField);
+    });
+
+    it('calls onSelect prop when changed', () => {
+        var choices = [{
+            value: 0,
+            text: 'Zero'
+        }];
+
+        var SelectInstance = TestUtils.renderIntoDocument(
+            <Select choices={choices} multiSelect={false} onSelect={callback} />
+        );
+
+        var options = TestUtils.scryRenderedDOMComponentsWithTag(SelectInstance, 'option');
+        var select = TestUtils.findRenderedDOMComponentWithTag(SelectInstance, 'select');
+
+        TestUtils.Simulate.change(
+            select,
+            {
+                target: {
+                    selectedOptions: [
+                        options[1]
+                    ]
+                }
+            }
+        );
+
+        expect(callback).toBeCalled();
+
+    });
+
+    it('renders with default value from initSelect', () => {
+        var choices = [{
+            value: 0,
+            text: 'Zero'
+        }];
+
+        var SelectInstance = TestUtils.renderIntoDocument(
+            <Select choices={choices} multiSelect={false} initSelect={[0]} />
+        );
+
+        var select = TestUtils.findRenderedDOMComponentWithTag(SelectInstance, 'select');
+
+        expect(select.value).toEqual('0');
+    });
 });
 
 // describe('Menu', () => {
