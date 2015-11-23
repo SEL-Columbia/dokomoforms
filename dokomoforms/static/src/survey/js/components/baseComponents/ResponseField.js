@@ -161,23 +161,23 @@ module.exports = React.createClass({
     render: function() {
         return (
             <div className='input_container'>
-                    <input
-                        type={this.getResponseType()}
-                        step={this.getResponseStep()}
-                        placeholder={this.props.placeholder || 'Please provide a response.'}
-                        onChange={this.onChange}
-                        defaultValue={this.props.initValue}
+                <input
+                    type={this.getResponseType()}
+                    step={this.getResponseStep()}
+                    placeholder={this.props.placeholder || 'Please provide a response.'}
+                    onChange={this.onChange}
+                    defaultValue={this.props.initValue}
+                    disabled={this.props.disabled}
+                 >
+                 {this.props.showMinus ?
+                    <span
+                        onClick={this.props.buttonFunction.bind(null, this.props.index)}
                         disabled={this.props.disabled}
-                     >
-                     {this.props.showMinus ?
-                        <span
-                            onClick={this.props.buttonFunction.bind(null, this.props.index)}
-                            disabled={this.props.disabled}
-                            className='icon icon-close question__minus'>
-                        </span>
-                        : null}
-                    </input>
-                 </div>
+                        className='icon icon-close question__minus'>
+                    </span>
+                    : null}
+                </input>
+            </div>
         );
     }
 });
