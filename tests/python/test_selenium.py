@@ -18,9 +18,11 @@ import urllib.error
 from bs4 import BeautifulSoup
 
 import dateutil.parser
-from dateutil.tz import tzlocal
+from dateutil.tz import tzlocal, tzoffset
 
 from passlib.hash import bcrypt_sha256
+
+import pytz
 
 from selenium import webdriver
 from selenium.common.exceptions import (
@@ -319,6 +321,16 @@ class DriverTest(tests.python.util.DokoExternalDBTest):
             self.sleep()
             element.send_keys(year)
             self.sleep()
+        elif self.browser == 'android':
+            self.drv.execute_script(
+                'arguments[0].value = "{}-{}-{}"'.format(year, month, day),
+                element
+            )
+            self.drv.execute_script(
+                "var event = new Event('input', {bubbles: true}); "
+                "arguments[0].dispatchEvent(event);",
+                element
+            )
         else:
             element.send_keys('/'.join((year, month, day)))
 
@@ -330,27 +342,95 @@ class DriverTest(tests.python.util.DokoExternalDBTest):
             self.sleep()
             element.send_keys(am_pm)
             self.sleep()
+        elif self.browser == 'android':
+            if hour == '12' and am_pm == 'AM':
+                adjusted_hour = '0'
+            elif hour != '12' and am_pm == 'PM':
+                adjusted_hour = str(int(hour) + 12)
+            else:
+                adjusted_hour = hour
+
+            h = adjusted_hour
+            adjusted_hour = '0' + h if len(h) == 1 else h
+            adjusted_minute = '0' + minute if len(minute) == 1 else minute
+
+            self.drv.execute_script(
+                'arguments[0].value = "{}:{}"'.format(
+                    adjusted_hour, adjusted_minute
+                ),
+                element
+            )
+            self.drv.execute_script(
+                "var event = new Event('input', {bubbles: true}); "
+                "arguments[0].dispatchEvent(event);",
+                element
+            )
         else:
             element.send_keys('{}:{} {}'.format(hour, minute, am_pm))
 
-    def enter_timestamp(self, element, year, month, day, hour, minute, am_pm):
+    def enter_timestamp(self, element, timestamp):
+        modified_time_str = self.drv.execute_script(
+            'return moment("{}").format();'.format(timestamp)
+        )
+        modified_time = dateutil.parser.parse(modified_time_str)
+        unmodified_time = (
+            dateutil.parser.parse(timestamp).replace(tzinfo=pytz.utc)
+        )
+        utc_offset = (modified_time - unmodified_time).seconds
+        utc_offset_time = (
+            dateutil.parser.
+            parse(timestamp).
+            replace(tzinfo=tzoffset(None, utc_offset))
+        )
+        utc_time = utc_offset_time.astimezone(pytz.utc)
+
+        if self.browser == 'android':
+            self.drv.execute_script(
+                'arguments[0].value = "{}"'.format(
+                    utc_time.isoformat()[:-6]
+                ),
+                element
+            )
+            self.sleep()
+            self.drv.execute_script(
+                "var event = new Event('input', {bubbles: true}); "
+                "arguments[0].dispatchEvent(event);",
+                element
+            )
+            self.sleep()
+            self.click(element)
+            if 'NATIVE_APP' in self.drv.window_handles:
+                self.drv.switch_to.window('NATIVE_APP')
+                buttons = self.drv.find_elements_by_tag_name('Button')
+                if buttons:
+                    self.click(buttons[1])
+                self.drv.switch_to.window('WEBVIEW_0')
+            self.drv.execute_script(
+                "var event = new Event('input', {bubbles: true}); "
+                "arguments[0].dispatchEvent(event);",
+                self.input_field()
+            )
+            self.sleep()
+            return
         if self.browser == 'chrome':
             raise unittest.SkipTest('Selenium + Chrome + timestamp == 😢')
-        self.enter_date(element, year, month, day)
+        self.enter_date(
+            element,
+            utc_time.strftime('%Y'),
+            utc_time.strftime('%m'),
+            utc_time.strftime('%d'),
+        )
         if self.browser == 'chrome':
             # For some reason this doesn't work...
             element.send_keys(Keys.TAB)
         else:
             element.send_keys(' ')
-        self.enter_time(element, hour, minute, am_pm)
-
-    def enter_timestamp_temporary(self, e, y, mo, d, h, mi, am_pm):
-        """Use this temporarily until we use moment.js."""
-        if self.browser == 'chrome':
-            raise unittest.SkipTest('Selenium + Chrome + timestamp == 😢')
-        e.send_keys('{}-{}-{}T{}:{}:00Z'.format(
-            y, mo, d, h if am_pm.lower().startswith('a') else h + 12, mi
-        ))
+        self.enter_time(
+            element,
+            utc_time.strftime('%I'),
+            utc_time.strftime('%M'),
+            utc_time.strftime('%p'),
+        )
 
 
 class TestAuth(DriverTest):
@@ -1568,7 +1648,7 @@ class TestEnumerate(DriverTest):
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.enter_timestamp(
             self.drv.find_element_by_tag_name('input'),
-            '2015', '08', '11', '3', '33', 'PM'
+            '2015-08-11T15:33:00'
         )
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
@@ -1578,12 +1658,7 @@ class TestEnumerate(DriverTest):
 
         self.assertIsNot(existing_submission, new_submission)
         answer = new_submission.answers[0].answer
-        date_answer = answer.date()
-        self.assertEqual(date_answer.isoformat(), '2015-08-11')
-        time_answer = answer.timetz()
-        answer_parts = re.split('[-+]', time_answer.isoformat())
-        self.assertEqual(len(answer_parts), 2, msg=answer_parts)
-        self.assertEqual(answer_parts[0], '15:33:00')
+        self.assertEqual(answer.isoformat(), '2015-08-11T15:33:00+00:00')
 
     @report_success_status
     def test_single_location_question(self):
@@ -3254,17 +3329,7 @@ class TestEnumerate(DriverTest):
             'b0'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys(Keys.DELETE)
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE * 10)
         self.enter_date(
             self.drv.find_element_by_tag_name('input'),
             '2015', '01', '04'
@@ -3275,17 +3340,7 @@ class TestEnumerate(DriverTest):
             'b1'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys(Keys.DELETE)
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE * 10)
         self.enter_date(
             self.drv.find_element_by_tag_name('input'),
             '2015', '01', '01'
@@ -3317,17 +3372,7 @@ class TestEnumerate(DriverTest):
             'b0'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys(Keys.DELETE)
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE * 10)
         self.enter_date(
             self.drv.find_element_by_tag_name('input'),
             '2015', '11', '22'
@@ -3338,17 +3383,7 @@ class TestEnumerate(DriverTest):
             'b1'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys(Keys.DELETE)
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE * 10)
         self.enter_date(
             self.drv.find_element_by_tag_name('input'),
             '2015', '01', '05'
@@ -3376,17 +3411,7 @@ class TestEnumerate(DriverTest):
             'b0'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys(Keys.DELETE)
-            .perform()
-        )
+        self.input_field().send_keys(Keys.BACK_SPACE * 10)
         self.enter_date(
             self.drv.find_element_by_tag_name('input'),
             '2070', '01', '05'
@@ -3401,16 +3426,16 @@ class TestEnumerate(DriverTest):
     def test_timestamp_buckets(self):
         survey_id = self.survey_with_branch(
             'timestamp',
-            '(2015-01-01T1:00:00Z, 2015-01-03:1:00:00Z)',
-            '[2015-01-04T1:00:00Z, 2015-01-05T1:00:00Z]'
+            '(2015-01-01T12:00:00Z, 2015-01-03T12:00:00Z)',
+            '[2015-01-04T12:00:00Z, 2015-01-05T12:00:00Z]'
         )
 
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
-        self.enter_timestamp_temporary(
+        self.enter_timestamp(
             self.drv.find_element_by_tag_name('input'),
-            '2015', '01', '02', '01', '00', 'AM'
+            '2015-01-02T12:00:00'
         )
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
@@ -3418,20 +3443,10 @@ class TestEnumerate(DriverTest):
             'b0'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys(Keys.DELETE)
-            .perform()
-        )
-        self.enter_timestamp_temporary(
+        self.input_field().send_keys(Keys.RIGHT * 30, Keys.BACK_SPACE * 30)
+        self.enter_timestamp(
             self.drv.find_element_by_tag_name('input'),
-            '2015', '01', '04', '01', '00', 'AM'
+            '2015-01-04T12:00:00'
         )
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
@@ -3439,20 +3454,10 @@ class TestEnumerate(DriverTest):
             'b1'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys(Keys.DELETE)
-            .perform()
-        )
-        self.enter_timestamp_temporary(
+        self.input_field().send_keys(Keys.RIGHT * 30, Keys.BACK_SPACE * 30)
+        self.enter_timestamp(
             self.drv.find_element_by_tag_name('input'),
-            '2015', '01', '01', '01', '00', 'AM'
+            '2015-01-01T12:00:00'
         )
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
@@ -3473,7 +3478,7 @@ class TestEnumerate(DriverTest):
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.enter_timestamp(
             self.drv.find_element_by_tag_name('input'),
-            '2014', '11', '22', '01', '00', 'AM'
+            '2014-11-22T01:00:00'
         )
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
@@ -3481,20 +3486,10 @@ class TestEnumerate(DriverTest):
             'b0'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys(Keys.DELETE)
-            .perform()
-        )
+        self.input_field().send_keys(Keys.RIGHT * 30, Keys.BACK_SPACE * 30)
         self.enter_timestamp(
             self.drv.find_element_by_tag_name('input'),
-            '2015', '11', '22', '01', '00', 'AM'
+            '2015-11-22T01:00:00'
         )
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
@@ -3502,20 +3497,10 @@ class TestEnumerate(DriverTest):
             'b1'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys(Keys.DELETE)
-            .perform()
-        )
+        self.input_field().send_keys(Keys.RIGHT * 30, Keys.BACK_SPACE * 30)
         self.enter_timestamp(
             self.drv.find_element_by_tag_name('input'),
-            '2015', '01', '05', '01', '00', 'AM'
+            '2015-01-05T01:00:00'
         )
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
@@ -3532,7 +3517,7 @@ class TestEnumerate(DriverTest):
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.enter_timestamp(
             self.drv.find_element_by_tag_name('input'),
-            '1970', '01', '05', '01', '00', 'AM'
+            '1970-01-05T01:00:00'
         )
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
@@ -3540,20 +3525,10 @@ class TestEnumerate(DriverTest):
             'b0'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        (
-            ActionChains(self.drv)
-            .key_down(
-                self.control_key,
-                self.drv.find_element_by_tag_name('input')
-            )
-            .send_keys('a')
-            .key_up(self.control_key)
-            .send_keys(Keys.DELETE)
-            .perform()
-        )
+        self.input_field().send_keys(Keys.RIGHT * 30, Keys.BACK_SPACE * 30)
         self.enter_timestamp(
             self.drv.find_element_by_tag_name('input'),
-            '2070', '01', '05', '01', '00', 'AM'
+            '2070-01-05T01:00:00'
         )
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(

@@ -11,7 +11,7 @@ addons:
   firefox: "42.0"
 
 before_install:
-  - pip install coveralls flake8 coverage beautifulsoup4 py-dateutil selenium
+  - pip install coveralls flake8 coverage beautifulsoup4 py-dateutil pytz selenium
 
 before_script:
   - python3 -m flake8 .
