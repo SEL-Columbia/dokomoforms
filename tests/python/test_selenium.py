@@ -2183,7 +2183,9 @@ class TestEnumerate(DriverTest):
         alert = self.drv.switch_to.alert
         alert.accept()
 
-        self.input_field().send_keys(Keys.BACK_SPACE * 14, '3')
+        self.input_field().send_keys(
+            Keys.RIGHT * 14, Keys.BACK_SPACE * 14, '3'
+        )
 
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
@@ -2254,10 +2256,10 @@ class TestEnumerate(DriverTest):
             self.sleep()
 
         self.drv.find_elements_by_tag_name('input')[0].send_keys(
-            Keys.BACK_SPACE * 14, '3'
+            Keys.RIGHT * 15, Keys.BACK_SPACE * 15, '3'
         )
         self.drv.find_elements_by_tag_name('input')[-1].send_keys(
-            Keys.BACK_SPACE * 13, '4'
+            Keys.RIGHT * 14, Keys.BACK_SPACE * 14, '4'
         )
 
         self.click(self.drv.find_element_by_class_name('navigate-right'))
