@@ -19,6 +19,12 @@ module.exports = React.createClass({
         return {};
     },
 
+    getDefaultProps: function() {
+        return {
+            logic: {}
+        };
+    },
+
     // Determine the input field type based on props.type
     getResponseType: function() {
         var type = this.props.type;
@@ -60,69 +66,83 @@ module.exports = React.createClass({
     validate: function(answer) {
         var type = this.props.type;
         var logic = this.props.logic;
-        console.log('Enforcing: ', logic);
-        var val = null;
+
+        // console.log('logic', logic);
+
+        // assume false
+        var val;
         switch (type) {
             case 'integer':
                 val = parseInt(answer);
-                if (isNaN(val)) {
-                    val = null;
-                    break;
-                }
 
-                if (logic && logic.min && typeof logic.min === 'number') {
-                    if (val < logic.min) {
-                        val = null;
+                // in a try/catch to avoid checking logic props
+                try {
+                    if (isNaN(val) || val < logic.min || val > logic.max) {
+                        return false;
                     }
-                }
-
-                if (logic && logic.max && typeof logic.max === 'number') {
-                    if (val > logic.max) {
-                        val = null;
-                    }
+                } catch(ignore) {
+                    // ignore
                 }
 
                 break;
             case 'decimal':
                 val = parseFloat(answer);
-                if (isNaN(val)) {
-                    val = null;
-                }
 
-                if (logic && logic.min && typeof logic.min === 'number') {
-                    if (val < logic.min) {
-                        val = null;
+                // in a try/catch to avoid checking logic props
+                try {
+                    if (isNaN(val) || val < logic.min || val > logic.max) {
+                        return false;
                     }
-                }
-
-                if (logic && logic.max && typeof logic.max === 'number') {
-                    if (val > logic.max) {
-                        val = null;
-                    }
+                } catch(ignore) {
+                    // ignore
                 }
 
                 break;
             case 'date':
                 var resp = new Date(answer);
-                var day = ('0' + resp.getDate()).slice(-2);
-                var month = ('0' + (resp.getMonth() + 1)).slice(-2);
-                var year = resp.getFullYear();
-                val = answer; //XXX Keep format?
-                if (isNaN(year) || isNaN(month) || isNaN(day)) {
-                    val = null;
+                // var day = ('0' + resp.getDate()).slice(-2);
+                // var month = ('0' + (resp.getMonth() + 1)).slice(-2);
+                // var year = resp.getFullYear();
+                // val = answer; //XXX Keep format?
+
+                var min = new Date(logic.min);
+                var max = new Date(logic.max);
+
+                console.log(resp, logic.min, min, logic.max, max);
+                // make sure min / max are parseable dates
+                if (isNaN(min) || isNaN(max)) {
+                    return false;
                 }
 
-                if (logic && logic.min && !isNaN((new Date(logic.min)).getDate())) {
-                    if (resp < new Date(logic.min)) {
-                        val = null;
-                    }
+                // validate response
+                if (resp < min || resp > max) {
+                    return false;
                 }
 
-                if (logic && logic.max && !isNaN((new Date(logic.max)).getDate())) {
-                    if (resp > new Date(logic.max)) {
-                        val = null;
-                    }
-                }
+                // // in a try/catch to avoid checking logic props
+                // try {
+                //     if (isNaN(val) || val < logic.min || val > logic.max) {
+                //         return false;
+                //     }
+                // } catch(ignore) {
+                //     // ignore
+                // }
+
+                // if (isNaN(year) || isNaN(month) || isNaN(day)) {
+                //     return false;
+                // }
+
+                // if (logic && logic.min && !isNaN((new Date(logic.min)).getDate())) {
+                //     if (resp < new Date(logic.min)) {
+                //         return false;
+                //     }
+                // }
+
+                // if (logic && logic.max && !isNaN((new Date(logic.max)).getDate())) {
+                //     if (resp > new Date(logic.max)) {
+                //         return false;
+                //     }
+                // }
 
                 break;
             case 'timestamp':
@@ -134,8 +154,7 @@ module.exports = React.createClass({
                 }
         }
 
-        return val;
-
+        return true;
     },
 
     /*
@@ -145,11 +164,13 @@ module.exports = React.createClass({
      * @event: Change event
      */
     onChange: function(event) {
-        var value = this.validate(event.target.value);
+        var value = event.target.value;
         var input = event.target;
+        var isValid = this.validate(value);
+
         input.setCustomValidity('');
 
-        if (value === null) {
+        if (!isValid) {
             window.target = event.target;
             input.setCustomValidity('Invalid field.');
         }
@@ -158,6 +179,7 @@ module.exports = React.createClass({
             this.props.onInput(value, this.props.index);
     },
 
+    // TODO: invalid HTML, input field should not have children -- refactor to move span outside input.
     render: function() {
         return (
             <div className='input_container'>

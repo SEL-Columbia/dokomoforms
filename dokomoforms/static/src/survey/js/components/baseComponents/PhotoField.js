@@ -20,26 +20,13 @@ module.exports = React.createClass({
         };
     },
 
-    /*
-     * Validate the answer based on props.type
-     *
-     * @answer: The response to be validated
-     *
-     * TODO: implement photo validation, if necessary...
-     */
-    validate: function(answer) {
-        return true;
-    },
-
     showPreview: function() {
-        console.log('showPreview');
         this.setState({
             showPreview: true
         });
     },
 
     hidePreview: function() {
-        console.log('hidePreview');
         this.setState({
             showPreview: false
         });
