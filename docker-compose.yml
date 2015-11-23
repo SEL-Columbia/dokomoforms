@@ -8,11 +8,9 @@ nginx:
     - ./nginx.conf:/etc/nginx/nginx.conf
 webapp:
   image: "selcolumbia/dokomoforms"
-  command: bash -c "head -c 24 /dev/urandom > cookie_secret && python webapp.py"
+  command: bash -c "./docker-wait-for-postgres.sh db && head -c 24 /dev/urandom > cookie_secret && python webapp.py"
   links:
     - "db:db"
-  ports:
-    - "8888:8888"
   volumes:
     - ./local_config.py:/dokomo/local_config.py
 db:
