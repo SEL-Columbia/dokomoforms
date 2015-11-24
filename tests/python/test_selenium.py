@@ -119,6 +119,25 @@ class DriverTest(tests.python.util.DokoExternalDBTest):
         finally:
             signal.alarm(0)
 
+    @classmethod
+    def setUpClass(cls):
+        if not SAUCE_CONNECT:
+            return
+        cls.username = os.environ.get('SAUCE_USERNAME', SAUCE_USERNAME)
+        cls.access_key = os.environ.get('SAUCE_ACCESS_KEY', SAUCE_ACCESS_KEY)
+        cls.browser_config = os.environ.get('BROWSER', DEFAULT_BROWSER)
+        values = (cls.username, cls.access_key, cls.browser_config)
+        if any(v is None for v in values):
+            cls.fail(
+                cls,
+                'You have specified SAUCE_CONNECT=true but you have not'
+                ' specified SAUCE_USERNAME, SAUCE_ACCESS_KEY,'
+                ' and DEFAULT_BROWSER'
+            )
+        configs = cls.browser_config.split(':')
+        cls.browser, cls.version, cls.platform, *cls.other = configs
+        super().setUpClass()
+
     def setUp(self):
         try:
             urlopen(base)
@@ -143,25 +162,13 @@ class DriverTest(tests.python.util.DokoExternalDBTest):
             self.platform = 'Linux'
             return
 
-        self.username = os.environ.get('SAUCE_USERNAME', SAUCE_USERNAME)
-        self.access_key = os.environ.get('SAUCE_ACCESS_KEY', SAUCE_ACCESS_KEY)
-        browser_config = os.environ.get('BROWSER', DEFAULT_BROWSER)
-        values = (self.username, self.access_key, browser_config)
-        if any(v is None for v in values):
-            self.fail(
-                'You have specified SAUCE_CONNECT=true but you have not'
-                ' specified SAUCE_USERNAME, SAUCE_ACCESS_KEY,'
-                ' and DEFAULT_BROWSER'
-            )
-        configs = browser_config.split(':')
-        self.browser, self.version, self.platform, *other = configs
         caps = {
             'browserName': self.browser,
             'platform': self.platform,
             'idleTimeout': 1000,  # maximum
         }
         if self.browser in {'android', 'iPhone'}:
-            caps['deviceName'] = other[0]
+            caps['deviceName'] = self.other[0]
             caps['device-orientation'] = 'portrait'
         if self.version:
             caps['version'] = self.version
@@ -172,13 +179,13 @@ class DriverTest(tests.python.util.DokoExternalDBTest):
             caps['tags'] = [os.environ['TRAVIS_PYTHON_VERSION'], 'CI']
             caps['name'] = ' -- '.join((
                 os.environ['TRAVIS_BUILD_NUMBER'],
-                browser_config,
+                self.browser_config,
                 '{}.{}'.format(self.__class__.__name__, self._testMethodName)
             ))
         else:
             caps['name'] = ' -- '.join((
                 'Manual run',
-                browser_config,
+                self.browser_config,
                 '{}.{}'.format(self.__class__.__name__, self._testMethodName)
             ))
         hub_url = '{}:{}@localhost:4445'.format(self.username, self.access_key)
@@ -455,10 +462,16 @@ class TestAuth(DriverTest):
 
 
 class AdminTest(DriverTest):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        if cls.browser in {'android', 'iPhone'}:
+            cls.skipTest(
+                cls, 'The admin interface has no mobile design (yet).'
+            )
+
     def setUp(self):
         super().setUp()
-        if self.browser in {'android', 'iPhone'}:
-            self.skipTest('The admin interface has no mobile design (yet).')
         self.get('/debug/login/test_creator@fixtures.com')
         self.wait_for_element('html', by=By.TAG_NAME)
 
