@@ -122,6 +122,8 @@ class DriverTest(tests.python.util.DokoExternalDBTest):
     @classmethod
     def setUpClass(cls):
         if not SAUCE_CONNECT:
+            cls.browser = 'firefox'
+            cls.platform = 'Linux'
             return
         cls.username = os.environ.get('SAUCE_USERNAME', SAUCE_USERNAME)
         cls.access_key = os.environ.get('SAUCE_ACCESS_KEY', SAUCE_ACCESS_KEY)
@@ -158,8 +160,6 @@ class DriverTest(tests.python.util.DokoExternalDBTest):
 
         if not SAUCE_CONNECT:
             self.drv = webdriver.Firefox(firefox_profile=f_profile)
-            self.browser = 'firefox'
-            self.platform = 'Linux'
             return
 
         caps = {
@@ -1139,9 +1139,7 @@ class TestAdminManageSurvey(AdminTest):
         ))
 
         save_btn = self.drv.find_element_by_class_name('btn-save-user')
-        self.sleep()
-        save_btn.click()
-        self.sleep()
+        self.click(save_btn)
 
         # refresh the page
         self.drv.refresh()
