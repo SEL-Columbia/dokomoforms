@@ -127,11 +127,11 @@ module.exports = React.createClass({
 
                 break;
             case 'timestamp':
-            case 'time':
                 //TODO: enforce min/max
                 val = moment(answer).toDate();
                 console.log('val: ', val);
                 break;
+            case 'time':
             default:
                 if (answer) {
                     val = answer;
