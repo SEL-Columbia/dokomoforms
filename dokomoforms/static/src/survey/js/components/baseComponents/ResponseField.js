@@ -1,4 +1,5 @@
-var React = require('react');
+var React = require('react'),
+    moment = require('moment');
 
 /*
  * ResponseField component
@@ -126,8 +127,11 @@ module.exports = React.createClass({
 
                 break;
             case 'timestamp':
+                //TODO: enforce min/max
+                val = moment(answer).toDate();
+                console.log('val: ', val);
+                break;
             case 'time':
-                //TODO: enforce
             default:
                 if (answer) {
                     val = answer;
