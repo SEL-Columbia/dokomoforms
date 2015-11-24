@@ -38,11 +38,10 @@ module.exports = React.createClass({
 
         e.target.checked = checked;
         window.etarget = e.target;
-        //e.stopPropagation();
-        //e.cancelBubble = true;
 
-        if (this.props.selectFunction)
+        if (this.props.selectFunction) {
             this.props.selectFunction(selected);
+        }
 
         this.setState({
             selected: selected
