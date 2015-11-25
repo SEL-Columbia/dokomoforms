@@ -138,9 +138,6 @@ module.exports = React.createClass({
             );
         }
 
-        console.log('loggedIn: ', this.props.loggedIn);
-        console.log('hasFacilities: ', this.props.hasFacilities);
-
         if (navigator.onLine) {
             if (this.props.hasFacilities) {
                 reloadFacilities = (

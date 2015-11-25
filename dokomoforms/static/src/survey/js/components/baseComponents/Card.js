@@ -21,7 +21,7 @@ module.exports = React.createClass({
                 <div className={messageClass} >
                 {this.props.messages.map(function(msg, idx) {
                     return (
-                            <span> {msg} <br/> </span>
+                            <span key={idx}> {msg} <br/> </span>
                         );
                 })}
                 </div>

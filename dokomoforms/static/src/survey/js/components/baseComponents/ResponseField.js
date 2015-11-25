@@ -61,7 +61,6 @@ module.exports = React.createClass({
     validate: function(answer) {
         var type = this.props.type;
         var logic = this.props.logic;
-        console.log('Enforcing: ', logic);
         var val = null;
         switch (type) {
             case 'integer':
@@ -112,6 +111,7 @@ module.exports = React.createClass({
                 if (isNaN(year) || isNaN(month) || isNaN(day)) {
                     val = null;
                 }
+
 
                 if (logic && logic.min && !isNaN((new Date(logic.min)).getDate())) {
                     if (resp < new Date(logic.min)) {
@@ -165,23 +165,23 @@ module.exports = React.createClass({
     render: function() {
         return (
             <div className='input_container'>
-                    <input
-                        type={this.getResponseType()}
-                        step={this.getResponseStep()}
-                        placeholder={this.props.placeholder || 'Please provide a response.'}
-                        onChange={this.onChange}
-                        defaultValue={this.props.initValue}
+                <input
+                    type={this.getResponseType()}
+                    step={this.getResponseStep()}
+                    placeholder={this.props.placeholder || 'Please provide a response.'}
+                    onChange={this.onChange}
+                    defaultValue={this.props.initValue}
+                    disabled={this.props.disabled}
+                 >
+                 {this.props.showMinus ?
+                    <span
+                        onClick={this.props.buttonFunction.bind(null, this.props.index)}
                         disabled={this.props.disabled}
-                     >
-                     {this.props.showMinus ?
-                        <span
-                            onClick={this.props.buttonFunction.bind(null, this.props.index)}
-                            disabled={this.props.disabled}
-                            className='icon icon-close question__minus'>
-                        </span>
-                        : null}
-                    </input>
-                 </div>
+                        className='icon icon-close question__minus'>
+                    </span>
+                    : null}
+                </input>
+            </div>
         );
     }
 });

@@ -22,9 +22,14 @@
     "pouchdb-upsert": "^1.1.1",
     "ratchet": "https://github.com/twbs/ratchet/archive/v2.0.2.tar.gz",
     "react": "^0.14.2",
+    "react-dom": "~0.14.2",
     "screenfull": "^2.0.0"
   },
   "devDependencies": {
+    "babel-core": "^6.1.20",
+    "babel-jest": "^6.0.1",
+    "babel-preset-es2015": "^6.1.18",
+    "babel-preset-react": "^6.1.18",
     "babelify": "^7.2.0",
     "browserify": "^12.0.1",
     "browserify-shim": "^3.8.7",
@@ -53,6 +58,7 @@
     "mocha": "^2.2.4",
     "mocha-istanbul": "^0.2.0",
     "node-underscorify": "0.0.14",
+    "react-addons-test-utils": "~0.14.2",
     "reactify": "^1.1.1",
     "should": "^7.1.1",
     "supertest": "^1.1.0",
@@ -78,36 +84,45 @@
     "screenfull": "global:screenfull"
   },
   "jest": {
-    "testDirectoryName": "tests/js",
+    "scriptPreprocessor": "<rootDir>/node_modules/babel-jest",
+    "testFileExtensions": [
+      "js"
+    ],
+    "moduleFileExtensions": [
+      "js"
+    ],
+    "unmockedModulePathPatterns": [
+      "<rootDir>/node_modules/"
+    ],
     "collectCoverage": true,
     "collectCoverageOnlyFrom": {
-      "dokomoforms/static/Application.js": true,
-      "dokomoforms/static/FacilityAPI.js": true,
-      "dokomoforms/static/PhotoAPI.js": true,
-      "dokomoforms/static/persona.js": true,
-      "dokomoforms/static/visualizations.js": true,
-      "dokomoforms/static/components/Facility.js": true,
-      "dokomoforms/static/components/Footer.js": true,
-      "dokomoforms/static/components/Header.js": true,
-      "dokomoforms/static/components/Location.js": true,
-      "dokomoforms/static/components/MultipleChoice.js": true,
-      "dokomoforms/static/components/Note.js": true,
-      "dokomoforms/static/components/Photo.js": true,
-      "dokomoforms/static/components/Question.js": true,
-      "dokomoforms/static/components/Splash.js": true,
-      "dokomoforms/static/components/Submit.js": true,
-      "dokomoforms/static/components/baseComponents/BigButton.js": true,
-      "dokomoforms/static/components/baseComponents/Card.js": true,
-      "dokomoforms/static/components/baseComponents/DontKnow.js": true,
-      "dokomoforms/static/components/baseComponents/FacilityRadios.js": true,
-      "dokomoforms/static/components/baseComponents/LittleButton.js": true,
-      "dokomoforms/static/components/baseComponents/Menu.js": true,
-      "dokomoforms/static/components/baseComponents/Message.js": true,
-      "dokomoforms/static/components/baseComponents/PhotoField.js": true,
-      "dokomoforms/static/components/baseComponents/ResponseField.js": true,
-      "dokomoforms/static/components/baseComponents/ResponseFields.js": true,
-      "dokomoforms/static/components/baseComponents/Select.js": true,
-      "dokomoforms/static/components/baseComponents/Title.js": true
+      "dokomoforms/static/src/survey/js/Application.js": true,
+      "dokomoforms/static/src/survey/js/api/FacilityAPI.js": true,
+      "dokomoforms/static/src/survey/js/api/PhotoAPI.js": true,
+      "dokomoforms/static/src/common/js/persona.js": true,
+      "dokomoforms/static/src/survey/js/components/Facility.js": true,
+      "dokomoforms/static/src/survey/js/components/Footer.js": true,
+      "dokomoforms/static/src/survey/js/components/Header.js": true,
+      "dokomoforms/static/src/survey/js/components/Location.js": true,
+      "dokomoforms/static/src/survey/js/components/MultipleChoice.js": true,
+      "dokomoforms/static/src/survey/js/components/Note.js": true,
+      "dokomoforms/static/src/survey/js/components/Photo.js": true,
+      "dokomoforms/static/src/survey/js/components/Question.js": true,
+      "dokomoforms/static/src/survey/js/components/Splash.js": true,
+      "dokomoforms/static/src/survey/js/components/Submit.js": true,
+      "dokomoforms/static/src/survey/js/components/baseComponents/BigButton.js": true,
+      "dokomoforms/static/src/survey/js/components/baseComponents/LittleButton.js": true,
+      "dokomoforms/static/src/survey/js/components/baseComponents/Card.js": true,
+      "dokomoforms/static/src/survey/js/components/baseComponents/Message.js": true,
+      "dokomoforms/static/src/survey/js/components/baseComponents/DontKnow.js": true,
+      "dokomoforms/static/src/survey/js/components/baseComponents/Menu.js": true,
+      "dokomoforms/static/src/survey/js/components/baseComponents/FacilityRadios.js": true,
+      "dokomoforms/static/src/survey/js/components/baseComponents/PhotoField.js": true,
+      "dokomoforms/static/src/survey/js/components/baseComponents/PhotoPreview.js": true,
+      "dokomoforms/static/src/survey/js/components/baseComponents/ResponseField.js": true,
+      "dokomoforms/static/src/survey/js/components/baseComponents/ResponseFields.js": true,
+      "dokomoforms/static/src/survey/js/components/baseComponents/Select.js": true,
+      "dokomoforms/static/src/survey/js/components/baseComponents/Title.js": true
     }
   },
   "scripts": {
@@ -126,7 +141,7 @@
     "Data",
     "Collection"
   ],
-  "author": "Abdi Dahir Viktor Roytman Jon Wohl",
+  "author": "Abdi Dahir, Viktor Roytman, & Jonathan Wohl",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/SEL-Columbia/dokomoforms/issues"

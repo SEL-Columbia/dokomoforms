@@ -1,38 +1,16 @@
 var React = require('react');
 
 /*
- * ResponseField component
- * Main input field component, handles validation
+ * PhotoPreview component
+ *
+ * Displays a preview of the Photo
  *
  * props:
- *  @onInput: What to do on valid input
- *  @index: What index value to send on valid input (i.e position in array of fields)
- *  @showRetake: Show the 'retake' button
- *  @buttonFunction: What to do on 'X' click event, index value is bound to this function
- *  @initValue: Initial value for the input field
+ *  @onClose: What to do when the close button is pressed
+ *  @onDelete: What to do when the delete button is pressed
+ *  @url: The URL of the photo to display
  */
 module.exports = React.createClass({
-
-    /*
-     * Validate the answer based on props.type
-     *
-     * @answer: The response to be validated
-     *
-     * TODO: implement photo validation, if necessary...
-     */
-    validate: function(answer) {
-        return true;
-    },
-
-    /*
-     * Handle change event, validates on every change
-     * fires props.onInput on validation success
-     *
-     * @event: Change event
-     */
-    // onChange: function(event) {
-
-    // },
 
     render: function() {
         var divStyle = {

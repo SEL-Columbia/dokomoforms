@@ -8,6 +8,7 @@ var React = require('react');
  *  @buttonFunction: What to do on click events
  *  @text: Text of the button
  *  @icon: Icon if any to show before button text
+ *  @disabled: Whether or not the button should be disabled
  */
 module.exports = React.createClass({
     render: function() {
@@ -15,16 +16,16 @@ module.exports = React.createClass({
         var classes = 'btn ';
         classes += this.props.extraClasses || '';
         return (
-                <div className='content-padded'>
-                    <button className={classes}
-                        disabled={this.props.disabled}
-                        onClick={this.props.buttonFunction} >
+            <div className='content-padded'>
+                <button className={classes}
+                    disabled={this.props.disabled}
+                    onClick={this.props.buttonFunction} >
 
-                        {this.props.icon ? <span className={iconClass}></span> : null }
-                        {this.props.text}
-                    </button>
-                </div>
-               );
+                    {this.props.icon ? <span className={iconClass}></span> : null }
+                    {this.props.text}
+                </button>
+            </div>
+       );
     }
 });
 
