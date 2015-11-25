@@ -12,6 +12,9 @@ var $ = require('jquery'),
     _t = require('./lang'),
     activityGraph = require('./activity-graph');
 
+// require datatables
+// require('datatables')( window, $ );
+
 var AccountOverview = (function() {
     var recentSubmissions = [];
 

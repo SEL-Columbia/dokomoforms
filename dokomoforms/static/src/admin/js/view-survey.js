@@ -9,6 +9,9 @@ var $ = require('jquery'),
     shareable_link_tpl = require('../templates/shareable-link.tpl'),
     edit_link_tpl = require('../templates/edit-shareable-link.tpl');
 
+// require datatables
+// require('datatables')( window, $ );
+
 var ViewSurvey = (function() {
     var survey_id,
         survey_slug,

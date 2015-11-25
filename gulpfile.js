@@ -92,8 +92,8 @@ var path = {
     ADMIN_JS_VENDOR_SRC: [
         node_modules_path + '/jquery/dist/jquery.js',
         node_modules_path + '/bootstrap/dist/js/bootstrap.js',
-        node_modules_path + '/datatables/media/js/jquery.dataTables.min.js',
-        node_modules_path + '/datatables/media/js/dataTables.bootstrap.min.js',
+        node_modules_path + '/datatables.net/js/jquery.dataTables.js',
+        node_modules_path + '/datatables.net-bs/js/dataTables.bootstrap.js',
         node_modules_path + '/lodash-compat/index.js',
         node_modules_path + '/moment/min/moment.min.js',
         node_modules_path + '/leaflet/dist/leaflet.js',
