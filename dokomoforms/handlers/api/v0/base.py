@@ -283,6 +283,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         Given a model class, build up the ORM query based on query params
         and return the query result.
         """
+        self.session.flush()
         model_cls = self.resource_type
         query = self.session.query(model_cls, count().over())
 
