@@ -439,6 +439,30 @@ class DriverTest(tests.python.util.DokoExternalDBTest):
             utc_time.strftime('%p'),
         )
 
+    def select_by_index(self, element, index):
+        """Select an element from a <select> <option> list.
+
+        For some reason on Android selecting an option works but raises an
+        exception....
+        So... ingnore the exception.
+        """
+        andr = self.browser == 'android'
+        if andr and self.version < StrictVersion('5.0'):
+            self.click(self.drv.find_element_by_tag_name('select'))
+            self.drv.switch_to.window('NATIVE_APP')
+            self.click(
+                self.drv.find_elements_by_tag_name('TextView')[index + 2]
+            )
+            self.drv.switch_to.window('WEBVIEW_0')
+            return
+        try:
+            element.select_by_index(index)
+        except WebDriverException:
+            if andr:
+                pass
+            else:
+                raise
+
 
 class TestAuth(DriverTest):
     @report_success_status
@@ -1374,16 +1398,7 @@ class TestEnumerate(DriverTest):
         self.click(self.drv.find_element_by_class_name('menu'))
         lang = Select(self.drv.find_element_by_class_name('language_select'))
         self.assertEqual(len(lang.options), 3)
-        # For some reason on Android selecting an option works but raises an
-        # exception...
-        # So... ignore the exception!
-        try:
-            lang.select_by_index(1)
-        except WebDriverException:
-            if self.browser == 'android':
-                pass
-            else:
-                raise
+        self.select_by_index(lang, 1)
 
         self.sleep()
 
@@ -4008,7 +4023,8 @@ class TestEnumerate(DriverTest):
         )
 
         # navigate to end of survey and save
-        self.click(self.drv.find_elements_by_tag_name('option')[1])
+        facility_type = Select(self.drv.find_element_by_tag_name('select'))
+        self.select_by_index(facility_type, 1)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
 
