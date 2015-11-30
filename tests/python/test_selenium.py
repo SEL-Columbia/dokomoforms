@@ -1318,7 +1318,7 @@ class TestEnumerate(DriverTest):
 
     def get_last_submission(self, survey_id):
         self.sleep()
-        return (
+        result = (
             self.session
             .query(Submission)
             .filter_by(survey_id=survey_id)
@@ -1326,6 +1326,25 @@ class TestEnumerate(DriverTest):
             .limit(1)
             .one()
         )
+        andr = self.browser == 'android'
+        if andr and self.version < StrictVersion('5.0'):
+            # For some reason the Android 4.4 tests report the wrong time
+            # for a while... This gets around that problem.
+            try:
+                existing = self.existing
+            except AttributeError:
+                self.existing = result
+            else:
+                result = (
+                    self.session
+                    .query(Submission)
+                    .filter(Submission.id != existing.id)
+                    .filter(Submission.survey_id == survey_id)
+                    .order_by(Submission.save_time.desc())
+                    .limit(1)
+                    .one()
+                )
+        return result
 
     @report_success_status
     def test_login(self):
@@ -4250,7 +4269,7 @@ class TestEnumerateOfflineRevisit(DriverTest):
 
     def get_last_submission(self, survey_id):
         self.sleep()
-        return (
+        result = (
             self.session
             .query(Submission)
             .filter_by(survey_id=survey_id)
@@ -4258,6 +4277,25 @@ class TestEnumerateOfflineRevisit(DriverTest):
             .limit(1)
             .one()
         )
+        andr = self.browser == 'android'
+        if andr and self.version < StrictVersion('5.0'):
+            # For some reason the Android 4.4 tests report the wrong time
+            # for a while... This gets around that problem.
+            try:
+                existing = self.existing
+            except AttributeError:
+                self.existing = result
+            else:
+                result = (
+                    self.session
+                    .query(Submission)
+                    .filter(Submission.id != existing.id)
+                    .filter(Submission.survey_id == survey_id)
+                    .order_by(Submission.save_time.desc())
+                    .limit(1)
+                    .one()
+                )
+        return result
 
     @report_success_status
     def test_revisit_offline_entirely(self):
