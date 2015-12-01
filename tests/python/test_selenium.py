@@ -410,7 +410,9 @@ class DriverTest(tests.python.util.DokoExternalDBTest):
                 self.drv.switch_to.window('NATIVE_APP')
                 buttons = self.drv.find_elements_by_tag_name('Button')
                 if buttons:
-                    self.click(buttons[1])
+                    old_android = self.version < StrictVersion('5.0')
+                    cancel = 0 if old_android else 1
+                    self.click(buttons[cancel])
                 self.drv.switch_to.window('WEBVIEW_0')
             self.drv.execute_script(
                 "var event = new Event('input', {bubbles: true}); "
