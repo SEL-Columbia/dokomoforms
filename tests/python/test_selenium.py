@@ -4352,7 +4352,8 @@ class TestEnumerateOfflineRevisit(DriverTest):
             .send_keys('new facility')
         )
         # navigate to end of survey and save
-        self.click(self.drv.find_elements_by_tag_name('option')[1])
+        facility_type = Select(self.drv.find_element_by_tag_name('select'))
+        self.select_by_index(facility_type, 1)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
 
