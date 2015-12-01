@@ -1621,6 +1621,9 @@ class TestEnumerate(DriverTest):
 
     @report_success_status
     def test_single_photo_question(self):
+        if self.browser == 'android' and self.version < StrictVersion('5.0'):
+            # http://caniuse.com/#feat=stream
+            self.skipTest('getUserMedia does not work in the <5 AOSP browser')
         survey_id = self.get_single_node_survey_id('photo')
         existing_submission = self.get_last_submission(survey_id)
 
