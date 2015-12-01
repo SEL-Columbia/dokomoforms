@@ -463,6 +463,20 @@ class DriverTest(tests.python.util.DokoExternalDBTest):
             else:
                 raise
 
+    def select_multiple(self, *indices):
+        if self.browser == 'android' and self.version < StrictVersion('5.0'):
+            self.click(self.drv.find_element_by_tag_name('select'))
+            self.drv.switch_to.window('NATIVE_APP')
+            options = self.drv.find_elements_by_tag_name('CheckedTextView')
+            for index in indices:
+                self.click(options[index])
+            self.click(self.drv.find_elements_by_tag_name('Button')[-1])
+            self.drv.switch_to.window('WEBVIEW_0')
+            return
+        options = self.drv.find_elements_by_tag_name('option')
+        for index in indices:
+            self.click(options[index])
+
 
 class TestAuth(DriverTest):
     @report_success_status
@@ -1846,8 +1860,7 @@ class TestEnumerate(DriverTest):
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
 
-        self.click(self.drv.find_elements_by_tag_name('option')[1])
-        self.click(self.drv.find_elements_by_tag_name('option')[2])
+        self.select_multiple(1, 2)
 
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
@@ -4170,7 +4183,8 @@ class TestEnumerate(DriverTest):
             .send_keys('new facility')
         )
         # navigate to end of survey and save
-        self.click(self.drv.find_elements_by_tag_name('option')[1])
+        facility_type = Select(self.drv.find_element_by_tag_name('select'))
+        self.select_by_index(facility_type, 1)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
 
