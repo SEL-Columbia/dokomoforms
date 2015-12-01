@@ -3636,24 +3636,26 @@ class TestEnumerate(DriverTest):
 
         survey_id = survey.id
 
+        element_by_tag = self.drv.find_element_by_tag_name
+
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
-        self.click(self.drv.find_elements_by_tag_name('option')[1])
+        self.select_by_index(Select(element_by_tag('select')), 1)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
             self.drv.find_element_by_tag_name('h3').text,
             'b0'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        self.click(self.drv.find_elements_by_tag_name('option')[2])
+        self.select_by_index(Select(element_by_tag('select')), 2)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
             self.drv.find_element_by_tag_name('h3').text,
             'b1'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        self.click(self.drv.find_elements_by_tag_name('option')[3])
+        self.select_by_index(Select(element_by_tag('select')), 3)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
             self.drv.find_element_by_tag_name('h3').text,
