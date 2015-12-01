@@ -1898,7 +1898,8 @@ class TestEnumerate(DriverTest):
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
 
-        self.click(self.drv.find_elements_by_tag_name('option')[-1])
+        e_by_tag = self.drv.find_element_by_tag_name
+        self.select_by_index(Select(e_by_tag('select')), 3)
         (
             self.drv
             .find_element_by_tag_name('input')
