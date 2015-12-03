@@ -410,7 +410,9 @@ class DriverTest(tests.python.util.DokoExternalDBTest):
                 self.drv.switch_to.window('NATIVE_APP')
                 buttons = self.drv.find_elements_by_tag_name('Button')
                 if buttons:
-                    self.click(buttons[1])
+                    old_android = self.version < StrictVersion('5.0')
+                    cancel = 0 if old_android else 1
+                    self.click(buttons[cancel])
                 self.drv.switch_to.window('WEBVIEW_0')
             self.drv.execute_script(
                 "var event = new Event('input', {bubbles: true}); "
@@ -438,6 +440,44 @@ class DriverTest(tests.python.util.DokoExternalDBTest):
             utc_time.strftime('%M'),
             utc_time.strftime('%p'),
         )
+
+    def select_by_index(self, element, index):
+        """Select an element from a <select> <option> list.
+
+        For some reason on Android selecting an option works but raises an
+        exception....
+        So... ingnore the exception.
+        """
+        andr = self.browser == 'android'
+        if andr and self.version < StrictVersion('5.0'):
+            self.click(self.drv.find_element_by_tag_name('select'))
+            self.drv.switch_to.window('NATIVE_APP')
+            self.click(
+                self.drv.find_elements_by_tag_name('TextView')[index + 2]
+            )
+            self.drv.switch_to.window('WEBVIEW_0')
+            return
+        try:
+            element.select_by_index(index)
+        except WebDriverException:
+            if andr:
+                pass
+            else:
+                raise
+
+    def select_multiple(self, *indices):
+        if self.browser == 'android' and self.version < StrictVersion('5.0'):
+            self.click(self.drv.find_element_by_tag_name('select'))
+            self.drv.switch_to.window('NATIVE_APP')
+            options = self.drv.find_elements_by_tag_name('CheckedTextView')
+            for index in indices:
+                self.click(options[index])
+            self.click(self.drv.find_elements_by_tag_name('Button')[-1])
+            self.drv.switch_to.window('WEBVIEW_0')
+            return
+        options = self.drv.find_elements_by_tag_name('option')
+        for index in indices:
+            self.click(options[index])
 
 
 class TestAuth(DriverTest):
@@ -1294,7 +1334,7 @@ class TestEnumerate(DriverTest):
 
     def get_last_submission(self, survey_id):
         self.sleep()
-        return (
+        result = (
             self.session
             .query(Submission)
             .filter_by(survey_id=survey_id)
@@ -1302,6 +1342,25 @@ class TestEnumerate(DriverTest):
             .limit(1)
             .one()
         )
+        andr = self.browser == 'android'
+        if andr and self.version < StrictVersion('5.0'):
+            # For some reason the Android 4.4 tests report the wrong time
+            # for a while... This gets around that problem.
+            try:
+                existing = self.existing
+            except AttributeError:
+                self.existing = result
+            else:
+                result = (
+                    self.session
+                    .query(Submission)
+                    .filter(Submission.id != existing.id)
+                    .filter(Submission.survey_id == survey_id)
+                    .order_by(Submission.save_time.desc())
+                    .limit(1)
+                    .one()
+                )
+        return result
 
     @report_success_status
     def test_login(self):
@@ -1374,16 +1433,7 @@ class TestEnumerate(DriverTest):
         self.click(self.drv.find_element_by_class_name('menu'))
         lang = Select(self.drv.find_element_by_class_name('language_select'))
         self.assertEqual(len(lang.options), 3)
-        # For some reason on Android selecting an option works but raises an
-        # exception...
-        # So... ignore the exception!
-        try:
-            lang.select_by_index(1)
-        except WebDriverException:
-            if self.browser == 'android':
-                pass
-            else:
-                raise
+        self.select_by_index(lang, 1)
 
         self.sleep()
 
@@ -1573,6 +1623,9 @@ class TestEnumerate(DriverTest):
 
     @report_success_status
     def test_single_photo_question(self):
+        if self.browser == 'android' and self.version < StrictVersion('5.0'):
+            # http://caniuse.com/#feat=stream
+            self.skipTest('getUserMedia does not work in the <5 AOSP browser')
         survey_id = self.get_single_node_survey_id('photo')
         existing_submission = self.get_last_submission(survey_id)
 
@@ -1765,7 +1818,8 @@ class TestEnumerate(DriverTest):
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
 
-        self.click(self.drv.find_elements_by_tag_name('option')[1])
+        e_by_tag = self.drv.find_element_by_tag_name
+        self.select_by_index(Select(e_by_tag('select')), 1)
 
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
@@ -1812,8 +1866,7 @@ class TestEnumerate(DriverTest):
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
 
-        self.click(self.drv.find_elements_by_tag_name('option')[1])
-        self.click(self.drv.find_elements_by_tag_name('option')[2])
+        self.select_multiple(1, 2)
 
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
@@ -1864,7 +1917,8 @@ class TestEnumerate(DriverTest):
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
 
-        self.click(self.drv.find_elements_by_tag_name('option')[-1])
+        e_by_tag = self.drv.find_element_by_tag_name
+        self.select_by_index(Select(e_by_tag('select')), 3)
         (
             self.drv
             .find_element_by_tag_name('input')
@@ -3602,24 +3656,26 @@ class TestEnumerate(DriverTest):
 
         survey_id = survey.id
 
+        element_by_tag = self.drv.find_element_by_tag_name
+
         self.get('/enumerate/{}'.format(survey_id))
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
-        self.click(self.drv.find_elements_by_tag_name('option')[1])
+        self.select_by_index(Select(element_by_tag('select')), 1)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
             self.drv.find_element_by_tag_name('h3').text,
             'b0'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        self.click(self.drv.find_elements_by_tag_name('option')[2])
+        self.select_by_index(Select(element_by_tag('select')), 2)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
             self.drv.find_element_by_tag_name('h3').text,
             'b1'
         )
         self.click(self.drv.find_element_by_class_name('page_nav__prev'))
-        self.click(self.drv.find_elements_by_tag_name('option')[3])
+        self.select_by_index(Select(element_by_tag('select')), 3)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.assertEqual(
             self.drv.find_element_by_tag_name('h3').text,
@@ -4008,7 +4064,8 @@ class TestEnumerate(DriverTest):
         )
 
         # navigate to end of survey and save
-        self.click(self.drv.find_elements_by_tag_name('option')[1])
+        facility_type = Select(self.drv.find_element_by_tag_name('select'))
+        self.select_by_index(facility_type, 1)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
 
@@ -4065,7 +4122,8 @@ class TestEnumerate(DriverTest):
             .send_keys('new facility')
         )
         # navigate to end of survey and save
-        self.click(self.drv.find_elements_by_tag_name('option')[1])
+        facility_type = Select(self.drv.find_element_by_tag_name('select'))
+        self.select_by_index(facility_type, 1)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
 
@@ -4131,7 +4189,8 @@ class TestEnumerate(DriverTest):
             .send_keys('new facility')
         )
         # navigate to end of survey and save
-        self.click(self.drv.find_elements_by_tag_name('option')[1])
+        facility_type = Select(self.drv.find_element_by_tag_name('select'))
+        self.select_by_index(facility_type, 1)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
 
@@ -4233,7 +4292,7 @@ class TestEnumerateOfflineRevisit(DriverTest):
 
     def get_last_submission(self, survey_id):
         self.sleep()
-        return (
+        result = (
             self.session
             .query(Submission)
             .filter_by(survey_id=survey_id)
@@ -4241,6 +4300,25 @@ class TestEnumerateOfflineRevisit(DriverTest):
             .limit(1)
             .one()
         )
+        andr = self.browser == 'android'
+        if andr and self.version < StrictVersion('5.0'):
+            # For some reason the Android 4.4 tests report the wrong time
+            # for a while... This gets around that problem.
+            try:
+                existing = self.existing
+            except AttributeError:
+                self.existing = result
+            else:
+                result = (
+                    self.session
+                    .query(Submission)
+                    .filter(Submission.id != existing.id)
+                    .filter(Submission.survey_id == survey_id)
+                    .order_by(Submission.save_time.desc())
+                    .limit(1)
+                    .one()
+                )
+        return result
 
     @report_success_status
     def test_revisit_offline_entirely(self):
@@ -4274,7 +4352,8 @@ class TestEnumerateOfflineRevisit(DriverTest):
             .send_keys('new facility')
         )
         # navigate to end of survey and save
-        self.click(self.drv.find_elements_by_tag_name('option')[1])
+        facility_type = Select(self.drv.find_element_by_tag_name('select'))
+        self.select_by_index(facility_type, 1)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         self.click(self.drv.find_element_by_class_name('navigate-right'))
 
