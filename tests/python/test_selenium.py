@@ -1426,6 +1426,7 @@ class TestEnumerate(DriverTest):
 
         # login as enumerator
         self.get('/debug/login/test_enumerator@fixtures.com')
+        self.sleep()
 
         self.get('/enumerate/{}'.format(survey_id))
 
