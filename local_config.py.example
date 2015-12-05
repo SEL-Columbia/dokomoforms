@@ -76,7 +76,7 @@ import os
 
 # revisit_url = 'some URL'
 
-# Default: 'http://revisit.global/api/v0/facilities.json'
+# Default: 'https://revisit.global/api/v0/facilities.json'
 # Set revisit_url to tell the application which Revisit server to use as a
 # registry for facility data. By default it will use the official
 # revisit.global server. You may wish to use staging.revisit.global instead
