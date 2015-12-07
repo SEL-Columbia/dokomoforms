@@ -125,7 +125,7 @@ class DebugRevisitHandler(BaseHandler):
         if not revisit_online:
             raise tornado.web.HTTPError(502)
         if slow_mode:  # pragma: no cover
-            sleep(2)
+            sleep(2.5)
         self.write(compressed_facilities)
         self.set_header('Content-Type', 'application/json')
 
