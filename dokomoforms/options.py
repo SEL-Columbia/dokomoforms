@@ -34,7 +34,7 @@ persona_help = (
 persona_url = 'https://verifier.login.persona.org/verify'
 define('persona_verification_url', default=persona_url, help=persona_help)
 
-revisit_url = 'http://revisit.global/api/v0/facilities.json'
+revisit_url = 'https://revisit.global/api/v0/facilities.json'
 revisit_help = (
     'the URL for facility data. Do not change this without a good reason.'
 )
