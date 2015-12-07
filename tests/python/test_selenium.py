@@ -18,7 +18,7 @@ import urllib.error
 from bs4 import BeautifulSoup
 
 import dateutil.parser
-from dateutil.tz import tzlocal, tzoffset
+from dateutil.tz import tzoffset
 
 from passlib.hash import bcrypt_sha256
 
@@ -920,9 +920,12 @@ class TestAdminManageSurvey(AdminTest):
             .filter_by(id='b0816b52-204f-41d4-aaf0-ac6ae2970923')
             .scalar()
         )
+        earliest_local = self.drv.execute_script(
+            'return moment("{}").format();'.format(earliest_utc)
+        )
         self.assertEqual(
             dateutil.parser.parse(stats[1].text).date(),
-            earliest_utc.astimezone(tzlocal()).date()
+            dateutil.parser.parse(earliest_local).date()
         )
         self.assertEqual(
             dateutil.parser.parse(stats[2].text).date(),
@@ -1311,9 +1314,12 @@ class TestAdminViewData(AdminTest):
             .filter_by(id='b0816b52-204f-41d4-aaf0-ac6ae2970923')
             .scalar()
         )
+        earliest_local = self.drv.execute_script(
+            'return moment("{}").format();'.format(earliest_utc)
+        )
         self.assertEqual(
             dateutil.parser.parse(stats[1].text).date(),
-            earliest_utc.astimezone(tzlocal()).date()
+            dateutil.parser.parse(earliest_local).date()
         )
         self.assertEqual(
             dateutil.parser.parse(stats[2].text).date(),
