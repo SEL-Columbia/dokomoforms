@@ -31,8 +31,6 @@ db_database = 'doko'
 db_user = 'postgres'
 organization = 'unconfigured organization'
 
-https = True
-
 try:
     from local_config import *  # NOQA
 except ImportError:

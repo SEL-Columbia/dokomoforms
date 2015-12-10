@@ -24,7 +24,7 @@ define('log_to_file', default=True, help=log_help, type=bool)
 define('debug', default=False, help='whether to enable debug mode', type=bool)
 
 https_help = 'whether the application accepts https traffic'
-define('https', help=https_help, type=bool)
+define('https', default=True, help=https_help, type=bool)
 
 define('organization', help='the name of your organization')
 

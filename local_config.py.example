@@ -62,6 +62,11 @@ import os
 # Default: True
 # Set https = False to put the webapp into HTTP mode (can not serve HTTPS
 # traffic).
+#
+# WARNING:
+# Some of the features of the application will only work if served over HTTPS.
+# Do not set https = False unless you want to develop the application without
+# bothering with a dummy self-signed certificate.
 
 #######################################
 
