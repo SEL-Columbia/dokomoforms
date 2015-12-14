@@ -29,7 +29,10 @@ db_password = os.environ.get('DB_ENV_POSTGRES_PASSWORD', 'database password')
 
 db_database = 'doko'
 db_user = 'postgres'
+
 organization = 'unconfigured organization'
+admin_email = 'admin@example.com'
+admin_name = 'admin'
 
 try:
     from local_config import *  # NOQA
