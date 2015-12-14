@@ -3,6 +3,7 @@ import datetime
 
 from sqlalchemy.orm.exc import NoResultFound
 
+from dokomoforms.options import options
 import dokomoforms.models as models
 from dokomoforms.models import Administrator, Email
 from dokomoforms.handlers.util import BaseHandler
@@ -193,9 +194,10 @@ class DemoUserCreationHandler(BaseHandler):
         except NoResultFound:
             user = _create_demo_user(self.session)
         cookie_options = {
-            'expires_days': None,
             'httponly': True,
         }
+        if options.https:
+            cookie_options['secure'] = True
         self.set_secure_cookie('user', user.id, **cookie_options)
         self.redirect('/')
 

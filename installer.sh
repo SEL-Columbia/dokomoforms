@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
+# Dokomo Forms installer for version 0.2.2
 set -o errexit
 
 # Do you have docker installed?
@@ -32,9 +33,10 @@ if command -v docker-compose > /dev/null; then
 else
   DOCKER_COMPOSE=./docker-compose
   if ! [ -f ./docker-compose ]; then
-    printf "=========================\n"
-    printf "Installing docker-compose\n"
-    printf "=========================\n\n"
+    printf "========================================\n"
+    printf "Installing docker-compose in this       \n"
+    printf "directory                               \n"
+    printf "========================================\n"
     $CURL -o docker-compose -L https://github.com/docker/compose/releases/download/1.5.2/run.sh
     chmod +x docker-compose
     ./docker-compose -v
@@ -84,7 +86,7 @@ printf "========================================\n"
 printf "Installing SSL certificate. Make sure   \n"
 printf "you have set up the DNS records for your\n"
 printf "domain to point to this machine.        \n"
-printf "========================================\n\n"
+printf "========================================\n"
 $SUDO docker run -it --rm -p 443:443 -p 80:80 --name letsencrypt \
   -v "/etc/letsencrypt:/etc/letsencrypt" \
   -v "/var/lib/letsencrypt:/var/lib/letsencrypt" \
@@ -94,7 +96,7 @@ $SUDO docker run -it --rm -p 443:443 -p 80:80 --name letsencrypt \
 printf "========================================\n"
 printf "Generating Diffie-Hellman parameters    \n"
 printf "using OpenSSL (2048 bit prime)          \n"
-printf "========================================\n\n"
+printf "========================================\n"
 $SUDO openssl dhparam -out /etc/letsencrypt/live/$LETSENCRYPT_DIR/dhparam.pem 2048
 
 # Download the configuration files
@@ -113,12 +115,30 @@ touch local_config.py
 
 sed -i s/www.example.com/$LETSENCRYPT_DIR/g nginx.conf
 
-printf "What is the name of your organization?\n"
-printf "This will be displayed as part of the title of the website.\n"
+printf "What is the name of your organization?  \n"
+printf "This will be displayed as part of the   \n"
+printf "title of the website.                   \n"
 printf "Organization name:\n>>> "
 read ORGANIZATION
 printf "organization = '$ORGANIZATION'\n" >> local_config.py
-# To be continued...
+
+printf "\n"
+printf "Please enter an e-mail address for the  \n"
+printf "administrator. This will be the only    \n"
+printf "account that can log in at first.       \n"
+printf "Administrator e-mail address:\n>>> "
+read ADMIN_EMAIL
+printf "admin_email = '$ADMIN_EMAIL'\n" >> local_config.py
+DEFAULT_NAME=$(echo $ADMIN_EMAIL | cut -d'@' -f1)
+
+printf "\n"
+printf "Please enter a user name for the        \n"
+printf "administrator. Leave this field blank to\n"
+printf "use this user name:                     \n"
+printf "$DEFAULT_NAME\n"
+printf "Administrator user name:\n>>> "
+read ADMIN_NAME
+printf "admin_name = '${ADMIN_NAME:-$DEFAULT_NAME}'\n" >> local_config.py
 
 # Let's Encrypt auto-renew (for now this is a cron job).
 printf "========================================\n"
@@ -131,6 +151,10 @@ CRON_JOB="0 0 1 * * $CRON_CMD"
 
 # Bring up Dokomo Forms
 printf "========================================\n"
-printf "Starting Dokomo Forms                   \n"
+printf "Starting Dokomo Forms.                  \n"
+printf "                                        \n"
+printf "You can view the status of the          \n"
+printf "containers by running:                  \n"
+printf "$DOCKER_COMPOSE ps\n"
 printf "========================================\n"
 $DOCKER_COMPOSE up -d
