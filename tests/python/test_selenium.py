@@ -660,6 +660,7 @@ class TestAdminSettings(AdminTest):
 
         self.sleep()
         self.click(self.drv.find_element_by_class_name('nav-settings'))
+        self.sleep()
         self.wait_for_element('user-name')
         name_field = self.drv.find_element_by_id('user-name')
         self.click(name_field)
