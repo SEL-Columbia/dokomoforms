@@ -24,9 +24,11 @@ define('log_to_file', default=True, help=log_help, type=bool)
 define('debug', default=False, help='whether to enable debug mode', type=bool)
 
 https_help = 'whether the application accepts https traffic'
-define('https', help=https_help, type=bool)
+define('https', default=True, help=https_help, type=bool)
 
 define('organization', help='the name of your organization')
+define('admin_email', help='the e-mail address of the main administrator')
+define('admin_name', help='the user name of the main administrator')
 
 persona_help = (
     'the URL for login verification. Do not change this without a good reason.'

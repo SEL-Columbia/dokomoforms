@@ -10,5 +10,4 @@ webapp-dev:
 db-dev:
   image: "mdillon/postgis:9.4"
   environment:
-    POSTGRES_PASSWORD: 'password'
     POSTGRES_DB: 'doko'

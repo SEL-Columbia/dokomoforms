@@ -17,7 +17,7 @@ from passlib.hash import bcrypt_sha256
 
 from dokomoforms.options import options
 from dokomoforms.handlers.util import BaseHandler, authenticated_admin
-from dokomoforms.models import User, Email
+from dokomoforms.models import User, Administrator, Email
 
 
 class Login(BaseHandler):
@@ -79,14 +79,21 @@ class Login(BaseHandler):
                 .one()
             )
         except NoResultFound:
-            _ = self.locale.translate
-            raise tornado.web.HTTPError(
-                422,
-                reason=_(
-                    'There is no account associated with the e-mail'
-                    ' address {}'.format(data['email'])
-                ),
-            )
+            if data['email'] != options.admin_email:
+                _ = self.locale.translate
+                raise tornado.web.HTTPError(
+                    422,
+                    reason=_(
+                        'There is no account associated with the e-mail'
+                        ' address {}'.format(data['email'])
+                    ),
+                )
+            with self.session.begin():
+                user = Administrator(
+                    name=options.admin_name,
+                    emails=[Email(address=options.admin_email)]
+                )
+                self.session.add(user)
         cookie_options = {
             'httponly': True,
         }

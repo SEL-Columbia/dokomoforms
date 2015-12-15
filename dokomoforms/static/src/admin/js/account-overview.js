@@ -70,7 +70,8 @@ var AccountOverview = (function() {
 
     function loadRecentSubmissions() {
         var limit = 5;
-        return $.getJSON('/api/v0/submissions?order_by=save_time:DESC&limit=' + limit +
+        return $.getJSON('/api/v0/submissions?user_id=' + window.CURRENT_USER_ID +
+	    '&order_by=save_time:DESC&limit=' + limit +
             '&fields=id,submission_time,submitter_name,survey_title,survey_id,survey_default_language,answers');
     }
 
