@@ -90,7 +90,7 @@ printf "========================================\n"
 $SUDO docker run -it --rm -p 443:443 -p 80:80 --name letsencrypt \
   -v "/etc/letsencrypt:/etc/letsencrypt:Z" \
   -v "/var/lib/letsencrypt:/var/lib/letsencrypt:Z" \
-  -v "/var/log/letsencrypt:/var/log/letsencrypt:Z" \
+  -v "/var/log:/var/log:Z" \
   quay.io/letsencrypt/letsencrypt:latest auth $DOMAIN_ARGS
 
 # Run openssl dhparam
