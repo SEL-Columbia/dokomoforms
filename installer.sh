@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # Dokomo Forms installer for version 0.2.2
-set -o errexit
+set -e
 
 # Do you have docker installed?
 if ! command -v docker > /dev/null; then
