@@ -34,8 +34,8 @@ else
   DOCKER_COMPOSE=./docker-compose
   if ! [ -f ./docker-compose ]; then
     printf "========================================\n"
-    printf "Installing docker-compose in this       \n"
-    printf "directory                               \n"
+    printf " Installing docker-compose in this      \n"
+    printf " directory                              \n"
     printf "========================================\n"
     $CURL -o docker-compose -L https://github.com/docker/compose/releases/download/1.5.2/run.sh
     chmod +x docker-compose
@@ -67,14 +67,14 @@ fi
 
 # Ask for domain(s)
 printf "========================================\n"
-printf "Please enter your domain name(s) (space \n"
-printf "separated)                              \n"
+printf " Please enter your domain name(s) (space\n"
+printf " separated)                             \n"
 printf "                                        \n"
-printf "Hint: for www include both              \n"
-printf ">>> www.your.domain your.domain         \n"
+printf " Hint: for www include both             \n"
+printf " >>> www.your.domain your.domain        \n"
 printf "                                        \n"
-printf "For a subdomain just give               \n"
-printf ">>> subdomain.your.domain               \n"
+printf " For a subdomain just give              \n"
+printf " >>> subdomain.your.domain              \n"
 printf "========================================\n"
 printf "Domain(s):\n>>> "
 read DOMAINS
@@ -83,9 +83,9 @@ DOMAIN_ARGS=$(echo $DOMAINS | sed -r s/\([^\ ]+\)/-d\ \\1/g)
 
 # Run letsencrypt
 printf "========================================\n"
-printf "Installing SSL certificate. Make sure   \n"
-printf "you have set up the DNS records for your\n"
-printf "domain to point to this machine.        \n"
+printf " Installing SSL certificate. Make sure  \n"
+printf " you have set up the DNS records for    \n"
+printf " your domain to point to this machine.  \n"
 printf "========================================\n"
 $SUDO docker run -it --rm -p 443:443 -p 80:80 --name letsencrypt \
   -v "/etc/letsencrypt:/etc/letsencrypt:Z" \
@@ -95,21 +95,21 @@ $SUDO docker run -it --rm -p 443:443 -p 80:80 --name letsencrypt \
 
 # Run openssl dhparam
 printf "========================================\n"
-printf "Generating Diffie-Hellman parameters    \n"
-printf "using OpenSSL (2048 bit prime)          \n"
+printf " Generating Diffie-Hellman parameters   \n"
+printf " using OpenSSL (2048 bit prime)         \n"
 printf "========================================\n"
 $SUDO openssl dhparam -out /etc/letsencrypt/live/$LETSENCRYPT_DIR/dhparam.pem 2048
 
 # Download the configuration files
 printf "========================================\n"
-printf "Downloading configuration files         \n"
+printf " Downloading configuration files        \n"
 printf "========================================\n"
 $CURL -O https://raw.githubusercontent.com/SEL-Columbia/dokomoforms/v0.2.2/docker-compose.yml
 $CURL -O https://raw.githubusercontent.com/SEL-Columbia/dokomoforms/v0.2.2/nginx.conf
 
 # Edit the configuration files
 printf "========================================\n"
-printf "Generating final configuration          \n"
+printf " Generating final configuration         \n"
 printf "========================================\n"
 
 touch local_config.py
@@ -143,8 +143,8 @@ printf "admin_name = '${ADMIN_NAME:-$DEFAULT_NAME}'\n" >> local_config.py
 
 # Let's Encrypt auto-renew (for now this is a cron job).
 printf "========================================\n"
-printf "Adding monthly cron job to renew SSL    \n"
-printf "certificate.                            \n"
+printf " Adding monthly cron job to renew SSL   \n"
+printf " certificate.                           \n"
 printf "========================================\n"
 CRON_CMD="mkdir -p /tmp/letsencrypt-auto && docker run -it --rm --name letsencrypt -v /etc/letsencrypt:/etc/letsencrypt:Z -v /var/lib/letsencrypt:/var/lib/letsencrypt:Z -v /tmp/letsencrypt-auto:/tmp/letsencrypt-auto:Z -v /var/log/letsencrypt:/var/log/letsencrypt:Z quay.io/letsencrypt/letsencrypt --renew certonly -a webroot -w /tmp/letsencrypt-auto $DOMAIN_ARGS && docker restart $USER_nginx_1"
 CRON_JOB="0 0 1 * * $CRON_CMD"
@@ -152,10 +152,10 @@ CRON_JOB="0 0 1 * * $CRON_CMD"
 
 # Bring up Dokomo Forms
 printf "========================================\n"
-printf "Starting Dokomo Forms.                  \n"
+printf " Starting Dokomo Forms.                 \n"
 printf "                                        \n"
-printf "You can view the status of the          \n"
-printf "containers by running:                  \n"
-printf "$DOCKER_COMPOSE ps\n"
+printf " You can view the status of the         \n"
+printf " containers by running:                 \n"
+printf " $DOCKER_COMPOSE ps\n"
 printf "========================================\n"
 $DOCKER_COMPOSE up -d
