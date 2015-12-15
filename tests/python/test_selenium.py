@@ -4399,7 +4399,7 @@ class TestEnumerateSlowRevisit(DriverTest):
                 'http://localhost:9999/debug/toggle_revisit_slow?state=true'
             )
         except urllib.error.URLError:
-            pass
+            self.fail('Revisit cannot be set to slow mode')
 
     def tearDown(self):
         super().tearDown()
@@ -4437,9 +4437,9 @@ class TestEnumerateSlowRevisit(DriverTest):
             overlay = self.drv.find_elements_by_class_name('loading-overlay')
             finish_time = time.time()
 
-            self.assertGreater(finish_time - start_time, 2)
             # overlay should not be present
             self.assertEqual(len(overlay), 0)
+            self.assertGreater(finish_time - start_time, 2)
 
     @report_success_status
     def test_facilities_only_fetched_on_first_load(self):
@@ -4461,9 +4461,9 @@ class TestEnumerateSlowRevisit(DriverTest):
             overlay = self.drv.find_elements_by_class_name('loading-overlay')
             finish_time = time.time()
 
-            self.assertGreater(finish_time - start_time, 2)
             # overlay should not be present
             self.assertEqual(len(overlay), 0)
+            self.assertGreater(finish_time - start_time, 2)
 
         # second load, should be fast because revisit is not hit
         self.drv.refresh()
