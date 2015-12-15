@@ -88,8 +88,9 @@ printf "you have set up the DNS records for your\n"
 printf "domain to point to this machine.        \n"
 printf "========================================\n"
 $SUDO docker run -it --rm -p 443:443 -p 80:80 --name letsencrypt \
-  -v "/etc/letsencrypt:/etc/letsencrypt" \
-  -v "/var/lib/letsencrypt:/var/lib/letsencrypt" \
+  -v "/etc/letsencrypt:/etc/letsencrypt:Z" \
+  -v "/var/lib/letsencrypt:/var/lib/letsencrypt:Z" \
+  -v "/var/log/letsencrypt:/var/log/letsencrypt:Z" \
   quay.io/letsencrypt/letsencrypt:latest auth $DOMAIN_ARGS
 
 # Run openssl dhparam
@@ -145,7 +146,7 @@ printf "========================================\n"
 printf "Adding monthly cron job to renew SSL    \n"
 printf "certificate.                            \n"
 printf "========================================\n"
-CRON_CMD="mkdir -p /tmp/letsencrypt-auto && docker run -it --rm --name letsencrypt -v /etc/letsencrypt:/etc/letsencrypt -v /var/lib/letsencrypt:/var/lib/letsencrypt -v /tmp/letsencrypt-auto:/tmp/letsencrypt-auto -v /var/log/letsencrypt:/var/log/letsencrypt quay.io/letsencrypt/letsencrypt --renew certonly -a webroot -w /tmp/letsencrypt-auto $DOMAIN_ARGS && docker restart $USER_nginx_1"
+CRON_CMD="mkdir -p /tmp/letsencrypt-auto && docker run -it --rm --name letsencrypt -v /etc/letsencrypt:/etc/letsencrypt:Z -v /var/lib/letsencrypt:/var/lib/letsencrypt:Z -v /tmp/letsencrypt-auto:/tmp/letsencrypt-auto:Z -v /var/log/letsencrypt:/var/log/letsencrypt:Z quay.io/letsencrypt/letsencrypt --renew certonly -a webroot -w /tmp/letsencrypt-auto $DOMAIN_ARGS && docker restart $USER_nginx_1"
 CRON_JOB="0 0 1 * * $CRON_CMD"
 ( crontab -l | fgrep -i -v "$CRON_CMD" ; echo "$CRON_JOB" ) | crontab -
 
