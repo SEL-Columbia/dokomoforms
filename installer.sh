@@ -141,16 +141,6 @@ printf "Administrator user name:\n>>> "
 read ADMIN_NAME
 printf "admin_name = '${ADMIN_NAME:-$DEFAULT_NAME}'\n" >> local_config.py
 
-# Let's Encrypt auto-renew (for now this is a cron job).
-printf "========================================\n"
-printf " Adding monthly cron job to renew SSL   \n"
-printf " certificate.                           \n"
-printf "========================================\n"
-CRON_CMD="mkdir -p /tmp/letsencrypt-auto && docker run -it --rm --name letsencrypt -v /etc/letsencrypt:/etc/letsencrypt:Z -v /var/lib/letsencrypt:/var/lib/letsencrypt:Z -v /tmp/letsencrypt-auto:/tmp/letsencrypt-auto:Z -v /var/log/letsencrypt:/var/log/letsencrypt:Z quay.io/letsencrypt/letsencrypt --renew certonly -a webroot -w /tmp/letsencrypt-auto $DOMAIN_ARGS && docker restart ${USER}_nginx_1"
-CRON_JOB="0 0 1 * * $CRON_CMD"
-cat <(fgrep -i -v "$CRON_CMD" <(crontab -l)) <(echo "$CRON_JOB") | crontab -
-crontab -l
-
 # Bring up Dokomo Forms
 printf "========================================\n"
 printf " Starting Dokomo Forms.                 \n"
@@ -163,3 +153,14 @@ if [ -f /etc/redhat-release ] ; then
   chcon -Rt svirt_sandbox_file_t .
 fi
 $DOCKER_COMPOSE up -d
+NGINX_CONTAINER_NAME=$($DOCKER_COMPOSE ps | grep nginx | cut -d' ' -f1)
+
+# Let's Encrypt auto-renew (for now this is a cron job).
+printf "========================================\n"
+printf " Adding monthly cron job to renew SSL   \n"
+printf " certificate.                           \n"
+printf "========================================\n"
+CRON_CMD="mkdir -p /tmp/letsencrypt-auto && docker run -it --rm --name letsencrypt -v /etc/letsencrypt:/etc/letsencrypt:Z -v /var/lib/letsencrypt:/var/lib/letsencrypt:Z -v /tmp/letsencrypt-auto:/tmp/letsencrypt-auto:Z -v /var/log/letsencrypt:/var/log/letsencrypt:Z quay.io/letsencrypt/letsencrypt --renew certonly -a webroot -w /tmp/letsencrypt-auto $DOMAIN_ARGS && docker restart $NGINX_CONTAINER_NAME"
+CRON_JOB="0 0 1 * * $CRON_CMD"
+crontab -l | fgrep -i -v "$CRON_CMD" | { cat; echo "$CRON_JOB"; } | crontab -
+crontab -l
