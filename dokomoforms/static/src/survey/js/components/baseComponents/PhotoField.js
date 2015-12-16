@@ -2,8 +2,9 @@ var React = require('react'),
     PhotoPreview = require('./PhotoPreview');
 
 /*
- * ResponseField component
- * Main input field component, handles validation
+ * PhotoField component
+ *
+ * Displays a photo thumbnail.
  *
  * props:
  *  @onInput: What to do on valid input
@@ -19,26 +20,13 @@ module.exports = React.createClass({
         };
     },
 
-    /*
-     * Validate the answer based on props.type
-     *
-     * @answer: The response to be validated
-     *
-     * TODO: implement photo validation, if necessary...
-     */
-    validate: function(answer) {
-        return true;
-    },
-
     showPreview: function() {
-        console.log('showPreview');
         this.setState({
             showPreview: true
         });
     },
 
     hidePreview: function() {
-        console.log('hidePreview');
         this.setState({
             showPreview: false
         });
@@ -48,16 +36,6 @@ module.exports = React.createClass({
         this.hidePreview();
         this.props.buttonFunction(this.props.index);
     },
-
-    /*
-     * Handle change event, validates on every change
-     * fires props.onInput on validation success
-     *
-     * @event: Change event
-     */
-    // onChange: function(event) {
-
-    // },
 
     render: function() {
         var preview;

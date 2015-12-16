@@ -24,9 +24,11 @@ define('log_to_file', default=True, help=log_help, type=bool)
 define('debug', default=False, help='whether to enable debug mode', type=bool)
 
 https_help = 'whether the application accepts https traffic'
-define('https', help=https_help, type=bool)
+define('https', default=True, help=https_help, type=bool)
 
 define('organization', help='the name of your organization')
+define('admin_email', help='the e-mail address of the main administrator')
+define('admin_name', help='the user name of the main administrator')
 
 persona_help = (
     'the URL for login verification. Do not change this without a good reason.'
@@ -34,7 +36,7 @@ persona_help = (
 persona_url = 'https://verifier.login.persona.org/verify'
 define('persona_verification_url', default=persona_url, help=persona_help)
 
-revisit_url = 'http://revisit.global/api/v0/facilities.json'
+revisit_url = 'https://revisit.global/api/v0/facilities.json'
 revisit_help = (
     'the URL for facility data. Do not change this without a good reason.'
 )

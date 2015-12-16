@@ -14,6 +14,23 @@ import os
 
 #######################################
 
+# admin_email = "Initial administrator's e-mail address"
+
+# Default: 'admin@example.com'
+# Set admin_email to the e-mail address of the administrator of this
+# installation of Dokomo Forms. This will be the only account that can log in
+# at first.
+
+#######################################
+
+# admin_name = "Initial administrator's user name"
+
+# Default: 'admin'
+# Set admin_name to the user name of the administrator of this
+# installation of Dokomo Forms.
+
+#######################################
+
 # demo = True
 
 # Default: False
@@ -62,6 +79,11 @@ import os
 # Default: True
 # Set https = False to put the webapp into HTTP mode (can not serve HTTPS
 # traffic).
+#
+# WARNING:
+# Some of the features of the application will only work if served over HTTPS.
+# Do not set https = False unless you want to develop the application without
+# bothering with a dummy self-signed certificate.
 
 #######################################
 
@@ -76,7 +98,7 @@ import os
 
 # revisit_url = 'some URL'
 
-# Default: 'http://revisit.global/api/v0/facilities.json'
+# Default: 'https://revisit.global/api/v0/facilities.json'
 # Set revisit_url to tell the application which Revisit server to use as a
 # registry for facility data. By default it will use the official
 # revisit.global server. You may wish to use staging.revisit.global instead

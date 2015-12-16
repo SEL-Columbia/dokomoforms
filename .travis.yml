@@ -11,7 +11,7 @@ addons:
   firefox: "42.0"
 
 before_install:
-  - pip install coveralls flake8 coverage beautifulsoup4 py-dateutil selenium
+  - pip install coveralls flake8 coverage beautifulsoup4 py-dateutil pytz selenium
 
 before_script:
   - python3 -m flake8 .
@@ -20,17 +20,17 @@ before_script:
   - nvm install stable
   - npm install npm -g
   - npm install
+  - node_modules/gulp/bin/gulp.js dev-build
   - ./tests/python/selenium_webapp.py &>/dev/null &
   - sleep 2
-  - node_modules/gulp/bin/gulp.js dev-build
 
 script:
-# - npm test
+  - npm test
   - xvfb-run --server-args="-screen 0, 1280x1280x16" tests/python/coverage_run.sh
 
 after_success:
   - coveralls
-# - npm coveralls
+  - npm coveralls
 
 notifications:
   email:

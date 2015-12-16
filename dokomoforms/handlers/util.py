@@ -113,7 +113,8 @@ class BaseHandler(tornado.web.RequestHandler):
             "img-src 'self' *.tile.openstreetmap.org data: blob:;"
             "object-src 'self' blob:;"
             "media-src 'self' blob: mediastream:;"
-            "connect-src 'self' blob: *.revisit.global localhost:3000;"
+            "connect-src 'self' blob: revisit.global *.revisit.global"
+            " localhost:3000;"
             "default-src 'self';"
         )
 

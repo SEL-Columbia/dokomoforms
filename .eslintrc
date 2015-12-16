@@ -25,11 +25,15 @@
         "browser": true,
         "node": true,
         "commonjs": true,
-        "jquery": true
+        "jquery": true,
+        "jest": true
     },
     "extends": "eslint:recommended",
     "ecmaFeatures": {
         "jsx": true,
+        "modules": true,
+        "arrowFunctions": true,
+        "blockBindings": true,
         "experimentalObjectRestSpread": true
     },
     "plugins": [

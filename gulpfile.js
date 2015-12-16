@@ -53,6 +53,8 @@ var path = {
     // SURVEY_CSS_BUILD: survey_dist_path + '/css/survey/*.css',
 
     SURVEY_JS_VENDOR_SRC: [
+        node_modules_path + '/es5-shim/es5-shim.js',
+        node_modules_path + '/es5-shim/es5-sham.js',
         node_modules_path + '/jquery/dist/jquery.js',
         node_modules_path + '/bootstrap/dist/js/bootstrap.js',
         node_modules_path + '/lodash-compat/index.js',
