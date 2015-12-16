@@ -158,4 +158,7 @@ printf " You can view the status of the         \n"
 printf " containers by running:                 \n"
 printf " $DOCKER_COMPOSE ps\n"
 printf "========================================\n"
+if [ -f /etc/redhat-release ] ; then
+  chcon -Rt svirt_sandbox_file_t .
+fi
 $DOCKER_COMPOSE up -d

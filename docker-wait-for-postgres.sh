@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 until psql --host=$1 --username=postgres -w &>/dev/null
 do
   echo "Waiting for PostgreSQL..."
