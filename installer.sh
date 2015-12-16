@@ -38,6 +38,7 @@ else
     printf " directory                              \n"
     printf "========================================\n"
     $CURL -o docker-compose -L https://github.com/docker/compose/releases/download/1.5.2/run.sh
+    sleep 1
     chmod +x docker-compose
     ./docker-compose -v
   fi
