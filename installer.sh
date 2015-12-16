@@ -121,7 +121,7 @@ printf "This will be displayed as part of the   \n"
 printf "title of the website.                   \n"
 printf "Organization name:\n>>> "
 read ORGANIZATION
-printf "organization = '$ORGANIZATION'\n" >> local_config.py
+printf "organization = '''$ORGANIZATION'''\n" >> local_config.py
 
 printf "\n"
 printf "Please enter an e-mail address for the  \n"
@@ -146,9 +146,10 @@ printf "========================================\n"
 printf " Adding monthly cron job to renew SSL   \n"
 printf " certificate.                           \n"
 printf "========================================\n"
-CRON_CMD="mkdir -p /tmp/letsencrypt-auto && docker run -it --rm --name letsencrypt -v /etc/letsencrypt:/etc/letsencrypt:Z -v /var/lib/letsencrypt:/var/lib/letsencrypt:Z -v /tmp/letsencrypt-auto:/tmp/letsencrypt-auto:Z -v /var/log/letsencrypt:/var/log/letsencrypt:Z quay.io/letsencrypt/letsencrypt --renew certonly -a webroot -w /tmp/letsencrypt-auto $DOMAIN_ARGS && docker restart $USER_nginx_1"
+CRON_CMD="mkdir -p /tmp/letsencrypt-auto && docker run -it --rm --name letsencrypt -v /etc/letsencrypt:/etc/letsencrypt:Z -v /var/lib/letsencrypt:/var/lib/letsencrypt:Z -v /tmp/letsencrypt-auto:/tmp/letsencrypt-auto:Z -v /var/log/letsencrypt:/var/log/letsencrypt:Z quay.io/letsencrypt/letsencrypt --renew certonly -a webroot -w /tmp/letsencrypt-auto $DOMAIN_ARGS && docker restart ${USER}_nginx_1"
 CRON_JOB="0 0 1 * * $CRON_CMD"
-( crontab -l | fgrep -i -v "$CRON_CMD" ; echo "$CRON_JOB" ) | crontab -
+cat <(fgrep -i -v "$CRON_CMD" <(crontab -l)) <(echo "$CRON_JOB") | crontab -
+crontab -l
 
 # Bring up Dokomo Forms
 printf "========================================\n"
