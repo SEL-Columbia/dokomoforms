@@ -849,7 +849,12 @@ class TestAdminUser(AdminTest):
         self.sleep()
         self.click(edit_btn)
         self.sleep()
-        self.wait_for_element('user-name')
+        try:
+            self.wait_for_element('user-name')
+        except TimeoutException:
+            self.click(edit_btn)
+            self.sleep()
+            self.wait_for_element('user-name')
         (
             self.drv
             .find_element_by_id('user-name')
