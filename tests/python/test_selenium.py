@@ -4393,6 +4393,10 @@ class TestEnumerateOfflineRevisit(DriverTest):
 
 class TestEnumerateSlowRevisit(DriverTest):
     def setUp(self):
+        is_travis = os.environ.get('TRAVIS', 'f').startswith('t')
+        if is_travis and not SAUCE_CONNECT:
+            raise unittest.SkipTest("These just don't work reliably on Travis")
+
         super().setUp()
 
         try:
