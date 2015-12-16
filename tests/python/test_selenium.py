@@ -1769,6 +1769,11 @@ class TestEnumerate(DriverTest):
         self.set_geolocation()
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.wait_for_element(
+            '.content > span:nth-child(2) > span:nth-child(1)'
+            ' > div:nth-child(1) > button:nth-child(1)',
+            by=By.CSS_SELECTOR
+        )
         self.click(
             self.drv
             .find_element_by_css_selector(
