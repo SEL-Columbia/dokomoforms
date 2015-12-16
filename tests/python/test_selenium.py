@@ -4096,6 +4096,7 @@ class TestEnumerate(DriverTest):
         # navigate back to facility question, check that the new facility
         # is there
         self.click(self.drv.find_element_by_class_name('navigate-right'))
+        self.sleep()
         self.wait_for_element(
             '.btn-add-facility',
             by=By.CSS_SELECTOR
@@ -4118,6 +4119,7 @@ class TestEnumerate(DriverTest):
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         # wait for add button
+        self.sleep()
         self.wait_for_element(
             '.btn-add-facility',
             by=By.CSS_SELECTOR
@@ -4247,6 +4249,7 @@ class TestEnumerate(DriverTest):
         self.wait_for_element('navigate-right', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('navigate-right'))
         # wait for add button
+        self.sleep()
         self.wait_for_element(
             '.btn-add-facility',
             by=By.CSS_SELECTOR
