@@ -852,9 +852,13 @@ class TestAdminUser(AdminTest):
         try:
             self.wait_for_element('user-name')
         except TimeoutException:
-            self.click(edit_btn)
+            self.click(self.drv.find_element_by_css_selector(
+                'tr.odd:nth-child(3) > td:nth-child(5) > button:nth-child(1)'
+            ))
+
             self.sleep()
             self.wait_for_element('user-name')
+
         (
             self.drv
             .find_element_by_id('user-name')
