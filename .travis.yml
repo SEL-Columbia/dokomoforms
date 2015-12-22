@@ -12,6 +12,7 @@ addons:
 
 before_install:
   - pip install coveralls flake8 coverage beautifulsoup4 py-dateutil pytz selenium
+  - gem install coveralls-lcov
 
 before_script:
   - python3 -m flake8 .
@@ -29,8 +30,8 @@ script:
   - xvfb-run --server-args="-screen 0, 1280x1280x16" tests/python/coverage_run.sh
 
 after_success:
-  - coveralls
-  - npm coveralls
+  - coveralls-lcov -v -n coverage/lcov.info > coverage.json
+  - coveralls --merge=coverage.json
 
 notifications:
   email:
