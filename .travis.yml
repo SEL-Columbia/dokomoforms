@@ -30,7 +30,7 @@ script:
 
 after_success:
   - coveralls
-  - npm coveralls
+  - npm run coveralls
 
 notifications:
   email:
