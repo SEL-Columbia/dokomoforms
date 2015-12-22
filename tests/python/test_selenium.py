@@ -1442,6 +1442,7 @@ class TestEnumerate(DriverTest):
 
         self.get('/enumerate/{}'.format(survey_id))
 
+        self.sleep()
         self.wait_for_element('menu', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('menu'))
         lang = Select(self.drv.find_element_by_class_name('language_select'))
