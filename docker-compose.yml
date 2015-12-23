@@ -1,5 +1,5 @@
 nginx:
-  image: "nginx:1.9.8"
+  image: "nginx:1.9.9"
   links:
     - "webapp:webapp"
   ports:
@@ -10,7 +10,7 @@ nginx:
     - /etc/letsencrypt:/etc/letsencrypt
     - /tmp:/tmp
 webapp:
-  image: "selcolumbia/dokomoforms:0.2.5"
+  image: "selcolumbia/dokomoforms:0.2.6"
   command: bash -c "./docker-wait-for-postgres.sh db && head -c 24 /dev/urandom > cookie_secret && python webapp.py"
   links:
     - "db:db"
