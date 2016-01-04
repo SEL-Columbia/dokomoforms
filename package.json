@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "backbone": "^1.2.3",
-    "bootstrap": "^3.3.5",
+    "bootstrap": "^3.3.6",
     "datatables": "https://github.com/DataTables/DataTables/archive/1.10.9.tar.gz",
     "es5-shim": "^4.3.1",
     "highcharts-release": "^4.1.8",
@@ -20,11 +20,11 @@
     "moment": "^2.10.6",
     "node-uuid": "^1.4.3",
     "pouchdb": "^5.1.0",
-    "pouchdb-upsert": "^1.1.1",
+    "pouchdb-upsert": "^2.0.0",
     "ratchet": "https://github.com/twbs/ratchet/archive/v2.0.2.tar.gz",
-    "react": "^0.14.2",
+    "react": "^0.14.5",
     "react-dom": "~0.14.2",
-    "screenfull": "^2.0.0"
+    "screenfull": "^3.0.0"
   },
   "devDependencies": {
     "babel-core": "^6.1.20",
