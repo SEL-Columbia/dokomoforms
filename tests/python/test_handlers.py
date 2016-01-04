@@ -238,7 +238,10 @@ class TestAuth(DokoHTTPTest):
                 _logged_in_user=None
             )
         self.assertEqual(response.code, 200, msg=response.body)
-        self.assertNotIn('secure', response.headers['Set-Cookie'].lower())
+        self.assertEqual(
+            response.headers['Set-Cookie'].lower().count('secure'),
+            1
+        )
 
     def test_login_success_secure_cookie(self):
         dokomoforms.handlers.auth.options.https = True
