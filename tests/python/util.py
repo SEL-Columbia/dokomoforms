@@ -142,6 +142,7 @@ class DokoHTTPTest(DokoFixtureTest, LogTrapTestCase, AsyncHTTPTestCase):
 
     def get_app(self):
         """Return an instance of the application to be tested."""
+        options.https = True
         options.debug = True
         options.demo = False
         self.app = Application(self.session, options=options)
