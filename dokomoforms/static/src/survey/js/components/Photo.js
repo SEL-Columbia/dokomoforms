@@ -49,7 +49,8 @@ module.exports = React.createClass({
 
     componentWillUnmount: function() {
         if (this.stream) {
-            this.stream.stop();
+	    // https://github.com/andyet/SimpleWebRTC/issues/363#issuecomment-163178700
+	    this.stream.getTracks().forEach(function (track) { track.stop(); });
         }
     },
 
@@ -60,7 +61,8 @@ module.exports = React.createClass({
     startStream: function() {
         var self = this;
         if (self.stream) {
-            self.stream.stop();
+	    // https://github.com/andyet/SimpleWebRTC/issues/363#issuecomment-163178700
+	    self.stream.getTracks().forEach(function (track) { track.stop(); });
         }
         // Browser implementations
         navigator.getUserMedia = navigator.getUserMedia ||

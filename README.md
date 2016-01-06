@@ -15,6 +15,8 @@ Several solutions exist to handle offline mobile data collection. While this typ
 
 **Dokomo strives to simplify the process by integrating the elements of a data collection effort into a unified system, from creation of mobile-ready surveys to quick analysis and visualization of the collected data.**
 
+The latest install script is here: https://raw.githubusercontent.com/SEL-Columbia/dokomoforms/v0.2.8/installer.sh
+
 ## Features
 
 #### Mobile-Web Technology
