@@ -262,6 +262,10 @@ class Application(tornado.web.Application):
             'debug': options.debug,
         }
 
+        # HTTPS
+        if options.https:
+            settings['xsrf_cookie_kwargs'] = {'secure': True}
+
         # Debug
         if settings['debug']:  # pragma: no cover
             from dokomoforms.handlers.debug import revisit_debug

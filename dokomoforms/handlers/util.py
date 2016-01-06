@@ -106,7 +106,7 @@ class BaseHandler(tornado.web.RequestHandler):
             "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
             " cdn.leafletjs.com code.highcharts.com"
             " momentjs.com cdn.datatables.net https://login.persona.org; "
-            "frame-src login.persona.org; "
+            "child-src login.persona.org; "
             "style-src 'self' 'unsafe-inline'"
             " fonts.googleapis.com cdn.leafletjs.com *.cloudfront.net;"
             "font-src 'self' fonts.googleapis.com fonts.gstatic.com;"
