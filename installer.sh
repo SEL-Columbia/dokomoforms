@@ -105,8 +105,8 @@ $SUDO openssl dhparam -out /etc/letsencrypt/live/$LETSENCRYPT_DIR/dhparam.pem 20
 printf "========================================\n"
 printf " Downloading configuration files        \n"
 printf "========================================\n"
-$CURL -O https://raw.githubusercontent.com/SEL-Columbia/dokomoforms/v0.2.7/docker-compose.yml
-$CURL -O https://raw.githubusercontent.com/SEL-Columbia/dokomoforms/v0.2.7/nginx.conf
+$CURL -L https://raw.githubusercontent.com/SEL-Columbia/dokomoforms/v0.2.7/docker-compose.yml > docker-compose.yml
+$CURL -L https://raw.githubusercontent.com/SEL-Columbia/dokomoforms/v0.2.7/nginx.conf > nginx.conf
 
 # Edit the configuration files
 printf "========================================\n"
