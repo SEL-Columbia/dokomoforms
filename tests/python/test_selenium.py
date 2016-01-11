@@ -1435,6 +1435,7 @@ class TestEnumerate(DriverTest):
         # clicking logout should refresh the page
         self.wait_for_element('menu', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('menu'))
+        self.sleep()
         self.click(
             self.drv
             .find_element_by_class_name('menu_logout')
