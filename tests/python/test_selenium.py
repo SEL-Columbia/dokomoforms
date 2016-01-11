@@ -1104,7 +1104,12 @@ class TestAdminManageSurvey(AdminTest):
                 .get_attribute('class')
             )
         )
-        self.click(self.drv.find_element_by_class_name('save-survey-url'))
+        try:
+            self.click(self.drv.find_element_by_class_name('save-survey-url'))
+        except WebDriverException:
+            # Certain browsers complain when you try to click something that's
+            # not clickable.
+            pass
 
         self.get('/enumerate/slug')
         self.assertEqual(
