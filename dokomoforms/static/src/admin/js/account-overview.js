@@ -88,7 +88,7 @@ var AccountOverview = (function() {
                         zoom: 14,
                         attributionControl: false
                     });
-                    L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
                     var markers = [];
                     _.each(submissions, function(submission) {
                         console.log(submission);
