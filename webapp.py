@@ -152,11 +152,6 @@ class Application(tornado.web.Application):
         urls = [
             # Administrative
             url(r'/', handlers.Index, name='index'),
-            url(
-                r'/(manifest\.json)',
-                tornado.web.StaticFileHandler,
-                {'path': settings['static_path']}
-            ),
             url(r'/user/login/?', handlers.Login, name='login'),
             url(r'/user/logout/?', handlers.Logout, name='logout'),
             url(
