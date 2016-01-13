@@ -1,0 +1,13 @@
+{
+  "name": "Dokomo Forms",
+  "start_url": "/",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "static/dist/admin/img/favicon.png",
+      "sizes": "196x196",
+      "type": "image/png"
+    }
+  ],
+  "lang": "en-US"
+}
