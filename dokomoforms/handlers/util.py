@@ -85,6 +85,8 @@ class BaseHandler(tornado.web.RequestHandler):
         """Return the logged-in User's selected language
         for the given survey, or None if they do not have one."""
         user = self.current_user_model
+        if user is None:
+            return None
         try:
             return user.preferences[survey.id]['display_language']
         except KeyError:
