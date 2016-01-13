@@ -85,10 +85,11 @@ class BaseHandler(tornado.web.RequestHandler):
         """Return the logged-in User's selected language
         for the given survey, or None if they do not have one."""
         user = self.current_user_model
-        if (user
-                and survey.id in user.preferences
-                and 'display_language' in user.preferences[survey.id]):
+        try:
             return user.preferences[survey.id]['display_language']
+        except KeyError:
+            # preference has not been set
+            pass
         return None
 
     def set_default_headers(self):
