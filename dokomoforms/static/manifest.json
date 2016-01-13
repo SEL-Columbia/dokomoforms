@@ -1,6 +1,8 @@
 {
   "name": "Dokomo Forms",
-  "start_url": "/",
+  "short_name": "Dokomo Forms",
+  "start_url": "/enumerate/",
+  "scope": "/enumerate/",
   "display": "standalone",
   "icons": [
     {

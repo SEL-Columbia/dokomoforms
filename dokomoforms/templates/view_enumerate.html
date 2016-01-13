@@ -18,6 +18,20 @@
         <link href='https://fonts.googleapis.com/css?family=Roboto:400,300,500,700,100' rel='stylesheet' type='text/css'>
         <link rel="icon" href="/static/dist/survey/img/favicon.png">
 	<link rel="manifest" href="/static/manifest.json">
+	<script>
+            // From https://github.com/GoogleChrome/samples/blob/cbc8098c3ebda4dda0ff894673d3847eae31648f/app-install-banner/basic-banner/index.html
+            window.addEventListener('load', function() {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('/static/src/common/js/service-worker.js', { scope: '/static/src/common/js/' })
+                    .then(function(r) {
+                        console.log('registered service worker');
+                    })
+                    .catch(function(error) {
+                        console.error(error);
+                    });
+                };
+            });
+	</script>
     </head>
 
     <body>
