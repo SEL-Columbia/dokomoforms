@@ -4082,7 +4082,8 @@ class TestEnumerate(DriverTest):
         self.sleep()
         self.wait_for_element(
             '.btn-add-facility',
-            by=By.CSS_SELECTOR
+            by=By.CSS_SELECTOR,
+            timeout=10,
         )
         # click add button
         self.click(
