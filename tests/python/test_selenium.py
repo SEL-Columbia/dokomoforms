@@ -1798,7 +1798,8 @@ class TestEnumerate(DriverTest):
         self.wait_for_element(
             '.content > span:nth-child(2) > span:nth-child(1)'
             ' > div:nth-child(1) > button:nth-child(1)',
-            by=By.CSS_SELECTOR
+            by=By.CSS_SELECTOR,
+            timeout=10,
         )
         self.click(
             self.drv
