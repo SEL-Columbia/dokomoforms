@@ -22,7 +22,7 @@
             // From https://github.com/GoogleChrome/samples/blob/cbc8098c3ebda4dda0ff894673d3847eae31648f/app-install-banner/basic-banner/index.html
             window.addEventListener('load', function() {
                 if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.register('/static/src/common/js/service-worker.js', { scope: '/static/src/common/js/' })
+                    navigator.serviceWorker.register('/static/src/common/js/service-worker.js')
                     .then(function(r) {
                         console.log('registered service worker');
                     })
