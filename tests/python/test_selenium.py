@@ -520,7 +520,9 @@ class TestAdminOverview(AdminTest):
     @report_success_status
     def test_account_overview_renders_properly(self):
         self.get('/')
+
         # Recent submissions table
+        self.sleep()
         self.assertEqual(
             len(self.drv.find_elements_by_class_name('submission-row')),
             5
