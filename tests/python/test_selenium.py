@@ -1104,7 +1104,15 @@ class TestAdminManageSurvey(AdminTest):
                 .get_attribute('class')
             )
         )
-        self.click(self.drv.find_element_by_class_name('save-survey-url'))
+        try:
+            self.click(self.drv.find_element_by_class_name('save-survey-url'))
+        except (WebDriverException, ValueError):
+            # Catch ValueError due to
+            # https://github.com/SeleniumHQ/selenium/issues/1470
+            #
+            # Certain browsers complain when you try to click something that's
+            # not clickable.
+            pass
 
         self.get('/enumerate/slug')
         self.assertEqual(
@@ -1430,6 +1438,7 @@ class TestEnumerate(DriverTest):
         # clicking logout should refresh the page
         self.wait_for_element('menu', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('menu'))
+        self.sleep()
         self.click(
             self.drv
             .find_element_by_class_name('menu_logout')
@@ -4073,7 +4082,8 @@ class TestEnumerate(DriverTest):
         self.sleep()
         self.wait_for_element(
             '.btn-add-facility',
-            by=By.CSS_SELECTOR
+            by=By.CSS_SELECTOR,
+            timeout=10,
         )
         # click add button
         self.click(

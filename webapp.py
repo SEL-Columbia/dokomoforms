@@ -139,6 +139,16 @@ class Application(tornado.web.Application):
 
         sur = SurveyResource
 
+        settings = {
+            'template_path': os.path.join(_pwd, 'dokomoforms', 'templates'),
+            'static_path': os.path.join(_pwd, 'dokomoforms', 'static'),
+            'default_handler_class': handlers.NotFound,
+            'xsrf_cookies': True,
+            'cookie_secret': get_cookie_secret(),
+            'login_url': '/',
+            'debug': options.debug,
+        }
+
         urls = [
             # Administrative
             url(r'/', handlers.Index, name='index'),
@@ -251,16 +261,6 @@ class Application(tornado.web.Application):
                 name='generate_token'
             ),
         ]
-
-        settings = {
-            'template_path': os.path.join(_pwd, 'dokomoforms/templates'),
-            'static_path': os.path.join(_pwd, 'dokomoforms/static'),
-            'default_handler_class': handlers.NotFound,
-            'xsrf_cookies': True,
-            'cookie_secret': get_cookie_secret(),
-            'login_url': '/',
-            'debug': options.debug,
-        }
 
         # HTTPS
         if options.https:

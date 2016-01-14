@@ -85,10 +85,13 @@ class BaseHandler(tornado.web.RequestHandler):
         """Return the logged-in User's selected language
         for the given survey, or None if they do not have one."""
         user = self.current_user_model
-        if (user
-                and survey.id in user.preferences
-                and 'display_language' in user.preferences[survey.id]):
+        if user is None:
+            return None
+        try:
             return user.preferences[survey.id]['display_language']
+        except KeyError:
+            # preference has not been set
+            pass
         return None
 
     def set_default_headers(self):
@@ -107,6 +110,7 @@ class BaseHandler(tornado.web.RequestHandler):
             " cdn.leafletjs.com code.highcharts.com"
             " momentjs.com cdn.datatables.net https://login.persona.org; "
             "child-src login.persona.org; "
+            "frame-src login.persona.org; "
             "style-src 'self' 'unsafe-inline'"
             " fonts.googleapis.com cdn.leafletjs.com *.cloudfront.net;"
             "font-src 'self' fonts.googleapis.com fonts.gstatic.com;"

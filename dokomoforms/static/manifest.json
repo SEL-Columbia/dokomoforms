@@ -1,0 +1,15 @@
+{
+  "name": "Dokomo Forms",
+  "short_name": "Dokomo Forms",
+  "start_url": "/enumerate/",
+  "scope": "/enumerate/",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "/static/dist/admin/img/favicon.png",
+      "sizes": "196x196",
+      "type": "image/png"
+    }
+  ],
+  "lang": "en-US"
+}
