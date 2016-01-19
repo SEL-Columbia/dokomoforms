@@ -325,6 +325,20 @@ class TestAuth(DokoHTTPTest):
             )
         self.assertEqual(response.code, 400, msg=response.body)
 
+    def test_check_login_status_logged_out(self):
+        response = self.fetch(
+            '/user/authenticated',
+            method='POST', _logged_in_user=None, body=''
+        )
+        self.assertEqual(response.code, 403)
+
+    def test_check_login_status_logged_in(self):
+        response = self.fetch(
+            '/user/authenticated',
+            method='POST', body=''
+        )
+        self.assertEqual(response.code, 200)
+
 
 class TestBaseHandler(DokoHTTPTest):
     def test_clear_user_cookie_if_not_uuid(self):
