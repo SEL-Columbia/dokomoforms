@@ -682,7 +682,7 @@ class TestAdminSettings(AdminTest):
         save_btn = self.drv.find_element_by_class_name('btn-save-user')
         self.sleep()
         save_btn.click()
-        self.sleep()
+        self.sleep(2)
 
         self.click(self.drv.find_element_by_id('UserDropdown'))
         try:
@@ -1108,7 +1108,7 @@ class TestAdminManageSurvey(AdminTest):
         )
         try:
             self.click(self.drv.find_element_by_class_name('save-survey-url'))
-        except (WebDriverException, ValueError):
+        except (WebDriverException, ValueError, TypeError):
             # Catch ValueError due to
             # https://github.com/SeleniumHQ/selenium/issues/1470
             #
