@@ -243,6 +243,43 @@ class TestAuth(DokoHTTPTest):
             1
         )
 
+    def test_login_as_admin_first_time(self):
+        admin_emails = (
+            self.session
+            .query(models.Email)
+            .filter_by(address='admin@email.com')
+            .all()
+        )
+        self.assertEqual(len(admin_emails), 0)
+
+        dokomoforms.handlers.auth.options.https = False
+        dokomoforms.handlers.auth.options.admin_email = 'admin@email.com'
+        with patch.object(handlers.Login, '_async_post') as p:
+            dummy = lambda: None
+            dummy.body = json_encode(
+                {'status': 'okay', 'email': 'admin@email.com'}
+            )
+            p.return_value = tornado.gen.Task(
+                lambda callback=None: callback(dummy)
+            )
+            response = self.fetch(
+                '/user/login?assertion=woah', method='POST', body='',
+                _logged_in_user=None
+            )
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Set-Cookie'].lower().count('secure'),
+            1
+        )
+
+        new_admin_emails = (
+            self.session
+            .query(models.Email)
+            .filter_by(address='admin@email.com')
+            .all()
+        )
+        self.assertEqual(len(new_admin_emails), 1)
+
     def test_login_success_secure_cookie(self):
         dokomoforms.handlers.auth.options.https = True
         with patch.object(handlers.Login, '_async_post') as p:
