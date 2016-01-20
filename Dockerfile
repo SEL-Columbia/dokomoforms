@@ -7,4 +7,5 @@ RUN cp -a /tmp/node_modules /dokomo/
 ADD . /dokomo/
 RUN pip install -r requirements.txt
 RUN nodejs node_modules/gulp/bin/gulp.js build
+RUN mv /dokomo/dokomoforms/static/dist /var/www
 EXPOSE 8888
