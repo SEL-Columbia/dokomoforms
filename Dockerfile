@@ -7,5 +7,9 @@ RUN cp -a /tmp/node_modules /dokomo/
 ADD . /dokomo/
 RUN pip install -r requirements.txt
 RUN nodejs node_modules/gulp/bin/gulp.js build
-RUN mv /dokomo/dokomoforms/static/dist /var/www
+RUN mkdir -p /var/www/static/dist
+RUN cp -r /dokomo/dokomoforms/static/dist /var/www/static
+RUN cp /dokomo/dokomoforms/static/robots.txt /var/www/static/robots.txt
+RUN cp /dokomo/dokomoforms/static/manifest.json /var/www/static/manifest.json
+RUN cp /dokomo/dokomoforms/static/src/common/img/favicon.png /var/www/static/favicon.png
 EXPOSE 8888

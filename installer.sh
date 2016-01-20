@@ -88,7 +88,7 @@ printf " Installing SSL certificate. Make sure  \n"
 printf " you have set up the DNS records for    \n"
 printf " your domain to point to this machine.  \n"
 printf "========================================\n"
-$SUDO docker run -it --rm -p 443:443 -p 80:80 --name letsencrypt \
+$SUDO docker run -it --rm -p 443:443 -p 80:80 \
   -v "/etc/letsencrypt:/etc/letsencrypt:Z" \
   -v "/var/lib/letsencrypt:/var/lib/letsencrypt:Z" \
   -v "/var/log:/var/log:Z" \
