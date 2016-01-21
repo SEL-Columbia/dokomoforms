@@ -13,10 +13,10 @@
     <!-- TODO: consider not loading this from CDN-->
     <link href='https://fonts.googleapis.com/css?family=Roboto:100,300,500,700' rel='stylesheet' type='text/css'>
 
-    <link href="/static/dist/admin/css/admin.css" rel="stylesheet" type="text/css">
+    <link href="{{ static_url('dist/admin/css/admin.css') }}" rel="stylesheet" type="text/css">
 
-    <link rel="icon" href="/static/dist/admin/img/favicon.png">
-    <link rel="manifest" href="/static/manifest.json">
+    <link rel="icon" href="{{ static_url('dist/admin/img/favicon.png') }}">
+    <link rel="manifest" href="{{ static_url('manifest.json') }}">
 
     <title>{{ options.organization }} Surveys -- Powered by DokomoData</title>
 </head>
@@ -98,7 +98,7 @@
     <!-- <script src="http://cdn.datatables.net/plug-ins/1.10.6/integration/bootstrap/3/dataTables.bootstrap.js"></script> -->
 
     <!-- VENDOR bundled -->
-    <script type="text/javascript" src="/static/dist/admin/js/vendor.js"></script>
+    <script type="text/javascript" src="{{ static_url('dist/admin/js/vendor.js') }}"></script>
 
     <!-- Persona for login stuff -->
     <script src="https://login.persona.org/include.js"></script>
