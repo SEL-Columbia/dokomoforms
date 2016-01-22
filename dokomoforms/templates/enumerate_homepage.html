@@ -1,1 +1,51 @@
-Hi you are an enumerator.
+{% from dokomoforms.options import options %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>{{ options.organization }} Surveys -- Powered by DokomoData</title>
+
+        <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
+
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="mobile-web-app-status-bar-style" content="black">
+
+        <link href='https://fonts.googleapis.com/css?family=Roboto:400,300,500,700,100' rel='stylesheet' type='text/css'>
+	<link rel="icon" href="{{ static_url('dist/survey/img/favicon.png') }}">
+	<link rel="manifest" href="{{ static_url('manifest.json') }}">
+	<script>
+            // From https://github.com/GoogleChrome/samples/blob/cbc8098c3ebda4dda0ff894673d3847eae31648f/app-install-banner/basic-banner/index.html
+            window.addEventListener('load', function() {
+                if ('serviceWorker' in navigator) {
+		    // I have no idea if this should use static_url...
+                    navigator.serviceWorker.register('/static/src/common/js/service-worker.js')
+                    .then(function(r) {
+                        console.log('registered service worker');
+                    })
+                    .catch(function(error) {
+                        console.error(error);
+                    });
+                };
+            });
+	</script>
+    </head>
+
+    <body>
+        <div id="wrapper">
+	  Enumerator home page.
+	</div>
+        <!-- Bootstrapped Variables -->
+        <script type="text/javascript">
+            window.CURRENT_USER_ID = '{{ current_user_id }}';
+            window.CURRENT_USER_PREFS = {% raw current_user_prefs %};
+        </script>
+        <!-- Vendor libs (jquery, react, lodash, etc.) -->
+	<script src="{{ static_url('dist/survey/js/vendor.js') }}"></script>
+        <!-- Persona for login stuff -->
+        <script src="https://login.persona.org/include.js"></script>
+    </body>
+
+</html>
