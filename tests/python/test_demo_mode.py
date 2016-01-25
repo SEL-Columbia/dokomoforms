@@ -7,6 +7,7 @@ from tests.python.util import (
 
 utils = (setUpModule, tearDownModule)
 
+import dokomoforms.handlers
 from dokomoforms.models import Administrator
 from dokomoforms.options import options
 
@@ -20,7 +21,26 @@ class TestDemoMode(DokoHTTPTest):
         self.app = Application(self.session, options=options)
         return self.app
 
-    def test_logging_in_creates_user(self):
+    def test_logging_in_creates_user_no_https(self):
+        dokomoforms.handlers.demo.options.https = False
+        no_user = (
+            self.session
+            .query(count(Administrator.id))
+            .filter_by(name='demo_user')
+            .scalar()
+        )
+        self.assertEqual(no_user, 0)
+        self.fetch('/demo/login', _logged_in_user=None)
+        user = (
+            self.session
+            .query(count(Administrator.id))
+            .filter_by(name='demo_user')
+            .scalar()
+        )
+        self.assertEqual(user, 1)
+
+    def test_logging_in_creates_user_https(self):
+        dokomoforms.handlers.demo.options.https = True
         no_user = (
             self.session
             .query(count(Administrator.id))

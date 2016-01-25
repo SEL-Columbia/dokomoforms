@@ -379,7 +379,7 @@ def main(msg=None):  # pragma: no cover
         logging.getLogger('sqlalchemy').setLevel(log_level)
     if options.kill:
         ensure_that_user_wants_to_drop_schema()
-    http_server = tornado.httpserver.HTTPServer(Application())
+    http_server = tornado.httpserver.HTTPServer(Application(), xheaders=True)
     tornado.locale.load_gettext_translations(
         os.path.join(_pwd, 'locale'), 'dokomoforms'
     )

@@ -9,13 +9,16 @@ nginx:
     - ./nginx.conf:/etc/nginx/nginx.conf
     - /etc/letsencrypt:/etc/letsencrypt
     - /tmp:/tmp
+  volumes_from:
+    - webapp
 webapp:
-  image: "selcolumbia/dokomoforms:0.2.8"
+  image: "selcolumbia/dokomoforms:0.2.9"
   command: bash -c "./docker-wait-for-postgres.sh db && head -c 24 /dev/urandom > cookie_secret && python webapp.py"
   links:
     - "db:db"
   volumes:
     - ./local_config.py:/dokomo/local_config.py
+    - /var/www
 db:
   image: "mdillon/postgis:9.4"
   environment:
