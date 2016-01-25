@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Dokomo Forms installer for version 0.2.9
+# Dokomo Forms installer for version 0.2.10
 set -e
 
 # Do you have docker installed?
@@ -108,8 +108,8 @@ $SUDO openssl dhparam -out /etc/letsencrypt/live/$LETSENCRYPT_DIR/dhparam.pem 20
 printf "========================================\n"
 printf " Downloading configuration files        \n"
 printf "========================================\n"
-$CURL -L https://raw.githubusercontent.com/SEL-Columbia/dokomoforms/v0.2.9/docker-compose.yml > docker-compose.yml
-$CURL -L https://raw.githubusercontent.com/SEL-Columbia/dokomoforms/v0.2.9/nginx.conf > nginx.conf
+$CURL -L https://raw.githubusercontent.com/SEL-Columbia/dokomoforms/v0.2.10/docker-compose.yml > docker-compose.yml
+$CURL -L https://raw.githubusercontent.com/SEL-Columbia/dokomoforms/v0.2.10/nginx.conf > nginx.conf
 
 # Edit the configuration files
 printf "========================================\n"
