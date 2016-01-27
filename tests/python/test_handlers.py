@@ -23,7 +23,6 @@ from tests.python.util import (
 
 utils = (setUpModule, tearDownModule)
 
-import dokomoforms.exc as exc
 import dokomoforms.handlers as handlers
 import dokomoforms.handlers.auth
 from dokomoforms.handlers.util import (
@@ -480,22 +479,6 @@ class TestBaseHandler(DokoHTTPTest):
             handler = BaseHandler(self.app, dummy_request)
             self.assertEqual(handler.get_cookie('user'), cookie_object.value)
             self.assertIsNone(handler.current_user_model)
-
-    def test_underscore_t_field_not_logged_in(self):
-        dummy_request = SimpleNamespace(
-            cookies={'user': SimpleNamespace(
-                value=str(uuid.uuid4())
-            )},
-            connection=SimpleNamespace(
-                set_close_callback=lambda _: None,
-            ),
-        )
-        handler = BaseHandler(self.app, dummy_request)
-        self.assertRaises(
-            exc.CannotDecideOnTranslationError,
-            handler._t,
-            SimpleNamespace(field=None),
-        )
 
 
 class TestBaseAPIHandler(DokoHTTPTest):

@@ -10,7 +10,6 @@ from sqlalchemy.orm.exc import NoResultFound
 import tornado.web
 from tornado.escape import to_unicode, json_encode
 
-from dokomoforms.exc import CannotDecideOnTranslationError
 from dokomoforms.models import User, Administrator
 from dokomoforms.models.survey import most_recent_surveys
 
@@ -198,7 +197,7 @@ class BaseHandler(tornado.web.RequestHandler):
         if user_preferred_language and user_preferred_language in field:
             return field[user_preferred_language]
 
-        raise CannotDecideOnTranslationError(field)
+        return field[survey.default_language]
 
     def get_template_namespace(self):
         """Template functions.
