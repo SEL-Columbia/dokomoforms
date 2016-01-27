@@ -57,6 +57,14 @@ class TestIndex(DokoHTTPTest):
             msg=survey_dropdown
         )
 
+    def test_get_logged_in_enumerator(self):
+        response = self.fetch(
+            '/',
+            method='GET',
+            _logged_in_user='a7becd02-1a3f-4c1d-a0e1-286ba121aef3'
+        )
+        self.assertTrue(response.effective_url.endswith('/enumerate'))
+
 
 class TestNotFound(DokoHTTPTest):
     def test_bogus_url(self):
