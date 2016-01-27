@@ -177,7 +177,7 @@ class BaseHandler(tornado.web.RequestHandler):
             prefs = self.current_user_model.preferences
         return json_encode(prefs)
 
-    def _t(self, field, survey=None):
+    def _t(self, field, survey):
         """Pick a translation from a translatable field.
 
         Based on user's preference.
@@ -187,12 +187,9 @@ class BaseHandler(tornado.web.RequestHandler):
         # user's preferred survey language
         user_preferred_language = self.user_default_language
 
-        if survey is not None:
-            # see if user has selected a display language for this survey,
-            # if so, use it.
-            user_survey_language = self.user_survey_language(survey)
-            if user_survey_language and user_survey_language in field:
-                return field[user_survey_language]
+        user_survey_language = self.user_survey_language(survey)
+        if user_survey_language and user_survey_language in field:
+            return field[user_survey_language]
 
         if user_preferred_language and user_preferred_language in field:
             return field[user_preferred_language]
