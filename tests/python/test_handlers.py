@@ -425,6 +425,33 @@ class TestAuth(DokoHTTPTest):
 
 
 class TestBaseHandler(DokoHTTPTest):
+    def test_user_default_language_not_logged_in(self):
+        dummy_request = SimpleNamespace(
+            cookies={'user': SimpleNamespace(
+                value=str(uuid.uuid4())
+            )},
+            connection=SimpleNamespace(
+                set_close_callback=lambda _: None,
+            ),
+        )
+        handler = BaseHandler(self.app, dummy_request)
+        self.assertIsNone(handler.user_default_language)
+        self.assertIsNone(handler.current_user_model)
+
+    def test_user_default_language_logged_in(self):
+        dummy_request = SimpleNamespace(
+            cookies={'user': SimpleNamespace(
+                value='b7becd02-1a3f-4c1d-a0e1-286ba121aef4',
+            )},
+            connection=SimpleNamespace(
+                set_close_callback=lambda _: None,
+            ),
+        )
+        with patch.object(BaseHandler, '_current_user_cookie') as p:
+            p.return_value = 'b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+            handler = BaseHandler(self.app, dummy_request)
+            self.assertEqual(handler.user_default_language, 'English')
+
     def test_clear_user_cookie_if_not_uuid(self):
         dummy_request = lambda: None
         cookie_object = lambda: None
