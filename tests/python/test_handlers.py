@@ -452,6 +452,19 @@ class TestBaseHandler(DokoHTTPTest):
             handler = BaseHandler(self.app, dummy_request)
             self.assertEqual(handler.user_default_language, 'English')
 
+    def test_user_survey_language_not_logged_in(self):
+        dummy_request = SimpleNamespace(
+            cookies={'user': SimpleNamespace(
+                value=str(uuid.uuid4())
+            )},
+            connection=SimpleNamespace(
+                set_close_callback=lambda _: None,
+            ),
+        )
+        handler = BaseHandler(self.app, dummy_request)
+        self.assertIsNone(handler.user_survey_language('any survey'))
+        self.assertIsNone(handler.current_user_model)
+
     def test_clear_user_cookie_if_not_uuid(self):
         dummy_request = lambda: None
         cookie_object = lambda: None
