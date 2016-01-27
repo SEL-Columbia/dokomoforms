@@ -1,4 +1,5 @@
 """Handler tests"""
+from types import SimpleNamespace
 from unittest.mock import patch
 import uuid
 
@@ -14,6 +15,7 @@ from tornado.escape import json_decode, json_encode, url_escape
 import tornado.gen
 import tornado.httpclient
 import tornado.testing
+import tornado.web
 
 from tests.python.util import (
     DokoHTTPTest, setUpModule, tearDownModule
@@ -23,8 +25,82 @@ utils = (setUpModule, tearDownModule)
 
 import dokomoforms.handlers as handlers
 import dokomoforms.handlers.auth
-from dokomoforms.handlers.util import BaseHandler, BaseAPIHandler
+from dokomoforms.handlers.util import (
+    BaseHandler, BaseAPIHandler, authenticated_admin
+)
 import dokomoforms.models as models
+
+
+class TestUtil(DokoHTTPTest):
+    def test_authenticated_admin_not_logged_in_bad_method(self):
+        """You should get a 403."""
+        method = authenticated_admin(lambda x: x)
+        args = SimpleNamespace(
+            current_user=None,
+            request=SimpleNamespace(method='POST'),
+        )
+        self.assertRaises(tornado.web.HTTPError, method, args)
+        try:
+            method(args)
+        except tornado.web.HTTPError as err:
+            status = err.status_code
+        self.assertEqual(status, 403)
+
+    def test_authenticated_admin_not_logged_in_ok_method(self):
+        """You should get a redirect to the login page."""
+        class Redirect(Exception):
+            """For testing purposes"""
+        def redirect(url):
+            raise Redirect(url)
+
+        method = authenticated_admin(lambda x: x)
+        args = SimpleNamespace(
+            current_user=None,
+            request=SimpleNamespace(
+                method='GET',
+                uri='/admin',
+            ),
+            get_login_url=lambda: '/',
+            redirect=redirect,
+        )
+        self.assertRaises(Redirect, method, args)
+        try:
+            method(args)
+        except Redirect as redirect:
+            url = redirect.args[0]
+        self.assertEqual(url, '/?next=%2Fadmin')
+
+    def test_authenticated_admin_enumerator_logged_in(self):
+        """You should get a 403."""
+        method = authenticated_admin(lambda x: x)
+        args = SimpleNamespace(
+            current_user=object(),
+            current_user_model=(
+                self.session
+                .query(models.User)
+                .get('a7becd02-1a3f-4c1d-a0e1-286ba121aef3')
+            ),
+        )
+        self.assertRaises(tornado.web.HTTPError, method, args)
+        try:
+            method(args)
+        except tornado.web.HTTPError as err:
+            status = err.status_code
+        self.assertEqual(status, 403)
+
+    def test_authenticated_admin_administrator_logged_in(self):
+        """The method should be evaluated."""
+        method = authenticated_admin(lambda x: x)
+        args = SimpleNamespace(
+            current_user=object(),
+            current_user_model=(
+                self.session
+                .query(models.User)
+                .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+            ),
+        )
+        result = method(args)
+        self.assertIs(result, args)
 
 
 class TestIndex(DokoHTTPTest):
