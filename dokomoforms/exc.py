@@ -6,6 +6,11 @@ class DokomoError(Exception):
     """The base class for all exceptions used in Dokomo Forms."""
 
 
+class CannotDecideOnTranslationError(DokomoError):
+
+    """There is no way to decide which translation to use."""
+
+
 class SurveyAccessForbidden(DokomoError):
 
     """The logged-in user does not have access to the survey."""
