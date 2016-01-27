@@ -184,12 +184,12 @@ class BaseHandler(tornado.web.RequestHandler):
 
         Falls back to default_language.
         """
-        # user's preferred survey language
-        user_preferred_language = self.user_default_language
-
         user_survey_language = self.user_survey_language(survey)
         if user_survey_language and user_survey_language in field:
             return field[user_survey_language]
+
+        # user's preferred survey language
+        user_preferred_language = self.user_default_language
 
         if user_preferred_language and user_preferred_language in field:
             return field[user_preferred_language]

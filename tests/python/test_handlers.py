@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 import lzstring
 
 import sqlalchemy as sa
+from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.functions import count
 from sqlalchemy.dialects import postgresql as pg
 
@@ -479,6 +480,88 @@ class TestBaseHandler(DokoHTTPTest):
             handler = BaseHandler(self.app, dummy_request)
             self.assertEqual(handler.get_cookie('user'), cookie_object.value)
             self.assertIsNone(handler.current_user_model)
+
+    def test_underscore_t_no_preference(self):
+        dummy_request = SimpleNamespace(
+            cookies={'user': SimpleNamespace(
+                value=str(uuid.uuid4())
+            )},
+            connection=SimpleNamespace(
+                set_close_callback=lambda _: None,
+            ),
+        )
+        handler = BaseHandler(self.app, dummy_request)
+        result = handler._t(
+            {'English': 'text'},
+            SimpleNamespace(default_language='English')
+        )
+        self.assertEqual(result, 'text')
+
+    def test_underscore_t_no_preference_no_translation(self):
+        """Is this the desired behavior? Maybe."""
+        dummy_request = SimpleNamespace(
+            cookies={'user': SimpleNamespace(
+                value=str(uuid.uuid4())
+            )},
+            connection=SimpleNamespace(
+                set_close_callback=lambda _: None,
+            ),
+        )
+        handler = BaseHandler(self.app, dummy_request)
+        self.assertRaises(
+            KeyError,
+            handler._t,
+            {'English': 'text'},
+            SimpleNamespace(default_language='French'),
+        )
+
+    def test_underscore_t_user_default(self):
+        dummy_request = SimpleNamespace(
+            cookies={'user': SimpleNamespace(
+                value='b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+            )},
+            connection=SimpleNamespace(
+                set_close_callback=lambda _: None,
+            ),
+        )
+        with patch.object(BaseHandler, '_current_user_cookie') as p:
+            p.return_value = 'b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+            handler = BaseHandler(self.app, dummy_request)
+            result = handler._t(
+                {'English': 'text'},
+                SimpleNamespace(id=None, default_language='French')
+            )
+            self.assertEqual(result, 'text')
+
+    def test_underscore_t_user_survey_default(self):
+        with self.session.begin():
+            user = (
+                self.session
+                .query(models.User)
+                .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+            )
+            user.preferences['woah survey_id'] = {
+                'display_language': 'Cool language'
+            }
+            flag_modified(user, 'preferences')
+            self.session.add(user)
+
+        dummy_request = SimpleNamespace(
+            cookies={'user': SimpleNamespace(
+                value='b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+            )},
+            connection=SimpleNamespace(
+                set_close_callback=lambda _: None,
+            ),
+        )
+        with patch.object(BaseHandler, '_current_user_cookie') as p:
+            p.return_value = 'b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+            handler = BaseHandler(self.app, dummy_request)
+            result = handler._t(
+                {'Cool language': 'text'},
+                SimpleNamespace(id='woah survey_id', default_language='French')
+            )
+            self.assertEqual(result, 'text')
 
 
 class TestBaseAPIHandler(DokoHTTPTest):
