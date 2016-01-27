@@ -154,6 +154,11 @@ class TestNotFound(DokoHTTPTest):
         )
         self.assertEqual(response.code, 404, msg=response)
 
+    def test_bogus_survey_id(self):
+        fake_id = str(uuid.uuid4())
+        response = self.fetch('/enumerate/{}'.format(fake_id))
+        self.assertEqual(response.code, 404, msg=response)
+
 
 class TestDebug(DokoHTTPTest):
     def tearDown(self):
