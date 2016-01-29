@@ -520,7 +520,9 @@ class TestAdminOverview(AdminTest):
     @report_success_status
     def test_account_overview_renders_properly(self):
         self.get('/')
+
         # Recent submissions table
+        self.sleep()
         self.assertEqual(
             len(self.drv.find_elements_by_class_name('submission-row')),
             5
@@ -680,7 +682,7 @@ class TestAdminSettings(AdminTest):
         save_btn = self.drv.find_element_by_class_name('btn-save-user')
         self.sleep()
         save_btn.click()
-        self.sleep()
+        self.sleep(2)
 
         self.click(self.drv.find_element_by_id('UserDropdown'))
         try:
@@ -1104,7 +1106,15 @@ class TestAdminManageSurvey(AdminTest):
                 .get_attribute('class')
             )
         )
-        self.click(self.drv.find_element_by_class_name('save-survey-url'))
+        try:
+            self.click(self.drv.find_element_by_class_name('save-survey-url'))
+        except (WebDriverException, ValueError, TypeError):
+            # Catch ValueError due to
+            # https://github.com/SeleniumHQ/selenium/issues/1470
+            #
+            # Certain browsers complain when you try to click something that's
+            # not clickable.
+            pass
 
         self.get('/enumerate/slug')
         self.assertEqual(
@@ -1430,6 +1440,7 @@ class TestEnumerate(DriverTest):
         # clicking logout should refresh the page
         self.wait_for_element('menu', By.CLASS_NAME)
         self.click(self.drv.find_element_by_class_name('menu'))
+        self.sleep()
         self.click(
             self.drv
             .find_element_by_class_name('menu_logout')
@@ -1789,7 +1800,8 @@ class TestEnumerate(DriverTest):
         self.wait_for_element(
             '.content > span:nth-child(2) > span:nth-child(1)'
             ' > div:nth-child(1) > button:nth-child(1)',
-            by=By.CSS_SELECTOR
+            by=By.CSS_SELECTOR,
+            timeout=10,
         )
         self.click(
             self.drv
@@ -4073,7 +4085,8 @@ class TestEnumerate(DriverTest):
         self.sleep()
         self.wait_for_element(
             '.btn-add-facility',
-            by=By.CSS_SELECTOR
+            by=By.CSS_SELECTOR,
+            timeout=10,
         )
         # click add button
         self.click(
@@ -4141,7 +4154,8 @@ class TestEnumerate(DriverTest):
         self.sleep()
         self.wait_for_element(
             '.btn-add-facility',
-            by=By.CSS_SELECTOR
+            by=By.CSS_SELECTOR,
+            timeout=10,
         )
         # click add button
         self.click(

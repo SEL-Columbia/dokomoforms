@@ -36,7 +36,7 @@
 
 {% block extra_scripts %}
 
-    <script type="text/javascript" src="/static/dist/admin/js/login-page.bundle.js"></script>
+    <script type="text/javascript" src="{{ static_url('dist/admin/js/login-page.bundle.js') }}"></script>
 
     {% if message %}
     <script>

@@ -182,25 +182,25 @@ with session.begin():
                     models.construct_bucket(
                         bucket_type='multiple_choice',
                         bucket=node.choices[1],
-                        ),
-                    ],
+                    ),
+                ],
 
                 nodes=[
                     models.construct_survey_node(
                         node=models.construct_node(
                             title={'English': 'mc text sub 1'},
                             type_constraint='text',
-                            ),
                         ),
+                    ),
                     models.construct_survey_node(
                         node=models.construct_node(
                             title={'English': 'mc text sub 2'},
                             type_constraint='text',
-                            ),
                         ),
-                    ]
-                )
-            ]
+                    ),
+                ]
+            )
+        ]
     ))
 
     survey.nodes.append(models.construct_survey_node(

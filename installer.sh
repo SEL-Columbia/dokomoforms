@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Dokomo Forms installer for version 0.2.8
+# Dokomo Forms installer for version 0.2.10
 set -e
 
 # Do you have docker installed?
@@ -88,7 +88,10 @@ printf " Installing SSL certificate. Make sure  \n"
 printf " you have set up the DNS records for    \n"
 printf " your domain to point to this machine.  \n"
 printf "========================================\n"
-$SUDO docker run -it --rm -p 443:443 -p 80:80 --name letsencrypt \
+# for some reason these directories need to exist beforehand on Fedora...
+$SUDO mkdir -p /etc/letsencrypt
+$SUDO mkdir -p /var/lib/letsencrypt
+$SUDO docker run -it --rm -p 443:443 -p 80:80 \
   -v "/etc/letsencrypt:/etc/letsencrypt:Z" \
   -v "/var/lib/letsencrypt:/var/lib/letsencrypt:Z" \
   -v "/var/log:/var/log:Z" \
@@ -105,8 +108,8 @@ $SUDO openssl dhparam -out /etc/letsencrypt/live/$LETSENCRYPT_DIR/dhparam.pem 20
 printf "========================================\n"
 printf " Downloading configuration files        \n"
 printf "========================================\n"
-$CURL -L https://raw.githubusercontent.com/SEL-Columbia/dokomoforms/v0.2.8/docker-compose.yml > docker-compose.yml
-$CURL -L https://raw.githubusercontent.com/SEL-Columbia/dokomoforms/v0.2.8/nginx.conf > nginx.conf
+$CURL -L https://raw.githubusercontent.com/SEL-Columbia/dokomoforms/v0.2.10/docker-compose.yml > docker-compose.yml
+$CURL -L https://raw.githubusercontent.com/SEL-Columbia/dokomoforms/v0.2.10/nginx.conf > nginx.conf
 
 # Edit the configuration files
 printf "========================================\n"

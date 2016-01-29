@@ -85,10 +85,13 @@ class BaseHandler(tornado.web.RequestHandler):
         """Return the logged-in User's selected language
         for the given survey, or None if they do not have one."""
         user = self.current_user_model
-        if (user
-                and survey.id in user.preferences
-                and 'display_language' in user.preferences[survey.id]):
+        if user is None:
+            return None
+        try:
             return user.preferences[survey.id]['display_language']
+        except KeyError:
+            # preference has not been set
+            pass
         return None
 
     def set_default_headers(self):
@@ -107,6 +110,7 @@ class BaseHandler(tornado.web.RequestHandler):
             " cdn.leafletjs.com code.highcharts.com"
             " momentjs.com cdn.datatables.net https://login.persona.org; "
             "child-src login.persona.org; "
+            "frame-src login.persona.org; "
             "style-src 'self' 'unsafe-inline'"
             " fonts.googleapis.com cdn.leafletjs.com *.cloudfront.net;"
             "font-src 'self' fonts.googleapis.com fonts.gstatic.com;"
@@ -173,22 +177,19 @@ class BaseHandler(tornado.web.RequestHandler):
             prefs = self.current_user_model.preferences
         return json_encode(prefs)
 
-    def _t(self, field, survey=None):
+    def _t(self, field, survey):
         """Pick a translation from a translatable field.
 
         Based on user's preference.
 
         Falls back to default_language.
         """
+        user_survey_language = self.user_survey_language(survey)
+        if user_survey_language and user_survey_language in field:
+            return field[user_survey_language]
+
         # user's preferred survey language
         user_preferred_language = self.user_default_language
-
-        if survey is not None:
-            # see if user has selected a display language for this survey,
-            # if so, use it.
-            user_survey_language = self.user_survey_language(survey)
-            if user_survey_language and user_survey_language in field:
-                return field[user_survey_language]
 
         if user_preferred_language and user_preferred_language in field:
             return field[user_preferred_language]

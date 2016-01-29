@@ -1,4 +1,5 @@
 """Handler tests"""
+from types import SimpleNamespace
 from unittest.mock import patch
 import uuid
 
@@ -7,6 +8,7 @@ from bs4 import BeautifulSoup
 import lzstring
 
 import sqlalchemy as sa
+from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.functions import count
 from sqlalchemy.dialects import postgresql as pg
 
@@ -14,6 +16,7 @@ from tornado.escape import json_decode, json_encode, url_escape
 import tornado.gen
 import tornado.httpclient
 import tornado.testing
+import tornado.web
 
 from tests.python.util import (
     DokoHTTPTest, setUpModule, tearDownModule
@@ -23,8 +26,82 @@ utils = (setUpModule, tearDownModule)
 
 import dokomoforms.handlers as handlers
 import dokomoforms.handlers.auth
-from dokomoforms.handlers.util import BaseHandler, BaseAPIHandler
+from dokomoforms.handlers.util import (
+    BaseHandler, BaseAPIHandler, authenticated_admin
+)
 import dokomoforms.models as models
+
+
+class TestUtil(DokoHTTPTest):
+    def test_authenticated_admin_not_logged_in_bad_method(self):
+        """You should get a 403."""
+        method = authenticated_admin(lambda x: x)
+        args = SimpleNamespace(
+            current_user=None,
+            request=SimpleNamespace(method='POST'),
+        )
+        self.assertRaises(tornado.web.HTTPError, method, args)
+        try:
+            method(args)
+        except tornado.web.HTTPError as err:
+            status = err.status_code
+        self.assertEqual(status, 403)
+
+    def test_authenticated_admin_not_logged_in_ok_method(self):
+        """You should get a redirect to the login page."""
+        class Redirect(Exception):
+            """For testing purposes"""
+        def redirect(url):
+            raise Redirect(url)
+
+        method = authenticated_admin(lambda x: x)
+        args = SimpleNamespace(
+            current_user=None,
+            request=SimpleNamespace(
+                method='GET',
+                uri='/admin',
+            ),
+            get_login_url=lambda: '/',
+            redirect=redirect,
+        )
+        self.assertRaises(Redirect, method, args)
+        try:
+            method(args)
+        except Redirect as redirect:
+            url = redirect.args[0]
+        self.assertEqual(url, '/?next=%2Fadmin')
+
+    def test_authenticated_admin_enumerator_logged_in(self):
+        """You should get a 403."""
+        method = authenticated_admin(lambda x: x)
+        args = SimpleNamespace(
+            current_user=object(),
+            current_user_model=(
+                self.session
+                .query(models.User)
+                .get('a7becd02-1a3f-4c1d-a0e1-286ba121aef3')
+            ),
+        )
+        self.assertRaises(tornado.web.HTTPError, method, args)
+        try:
+            method(args)
+        except tornado.web.HTTPError as err:
+            status = err.status_code
+        self.assertEqual(status, 403)
+
+    def test_authenticated_admin_administrator_logged_in(self):
+        """The method should be evaluated."""
+        method = authenticated_admin(lambda x: x)
+        args = SimpleNamespace(
+            current_user=object(),
+            current_user_model=(
+                self.session
+                .query(models.User)
+                .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+            ),
+        )
+        result = method(args)
+        self.assertIs(result, args)
 
 
 class TestIndex(DokoHTTPTest):
@@ -57,6 +134,14 @@ class TestIndex(DokoHTTPTest):
             msg=survey_dropdown
         )
 
+    def test_get_logged_in_enumerator(self):
+        response = self.fetch(
+            '/',
+            method='GET',
+            _logged_in_user='a7becd02-1a3f-4c1d-a0e1-286ba121aef3'
+        )
+        self.assertTrue(response.effective_url.endswith('/enumerate'))
+
 
 class TestNotFound(DokoHTTPTest):
     def test_bogus_url(self):
@@ -67,6 +152,11 @@ class TestNotFound(DokoHTTPTest):
         response = self.fetch(
             '/user/login', method='GET', _logged_in_user=None
         )
+        self.assertEqual(response.code, 404, msg=response)
+
+    def test_bogus_survey_id(self):
+        fake_id = str(uuid.uuid4())
+        response = self.fetch('/enumerate/{}'.format(fake_id))
         self.assertEqual(response.code, 404, msg=response)
 
 
@@ -243,6 +333,43 @@ class TestAuth(DokoHTTPTest):
             1
         )
 
+    def test_login_as_admin_first_time(self):
+        admin_emails = (
+            self.session
+            .query(models.Email)
+            .filter_by(address='admin@email.com')
+            .all()
+        )
+        self.assertEqual(len(admin_emails), 0)
+
+        dokomoforms.handlers.auth.options.https = False
+        dokomoforms.handlers.auth.options.admin_email = 'admin@email.com'
+        with patch.object(handlers.Login, '_async_post') as p:
+            dummy = lambda: None
+            dummy.body = json_encode(
+                {'status': 'okay', 'email': 'admin@email.com'}
+            )
+            p.return_value = tornado.gen.Task(
+                lambda callback=None: callback(dummy)
+            )
+            response = self.fetch(
+                '/user/login?assertion=woah', method='POST', body='',
+                _logged_in_user=None
+            )
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Set-Cookie'].lower().count('secure'),
+            1
+        )
+
+        new_admin_emails = (
+            self.session
+            .query(models.Email)
+            .filter_by(address='admin@email.com')
+            .all()
+        )
+        self.assertEqual(len(new_admin_emails), 1)
+
     def test_login_success_secure_cookie(self):
         dokomoforms.handlers.auth.options.https = True
         with patch.object(handlers.Login, '_async_post') as p:
@@ -288,8 +415,62 @@ class TestAuth(DokoHTTPTest):
             )
         self.assertEqual(response.code, 400, msg=response.body)
 
+    def test_check_login_status_logged_out(self):
+        response = self.fetch(
+            '/user/authenticated',
+            method='POST', _logged_in_user=None, body=''
+        )
+        self.assertEqual(response.code, 403)
+
+    def test_check_login_status_logged_in(self):
+        response = self.fetch(
+            '/user/authenticated',
+            method='POST', body=''
+        )
+        self.assertEqual(response.code, 200)
+
 
 class TestBaseHandler(DokoHTTPTest):
+    def test_user_default_language_not_logged_in(self):
+        dummy_request = SimpleNamespace(
+            cookies={'user': SimpleNamespace(
+                value=str(uuid.uuid4())
+            )},
+            connection=SimpleNamespace(
+                set_close_callback=lambda _: None,
+            ),
+        )
+        handler = BaseHandler(self.app, dummy_request)
+        self.assertIsNone(handler.user_default_language)
+        self.assertIsNone(handler.current_user_model)
+
+    def test_user_default_language_logged_in(self):
+        dummy_request = SimpleNamespace(
+            cookies={'user': SimpleNamespace(
+                value='b7becd02-1a3f-4c1d-a0e1-286ba121aef4',
+            )},
+            connection=SimpleNamespace(
+                set_close_callback=lambda _: None,
+            ),
+        )
+        with patch.object(BaseHandler, '_current_user_cookie') as p:
+            p.return_value = 'b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+            handler = BaseHandler(self.app, dummy_request)
+            self.assertEqual(handler.user_default_language, 'English')
+
+    def test_user_survey_language_not_logged_in(self):
+        dummy_request = SimpleNamespace(
+            cookies={'user': SimpleNamespace(
+                value=str(uuid.uuid4())
+            )},
+            connection=SimpleNamespace(
+                set_close_callback=lambda _: None,
+            ),
+        )
+        handler = BaseHandler(self.app, dummy_request)
+        self.assertIsNone(handler.user_survey_language('any survey'))
+        self.assertIsNone(handler.current_user_model)
+
     def test_clear_user_cookie_if_not_uuid(self):
         dummy_request = lambda: None
         cookie_object = lambda: None
@@ -304,6 +485,88 @@ class TestBaseHandler(DokoHTTPTest):
             handler = BaseHandler(self.app, dummy_request)
             self.assertEqual(handler.get_cookie('user'), cookie_object.value)
             self.assertIsNone(handler.current_user_model)
+
+    def test_underscore_t_no_preference(self):
+        dummy_request = SimpleNamespace(
+            cookies={'user': SimpleNamespace(
+                value=str(uuid.uuid4())
+            )},
+            connection=SimpleNamespace(
+                set_close_callback=lambda _: None,
+            ),
+        )
+        handler = BaseHandler(self.app, dummy_request)
+        result = handler._t(
+            {'English': 'text'},
+            SimpleNamespace(default_language='English')
+        )
+        self.assertEqual(result, 'text')
+
+    def test_underscore_t_no_preference_no_translation(self):
+        """Is this the desired behavior? Maybe."""
+        dummy_request = SimpleNamespace(
+            cookies={'user': SimpleNamespace(
+                value=str(uuid.uuid4())
+            )},
+            connection=SimpleNamespace(
+                set_close_callback=lambda _: None,
+            ),
+        )
+        handler = BaseHandler(self.app, dummy_request)
+        self.assertRaises(
+            KeyError,
+            handler._t,
+            {'English': 'text'},
+            SimpleNamespace(default_language='French'),
+        )
+
+    def test_underscore_t_user_default(self):
+        dummy_request = SimpleNamespace(
+            cookies={'user': SimpleNamespace(
+                value='b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+            )},
+            connection=SimpleNamespace(
+                set_close_callback=lambda _: None,
+            ),
+        )
+        with patch.object(BaseHandler, '_current_user_cookie') as p:
+            p.return_value = 'b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+            handler = BaseHandler(self.app, dummy_request)
+            result = handler._t(
+                {'English': 'text'},
+                SimpleNamespace(id=None, default_language='French')
+            )
+            self.assertEqual(result, 'text')
+
+    def test_underscore_t_user_survey_default(self):
+        with self.session.begin():
+            user = (
+                self.session
+                .query(models.User)
+                .get('b7becd02-1a3f-4c1d-a0e1-286ba121aef4')
+            )
+            user.preferences['woah survey_id'] = {
+                'display_language': 'Cool language'
+            }
+            flag_modified(user, 'preferences')
+            self.session.add(user)
+
+        dummy_request = SimpleNamespace(
+            cookies={'user': SimpleNamespace(
+                value='b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+            )},
+            connection=SimpleNamespace(
+                set_close_callback=lambda _: None,
+            ),
+        )
+        with patch.object(BaseHandler, '_current_user_cookie') as p:
+            p.return_value = 'b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+            handler = BaseHandler(self.app, dummy_request)
+            result = handler._t(
+                {'Cool language': 'text'},
+                SimpleNamespace(id='woah survey_id', default_language='French')
+            )
+            self.assertEqual(result, 'text')
 
 
 class TestBaseAPIHandler(DokoHTTPTest):

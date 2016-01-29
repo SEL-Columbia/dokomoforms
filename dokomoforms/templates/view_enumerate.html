@@ -13,10 +13,26 @@
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="mobile-web-app-status-bar-style" content="black">
 
-        <link href="/static/dist/survey/css/survey.css" rel="stylesheet" type="text/css">
+	<link href="{{ static_url('dist/survey/css/survey.css') }}" rel="stylesheet" type="text/css">
 
         <link href='https://fonts.googleapis.com/css?family=Roboto:400,300,500,700,100' rel='stylesheet' type='text/css'>
-        <link rel="icon" href="/static/dist/survey/img/favicon.png">
+	<link rel="icon" href="{{ static_url('dist/survey/img/favicon.png') }}">
+	<link rel="manifest" href="{{ static_url('manifest.json') }}">
+	<script>
+            // From https://github.com/GoogleChrome/samples/blob/cbc8098c3ebda4dda0ff894673d3847eae31648f/app-install-banner/basic-banner/index.html
+            window.addEventListener('load', function() {
+                if ('serviceWorker' in navigator) {
+		    // I have no idea if this should use static_url...
+                    navigator.serviceWorker.register('/static/src/common/js/service-worker.js')
+                    .then(function(r) {
+                        console.log('registered service worker');
+                    })
+                    .catch(function(error) {
+                        console.error(error);
+                    });
+                };
+            });
+	</script>
     </head>
 
     <body>
@@ -33,9 +49,9 @@
             {% end %}
         </script>
         <!-- Vendor libs (jquery, react, lodash, etc.) -->
-        <script src="/static/dist/survey/js/vendor.js"></script>
+	<script src="{{ static_url('dist/survey/js/vendor.js') }}"></script>
         <!-- App -->
-        <script src="/static/dist/survey/js/build.bundle.js"></script>
+	<script src="{{ static_url('dist/survey/js/build.bundle.js') }}"></script>
 	    <!-- pass in the revisit url -->
         <script>
             window.init({% raw survey %}, '{% raw revisit_url %}');
