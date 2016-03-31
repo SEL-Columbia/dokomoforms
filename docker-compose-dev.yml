@@ -1,13 +1,13 @@
-webapp-dev:
-  build: .
-  command: bash -c "./docker-wait-for-postgres.sh db-dev && head -c 24 /dev/urandom > cookie_secret && python webapp.py"
-  volumes:
-    - ./:/dokomo
-  links:
-    - "db-dev:db-dev"
-  ports:
-    - "8888:8888"
-db-dev:
-  image: "mdillon/postgis:9.4"
-  environment:
-    POSTGRES_DB: 'doko'
+version: '2'
+services:
+  webapp-dev:
+    build: .
+    command: bash -c "./docker-wait-for-postgres.sh dokomoforms_db-dev_1 && head -c 24 /dev/urandom > cookie_secret && python webapp.py"
+    volumes:
+      - ./:/dokomo
+    ports:
+      - "8888:8888"
+  db-dev:
+    image: "mdillon/postgis:9.4"
+    environment:
+      POSTGRES_DB: 'doko'
