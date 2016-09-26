@@ -217,7 +217,8 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         return full_response
 
     def _check_xsrf_cookie(self):
-        return BaseHandler.check_xsrf_cookie(self.r_handler)
+        return None
+        # return BaseHandler.check_xsrf_cookie(self.r_handler)
 
     def is_authenticated(self, admin_only=True):
         """Return whether the request has been authenticated."""

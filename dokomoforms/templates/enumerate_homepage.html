@@ -1,51 +1,90 @@
-{% from dokomoforms.options import options %}
-<!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <title>{{ options.organization }} Surveys -- Powered by DokomoData</title>
+{% extends "base.html" %}
 
-        <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
 
-        <meta name="apple-mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-status-bar-style" content="black">
+{% block header %}
+<div class="header header-account-overview light-shadow">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6"><h1>Account Overview</h1></div>
+        </div>
+    </div>
+</div>
+{% end %}
 
-        <meta name="mobile-web-app-capable" content="yes">
-        <meta name="mobile-web-app-status-bar-style" content="black">
+{% block content %}
+<div class="content">
+    <div class="container" role="main">
+        <div class="message"></div>
+        <div class="row">
+            <div class="col-md-6">
+                <!-- Recent Submissions -->
 
-        <link href='https://fonts.googleapis.com/css?family=Roboto:400,300,500,700,100' rel='stylesheet' type='text/css'>
-	<link rel="icon" href="{{ static_url('dist/survey/img/favicon.png') }}">
-	<link rel="manifest" href="{{ static_url('manifest.json') }}">
-	<script>
-            // From https://github.com/GoogleChrome/samples/blob/cbc8098c3ebda4dda0ff894673d3847eae31648f/app-install-banner/basic-banner/index.html
-            window.addEventListener('load', function() {
-                if ('serviceWorker' in navigator) {
-		    // I have no idea if this should use static_url...
-                    navigator.serviceWorker.register('/static/src/common/js/service-worker.js')
-                    .then(function(r) {
-                        console.log('registered service worker');
-                    })
-                    .catch(function(error) {
-                        console.error(error);
-                    });
-                };
-            });
-	</script>
-    </head>
+                <h4>Recent Submissions <span class="info-icon" data-toggle="tooltip" data-placement="right" title="Quickly view the five latest submissions.">i</span></h4>
+                <div class="recent-submissions" role="tabpanel">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li role="presentation" class="active"><a href="#recent-list" aria-controls="recent-list" role="tab" data-toggle="tab">List</a></li>
+                        <li role="presentation"><a href="#recent-map" aria-controls="recent-map" role="tab" data-toggle="tab">Map</a></li>
+                    </ul>
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane active recent-block" id="recent-list">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Submitted On</th>
+                                        <th>Submitted By</th>
+                                        <th>Survey</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
 
-    <body>
-        <div id="wrapper">
-	  Enumerator home page.
-	</div>
-        <!-- Bootstrapped Variables -->
-        <script type="text/javascript">
-            window.CURRENT_USER_ID = '{{ current_user_id }}';
-            window.CURRENT_USER_PREFS = {% raw current_user_prefs %};
-        </script>
-        <!-- Vendor libs (jquery, react, lodash, etc.) -->
-	<script src="{{ static_url('dist/survey/js/vendor.js') }}"></script>
-        <!-- Persona for login stuff -->
-        <script src="https://login.persona.org/include.js"></script>
-    </body>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div role="tabpanel" class="tab-pane recent-block recent-map" id="recent-map">
+                            <div id="recent-map-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <!-- Activity Graph -->
+                <h4>Activity Graph <span class="info-icon" data-toggle="tooltip" data-placement="right" title="A plot of submissions over the past 30 days.">i</span></h4>
+                <div class="activity-graph">
+                    <div class="alert alert-info no-activity-message hide">
+                        <em>There has been no submission activity for any survey in the past 30 days.</em>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <h4>Surveys</h4>
+                <table id="surveys" class="table-view display table table-striped table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Created On</th>
+                            <th># of Submissions</th>
+                            <th>Latest Submission</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
-</html>
+{% end %}
+
+
+{% block extra_scripts %}
+
+    <script type="text/javascript" src="{{ static_url('dist/admin/js/account-overview.bundle.js') }}"></script>
+
+{% end %}
+
+
+

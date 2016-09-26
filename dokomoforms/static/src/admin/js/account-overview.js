@@ -194,6 +194,7 @@ var AccountOverview = (function() {
 
     function setupDataTable() {
         // DataTables
+        console.log('datafunction', window.CURRENT_USER_ID)
         var $surveys = $('#surveys');
 
         if ($surveys.length > 0) {
