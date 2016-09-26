@@ -5,7 +5,7 @@ import datetime
 import restless.exceptions as exc
 from restless.constants import CREATED
 
-from sqlalchemy import cast, Date
+from sqlalchemy import and_, cast, Date
 from sqlalchemy.sql import func
 
 from dokomoforms.exc import SurveyAccessForbidden
@@ -14,7 +14,7 @@ from dokomoforms.handlers.api.v0.submissions import (
     SubmissionResource, _create_submission
 )
 from dokomoforms.models import (
-    Survey, Submission, SubSurvey, Choice,
+    Survey, EnumeratorOnlySurvey, Submission, SubSurvey, Choice,
     construct_survey, construct_survey_node, construct_bucket,
     administrator_filter, get_model,
     Node, construct_node
@@ -127,11 +127,14 @@ class SurveyResource(BaseResource):
         elif request_method == 'POST':
             survey_id_index = -2
             url_name = 'submit_to_survey'
-        if request_method in {'GET', 'POST'} and len(uri_parts) != 4:
-            survey_id = uri_parts[survey_id_index]
-            url = self.application.reverse_url(url_name, survey_id)
-            if uri == os.path.commonprefix((uri, url)):
-                return True
+        if request_method in {'GET', 'POST'}:
+            if len(uri_parts) == 4:
+                return super().is_authenticated(admin_only=False)
+            else:
+                survey_id = uri_parts[survey_id_index]
+                url = self.application.reverse_url(url_name, survey_id)
+                if uri == os.path.commonprefix((uri, url)):
+                    return True
         return super().is_authenticated()
 
     def detail(self, survey_id):
@@ -154,6 +157,22 @@ class SurveyResource(BaseResource):
         if user not in survey.enumerators:
             raise SurveyAccessForbidden(survey.id)
         return result
+
+    def list(self):
+        """Return a list of surveys.
+
+        This method requires authentication.
+        An administrator can see any survey.
+        An enumerator can only see their assigned surveys.
+        """
+        user = self.current_user_model
+        where = None
+        if user.role == 'enumerator':
+            where = and_(
+                Survey.survey_type == 'enumerator_only',
+                EnumeratorOnlySurvey.enumerators.contains(user)
+            )
+        return super().list(where=where)
 
     def create(self):
         """Create a new survey.
