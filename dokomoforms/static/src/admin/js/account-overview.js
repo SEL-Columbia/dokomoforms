@@ -292,7 +292,8 @@ var AccountOverview = (function() {
                         // This does not handle searching in the exact way specified by
                         // the DataTables documentation. Instead, it searches in the way
                         // that the API expects (search_term, search_fields).
-                        'url': '/api/v0/surveys?user_id=' + window.CURRENT_USER_ID,
+                        // ?user_id=' + window.CURRENT_USER_ID
+                        'url': '/api/v0/surveys',
                         'data': {
                             draw: data.draw,
                             offset: data.start,
