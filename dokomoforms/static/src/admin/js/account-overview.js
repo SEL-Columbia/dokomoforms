@@ -194,7 +194,6 @@ var AccountOverview = (function() {
 
     function setupDataTable() {
         // DataTables
-        console.log('datafunction', window.CURRENT_USER_ID)
         var $surveys = $('#surveys');
 
         if ($surveys.length > 0) {
@@ -219,7 +218,11 @@ var AccountOverview = (function() {
                     },
                     'targets': 0,
                     'render': function(data) {
-                        return '<a href="/admin/' + data.id + '">' + data.title + '</a>';
+                        if (window.CURRENT_USER_ROLE == "administrator") {
+                            return '<a href="/admin/' + data.id + '">' + data.title + '</a>';
+                        } else if (window.CURRENT_USER_ROLE  == "enumerator") {
+                            return '<a href="/enumerate/' + data.id + '">' + data.title + '</a>';
+                        }
                     }
                 }, {
                     'data': 'created_on',
@@ -249,7 +252,6 @@ var AccountOverview = (function() {
                 }, {
                     'data': 'id',
                     'render': function(data, type, row) {
-                        // console.log(data);
                         var view = view_btn_tpl({
                                 survey_id: data
                             }),
