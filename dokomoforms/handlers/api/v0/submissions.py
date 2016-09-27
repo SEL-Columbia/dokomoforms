@@ -28,7 +28,9 @@ def _create_answer(session, answer_dict) -> Answer:
 def _create_submission(self, survey):
     # Unauthenticated submissions are only allowed if the survey_type is
     # 'public'.
-    authenticated = super(self.__class__, self).is_authenticated()
+    authenticated = (
+        super(self.__class__, self).is_authenticated(admin_only=False)
+    )
     if not authenticated:
         if survey.survey_type == 'public':
             self._check_xsrf_cookie()
