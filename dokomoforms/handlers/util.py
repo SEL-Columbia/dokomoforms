@@ -167,6 +167,11 @@ class BaseHandler(tornado.web.RequestHandler):
             return None
         return self.current_user_model.id
 
+    def _get_current_user_role(self):
+        if not self.current_user:
+            return None
+        return self.current_user_model.role
+
     def _get_current_user_prefs(self):
         """Get the current user's preferences for the templates.
 
@@ -212,7 +217,8 @@ class BaseHandler(tornado.web.RequestHandler):
             'current_user_id': self._get_current_user_id(),
             '_t': self._t,
             'current_user_model': self.current_user_model,
-            'current_user_prefs': self._get_current_user_prefs()
+            'current_user_prefs': self._get_current_user_prefs(),
+            'current_user_role': self._get_current_user_role(),
         })
         return namespace
 

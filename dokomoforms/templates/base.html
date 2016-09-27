@@ -31,7 +31,7 @@
                 <ul class="nav navbar-nav">
                     {% if current_user %}
                         <li><a href="/">Account Overview</a></li>
-                        {% if current_user_model.role == "administrator" %}
+                        {% if current_user_role == "administrator" %}
                             <li><a href="/admin/user-administration">User Administration</a></li>
                         {% end %}
                         <li>
@@ -108,7 +108,7 @@
     <script type="text/javascript">
         window.CURRENT_USER_ID = '{{ current_user_id }}';
         window.CURRENT_USER_PREFS = {% raw current_user_prefs %};
-        window.CURRENT_USER_ROLE = '{{ current_user_model.role }}';
+        window.CURRENT_USER_ROLE = '{{ current_user_role }}';
     </script>
 
 

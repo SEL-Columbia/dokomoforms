@@ -221,7 +221,7 @@ var AccountOverview = (function() {
                         if (window.CURRENT_USER_ROLE == "administrator") {
                             return '<a href="/admin/' + data.id + '">' + data.title + '</a>';
                         } else if (window.CURRENT_USER_ROLE  == "enumerator") {
-                            return '<a href="/enumerate/' + data.id + '">' + data.title + '</a>';
+                            return '<a target="_blank" href="/enumerate/' + data.id + '"">' + data.title + '</a>';
                         }
                     }
                 }, {
