@@ -64,7 +64,7 @@
                                 {{ answer.response['response'].isoformat() }}
                             {% elif answer.type_constraint == 'decimal' %}
                                 {{ float(answer.response['response']) }}
-                            {% elif answer.type_constraint == 'photo' %}
+                            {% elif answer.type_constraint == 'photo' and answer.photo != None %}
                                 <img src="data:image/png;base64,{{ answer.photo.image }}">
                             {% elif answer.type_constraint == 'location' %}
                                 {{ answer.response['response']['lat'] }}, {{ answer.response['response']['lng'] }}
