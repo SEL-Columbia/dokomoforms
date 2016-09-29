@@ -18,7 +18,7 @@ var AccountOverview = (function() {
     function init() {
         base.init();
         if (window.CURRENT_USER_ID !== 'None') {
-            if (window.CURRENT_USER_ROLE == "administrator") {
+            if (window.CURRENT_USER_ROLE == 'administrator') {
                 loadActivityGraph();
                 loadRecentSubmissions()
                     .done(function(data) {
@@ -29,7 +29,7 @@ var AccountOverview = (function() {
                     .done(drawRecentSubs);
                 setupDataTable();
                 setupEventHandlers();
-            } else if (window.CURRENT_USER_ROLE == "enumerator") {
+            } else if (window.CURRENT_USER_ROLE == 'enumerator') {
                 setupEnumDataTable();
             }
         }
@@ -218,11 +218,7 @@ var AccountOverview = (function() {
                     },
                     'targets': 0,
                     'render': function(data) {
-                        if (window.CURRENT_USER_ROLE == "administrator") {
-                            return '<a href="/admin/' + data.id + '">' + data.title + '</a>';
-                        } else if (window.CURRENT_USER_ROLE  == "enumerator") {
-                            return '<a target="_blank" href="/enumerate/' + data.id + '"">' + data.title + '</a>';
-                        }
+                        return '<a href="/admin/' + data.id + '">' + data.title + '</a>';
                     }
                 }, {
                     'data': 'created_on',
@@ -362,11 +358,7 @@ var AccountOverview = (function() {
                     },
                     'targets': 0,
                     'render': function(data) {
-                        if (window.CURRENT_USER_ROLE == "administrator") {
-                            return '<a href="/admin/' + data.id + '">' + data.title + '</a>';
-                        } else if (window.CURRENT_USER_ROLE  == "enumerator") {
-                            return '<a target="_blank" href="/enumerate/' + data.id + '"">' + data.title + '</a>';
-                        }
+                        return '<a target="_blank" href="/enumerate/' + data.id + '"">' + data.title + '</a>';
                     }
                 }, {
                     'data': 'created_on',
