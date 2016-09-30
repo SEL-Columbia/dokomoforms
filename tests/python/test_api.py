@@ -280,6 +280,17 @@ class TestAuthentication(DokoHTTPTest):
         )
         self.assertEqual(response.code, 401)
 
+    def test_enumerator_trying_to_access_own_surveys(self):
+        user_id = 'a7becd02-1a3f-4c1d-a0e1-286ba121aef3'
+        response = self.fetch(
+            self.api_root + '/surveys', _logged_in_user=user_id
+        )
+        self.assertEqual(response.code, 200)
+        surveys = json_decode(response.body)['surveys']
+        self.assertEqual(len(surveys), 1)
+        user = self.session.query(User).get(user_id)
+        self.assertEqual(surveys[0]['id'], user.allowed_surveys[0].id)
+
     def test_enumerator_trying_to_access_allowed_survey(self):
         user_id = 'a7becd02-1a3f-4c1d-a0e1-286ba121aef3'
         survey_id = 'c0816b52-204f-41d4-aaf0-ac6ae2970925'
