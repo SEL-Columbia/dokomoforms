@@ -1,4 +1,6 @@
 """TornadoResource class for dokomoforms.models.user.User."""
+from restless.exceptions import Unauthorized
+
 from sqlalchemy.orm.exc import NoResultFound
 
 from dokomoforms.handlers.api.v0 import BaseResource
@@ -31,8 +33,21 @@ class UserResource(BaseResource):
                 self._survey(s_id) for s_id in self.data[field_name]
             ]
 
+    def is_authenticated(self):
+        """Return whether the user has authenticated."""
+        return super().is_authenticated(admin_only=False)
+
+    def detail(self, user_id):
+        """Return a user's details."""
+        is_admin = self.current_user_model.role == 'administrator'
+        if not is_admin and self.current_user_model.id != user_id:
+            raise Unauthorized()
+        return super().detail(user_id)
+
     def create(self):
         """Create a new user."""
+        if self.current_user_model.role != 'administrator':
+            raise Unauthorized()
         if not self.data.get('emails'):
             raise UserRequiresEmailError()
         self.data['emails'] = [
@@ -47,6 +62,9 @@ class UserResource(BaseResource):
 
     def update(self, user_id):
         """Update a user."""
+        is_admin = self.current_user_model.role == 'administrator'
+        if not is_admin and self.current_user_model.id != user_id:
+            raise Unauthorized()
         if 'emails' in self.data:
             self.data['emails'] = [
                 self._email(address) for address in self.data['emails']
@@ -55,3 +73,15 @@ class UserResource(BaseResource):
         self._modify_survey_data('admin_surveys')
         self._modify_survey_data('surveys')
         return super().update(user_id)
+
+    def list(self):
+        """Return the details for a list of users."""
+        if self.current_user_model.role != 'administrator':
+            raise Unauthorized()
+        return super().list()
+
+    def delete(self, user_id):
+        """Delete a user."""
+        if self.current_user_model.role != 'administrator':
+            raise Unauthorized()
+        return super().delete(user_id)
