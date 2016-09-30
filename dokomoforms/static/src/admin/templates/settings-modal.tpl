@@ -32,6 +32,7 @@
                             <option <%= (data.preferences && data.preferences.default_language === 'French') ? "selected" : "" %> value="French">French (not yet available)</option>
                         </select>
                     </div>
+                <% if (data.role === 'administrator') { %>
                     <div class="form-group">
                         <label for="user-api-token">API Token</label>
                         <p class="help-block">Generating a new token will invalidate the existing token.</p>
@@ -46,6 +47,7 @@
                             <span class="token-expiration-text"></span>
                         </div>
                     </div>
+                <% } %>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
