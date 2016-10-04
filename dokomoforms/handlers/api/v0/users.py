@@ -84,4 +84,4 @@ class UserResource(BaseResource):
         """Delete a user."""
         if self.current_user_model.role != 'administrator':
             raise Unauthorized()
-        return super().delete(user_id)
+        super().delete(user_id)

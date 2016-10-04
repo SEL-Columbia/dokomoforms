@@ -160,7 +160,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
             'Content-Type', '{}; charset=UTF-8'.format(content_type)
         )
         self.ref_rh.set_status(status)
-        self.ref_rh.finish(data)
+        self.ref_rh.finish(None if status == 204 else data)
 
     def handle_error(self, err):
         """Generate a serialized error message.
