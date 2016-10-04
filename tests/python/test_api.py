@@ -280,6 +280,92 @@ class TestAuthentication(DokoHTTPTest):
         )
         self.assertEqual(response.code, 401)
 
+    def test_enumerator_trying_to_access_all_user_data(self):
+        user_id = 'a7becd02-1a3f-4c1d-a0e1-286ba121aef3'
+        response = self.fetch(
+            self.api_root + '/users', _logged_in_user=user_id
+        )
+        self.assertEqual(response.code, 401)
+
+    def test_admin_trying_to_access_all_user_data(self):
+        user_id = 'b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+        response = self.fetch(
+            self.api_root + '/users', _logged_in_user=user_id
+        )
+        self.assertEqual(response.code, 200)
+        users = json_decode(response.body)['users']
+        self.assertEqual(len(users), 3)
+
+    def test_enumerator_trying_to_access_own_user_data(self):
+        user_id = 'a7becd02-1a3f-4c1d-a0e1-286ba121aef3'
+        response = self.fetch(
+            self.api_root + '/users/' + user_id, _logged_in_user=user_id
+        )
+        self.assertEqual(response.code, 200)
+        self.assertEqual(json_decode(response.body)['name'], 'test_user')
+
+    def test_enumerator_trying_to_access_different_user_data(self):
+        user_id = 'a7becd02-1a3f-4c1d-a0e1-286ba121aef3'
+        other_user = 'b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+        response = self.fetch(
+            self.api_root + '/users/' + other_user, _logged_in_user=user_id
+        )
+        self.assertEqual(response.code, 401)
+
+    def test_enumerator_trying_to_create_user(self):
+        user_id = 'a7becd02-1a3f-4c1d-a0e1-286ba121aef3'
+        response = self.fetch(
+            self.api_root + '/users', _logged_in_user=user_id,
+            method='POST', body='',
+        )
+        self.assertEqual(response.code, 401)
+
+    def test_enumerator_trying_to_update_different_user_data(self):
+        user_id = 'a7becd02-1a3f-4c1d-a0e1-286ba121aef3'
+        other_user = 'b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+        response = self.fetch(
+            self.api_root + '/users/' + other_user, _logged_in_user=user_id,
+            method='PUT', body=''
+        )
+        self.assertEqual(response.code, 401)
+
+    def test_enumerator_trying_to_delete_own_user_data(self):
+        user_id = 'a7becd02-1a3f-4c1d-a0e1-286ba121aef3'
+        response = self.fetch(
+            self.api_root + '/users/' + user_id, _logged_in_user=user_id,
+            method='DELETE',
+        )
+        self.assertEqual(response.code, 401)
+
+    def test_enumerator_trying_to_delete_different_user_data(self):
+        user_id = 'a7becd02-1a3f-4c1d-a0e1-286ba121aef3'
+        other_user = 'b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+        response = self.fetch(
+            self.api_root + '/users/' + other_user, _logged_in_user=user_id,
+            method='DELETE',
+        )
+        self.assertEqual(response.code, 401)
+
+    def test_admin_trying_to_delete_own_user_data(self):
+        """Does this even make sense?"""
+        user_id = 'b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+        response = self.fetch(
+            self.api_root + '/users/' + user_id, _logged_in_user=user_id,
+            method='DELETE',
+        )
+        self.assertEqual(response.code, 204)
+        self.assertTrue(self.session.query(User).get(user_id).deleted)
+
+    def test_admin_trying_to_delete_different_user_data(self):
+        user_id = 'b7becd02-1a3f-4c1d-a0e1-286ba121aef4'
+        other_user = 'a7becd02-1a3f-4c1d-a0e1-286ba121aef3'
+        response = self.fetch(
+            self.api_root + '/users/' + other_user, _logged_in_user=user_id,
+            method='DELETE',
+        )
+        self.assertEqual(response.code, 204)
+        self.assertTrue(self.session.query(User).get(other_user).deleted)
+
     def test_enumerator_trying_to_access_own_surveys(self):
         user_id = 'a7becd02-1a3f-4c1d-a0e1-286ba121aef3'
         response = self.fetch(
