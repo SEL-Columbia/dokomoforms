@@ -111,7 +111,8 @@ var path = {
         'account-overview.js',
         'view-data.js',
         'view-survey.js',
-        'user-admin.js'
+        'user-admin.js',
+        'enumerator-overview.js'
     ],
     ADMIN_JS_DIST: admin_dist_path + '/js',
 
