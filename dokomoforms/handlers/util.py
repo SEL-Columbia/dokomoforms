@@ -209,9 +209,14 @@ class BaseHandler(tornado.web.RequestHandler):
         """
         namespace = super().get_template_namespace()
         user = self.current_user_model
-        surveys_for_menu = most_recent_surveys(
-            self.session, user.id, self.num_surveys_for_menu
-        ) if user else None
+        if user and user.role == 'administrator':
+            surveys_for_menu = most_recent_surveys(
+                self.session, user.id, self.num_surveys_for_menu
+            )
+        elif user and user.role == 'enumerator':
+            surveys_for_menu = user.allowed_surveys
+        else:
+            surveys_for_menu = None
         namespace.update({
             'surveys_for_menu': surveys_for_menu,
             'current_user_id': self._get_current_user_id(),

@@ -4,7 +4,6 @@ var $ = require('jquery'),
     _t = require('./lang');
 
 
-
 var AccountOverview = (function() {
 
     function init() {
