@@ -29,8 +29,6 @@ var AccountOverview = (function() {
                     .done(drawRecentSubs);
                 setupDataTable();
                 setupEventHandlers();
-            } else if (window.CURRENT_USER_ROLE == 'enumerator') {
-                setupEnumDataTable();
             }
         }
     }

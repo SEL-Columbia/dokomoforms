@@ -4,6 +4,7 @@ var $ = require('jquery'),
     _t = require('./lang');
 
 
+
 var AccountOverview = (function() {
 
     function init() {
@@ -15,8 +16,6 @@ var AccountOverview = (function() {
         }
     }
 
-
-    // this needs to be moved
     function setupEnumDataTable() {
         // DataTables
         var $surveys = $('#surveys');
