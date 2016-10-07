@@ -38,7 +38,12 @@
                             <a href="#" class="dropdown-toggle" type="button" id="SurveysDropdown" data-toggle="dropdown" aria-expanded="true">Surveys <span class="caret"></span></a>
                             <ul class="dropdown-menu dropdown-menu-surveys" role="menu" aria-labelledby="SurveysDropdown">
                                 {% for the_survey in surveys_for_menu %}
-                                    <li role="presentation"><a role="menuitem" tabindex="-1" href="/admin/{{ the_survey.id }}">{{ _t(the_survey.title, survey=the_survey) }}</a></li>
+                                    <li role="presentation">
+                                    {% if current_user_role == "enumerator" %}
+                                        <a role="menuitem" tabindex="-1" href="/enumerate/{{ the_survey.id }}">{{ _t(the_survey.title, survey=the_survey) }}</a>
+                                    {% else %}
+                                        <a role="menuitem" tabindex="-1" href="/admin/{{ the_survey.id }}">{{ _t(the_survey.title, survey=the_survey) }}</a>
+                                    {% end %}
                                 {% end %}
                             </ul>
                         </li>
@@ -106,9 +111,11 @@
     <script src="https://login.persona.org/include.js"></script>
 
     <script type="text/javascript">
+
         window.CURRENT_USER_ID = '{{ current_user_id }}';
         window.CURRENT_USER_PREFS = {% raw current_user_prefs %};
         window.CURRENT_USER_ROLE = '{{ current_user_role }}';
+
     </script>
 
 
