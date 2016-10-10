@@ -13,7 +13,7 @@
                         </div>
                         <div class="form-group">
                             <label for="user-email">Email</label>
-                            <input type="email" class="form-control" id="user-email" placeholder="Email" value="<%= data.emails ? data.emails[0] : '' %>">
+                            <input type="email" class="form-control" id="user-email" placeholder="Email" value="<%= data.emails ? data.emails[0] : '' %>" required>
                         </div>
                         <div class="form-group">
                             <label for="user-role">Role</label>

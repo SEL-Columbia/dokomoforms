@@ -47,6 +47,11 @@ var UserModal = function(user_id, surveys) {
     function saveUser() {
         console.log('saveUser', user.toJSON());
 
+        if (document.getElementById("user-email").checkValidity()==false) {
+            alert('Please enter a valid email address');
+            return false;
+        }
+
         var changeset = {
             name: $modal.find('#user-name').val(),
             emails: [$modal.find('#user-email').val()],
@@ -55,6 +60,7 @@ var UserModal = function(user_id, surveys) {
                 default_language: $modal.find('#user-default-lang').val()
             }
         };
+
         var surveys = $modal.find('#user-surveys').val() || [];
         console.log('surveys', surveys);
         if (changeset.role === 'enumerator') {
