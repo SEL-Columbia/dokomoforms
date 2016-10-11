@@ -107,17 +107,18 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         modifiers.discard('dialect')
         return bool(modifiers)
 
-    def _set_filename(self, filename, extension):
-        now = datetime.datetime.now().isoformat()
-        filename += '_' + now
-        if self.query_modifiers_applied:
-            filename += '_modified'
-        self.ref_rh.set_header(
-            'Content-Disposition',
-            'inline; filename={}.{}'.format(
-                filename_safe(filename), extension
-            )
-        )
+    ###deleteme
+    #def _set_filename(self, filename, extension):
+    #    now = datetime.datetime.now().isoformat()
+    #    filename += '_' + now
+    #    if self.query_modifiers_applied:
+    #        filename += '_modified'
+    #    self.ref_rh.set_header(
+    #        'Content-Disposition',
+    #        'inline; filename={}.{}'.format(
+    #            filename_safe(filename), extension
+    #        )
+    #    )
 
     def _get_model(self, model_id, model_cls=None, exception=None):
         """Get an instance of this model class by id."""
@@ -146,21 +147,6 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
             return output(arg)
 
         return arg
-
-    def build_response(self, data, status=200):
-        """Finish the Tornado response.
-
-        This takes into account non-JSON content-types.
-        """
-        if self.content_type == 'csv':
-            content_type = 'text/csv'
-        else:
-            content_type = 'application/json'
-        self.ref_rh.set_header(
-            'Content-Type', '{}; charset=UTF-8'.format(content_type)
-        )
-        self.ref_rh.set_status(status)
-        self.ref_rh.finish(data)
 
     def handle_error(self, err):
         """Generate a serialized error message.

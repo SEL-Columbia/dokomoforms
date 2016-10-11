@@ -1,10 +1,13 @@
 """TornadoResource class for dokomoforms.models.submission.Submission."""
 from contextlib import closing
+import datetime
 from csv import DictWriter
 from io import StringIO
 from itertools import chain
 
 import restless.exceptions as exc
+
+import tornado.gen
 
 from dokomoforms.handlers.api.v0 import BaseResource
 from dokomoforms.models import (
@@ -99,34 +102,35 @@ class SubmissionResource(BaseResource):
     default_sort_column_name = 'save_time'
     objects_key = 'submissions'
 
-    def _csv(self, raw_answers) -> dict:
-        """Return {'format': 'csv', 'data': <csv-formatted string>}."""
-        answers = [answer._asdict('csv') for answer in raw_answers]
-        dialect = self._query_arg('dialect', default='excel')
-        fieldnames = [
-            'id', 'deleted', 'answer_number', 'submission_id', 'save_time',
-            'survey_id', 'survey_node_id', 'question_id', 'type_constraint',
-            'last_update_time', 'main_answer', 'response', 'response_type',
-            'metadata'
-        ]
-        with closing(StringIO()) as out:
-            dw = DictWriter(out, fieldnames=fieldnames, dialect=dialect)
-            dw.writeheader()
-            dw.writerows(answers)
-            return {'format': 'csv', 'data': out.getvalue()}
+    ###deleteme
+    #def _csv(self, raw_answers) -> dict:
+    ##    """Return {'format': 'csv', 'data': <csv-formatted string>}."""
+    ##    answers = [answer._asdict('csv') for answer in raw_answers]
+    ##    dialect = self._query_arg('dialect', default='excel')
+    ##    fieldnames = [
+    ##        'id', 'deleted', 'answer_number', 'submission_id', 'save_time',
+    ##        'survey_id', 'survey_node_id', 'question_id', 'type_constraint',
+    ##        'last_update_time', 'main_answer', 'response', 'response_type',
+    ##        'metadata'
+    ##    ]
+    ##    with closing(StringIO()) as out:
+    ##        dw = DictWriter(out, fieldnames=fieldnames, dialect=dialect)
+    ##        dw.writeheader()
+    ##        dw.writerows(answers)
+    ##        return {'format': 'csv', 'data': out.getvalue()}
 
-    def wrap_list_response(self, data):
-        """Allow CSV export of submission data.
+    #def wrap_list_response(self, data):
+    #    """Allow CSV export of submission data.
 
-        This method adds CSV export functionality on top of the JSON list
-        wrapping of BaseResource.wrap_list_response.
-        """
-        if self.content_type == 'csv':
-            self._set_filename('submissions', 'csv')
-            sub_data = data[2]
-            raw_answers = chain.from_iterable(sub.answers for sub in sub_data)
-            return self._csv(raw_answers)
-        return super().wrap_list_response(data)
+    #    This method adds CSV export functionality on top of the JSON list
+    #    wrapping of BaseResource.wrap_list_response.
+    #    """
+    #    if self.content_type == 'csv':
+    #        self._set_filename('submissions', 'csv')
+    #        sub_data = data[2]
+    #        raw_answers = chain.from_iterable(sub.answers for sub in sub_data)
+    #        return self._csv(raw_answers)
+    #    return super().wrap_list_response(data)
 
     def is_authenticated(self):
         """Allow unauthenticated POSTs under the right circumstances."""
@@ -137,12 +141,13 @@ class SubmissionResource(BaseResource):
             return True
         return super().is_authenticated()
 
-    def detail(self, submission_id):
-        """Allow CSV export of a single submission."""
-        if self.content_type == 'csv':
-            self._set_filename('submission_{}'.format(submission_id), 'csv')
-            return self._csv(self._get_model(submission_id).answers)
-        return super().detail(submission_id)
+    ###deleteme
+    #def detail(self, submission_id):
+    #    """Allow CSV export of a single submission."""
+    #    if self.content_type == 'csv':
+    #        self._set_filename('submission_{}'.format(submission_id), 'csv')
+    #        return self._csv(self._get_model(submission_id).answers)
+    #    return super().detail(submission_id)
 
     def list(self, survey_id=None):
         """List submissions, and restrict to a survey if the id is given."""
@@ -163,6 +168,43 @@ class SubmissionResource(BaseResource):
         )
         survey = self._get_model(survey_id, model_cls=Survey, exception=error)
         return _create_submission(self, survey)
+
+
+fieldnames = [
+    'id', 'deleted', 'answer_number', 'submission_id', 'save_time',
+    'survey_id', 'survey_node_id', 'question_id', 'type_constraint',
+    'last_update_time', 'main_answer', 'response', 'response_type',
+    'metadata'
+]
+
+
+@tornado.gen.coroutine
+def csv_get(self, survey_id):
+    self.set_header('Content-Type', 'text/csv; charset=UTF-8')
+    self.set_header(
+        'Content-Disposition',
+        'attachment; filename=survey_{}_submissions_{}.csv'.format(
+            survey_id, datetime.datetime.now().isoformat()
+        )
+    )
+    sub_data = self.resource_handler.list(survey_id=survey_id)[2]
+    #raw_answers = chain.from_iterable(sub.answers for sub in sub_data)
+    dw = DictWriter(self, fieldnames=fieldnames)
+    dw.writeheader()
+    for sub in sub_data:
+        answers = sub.answers
+        yield tornado.gen.moment
+        for answer in answers:
+            dw.writerow(answer._asdict('csv'))
+            yield self.flush()
+    #for index, answer in enumerate(raw_answers):
+    #    str(answer)
+    #    #dw.writerow(answer._asdict('csv'))
+    #    yield self.flush()
+
+
+SubmissionsCSVResource = SubmissionResource.as_list()
+SubmissionsCSVResource.get = csv_get
 
 
 def get_submission_for_handler(tornado_handler, submission_id):

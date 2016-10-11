@@ -37,7 +37,7 @@ import dokomoforms.handlers as handlers
 from dokomoforms.models import create_engine, Base, UUID_REGEX
 from dokomoforms.handlers.api.v0 import (
     SurveyResource, SubmissionResource, PhotoResource, NodeResource,
-    UserResource
+    UserResource, SubmissionsCSVResource
 )
 
 
@@ -216,6 +216,11 @@ class Application(tornado.web.Application):
                 '/surveys/({uuid})/submissions/?',
                 SubmissionResource.as_list(),
                 name='survey_list_submissions',
+            ),
+            api_url(
+                '/surveys/({uuid})/submissions_csv',
+                SubmissionsCSVResource,
+                name='survey_submissions_csv',
             ),
             api_url(
                 '/surveys/({uuid})/stats/?', sur.as_view('stats'),

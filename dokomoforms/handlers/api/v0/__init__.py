@@ -6,7 +6,8 @@ from dokomoforms.handlers.api.v0.surveys import (
     SurveyResource, get_survey_for_handler
 )
 from dokomoforms.handlers.api.v0.submissions import (
-    SubmissionResource, get_submission_for_handler
+    SubmissionResource, get_submission_for_handler,
+    SubmissionsCSVResource
 )
 from dokomoforms.handlers.api.v0.nodes import NodeResource
 from dokomoforms.handlers.api.v0.users import UserResource
@@ -20,6 +21,7 @@ __all__ = (
 
     'SurveyResource', 'get_survey_for_handler',
     'SubmissionResource', 'get_submission_for_handler',
+    'SubmissionsCSVResource',
     'UserResource',
     'NodeResource',
     'PhotoResource',

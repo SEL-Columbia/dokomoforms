@@ -4,6 +4,6 @@
     </button>
     <ul class="dropdown-menu dropdown-menu-right" role="menu">
         <li><a target="_blank" href="/api/v0/surveys/<%= data.survey_id %>/submissions">JSON</a></li>
-        <li><a target="_blank" href="/api/v0/surveys/<%= data.survey_id %>/submissions?format=csv">CSV</a></li>
+        <li><a target="_blank" href="/api/v0/surveys/<%= data.survey_id %>/submissions_csv">CSV</a></li>
     </ul>
 </div>
