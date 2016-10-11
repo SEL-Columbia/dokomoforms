@@ -214,7 +214,7 @@ class Application(tornado.web.Application):
             ),
             api_url(
                 '/surveys/({uuid})/submissions/?',
-                sur.as_view('list_submissions'),
+                SubmissionResource.as_list(),
                 name='survey_list_submissions',
             ),
             api_url(

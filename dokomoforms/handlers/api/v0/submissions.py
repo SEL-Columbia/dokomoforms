@@ -144,6 +144,13 @@ class SubmissionResource(BaseResource):
             return self._csv(self._get_model(submission_id).answers)
         return super().detail(submission_id)
 
+    def list(self, survey_id=None):
+        """List submissions, and restrict to a survey if the id is given."""
+        where = None
+        if survey_id is not None:
+            where = Submission.survey_id == survey_id
+        return super().list(where=where)
+
     # POST /api/submissions/
     def create(self):
         """Create a new submission.
