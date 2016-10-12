@@ -29,5 +29,7 @@ class ModelJSONSerializer(JSONSerializer):
             pass
         else:
             if content_type == 'csv':
-                return data['data']
-        return json.dumps(data, cls=ModelJSONEncoder).replace('</', '<\\/')
+                yield data
+                return
+        for chunk in ModelJSONEncoder().iterencode(data):
+            yield chunk.replace('</', '<\\/')
