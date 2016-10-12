@@ -181,14 +181,11 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
 
     @tornado.gen.coroutine
     def handle(self, endpoint, *args, **kwargs):
-        """
-        almost identical to Resource.handle, except
-        the way we handle the return value of view_method.
-        """
+        """Function taken from restless source code except last line."""
         method = self.request_method()
 
         try:
-            if not method in self.http_methods.get(endpoint, {}):
+            if method not in self.http_methods.get(endpoint, {}):
                 raise exc.MethodNotImplemented(
                     "Unsupported method '{0}' for {1} endpoint.".format(
                         method,

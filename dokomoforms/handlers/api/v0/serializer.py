@@ -1,7 +1,7 @@
 """The restless Serializer for the models."""
 from restless.serializers import JSONSerializer
+
 from dokomoforms.models import ModelJSONEncoder
-import json
 
 
 class ModelJSONSerializer(JSONSerializer):

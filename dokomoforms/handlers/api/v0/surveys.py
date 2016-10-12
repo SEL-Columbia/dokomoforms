@@ -10,9 +10,7 @@ from sqlalchemy.sql import func
 
 from dokomoforms.exc import SurveyAccessForbidden
 from dokomoforms.handlers.api.v0 import BaseResource
-from dokomoforms.handlers.api.v0.submissions import (
-    SubmissionResource, _create_submission
-)
+from dokomoforms.handlers.api.v0.submissions import _create_submission
 from dokomoforms.models import (
     Survey, Submission, SubSurvey, Choice,
     construct_survey, construct_survey_node, construct_bucket,

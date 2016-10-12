@@ -1,8 +1,4 @@
 """TornadoResource class for dokomoforms.models.submission.Submission."""
-from contextlib import closing
-from csv import DictWriter
-from io import StringIO
-from itertools import chain
 
 import restless.exceptions as exc
 
