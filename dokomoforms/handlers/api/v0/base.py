@@ -183,7 +183,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
                     yield self.ref_rh.flush()
 
     @tornado.gen.coroutine
-    def handle(self, endpoint, *args, **kwargs):
+    def handle(self, endpoint, *args, **kwargs):  # pragma: no cover
         """Function taken from restless source code except last line."""
         method = self.request_method()
 

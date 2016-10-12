@@ -57,6 +57,17 @@ class TestIndex(DokoHTTPTest):
             msg=survey_dropdown
         )
 
+    def test_get_logged_in_enumerator(self):
+        """Mostly a placeholder"""
+        user_id = 'a7becd02-1a3f-4c1d-a0e1-286ba121aef3'
+        response = self.fetch('/', method='GET', _logged_in_user=user_id)
+        response_soup = BeautifulSoup(response.body, 'html.parser')
+        links = response_soup.select('a.btn-login.btn-large')
+        self.assertEqual(len(links), 0, msg=response.body)
+        self.assertIn(
+            'Enumerator', response.body.decode(), msg=response.body
+        )
+
 
 class TestNotFound(DokoHTTPTest):
     def test_bogus_url(self):
