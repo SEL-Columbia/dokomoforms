@@ -258,13 +258,12 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         :returns: A wrapping dict
         :rtype: dict
         """
-        response = OrderedDict(
-            (
-               (self.objects_key, data[2]),
-               ('total_entries', data[1]),
-               ('filtered_entries', data[0]),
-            ) + tuple((k, v) for k, v in kwargs.items())
+        dict_items = (
+            (self.objects_key, data[2]),
+            ('total_entries', data[1]),
+            ('filtered_entries', data[0]),
         )
+        response = OrderedDict(dict_items + tuple(kwargs.items()))
         # add additional properties to the response object
         full_response = self._add_meta_props(response)
 
