@@ -1,6 +1,7 @@
 """TornadoResource class for dokomoforms.models.submission.Submission."""
-
 import restless.exceptions as exc
+
+from sqlalchemy import func
 
 from dokomoforms.handlers.api.v0 import BaseResource
 from dokomoforms.models import (
@@ -121,7 +122,16 @@ class SubmissionResource(BaseResource):
         if self.survey_id is None:
             return super().wrap_list_response(data)
         else:
-            return super().wrap_list_response(data, survey_id=self.survey_id)
+            return super().wrap_list_response(
+                data,
+                survey_id=self.survey_id,
+                total_entries=(
+                    self.session
+                    .query(func.count(Submission.id))
+                    .filter_by(survey_id=self.survey_id)
+                    .scalar()
+                ),
+            )
 
     def is_authenticated(self):
         """Allow unauthenticated POSTs under the right circumstances."""
