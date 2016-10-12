@@ -23,4 +23,6 @@ class ModelJSONSerializer(JSONSerializer):
         :returns: A serialized version of the data
         :rtype: string
         """
-        return json.dumps(data, cls=ModelJSONEncoder).replace('</', '<\\/')
+        for chunk in ModelJSONEncoder().iterencode(data):
+            yield chunk.replace('</', '<\\/')
+        #return json.dumps(data, cls=ModelJSONEncoder).replace('</', '<\\/')

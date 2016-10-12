@@ -7,7 +7,8 @@ from time import localtime
 
 from passlib.hash import bcrypt_sha256
 
-from restless.tnd import TornadoResource
+from restless.constants import OK
+from restless.tnd import TornadoResource, is_future
 import restless.exceptions as exc
 
 from sqlalchemy import text, func
@@ -15,6 +16,7 @@ from sqlalchemy.sql.functions import count
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
 
+import tornado.gen
 import tornado.web
 
 from dokomoforms.exc import SurveyAccessForbidden
@@ -147,6 +149,51 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
             return output(arg)
 
         return arg
+
+    @tornado.gen.coroutine
+    def build_response(self, data, status=200):
+        self.ref_rh.set_header('Content-Type', 'application/json; charset=UTF-8')
+        self.ref_rh.set_status(status)
+        for index, chunk in enumerate(data):
+            yield tornado.gen.moment
+            self.ref_rh.write(chunk)
+            if not index % 100:
+                yield self.ref_rh.flush()
+
+    @tornado.gen.coroutine
+    def handle(self, endpoint, *args, **kwargs):
+        """
+        almost identical to Resource.handle, except
+        the way we handle the return value of view_method.
+        """
+        method = self.request_method()
+
+        try:
+            if not method in self.http_methods.get(endpoint, {}):
+                raise exc.MethodNotImplemented(
+                    "Unsupported method '{0}' for {1} endpoint.".format(
+                        method,
+                        endpoint
+                    )
+                )
+
+            if not self.is_authenticated():
+                raise exc.Unauthorized()
+
+            self.data = self.deserialize(method, endpoint, self.request_body())
+            view_method = getattr(self, self.http_methods[endpoint][method])
+            data = view_method(*args, **kwargs)
+            if is_future(data):
+                # need to check if the view_method is a generator or not
+                data = yield data
+            serialized = self.serialize(method, endpoint, data)
+        except Exception as err:
+            raise tornado.gen.Return(self.handle_error(err))
+
+        status = self.status_map.get(self.http_methods[endpoint][method], OK)
+        yield self.build_response(serialized, status=status)
+        #from IPython.core.debugger import Tracer; Tracer()()
+        #raise gen.Return(self.build_response(serialized, status=status))
 
     def handle_error(self, err):
         """Generate a serialized error message.
