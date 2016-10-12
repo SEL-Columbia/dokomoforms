@@ -7,6 +7,7 @@ from datetime import datetime, date, timedelta
 from io import StringIO
 import json
 import os
+import unittest
 import uuid
 
 import dateutil.parser
@@ -27,6 +28,7 @@ import dokomoforms.models as models
 from dokomoforms.models.answer import PhotoAnswer
 from dokomoforms.handlers.api.v0.base import BaseResource
 from dokomoforms.handlers.api.v0.nodes import NodeResource
+from dokomoforms.handlers.api.v0.serializer import ModelJSONSerializer
 
 utils = (setUpModule, tearDownModule)
 
@@ -78,6 +80,14 @@ class TestErrorHandling(DokoHTTPTest):
         # test response
         self.assertEqual(response.code, 404, msg=response.body)
         self.assertIn('not found', json_decode(response.body)['error'])
+
+
+class TestSerialize(unittest.TestCase):
+    def test_serialize(self):
+        data = {'format': 'csv'}
+        result = ModelJSONSerializer.serialize(None, data)
+        self.assertEqual(next(result), data)
+        self.assertRaises(StopIteration, next, result)
 
 
 class TestApiBase(DokoFixtureTest):
@@ -2215,6 +2225,39 @@ class TestSubmissionApi(DokoHTTPTest):
 
         self.assertFalse("error" in submission_dict)
 
+    def test_list_submissions_large(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        survey = self.session.query(models.Survey).get(survey_id)
+        with self.session.begin():
+            for i in range(150):
+                self.session.add(models.construct_submission(
+                    submission_type='public_submission',
+                    survey=survey,
+                    answers=[models.construct_answer(
+                        survey_node=survey.nodes[0],
+                        type_constraint='integer',
+                        answer=1,
+                    )]
+                ))
+        # url to test
+        url = self.api_root + '/surveys/' + survey_id + '/submissions'
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        # check that response is valid parseable json
+        submission_dict = json_decode(response.body)
+
+        # check that the expected keys are present
+        self.assertTrue('submissions' in submission_dict, msg=submission_dict)
+        self.assertEqual(
+            len(submission_dict['submissions']), 251
+        )
+        self.assertEqual(submission_dict['total_entries'], 251)
+
+        self.assertFalse("error" in submission_dict)
+
     def test_list_submissions_csv(self):
         decimal_survey = (
             self.session
@@ -2279,6 +2322,55 @@ class TestSubmissionApi(DokoHTTPTest):
 
         self.assertEqual(data[2]['main_answer'], '4.4')
         self.assertEqual(data[2]['response'], '4.4')
+
+    def test_list_submissions_large_csv(self):
+        survey_id = 'b0816b52-204f-41d4-aaf0-ac6ae2970923'
+        survey = self.session.query(models.Survey).get(survey_id)
+        with self.session.begin():
+            for i in range(150):
+                self.session.add(models.construct_submission(
+                    submission_type='public_submission',
+                    survey=survey,
+                    answers=[models.construct_answer(
+                        survey_node=survey.nodes[0],
+                        type_constraint='integer',
+                        answer=1,
+                    )]
+                ))
+        # url to test
+        url = (
+            self.api_root + '/surveys/' + survey_id + '/submissions?format=csv'
+        )
+        # http method (just for clarity)
+        method = 'GET'
+        # make request
+        response = self.fetch(url, method=method)
+        # test response
+        self.assertEqual(response.code, 200, msg=response.body)
+        self.assertEqual(
+            response.headers['Content-Type'], 'text/csv; charset=UTF-8'
+        )
+        cd = response.headers['Content-Disposition']
+        full_filename = cd.split()[1]
+        filename, extension = full_filename[9:-4], full_filename[-3:]
+        self.assertEqual(extension, 'csv')
+        chunks = filename.split('_')
+        self.assertEqual(len(chunks), 5)
+        self.assertEqual(chunks[0], 'survey')
+
+        with closing(StringIO(response.body.decode())) as csv_data:
+            dr = DictReader(csv_data)
+            data = list(dr)
+
+        self.assertEqual(len(data), 151)
+        self.assertEqual(data[0]['main_answer'], '3')
+        self.assertEqual(data[0]['response'], '3')
+
+        self.assertEqual(data[1]['main_answer'], '1')
+        self.assertEqual(data[1]['response'], '1')
+
+        self.assertEqual(data[2]['main_answer'], '1')
+        self.assertEqual(data[2]['response'], '1')
 
     def test_list_submissions_search_submitter_name(self):
         search_term = 'singular'

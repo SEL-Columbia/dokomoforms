@@ -1,13 +1,15 @@
 """The base class of the TornadoResource classes in the api module."""
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
+from csv import DictWriter
 import datetime
 import logging
 from time import localtime
 
 from passlib.hash import bcrypt_sha256
 
-from restless.tnd import TornadoResource
+from restless.constants import OK
+from restless.tnd import TornadoResource, is_future
 import restless.exceptions as exc
 
 from sqlalchemy import text, func
@@ -15,6 +17,7 @@ from sqlalchemy.sql.functions import count
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
 
+import tornado.gen
 import tornado.web
 
 from dokomoforms.exc import SurveyAccessForbidden
@@ -114,7 +117,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
             filename += '_modified'
         self.ref_rh.set_header(
             'Content-Disposition',
-            'inline; filename={}.{}'.format(
+            'attachment; filename={}.{}'.format(
                 filename_safe(filename), extension
             )
         )
@@ -147,21 +150,70 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
 
         return arg
 
+    @tornado.gen.coroutine
     def build_response(self, data, status=200):
         """Finish the Tornado response.
 
         This takes into account non-JSON content-types.
         """
-        if self.content_type == 'csv':
-            content_type = 'text/csv'
-        else:
-            content_type = 'application/json'
-        self.ref_rh.set_header(
-            'Content-Type', '{}; charset=UTF-8'.format(content_type)
-        )
         self.ref_rh.set_status(status)
-        self.ref_rh.finish(data)
+        if self.content_type == 'csv':
+            self.ref_rh.set_header('Content-Type', 'text/csv; charset=UTF-8')
+            data = next(data)
+            dw = DictWriter(
+                self.ref_rh,
+                fieldnames=data['fieldnames'], dialect=data['dialect'])
+            dw.writeheader()
+            linecount = 0
+            for submission in data['data']:
+                answers = submission.answers
+                yield tornado.gen.moment
+                for answer in answers:
+                    linecount += 1
+                    dw.writerow(answer._asdict('csv'))
+                    if not linecount % 100:
+                        yield self.ref_rh.flush()
+        else:
+            self.ref_rh.set_header(
+                'Content-Type', 'application/json; charset=UTF-8')
+            for index, chunk in enumerate(data):
+                yield tornado.gen.moment
+                self.ref_rh.write(chunk)
+                if not index % 100:
+                    yield self.ref_rh.flush()
 
+    @tornado.gen.coroutine
+    def handle(self, endpoint, *args, **kwargs):  # pragma: no cover
+        """Function taken from restless source code except last line."""
+        method = self.request_method()
+
+        try:
+            if method not in self.http_methods.get(endpoint, {}):
+                raise exc.MethodNotImplemented(
+                    "Unsupported method '{0}' for {1} endpoint.".format(
+                        method,
+                        endpoint
+                    )
+                )
+
+            if not self.is_authenticated():
+                raise exc.Unauthorized()
+
+            self.data = self.deserialize(method, endpoint, self.request_body())
+            view_method = getattr(self, self.http_methods[endpoint][method])
+            data = view_method(*args, **kwargs)
+            if is_future(data):
+                # need to check if the view_method is a generator or not
+                data = yield data
+            serialized = self.serialize(method, endpoint, data)
+        except Exception as err:
+            yield self.handle_error(err)
+            return
+
+        status = self.status_map.get(self.http_methods[endpoint][method], OK)
+        yield self.build_response(serialized, status=status)
+
+    @tornado.gen.coroutine
     def handle_error(self, err):
         """Generate a serialized error message.
 
@@ -187,9 +239,9 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         elif isinstance(err, understood):
             err = exc.BadRequest(err)
         logging.exception(err)
-        return super().handle_error(err)
+        yield super().handle_error(err)
 
-    def wrap_list_response(self, data):
+    def wrap_list_response(self, data, **kwargs):
         """Wrap a list response in a dict.
 
         Takes a list of data & wraps it in a dictionary (within the ``objects``
@@ -206,11 +258,12 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         :returns: A wrapping dict
         :rtype: dict
         """
-        response = OrderedDict((
+        dict_items = (
             (self.objects_key, data[2]),
             ('total_entries', data[1]),
             ('filtered_entries', data[0]),
-        ))
+        )
+        response = OrderedDict(dict_items + tuple(kwargs.items()))
         # add additional properties to the response object
         full_response = self._add_meta_props(response)
 
