@@ -1145,7 +1145,7 @@ class TestAdminManageSurvey(AdminTest):
         data = json.loads(json_str)
 
         self.assertEqual(data['total_entries'], 101)
-        self.assertEqual(data['total_entries'], 101)
+        self.assertEqual(data['filtered_entries'], 101)
         self.assertEqual(len(data['submissions']), 101)
 
     @report_success_status
