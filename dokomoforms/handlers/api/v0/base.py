@@ -160,7 +160,10 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         if self.content_type == 'csv':
             self.ref_rh.set_header('Content-Type', 'text/csv; charset=UTF-8')
             data = next(data)
-            dw = DictWriter(self.ref_rh, fieldnames=data['fieldnames'])
+            dw = DictWriter(
+                self.ref_rh,
+                fieldnames=data['fieldnames'], dialect=data['dialect'])
+            dw.writeheader()
             linecount = 0
             for submission in data['data']:
                 answers = submission.answers
@@ -204,11 +207,13 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
                 data = yield data
             serialized = self.serialize(method, endpoint, data)
         except Exception as err:
-            raise tornado.gen.Return(self.handle_error(err))
+            yield self.handle_error(err)
+            return
 
         status = self.status_map.get(self.http_methods[endpoint][method], OK)
         yield self.build_response(serialized, status=status)
 
+    @tornado.gen.coroutine
     def handle_error(self, err):
         """Generate a serialized error message.
 
@@ -234,9 +239,9 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
         elif isinstance(err, understood):
             err = exc.BadRequest(err)
         logging.exception(err)
-        return super().handle_error(err)
+        yield super().handle_error(err)
 
-    def wrap_list_response(self, data):
+    def wrap_list_response(self, data, **kwargs):
         """Wrap a list response in a dict.
 
         Takes a list of data & wraps it in a dictionary (within the ``objects``
@@ -257,6 +262,7 @@ class BaseResource(TornadoResource, metaclass=ABCMeta):
             (self.objects_key, data[2]),
             ('total_entries', data[1]),
             ('filtered_entries', data[0]),
+            *((k, v) for k, v in kwargs.items())
         ))
         # add additional properties to the response object
         full_response = self._add_meta_props(response)

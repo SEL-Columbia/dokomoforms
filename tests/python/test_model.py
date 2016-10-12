@@ -519,7 +519,7 @@ class TestUser(DokoTest):
         user = self.session.query(models.User).one()
         self.assertEqual(
             json.loads(
-                ModelJSONSerializer.serialize(None, user),
+                ''.join(ModelJSONSerializer.serialize(None, user)),
                 object_pairs_hook=OrderedDict,
             ),
             OrderedDict((
@@ -2624,7 +2624,7 @@ class TestSurveyNode(DokoTest):
         n_i = n.id
         self.assertEqual(
             json.loads(
-                ModelJSONSerializer.serialize(None, survey),
+                ''.join(ModelJSONSerializer.serialize(None, survey)),
                 object_pairs_hook=OrderedDict,
             ),
             OrderedDict((
