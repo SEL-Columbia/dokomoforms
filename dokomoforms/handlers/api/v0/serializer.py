@@ -1,7 +1,7 @@
 """The restless Serializer for the models."""
 from restless.serializers import JSONSerializer
+
 from dokomoforms.models import ModelJSONEncoder
-import json
 
 
 class ModelJSONSerializer(JSONSerializer):
@@ -29,5 +29,7 @@ class ModelJSONSerializer(JSONSerializer):
             pass
         else:
             if content_type == 'csv':
-                return data['data']
-        return json.dumps(data, cls=ModelJSONEncoder).replace('</', '<\\/')
+                yield data
+                return
+        for chunk in ModelJSONEncoder().iterencode(data):
+            yield chunk.replace('</', '<\\/')

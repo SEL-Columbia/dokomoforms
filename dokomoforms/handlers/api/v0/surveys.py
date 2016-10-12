@@ -10,9 +10,7 @@ from sqlalchemy.sql import func
 
 from dokomoforms.exc import SurveyAccessForbidden
 from dokomoforms.handlers.api.v0 import BaseResource
-from dokomoforms.handlers.api.v0.submissions import (
-    SubmissionResource, _create_submission
-)
+from dokomoforms.handlers.api.v0.submissions import _create_submission
 from dokomoforms.models import (
     Survey, Submission, SubSurvey, Choice,
     construct_survey, construct_survey_node, construct_bucket,
@@ -176,33 +174,6 @@ class SurveyResource(BaseResource):
     def submit(self, survey_id):
         """Submit to a survey."""
         return _create_submission(self, self._get_model(survey_id))
-
-    def list_submissions(self, survey_id):
-        """List all submissions for a survey."""
-        sub_resource = SubmissionResource()
-        sub_resource.ref_rh = self.ref_rh
-        sub_resource.request = self.request
-        sub_resource.application = self.application
-        where = Submission.survey_id == survey_id
-        result = sub_resource.list(where=where)
-        response = sub_resource.wrap_list_response(result)
-        if sub_resource.content_type == 'csv':
-            title = (
-                self.session
-                .query(Survey.title[Survey.default_language])
-                .filter_by(id=survey_id)
-                .scalar()
-            )
-            self._set_filename('survey_{}_submissions'.format(title), 'csv')
-        else:
-            response['total_entries'] = (
-                self.session
-                .query(func.count(Submission.id))
-                .filter_by(survey_id=survey_id)
-                .scalar()
-            )
-            response['survey_id'] = survey_id
-        return response
 
     def stats(self, survey_id):
         """Get stats for a survey."""

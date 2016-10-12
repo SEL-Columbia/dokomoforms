@@ -1,8 +1,4 @@
 """TornadoResource class for dokomoforms.models.submission.Submission."""
-from contextlib import closing
-from csv import DictWriter
-from io import StringIO
-from itertools import chain
 
 import restless.exceptions as exc
 
@@ -98,22 +94,13 @@ class SubmissionResource(BaseResource):
     resource_type = Submission
     default_sort_column_name = 'save_time'
     objects_key = 'submissions'
-
-    def _csv(self, raw_answers) -> dict:
-        """Return {'format': 'csv', 'data': <csv-formatted string>}."""
-        answers = [answer._asdict('csv') for answer in raw_answers]
-        dialect = self._query_arg('dialect', default='excel')
-        fieldnames = [
-            'id', 'deleted', 'answer_number', 'submission_id', 'save_time',
-            'survey_id', 'survey_node_id', 'question_id', 'type_constraint',
-            'last_update_time', 'main_answer', 'response', 'response_type',
-            'metadata'
-        ]
-        with closing(StringIO()) as out:
-            dw = DictWriter(out, fieldnames=fieldnames, dialect=dialect)
-            dw.writeheader()
-            dw.writerows(answers)
-            return {'format': 'csv', 'data': out.getvalue()}
+    fieldnames = [
+        'id', 'deleted', 'answer_number', 'submission_id', 'save_time',
+        'survey_id', 'survey_node_id', 'question_id', 'type_constraint',
+        'last_update_time', 'main_answer', 'response', 'response_type',
+        'metadata'
+    ]
+    survey_id = None
 
     def wrap_list_response(self, data):
         """Allow CSV export of submission data.
@@ -122,11 +109,19 @@ class SubmissionResource(BaseResource):
         wrapping of BaseResource.wrap_list_response.
         """
         if self.content_type == 'csv':
-            self._set_filename('submissions', 'csv')
-            sub_data = data[2]
-            raw_answers = chain.from_iterable(sub.answers for sub in sub_data)
-            return self._csv(raw_answers)
-        return super().wrap_list_response(data)
+            if 'Content-Disposition' not in self.ref_rh._headers.keys():
+                self._set_filename('submissions', 'csv')
+            dialect = self._query_arg('dialect', default='excel')
+            return {
+                'format': 'csv',
+                'fieldnames': self.fieldnames,
+                'dialect': dialect,
+                'data': data[2],
+            }
+        if self.survey_id is None:
+            return super().wrap_list_response(data)
+        else:
+            return super().wrap_list_response(data, survey_id=self.survey_id)
 
     def is_authenticated(self):
         """Allow unauthenticated POSTs under the right circumstances."""
@@ -141,8 +136,31 @@ class SubmissionResource(BaseResource):
         """Allow CSV export of a single submission."""
         if self.content_type == 'csv':
             self._set_filename('submission_{}'.format(submission_id), 'csv')
-            return self._csv(self._get_model(submission_id).answers)
+            dialect = self._query_arg('dialect', default='excel')
+            return {
+                'format': 'csv',
+                'fieldnames': self.fieldnames,
+                'dialect': dialect,
+                'data': [self._get_model(submission_id)],
+            }
         return super().detail(submission_id)
+
+    def list(self, survey_id=None):
+        """List submissions, and restrict to a survey if the id is given."""
+        where = None
+        if survey_id is not None:
+            self.survey_id = survey_id
+            where = Submission.survey_id == survey_id
+            if self.content_type == 'csv':
+                title = (
+                    self.session
+                    .query(Survey.title[Survey.default_language])
+                    .filter_by(id=survey_id)
+                    .scalar()
+                )
+                self._set_filename(
+                    'survey_{}_submissions'.format(title), 'csv')
+        return super().list(where=where)
 
     # POST /api/submissions/
     def create(self):
