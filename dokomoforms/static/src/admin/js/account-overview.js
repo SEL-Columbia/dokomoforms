@@ -18,18 +18,16 @@ var AccountOverview = (function() {
     function init() {
         base.init();
         if (window.CURRENT_USER_ID !== 'None') {
-            if (window.CURRENT_USER_ROLE == 'administrator') {
-                loadActivityGraph();
-                loadRecentSubmissions()
-                    .done(function(data) {
-                        // store recent subs for detail modal browsing
-                        recentSubmissions = _.pluck(data.submissions, 'id');
-                    })
-                    .done(drawMap)
-                    .done(drawRecentSubs);
-                setupDataTable();
-                setupEventHandlers();
-            }
+            loadActivityGraph();
+            loadRecentSubmissions()
+                .done(function(data) {
+                    // store recent subs for detail modal browsing
+                    recentSubmissions = _.pluck(data.submissions, 'id');
+                })
+                .done(drawMap)
+                .done(drawRecentSubs);
+            setupDataTable();
+            setupEventHandlers();
         }
     }
 
