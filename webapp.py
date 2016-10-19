@@ -189,6 +189,12 @@ class Application(tornado.web.Application):
                 name='admin_user_view',
             ),
 
+            url(
+                r'/admin/create-survey/?',
+                handlers.CreateSurveyHandler,
+                name='admin_survey_creation'
+            ),
+
             # * Enumerate views
             url(
                 r'/enumerate/?',

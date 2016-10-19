@@ -118,3 +118,15 @@ class ViewUserAdminHandler(BaseHandler):
         self.render(
             'view_user_admin.html'
         )
+
+
+class CreateSurveyHandler(BaseHandler):
+
+    """The endpoint for getting the user administration admin page."""
+
+    @authenticated_admin
+    def get(self):
+        """GET the user admin page."""
+        self.render(
+            'survey_creation.html'
+        )

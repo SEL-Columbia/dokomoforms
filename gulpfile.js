@@ -112,7 +112,8 @@ var path = {
         'view-data.js',
         'view-survey.js',
         'user-admin.js',
-        'enumerator-overview.js'
+        'enumerator-overview.js',
+        'create-survey.js'
     ],
     ADMIN_JS_DIST: admin_dist_path + '/js',
 

@@ -6,7 +6,7 @@ from dokomoforms.handlers.auth import (
 from dokomoforms.handlers.user.admin import (
     AdminHomepageHandler,
     ViewSurveyHandler, ViewSurveyDataHandler,
-    ViewSubmissionHandler, ViewUserAdminHandler
+    ViewSubmissionHandler, ViewUserAdminHandler, CreateSurveyHandler
 )
 from dokomoforms.handlers.user.enumerate import (
     EnumerateHomepageHandler, Enumerate, EnumerateTitle
@@ -25,7 +25,7 @@ __all__ = (
     'Login', 'Logout', 'GenerateToken',
     'AdminHomepageHandler', 'CheckLoginStatus',
     'ViewSurveyHandler', 'ViewSurveyDataHandler', 'ViewUserAdminHandler',
-    'ViewSubmissionHandler',
+    'ViewSubmissionHandler', 'CreateSurveyHandler',
     'EnumerateHomepageHandler', 'Enumerate', 'EnumerateTitle',
     'DebugUserCreationHandler', 'DebugLoginHandler', 'DebugLogoutHandler',
     'DebugPersonaHandler', 'DebugRevisitHandler', 'DebugToggleRevisitHandler',
