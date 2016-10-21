@@ -12,6 +12,7 @@
     "bootstrap": "^3.3.6",
     "datatables": "https://github.com/DataTables/DataTables/archive/1.10.9.tar.gz",
     "es5-shim": "^4.5.7",
+    "eslint": "^3.8.1",
     "highcharts-release": "^4.2.3",
     "jquery": "^2.2.2",
     "leaflet": "^0.7.7",

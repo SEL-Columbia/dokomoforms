@@ -1,4 +1,6 @@
-var env = process.env.NODE_ENV || 'production';
+// var env = process.env.NODE_ENV || 'production';
+env = 'development';
+
 
 
 var gulp = require('gulp'),
@@ -9,6 +11,7 @@ var gulp = require('gulp'),
     source = require('vinyl-source-stream'),
     concat = require('gulp-concat'),
     browserify = require('browserify'),
+    babelify = require('babelify'),
     reactify = require('reactify'),
     streamify = require('gulp-streamify'),
     underscorify = require('node-underscorify').transform({
@@ -100,7 +103,8 @@ var path = {
         node_modules_path + '/moment/min/moment.min.js',
         node_modules_path + '/leaflet/dist/leaflet.js',
         node_modules_path + '/highcharts-release/highcharts.js',
-        node_modules_path + '/backbone/backbone.js'
+        node_modules_path + '/backbone/backbone.js',
+        node_modules_path + '/react/dist/react.js'
     ],
     ADMIN_JS_APP_SRC: admin_src_path + '/js/**/*.js',
     ADMIN_JS_ENTRY_POINT_PREFIX: admin_src_path + '/js/',
@@ -254,7 +258,9 @@ gulp.task('admin-js-app', function() {
         return browserify({
             entries: [path.ADMIN_JS_ENTRY_POINT_PREFIX + entry]
         })
+            .transform(babelify)
             .transform(underscorify)
+            .transform(reactify)
             .bundle()
             .on('error', function(err) {
                 console.log(err.message);

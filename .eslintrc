@@ -29,12 +29,13 @@
         "jest": true
     },
     "extends": "eslint:recommended",
-    "ecmaFeatures": {
-        "jsx": true,
-        "modules": true,
-        "arrowFunctions": true,
-        "blockBindings": true,
-        "experimentalObjectRestSpread": true
+    "ParserOptions": {
+        "ecmaVersion": 6,
+        "sourceType": "module",
+        "ecmaFeatures": {
+            "jsx": true,
+            "experimentalObjectRestSpread": true
+        }
     },
     "plugins": [
         "react"
