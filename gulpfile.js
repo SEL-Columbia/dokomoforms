@@ -117,7 +117,8 @@ var path = {
         'view-survey.js',
         'user-admin.js',
         'enumerator-overview.js',
-        'create-survey.js'
+        'create-survey.js',
+        'create-survey/main.babel.js'
     ],
     ADMIN_JS_DIST: admin_dist_path + '/js',
 
@@ -258,7 +259,9 @@ gulp.task('admin-js-app', function() {
         return browserify({
             entries: [path.ADMIN_JS_ENTRY_POINT_PREFIX + entry]
         })
-            .transform(babelify)
+            .transform(babelify.configure({
+                only: /.*\.babel.*/
+            }))
             .transform(underscorify)
             .transform(reactify)
             .bundle()
