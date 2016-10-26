@@ -1,5 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import App from './Application.babel.jsx';
+import Application from './Application.babel.js';
 
-ReactDOM.render(<App />, document.getElementById('app'));
+ReactDOM.render(
+        <Application />
+        , document.getElementById('app'));
