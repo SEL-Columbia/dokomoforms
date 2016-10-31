@@ -1,43 +1,57 @@
 import React from 'react';
+import NodeList from './components/Node.babel.js';
 
 class Survey extends React.Component {
 
     constructor(props) {
         super(props);
 
-        this.updateTitle = this.updateTitle.bind(this);
+        this.updateQuestion = this.updateQuestion.bind(this);
+        this.updateNodes = this.updateNodes.bind(this);
+        this.saveSurvey = this.saveSurvey.bind(this);
 
         this.state = {
-            title: ''
+            title: '',
+            nodes: []
         };
     }
 
-    updateTitle(event) {
-        this.setState({title: event.target.value})
+    updateQuestion(event) {
+        // this.setState({title: event.target.value});
     }
+
+    updateNodes(nodeList) {
+        this.setState({nodes: nodeList});
+    }
+
+    saveSurvey() {
+        const survey = this.state;
+        console.log('from survey', survey);
+        this.props.buildSurvey(survey);
+    }
+
+    render() {
+
+        return (
+            <div>
+                <SurveyTitle updateQuestion={this.updateQuestion}>
+                {this.state.title}</SurveyTitle>
+                <NodeList updateNodes={this.updateNodes}/>
+                <button onClick={this.saveSurvey}>save survey</button>
+            </div>
+        );
+    }
+}
+
+class SurveyTitle extends React.Component {
 
     render() {
         return (
             <div>
-                <SurveyInfo data={this.state.title} updateStateProp={this.updateTitle}>
-                {this.state.title}</SurveyInfo>
+                <input type="text" onChange={this.props.updateQuestion} />
             </div>
         );
-    };
-};
-
-class SurveyInfo extends React.Component {
-
-    render() {
-      return (
-         <div>
-            <input type="text" value={this.props.data} 
-               onChange={this.props.updateStateProp} />
-            <h3>{this.props.data}</h3>
-         </div>
-      );
-   }
-
+    }
 }
 
 export default Survey;
