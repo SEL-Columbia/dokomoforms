@@ -1,46 +1,103 @@
 import React from 'react';
-import NodeList from './components/Node.babel.js';
+import NodeList from './Node.babel.js';
+import SubSurvey from './SubSurvey.babel.js';
 
 class Survey extends React.Component {
 
     constructor(props) {
         super(props);
 
-        this.updateQuestion = this.updateQuestion.bind(this);
-        this.updateNodes = this.updateNodes.bind(this);
-        this.saveSurvey = this.saveSurvey.bind(this);
+        this.updateTitle = this.updateTitle.bind(this);
+        this.updateNodeList = this.updateNodeList.bind(this);
+        this.createSubSurvey = this.createSubSurvey.bind(this);
+        this.back = this.back.bind(this);
+        this.renderBody = this.renderBody.bind(this);
+        this.submit = this.submit.bind(this);
 
         this.state = {
             title: '',
-            nodes: []
-        };
+            nodes: [],
+            surveyIDs: ['first'],
+            current: 0,
+            tempNode: ''
+        }
+
     }
 
-    updateQuestion(event) {
-        // this.setState({title: event.target.value});
+    updateTitle(event) {
+        this.setState({title: event.target.value});
     }
 
-    updateNodes(nodeList) {
+    updateNodeList(nodeList) {
+        console.log('nodeList', nodeList[0].node);
         this.setState({nodes: nodeList});
     }
 
-    saveSurvey() {
-        const survey = this.state;
-        console.log('from survey', survey);
-        this.props.buildSurvey(survey);
+    createSubSurvey(index, node) {
+        console.log(index.toString());
+        console.log('node', node);
+        this.setState({tempNode: node});
+        var surveyArr = this.state.surveyIDs;
+        surveyArr.push(index.toString());
+        this.setState({surveyIDs: surveyArr});
+        this.setState({current: ++this.state.current})
+    }
+
+    back() {
+        this.setState({current: --this.state.current});
+    }
+
+    submit() {
+        console.log('being called???')
+        const newSurvey = {
+            title: this.state.title,
+            nodes: this.state.nodes
+        }
+        console.log('before submitting', newSurvey.nodes[0]);
+        this.props.submitToDatabase(newSurvey);
+    }
+
+    renderBody() {
+        console.log('this state', this.state);
+        console.log('current', this.state.current);
+        var currentIndex = this.state.surveyIDs[this.state.current];
+        if (currentIndex=='first') {
+            return ( 
+                <div>
+                    <SurveyTitle updateTitle={this.updateTitle} />
+                    <NodeList key={currentIndex}
+                        updateNodeList={this.updateNodeList}
+                        handleSubSurvey={this.createSubSurvey}
+                    />
+                    <button onClick={this.submit}>submit</button>
+                </div>
+            );
+        } else {
+            return ( 
+                <div>
+                    {this.state.title}
+                    <SubSurvey key={currentIndex}>
+                    {currentIndex}
+                    {this.state.tempNode}
+                        <NodeList key={currentIndex}
+                            updateNodeList={this.updateNodeList}
+                            handleSubSurvey={this.createSubSurvey}
+                        />
+                    </SubSurvey>
+                    <button onClick={this.back}>back</button>
+                </div>
+            );
+        }
     }
 
     render() {
-
         return (
             <div>
-                <SurveyTitle updateQuestion={this.updateQuestion}>
-                {this.state.title}</SurveyTitle>
-                <NodeList updateNodes={this.updateNodes}/>
-                <button onClick={this.saveSurvey}>save survey</button>
+                {this.renderBody()}
             </div>
         );
     }
+
 }
 
 class SurveyTitle extends React.Component {
@@ -48,7 +105,7 @@ class SurveyTitle extends React.Component {
     render() {
         return (
             <div>
-                <input type="text" onChange={this.props.updateQuestion} />
+                <input type="text" onChange={this.props.updateTitle} />
             </div>
         );
     }

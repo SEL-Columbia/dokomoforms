@@ -104,7 +104,8 @@ var path = {
         node_modules_path + '/leaflet/dist/leaflet.js',
         node_modules_path + '/highcharts-release/highcharts.js',
         node_modules_path + '/backbone/backbone.js',
-        node_modules_path + '/react/dist/react.js'
+        node_modules_path + '/react/dist/react.js',
+        node_modules_path + '/node-uuid/uuid.js'
     ],
     ADMIN_JS_APP_SRC: admin_src_path + '/js/**/*.js',
     ADMIN_JS_ENTRY_POINT_PREFIX: admin_src_path + '/js/',

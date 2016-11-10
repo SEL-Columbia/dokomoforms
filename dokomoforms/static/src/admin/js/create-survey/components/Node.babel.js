@@ -1,3 +1,8 @@
+import React from 'react';
+import uuid from 'node-uuid';
+
+console.log(uuid);
+
 class NodeList extends React.Component {
 
     constructor(props) {
@@ -18,7 +23,7 @@ class NodeList extends React.Component {
         nodeArr.push(newNode);
         this.setState({nodes: nodeArr}, function(){
             console.log('added to list!', newNode, this.state.nodes)
-            this.props.updateNodes(this.state.nodes);
+            this.props.updateNodeList(this.state.nodes);
         })
     }
 
@@ -31,7 +36,13 @@ class NodeList extends React.Component {
     listQuestions(num) {
         var rows = [];
         for (var i=0; i<num; i++) {
-            rows.push(<Node key={i} index={i} addToNodeList={this.addToNodeList} />)
+            console.log(this.props.handleSubSurvey);
+            rows.push(
+                    <Node
+                        index={i}
+                        addToList={this.addToNodeList}
+                        I={this.props.handleSubSurvey}
+                    />);
         }
         return rows;
     }
@@ -48,13 +59,20 @@ class NodeList extends React.Component {
 
 class Node extends React.Component {
 
+    // Node is currently referring to the full node object that contains the question
+    // and the associated sub-surveys
+
     constructor(props) {
         super(props);
 
         this.updateTitle = this.updateTitle.bind(this);
+        this.addSubsurvey = this.addSubSurvey.bind(this);
         this.saveNode = this.saveNode.bind(this);
+
         this.state = {
-            title: ''
+            isDisabled: true,
+            title: '',
+            sub_surveys: []
         }
     }
 
@@ -62,10 +80,33 @@ class Node extends React.Component {
         this.setState({title: event.target.value});
     }
 
+    deleteNode() {
+        /// languages???
+        const message ='Are you sure you want to delete this question and all of it\'s sub-surveys?'
+
+        if(confirm(message)) {
+            console.log('deleted!');
+        } else {
+            console.log('nevermind!!');
+        }
+    }
+
+    addSubSurvey() {
+        console.log(uuid);
+        var index = uuid.v4();
+        this.props.I(index, this.state.title);
+    }
+
     saveNode() {
-        console.log('saving from node', this.state);
-        const node = this.state;
-        this.props.addToNodeList(node);
+        var node = { 
+            node: {}
+        };
+        node.node.title = this.state.title;
+        if (this.state.sub_surveys.length) {
+            node.sub_surveys = this.state.sub_surveys;
+        }
+        this.props.addToList(node);
+        this.setState({isDisabled: false})
     }
 
     render() {
@@ -73,8 +114,12 @@ class Node extends React.Component {
             <div>
                 Question: <input type="text"
                     onChange={this.updateTitle}/>
+                    <button onClick={this.deleteNode}>delete</button>
                     <button onClick={this.saveNode}>save</button>
-                    <button onClick={this.addSubsurvey}>add sub-survey</button>
+                    <button 
+                        disabled={this.state.isDisabled}
+                        onClick={this.addSubsurvey}
+                    >add sub-survey</button>
             </div>
         );
     }
