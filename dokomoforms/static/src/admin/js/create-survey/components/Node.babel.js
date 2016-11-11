@@ -13,8 +13,7 @@ class NodeList extends React.Component {
         this.listQuestions = this.listQuestions.bind(this);
         
         this.state = {
-            questions: 1,
-            nodes: []
+            nodes: [{id: 586}]
         };
     }
 
@@ -28,32 +27,57 @@ class NodeList extends React.Component {
     }
 
     addQuestion() {
-        let currentQuestions = this.state.questions;
-        currentQuestions++;
-        this.setState({questions: currentQuestions});
+        // let currentQuestions = this.state.questions;
+        // currentQuestions++;
+        // this.setState({questions: currentQuestions});
+        console.log('being called');
+        var index = uuid.v4();
+        index = index.toString();
+        this.listQuestions(index);
     }
 
-    listQuestions(num) {
+    listQuestions(indx) {
+        console.log('list questions');
         var rows = [];
-        for (var i=0; i<num; i++) {
-            console.log(this.props.handleSubSurvey);
+        var self = this;
+        rows = this.state.nodes.map(function(node){
+            console.log(self);
+            <Node
+                key = {node.id}
+                addToList={self.addToNodeList}
+                I={self.props.handleSubSurvey}
+            />
+        })
+        if (indx) {
+            console.log(indx);
             rows.push(
-                    <Node
-                        index={i}
-                        addToList={this.addToNodeList}
-                        I={this.props.handleSubSurvey}
-                    />);
+                <Node
+                    key={indx}
+                    addToList={this.addToNodeList}
+                    I={this.props.handleSubSurvey}
+                />
+            );
         }
+        console.log(rows);
         return rows;
     }
 
     render() {
-        return (
-            <div>
-                {this.listQuestions(this.state.questions)}
-                <button onClick={this.addQuestion}>Add Question</button>
-            </div>
-        );
+        console.log(this.state.nodes.length);
+        if (this.state.nodes.length) {
+            return (
+                <div>
+                    {this.listQuestions()}
+                    <button onClick={this.addQuestion}>Add Question</button>
+                </div>
+            )
+        } else {
+            return (
+                <div>
+                    {this.addQuestion()}
+                </div>
+            )
+        }
     }
 }
 

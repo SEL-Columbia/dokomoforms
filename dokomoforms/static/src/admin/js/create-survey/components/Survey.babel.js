@@ -17,9 +17,9 @@ class Survey extends React.Component {
         this.state = {
             title: '',
             nodes: [],
-            surveyIDs: ['first'],
-            current: 0,
-            tempNode: ''
+            currentIndex: '1',
+            prevIndex: null,
+            tempNode: null
         }
 
     }
@@ -37,14 +37,10 @@ class Survey extends React.Component {
         console.log(index.toString());
         console.log('node', node);
         this.setState({tempNode: node});
-        var surveyArr = this.state.surveyIDs;
-        surveyArr.push(index.toString());
-        this.setState({surveyIDs: surveyArr});
-        this.setState({current: ++this.state.current})
     }
 
     back() {
-        this.setState({current: --this.state.current});
+        this.setState({currentIndex: prevIndex});
     }
 
     submit() {
@@ -59,9 +55,8 @@ class Survey extends React.Component {
 
     renderBody() {
         console.log('this state', this.state);
-        console.log('current', this.state.current);
-        var currentIndex = this.state.surveyIDs[this.state.current];
-        if (currentIndex=='first') {
+        var currentIndex = this.state.currentIndex;
+        if (currentIndex==1) {
             return ( 
                 <div>
                     <SurveyTitle updateTitle={this.updateTitle} />
