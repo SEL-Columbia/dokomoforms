@@ -9,17 +9,14 @@ class Survey extends React.Component {
 
         this.updateTitle = this.updateTitle.bind(this);
         this.updateNodeList = this.updateNodeList.bind(this);
-        this.createSubSurvey = this.createSubSurvey.bind(this);
         this.back = this.back.bind(this);
         this.renderBody = this.renderBody.bind(this);
         this.submit = this.submit.bind(this);
 
         this.state = {
+            parentSurvey: null,
             title: '',
-            nodes: [],
-            surveyIDs: ['first'],
-            current: 0,
-            tempNode: ''
+            nodes: []
         }
 
     }
@@ -33,18 +30,15 @@ class Survey extends React.Component {
         this.setState({nodes: nodeList});
     }
 
-    createSubSurvey(index, node) {
-        console.log(index.toString());
-        console.log('node', node);
-        this.setState({tempNode: node});
-        var surveyArr = this.state.surveyIDs;
-        surveyArr.push(index.toString());
-        this.setState({surveyIDs: surveyArr});
-        this.setState({current: ++this.state.current})
+    showSubSurvey(subSurvey) {
+        this.setState({parentSurvey: subSurvey.parentNode.parentSurvey, nodes: subSurvey.nodes})
     }
 
     back() {
-        this.setState({current: --this.state.current});
+        this.setState({
+            parentSurvey: this.parentNode.parentSurvey,
+            nodes: this.parentNode.parentSurvey.nodes
+        });
     }
 
     submit() {
@@ -59,15 +53,16 @@ class Survey extends React.Component {
 
     renderBody() {
         console.log('this state', this.state);
-        console.log('current', this.state.current);
-        var currentIndex = this.state.surveyIDs[this.state.current];
-        if (currentIndex=='first') {
+        if (this.state.parentSurvey==null) {
+            console.log('current', this.state.parentSurvey);
             return ( 
                 <div>
                     <SurveyTitle updateTitle={this.updateTitle} />
-                    <NodeList key={currentIndex}
+                    <NodeList
+                        parentSurvey={this.state.parentSurvey}
+                        nodes={this.state.nodes}
+                        showSubSurvey={this.showSubSurvey}
                         updateNodeList={this.updateNodeList}
-                        handleSubSurvey={this.createSubSurvey}
                     />
                     <button onClick={this.submit}>submit</button>
                 </div>
@@ -76,12 +71,10 @@ class Survey extends React.Component {
             return ( 
                 <div>
                     {this.state.title}
-                    <SubSurvey key={currentIndex}>
-                    {currentIndex}
-                    {this.state.tempNode}
-                        <NodeList key={currentIndex}
+                    <SubSurvey>
+                    {this.parentNode.node.title}
+                        <NodeList nodes={this.state.nodes}
                             updateNodeList={this.updateNodeList}
-                            handleSubSurvey={this.createSubSurvey}
                         />
                     </SubSurvey>
                     <button onClick={this.back}>back</button>
