@@ -39,7 +39,12 @@ class Survey extends React.Component {
             parentSurvey: this.parentNode.parentSurvey,
             nodes: this.parentNode.parentSurvey.nodes
         });
-    }
+
+    // createSubSurvey(index, node) {
+    //     console.log(index.toString());
+    //     console.log('node', node);
+    //     this.setState({tempNode: node});
+    // }
 
     submit() {
         console.log('being called???')

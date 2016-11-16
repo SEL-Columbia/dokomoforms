@@ -12,6 +12,9 @@ class NodeList extends React.Component {
         this.addQuestion = this.addQuestion.bind(this);
         this.listQuestions = this.listQuestions.bind(this);
         
+        this.state = {
+            rows: []
+        };
     }
 
     listQuestions() {
@@ -39,8 +42,40 @@ class NodeList extends React.Component {
     }
 
     addToNodeList(id) {
-        console.log('hello')
+        // let currentQuestions = this.state.questions;
+        // currentQuestions++;
+        // this.setState({questions: currentQuestions});
+        console.log('being called');
+        // var index = uuid.v4();
+        // index = index.toString();
+        // this.listQuestions(index);
     }
+
+    // listQuestions(indx) {
+    //     console.log('list questions');
+    //     var rows = [];
+    //     var self = this;
+    //     rows = this.state.nodes.map(function(node){
+    //         console.log(self);
+    //         <Node
+    //             key = {node.id}
+    //             addToList={self.addToNodeList}
+    //             I={self.props.handleSubSurvey}
+    //         />
+    //     })
+    //     if (indx) {
+    //         console.log(indx);
+    //         rows.push(
+    //             <Node
+    //                 key={indx}
+    //                 addToList={this.addToNodeList}
+    //                 I={this.props.handleSubSurvey}
+    //             />
+    //         );
+    //     }
+    //     console.log(rows);
+    //     return rows;
+    // }
 
 
     render() {
@@ -50,6 +85,21 @@ class NodeList extends React.Component {
                 <button onClick={this.addQuestion}>Add Question</button>
             </div>
         );
+        // console.log(this.state.nodes.length);
+        // if (this.state.nodes.length) {
+        //     return (
+        //         <div>
+        //             {this.listQuestions()}
+        //             <button onClick={this.addQuestion}>Add Question</button>
+        //         </div>
+        //     )
+        // } else {
+        //     return (
+        //         <div>
+        //             {this.addQuestion()}
+        //         </div>
+        //     )
+        // }
     }
 }
 
