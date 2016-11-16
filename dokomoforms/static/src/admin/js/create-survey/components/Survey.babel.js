@@ -14,9 +14,10 @@ class Survey extends React.Component {
         this.submit = this.submit.bind(this);
 
         this.state = {
-            parentSurvey: null,
+            parentNode: null,
+            previous: null,
             title: '',
-            nodes: []
+            nodes: [{id: 4}]
         }
 
     }
@@ -25,20 +26,38 @@ class Survey extends React.Component {
         this.setState({title: event.target.value});
     }
 
-    updateNodeList(nodeList) {
-        console.log('nodeList', nodeList[0].node);
-        this.setState({nodes: nodeList});
+    updateNodeList(node, index) {
+        console.log('being called')
+        var nodelist = [].concat(this.state.nodes);
+        console.log('should have parent survey', node.parentSurvey.nodes)
+        if (index < 0) {
+            console.log('less than')
+            node.parentSurvey = {};
+            nodelist.push(node)
+        } else {
+            nodelist[index] = node;
+        }
+        node.parentSurvey.nodes = nodelist;
+        console.log('nodeList', nodelist);
+        this.setState({nodes: nodelist})
+        console.log('here', this.state.nodes)
     }
 
-    showSubSurvey(subSurvey) {
-        this.setState({parentSurvey: subSurvey.parentNode.parentSurvey, nodes: subSurvey.nodes})
+    showSubSurvey(node) {
+        console.log('parentnode', node.subSurveys[0].parentNode)
+        this.setState({previous: this.state.parentNode})
+        console.log('in between', this.state)
+        this.setState({parentNode: node.subSurveys[0].parentNode})
+        console.log('newest state', this.state)
     }
 
     back() {
+        console.log('back', this.state)
         this.setState({
-            parentSurvey: this.parentNode.parentSurvey,
-            nodes: this.parentNode.parentSurvey.nodes
-        });
+            parentSurvey: this.state.parentNode.parentSurvey,
+            nodes: this.state.parentNode.parentSurvey.nodes
+        })
+    }
 
     // createSubSurvey(index, node) {
     //     console.log(index.toString());
@@ -57,14 +76,19 @@ class Survey extends React.Component {
     }
 
     renderBody() {
+        console.log('survey', this)
+        var displaytitle;
+        if (this.state.parentNode) displaytitle = this.state.parentNode.node;
+        else displaytitle = 'first one'
         console.log('this state', this.state);
-        if (this.state.parentSurvey==null) {
-            console.log('current', this.state.parentSurvey);
+        if (this.state.parentNode==null) {
+            console.log('current', this.state.parentNode);
             return ( 
                 <div>
+                    {displaytitle}
                     <SurveyTitle updateTitle={this.updateTitle} />
                     <NodeList
-                        parentSurvey={this.state.parentSurvey}
+                        parentNode={this.state.parentNode}
                         nodes={this.state.nodes}
                         showSubSurvey={this.showSubSurvey}
                         updateNodeList={this.updateNodeList}
@@ -73,14 +97,10 @@ class Survey extends React.Component {
                 </div>
             );
         } else {
-            return ( 
+            return (
                 <div>
-                    {this.state.title}
                     <SubSurvey>
-                    {this.parentNode.node.title}
-                        <NodeList nodes={this.state.nodes}
-                            updateNodeList={this.updateNodeList}
-                        />
+                        <NodeList />
                     </SubSurvey>
                     <button onClick={this.back}>back</button>
                 </div>

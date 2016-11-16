@@ -14,17 +14,50 @@ class NodeList extends React.Component {
         
         this.state = {
             rows: []
-        };
+        }
+    }
+
+    componentWillMount() {
+        if (this.props.nodes) {
+            if (this.props.nodes.length < 1) {
+                let newNode = {
+                    id: uuid.v4(),
+                    name: 'newest node',
+                    saved: false
+                }
+                let rows = [newNode];
+                this.setState({ rows })
+            }
+        }
     }
 
     listQuestions() {
-        let rowsArray = this.props.nodes;
-        rowsArray.map(function(node) {
-            return (
+        var rowsArray;
+
+        this.state.counter++;
+        if (this.state.counter > 2) return;
+        
+        let self = this;
+        // if (this.props.nodes.length < 1 && this.state.rows.length < 1) {
+        //     console.log('less than one');
+        //     rowsArray = this.addQuestion()
+        //     console.log('here', rowsArray)
+        // } else {
+        //     rowsArray = this.props.nodes;
+        //     rowsArray = rowsArray.concat(this.state.rows);
+        // }
+        // console.log('made it');
+        // console.log('lQ rows', this.state.rows)
+        // return AddQuestion;
+
+        var rowsArray = this.props.nodes.concat(this.state.rows);
+        console.log(rowsArray)
+        return rowsArray.map(function(node) {
+                return (
                     <Node
                         key={node.id}
                         node={node}
-                        addUpdateNode={this.addToNodeList}
+                        addUpdateNode={self.addToNodeList}
                     />
                 )
             }
@@ -32,74 +65,47 @@ class NodeList extends React.Component {
     }
 
     addQuestion() {
+        console.log('props', this.props)
+        var rowsArray = [];
         let newNode = {
+            parentNode: this.props.parentNode,
             id: uuid.v4(),
+            name: 'newest node',
             saved: false
         }
-        let rowsArray = this.state.rows;
+        rowsArray = rowsArray.concat(this.state.rows);
         rowsArray.push(newNode);
         this.setState({rows: rowsArray});
+        console.log(this.state.rows);
     }
 
-    addToNodeList(id) {
-        // let currentQuestions = this.state.questions;
-        // currentQuestions++;
-        // this.setState({questions: currentQuestions});
-        console.log('being called');
+    addToNodeList(node) {
+        let indx = -1;
+        let updatedNode = node;
+        console.log('node', node);
+        for (var i = 0; i < this.props.nodes.length; i++) {
+            if (this.props.nodes[i].id == node.id) {
+                console.log('subsurvey thing', node.id, node.parentNode)
+                indx = i;
+                break;
+            }
+        }
+        this.props.updateNodeList(updatedNode, indx)
+        
+        console.log('being called??');
         // var index = uuid.v4();
         // index = index.toString();
         // this.listQuestions(index);
     }
 
-    // listQuestions(indx) {
-    //     console.log('list questions');
-    //     var rows = [];
-    //     var self = this;
-    //     rows = this.state.nodes.map(function(node){
-    //         console.log(self);
-    //         <Node
-    //             key = {node.id}
-    //             addToList={self.addToNodeList}
-    //             I={self.props.handleSubSurvey}
-    //         />
-    //     })
-    //     if (indx) {
-    //         console.log(indx);
-    //         rows.push(
-    //             <Node
-    //                 key={indx}
-    //                 addToList={this.addToNodeList}
-    //                 I={this.props.handleSubSurvey}
-    //             />
-    //         );
-    //     }
-    //     console.log(rows);
-    //     return rows;
-    // }
-
-
     render() {
+        console.log('here??', this.props)
         return (
             <div>
                 {this.listQuestions()}
                 <button onClick={this.addQuestion}>Add Question</button>
             </div>
         );
-        // console.log(this.state.nodes.length);
-        // if (this.state.nodes.length) {
-        //     return (
-        //         <div>
-        //             {this.listQuestions()}
-        //             <button onClick={this.addQuestion}>Add Question</button>
-        //         </div>
-        //     )
-        // } else {
-        //     return (
-        //         <div>
-        //             {this.addQuestion()}
-        //         </div>
-        //     )
-        // }
     }
 }
 
@@ -142,7 +148,14 @@ class Node extends React.Component {
             parentNode: this.props.node,
             nodes: []
         }
-        this.subSurveys.push(newSubSurvey)
+        let node = this.props.node;
+        let ss = [];
+        ss.push(newSubSurvey)
+        node.subSurveys = ss
+        console.log('state subsurveys', ss)
+        console.log(this.props.node.id)
+        this.props.addUpdateNode(node);
+        this.props.showSubSurvey(newSubSurvey);
     }
 
     saveNode() {

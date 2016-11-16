@@ -27,9 +27,16 @@ class SubSurvey extends React.Component {
 
 
     render() {
+        var self = this;
+        const childrenWithProps = React.Children.map(this.props.children, function(child) {
+            React.cloneElement(child, {
+                nodes: self.state.nodes,
+                buckets: self.state.buckets
+            })
+        })
         return (
             <div>
-                {this.props.children}
+                {childrenWithProps}  
             </div>
         );
     }
