@@ -14,12 +14,11 @@ class Survey extends React.Component {
         this.submit = this.submit.bind(this);
 
         this.state = {
+            displayRoot: true,
             parentNode: null,
-            previous: null,
             title: '',
-            nodes: [{id: 4}]
+            nodes: []
         }
-
     }
 
     updateTitle(event) {
@@ -27,36 +26,28 @@ class Survey extends React.Component {
     }
 
     updateNodeList(node, index) {
-        console.log('being called')
-        var nodelist = [].concat(this.state.nodes);
+        console.log('update nodelist being called', node, index)
+        var nodeList = [].concat(this.state.nodes);
         console.log('should have parent survey', node.parentSurvey.nodes)
         if (index < 0) {
-            console.log('less than')
-            node.parentSurvey = {};
-            nodelist.push(node)
-        } else {
+            
+        } nodelist.push(node)
+        if (nodelist[index].id!==node.id) {
+            console.log('nodes didnt match');
+            return;
+        }
+        else {
             nodelist[index] = node;
         }
-        node.parentSurvey.nodes = nodelist;
         console.log('nodeList', nodelist);
         this.setState({nodes: nodelist})
-        console.log('here', this.state.nodes)
+        console.log('nodes', this.state.nodes)
     }
 
-    showSubSurvey(node) {
-        console.log('parentnode', node.subSurveys[0].parentNode)
-        this.setState({previous: this.state.parentNode})
-        console.log('in between', this.state)
-        this.setState({parentNode: node.subSurveys[0].parentNode})
-        console.log('newest state', this.state)
-    }
 
-    back() {
-        console.log('back', this.state)
-        this.setState({
-            parentSurvey: this.state.parentNode.parentSurvey,
-            nodes: this.state.parentNode.parentSurvey.nodes
-        })
+    back(currentSubSurvey) {
+        if (currentSubSurvey.parentNode==null) this.setState({displayRoot: true})
+        else renderSubSurvey(currentSubSurvey.parentNode.parentSurvey)
     }
 
     // createSubSurvey(index, node) {
@@ -75,45 +66,42 @@ class Survey extends React.Component {
         this.props.submitToDatabase(newSurvey);
     }
 
-    renderBody() {
-        console.log('survey', this)
-        var displaytitle;
-        if (this.state.parentNode) displaytitle = this.state.parentNode.node;
-        else displaytitle = 'first one'
-        console.log('this state', this.state);
-        if (this.state.parentNode==null) {
-            console.log('current', this.state.parentNode);
-            return ( 
-                <div>
-                    {displaytitle}
-                    <SurveyTitle updateTitle={this.updateTitle} />
-                    <NodeList
-                        parentNode={this.state.parentNode}
-                        nodes={this.state.nodes}
-                        showSubSurvey={this.showSubSurvey}
-                        updateNodeList={this.updateNodeList}
-                    />
-                    <button onClick={this.submit}>submit</button>
-                </div>
-            );
-        } else {
-            return (
-                <div>
-                    <SubSurvey>
-                        <NodeList />
-                    </SubSurvey>
-                    <button onClick={this.back}>back</button>
-                </div>
-            );
-        }
+    showSubSurvey() {
+        this.setState({displayRoot: false})
+    }
+
+    renderSurvey() {
+        console.log('root survey', this.state)
+        else displaytitle = 'Define Your Survey'
+        return ( 
+            <div>
+                {displaytitle}
+                <SurveyTitle onBlur={this.updateTitle} />
+                <NodeList
+                    parentNode={this.state.parentNode}
+                    nodes={this.state.nodes}
+                    showSubSurvey={this.showSubSurvey}
+                    updateNodeList={this.updateNodeList}
+                />
+                <button onClick={this.submit}>submit</button>
+            </div>
+        );
+    }
+
+    renderSubSurvey(subSurvey) {
+        return (
+            <div>
+                <SubSurvey 
+                    data={subSurvey}
+                />
+                <button onClick={this.back(subSurvey)}>back</button>
+            </div>
+        );
     }
 
     render() {
-        return (
-            <div>
-                {this.renderBody()}
-            </div>
-        );
+        if (this.state.displayRoot==true) renderSurvey()
+        else renderSubSurvey()
     }
 
 }

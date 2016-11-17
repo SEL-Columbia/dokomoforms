@@ -13,97 +13,93 @@ class NodeList extends React.Component {
         this.listQuestions = this.listQuestions.bind(this);
         
         this.state = {
-            rows: []
+            newNode: undefined
         }
     }
 
     componentWillMount() {
-        if (this.props.nodes) {
-            if (this.props.nodes.length < 1) {
+        if (this.props.nodes && this.props.nodes.length < 1) {
                 let newNode = {
                     id: uuid.v4(),
-                    name: 'newest node',
-                    saved: false
-                }
-                let rows = [newNode];
-                this.setState({ rows })
+                    parentNode: this.props.parentNode,
+                    saved: false,
+                    node: {
+                        title: {"English": ""}
+                    }
+                };
+                this.setState({newNode})
             }
         }
     }
 
     listQuestions() {
-        var rowsArray;
+        let rows;
 
         this.state.counter++;
         if (this.state.counter > 2) return;
         
-        let self = this;
-        // if (this.props.nodes.length < 1 && this.state.rows.length < 1) {
-        //     console.log('less than one');
-        //     rowsArray = this.addQuestion()
-        //     console.log('here', rowsArray)
-        // } else {
-        //     rowsArray = this.props.nodes;
-        //     rowsArray = rowsArray.concat(this.state.rows);
-        // }
-        // console.log('made it');
-        // console.log('lQ rows', this.state.rows)
-        // return AddQuestion;
-
-        var rowsArray = this.props.nodes.concat(this.state.rows);
-        console.log(rowsArray)
-        return rowsArray.map(function(node) {
-                return (
-                    <Node
-                        key={node.id}
-                        node={node}
-                        addUpdateNode={self.addToNodeList}
-                    />
-                )
-            }
-        )
+        const self = this;
+        let rows = this.props.nodes;
+        if (this.state.newNode) rows.push(newNode); 
+        console.log(rows)
+        return rows.map(function(node, i) {
+            console.log('saved?', node.saved)
+            return (
+                <Node
+                    key={node.id}
+                    index={i}
+                    node={node}
+                    addOrUpdateNode={self.addOrUpdateNode}
+                    
+                />
+            )
+        })
     }
 
     addQuestion() {
-        console.log('props', this.props)
-        var rowsArray = [];
-        let newNode = {
-            parentNode: this.props.parentNode,
-            id: uuid.v4(),
-            name: 'newest node',
-            saved: false
+        if (this.state.newNode==undefined) {
+            let newNode = {
+                id: uuid.v4(),
+                parentNode: this.props.parentNode,
+                saved: false, 
+                node: {
+                    title: {"English": ""}
+                }
+            };
+            this.setState({newNode: newNode});
+            console.log('new question added', this.state.newNode)
         }
-        rowsArray = rowsArray.concat(this.state.rows);
-        rowsArray.push(newNode);
-        this.setState({rows: rowsArray});
-        console.log(this.state.rows);
+        console.log('you should already have an empty question');
     }
 
-    addToNodeList(node) {
-        let indx = -1;
-        let updatedNode = node;
-        console.log('node', node);
-        for (var i = 0; i < this.props.nodes.length; i++) {
-            if (this.props.nodes[i].id == node.id) {
-                console.log('subsurvey thing', node.id, node.parentNode)
-                indx = i;
-                break;
+    addOrUpdateNode(props, nodeId, index) {
+        let node;
+        let property;
+        if (props.hasOwnProperty('node') property='node';
+        else property='sub_surveys';
+        if (nodeId==this.state.newNode.id) {
+            node = Object.assign({}, this.state.newNode[property], properties)
+            console.log('adding node', node, index);
+            this.props.updateNodeList(node, index);
+        } else if (this.props.nodes[index].id==nodeId)
+            {
+                console.log('updating node', node, index);
+                node = Object.assign({}, this.props.nodes[index], properties)
+                this.props.updateNodeList(node, index);
             }
         }
-        this.props.updateNodeList(updatedNode, indx)
-        
-        console.log('being called??');
-        // var index = uuid.v4();
-        // index = index.toString();
-        // this.listQuestions(index);
+        console.log('index wasnt accurate')
     }
 
     render() {
-        console.log('here??', this.props)
+        console.log('rendering nodelist', this.props.nodes)
         return (
             <div>
                 {this.listQuestions()}
-                <button onClick={this.addQuestion}>Add Question</button>
+                <button 
+                    onClick={this.addQuestion}
+                    disabled={this.state.newNode}
+                >Add Question</button>
             </div>
         );
     }
@@ -124,23 +120,20 @@ class Node extends React.Component {
         this.state = {
             isDisabled: true,
             title: '',
-            subSurveys: []
+            sub_surveys: []
         }
     }
 
     updateTitle(event) {
         this.setState({title: event.target.value});
+        if (this.state.title!==this.state.node.title[0]) {
+            let properties = {'English': this.state.title};
+            this.saveNode(properties);
+        }
     }
 
     deleteNode() {
         /// languages???
-        const message ='Are you sure you want to delete this question and all of it\'s sub-surveys?'
-
-        if(confirm(message)) {
-            console.log('deleted!');
-        } else {
-            console.log('nevermind!!');
-        }
     }
 
     addSubSurvey() {
@@ -148,25 +141,37 @@ class Node extends React.Component {
             parentNode: this.props.node,
             nodes: []
         }
-        let node = this.props.node;
-        let ss = [];
+        
+        let  = [];
         ss.push(newSubSurvey)
-        node.subSurveys = ss
-        console.log('state subsurveys', ss)
+        this.setState({sub_surveys: ss});
+        console.log('state subsurveys', this.state.sub_surveys)
         console.log(this.props.node.id)
-        this.props.addUpdateNode(node);
+        this.saveNode({sub_surveys: this.state.sub_surveys});
         this.props.showSubSurvey(newSubSurvey);
     }
 
-    saveNode() {
-        this.setState({isDisabled: false})
+    saveNode(updatedProperties) {
+        if (updatedProperties) {
+            console.log('updated properties', this.props.node.id)
+            this.props.addOrUpdateNode(updatedProperties, this.props.node.id);
+        } else {
+            let newProperties = {
+                node: {
+                    title: {"English": this.state.title}
+                },
+                sub_surveys: this.state.sub_surveys
+            }
+            this.props.addOrUpdateNode(newProperties, this.props.node.id);
+        }
+        this.setState({isDisabled: false});
     }
 
     render() {
         return (
             <div>
-                Question: <input type="text" placeholder={this.props.title}
-                    onChange={this.updateTitle}/>
+                Question: <input type="text" placeholder={this.props.node.title[0]}
+                    onBlur={this.updateTitle}/>
                     <button onClick={this.deleteNode}>delete</button>
                     <button onClick={this.saveNode}>save</button>
                     <button 
