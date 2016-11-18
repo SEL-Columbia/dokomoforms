@@ -25,15 +25,23 @@ class SubSurvey extends React.Component {
         };
     }
 
+    function(){
+        sub_survey = {
+            buckets: ['one bucket'],
+            nodes: ['one node']
+        };
+        this.props.updateSurvey(sub_survey)
+    }
+
 
     render() {
-        var self = this;
-        const childrenWithProps = React.Children.map(this.props.children, function(child) {
-            React.cloneElement(child, {
-                nodes: self.state.nodes,
-                buckets: self.state.buckets
-            })
-        })
+        console.log(this.props.data)
+        // const childrenWithProps = React.Children.map(this.props.children, function(child) {
+        //     React.cloneElement(child, {
+        //         nodes: self.state.nodes,
+        //         buckets: self.state.buckets
+        //     })
+        // })
         return (
             <div>
                 {childrenWithProps}  

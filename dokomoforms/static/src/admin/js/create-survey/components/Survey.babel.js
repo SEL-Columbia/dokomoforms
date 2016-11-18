@@ -10,11 +10,13 @@ class Survey extends React.Component {
         this.updateTitle = this.updateTitle.bind(this);
         this.updateNodeList = this.updateNodeList.bind(this);
         this.back = this.back.bind(this);
-        this.renderBody = this.renderBody.bind(this);
         this.submit = this.submit.bind(this);
+        this.showSubSurvey = this.showSubSurvey.bind(this);
+        this.renderSurvey = this.renderSurvey.bind(this);
+        this.renderSubSurvey = this.renderSubSurvey.bind(this);
 
         this.state = {
-            displayRoot: true,
+            displaySurvey: 'root',
             parentNode: null,
             title: '',
             nodes: []
@@ -27,34 +29,22 @@ class Survey extends React.Component {
 
     updateNodeList(node, index) {
         console.log('update nodelist being called', node, index)
-        var nodeList = [].concat(this.state.nodes);
-        console.log('should have parent survey', node.parentSurvey.nodes)
-        if (index < 0) {
-            
-        } nodelist.push(node)
-        if (nodelist[index].id!==node.id) {
-            console.log('nodes didnt match');
-            return;
-        }
-        else {
-            nodelist[index] = node;
-        }
+        console.log('this state nodes', this.state.nodes)
+        let nodelist = [];
+        nodelist = nodelist.concat(this.state.nodes);
+        node.saved = true;
+        console.log('nodelist before', nodelist)
+        if (index < 0) nodelist.push(node)
+        else nodelist[index] = node;
         console.log('nodeList', nodelist);
         this.setState({nodes: nodelist})
-        console.log('nodes', this.state.nodes)
     }
 
 
     back(currentSubSurvey) {
-        if (currentSubSurvey.parentNode==null) this.setState({displayRoot: true})
+        if (currentSubSurvey.parentNode==null) this.setState({displaySurvey: 'root'})
         else renderSubSurvey(currentSubSurvey.parentNode.parentSurvey)
     }
-
-    // createSubSurvey(index, node) {
-    //     console.log(index.toString());
-    //     console.log('node', node);
-    //     this.setState({tempNode: node});
-    // }
 
     submit() {
         console.log('being called???')
@@ -66,19 +56,23 @@ class Survey extends React.Component {
         this.props.submitToDatabase(newSurvey);
     }
 
-    showSubSurvey() {
-        this.setState({displayRoot: false})
+    showSubSurvey(subSurvey) {
+        this.setState({displaySurvey: subSurvey, parentNode: subSurvey.parentNode});
+    }
+
+    updateSurvey(subSurvey) {
+        this.setState({displaySurvey: subSurvey});
     }
 
     renderSurvey() {
         console.log('root survey', this.state)
-        else displaytitle = 'Define Your Survey'
+        let displaytitle = 'Define Your Survey'
         return ( 
             <div>
                 {displaytitle}
                 <SurveyTitle onBlur={this.updateTitle} />
                 <NodeList
-                    parentNode={this.state.parentNode}
+                    parentSurvey={this.state.parentSurvey}
                     nodes={this.state.nodes}
                     showSubSurvey={this.showSubSurvey}
                     updateNodeList={this.updateNodeList}
@@ -88,11 +82,12 @@ class Survey extends React.Component {
         );
     }
 
-    renderSubSurvey(subSurvey) {
+    renderSubSurvey() {
         return (
             <div>
                 <SubSurvey 
-                    data={subSurvey}
+                    data={this.state.displaySurvey}
+
                 />
                 <button onClick={this.back(subSurvey)}>back</button>
             </div>
@@ -100,8 +95,8 @@ class Survey extends React.Component {
     }
 
     render() {
-        if (this.state.displayRoot==true) renderSurvey()
-        else renderSubSurvey()
+        if (this.state.displaySurvey=='root') return this.renderSurvey()
+        else return this.renderSubSurvey()
     }
 
 }
