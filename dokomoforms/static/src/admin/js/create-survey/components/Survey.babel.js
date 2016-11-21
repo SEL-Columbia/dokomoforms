@@ -16,9 +16,9 @@ class Survey extends React.Component {
         this.renderSubSurvey = this.renderSubSurvey.bind(this);
 
         this.state = {
-            displaySurvey: 'root',
-            parentNode: null,
             title: '',
+            default_language: 'English',
+            survey_type: '',
             nodes: []
         }
     }
@@ -40,63 +40,32 @@ class Survey extends React.Component {
         this.setState({nodes: nodelist})
     }
 
-
-    back(currentSubSurvey) {
-        if (currentSubSurvey.parentNode==null) this.setState({displaySurvey: 'root'})
-        else renderSubSurvey(currentSubSurvey.parentNode.parentSurvey)
-    }
-
     submit() {
-        console.log('being called???')
+        console.log('being called?')
         const newSurvey = {
             title: this.state.title,
+            default_language: this.default_language,
             nodes: this.state.nodes
         }
-        console.log('before submitting', newSurvey.nodes[0]);
-        this.props.submitToDatabase(newSurvey);
+        console.log('before submitting', newSurvey);
     }
 
-    showSubSurvey(subSurvey) {
-        this.setState({displaySurvey: subSurvey, parentNode: subSurvey.parentNode});
-    }
 
-    updateSurvey(subSurvey) {
-        this.setState({displaySurvey: subSurvey});
-    }
-
-    renderSurvey() {
-        console.log('root survey', this.state)
-        let displaytitle = 'Define Your Survey'
+    render() {
+        let displaytitle = 'Define Your Survey';
         return ( 
             <div>
                 {displaytitle}
-                <SurveyTitle onBlur={this.updateTitle} />
+                <SurveyTitle updateTitle={this.updateTitle} />
+                <DefaultLanguage />
                 <NodeList
-                    parentSurvey={this.state.parentSurvey}
                     nodes={this.state.nodes}
-                    showSubSurvey={this.showSubSurvey}
                     updateNodeList={this.updateNodeList}
+                    language={this.state.default_language}
                 />
                 <button onClick={this.submit}>submit</button>
             </div>
         );
-    }
-
-    renderSubSurvey() {
-        return (
-            <div>
-                <SubSurvey 
-                    data={this.state.displaySurvey}
-
-                />
-                <button onClick={this.back(subSurvey)}>back</button>
-            </div>
-        );
-    }
-
-    render() {
-        if (this.state.displaySurvey=='root') return this.renderSurvey()
-        else return this.renderSubSurvey()
     }
 
 }
@@ -106,7 +75,18 @@ class SurveyTitle extends React.Component {
     render() {
         return (
             <div>
-                <input type="text" onChange={this.props.updateTitle} />
+                <input type="text" onBlur={this.props.updateTitle} />
+            </div>
+        );
+    }
+}
+
+class DefaultLanguage extends React.Component {
+
+    render() {
+        return (
+            <div>
+                <input type="text" onBlur={this.props.updateDefault} />
             </div>
         );
     }
