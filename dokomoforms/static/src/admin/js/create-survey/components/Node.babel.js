@@ -10,7 +10,6 @@ class NodeList extends React.Component {
 
         this.listQuestions = this.listQuestions.bind(this);
         this.addQuestion = this.addQuestion.bind(this);
-        this.deleteQuestion = this.deleteQuestion.bind(this);
         this.addOrUpdateNode = this.addOrUpdateNode.bind(this);
         
         this.state = {
@@ -23,7 +22,10 @@ class NodeList extends React.Component {
         console.log('component will mount');
         console.log('this nodes', this.props.nodes);
         if (this.props.nodes && this.props.nodes.length < 1) {
-            let newNode = {id: uuid.v4()};
+            let newNode = {
+                id: uuid.v4(),
+                node: {}
+            };
             console.log('newNodeId', newNode.id)
             this.setState({newNode})
         }
@@ -43,7 +45,8 @@ class NodeList extends React.Component {
             return (
                 <Node
                     key={node.id}
-                    data={node}
+                    data={node.node}
+                    default_language={self.props.default_language}
                     addOrUpdateNode={self.addOrUpdateNode}
                     language={self.props.language}
                 />
@@ -76,9 +79,9 @@ class NodeList extends React.Component {
             console.log('updating node', node, index);
             this.props.updateNodeList(node, index);
         } else {
-            let i=0;
-            for (i < this.props.nodes.length-1; i++) {
-                if (this.node.id==this.props.nodes[i].id {
+            let i;
+            for (i=0; i<this.props.nodes.length-1; i++) {
+                if (this.node.id==this.props.nodes[i].id) {
                     console.log('index was not id');
                     console.log('index', index, 'actual index', i);
                     this.props.updateNodeList(node, i)
@@ -111,56 +114,65 @@ class Node extends React.Component {
     constructor(props) {
         super(props);
 
+        this.getTitleOrHintValue = this.getTitleOrHintValue.bind(this);
         this.updateTitle = this.updateTitle.bind(this);
-        this.addSubsurvey = this.addSubSurvey.bind(this);
+        this.updateHint = this.updateHint.bind(this);
+        this.addTypeConstraint = this.addTypeConstraint.bind(this);
         this.saveNode = this.saveNode.bind(this);
 
         this.state = {
             isDisabled: true,
-            title: {},
-            hint: {},
+            title: '',
+            hint: '',
             type_constraint: '',
             sub_surveys: []
         }
     }
 
 
-    componentWillMount() {
-        if (Object.keys(this.state.title).length===0) {
-            this.setState({title: {this.props.language}: ''})
-        }
-        if (Object.keys(this.state.hint).length===0) {
-            this.setState({hint: {this.props.language}: ''})
-        }
+    getTitleOrHintValue(property) {
+        if (!this.props.data.title) return '';
+        else return this.props.data[property][this.props.default_language]
     }
 
 
     updateTitle(event) {
-        if (event.target.value==this.state.title[this.props.default_language]) return;
-        let titleObj = {this.props.language: event.target.value}
+        let prevTitle = this.getTitleOrHintValue('title');
+        // check if title input is the same as props title
+        if (event.target.value===prevTitle) return;
+        // check if title input is the same as current state title
+        if (event.target.value===this.state.title) return;
+
+        let titleObj = {};
+        titleObj[this.props.default_language] = event.target.value;
         this.setState({title: titleObj}, function() {
             console.log('updated title', this.state.title);
-            if (this.state.title!==this.props.title) {
-                let properties = {this.props.language: this.state.title};
-                this.saveNode();
-            }
+            let properties = this.state.title;
+            this.saveNode();
         });
     }
 
     updateHint(event) {
-        if (event.target.value==this.state.hint[this.props.default_language]) return;
-        let hintObj = {this.props.language: event.target.value}
+        let prevHint = this.getTitleOrHintValue('hint');
+        // check if title input is the same as props title
+        if (event.target.value===prevHint) return;
+        // check if title input is the same as current state title
+        if (event.target.value===this.state.title) return;
+
+        let hintObj = {};
+        hintObj[this.props.default_language] = event.target.value;
         this.setState({hint: hintObj}, function() {
             console.log('updated hint', this.state.hint);
-            if (this.state.hint!==this.props.hint) {
-                let properties = {this.props.language: this.state.hint};
-                this.saveNode();
-            }
+            let properties = this.state.hint;
+            this.saveNode();
         });
     }
 
-    addTypeConstraint(event) {
 
+    addTypeConstraint(event) {
+        this.setState({type_constraint: event.target.value}, function(){
+            console.log('new state', this.state)
+        })
     }
 
 
@@ -179,36 +191,51 @@ class Node extends React.Component {
     // }
 
 
-    saveNode(properties) {
-        if (properties) {
-            console.log('properties to save', properties)
-        } else {
-            let node = this.state;
-            delete node['isDisabled'];
-            delete node['sub_surveys'];
-            if (JSON.stringify(node)===JSON.stringify(this.props.data.node)) return;
-            console.log('reassigning node');
-            let updatedNode = Object.assign(this.props.data.node, node);
-            this.props.addOrUpdateNode(updatedNode, this.props.index);
-        }
+    saveNode() {
+        let node = this.state;
+        delete node['isDisabled'];
+        delete node['sub_surveys'];
+        if (JSON.stringify(node)===JSON.stringify(this.props.data.node)) return;
+
+        console.log('reassigning node');
+        console.log('node', node);
+        console.log(this.props.data);
+        let updatedNode = Object.assign(this.props.data, node);
+        console.log('updatedNode', updatedNode);
         this.setState({isDisabled: false});
     }
 
 
     render() {
-        let displayTitle = this.props.title[this.props.language]
-        let displayHint = this.props.hint[this.props.language]
+
+        let displayTitle = this.getTitleOrHintValue('title');
+        let displayHint = this.getTitleOrHintValue('hint');
+
         return (
             <div>
-                Question: <input type="text" placeholder={this.props.title}
+
+                Question: <input type="text" placeholder={displayTitle}
                     onBlur={this.updateTitle}/>
-                Hint: <input type="text" placeholder={this.props.hint}
+
+                Hint: <input type="text" placeholder={displayHint}
                     onBlur={this.updateHint}/>
-                <select>
-                    {this.createUserDropdown()}
+
+                <select onChange={this.addTypeConstraint}>
+                    <option value="text">text</option>
+                    <option value="photo">photo</option>
+                    <option value="integer">integer</option>
+                    <option value="decimal">decimal</option>
+                    <option value="date">date</option>
+                    <option value="time">time</option>
+                    <option value="timestamp">timestamp</option>
+                    <option value="location">location</option>
+                    <option value="facility">facility</option>
+                    <option value="multiple_choice">multiple choice</option>
+                    <option value="note">note</option>
                 </select>
-                    <button onClick={this.deleteNode}>delete</button>
-                    <button onClick={this.saveNode}>save</button>
+
+                <button onClick={this.deleteNode}>delete</button>
+                <button onClick={this.saveNode}>save</button>
             </div>
         );
     }

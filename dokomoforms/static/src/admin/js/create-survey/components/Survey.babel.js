@@ -9,14 +9,11 @@ class Survey extends React.Component {
 
         this.updateTitle = this.updateTitle.bind(this);
         this.updateNodeList = this.updateNodeList.bind(this);
-        this.back = this.back.bind(this);
         this.submit = this.submit.bind(this);
-        this.showSubSurvey = this.showSubSurvey.bind(this);
-        this.renderSurvey = this.renderSurvey.bind(this);
-        this.renderSubSurvey = this.renderSubSurvey.bind(this);
 
         this.state = {
             title: '',
+            hint: '',
             default_language: 'English',
             survey_type: '',
             nodes: []
@@ -57,9 +54,9 @@ class Survey extends React.Component {
             <div>
                 {displaytitle}
                 <SurveyTitle updateTitle={this.updateTitle} />
-                <DefaultLanguage />
                 <NodeList
                     nodes={this.state.nodes}
+                    default_language={this.state.default_language}
                     updateNodeList={this.updateNodeList}
                     language={this.state.default_language}
                 />
