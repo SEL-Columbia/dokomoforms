@@ -1,5 +1,6 @@
 import React from 'react';
 import uuid from 'node-uuid';
+import $ from 'jquery';
 
 
 class NodeList extends React.Component {
@@ -94,12 +95,16 @@ class NodeList extends React.Component {
     render() {
         console.log('rendering nodelist', this.props.nodes)
         return (
-            <div>
-                {this.listQuestions()}
-                <button 
-                    onClick={this.addQuestion}
-                    disabled={this.state.newNode}
-                >Add Question</button>
+            <div className="container">
+                <div className="row">
+                    <div className="col-md-9 node-list center-block">
+                        {this.listQuestions()}
+                        <button 
+                            onClick={this.addQuestion}
+                            disabled={this.state.newNode}
+                        >Add Question</button>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -133,7 +138,7 @@ class Node extends React.Component {
     getTitleOrHintValue(property) {
         if (!this.props.data.title) return '';
         else return this.props.data[property][this.props.default_language]
-    }
+    };
 
 
     updateTitle(event) {
@@ -171,24 +176,21 @@ class Node extends React.Component {
 
     addTypeConstraint(event) {
         this.setState({type_constraint: event.target.value}, function(){
-            console.log('new state', this.state)
+            console.log('new state', this.state);
+            if (this.state.type_constraint==="multiple_choice") {
+                this.addChoicesList();
+            }
         })
+    }
+
+    addChoicesList() {
+        console.log('multiple choice');
     }
 
 
     deleteNode() {
         if (this.props.node.saved==false) {}
     }
-
-
-    // addSubSurvey(newSubSurvey) {
-    //     let sub_surveys = [];
-    //     sub_surveys.push(newSubSurvey)
-    //     this.setState({sub_surveys: sub_surveys}, function() {
-    //         console.log('state subsurveys', this.state.sub_surveys)
-    //     });
-    //     this.saveNode(this.state.sub_surveys);
-    // }
 
 
     saveNode() {
@@ -213,26 +215,37 @@ class Node extends React.Component {
 
         return (
             <div>
-
-                Question: <input type="text" placeholder={displayTitle}
+                <div className="form-group row">
+                    <label htmlFor="question-title" className="col-xs-2 col-form-label">Question:</label>
+                </div>
+                <div className="form-group row col-xs-12">
+                    <textarea className="form-control question-title" rows="1" displayTitle={displayTitle}
                     onBlur={this.updateTitle}/>
+                </div>
+                <div className="form-group row">
+                    <label htmlFor="question-type" className="col-xs-2 col-form-label">Question Type:</label>
+                    <div className="col-xs-2">
+                        <select className="form-control type-constraint" onChange={this.addTypeConstraint}>
+                            <option value="text">text</option>
+                            <option value="photo">photo</option>
+                            <option value="integer">integer</option>
+                            <option value="decimal">decimal</option>
+                            <option value="date">date</option>
+                            <option value="time">time</option>
+                            <option value="timestamp">timestamp</option>
+                            <option value="location">location</option>
+                            <option value="facility">facility</option>
+                            <option value="multiple_choice">multiple choice</option>
+                            <option value="note">note</option>
+                        </select>
+                    </div>
+                    <label htmlFor="question-hint" className="col-xs-2 col-form-label">Hint:</label>
+                    <div className="form-group row col-xs-6">
+                        <textarea className="form-control hint-title" rows="1" displayTitle={displayTitle}
+                        onBlur={this.updateTitle}/>
+                    </div>
+                </div>
 
-                Hint: <input type="text" placeholder={displayHint}
-                    onBlur={this.updateHint}/>
-
-                <select onChange={this.addTypeConstraint}>
-                    <option value="text">text</option>
-                    <option value="photo">photo</option>
-                    <option value="integer">integer</option>
-                    <option value="decimal">decimal</option>
-                    <option value="date">date</option>
-                    <option value="time">time</option>
-                    <option value="timestamp">timestamp</option>
-                    <option value="location">location</option>
-                    <option value="facility">facility</option>
-                    <option value="multiple_choice">multiple choice</option>
-                    <option value="note">note</option>
-                </select>
 
                 <button onClick={this.deleteNode}>delete</button>
                 <button onClick={this.saveNode}>save</button>

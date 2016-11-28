@@ -8,12 +8,12 @@ class Survey extends React.Component {
         super(props);
 
         this.updateTitle = this.updateTitle.bind(this);
+        this.addDefaultLanguage = this.addDefaultLanguage.bind(this);
         this.updateNodeList = this.updateNodeList.bind(this);
         this.submit = this.submit.bind(this);
 
         this.state = {
             title: '',
-            hint: '',
             default_language: 'English',
             survey_type: '',
             nodes: []
@@ -22,6 +22,10 @@ class Survey extends React.Component {
 
     updateTitle(event) {
         this.setState({title: event.target.value});
+    }
+
+    addDefaultLanguage(event) {
+        this.setState({default_language: event.target.value});
     }
 
     updateNodeList(node, index) {
@@ -50,43 +54,57 @@ class Survey extends React.Component {
 
     render() {
         let displaytitle = 'Define Your Survey';
-        return ( 
+        return (
             <div>
-                {displaytitle}
-                <SurveyTitle updateTitle={this.updateTitle} />
                 <NodeList
                     nodes={this.state.nodes}
                     default_language={this.state.default_language}
                     updateNodeList={this.updateNodeList}
                     language={this.state.default_language}
                 />
-                <button onClick={this.submit}>submit</button>
             </div>
         );
     }
-
 }
+
 
 class SurveyTitle extends React.Component {
 
     render() {
         return (
             <div>
-                <input type="text" onBlur={this.props.updateTitle} />
+                Survey Title: <input type="text" onBlur={this.props.updateTitle} />
             </div>
         );
     }
 }
+
 
 class DefaultLanguage extends React.Component {
 
     render() {
         return (
             <div>
-                <input type="text" onBlur={this.props.updateDefault} />
+                Default Language: <input type="text" onBlur={this.props.updateDefault} />
             </div>
         );
     }
 }
+
+
+class temp extends React.Component {
+    render() {
+        return (
+            <div>
+                <div className="col-md-12">
+                    {displaytitle}
+                    <SurveyTitle updateTitle={this.updateTitle} />
+                    <DefaultLanguage addDefaultLanguage={this.addDefaultLanguage} />
+                </div>
+            </div>
+        )
+    }
+}
+
 
 export default Survey;
