@@ -245,12 +245,21 @@ class Node extends React.Component {
                         onBlur={this.updateTitle}/>
                     </div>
                 </div>
-
-
                 <button onClick={this.deleteNode}>delete</button>
                 <button onClick={this.saveNode}>save</button>
             </div>
         );
+    }
+}
+
+class Choice extends React.Component {
+    
+    if (this.props.type!=='multiple_choice') {
+        return null;
+    }
+
+    render() {
+        return ();
     }
 }
 
