@@ -123,6 +123,8 @@ class Node extends React.Component {
         this.updateTitle = this.updateTitle.bind(this);
         this.updateHint = this.updateHint.bind(this);
         this.addTypeConstraint = this.addTypeConstraint.bind(this);
+        this.listChoices = this.listChoices.bind(this);
+        this.addChoice = this.addChoice.bind(this);
         this.saveNode = this.saveNode.bind(this);
 
         this.state = {
@@ -130,7 +132,7 @@ class Node extends React.Component {
             title: '',
             hint: '',
             type_constraint: '',
-            sub_surveys: []
+            choices: []
         }
     }
 
@@ -175,16 +177,37 @@ class Node extends React.Component {
 
 
     addTypeConstraint(event) {
-        this.setState({type_constraint: event.target.value}, function(){
-            console.log('new state', this.state);
-            if (this.state.type_constraint==="multiple_choice") {
-                this.addChoicesList();
-            }
-        })
+        this.setState({type_constraint: event.target.value})
     }
 
-    addChoicesList() {
-        console.log('multiple choice');
+    addChoice(choice) {
+        console.log('choice?', choice)
+        // let choiceList = this.state.choices;
+        // if (choice==='new choice') choiceList.push({})
+        // else choiceList.push(choice);
+        // console.log('choiselist', choiceList);
+        // this.setState({choices: choiceList}, function(){
+        //     console.log('chocie added', this.state.choices)
+        // })
+    }
+
+    listChoices(){
+
+        if (!this.state.choices.length) {
+            console.log('no choice length')
+            return(<Choice addChoice={this.addChoice}/>)
+        } else {
+            console.log('choice length?')
+            let self = this;
+            let choices = this.state.choices;
+            let answer;
+            return choices.map(function(choice){
+                answer = choice.choice_text[Object.keys(choice.choice_text)[0]]
+                console.log('choices???', choices)
+                return(<Choice addChoice={self.addChoice}/>)
+            })
+        }
+
     }
 
 
@@ -240,11 +263,19 @@ class Node extends React.Component {
                         </select>
                     </div>
                     <label htmlFor="question-hint" className="col-xs-2 col-form-label">Hint:</label>
-                    <div className="form-group row col-xs-6">
-                        <textarea className="form-control hint-title" rows="1" displayTitle={displayTitle}
-                        onBlur={this.updateTitle}/>
+                    <div className="form-group col-xs-6">
+                        <textarea className="form-control hint-title" rows="1" displayTitle={displayHint}
+                        onBlur={this.updateHint}/>
                     </div>
                 </div>
+
+                {(this.state.type_constraint==="multiple_choice") &&
+                    <div>
+                        {this.listChoices()}
+                        <button value="new choice" onClick={this.addChoice}>add choice</button>
+                    </div>
+                }
+
                 <button onClick={this.deleteNode}>delete</button>
                 <button onClick={this.saveNode}>save</button>
             </div>
@@ -252,16 +283,27 @@ class Node extends React.Component {
     }
 }
 
-class Choice extends React.Component {
-    
-    if (this.props.type!=='multiple_choice') {
-        return null;
+function Choice(props) {
+
+
+    function choiceHandler(event) {
+        let choice = event.target.value;
+        props.addChoice(choice);
     }
 
-    render() {
-        return ();
-    }
+    return(
+        <div style={{backgroundColor:'orange'}}>
+            <h2>multiple choice</h2>
+            <div className="form-group row">
+                <label htmlFor="question-title" className="col-xs-2 col-form-label">1. </label>
+                <div className="form-group col-xs-10">
+                    <textarea className="form-control question-title" rows="1" onBlur={choiceHandler}/>
+                </div>
+            </div>
+        </div>
+    )
+
 }
 
-
+// onClick={() => choiceHandler(this.id)}
 export default NodeList;
