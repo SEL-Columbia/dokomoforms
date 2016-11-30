@@ -1,6 +1,7 @@
 import React from 'react';
 import uuid from 'node-uuid';
 import $ from 'jquery';
+import utils from './../utils.js'
 
 
 class NodeList extends React.Component {
@@ -128,7 +129,7 @@ class Node extends React.Component {
         this.saveNode = this.saveNode.bind(this);
 
         this.state = {
-            isDisabled: true,
+            enableAddChoice: false,
             title: '',
             hint: '',
             type_constraint: '',
@@ -180,50 +181,77 @@ class Node extends React.Component {
         this.setState({type_constraint: event.target.value})
     }
 
-    addChoice(event) {
-        let choice = {};
-        let choiceList = this.state.choices;
-        console.log('id', event.target.id);
-        if (event.target.id!=="new-choice") {
-            console.log('not new?')
-            console.log(this.props.default_language);
-            if (event.target.value==='' ||
-                choice[this.props.default_language]===event.target.value) {return;}
-            console.log('these things didnt happen'); 
-            let here = event.target.value
-            console.log('???', here.length);
-            choice[this.props.default_language] = event.target.value;
+    addChoice(id, event) {
+        console.log('initial choice state', this.state.choices);
+        console.log('id', id);
+        console.log('event', event.target)
+        let updated = false;
+        let choiceList = [];
+        choiceList = choiceList.concat(this.state.choices);
+        // if add choice was clicked
+        if (id===-1) {
+            console.log('its -1');
+            let newChoice = {id: utils.addId('choice')};
+            newChoice[this.props.default_language]='';
+            choiceList.push(newChoice);
+            updated = true;
+            console.log('new choiceList', choiceList);
+        // if adding the first choice in list
+        } else if (!choiceList.length) {
+            console.log('empty choiceList', choiceList);
+            let newChoice = {
+                id: id, 
+                [this.props.default_language]: event.target.value
+            }
+            choiceList.push(newChoice);
+            updated = true;
+            console.log('its adding');
         } else {
-            choice[this.props.default_language]='';
-            choiceList.push(choice);
+            for (var i = 0; i<choiceList.length; i++) {
+                console.log('first', choiceList[i].id, id)
+                // if updating and existing choice
+                if (choiceList[i].id===id) {
+                    console.log(choiceList[i][this.props.default_language], event.target.value)
+                    console.log('its updating')
+                    choiceList[i][this.props.default_language]=event.target.value;
+                    updated = true;
+                    break;
+                    console.log('after update');
+                }
+            }
         }
-        console.log('choicelist', choiceList);
-        this.setState({choices: choiceList}, function(){
-            console.log('choice added', this.state.choices)
-        })
+        if (updated===true) {
+            this.setState({choices: choiceList}, function(){
+                console.log('choice state is now updated', this.state.choices);
+            });
+        }
     }
 
     listChoices(){
+        console.log('rerendering list!!');
 
-        if (!this.state.choices.length) {
-            console.log('no choice length')
-            return(<Choice key={0} id={0} addChoice={this.addChoice}/>)
-        } else {
-            console.log('choice length?')
-            let self = this;
-            let choices = this.state.choices;
-            console.log('choies', choices);
-            let answer;
-            return choices.map(function(choice){
-                console.log('answer text', answer)
-                answer = choice[self.props.default_language];
-                console.log('choices???', choices)
-                return(<Choice answer={answer} addChoice={self.addChoice}/>)
-            })
+        let self = this;
+        let choices = this.state.choices;
+        let answer;
+
+        if (!choices.length) {
+            let newChoice = {id: utils.addId('choice')};
+            newChoice[this.props.default_language] = '';
+            choices.push(newChoice);
         }
 
+        console.log('choices before rendering', choices)
+        return choices.map(function(choice, i){
+            answer = choice[self.props.default_language];
+            return(<Choice
+                key={choice.id} 
+                index={i+1}
+                answer={answer} 
+                addChoice={self.addChoice.bind(null, choice.id)}
+            />)
+        })
     }
-
+    
 
     deleteNode() {
         if (this.props.node.saved==false) {}
@@ -284,9 +312,14 @@ class Node extends React.Component {
                 </div>
 
                 {(this.state.type_constraint==="multiple_choice") &&
-                    <div>
+                    <div style={{backgroundColor:'#00a896'}}>
+                        <h2>multiple choice</h2>
                         {this.listChoices()}
-                        <button id="new-choice" value="new choice" onClick={this.addChoice}>add choice</button>
+                        <button id="new-choice"
+                            value="new choice"
+                            onClick={this.addChoice.bind(null, -1)}
+                            disabled={false}
+                        >add choice</button>
                     </div>
                 }
 
@@ -297,17 +330,31 @@ class Node extends React.Component {
     }
 }
 
+
 function Choice(props) {
 
+    buttonHandler(event) {
+        if (!this.props.enabled && event.target.value.length ||
+            this.props.enabled && !event.target.value.length) {
+                props.changeAddChoice()
+        }
+    }
+
+    choiceHandler(event) {
+        console.log(props.answer, event.target.value)
+        if (event.target.value===props.answer) return;
+        else props.addChoice(event);
+    }
+
     return(
-        <div style={{backgroundColor:'orange'}}>
-            <h2>multiple choice</h2>
-            <div className="form-group row">
-                <label htmlFor="question-title" className="col-xs-2 col-form-label">1. </label>
-                <div className="form-group col-xs-10">
-                    <textarea id="choice-text" className="form-control question-title" rows="1" placeholder={props.answer} onBlur={props.addChoice}/>
+        <div className="form-group" style={{backgroundColor:'#02c39a'}}>
+            <div className="row">
+                <label htmlFor="question-title" className="col-xs-2 col-form-label">{props.index}.</label>
+                <div className="col-xs-10">
+                    <textarea id="choice-text" className="form-control question-title" rows="1" defaultValue={props.answer} onInput={buttonHandler} onBlur={choiceHandler}/>
                 </div>
             </div>
+            <button>delete</button>
         </div>
     )
 
