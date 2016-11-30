@@ -180,31 +180,45 @@ class Node extends React.Component {
         this.setState({type_constraint: event.target.value})
     }
 
-    addChoice(choice) {
-        console.log('choice?', choice)
-        // let choiceList = this.state.choices;
-        // if (choice==='new choice') choiceList.push({})
-        // else choiceList.push(choice);
-        // console.log('choiselist', choiceList);
-        // this.setState({choices: choiceList}, function(){
-        //     console.log('chocie added', this.state.choices)
-        // })
+    addChoice(event) {
+        let choice = {};
+        let choiceList = this.state.choices;
+        console.log('id', event.target.id);
+        if (event.target.id!=="new-choice") {
+            console.log('not new?')
+            console.log(this.props.default_language);
+            if (event.target.value==='' ||
+                choice[this.props.default_language]===event.target.value) {return;}
+            console.log('these things didnt happen'); 
+            let here = event.target.value
+            console.log('???', here.length);
+            choice[this.props.default_language] = event.target.value;
+        } else {
+            choice[this.props.default_language]='';
+            choiceList.push(choice);
+        }
+        console.log('choicelist', choiceList);
+        this.setState({choices: choiceList}, function(){
+            console.log('choice added', this.state.choices)
+        })
     }
 
     listChoices(){
 
         if (!this.state.choices.length) {
             console.log('no choice length')
-            return(<Choice addChoice={this.addChoice}/>)
+            return(<Choice key={0} id={0} addChoice={this.addChoice}/>)
         } else {
             console.log('choice length?')
             let self = this;
             let choices = this.state.choices;
+            console.log('choies', choices);
             let answer;
             return choices.map(function(choice){
-                answer = choice.choice_text[Object.keys(choice.choice_text)[0]]
+                console.log('answer text', answer)
+                answer = choice[self.props.default_language];
                 console.log('choices???', choices)
-                return(<Choice addChoice={self.addChoice}/>)
+                return(<Choice answer={answer} addChoice={self.addChoice}/>)
             })
         }
 
@@ -272,7 +286,7 @@ class Node extends React.Component {
                 {(this.state.type_constraint==="multiple_choice") &&
                     <div>
                         {this.listChoices()}
-                        <button value="new choice" onClick={this.addChoice}>add choice</button>
+                        <button id="new-choice" value="new choice" onClick={this.addChoice}>add choice</button>
                     </div>
                 }
 
@@ -285,19 +299,13 @@ class Node extends React.Component {
 
 function Choice(props) {
 
-
-    function choiceHandler(event) {
-        let choice = event.target.value;
-        props.addChoice(choice);
-    }
-
     return(
         <div style={{backgroundColor:'orange'}}>
             <h2>multiple choice</h2>
             <div className="form-group row">
                 <label htmlFor="question-title" className="col-xs-2 col-form-label">1. </label>
                 <div className="form-group col-xs-10">
-                    <textarea className="form-control question-title" rows="1" onBlur={choiceHandler}/>
+                    <textarea id="choice-text" className="form-control question-title" rows="1" placeholder={props.answer} onBlur={props.addChoice}/>
                 </div>
             </div>
         </div>
