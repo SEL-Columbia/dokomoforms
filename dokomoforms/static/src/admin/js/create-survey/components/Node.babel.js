@@ -14,80 +14,78 @@ class NodeList extends React.Component {
         this.addOrUpdateNode = this.addOrUpdateNode.bind(this);
         
         this.state = {
-            newNode: null
+            enableAddNode: false,
+            nodes: []
         }
     }
 
 
     componentWillMount() {
-        console.log('component will mount');
-        console.log('this nodes', this.props.nodes);
-        if (this.props.nodes && this.props.nodes.length < 1) {
-            let newNode = {
-                id: uuid.v4(),
-                node: {}
-            };
-            console.log('newNodeId', newNode.id)
-            this.setState({newNode})
+        if (!this.props.nodes.length) {
+            let nodeList = [];
+            let newNode = {id: utils.addId('node')};
+            newNode[this.props.default_language] = '';
+            nodeList.push(newNode);
+            this.setState({nodes: nodeList});
         }
     }
 
 
     listQuestions() {
-        console.log(this.props.nodes)
-        const self = this;
 
-        let rows = [];
-        rows = rows.concat(this.props.nodes);
-        console.log('rows', rows);
-        console.log('props nodes', this.props.nodes);
-        if (this.state.newNode) rows.push(this.state.newNode); 
-        return rows.map(function(node) {
-            return (
-                <Node
-                    key={node.id}
-                    data={node.node}
-                    default_language={self.props.default_language}
-                    addOrUpdateNode={self.addOrUpdateNode}
-                    language={self.props.language}
-                />
-            )
+        let self = this;
+        let nodes = this.state.nodes;
+
+        console.log('nodes before rendering', nodes)
+        return nodes.map(function(node, index){
+            return(<Node
+                key={node.id} 
+                index={index+1}
+                data={node.node}
+                enabled={self.state.enableAddNode}
+                updateNode={self.updateNode.bind(null, node.id)}
+                default_language={self.props.default_language}
+            />)
         })
     }
 
 
     addQuestion() {
-        if (this.state.newNode==null) {
-            let newNode = {id: uuid.v4()};
-            this.setState({newNode: newNode}, function(){
-                console.log('new question added', this.state.newNode);
-            });
-        } else {
-            console.log('you should already have an empty question');
-        }
+        
+        let nodeList = [];
+        nodeList = nodeList.concat(this.state.nodes);
+        console.log('adding node', nodeList);
+        let newNode = {id: utils.addId('node')};
+        newNode[this.props.default_language]='';
+        nodeList.push(newNode);
+        this.setState({enableAddNode: false, nodes: nodeList}, function(){
+            console.log('new node added', this.state.nodes);
+        });
     }
 
 
-    addOrUpdateNode(node, index) {
-        if (this.state.newNode && node.id==this.state.newNode.id) {
-            console.log('adding node', node, index, -1);
-            this.props.updateNodeList(node, -1);
-            this.setState({newNode: null}, function() {
-                console.log('cleared node');
-            })
-        } else if (this.props.nodes[index].id==node.id) {
-            console.log('index was id')
-            console.log('updating node', node, index);
-            this.props.updateNodeList(node, index);
-        } else {
-            let i;
-            for (i=0; i<this.props.nodes.length-1; i++) {
-                if (this.node.id==this.props.nodes[i].id) {
-                    console.log('index was not id');
-                    console.log('index', index, 'actual index', i);
-                    this.props.updateNodeList(node, i)
-                }
+    updateNode(id, node) {
+        let nodeList = [];
+        let updated = false;
+        nodeList = nodeList.concat(this.state.nodes);
+        console.log('updating choice', nodeList);
+
+        for (var i=0; i<nodeList.length; i++) {
+            if (nodeList[i].id===id) {
+                console.log(nodeList[i][this.props.default_language], text)
+                console.log('its updating')
+                choiceList[i][this.props.default_language]=text;
+                updated = true;
+                break;
             }
+        }
+
+        if (updated===true) {
+            this.setState({choices: choiceList}, function(){
+                console.log('choice state is now updated', this.state.choices);
+            })
+        } else {
+            console.log('something went wrong in update');
         }
     }
 
@@ -130,8 +128,6 @@ class Node extends React.Component {
         this.test = this.test.bind(this);
 
         this.state = {
-            enableAddNode: false,
-            enableAddChoice: false,
             title: '',
             hint: '',
             type_constraint: '',
