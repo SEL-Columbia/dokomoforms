@@ -32,17 +32,16 @@ class MultipleChoiceList extends React.Component {
             newChoice[this.props.default_language] = '';
             choices.push(newChoice);
         }
-
         console.log('choices before rendering', choices)
-        return choices.map(function(choice, i){
+        return choices.map(function(choice, index){
             answer = choice[self.props.default_language];
             return(<Choice
                 key={choice.id} 
-                index={i+1}
+                index={index+1}
                 answer={answer}
                 enabled={self.state.enableAddChoice}
                 addChoice={self.addChoice.bind(null, choice.id)}
-                changeAddChoice={self.changeAddChoice}
+                changeAddChoice={self.changeAddChoice.bind(null, index)}
                 saved={self.state.saved}
             />)
         })
@@ -98,7 +97,16 @@ class MultipleChoiceList extends React.Component {
     }
 
 
-    changeAddChoice(){
+    changeAddChoice(index){
+        let choices = this.state.choices;
+        for (var i=0; i <choices.length; i++) {
+            if (!choices[i][this.props.default_language].length) {
+                if (i!==index) {
+                    console.log('returning', i, index);
+                    return;
+                }
+            }
+        }
         let previous = this.state.enableAddChoice;
         this.setState({enableAddChoice: !previous});
     }
@@ -160,7 +168,9 @@ class Choice extends React.Component {
 
 
     save() {
-        console.log('testing save!!');
+        console.log('testing save!!', this.state.text);
+        if (this.state.text===props.answer) return;
+        else props.addChoice(this.state.text);
     }
     
 
@@ -178,9 +188,6 @@ class Choice extends React.Component {
         if (event.target.value!==this.state.text) {
             this.setState({text: event.target.value})
         }
-        // console.log(props.answer, event.target.value)
-        // if (event.target.value===props.answer) return;
-        // else props.addChoice(event);
     }
 
 
