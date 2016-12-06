@@ -1,5 +1,6 @@
 import React from 'react';
 import uuid from 'node-uuid';
+import utils from './../utils.js';
 import MultipleChoice from './MultipleChoice.babel.js';
 
 
@@ -11,7 +12,7 @@ class NodeList extends React.Component {
 
         this.listQuestions = this.listQuestions.bind(this);
         this.addQuestion = this.addQuestion.bind(this);
-        this.addOrUpdateNode = this.addOrUpdateNode.bind(this);
+        this.updateNode = this.updateNode.bind(this);
         
         this.state = {
             enableAddNode: false,
@@ -23,8 +24,10 @@ class NodeList extends React.Component {
     componentWillMount() {
         if (!this.props.nodes.length) {
             let nodeList = [];
-            let newNode = {id: utils.addId('node')};
-            newNode[this.props.default_language] = '';
+            let newNode = {
+                id: utils.addId('node'),
+                node: {}
+            };
             nodeList.push(newNode);
             this.setState({nodes: nodeList});
         }
@@ -38,25 +41,26 @@ class NodeList extends React.Component {
 
         console.log('nodes before rendering', nodes)
         return nodes.map(function(node, index){
-            return(<Node
-                key={node.id} 
-                index={index+1}
-                data={node.node}
-                enabled={self.state.enableAddNode}
-                updateNode={self.updateNode.bind(null, node.id)}
-                default_language={self.props.default_language}
-            />)
+            return(
+                <Node
+                    key={node.id} 
+                    index={index+1}
+                    data={node.node}
+                    enabled={self.state.enableAddNode}
+                    updateNode={self.updateNode.bind(null, node.id)}
+                    default_language={self.props.default_language}
+                />
+            )
         })
     }
 
 
     addQuestion() {
-        
         let nodeList = [];
         nodeList = nodeList.concat(this.state.nodes);
         console.log('adding node', nodeList);
         let newNode = {id: utils.addId('node')};
-        newNode[this.props.default_language]='';
+        newNode.node[this.props.default_language]='';
         nodeList.push(newNode);
         this.setState({enableAddNode: false, nodes: nodeList}, function(){
             console.log('new node added', this.state.nodes);
@@ -65,24 +69,24 @@ class NodeList extends React.Component {
 
 
     updateNode(id, node) {
+
         let nodeList = [];
         let updated = false;
         nodeList = nodeList.concat(this.state.nodes);
-        console.log('updating choice', nodeList);
+        console.log('updating node', nodeList);
 
         for (var i=0; i<nodeList.length; i++) {
             if (nodeList[i].id===id) {
-                console.log(nodeList[i][this.props.default_language], text)
                 console.log('its updating')
-                choiceList[i][this.props.default_language]=text;
+                nodeList[i].node = node;
                 updated = true;
                 break;
             }
         }
-
         if (updated===true) {
-            this.setState({choices: choiceList}, function(){
-                console.log('choice state is now updated', this.state.choices);
+            this.setState({nodes: nodeList}, function(){
+                console.log('node state is now updated', this.state.nodes);
+                this.props.updateNodeList(this.state.nodes);
             })
         } else {
             console.log('something went wrong in update');
@@ -99,7 +103,6 @@ class NodeList extends React.Component {
                         {this.listQuestions()}
                         <button 
                             onClick={this.addQuestion}
-                            disabled={this.state.newNode}
                         >Add Question</button>
                     </div>
                 </div>
@@ -121,27 +124,21 @@ class Node extends React.Component {
         this.updateTitle = this.updateTitle.bind(this);
         this.updateHint = this.updateHint.bind(this);
         this.addTypeConstraint = this.addTypeConstraint.bind(this);
-        // this.listChoices = this.listChoices.bind(this);
-        // this.addChoice = this.addChoice.bind(this);
-        // this.changeAddChoice = this.changeAddChoice.bind(this);
         this.saveNode = this.saveNode.bind(this);
-        this.test = this.test.bind(this);
 
         this.state = {
             title: '',
             hint: '',
             type_constraint: '',
-            choices: []
+            choices: [],
+            saved: false
         }
-    }
-
-    test(){
-        console.log('test');
     }
 
 
     getTitleOrHintValue(property) {
-        if (!this.props.data.title) return '';
+        if (!this.props.data ||
+            !this.props.data[property]) return '';
         else return this.props.data[property][this.props.default_language]
     };
 
@@ -179,7 +176,6 @@ class Node extends React.Component {
         });
     }
 
-
     addTypeConstraint(event) {
         this.setState({type_constraint: event.target.value})
     }
@@ -192,8 +188,8 @@ class Node extends React.Component {
 
     saveNode() {
         let node = this.state;
-        delete node['isDisabled'];
-        delete node['sub_surveys'];
+        console.log('node after state', node)
+        if (!node.choices.length) delete node.choices;
         if (JSON.stringify(node)===JSON.stringify(this.props.data.node)) return;
 
         console.log('reassigning node');
@@ -201,7 +197,13 @@ class Node extends React.Component {
         console.log(this.props.data);
         let updatedNode = Object.assign(this.props.data, node);
         console.log('updatedNode', updatedNode);
-        this.setState({isDisabled: false});
+        this.props.updateNode(updatedNode);
+    }
+
+    saveNode(){
+        this.setState({saved: true}, function(){
+            this.updateNode()
+        })
     }
 
 
@@ -211,7 +213,7 @@ class Node extends React.Component {
         let displayHint = this.getTitleOrHintValue('hint');
 
         return (
-            <div>
+            <div className="node">
                 <div className="form-group row">
                     <label htmlFor="question-title" className="col-xs-2 col-form-label">Question:</label>
                 </div>
@@ -251,9 +253,15 @@ class Node extends React.Component {
                 }
 
                 <button onClick={this.deleteNode}>delete</button>
-                <button onClick={this.saveNode}>save</button>
+                <button onClick={saveNode()}>save</button>
             </div>
         );
+    }
+}
+
+class TypeConstraint extends React.Component {
+    render(){
+        return;
     }
 }
 

@@ -1,6 +1,5 @@
 import React from 'react';
 import NodeList from './Node.babel.js';
-import SubSurvey from './SubSurvey.babel.js';
 
 class Survey extends React.Component {
 
@@ -13,7 +12,8 @@ class Survey extends React.Component {
         this.submit = this.submit.bind(this);
 
         this.state = {
-            title: '',
+            title: {},
+            hint: {},
             default_language: 'English',
             survey_type: '',
             nodes: []
@@ -21,11 +21,18 @@ class Survey extends React.Component {
     }
 
     updateTitle(event) {
-        this.setState({title: event.target.value});
+        if (this.state.title[this.state.default_language]===event.target.value) return;
+        let titleObj = {};
+        titleObj[this.state.default_language] = event.target.value;
+        this.setState({title: titleObj}, function(){
+            console.log('set state: title updated');
+        });
     }
 
     addDefaultLanguage(event) {
-        this.setState({default_language: event.target.value});
+        this.setState({default_language: event.target.value}, function(){
+            console.log('set state: default language updated');
+        });
     }
 
     updateNodeList(node, index) {
@@ -56,6 +63,7 @@ class Survey extends React.Component {
         let displaytitle = 'Define Your Survey';
         return (
             <div>
+                <SurveyTitle updateTitle={this.updateTitle}/>
                 <NodeList
                     nodes={this.state.nodes}
                     default_language={this.state.default_language}

@@ -21,8 +21,10 @@ class MultipleChoiceList extends React.Component {
         }
     }
 
+
     componentWillMount() {
-        if (!this.props.choices.length) {
+        if (!this.props.choices ||
+            !this.props.choices.length) {
             let choiceList = [];
             let newChoice = {id: utils.addId('choice')};
             newChoice[this.props.default_language] = '';
@@ -48,11 +50,12 @@ class MultipleChoiceList extends React.Component {
                 answer={answer}
                 enabled={self.state.enableAddChoice}
                 updateChoice={self.updateChoice.bind(null, choice.id)}
-                changeAddChoice={self.changeAddChoice.bind(null, index)}
+                changeAddChoice={self.changeAddChoice.bind(null, choice.id)}
                 saved={self.state.saved}
             />)
         })
     }
+
 
     addChoice() {
 
@@ -66,6 +69,7 @@ class MultipleChoiceList extends React.Component {
             console.log('new choice added', this.state.choices);
         });
     }
+
 
     updateChoice(id, text) {
         let choiceList = [];
@@ -94,7 +98,18 @@ class MultipleChoiceList extends React.Component {
     }
  
 
-    changeAddChoice(index){
+    changeAddChoice(id){
+        console.log('!!!!!!!!')
+        console.log(this.state.choices)
+        console.log('!!!!!!!!')
+
+        let choice;
+        for (var i=0; i<this.state.choices.length; i++) {
+            choice=this.state.choices[i]
+            console.log(choice);
+            if (!choice[this.props.default_language].length &&
+                choice.id!==id) return;
+        }
         let previous = this.state.enableAddChoice;
         this.setState({enableAddChoice: !previous});
     }
@@ -115,22 +130,8 @@ class MultipleChoiceList extends React.Component {
                 <button id="new-choice"
                     value="new choice"
                     onClick={this.addChoice}
-                    disabled={!this.state.enableAddChoice || this.state.saved}
+                    disabled={!this.state.enableAddChoice}
                 >add choice</button>
-                {(!this.state.saved) &&
-                    <button id="save-choices"
-                    value="save choices"
-                    onClick={this.save}
-                    disabled={!this.state.enableAddChoice || this.state.saved}
-                    >save</button>
-                }
-                {(this.state.saved) &&
-                    <button id="edit-choices"
-                    value="edit choices"
-                    onClick={this.save}
-                    disabled={!this.state.saved}
-                    >edit</button>
-                }
             </div>
         )
     }
@@ -194,6 +195,7 @@ class Choice extends React.Component {
             console.log('props', this.props.answer)
             this.setState({text: event.target.value}, function(){
                 console.log('state has been set', this.state.text)
+                this.save();
             })
         }
     }
