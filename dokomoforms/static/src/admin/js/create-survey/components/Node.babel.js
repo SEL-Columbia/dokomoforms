@@ -2,6 +2,7 @@ import React from 'react';
 import uuid from 'node-uuid';
 import utils from './../utils.js';
 import MultipleChoice from './MultipleChoice.babel.js';
+import { FacilityLogic, MinMaxLogic } from './Bucket.babel.js';
 
 
 class NodeList extends React.Component {
@@ -222,22 +223,7 @@ class Node extends React.Component {
                     onBlur={this.updateTitle}/>
                 </div>
                 <div className="form-group row">
-                    <label htmlFor="question-type" className="col-xs-2 col-form-label">Question Type:</label>
-                    <div className="col-xs-2">
-                        <select className="form-control type-constraint" onChange={this.addTypeConstraint}>
-                            <option value="text">text</option>
-                            <option value="photo">photo</option>
-                            <option value="integer">integer</option>
-                            <option value="decimal">decimal</option>
-                            <option value="date">date</option>
-                            <option value="time">time</option>
-                            <option value="timestamp">timestamp</option>
-                            <option value="location">location</option>
-                            <option value="facility">facility</option>
-                            <option value="multiple_choice">multiple choice</option>
-                            <option value="note">note</option>
-                        </select>
-                    </div>
+                    <TypeConstraint addTypeConstraint={this.addTypeConstraint} />
                     <label htmlFor="question-hint" className="col-xs-2 col-form-label">Hint:</label>
                     <div className="form-group col-xs-6">
                         <textarea className="form-control hint-title" rows="1" displayTitle={displayHint}
@@ -252,8 +238,16 @@ class Node extends React.Component {
                     />
                 }
 
+                {(this.state.type_constraint==="facility") &&
+                    <FacilityLogic />
+                }
+
+                {(this.state.type_constraint==="decimal") &&
+                    <MinMaxLogic />
+                }
+
                 <button onClick={this.deleteNode}>delete</button>
-                <button onClick={saveNode()}>save</button>
+                <button onClick={this.saveNode}>save</button>
             </div>
         );
     }
@@ -261,7 +255,26 @@ class Node extends React.Component {
 
 class TypeConstraint extends React.Component {
     render(){
-        return;
+        return(
+            <div>
+                <label htmlFor="question-type" className="col-xs-2 col-form-label">Question Type:</label>
+                <div className="col-xs-2">
+                    <select className="form-control type-constraint" onChange={this.props.addTypeConstraint}>
+                        <option value="text">text</option>
+                        <option value="photo">photo</option>
+                        <option value="integer">integer</option>
+                        <option value="decimal">decimal</option>
+                        <option value="date">date</option>
+                        <option value="time">time</option>
+                        <option value="timestamp">timestamp</option>
+                        <option value="location">location</option>
+                        <option value="facility">facility</option>
+                        <option value="multiple_choice">multiple choice</option>
+                        <option value="note">note</option>
+                    </select>
+                </div>
+            </div>
+        );
     }
 }
 

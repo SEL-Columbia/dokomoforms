@@ -132,6 +132,10 @@ class MultipleChoiceList extends React.Component {
                     onClick={this.addChoice}
                     disabled={!this.state.enableAddChoice}
                 >add choice</button>
+                <button id="allow-other"
+                    value="allow other"
+                    onClick={this.allowOther}
+                >allow other</button>
             </div>
         )
     }

@@ -1,5 +1,6 @@
 import React from 'react';
 import NodeList from './Node.babel.js';
+import cookies from '../../../../common/js/cookies';
 
 class Survey extends React.Component {
 
@@ -10,6 +11,7 @@ class Survey extends React.Component {
         this.addDefaultLanguage = this.addDefaultLanguage.bind(this);
         this.updateNodeList = this.updateNodeList.bind(this);
         this.submit = this.submit.bind(this);
+        this.test = this.test.bind(this);
 
         this.state = {
             title: {},
@@ -58,11 +60,106 @@ class Survey extends React.Component {
         console.log('before submitting', newSurvey);
     }
 
+    test() {
+        var modelSurvey = {
+          title: {English: 'languages survey 12',
+                German: 'languages survey 12'},
+          default_language: 'English',
+          languages: ['English', 'German'],
+          survey_type: 'public',
+          metadata: {},
+          nodes: [{
+              node: {
+                languages: ['English', 'German'],
+                title: {
+                    English: 'english test',
+                    German: 'german test'
+                },
+                hint: {
+                    English: 'e hint',
+                    German: 'g hint'
+                },
+                type_constraint: 'text',
+                logic: {}
+            }
+            },
+            {
+                node: {
+                    languages: ['English', 'German'],
+                    title: {
+                        English: 'english test 2',
+                        German: 'german test 2'
+                    },
+                    hint: {
+                        English: 'e hint',
+                        German: 'g hint'
+                    },
+                    type_constraint: 'facility',
+                    logic: {}
+                }
+            }]
+        };
+
+        var survey2 = {
+            title: {English: 'integer test'},
+          default_language: 'English',
+          survey_type: 'public',
+          metadata: {},
+          nodes: [{
+              node: {
+                title: {
+                    English: 'english test'
+                },
+                hint: {
+                    English: 'e hint'
+                },
+                type_constraint: 'facility',
+                logic: {}
+            }
+            }]
+        };
+
+
+        var modelNode = {
+                languages: ['English', 'German'],
+                title: {
+                    English: 'english test',
+                    German: 'german test'
+                },
+                hint: {
+                    English: 'e hint',
+                    German: 'g hint'
+                },
+                type_constraint: 'text',
+                logic: {}
+        }
+
+        $.ajax({
+            type: "POST",
+            url: "/api/v0/surveys",
+            contentType: 'application/json',
+            processData: false,
+            data: JSON.stringify(survey2),
+            headers: {
+              'X-XSRFToken': cookies.getCookie('_xsrf')
+            },
+            dataType: 'json',
+            success: function(response) {
+              console.log('success!!!');
+            },
+            error: function(response) {
+                console.log('error')
+              console.log(response.responseText);
+            }
+        })
+    }
+
 
     render() {
         let displaytitle = 'Define Your Survey';
         return (
             <div>
+                {this.test()}
                 <SurveyTitle updateTitle={this.updateTitle}/>
                 <NodeList
                     nodes={this.state.nodes}
