@@ -60,7 +60,7 @@ class NodeList extends React.Component {
         let nodeList = [];
         nodeList = nodeList.concat(this.state.nodes);
         console.log('adding node', nodeList);
-        let newNode = {id: utils.addId('node')};
+        let newNode = {id: utils.addId('node'), node: {}};
         newNode.node[this.props.default_language]='';
         nodeList.push(newNode);
         this.setState({enableAddNode: false, nodes: nodeList}, function(){
@@ -78,7 +78,8 @@ class NodeList extends React.Component {
 
         for (var i=0; i<nodeList.length; i++) {
             if (nodeList[i].id===id) {
-                console.log('its updating')
+                console.log(id, node);
+                console.log('its updating', nodeList)
                 nodeList[i].node = node;
                 updated = true;
                 break;
@@ -190,7 +191,7 @@ class Node extends React.Component {
     saveNode() {
         let node = this.state;
         console.log('node after state', node)
-        if (!node.choices.length) delete node.choices;
+        if (node.choices && !node.choices.length) delete node.choices;
         if (JSON.stringify(node)===JSON.stringify(this.props.data.node)) return;
 
         console.log('reassigning node');
@@ -199,12 +200,6 @@ class Node extends React.Component {
         let updatedNode = Object.assign(this.props.data, node);
         console.log('updatedNode', updatedNode);
         this.props.updateNode(updatedNode);
-    }
-
-    saveNode(){
-        this.setState({saved: true}, function(){
-            this.updateNode()
-        })
     }
 
 
@@ -260,6 +255,7 @@ class TypeConstraint extends React.Component {
                 <label htmlFor="question-type" className="col-xs-2 col-form-label">Question Type:</label>
                 <div className="col-xs-2">
                     <select className="form-control type-constraint" onChange={this.props.addTypeConstraint}>
+                        <option></option>
                         <option value="text">text</option>
                         <option value="photo">photo</option>
                         <option value="integer">integer</option>

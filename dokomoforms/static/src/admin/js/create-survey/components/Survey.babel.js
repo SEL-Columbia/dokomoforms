@@ -37,17 +37,19 @@ class Survey extends React.Component {
         });
     }
 
-    updateNodeList(node, index) {
-        console.log('update nodelist being called', node, index)
+    updateNodeList(nodelist) {
+        console.log('update nodelist being called')
         console.log('this state nodes', this.state.nodes)
-        let nodelist = [];
-        nodelist = nodelist.concat(this.state.nodes);
-        node.saved = true;
-        console.log('nodelist before', nodelist)
-        if (index < 0) nodelist.push(node)
-        else nodelist[index] = node;
-        console.log('nodeList', nodelist);
-        this.setState({nodes: nodelist})
+        // let nodelist = [];
+        // nodelist = nodelist.concat(this.state.nodes);
+        // node.saved = true;
+        // console.log('nodelist before', nodelist)
+        // if (index < 0) nodelist.push(node)
+        // else nodelist[index] = node;
+        // console.log('nodeList', nodelist);
+        this.setState({nodes: nodelist}, function(){
+            console.log('nodes from survey', this.state.nodes);
+        })
     }
 
     submit() {
@@ -101,23 +103,24 @@ class Survey extends React.Component {
         };
 
         var survey2 = {
-            title: {English: 'integer test'},
-          default_language: 'English',
-          survey_type: 'public',
-          metadata: {},
-          nodes: [{
-              node: {
-                title: {
-                    English: 'english test'
-                },
-                hint: {
-                    English: 'e hint'
-                },
-                type_constraint: 'facility',
-                logic: {}
-            }
+            title: {English: 'facility survey test'},
+            default_language: 'English',
+              survey_type: 'public',
+              metadata: {},
+              nodes: [{
+                  node: {
+                    type_constraint: 'facility',
+                    title: {'English': 'Facility'},
+                    hint: {'English': 'Select the facility from the list, or add a new one.'},
+                    logic: {
+                        'slat': 40.477398,
+                        'nlat': 40.91758,
+                        'wlng': -74.259094,
+                        'elng': -73.700165,
+                    }
+                }
             }]
-        };
+        }
 
 
         var modelNode = {
@@ -159,7 +162,6 @@ class Survey extends React.Component {
         let displaytitle = 'Define Your Survey';
         return (
             <div>
-                {this.test()}
                 <SurveyTitle updateTitle={this.updateTitle}/>
                 <NodeList
                     nodes={this.state.nodes}
