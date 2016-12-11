@@ -12,6 +12,7 @@ class Survey extends React.Component {
         this.updateNodeList = this.updateNodeList.bind(this);
         this.submit = this.submit.bind(this);
         this.test = this.test.bind(this);
+        this.update_default = this.update_default.bind(this);
 
         this.state = {
             title: {},
@@ -20,6 +21,10 @@ class Survey extends React.Component {
             survey_type: '',
             nodes: []
         }
+    }
+
+    update_default(){
+        this.setState({default_language: "Spanish"});
     }
 
     updateTitle(event) {
@@ -46,7 +51,7 @@ class Survey extends React.Component {
         // console.log('nodelist before', nodelist)
         // if (index < 0) nodelist.push(node)
         // else nodelist[index] = node;
-        // console.log('nodeList', nodelist);
+        console.log('nodeList', nodelist);
         this.setState({nodes: nodelist}, function(){
             console.log('nodes from survey', this.state.nodes);
         })
@@ -169,6 +174,7 @@ class Survey extends React.Component {
                     updateNodeList={this.updateNodeList}
                     language={this.state.default_language}
                 />
+                <button onClick={this.update_default}>button</button>
             </div>
         );
     }

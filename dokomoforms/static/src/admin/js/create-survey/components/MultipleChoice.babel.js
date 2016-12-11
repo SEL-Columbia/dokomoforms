@@ -79,8 +79,8 @@ class MultipleChoiceList extends React.Component {
 
         for (var i=0; i<choiceList.length; i++) {
             if (choiceList[i].id===id) {
-                console.log(choiceList[i][this.props.default_language], text)
-                console.log('its updating')
+                console.log(choiceList[i][this.props.default_language], text);
+                console.log('its updating');
                 choiceList[i][this.props.default_language]=text;
                 updated = true;
                 break;
@@ -89,7 +89,8 @@ class MultipleChoiceList extends React.Component {
 
         if (updated===true) {
             this.setState({choices: choiceList}, function(){
-                console.log('choice state is now updated', this.state.choices);
+                console.log('choice state is now updated', this.state.choices)
+                this.props.updateChoices(this.state.choices);
             })
         } else {
             console.log('something went wrong in update');
@@ -157,6 +158,7 @@ class Choice extends React.Component {
         }
     }
 
+
     componentWillReceiveProps(nextProps, nextState) {
         console.log('will receive props');
         console.log(nextProps);
@@ -167,6 +169,7 @@ class Choice extends React.Component {
             })
         };
     }
+
 
     shouldComponentUpdate(nextProps, nextState) {
         if (this.props.saved!==nextProps.saved) return true;

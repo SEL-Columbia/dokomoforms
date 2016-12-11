@@ -20,7 +20,7 @@ class FacilityLogic extends React.Component {
 
     logicHandler(coordinate, event) {
         this.setState({[coordinate]: event.target.value}, function(){
-            console.log(this.state);
+            console.log("updated logic", this.state);
         });
     }
 
@@ -71,8 +71,21 @@ class MinMaxLogic extends React.Component {
     }
 
     logicHandler(bound, event) {
+        if (bound==='min' && this.state.max && 
+            this.state.max < event.target.value) {
+            console.log('min must be less than max');
+            return;
+        }
+        if (bound==='max' && this.state.min &&
+            this.state.min > event.target.value) {
+            console.log('max must be more than min');
+            return;
+        }
         this.setState({[bound]: event.target.value}, function(){
-            console.log(this.state);
+            console.log("updated logic", this.state);
+            if (this.state.min && this.state.max) {
+                this.props.updateLogic(this.state);
+            }
         });
     }
 
