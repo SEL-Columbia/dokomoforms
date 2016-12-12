@@ -1,118 +1,6 @@
-import React from 'react';
-import uuid from 'node-uuid';
 import utils from './../utils.js';
 import MultipleChoice from './MultipleChoice.babel.js';
-import { FacilityLogic, MinMaxLogic } from './Bucket.babel.js';
-
-
-class NodeList extends React.Component {
-
-    constructor(props) {
-
-        super(props);
-
-        this.listQuestions = this.listQuestions.bind(this);
-        this.addQuestion = this.addQuestion.bind(this);
-        this.updateNode = this.updateNode.bind(this);
-        
-        this.state = {
-            enableAddNode: false,
-            nodes: []
-        }
-    }
-
-
-    componentWillMount() {
-        if (!this.props.nodes.length) {
-            let nodeList = [];
-            let newNode = {
-                id: utils.addId('node'),
-                node: {}
-            };
-            nodeList.push(newNode);
-            this.setState({nodes: nodeList});
-        }
-    }
-
-
-    listQuestions() {
-
-        let self = this;
-        let nodes = this.state.nodes;
-
-        console.log('nodes before rendering', nodes)
-        return nodes.map(function(node, index){
-            return(
-                <Node
-                    key={node.id} 
-                    index={index+1}
-                    data={node.node}
-                    enabled={self.state.enableAddNode}
-                    updateNode={self.updateNode.bind(null, node.id)}
-                    default_language={self.props.default_language}
-                />
-            )
-        })
-    }
-
-
-    addQuestion() {
-        let nodeList = [];
-        nodeList = nodeList.concat(this.state.nodes);
-        console.log('adding node', nodeList);
-        let newNode = {id: utils.addId('node'), node: {}};
-        newNode.node[this.props.default_language]='';
-        nodeList.push(newNode);
-        this.setState({enableAddNode: false, nodes: nodeList}, function(){
-            console.log('new node added', this.state.nodes);
-        });
-    }
-
-
-    updateNode(id, node) {
-
-        let nodeList = [];
-        let updated = false;
-        nodeList = nodeList.concat(this.state.nodes);
-        console.log('updating node', nodeList);
-
-        for (var i=0; i<nodeList.length; i++) {
-            if (nodeList[i].id===id) {
-                console.log(id, node);
-                console.log('its updating', nodeList)
-                nodeList[i].node = node;
-                updated = true;
-                break;
-            }
-        }
-        if (updated===true) {
-            this.setState({nodes: nodeList}, function(){
-                console.log('node state is now updated', this.state.nodes);
-                this.props.updateNodeList(this.state.nodes);
-            })
-        } else {
-            console.log('something went wrong in update');
-        }
-    }
-
-
-    render() {
-        console.log('rendering nodelist', this.props.nodes)
-        return (
-            <div className="container">
-                <div className="row">
-                    <div className="col-md-9 node-list center-block">
-                        {this.listQuestions()}
-                        <button 
-                            onClick={this.addQuestion}
-                        >Add Question</button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-}
-
+import { Title, FacilityLogic, MinMaxLogic } from './Bucket.babel.js';
 
 class Node extends React.Component {
 
@@ -126,38 +14,65 @@ class Node extends React.Component {
         this.updateTitle = this.updateTitle.bind(this);
         this.updateHint = this.updateHint.bind(this);
         this.addTypeConstraint = this.addTypeConstraint.bind(this);
+        this.addChoices = this.addChoices.bind(this);
+        this.updateLogic = this.updateLogic.bind(this);
+        this.listTitles = this.listTitles.bind(this);
         this.saveNode = this.saveNode.bind(this);
 
         this.state = {
-            title: '',
-            hint: '',
+            title: {},
+            hint: {},
             type_constraint: '',
             choices: [],
+            logic: {},
             saved: false
         }
     }
 
+    componentWillReceiveProps(nextProps, nextState) {
+        console.log('will receive props');
+        console.log(nextProps);
+        if (nextProps.saved===true) {
+            console.log('true')
+            this.setState({editable: false}, function(){
+                this.save()
+            })
+        };
+    }
 
-    getTitleOrHintValue(property) {
+    shouldComponentUpdate(nextProps, nextState) {
+        if (JSON.stringify(this.props)===JSON.stringify(nextProps)
+            && JSON.stringify(this.state)===JSON.stringify(nextState)) return false;
+        else {
+            console.log('props did change', this.props, nextProps);
+            return true;
+        }
+    }
+
+    getTitleOrHintValue(property, language) {
         if (!this.props.data ||
             !this.props.data[property]) return '';
-        else return this.props.data[property][this.props.default_language]
+        else return this.props.data[property][language]
     };
 
 
-    updateTitle(event) {
+    updateTitle(language, event) {
+        console.log(event);
         let prevTitle = this.getTitleOrHintValue('title');
-        // check if title input is the same as props title
+        //check if title input is the same as props title
         if (event.target.value===prevTitle) return;
-        // check if title input is the same as current state title
+        //check if title input is the same as current state title
         if (event.target.value===this.state.title) return;
-
-        let titleObj = {};
-        titleObj[this.props.default_language] = event.target.value;
+        
+        let prevTitleObj = {};
+        let newTitle = {};
+        newTitle[language] = event.target.value;
+        
+        let titleObj = Object.assign({}, this.state.title, newTitle);
         this.setState({title: titleObj}, function() {
             console.log('updated title', this.state.title);
-            let properties = this.state.title;
-            this.saveNode();
+            // let properties = this.state.title;
+            // this.saveNode();
         });
     }
 
@@ -174,51 +89,73 @@ class Node extends React.Component {
         this.setState({hint: hintObj}, function() {
             console.log('updated hint', this.state.hint);
             let properties = this.state.hint;
-            this.saveNode();
         });
     }
 
-    addTypeConstraint(event) {
-        this.setState({type_constraint: event.target.value})
-    }
-    
 
-    deleteNode() {
-        if (this.props.node.saved==false) {}
+    listTitles(){
+        const self = this;
+        let displayTitle;
+        return this.props.languages.map(function(language){
+            console.log('language', language);
+            displayTitle = self.getTitleOrHintValue('title', language);
+            return (
+                <Title
+                    key={language.toString()}
+                    language={language}
+                    displayTitle={displayTitle}
+                    updateTitle={self.updateTitle.bind(null, language)}
+                />
+            )
+        }) 
+    }
+
+
+    addTypeConstraint(event) {
+        console.log('being called.....')
+        this.setState({type_constraint: event}, function(){
+            console.log(this.state)
+        })
+    }
+
+
+    updateLogic(logic) {
+        this.setState({logic: logic});
+    }
+
+    addChoices(choiceList){
+        this.setState({saved: choiceList})
     }
 
 
     saveNode() {
+        console.log('saved')
+        this.setState({saved: true})
         let node = this.state;
-        console.log('node after state', node)
-        if (node.choices && !node.choices.length) delete node.choices;
-        if (JSON.stringify(node)===JSON.stringify(this.props.data.node)) return;
+        if (node.choices && (node.choices.length<1)) delete node.choices;
+        if (JSON.stringify(node)===JSON.stringify(this.props.data.node)) {
+            console.log('the node was not saved')
+            return;
+        } 
 
-        console.log('reassigning node');
-        console.log('node', node);
-        console.log(this.props.data);
         let updatedNode = Object.assign(this.props.data, node);
-        console.log('updatedNode', updatedNode);
+        console.log('the node was saved', updatedNode);
         this.props.updateNode(updatedNode);
     }
 
 
     render() {
-
-        let displayTitle = this.getTitleOrHintValue('title');
         let displayHint = this.getTitleOrHintValue('hint');
+        console.log('rendering node!', this.props.index)
+        console.log('state', this.state)
 
         return (
             <div className="node">
+                {this.listTitles()}
                 <div className="form-group row">
-                    <label htmlFor="question-title" className="col-xs-2 col-form-label">Question:</label>
-                </div>
-                <div className="form-group row col-xs-12">
-                    <textarea className="form-control question-title" rows="1" displayTitle={displayTitle}
-                    onBlur={this.updateTitle}/>
-                </div>
-                <div className="form-group row">
-                    <TypeConstraint addTypeConstraint={this.addTypeConstraint} />
+                    <TypeConstraint 
+                        addTypeConstraint={this.addTypeConstraint} 
+                        saved={this.state.saved}/>
                     <label htmlFor="question-hint" className="col-xs-2 col-form-label">Hint:</label>
                     <div className="form-group col-xs-6">
                         <textarea className="form-control hint-title" rows="1" displayTitle={displayHint}
@@ -229,32 +166,44 @@ class Node extends React.Component {
                 {(this.state.type_constraint==="multiple_choice") &&
                     <MultipleChoice
                         choices={this.state.choices}
+                        addChoices={this.addChoices}
                         default_language={this.props.default_language}
                     />
                 }
 
                 {(this.state.type_constraint==="facility") &&
-                    <FacilityLogic />
+                    <FacilityLogic updateLogic={this.updateLogic}/>
                 }
 
                 {(this.state.type_constraint==="decimal") &&
-                    <MinMaxLogic />
+                    <MinMaxLogic updateLogic={this.updateLogic}/>
                 }
 
-                <button onClick={this.deleteNode}>delete</button>
+                <button onClick={this.props.deleteQuestion}>delete</button>
                 <button onClick={this.saveNode}>save</button>
             </div>
         );
     }
 }
 
-class TypeConstraint extends React.Component {
-    render(){
-        return(
+
+function TypeConstraint(props) {
+
+    let type_constraint = "text";
+
+    function updateTypeConstraint(event) {
+        type_constraint = event.target.value;
+        props.addTypeConstraint(type_constraint)
+        console.log('new type constraint', type_constraint);
+    }
+
+    function renderList() {
+        return (
             <div>
                 <label htmlFor="question-type" className="col-xs-2 col-form-label">Question Type:</label>
                 <div className="col-xs-2">
-                    <select className="form-control type-constraint" onChange={this.props.addTypeConstraint}>
+                    <select className="form-control type-constraint"
+                        onChange={updateTypeConstraint}>
                         <option></option>
                         <option value="text">text</option>
                         <option value="photo">photo</option>
@@ -270,9 +219,14 @@ class TypeConstraint extends React.Component {
                     </select>
                 </div>
             </div>
-        );
+        )
     }
+
+    return (
+        <div>
+            {renderList()}
+        </div>
+    )
 }
 
-
-export default NodeList;
+export default Node;

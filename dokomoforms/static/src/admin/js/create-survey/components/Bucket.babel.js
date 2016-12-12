@@ -2,6 +2,20 @@ import React from 'react';
 import utils from './../utils.js';
 import ReactDOM from 'react-dom';
 
+function Title(props) {
+    return(
+        <div>
+            <div className="form-group row">
+                <label htmlFor="question-title" className="col-xs-4 col-form-label">{props.language} Question:</label>
+            </div>
+            <div className="form-group row col-xs-12">
+                <textarea className="form-control question-title" rows="1" displayTitle={props.displayTitle}
+                    onBlur={props.updateTitle}/>
+            </div>
+        </div>
+    )
+}
+
 class FacilityLogic extends React.Component {
 
     constructor(props) {
@@ -110,5 +124,5 @@ class MinMaxLogic extends React.Component {
 }
 
 
-export { FacilityLogic, MinMaxLogic };
+export { Title, FacilityLogic, MinMaxLogic };
 

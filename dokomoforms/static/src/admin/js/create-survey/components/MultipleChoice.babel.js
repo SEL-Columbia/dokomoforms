@@ -217,7 +217,7 @@ class Choice extends React.Component {
         return(
             <div>
                 {this.rendering()}
-                <div className="form-group" style={{backgroundColor:'#02c39a'}}>
+                <div className="form-group" style={{backgroundColor:'#daddd8'}}>
                     <div className="row">
                         <label htmlFor="question-title" className="col-xs-2 col-form-label">{this.props.index}.</label>
                         <div className="col-xs-10">

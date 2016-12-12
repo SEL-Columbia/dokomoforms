@@ -1,6 +1,7 @@
 import React from 'react';
-import NodeList from './Node.babel.js';
+import NodeList from './NodeList.babel.js';
 import cookies from '../../../../common/js/cookies';
+
 
 class Survey extends React.Component {
 
@@ -12,20 +13,17 @@ class Survey extends React.Component {
         this.updateNodeList = this.updateNodeList.bind(this);
         this.submit = this.submit.bind(this);
         this.test = this.test.bind(this);
-        this.update_default = this.update_default.bind(this);
 
         this.state = {
             title: {},
             hint: {},
             default_language: 'English',
+            languages: ['English', 'Spanish'],
             survey_type: '',
             nodes: []
         }
     }
 
-    update_default(){
-        this.setState({default_language: "Spanish"});
-    }
 
     updateTitle(event) {
         if (this.state.title[this.state.default_language]===event.target.value) return;
@@ -39,6 +37,16 @@ class Survey extends React.Component {
     addDefaultLanguage(event) {
         this.setState({default_language: event.target.value}, function(){
             console.log('set state: default language updated');
+        });
+    }
+
+    addLanguage(event){
+        let languageList = [];
+        languageList = languageList.concat(this.state.languages);
+        // possible add check for duplicate
+        languageList.push(event.target.value);
+        this.setState({languages: languageList}, function(){
+            console.log('language added', event.target.value, this.state.languages);
         });
     }
 
@@ -172,7 +180,7 @@ class Survey extends React.Component {
                     nodes={this.state.nodes}
                     default_language={this.state.default_language}
                     updateNodeList={this.updateNodeList}
-                    language={this.state.default_language}
+                    languages={this.state.languages}
                 />
                 <button onClick={this.update_default}>button</button>
             </div>
