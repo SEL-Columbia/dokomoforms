@@ -33,8 +33,17 @@ class NodeList extends React.Component {
         // }
     }
 
+    componentWillReceiveProps(nextProps) {
+        if (this.props.submitting===true) return;
+        if (nextProps.submitting===true) {
+            console.log('nodelist seeing saved')
+            return this.props.updateNodeList(this.state.nodes);
+        }
+    }
+
 
     shouldComponentUpdate(nextProps, nextState) {
+        console.log('being called!');
         if (this.props.default_language!==nextProps.default_language) {
             console.log('default language changed');
             console.log(this.props.default_language, nextProps.default_language)
@@ -44,7 +53,7 @@ class NodeList extends React.Component {
             console.log('state change in nodelist');
             return true;
         }
-        if (this.props.languages.length!==this.nextProps.languages.length) {
+        if (this.props.languages.length!==nextProps.languages.length) {
             console.log('question added or deleted');
             return true;
         }
@@ -61,6 +70,7 @@ class NodeList extends React.Component {
         return nodes.map(function(node, index){
             return(
                 <Node
+                    saved={self.props.submitting}
                     key={node.id} 
                     index={index+1}
                     data={node.node}
@@ -124,18 +134,16 @@ class NodeList extends React.Component {
 
 
     render() {
-        console.log(Node);
         console.log('rendering nodelist', this.props.nodes)
         return (
-            <div>
-                <div className="row">
-                    <div className="col-md-9 node-list center-block">
-                        {this.listQuestions()}
-                        <button 
-                            onClick={this.addQuestion}
-                        >Add Question</button>
-                    </div>
+            <div className="node-list">
+                <div className="header">
+                    Questions
                 </div>
+                {this.listQuestions()}
+                <button 
+                    onClick={this.addQuestion}
+                >Add Question</button>
             </div>
         );
     }

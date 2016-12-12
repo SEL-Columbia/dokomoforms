@@ -29,7 +29,7 @@ class Node extends React.Component {
         }
     }
 
-    componentWillReceiveProps(nextProps, nextState) {
+    componentWillReceiveProps(nextProps) {
         console.log('will receive props');
         console.log(nextProps);
         if (nextProps.saved===true) {
@@ -132,12 +132,12 @@ class Node extends React.Component {
         console.log('saved')
         this.setState({saved: true})
         let node = this.state;
+        delete node.saved;
         if (node.choices && (node.choices.length<1)) delete node.choices;
         if (JSON.stringify(node)===JSON.stringify(this.props.data.node)) {
-            console.log('the node was not saved')
+            console.log('the node was not saved');
             return;
-        } 
-
+        }
         let updatedNode = Object.assign(this.props.data, node);
         console.log('the node was saved', updatedNode);
         this.props.updateNode(updatedNode);
@@ -153,14 +153,14 @@ class Node extends React.Component {
             <div className="node">
                 {this.listTitles()}
                 <div className="form-group row">
+                    <label htmlFor="question-hint" className="col-xs-2 col-form-label">Hint:</label>
+                    <textarea className="form-control survey-title" rows="1" displayTitle={displayHint}
+                    onBlur={this.updateHint}/>
+                </div>
+                <div className="form-group row">
                     <TypeConstraint 
                         addTypeConstraint={this.addTypeConstraint} 
                         saved={this.state.saved}/>
-                    <label htmlFor="question-hint" className="col-xs-2 col-form-label">Hint:</label>
-                    <div className="form-group col-xs-6">
-                        <textarea className="form-control hint-title" rows="1" displayTitle={displayHint}
-                        onBlur={this.updateHint}/>
-                    </div>
                 </div>
 
                 {(this.state.type_constraint==="multiple_choice") &&
@@ -200,8 +200,8 @@ function TypeConstraint(props) {
     function renderList() {
         return (
             <div>
-                <label htmlFor="question-type" className="col-xs-2 col-form-label">Question Type:</label>
-                <div className="col-xs-2">
+                <label htmlFor="type-constraint" className="col-xs-2 col-form-label">Question Type:</label>
+                <div className="col-xs-4">
                     <select className="form-control type-constraint"
                         onChange={updateTypeConstraint}>
                         <option></option>
