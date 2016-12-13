@@ -4,13 +4,13 @@ import ReactDOM from 'react-dom';
 
 function Title(props) {
     return(
-        <div>
+        <div className="title">
             <div className="form-group row">
-                <label htmlFor="question-title" className="col-xs-4 col-form-label">{props.language} Question:</label>
+                <label htmlFor="question-title" className="col-xs-4 col-form-label">{props.property}</label>
             </div>
             <div className="form-group row col-xs-12">
-                <textarea className="form-control question-title" rows="1" displayTitle={props.displayTitle}
-                    onBlur={props.updateTitle}/>
+                <textarea className="form-control question-title" rows="1" displayTitle={props.display}
+                    onBlur={props.update}/>
             </div>
         </div>
     )

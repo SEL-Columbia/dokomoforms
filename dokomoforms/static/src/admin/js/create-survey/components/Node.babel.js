@@ -64,7 +64,6 @@ class Node extends React.Component {
         //check if title input is the same as current state title
         if (event.target.value===this.state.title) return;
         
-        let prevTitleObj = {};
         let newTitle = {};
         newTitle[language] = event.target.value;
         
@@ -77,35 +76,53 @@ class Node extends React.Component {
     }
 
 
-    updateHint(event) {
+    updateHint(language, event) {
         let prevHint = this.getTitleOrHintValue('hint');
         // check if title input is the same as props title
         if (event.target.value===prevHint) return;
         // check if title input is the same as current state title
         if (event.target.value===this.state.title) return;
 
-        let hintObj = {};
-        hintObj[this.props.default_language] = event.target.value;
+        let newHint = {};
+        newHint[language] = event.target.value;
+        
+        let hintObj = Object.assign({}, this.state.hint, newHint);
         this.setState({hint: hintObj}, function() {
             console.log('updated hint', this.state.hint);
-            let properties = this.state.hint;
+            // let properties = this.state.title;
+            // this.saveNode();
         });
     }
 
 
     listTitles(){
+
         const self = this;
-        let displayTitle;
+        let displayQuestion, displayHint, key;
+
         return this.props.languages.map(function(language){
             console.log('language', language);
-            displayTitle = self.getTitleOrHintValue('title', language);
+            displayQuestion = self.getTitleOrHintValue('title', language);
+            displayHint = self.getTitleOrHintValue('hint', language);
+            key = language.toString()
             return (
-                <Title
-                    key={language.toString()}
-                    language={language}
-                    displayTitle={displayTitle}
-                    updateTitle={self.updateTitle.bind(null, language)}
-                />
+                <div key={language} className="title-group">
+                    <span className="language-header">{language}</span>
+                        <Title
+                            property={'Question'}
+                            key={displayQuestion}
+                            language={language}
+                            display={displayQuestion}
+                            update={self.updateTitle.bind(null, language)}
+                        />
+                        <Title
+                            property={'Hint'}
+                            key={key+"_h"}
+                            language={language}
+                            display={displayHint}
+                            update={self.updateHint.bind(null, language)}
+                        />
+                </div>
             )
         }) 
     }
@@ -132,6 +149,7 @@ class Node extends React.Component {
         console.log('saved')
         this.setState({saved: true})
         let node = this.state;
+        node.languages = this.props.languages;
         delete node.saved;
         if (node.choices && (node.choices.length<1)) delete node.choices;
         if (JSON.stringify(node)===JSON.stringify(this.props.data.node)) {
@@ -153,15 +171,29 @@ class Node extends React.Component {
             <div className="node">
                 {this.listTitles()}
                 <div className="form-group row">
-                    <label htmlFor="question-hint" className="col-xs-2 col-form-label">Hint:</label>
-                    <textarea className="form-control survey-title" rows="1" displayTitle={displayHint}
-                    onBlur={this.updateHint}/>
-                </div>
-                <div className="form-group row">
                     <TypeConstraint 
                         addTypeConstraint={this.addTypeConstraint} 
                         saved={this.state.saved}/>
+                        <div>
+                    <label htmlFor="type-constraint" className="col-xs-2 col-form-label">Allow Multiple Responses:</label>
+                    <div className="col-xs-4">
+                        <select className="form-control type-constraint">
+                            <option></option>
+                            <option value="text">text</option>
+                            <option value="photo">photo</option>
+                            <option value="integer">integer</option>
+                            <option value="decimal">decimal</option>
+                            <option value="date">date</option>
+                            <option value="time">time</option>
+                            <option value="timestamp">timestamp</option>
+                            <option value="location">location</option>
+                            <option value="facility">facility</option>
+                            <option value="multiple_choice">multiple choice</option>
+                            <option value="note">note</option>
+                        </select>
+                    </div>
                 </div>
+            </div>
 
                 {(this.state.type_constraint==="multiple_choice") &&
                     <MultipleChoice

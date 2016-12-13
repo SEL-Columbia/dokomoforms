@@ -10,11 +10,10 @@ class Survey extends React.Component {
         super(props);
 
         this.updateTitle = this.updateTitle.bind(this);
-        this.updateDefault = this.updateDefault.bind(this);
         this.addLanguage = this.addLanguage.bind(this);
+        this.updateDefault = this.updateDefault.bind(this);
         this.updateNodeList = this.updateNodeList.bind(this);
         this.submit = this.submit.bind(this);
-        this.test = this.test.bind(this);
 
         this.state = {
             title: {},
@@ -27,13 +26,14 @@ class Survey extends React.Component {
     }
 
 
-    updateTitle(event) {
-        if (this.state.title[this.state.default_language]===event.target.value) return;
-        let titleObj = {};
-        titleObj[this.state.default_language] = event.target.value;
-        this.setState({title: titleObj}, function(){
-            console.log('set state: title updated');
-        });
+    updateTitle(language, event) {
+        let newTitle = {};
+        newTitle[language] = event.target.value;
+        
+        let titleObj = Object.assign({}, this.state.title, newTitle);
+        this.setState({title: titleObj}, function() {
+            console.log('updated title', this.state.title);
+        })
     }
 
     updateDefault(event) {
@@ -69,125 +69,118 @@ class Survey extends React.Component {
     }
 
     submit() {
+        // var survey2 = {
+        //     title: {English: 'other responses'},
+        //     default_language: 'English',
+        //       survey_type: 'public',
+        //       metadata: {},
+        //       nodes: [{
+        //         node: {
+        //             type_constraint: 'integer',
+        //             allow_multiple: true,
+        //             allow_other: true,
+        //             title: {'English': 'multiple responses'},
+        //             hint: {'English': 'select more than one'}
+        //         }
+        //     }]
+        // }
+        // console.log(survey2)
+        // this.props.submitToDatabase(survey2)
         console.log('being called?')
         this.setState({isSubmitted: true}, function(){
             const newSurvey = {
                 title: this.state.title,
+                languages: this.state.languages,
                 default_language: this.state.default_language,
                 survey_type: this.state.survey_type,
                 nodes: this.state.nodes
             }
-            delete newSurvey.nodes[0].id;
             console.log('before submitting', newSurvey);
             this.props.submitToDatabase(newSurvey);
         })
     }
 
-    test() {
-        var modelSurvey = {
-          title: {English: 'languages survey 12',
-                German: 'languages survey 12'},
-          default_language: 'English',
-          languages: ['English', 'German'],
-          survey_type: 'public',
-          metadata: {},
-          nodes: [{
-              node: {
-                languages: ['English', 'German'],
-                title: {
-                    English: 'english test',
-                    German: 'german test'
-                },
-                hint: {
-                    English: 'e hint',
-                    German: 'g hint'
-                },
-                type_constraint: 'text',
-                logic: {}
-            }
-            },
-            {
-                node: {
-                    languages: ['English', 'German'],
-                    title: {
-                        English: 'english test 2',
-                        German: 'german test 2'
-                    },
-                    hint: {
-                        English: 'e hint',
-                        German: 'g hint'
-                    },
-                    type_constraint: 'facility',
-                    logic: {}
-                }
-            }]
-        };
-
-        var survey2 = {
-            title: {English: 'facility survey test'},
-            default_language: 'English',
-              survey_type: 'public',
-              metadata: {},
-              nodes: [{
-                  node: {
-                    type_constraint: 'facility',
-                    title: {'English': 'Facility'},
-                    hint: {'English': 'Select the facility from the list, or add a new one.'},
-                    logic: {
-                        'slat': 40.477398,
-                        'nlat': 40.91758,
-                        'wlng': -74.259094,
-                        'elng': -73.700165,
-                    }
-                }
-            }]
-        }
+    // test() {
+        // var modelSurvey = {
+        //   title: {English: 'languages survey 12',
+        //         German: 'languages survey 12'},
+        //   default_language: 'English',
+        //   languages: ['English', 'German'],
+        //   survey_type: 'public',
+        //   metadata: {},
+        //   nodes: [{
+        //       node: {
+        //         languages: ['English', 'German'],
+        //         title: {
+        //             English: 'english test',
+        //             German: 'german test'
+        //         },
+        //         hint: {
+        //             English: 'e hint',
+        //             German: 'g hint'
+        //         },
+        //         type_constraint: 'text',
+        //         logic: {}
+        //     },
+        //     {
+        //         node: {
+        //             languages: ['English', 'German'],
+        //             title: {
+        //                 English: 'english test 2',
+        //                 German: 'german test 2'
+        //             },
+        //             hint: {
+        //                 English: 'e hint',
+        //                 German: 'g hint'
+        //             },
+        //             type_constraint: 'facility',
+        //             logic: {}
+        //         }
+        //     },
+        //         node: {
+        //             type_constraint: 'facility',
+        //             allow_multiple: true,
+        //             title: {'English': 'Facility'},
+        //             hint: {'English': 'Select the facility from the list, or add a new one.'},
+        //             logic: {
+        //                 'slat': 40.477398,
+        //                 'nlat': 40.91758,
+        //                 'wlng': -74.259094,
+        //                 'elng': -73.700165,
+        //             }
+        //         }
+        //     }]
+    //     };
+    // }
 
 
-        var modelNode = {
-                languages: ['English', 'German'],
-                title: {
-                    English: 'english test',
-                    German: 'german test'
-                },
-                hint: {
-                    English: 'e hint',
-                    German: 'g hint'
-                },
-                type_constraint: 'text',
-                logic: {}
-        }
 
-        $.ajax({
-            type: "POST",
-            url: "/api/v0/surveys",
-            contentType: 'application/json',
-            processData: false,
-            data: JSON.stringify(survey2),
-            headers: {
-              'X-XSRFToken': cookies.getCookie('_xsrf')
-            },
-            dataType: 'json',
-            success: function(response) {
-              console.log('success!!!');
-            },
-            error: function(response) {
-                console.log('error')
-              console.log(response.responseText);
-            }
-        })
-    }
+        // var modelNode = {
+        //         languages: ['English', 'German'],
+        //         title: {
+        //             English: 'english test',
+        //             German: 'german test'
+        //         },
+        //         hint: {
+        //             English: 'e hint',
+        //             German: 'g hint'
+        //         },
+        //         type_constraint: 'text',
+        //         logic: {}
+        // }
 
 
     render() {
-        let displaytitle = 'Define Your Survey';
         return (
             <div className="container">
                 <div className="col-lg-8 survey center-block">
                     <div className="survey-header header">
                         Create a Survey
                     </div>
-                    <SurveyTitle updateTitle={this.updateTitle}/>
+                    <SurveyTitle 
+                        updateTitle={this.updateTitle}
+                        languages={this.state.languages}
+                    />
                     <hr/>
                     <Languages 
                         languages={this.state.languages}
@@ -202,42 +195,40 @@ class Survey extends React.Component {
                         languages={this.state.languages}
                     />
                     <button onClick={this.update_default}>default</button>
-                    <button onClick={this.submit}>submit</button>
                 </div>
+                <button onClick={this.submit}>submit</button>
             </div>
         );
     }
 }
 
 
-class SurveyTitle extends React.Component {
+function SurveyTitle(props) {
 
-    render() {
+    const languages = props.languages;
+
+    function titleList(languages){
+        return props.languages.map(function(language){
+            return (
+                <div className="col-xs-12 survey-title" key={language}>
+                    <div className="language-text"><span className="language-header">{language}</span></div>
+                    <textarea id="survey-title" className="form-control survey-title-text" rows="1"
+                        onBlur={props.updateTitle.bind(null, language)}/>
+                </div>
+            )
+        })
+    }
+
         return (
             <div>
                 <div className="form-group row survey-group">
                     <label htmlFor="survey-title" className="col-xs-4 col-form-label survey-label">Survey Title: </label>
-                <div className="col-xs-12">
-                    <textarea className="form-control survey-title" rows="1"
-                        onBlur={this.props.updateTitle}/>
-                </div>
+                    {titleList()}
                 </div>
             </div>
         )
-    }
 }
 
-
-class DefaultLanguage extends React.Component {
-
-    render() {
-        return (
-            <div>
-                Default Language: <input type="text" onBlur={this.props.updateDefault} />
-            </div>
-        );
-    }
-}
 
 function Languages(props){
 

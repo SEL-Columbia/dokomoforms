@@ -15,6 +15,8 @@ class Application extends React.Component {
         var okay = JSON.stringify(newSurvey);
         console.log('submitting to database', okay);
 
+        delete newSurvey.nodes[0].id;
+
         $.ajax({
             type: "POST",
             url: "/api/v0/surveys",
