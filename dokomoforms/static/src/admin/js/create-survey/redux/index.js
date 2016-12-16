@@ -6,7 +6,7 @@ import { createStore } from 'redux'
 // import App from './components/App'
 
 import surveyApp from './reducers'
-import App from './components/App'
+import App from './../components/App'
 
 let store = createStore(surveyApp)
 
@@ -16,4 +16,3 @@ render(
   </Provider>,
   document.getElementById('root')
 )
-

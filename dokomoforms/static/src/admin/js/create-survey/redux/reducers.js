@@ -11,16 +11,39 @@ function visibilityFilter(state = SHOW_ALL, action) {
   }
 }
 
+function surveys(state, action) {
+    switch (action.type) {
+        case 'ADD_NODE':
+            return Object.assign({}, state, {
+                nodes: [
+                    ...state.nodes,
+                    {
+                        id: 123456,
+                        node: {}
+                    }
+                ]
+            })
+        case 'UPDATE_NODE':
+
+    }
+}
+
 function todos(state = [], action) {
   switch (action.type) {
-    case ADD_TODO:
-      return [
-        ...state,
-        {
-          text: action.text,
-          completed: false
-        }
-      ]
+    case 'ADD_TODO':
+      var newState = Object.assign({}, state);
+
+      newState.todo.items.push({
+        message: action.message,
+        completed: false
+      })
+      // return [
+      //   ...state,
+      //   {
+      //     text: action.text,
+      //     completed: false
+      //   }
+      // ]
     case TOGGLE_TODO:
       return state.map((todo, index) => {
         if (index === action.index) {
