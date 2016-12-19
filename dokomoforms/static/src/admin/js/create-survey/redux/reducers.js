@@ -11,7 +11,7 @@ function visibilityFilter(state = SHOW_ALL, action) {
   }
 }
 
-function surveys(state, action) {
+function nodes(state, action) {
     switch (action.type) {
         case 'ADD_NODE':
             return Object.assign({}, state, {

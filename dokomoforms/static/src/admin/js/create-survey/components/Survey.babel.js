@@ -1,6 +1,7 @@
 import React from 'react';
 import NodeList from './NodeList.babel.js';
 import cookies from '../../../../common/js/cookies';
+import {connect} from 'react-redux';
 
 
 class Survey extends React.Component {
@@ -267,6 +268,12 @@ function Languages(props){
     )
 }
 
+function mapStateToProps(state){
+    return {
+        surveys: state.surveys
+    };
+}
 
+export default connect(mapStateToProps)(Survey);
 
-export default Survey;
+// export default Survey;

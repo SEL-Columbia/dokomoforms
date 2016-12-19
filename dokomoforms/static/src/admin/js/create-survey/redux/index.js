@@ -5,12 +5,12 @@ import { createStore } from 'redux'
 // import todoApp from './reducers'
 // import App from './components/App'
 
-import surveyApp from './reducers'
+import reducer from './reducers'
 import App from './../components/App'
 
-let store = createStore(surveyApp)
+let store = createStore(reducer);
 
-render(
+ReactDOM.render(
   <Provider store={store}>
     <App />
   </Provider>,
