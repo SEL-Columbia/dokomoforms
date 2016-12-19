@@ -1,6 +1,9 @@
 import React from 'react';
 import utils from './../utils.js';
 import Node from './Node.babel.js';
+import {bindActionCreators} from 'redux';
+import {connect} from 'react-redux';
+import {addNode} from './../redux/actions.babel.js';
 
 
 class NodeList extends React.Component {
@@ -16,29 +19,32 @@ class NodeList extends React.Component {
         
         this.state = {
             enableAddNode: false,
-            nodes: [{id: utils.addId('node'), node: {}}]
+            nodes: []
         }
     }
 
 
     componentWillMount() {
-        // if (!this.props.nodes.length) {
-        //     let nodeList = [];
-        //     let newNode = {
-        //         id: utils.addId('node'),
-        //         node: {}
-        //     };
-        //     nodeList.push(newNode);
-        //     this.setState({nodes: nodeList});
-        // }
+
+        if (!this.props.nodes.length) {
+            let nodeList = [];
+            let newNode = {
+                id: utils.addId('node'),
+                node: {}
+            };
+            nodeList.push(newNode);
+            this.setState({nodes: nodeList});
+            // this.props.addNode(newNode);
+        }
     }
 
     componentWillReceiveProps(nextProps) {
-        if (this.props.submitting===true) return;
-        if (nextProps.submitting===true) {
-            console.log('nodelist seeing saved')
-            return this.props.updateNodeList(this.state.nodes);
-        }
+        console.log('props', this.props, nextProps)
+        // if (this.props.submitting===true) return;
+        // if (nextProps.submitting===true) {
+        //     console.log('nodelist seeing saved')
+        //     return this.props.updateNodeList(this.state.nodes);
+        // }
     }
 
 
@@ -72,6 +78,7 @@ class NodeList extends React.Component {
                 <Node
                     saved={self.props.submitting}
                     key={node.id} 
+                    id={node.id}
                     index={index+1}
                     data={node.node}
                     enabled={self.state.enableAddNode}
@@ -79,6 +86,7 @@ class NodeList extends React.Component {
                     deleteQuestion={self.deleteQuestion.bind(null, index)}
                     default_language={self.props.default_language}
                     languages={self.props.languages}
+                    showSubSurvey={self.props.showSubSurvey}
                 />
             )
         })
@@ -149,4 +157,18 @@ class NodeList extends React.Component {
     }
 }
 
-export default NodeList
+export default NodeList;
+
+// function mapStateToProps(state){
+//     console.log('here')
+//     console.log(state.myApp)
+//     return {
+//         nodes: state.myApp
+//     }
+// }
+
+// function matchDispatchToProps(dispatch){
+//     return bindActionCreators({addNode: addNode}, dispatch)
+// }
+
+// export default connect(mapStateToProps, matchDispatchToProps)(NodeList);

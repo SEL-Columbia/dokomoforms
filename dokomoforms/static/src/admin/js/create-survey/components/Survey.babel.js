@@ -14,6 +14,7 @@ class Survey extends React.Component {
         this.addLanguage = this.addLanguage.bind(this);
         this.updateDefault = this.updateDefault.bind(this);
         this.updateNodeList = this.updateNodeList.bind(this);
+        this.showSubSurvey = this.showSubSurvey.bind(this);
         this.submit = this.submit.bind(this);
 
         this.state = {
@@ -22,8 +23,14 @@ class Survey extends React.Component {
             default_language: 'English',
             survey_type: 'public',
             nodes: [],
-            isSubmitted: false
+            isSubmitted: false,
+            current: null
         }
+    }
+
+    showSubSurvey(subsurvey){
+        console.log('made it back to survey')
+        this.setState({current: subsurvey})
     }
 
 
@@ -174,6 +181,8 @@ class Survey extends React.Component {
     render() {
         return (
             <div className="container">
+            {(!this.state.current) &&
+                <div>
                 <div className="col-lg-8 survey center-block">
                     <div className="survey-header header">
                         Create a Survey
@@ -194,10 +203,28 @@ class Survey extends React.Component {
                         default_language={this.state.default_language}
                         updateNodeList={this.updateNodeList}
                         languages={this.state.languages}
+                        showSubSurvey={this.showSubSurvey}
                     />
                     <button onClick={this.update_default}>default</button>
                 </div>
                 <button onClick={this.submit}>submit</button>
+                </div>
+            }
+            {(this.state.current) && 
+                <div>
+                    <div className="col-lg-8 survey center-block">
+                        <span>this is the subsurvey!! {this.state.current.id}</span>
+                        <NodeList
+                            submitting={this.state.isSubmitted}
+                            nodes={[]}
+                            default_language={this.state.default_language}
+                            updateNodeList={this.updateNodeList}
+                            languages={this.state.languages}
+                            showSubSurvey={this.showSubSurvey}
+                        />
+                    </div>
+                </div>
+            }
             </div>
         );
     }
@@ -268,12 +295,18 @@ function Languages(props){
     )
 }
 
-function mapStateToProps(state){
-    return {
-        surveys: state.surveys
-    };
-}
+// function mapStateToProps(state){
+//     return {
+//         surveys: state.surveys
+//     };
+// }
 
-export default connect(mapStateToProps)(Survey);
+// function mapDispatchToProps(dispatch){
+//     return {
+//         bindActionCreators({selectUser: selectUser}, dispatch)
+//     }
+// }
 
-// export default Survey;
+// export default connect(mapStateToProps, mapDispatchToProps)(Survey);
+
+export default Survey;

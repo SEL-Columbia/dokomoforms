@@ -1,6 +1,7 @@
 import utils from './../utils.js';
 import MultipleChoice from './MultipleChoice.babel.js';
-import { Title, FacilityLogic, MinMaxLogic } from './Bucket.babel.js';
+import { Title, FacilityLogic, MinMaxLogic } from './Logic.babel.js';
+import SubSurveyList from './SubSurveyList.babel.js';
 
 class Node extends React.Component {
 
@@ -16,6 +17,8 @@ class Node extends React.Component {
         this.addTypeConstraint = this.addTypeConstraint.bind(this);
         this.addChoices = this.addChoices.bind(this);
         this.updateLogic = this.updateLogic.bind(this);
+        this.showSubSurveys = this.showSubSurveys.bind(this);
+        this.goToSubSurvey = this.goToSubSurvey.bind(this);
         this.listTitles = this.listTitles.bind(this);
         this.saveNode = this.saveNode.bind(this);
 
@@ -24,8 +27,10 @@ class Node extends React.Component {
             hint: {},
             type_constraint: '',
             choices: [],
+            sub_surveys: [],
             logic: {},
-            saved: false
+            saved: false,
+            showSubSurveys: false
         }
     }
 
@@ -92,6 +97,28 @@ class Node extends React.Component {
             // let properties = this.state.title;
             // this.saveNode();
         });
+    }
+
+    showSubSurveys(){
+        this.setState({showSubSurveys: true})
+    }
+
+    goToSubSurvey(bucket, id) {
+        let copy = [];
+        copy = copy.concat(this.state.sub_surveys)
+        let newSubSurvey = {
+            id: utils.addId('survey'),
+            buckets: [{
+                bucket_type: this.state.type_constraint,
+                buckets: [bucket]
+            }],
+            nodes: []
+        }
+        copy.push(newSubSurvey);
+        this.setState({sub_surveys: copy}, function(){
+            console.log('added sub to node', this.state)
+            this.props.showSubSurvey(newSubSurvey, this.state.title)
+        })
     }
 
 
@@ -166,6 +193,7 @@ class Node extends React.Component {
         let displayHint = this.getTitleOrHintValue('hint');
         console.log('rendering node!', this.props.index)
         console.log('state', this.state)
+        console.log('props???', this.props)
 
         return (
             <div className="node">
@@ -211,8 +239,17 @@ class Node extends React.Component {
                     <MinMaxLogic updateLogic={this.updateLogic}/>
                 }
 
+                {(this.state.showSubSurveys===true) &&
+                    <SubSurveyList
+                        choices={this.state.choices}
+                        id={this.props.id}
+                        goToSubSurvey={this.goToSubSurvey}
+                    />
+                }
+
                 <button onClick={this.props.deleteQuestion}>delete</button>
                 <button onClick={this.saveNode}>save</button>
+                <button onClick={this.showSubSurveys}>Add Subsurvey</button>
             </div>
         );
     }
