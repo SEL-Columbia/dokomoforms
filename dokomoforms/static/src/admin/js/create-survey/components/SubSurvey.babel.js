@@ -1,5 +1,8 @@
 import React from 'react';
-import NodeList from './Node.babel.js';
+import NodeList from './NodeList.babel.js';
+import {bindActionCreators} from 'redux';
+import {connect} from 'react-redux';
+import {updateSurveyView} from './../redux/actions.babel.js';
 
 // DEFINITION:
 // a SUBSURVEY should receive from parent component:
@@ -19,36 +22,65 @@ class SubSurvey extends React.Component {
     constructor(props) {
         super(props);
 
+        this.viewHandler = this.viewHandler.bind(this)
+
         this.state = {
             buckets: [],
             nodes: []
         };
     }
 
-    function(){
-        sub_survey = {
-            buckets: ['one bucket'],
-            nodes: ['one node']
-        };
-        this.props.updateSurvey(sub_survey)
+    viewHandler(){
+        this.props.updateSurveyView(this.props.nodeId, this.props.previous, null)
     }
 
-
     render() {
-        console.log(this.props.data)
-        // const childrenWithProps = React.Children.map(this.props.children, function(child) {
-        //     React.cloneElement(child, {
-        //         nodes: self.state.nodes,
-        //         buckets: self.state.buckets
-        //     })
-        // })
+        let q = this.props.nodes[this.props.nodeId].node.title.English;
+        console.log(q)
+        console.log('from the new view', this.props)
         return (
-            <div>
-                {childrenWithProps}  
+            <div className="container">
+                <div className="col-lg-8 survey center-block">
+                    <div className="survey-header header">
+                        Create a Sub Survey
+                    </div>
+
+                    <div>
+                        Question: {q}
+                        {(this.props.survey.buckets[0].type_constraint=='multiple_choice') &&
+                            <span>Answer: {this.props.survey.buckets[0].choice_number}</span>
+                        }
+                    </div>
+                    
+                    <NodeList
+                        key={this.props.survey.id}
+                        submitted={this.props.submitted}
+                        survey_id={this.props.survey.id}
+                        survey_nodes={this.props.survey.nodes}
+                        languages={this.props.languages}
+                    />
+                </div>
+                <button onClick={this.viewHandler}>back</button>
             </div>
         );
     }
 
 }
 
-export default SubSurvey;
+function mapStateToProps(state){
+    console.log('here')
+    console.log(state)
+    return {
+        surveys: state.surveys,
+        nodes: state.nodes
+    }
+}
+
+function matchDispatchToProps(dispatch){
+    return bindActionCreators({updateSurveyView: updateSurveyView}, dispatch)
+}
+
+export default connect(mapStateToProps, matchDispatchToProps)(SubSurvey);
+
+// export default SubSurvey;
+

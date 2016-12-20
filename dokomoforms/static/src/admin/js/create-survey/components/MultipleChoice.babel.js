@@ -15,22 +15,56 @@ class MultipleChoiceList extends React.Component {
         this.save = this.save.bind(this);
 
         this.state = {
-            enableAddChoice: false,
+            enableAddChoice: true,
             choices: [],
             saved: false
         }
     }
 
-
-    componentWillMount() {
+    componentWillMount(){
+        console.log('this is mounting', this.props)
         if (!this.props.choices ||
             !this.props.choices.length) {
             let choiceList = [];
             let newChoice = {id: utils.addId('choice')};
-            newChoice[this.props.default_language] = '';
+            newChoice['English'] = '';
+            console.log(newChoice);
             choiceList.push(newChoice);
             this.setState({choices: choiceList});
         }
+        else {
+            let choices = [];
+            choices = choices.concat(this.props.choices)
+            this.setState({choices: choices})
+        }
+    }
+
+    componentWillReceiveProps(nextProps) {
+
+        // if (!this.props.choices ||
+        //     !this.props.choices.length) {
+        //     let choiceList = [];
+        //     let newChoice = {id: utils.addId('choice')};
+        //     newChoice[this.props.default_language] = '';
+        //     choiceList.push(newChoice);
+        //     this.setState({choices: choiceList});
+        // }
+        // console.log('choices ', this.props)
+        // if (!nextProps.choices || !nextProps.choices.length) {
+        //     console.log('no')
+        //     let choiceList = [];
+        //     let newChoice = {id: utils.addId('choice')};
+        //     newChoice[this.props.default_language] = '';
+        //     choiceList.push(newChoice);
+        //     this.setState({choices: choiceList});
+        // } else {
+        //     console.log('yes')
+        //     this.setState({choices: nextProps.choices})
+        // }
+    }
+
+    shouldComponentUpdate(nextProps, nextState){
+        return true;
     }
 
 
@@ -38,7 +72,11 @@ class MultipleChoiceList extends React.Component {
         console.log('rerendering list!!');
 
         let self = this;
-        let choices = this.state.choices;
+        let choices = [];
+
+        if (this.state.choices) {
+            choices = choices.concat(this.state.choices)
+        }
         let answer;
 
         console.log('choices before rendering', choices)
@@ -63,9 +101,9 @@ class MultipleChoiceList extends React.Component {
         choiceList = choiceList.concat(this.state.choices);
         console.log('adding choice', choiceList);
         let newChoice = {id: utils.addId('choice')};
-        newChoice[this.props.default_language]='';
+        newChoice['English']='';
         choiceList.push(newChoice);
-        this.setState({enableAddChoice: false, choices: choiceList}, function(){
+        this.setState({enableAddChoice: true, choices: choiceList}, function(){
             console.log('new choice added', this.state.choices);
         });
     }
@@ -100,19 +138,20 @@ class MultipleChoiceList extends React.Component {
  
 
     changeAddChoice(id){
-        console.log('!!!!!!!!')
-        console.log(this.state.choices)
-        console.log('!!!!!!!!')
+        return;
+        // console.log('!!!!!!!!')
+        // console.log(this.state.choices)
+        // console.log('!!!!!!!!')
 
-        let choice;
-        for (var i=0; i<this.state.choices.length; i++) {
-            choice=this.state.choices[i]
-            console.log(choice);
-            if (!choice[this.props.default_language].length &&
-                choice.id!==id) return;
-        }
-        let previous = this.state.enableAddChoice;
-        this.setState({enableAddChoice: !previous});
+        // let choice;
+        // for (var i=0; i<this.state.choices.length; i++) {
+        //     choice=this.state.choices[i]
+        //     console.log(choice);
+        //     if (!choice[this.props.default_language].length &&
+        //         choice.id!==id) return;
+        // }
+        // let previous = this.state.enableAddChoice;
+        // this.setState({enableAddChoice: !previous});
     }
 
 
@@ -124,6 +163,8 @@ class MultipleChoiceList extends React.Component {
 
     render() {
 
+        console.log('rendering choices!!!')
+
         return(
             <div style={{backgroundColor:'#00a896'}}>
                 <h2>multiple choice</h2>
@@ -133,10 +174,6 @@ class MultipleChoiceList extends React.Component {
                     onClick={this.addChoice}
                     disabled={!this.state.enableAddChoice}
                 >add choice</button>
-                <button id="allow-other"
-                    value="allow other"
-                    onClick={this.allowOther}
-                >allow other</button>
             </div>
         )
     }

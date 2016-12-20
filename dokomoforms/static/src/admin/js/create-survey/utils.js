@@ -4,13 +4,15 @@ module.exports = (function() {
      * @param  {String} selector [description]
      */
 
+    let lastSurveyId = 1000;
     let lastNodeId = 0;
-    let lastChoiceId = 0;
+    let lastChoiceId = 100;
 
     function _addId(type) {
         let id = 0;
-        if (type==='node') id = ++lastNodeId;
-        if (type==='choice') id = ++lastChoiceId;
+        if (type==='node') { id = ++lastNodeId; }
+        if (type==='choice') { id = ++lastChoiceId; }
+        if (type==='survey') { id = ++lastSurveyId; }
         return id;
     }
 

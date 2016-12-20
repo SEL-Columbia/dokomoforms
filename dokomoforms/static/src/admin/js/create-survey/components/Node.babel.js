@@ -2,6 +2,9 @@ import utils from './../utils.js';
 import MultipleChoice from './MultipleChoice.babel.js';
 import { Title, FacilityLogic, MinMaxLogic } from './Logic.babel.js';
 import SubSurveyList from './SubSurveyList.babel.js';
+import {bindActionCreators} from 'redux';
+import {connect} from 'react-redux';
+import {addSurvey, updateNode, updateSurveyView} from './../redux/actions.babel.js';
 
 class Node extends React.Component {
 
@@ -17,10 +20,13 @@ class Node extends React.Component {
         this.addTypeConstraint = this.addTypeConstraint.bind(this);
         this.addChoices = this.addChoices.bind(this);
         this.updateLogic = this.updateLogic.bind(this);
+        this.updateChoices = this.updateChoices.bind(this);
+        this.addSubSurvey = this.addSubSurvey.bind(this);
         this.showSubSurveys = this.showSubSurveys.bind(this);
         this.goToSubSurvey = this.goToSubSurvey.bind(this);
         this.listTitles = this.listTitles.bind(this);
         this.saveNode = this.saveNode.bind(this);
+        this.addSubSurveyHandler = this.addSubSurveyHandler.bind(this);
 
         this.state = {
             title: {},
@@ -37,12 +43,15 @@ class Node extends React.Component {
     componentWillReceiveProps(nextProps) {
         console.log('will receive props');
         console.log(nextProps);
-        if (nextProps.saved===true) {
-            console.log('true')
-            this.setState({editable: false}, function(){
-                this.save()
-            })
-        };
+        if (nextProps.sub_surveys && nextProps.sub_surveys.length) {
+            this.setState({showSubSurveys: true})
+        }
+        // if (nextProps.saved===true) {
+        //     console.log('true')
+        //     this.setState({editable: false}, function(){
+        //         this.save()
+        //     })
+        // };
     }
 
     shouldComponentUpdate(nextProps, nextState) {
@@ -60,6 +69,16 @@ class Node extends React.Component {
         else return this.props.data[property][language]
     };
 
+    updateChoices(choiceList){
+        let newChoices = [];
+        if (this.state.type_constraint=='multiple_choice') {
+            newChoices = newChoices.concat(choiceList)
+        }
+        this.setState({choices: choiceList}, function(){
+            this.saveNode()
+        })
+    }
+
 
     updateTitle(language, event) {
         console.log(event);
@@ -76,7 +95,7 @@ class Node extends React.Component {
         this.setState({title: titleObj}, function() {
             console.log('updated title', this.state.title);
             // let properties = this.state.title;
-            // this.saveNode();
+            this.saveNode();
         });
     }
 
@@ -95,30 +114,57 @@ class Node extends React.Component {
         this.setState({hint: hintObj}, function() {
             console.log('updated hint', this.state.hint);
             // let properties = this.state.title;
-            // this.saveNode();
+            this.saveNode();
         });
+    }
+
+    addSubSurveyHandler(){
+        if (this.state.showSubSurveys) {
+            this.addSubSurvey();
+        }
+        this.showSubSurveys();
     }
 
     showSubSurveys(){
         this.setState({showSubSurveys: true})
     }
 
-    goToSubSurvey(bucket, id) {
-        let copy = [];
-        copy = copy.concat(this.state.sub_surveys)
-        let newSubSurvey = {
+    addSubSurvey() {
+        let sub_surveys = [];
+        if (this.props.sub_surveys) {
+            sub_surveys = sub_surveys.concat(this.props.sub_surveys)
+        }
+        let newSurvey = {
             id: utils.addId('survey'),
-            buckets: [{
-                bucket_type: this.state.type_constraint,
-                buckets: [bucket]
-            }],
+            buckets: [],
             nodes: []
         }
-        copy.push(newSubSurvey);
-        this.setState({sub_surveys: copy}, function(){
-            console.log('added sub to node', this.state)
-            this.props.showSubSurvey(newSubSurvey, this.state.title)
-        })
+        sub_surveys.push(newSurvey.id)
+        console.log('trying to add subsurbeys!!!!!')
+        this.props.addSurvey(newSurvey, newSurvey.id);
+        console.log(this.props.id, sub_surveys)
+        this.props.updateNode(this.props.id, sub_surveys, 'sub_surveys')
+    }
+
+    goToSubSurvey(id) {
+        console.log('before reducer', this.props.id)
+        this.props.updateSurveyView(this.props.id, id, this.props.parent)
+        // let copy = [];
+        // copy = copy.concat(this.state.sub_surveys)
+        // let newSubSurvey = {
+        //     id: utils.addId('survey'),
+        //     buckets: [{
+        //         bucket_type: this.state.type_constraint,
+        //         buckets: [bucket]
+        //     }],
+        //     nodes: []
+        // }
+        // copy.push(newSubSurvey);
+        // this.setState({sub_surveys: copy}, function(){
+        //     console.log('added sub to node', this.state)
+        //     this.saveNode();
+        //     this.props.showSubSurvey(newSubSurvey, this.state.title)
+        // })
     }
 
 
@@ -131,13 +177,14 @@ class Node extends React.Component {
             console.log('language', language);
             displayQuestion = self.getTitleOrHintValue('title', language);
             displayHint = self.getTitleOrHintValue('hint', language);
+            console.log('display!!!', displayQuestion, displayHint)
             key = language.toString()
             return (
                 <div key={language} className="title-group">
                     <span className="language-header">{language}</span>
                         <Title
                             property={'Question'}
-                            key={displayQuestion}
+                            key={key+"_t"}
                             language={language}
                             display={displayQuestion}
                             update={self.updateTitle.bind(null, language)}
@@ -159,6 +206,7 @@ class Node extends React.Component {
         console.log('being called.....')
         this.setState({type_constraint: event}, function(){
             console.log(this.state)
+            this.saveNode()
         })
     }
 
@@ -178,18 +226,20 @@ class Node extends React.Component {
         let node = this.state;
         node.languages = this.props.languages;
         delete node.saved;
-        if (node.choices && (node.choices.length<1)) delete node.choices;
+        delete node.showSubSurveys;
+        if (node.choices && node.choices.length<1) delete node.choices;
         if (JSON.stringify(node)===JSON.stringify(this.props.data.node)) {
             console.log('the node was not saved');
             return;
         }
         let updatedNode = Object.assign(this.props.data, node);
         console.log('the node was saved', updatedNode);
-        this.props.updateNode(updatedNode);
+        this.props.updateNodeOther(updatedNode);
     }
 
 
     render() {
+        let displayTitle = this.getTitleOrHintValue('title');
         let displayHint = this.getTitleOrHintValue('hint');
         console.log('rendering node!', this.props.index)
         console.log('state', this.state)
@@ -200,102 +250,127 @@ class Node extends React.Component {
                 {this.listTitles()}
                 <div className="form-group row">
                     <TypeConstraint 
+                        type_constraint={this.props.data.type_constraint}
                         addTypeConstraint={this.addTypeConstraint} 
                         saved={this.state.saved}/>
                         <div>
                     <label htmlFor="type-constraint" className="col-xs-2 col-form-label">Allow Multiple Responses:</label>
                     <div className="col-xs-4">
                         <select className="form-control type-constraint">
-                            <option></option>
-                            <option value="text">text</option>
-                            <option value="photo">photo</option>
-                            <option value="integer">integer</option>
-                            <option value="decimal">decimal</option>
-                            <option value="date">date</option>
-                            <option value="time">time</option>
-                            <option value="timestamp">timestamp</option>
-                            <option value="location">location</option>
-                            <option value="facility">facility</option>
-                            <option value="multiple_choice">multiple choice</option>
-                            <option value="note">note</option>
+                            <option value="photo">no</option>
+                            <option value="text">yes</option>
                         </select>
                     </div>
                 </div>
             </div>
 
-                {(this.state.type_constraint==="multiple_choice") &&
+                {(this.state.type_constraint=="multiple_choice" ||
+                    this.props.data.type_constraint=="multiple_choice") &&
                     <MultipleChoice
-                        choices={this.state.choices}
+                        choices={this.props.data.choices}
                         addChoices={this.addChoices}
+                        updateChoices={this.updateChoices}
                         default_language={this.props.default_language}
                     />
                 }
 
-                {(this.state.type_constraint==="facility") &&
-                    <FacilityLogic updateLogic={this.updateLogic}/>
-                }
-
-                {(this.state.type_constraint==="decimal") &&
-                    <MinMaxLogic updateLogic={this.updateLogic}/>
-                }
-
-                {(this.state.showSubSurveys===true) &&
+                {(this.state.showSubSurveys===true || this.props.sub_surveys) &&
                     <SubSurveyList
+                        type_constraint={this.state.type_constraint}
+                        sub_surveys={this.props.sub_surveys}
                         choices={this.state.choices}
                         id={this.props.id}
+                        addSubSurvey={this.addSubSurvey}
                         goToSubSurvey={this.goToSubSurvey}
                     />
                 }
 
                 <button onClick={this.props.deleteQuestion}>delete</button>
                 <button onClick={this.saveNode}>save</button>
-                <button onClick={this.showSubSurveys}>Add Subsurvey</button>
+                <button onClick={this.addSubSurveyHandler}>Add Subsurvey</button>
             </div>
         );
     }
 }
 
 
-function TypeConstraint(props) {
+class TypeConstraint extends React.Component {
 
-    let type_constraint = "text";
+    constructor(props) {
+        super(props)
 
-    function updateTypeConstraint(event) {
-        type_constraint = event.target.value;
-        props.addTypeConstraint(type_constraint)
-        console.log('new type constraint', type_constraint);
+        this.updateTypeConstraint = this.updateTypeConstraint.bind(this)
+        this.renderList = this.renderList.bind(this);
+
+        this.state = {
+            type_constraint: "text"
+        };
     }
 
-    function renderList() {
+    componentWillMount(){
+        console.log('type onstraint monti')
+        if (!this.props.type_constraint || !this.props.type_constraint.length) {
+            return;
+        }
+        this.setState({type_constraint: this.props.type_constraint})
+    }
+
+
+    updateTypeConstraint(event) {
+        this.setState({type_constraint: event.target.value}, function(){
+            this.props.addTypeConstraint(this.state.type_constraint)
+            console.log('new type constraint', this.state.type_constraint);
+        })
+    }
+
+    renderList() {
         return (
             <div>
                 <label htmlFor="type-constraint" className="col-xs-2 col-form-label">Question Type:</label>
                 <div className="col-xs-4">
                     <select className="form-control type-constraint"
-                        onChange={updateTypeConstraint}>
-                        <option></option>
-                        <option value="text">text</option>
-                        <option value="photo">photo</option>
-                        <option value="integer">integer</option>
-                        <option value="decimal">decimal</option>
-                        <option value="date">date</option>
-                        <option value="time">time</option>
-                        <option value="timestamp">timestamp</option>
-                        <option value="location">location</option>
-                        <option value="facility">facility</option>
-                        <option value="multiple_choice">multiple choice</option>
-                        <option value="note">note</option>
+                        value={this.state.type_constraint}
+                        onChange={this.updateTypeConstraint}>
+                    <option></option>
+                    <option value="text">text</option>
+                    <option value="photo">photo</option>
+                    <option value="integer">integer</option>
+                    <option value="decimal">decimal</option>
+                    <option value="date">date</option>
+                    <option value="time">time</option>
+                    <option value="timestamp">timestamp</option>
+                    <option value="location">location</option>
+                    <option value="facility">facility</option>
+                    <option value="multiple_choice">multiple choice</option>
+                    <option value="note">note</option>
                     </select>
                 </div>
             </div>
         )
     }
 
-    return (
-        <div>
-            {renderList()}
-        </div>
-    )
+    render() {
+        return (
+            <div>
+                {this.renderList()}
+            </div>
+        )
+    }
 }
 
-export default Node;
+function mapStateToProps(state){
+    console.log('here')
+    console.log(state)
+    return {
+        surveys: state.surveys,
+        nodes: state.nodes
+    }
+}
+
+function matchDispatchToProps(dispatch){
+    return bindActionCreators({addSurvey: addSurvey, updateNode: updateNode, updateSurveyView: updateSurveyView}, dispatch)
+}
+
+export default connect(mapStateToProps, matchDispatchToProps)(Node);
+
+// export default Node;
