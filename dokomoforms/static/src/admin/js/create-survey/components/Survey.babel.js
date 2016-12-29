@@ -42,12 +42,12 @@ class Survey extends React.Component {
         return update;
     }
 
-    // showSubSurvey(subsurvey){
-    //     console.log('made it back to survey')
-    //     this.setState({current: subsurvey}, function(){
-    //         console.log('current updated', this.state.current)
-    //     })
-    // }
+    showSubSurvey(subsurvey){
+        console.log('made it back to survey')
+        this.setState({current: subsurvey}, function(){
+            console.log('current updated', this.state.current)
+        })
+    }
 
 
     updateTitle(language, event) {

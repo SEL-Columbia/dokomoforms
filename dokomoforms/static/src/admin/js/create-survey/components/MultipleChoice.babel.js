@@ -117,9 +117,9 @@ class MultipleChoiceList extends React.Component {
 
         for (var i=0; i<choiceList.length; i++) {
             if (choiceList[i].id===id) {
-                console.log(choiceList[i][this.props.default_language], text);
+                console.log(choiceList[i]['English'], text);
                 console.log('its updating');
-                choiceList[i][this.props.default_language]=text;
+                choiceList[i]['English']=text;
                 updated = true;
                 break;
             }

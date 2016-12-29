@@ -119,6 +119,7 @@ class Node extends React.Component {
     }
 
     addSubSurveyHandler(){
+        console.log('add subsurvey being called');
         if (this.state.showSubSurveys) {
             this.addSubSurvey();
         }
@@ -276,9 +277,9 @@ class Node extends React.Component {
 
                 {(this.state.showSubSurveys===true || this.props.sub_surveys) &&
                     <SubSurveyList
-                        type_constraint={this.state.type_constraint}
+                        type_constraint={this.props.data.type_constraint}
                         sub_surveys={this.props.sub_surveys}
-                        choices={this.state.choices}
+                        choices={this.props.data.choices}
                         id={this.props.id}
                         addSubSurvey={this.addSubSurvey}
                         goToSubSurvey={this.goToSubSurvey}

@@ -4,7 +4,7 @@ import MultipleChoice from './MultipleChoice.babel.js';
 import { Title, FacilityLogic, MinMaxLogic } from './Logic.babel.js';
 import {bindActionCreators} from 'redux';
 import {connect} from 'react-redux';
-import {updateSurveys} from './../redux/actions.babel.js';
+import {updateSurveys, getSurvey} from './../redux/actions.babel.js';
 
 class SubSurveyList extends React.Component {
 
@@ -40,24 +40,25 @@ class SubSurveyList extends React.Component {
     	let renderList = [];
     	if (this.props.sub_surveys) {
     		console.log('it has subsurveys')
+    		console.log(this.props)
     		subList = subList.concat(this.props.sub_surveys)
     	}
     	if (subList.length > 0) {
     		console.log('subList', subList)
     		let sub_survey;
     		subList.forEach(function(subId, index) {
-	        sub_survey = subId
-	        console.log('sub_survey', sub_survey)
-	        renderList.push(
-	            <SubSurveyListItem
-	            	goToSubSurvey={self.goToSubSurvey}
-	            	key={sub_survey}
-	                sub_surveyId={sub_survey}
-	                type_constraint={self.props.type_constraint}
-	                choices={self.props.choices}
-	                addBucket={self.addBucket}
-	            />
-	        	)
+		        sub_survey = self.props.surveys[subId]
+		        console.log('sub_survey', sub_survey)
+		        renderList.push(
+		            <SubSurveyListItem
+		            	goToSubSurvey={self.goToSubSurvey}
+		            	key={sub_survey.id}
+		                sub_survey={sub_survey}
+		                type_constraint={self.props.type_constraint}
+		                choices={self.props.choices}
+		                addBucket={self.addBucket}
+		            />
+		        )
 			})
     	}
     	console.log(renderList);
@@ -83,23 +84,25 @@ class SubSurveyList extends React.Component {
 
 function SubSurveyListItem(props) {
 
-	let bucket = {bucket_type: props.type_constraint, bucket: undefined}
+	let type_constraint = props.type_constraint;
 
 	function viewSubSurveyHandler(){
-		props.goToSubSurvey(props.sub_surveyId)
+		props.goToSubSurvey(props.sub_survey.id)
 	}
 
 	function addBucketHandler(event){
 		console.log('bucket handler', props, event.target.value)
+
+		let newBucket = {bucket_type: props.type_constraint, bucket: undefined}
 		if (props.type_constraint=='multiple_choice') {
-			bucket.bucket = {}
-			bucket.bucket.choice_number = parseInt(event.target.value);
+			newBucket.bucket = {}
+			newBucket.bucket.choice_number = parseInt(event.target.value);
 		} else {
-			bucket.bucket = [];
-			bucket.bucket.push(JSON.stringify(event.target.value))
+			newBucket.bucket = [];
+			newBucket.bucket.push(JSON.stringify(event.target.value))
 		}
-		console.log([bucket]);
-		props.addBucket({buckets: [bucket]}, props.sub_surveyId)
+		console.log([newBucket]);
+		props.addBucket({buckets: [newBucket]}, props.sub_survey.id)
 	}
 
 	function listChoices() {
@@ -124,8 +127,8 @@ function SubSurveyListItem(props) {
 	            <label htmlFor="type-constraint" className="col-xs-2 col-form-label">Bucket</label>
 	            <div className="col-xs-4">
 	            	{(props.type_constraint=="multiple_choice") &&
-		            	<select onChange={addBucketHandler}>
-		            	{listChoices()}
+		            	<select onChange={addBucketHandler} value={props.sub}>
+		            		{listChoices()}
 		            	</select>
 	            	}
 	            	{(props.type_constraint!=="multiple_choice") &&
@@ -143,15 +146,11 @@ function SubSurveyListItem(props) {
 function mapStateToProps(state){
     return {
         surveys: state.surveys
-    };
+    }
 }
 
-function mapDispatchToProps(dispatch){
-    return (
-        bindActionCreators({updateSurveys: updateSurveys}, dispatch)
-    )
+function matchDispatchToProps(dispatch){
+    return bindActionCreators({getSurvey: getSurvey, updateSurveys: updateSurveys}, dispatch)
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(SubSurveyList);
-
-// export default SubSurveyList
+export default connect(mapStateToProps, matchDispatchToProps)(SubSurveyList);
