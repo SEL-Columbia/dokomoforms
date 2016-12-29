@@ -98,10 +98,10 @@ function SubSurveyListItem(props) {
 			newBucket.bucket = {}
 			newBucket.bucket.choice_number = parseInt(event.target.value);
 		} else {
-			newBucket.bucket = [];
-			newBucket.bucket.push(JSON.stringify(event.target.value))
+			newBucket.bucket = "[" + event.target.value + "]";
 		}
-		console.log([newBucket]);
+
+		console.log('new bucket', newBucket.bucket);
 		props.addBucket({buckets: [newBucket]}, props.sub_survey.id)
 	}
 

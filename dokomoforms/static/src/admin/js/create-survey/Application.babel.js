@@ -52,6 +52,7 @@ class Application extends React.Component {
             console.log('get', self.props.nodes)
             nodeObj = Object.assign({}, self.props.nodes[node_id])
             delete nodeObj.id
+            delete nodeObj.allow_other
             if (nodeObj.node.sub_surveys) {
                 delete nodeObj.node.sub_surveys
             }
@@ -94,6 +95,7 @@ class Application extends React.Component {
             console.log('submitting')
             console.log(self.props.surveys)
             let database_survey = self.deleteExcessParams(self.props.surveys[1001], 1001)
+            console.log('submitting this survey!!!!!', database_survey)
             database_survey.survey_type = 'public';
             $.ajax({
                 type: "POST",

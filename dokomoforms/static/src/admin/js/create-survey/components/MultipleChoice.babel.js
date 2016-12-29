@@ -13,11 +13,13 @@ class MultipleChoiceList extends React.Component {
         this.updateChoice = this.updateChoice.bind(this);
         this.changeAddChoice = this.changeAddChoice.bind(this);
         this.save = this.save.bind(this);
+        this.allowOther = this.allowOther.bind(this);
 
         this.state = {
             enableAddChoice: true,
             choices: [],
-            saved: false
+            saved: false,
+            allow_other: false
         }
     }
 
@@ -37,6 +39,28 @@ class MultipleChoiceList extends React.Component {
             choices = choices.concat(this.props.choices)
             this.setState({choices: choices})
         }
+    }
+
+    allowOther() {
+        let id;
+        let self = this;
+        this.setState({allow_other: true}, function(){
+            this.props.allowOther(true);
+        })
+
+        // let promise = new Promise (function(resolve, reject) {
+        //     console.log('inside the promise')
+        //     let id = self.addChoice()
+        //     resolve(id);
+        // })
+        
+        // promise.then(function(val){
+        //     console.log('val', val)
+        //     self.updateChoice(val, "other")
+        // })
+        // console.log('result', this.addChoice())
+        // console.log('allow other new id', id)
+        // this.updateChoice(id, "other");
     }
 
     componentWillReceiveProps(nextProps) {
@@ -80,7 +104,7 @@ class MultipleChoiceList extends React.Component {
         let answer;
 
         console.log('choices before rendering', choices)
-        return choices.map(function(choice, index){
+        choices = choices.map(function(choice, index){
             answer = choice[self.props.default_language];
             return(<Choice
                 key={choice.id} 
@@ -92,6 +116,19 @@ class MultipleChoiceList extends React.Component {
                 saved={self.state.saved}
             />)
         })
+
+        if (this.state.allow_other) {
+            console.log('allowing other')
+            choices.push(<Choice
+                key={0} 
+                index={this.state.choices.length}
+                answer={"other"}
+                saved={self.state.saved}
+            />)
+        }
+
+        console.log('after choices', choices)
+        return choices;
     }
 
 
@@ -103,13 +140,15 @@ class MultipleChoiceList extends React.Component {
         let newChoice = {id: utils.addId('choice')};
         newChoice['English']='';
         choiceList.push(newChoice);
+
         this.setState({enableAddChoice: true, choices: choiceList}, function(){
             console.log('new choice added', this.state.choices);
+            console.log('newchoice id', newChoice.id)
         });
     }
 
-
     updateChoice(id, text) {
+        console.log('resolve', id, text)
         let choiceList = [];
         let updated = false;
         choiceList = choiceList.concat(this.state.choices);
@@ -169,11 +208,18 @@ class MultipleChoiceList extends React.Component {
             <div style={{backgroundColor:'#00a896'}}>
                 <h2>multiple choice</h2>
                 {this.listChoices()}
-                <button id="new-choice"
-                    value="new choice"
-                    onClick={this.addChoice}
-                    disabled={!this.state.enableAddChoice}
-                >add choice</button>
+                <div>
+                    <button id="new-choice"
+                        value="new choice"
+                        onClick={this.addChoice}
+                        disabled={!this.state.enableAddChoice}
+                    >add choice</button>
+                    <button id="allow_other"
+                        value="allow other"
+                        onClick={this.allowOther}
+                        disabled={this.state.allow_other}
+                    >allow "other"</button>
+                </div>
             </div>
         )
     }
@@ -209,7 +255,11 @@ class Choice extends React.Component {
 
 
     shouldComponentUpdate(nextProps, nextState) {
-        if (this.props.saved!==nextProps.saved) return true;
+        if (this.props.answer!==nextProps.answer) {
+            console.log('not the same!')
+            return true;
+        }
+        console.log('props choices', this.props.answer, nextProps.answer)
         return false;
     }
 
@@ -251,6 +301,7 @@ class Choice extends React.Component {
 
 
     render() {
+        console.log('answers!!!!!', this.props)
         return(
             <div>
                 {this.rendering()}
@@ -258,7 +309,9 @@ class Choice extends React.Component {
                     <div className="row">
                         <label htmlFor="question-title" className="col-xs-2 col-form-label">{this.props.index}.</label>
                         <div className="col-xs-10">
-                            <textarea id="choice-text" className="form-control question-title" rows="1" defaultValue={this.props.answer} onInput={this.buttonHandler} onBlur={this.choiceHandler} readOnly={this.props.saved}/>
+                            <textarea id="choice-text" className="form-control question-title" rows="1"
+                                placeholder={this.props.answer} onInput={this.buttonHandler} 
+                                onBlur={this.choiceHandler} readOnly={this.props.answer==="other"}/>
                         </div>
                     </div>
                     <button>delete</button>

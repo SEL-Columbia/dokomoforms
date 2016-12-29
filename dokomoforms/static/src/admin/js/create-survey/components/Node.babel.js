@@ -18,6 +18,7 @@ class Node extends React.Component {
         this.updateTitle = this.updateTitle.bind(this);
         this.updateHint = this.updateHint.bind(this);
         this.addTypeConstraint = this.addTypeConstraint.bind(this);
+        this.addAllowMultiple = this.addAllowMultiple.bind(this);
         this.addChoices = this.addChoices.bind(this);
         this.updateLogic = this.updateLogic.bind(this);
         this.updateChoices = this.updateChoices.bind(this);
@@ -25,13 +26,16 @@ class Node extends React.Component {
         this.showSubSurveys = this.showSubSurveys.bind(this);
         this.goToSubSurvey = this.goToSubSurvey.bind(this);
         this.listTitles = this.listTitles.bind(this);
+        this.allowOther = this.allowOther.bind(this);
         this.saveNode = this.saveNode.bind(this);
         this.addSubSurveyHandler = this.addSubSurveyHandler.bind(this);
 
         this.state = {
             title: {},
             hint: {},
-            type_constraint: '',
+            allow_multiple: false,
+            allow_other: false,
+            type_constraint: 'text',
             choices: [],
             sub_surveys: [],
             logic: {},
@@ -43,6 +47,7 @@ class Node extends React.Component {
     componentWillReceiveProps(nextProps) {
         console.log('will receive props');
         console.log(nextProps);
+        console.log(typeof nextProps.data.allow_multiple)
         if (nextProps.sub_surveys && nextProps.sub_surveys.length) {
             this.setState({showSubSurveys: true})
         }
@@ -211,6 +216,20 @@ class Node extends React.Component {
         })
     }
 
+    addAllowMultiple(event) {
+        console.log('update allow_multiple', event.target.value)
+        this.setState({allow_multiple: event.target.value}, function(){
+            console.log(this.state)
+            this.saveNode()
+        })
+    }
+
+    allowOther(bool) {
+        this.setState({allow_other: bool}, function(){
+            console.log('allow other', bool, this.state)
+            this.saveNode();
+        })
+    }
 
     updateLogic(logic) {
         this.setState({logic: logic});
@@ -257,9 +276,11 @@ class Node extends React.Component {
                         <div>
                     <label htmlFor="type-constraint" className="col-xs-2 col-form-label">Allow Multiple Responses:</label>
                     <div className="col-xs-4">
-                        <select className="form-control type-constraint">
-                            <option value="photo">no</option>
-                            <option value="text">yes</option>
+                        <select className="form-control type-constraint"
+                            value={this.state.allow_multiple}
+                            onChange={this.addAllowMultiple}>
+                            <option value={false}>no</option>
+                            <option value={true}>yes</option>
                         </select>
                     </div>
                 </div>
@@ -271,6 +292,7 @@ class Node extends React.Component {
                         choices={this.props.data.choices}
                         addChoices={this.addChoices}
                         updateChoices={this.updateChoices}
+                        allowOther={this.allowOther}
                         default_language={this.props.default_language}
                     />
                 }
