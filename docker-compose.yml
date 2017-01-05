@@ -12,10 +12,11 @@ nginx:
   volumes_from:
     - webapp
 webapp:
-  image: "selcolumbia/dokomoforms:0.2.9"
+  image: "selcolumbia/dokomoforms:0.2.9.2"
   command: bash -c "./docker-wait-for-postgres.sh db && head -c 24 /dev/urandom > cookie_secret && python webapp.py"
   links:
     - "db:db"
+    - "redis:redis"
   volumes:
     - ./local_config.py:/dokomo/local_config.py
     - /var/www
@@ -23,3 +24,5 @@ db:
   image: "mdillon/postgis:9.4"
   environment:
     POSTGRES_DB: 'doko'
+redis:
+  image: redis:3.2.5

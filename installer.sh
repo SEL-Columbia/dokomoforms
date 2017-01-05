@@ -126,6 +126,8 @@ printf "title of the website.                   \n"
 printf "Organization name:\n>>> "
 read ORGANIZATION
 printf "organization = '''$ORGANIZATION'''\n" >> local_config.py
+printf "redis_url = '''redis://localhost:6379/0''\n" >> local_config.py
+printf "minigrid_website_url = ''\n" >> local_config.py
 
 printf "\n"
 printf "Please enter an e-mail address for the  \n"

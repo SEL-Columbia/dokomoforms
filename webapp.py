@@ -8,6 +8,7 @@ of the PostgreSQL database.
 The application looks for gettext translation files like
 locale/{locale}/LC_MESSAGES/dokomoforms.mo
 """
+from asyncio import get_event_loop
 import os
 import textwrap
 import signal
@@ -21,6 +22,7 @@ from sqlalchemy import DDL
 
 from sqlalchemy.orm import sessionmaker
 
+from tornado.platform.asyncio import AsyncIOMainLoop
 from tornado.web import url
 import tornado.log
 import tornado.httpserver
@@ -152,7 +154,7 @@ class Application(tornado.web.Application):
         urls = [
             # Administrative
             url(r'/', handlers.Index, name='index'),
-            url(r'/user/login/?', handlers.Login, name='login'),
+            url(r'/verify/?', handlers.Verify, name='verify'),
             url(r'/user/logout/?', handlers.Logout, name='logout'),
             url(
                 r'/user/authenticated/?',
@@ -310,6 +312,7 @@ class Application(tornado.web.Application):
 
 def start_http_server(http_server, port):  # pragma: no cover
     """Start the server, with the option to kill anything using the port."""
+    AsyncIOMainLoop().install()
     try:
         http_server.listen(options.port)
     except OSError:
@@ -397,7 +400,8 @@ def main(msg=None):  # pragma: no cover
     logging.info('Application started.')
     if msg is not None:
         print(msg)
-    tornado.ioloop.IOLoop.current().start()
+    get_event_loop().run_forever()
+    #tornado.ioloop.IOLoop.current().start()
 
 
 if __name__ == '__main__':  # pragma: no cover
