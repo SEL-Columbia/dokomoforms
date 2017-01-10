@@ -43,7 +43,7 @@ class VerifyLoginHandler(BaseHandler):
         try:
             user = (
                 self.session
-                .query(models.User)
+                .query(User)
                 .filter_by(email=email)
                 .one()
             )
