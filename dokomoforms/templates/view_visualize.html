@@ -23,8 +23,6 @@
 
 
     <script src="/static/lib.js"></script>
-    <script src="https://login.persona.org/include.js"></script>
-    <script src="/static/persona.js"></script>
     <script src="https://d3js.org/d3.v3.js"></script>
     <script src="/static/visualizations.js"></script>
     {% if time_data %}
@@ -46,9 +44,10 @@
 {% block footer %}
     <div class="bar bar-standard bar-footer">
         <div class="bar-padded">
-            <a data-ignore="push" class="btn btn-block" href="#" id="logout">Logout</a>
+			    <form action="/user/logout" method="POST">
+                            {% module xsrf_form_html() %}
+			    <input type="submit" value=" Log Out" />
+			    </form>
         </div>
     </div>
-    <script src="https://login.persona.org/include.js"></script>
-    <script src="/static/persona.js"></script>
 {% end %}

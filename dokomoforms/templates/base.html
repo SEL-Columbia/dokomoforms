@@ -53,7 +53,10 @@
 			    {% if options.demo %}
 			    <li role="presentation"><a class="demo-logout" role="menuitem" tabindex="-1" href="/demo/logout"><span class="glyphicon glyphicon-log-out icon-inline-left" id="logout"></span> Log Out</a></li>
 			    {% else %}
-			    <li role="presentation"><a class="btn-logout" role="menuitem" tabindex="-1" href="#"><span class="glyphicon glyphicon-log-out icon-inline-left" id="logout"></span> Log Out</a></li>
+			    <li role="presentation"><form action="/user/logout" method="POST">
+                            {% module xsrf_form_html() %}
+			    <input type="submit" value=" Log Out" />
+			    </form></li>
 			    {% end %}
                         </ul>
                     </li>
@@ -62,7 +65,11 @@
 		    {% elif options.demo %}
                     <li><a class="btn btn-block demo-login" href="/demo/login" id="login">Login or Register</a></li>
                     {% else %}
-                    <li><a class="btn btn-block btn-login" href="#" id="login">Login or Register</a></li>
+		    <li><form action="/" method="POST">
+                    {% module xsrf_form_html() %}
+		    E-mail: <input type="email" name="email" />
+		    <input type="submit" value="Login or Register">
+		    </form></li>
                     {% end %}
                 </ul>
             </div>
@@ -100,8 +107,6 @@
     <!-- VENDOR bundled -->
     <script type="text/javascript" src="{{ static_url('dist/admin/js/vendor.js') }}"></script>
 
-    <!-- Persona for login stuff -->
-    <script src="https://login.persona.org/include.js"></script>
 
     <script type="text/javascript">
         window.CURRENT_USER_ID = '{{ current_user_id }}';
