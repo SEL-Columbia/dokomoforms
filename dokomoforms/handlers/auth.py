@@ -16,7 +16,7 @@ import tornado.httpclient
 from passlib.hash import bcrypt_sha256
 
 from dokomoforms.options import options
-from dokomoforms.handlers.porter import get_verified_email, redis_kv
+from dokomoforms.handlers.portier import get_verified_email, redis_kv
 from dokomoforms.handlers.util import BaseHandler, authenticated_admin
 from dokomoforms.models import User, Administrator, Email
 
