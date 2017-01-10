@@ -45,7 +45,7 @@ class VerifyLoginHandler(BaseHandler):
                 self.session
                 .query(User.id, User.name)
                 .join(Email)
-                .filter(Email.address == data['email'])
+                .filter(Email.address == email)
                 .one()
             )
         except NoResultFound:
