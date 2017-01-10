@@ -14,7 +14,7 @@ from tornado.escape import json_decode
 from tornado.httpclient import AsyncHTTPClient
 import tornado.web
 
-from minigrid.options import options
+from dokomoforms.options import options
 
 
 redis_kv = redis.StrictRedis.from_url(options.redis_url)
