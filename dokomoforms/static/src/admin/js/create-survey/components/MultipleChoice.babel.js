@@ -11,6 +11,7 @@ class MultipleChoiceList extends React.Component {
         this.listChoices = this.listChoices.bind(this);
         this.addChoice = this.addChoice.bind(this);
         this.updateChoice = this.updateChoice.bind(this);
+        this.deleteChoice = this.deleteChoice.bind(this);
         this.changeAddChoice = this.changeAddChoice.bind(this);
         this.save = this.save.bind(this);
         this.allowOther = this.allowOther.bind(this);
@@ -105,13 +106,14 @@ class MultipleChoiceList extends React.Component {
 
         console.log('choices before rendering', choices)
         choices = choices.map(function(choice, index){
-            answer = choice[self.props.default_language];
+            answer = choice['English'];
             return(<Choice
                 key={choice.id} 
                 index={index+1}
                 answer={answer}
                 enabled={self.state.enableAddChoice}
                 updateChoice={self.updateChoice.bind(null, choice.id)}
+                deleteChoice={self.deleteChoice.bind(null, index)}
                 changeAddChoice={self.changeAddChoice.bind(null, choice.id)}
                 saved={self.state.saved}
             />)
@@ -133,7 +135,6 @@ class MultipleChoiceList extends React.Component {
 
 
     addChoice() {
-
         let choiceList = [];
         choiceList = choiceList.concat(this.state.choices);
         console.log('adding choice', choiceList);
@@ -175,6 +176,16 @@ class MultipleChoiceList extends React.Component {
 
     }
  
+    deleteChoice() {
+        console.log('args', arguments)
+        const index = arguments[0];
+        let choiceList = [];
+        let updated = false;
+        choiceList = choiceList.concat(this.state.choices);
+        choiceList.splice(index, 1)
+        this.setState({choices: choiceList})
+        this.props.updateChoices(this.state.choices);
+    }
 
     changeAddChoice(id){
         return;
@@ -314,7 +325,7 @@ class Choice extends React.Component {
                                 onBlur={this.choiceHandler} readOnly={this.props.answer==="other"}/>
                         </div>
                     </div>
-                    <button>delete</button>
+                    <button onClick={this.props.deleteChoice}>delete</button>
                 </div>
             </div>
         )
