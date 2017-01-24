@@ -4,8 +4,8 @@ module.exports = (function() {
      * @param  {String} selector [description]
      */
 
-    let lastSurveyId = 1000;
-    let lastNodeId = 0;
+    let lastSurveyId = 1001;
+    let lastNodeId = 1;
     let lastChoiceId = 100;
 
     function _addId(type) {
