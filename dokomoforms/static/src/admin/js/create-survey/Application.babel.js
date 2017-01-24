@@ -7,6 +7,7 @@ import SubSurvey from './components/SubSurvey.babel.js';
 import {bindActionCreators} from 'redux';
 import {connect} from 'react-redux';
 import {addSurvey, getNode, getSurvey} from './redux/actions.babel.js';
+import surveySelector from './redux/selectors.babel.js';
 
 class Application extends React.Component {
 
@@ -22,16 +23,16 @@ class Application extends React.Component {
         }
     }
 
-    componentWillMount() {
-        console.log('component will mount - applic')
-        if (!this.props.survey) {
-            let newSurvey = {
-                id: utils.addId('survey'),
-                nodes: []
-            }
-            this.props.addSurvey(newSurvey, 1001);
-        }
-    }
+    // componentWillMount() {
+    //     console.log('component will mount - applic')
+    //     if (!this.props.survey) {
+    //         let newSurvey = {
+    //             id: utils.addId('survey'),
+    //             nodes: []
+    //         }
+    //         this.props.addSurvey(newSurvey, 1001);
+    //     }
+    // }
 
     shouldComponentUpdate() {
         console.log('top level app update')
@@ -90,19 +91,55 @@ class Application extends React.Component {
 
 
     submitToDatabase() {
+
+        var test_survey = {
+          title: {
+            English: 'test repeats again 1'
+          },
+          default_language: 'English',
+          survey_type: 'public',
+          metadata: {},
+          nodes: [
+            {
+              node: {
+                title: {English: 'how many people in your household?'},
+                hint: {English: 'a hint'},
+                type_constraint: 'integer'
+              },
+              sub_surveys: [
+                    {
+                        repeatable: true,
+                        buckets: [{
+                            bucket_type: 'integer',
+                            bucket: '[1, 5]',
+                        }],
+                        nodes: [{
+                                repeatable: true,
+                                node: {
+                                    title: {English: 'what is your name?'},
+                                    type_constraint: 'text'
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }]
+        }
+
+        
         let self = this;
         this.setState({submitted: true}, function(){
             console.log('submitting')
-            console.log(self.props.surveys)
-            let database_survey = self.deleteExcessParams(self.props.surveys[1001], 1001)
-            console.log('submitting this survey!!!!!', database_survey)
-            database_survey.survey_type = 'public';
+            // console.log(self.props.surveys)
+            // let database_survey = self.deleteExcessParams(self.props.surveys[1001], 1001)
+            console.log('submitting this survey!!!!!', test_survey)
+            // database_survey.survey_type = 'public';
             $.ajax({
                 type: "POST",
                 url: "/api/v0/surveys",
                 contentType: 'application/json',
                 processData: false,
-                data: JSON.stringify(database_survey),
+                data: JSON.stringify(test_survey),
                 headers: {
                   'X-XSRFToken': cookies.getCookie('_xsrf')
                 },
@@ -121,6 +158,7 @@ class Application extends React.Component {
 
     render() {
         console.log(this.props.surveys, this.props.surveyView)
+        console.log('surveys!!', this.props.surveys)
         let parent;
         if (this.props.surveyView && !this.props.surveyView.parent) {
             parent = this.props.surveys[this.props.surveyView.survey_id].parent;
@@ -135,7 +173,7 @@ class Application extends React.Component {
                     <div>
                     <Survey
                         submitted={this.state.submitted}
-                        survey={this.props.surveys[1001]}
+                        survey={this.props.surveys[0]}
                         submitToDatabase={this.submitToDatabase}
                     />
                     </div>
@@ -159,9 +197,9 @@ function mapStateToProps(state){
     console.log('here', 'application')
     console.log(state)
     return {
-        surveys: state.surveys,
-        nodes: state.nodes,
-        surveyView: state.surveyView,
+        surveys: surveySelector(state)
+        // nodes: state.nodes,
+        // surveyView: state.surveyView,
     }
 }
 
