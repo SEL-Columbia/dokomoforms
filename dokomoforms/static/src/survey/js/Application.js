@@ -5,6 +5,7 @@ var React = require('react'),
     PouchDB = require('pouchdb'),
     ps = require('../../common/js/pubsub'),
     cookies = require('../../common/js/cookies');
+    uuid = require('node-uuid');
 
 // pouch plugin
 // PouchDB.plugin(require('pouchdb-upsert'));
@@ -49,6 +50,7 @@ var Application = React.createClass({
         var first_question = null;
         questions.forEach(function(node, idx) {
             var question = node;
+            question.id = question.id;
             question.prev = null;
             question.next = null;
             if (idx > 0) {
@@ -330,10 +332,57 @@ var Application = React.createClass({
 
                         // Append all subsurveys to clone of current question, update head, update headStack if in bucket
                         var inBee = self.inBucket(sub.buckets, currentQuestion.type_constraint, answer);
+                        
                         if (inBee) {
                             // Clone current element
                             var clone = self.cloneNode(currentQuestion);
                             var temp = clone.next;
+
+
+                            if (sub.repeatable && (answer > 1)) {
+                                var list = [];
+                                var copiedNode;
+                                var augmentedId;
+                                console.log('greater than 1')
+                                for (var i = 0; i < answer - 1; i++) {
+                                    sub.nodes.forEach(function(node){
+                                        console.log('node', node.title)
+                                        copiedNode = Object.assign({}, node);
+                                        console.log('copiednode', node)
+                                        augmentedId = i.toString()
+                                        copiedNode.id = copiedNode.id + "_" + augmentedId;
+                                        list.push(copiedNode)
+                                    })
+
+                                    // console.log('copiedList', copiedList)
+
+                                    // list = list.concat(copiedList)
+                                    // console.log('answer', i)
+                                    // var copyList = sub.nodes.slice();
+                                    // console.log('copied list', copyList)
+                                    // list = list.concat(copyList);
+                                    // console.log('list', list)
+                                }
+
+                                console.log('list', list)
+
+                                // list.map(function(node){
+                                //     node.node_id = uuid.v4();
+                                // })
+
+                                sub.nodes.splice.apply(sub.nodes, [-1, 0].concat(list));
+
+                                console.log('length', sub.nodes.length)
+                                sub.nodes.forEach(function(node){
+                                    console.log('after', node.node_id, node.id)
+                                })
+
+                                console.log('copied list length', list.length);
+                                console.log('node length', sub.nodes.length)
+
+                            }
+
+                            console.log('subnodes', sub.nodes)
 
                             // link sub nodes
                             // TODO: Deal with repeatable flag here!
@@ -355,6 +404,7 @@ var Application = React.createClass({
                                     sub.nodes[i].next = sub.nodes[i + 1];
                                 }
                             }
+
 
                             // Always add branchable questions previous state into headStack
                             // This is how we can revert alterations to a branched question
@@ -776,6 +826,8 @@ var Application = React.createClass({
                     }
                 }
 
+                if (question.id.length > 36) question.id = question.id.substring(question.id, question.id.indexOf('_'));
+
                 answers.push({
                     survey_node_id: question.id,
                     response: response,
@@ -837,8 +889,15 @@ var Application = React.createClass({
         // Get all unsynced facilities
         var unsynced_facilities = JSON.parse(localStorage['unsynced_facilities'] || '[]');
 
+
         // Post surveys to Dokomoforms
         unsynced_submissions.forEach(function(survey) {
+
+            var test = JSON.stringify(survey)
+            console.log('test', test)
+            console.log('survey!!!!', survey)
+
+
             // Update submit time
             survey.submission_time = new Date().toISOString();
             $.ajax({
