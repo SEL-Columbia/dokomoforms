@@ -8,7 +8,7 @@ class Node extends Model {
 		switch (type) {
 			case "ADD_NODE_TO_SURVEY":
 				console.log('state', session.state)
-            	console.log('adding node to survey??', payload.node)
+            	console.log('adding node to survey?', payload.node)
             	Node.create(payload.node)
             	console.log('new state????', session.state)
             	break;
@@ -16,8 +16,10 @@ class Node extends Model {
             	Node.withId(payload.node_id).update({node: payload.node});
             	break;
             case "ADD_SUBSURVEY_TO_NODE":
-            	console.log('node model', payload.node_id, payload.sub_survey)
-            	Node.withId(payload.node_id).sub_surveys.add(payload.sub_survey.id);
+            	// console.log('node model', payload.node_id, payload.sub_survey.id)
+             //    console.log(session.state)
+            	// Node.withId(payload.node_id).sub_surveys.add(payload.sub_survey.id);
+             //    console.log('should be added');
             	break;
            	case "DELETE_NODE":
            		console.log('deleting node from models', payload.node_id)
@@ -34,7 +36,7 @@ Node.modelName = 'Node';
 Node.fields = {
     id: attr(), // non-relational field for any value; optional but highly recommended
     node: attr(),
-    sub_surveys: many('Survey', 'node_model')
+    survey: fk('Survey', 'nodes')
 };
 
 class Survey extends Model {
@@ -48,7 +50,7 @@ class Survey extends Model {
 			case "ADD_NODE_TO_SURVEY":
 				console.log('state', session.state)
             	console.log('adding node to survey??', payload.surveyId, payload.node)
-            	Survey.withId(payload.surveyId).nodes.add(payload.node.id)
+            	// Survey.withId(payload.surveyId).nodes.add(payload.node.id)
             	console.log('new state????', session.state)
             	break;
             case "UPDATE_SURVEY":
@@ -136,7 +138,7 @@ Survey.fields = {
     id: attr(),
     title: attr(),
     default_language: attr(),
-    nodes: many('Node', 'survey_model')
+    node: fk('Node', 'sub_surveys')
 };
 
 

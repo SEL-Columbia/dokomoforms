@@ -46,8 +46,8 @@ class SubSurveyList extends React.Component {
     	if (subList.length > 0) {
     		console.log('subList', subList)
     		let sub_survey;
-    		subList.forEach(function(subId, index) {
-		        sub_survey = self.props.surveys[subId]
+    		subList.forEach(function(sub) {
+		        sub_survey = sub
 		        console.log('sub_survey', sub_survey)
 		        renderList.push(
 		            <SubSurveyListItem
@@ -82,35 +82,54 @@ class SubSurveyList extends React.Component {
 	}
 }
 
-function SubSurveyListItem(props) {
+class SubSurveyListItem extends React.Component {
 
-	let type_constraint = props.type_constraint;
+	constructor(props) {
+		super(props)
 
-	function viewSubSurveyHandler(){
-		props.goToSubSurvey(props.sub_survey.id)
+		this.viewSubSurveyHandler = this.viewSubSurveyHandler.bind(this)
+		this.addBucketHandler = this.addBucketHandler.bind(this)
+		this.listChoices = this.listChoices.bind(this)
+		this.listBuckets = this.listBuckets.bind(this)
+		this.updateSelected = this.updateSelected.bind(this)
+
+		this.state = {
+			selected: null
+		}
 	}
 
-	function addBucketHandler(event){
-		console.log('bucket handler', props, event.target.value)
+	viewSubSurveyHandler() {
+		this.props.goToSubSurvey(this.props.sub_survey.id)
+	}
 
-		let newBucket = {bucket_type: props.type_constraint, bucket: undefined}
-		if (props.type_constraint=='multiple_choice') {
+	addBucketHandler(){
+		console.log('refs!', this.refs)
+		console.log('bucket handler', this.props, this.state.selected)
+
+		let bucketList = [].concat(this.props.sub_survey.buckets)
+		let newBucket = {bucket_type: this.props.type_constraint, bucket: undefined}
+		if (this.props.type_constraint=='multiple_choice') {
 			newBucket.bucket = {}
-			newBucket.bucket.choice_number = parseInt(event.target.value);
+			newBucket.bucket.choice_number = parseInt(this.state.selected);
 		} else {
-			newBucket.bucket = "[" + event.target.value + "]";
+			newBucket.bucket = "[" + this.state.selected + "]";
 		}
 
 		console.log('new bucket', newBucket.bucket);
-		props.addBucket({buckets: [newBucket]}, props.sub_survey.id)
+		bucketList.push(newBucket)
+		this.props.addBucket({buckets: bucketList}, this.props.sub_survey.id)
 	}
 
-	function listChoices() {
-		console.log('item', props)
+	updateSelected(event){
+		this.setState({selected: event.target.value})
+	}
+
+	listChoices() {
+		console.log('item', this.props)
 		let choiceList= [<option></option>];
 		let mappedChoices = []
-		if (props.choices) {
-			mappedChoices = props.choices.map(function(choice, index) {
+		if (this.props.choices) {
+			mappedChoices = this.props.choices.map(function(choice, index) {
 				console.log(choice.English);
 				return(
 					<option value={index}>{choice.English}</option>
@@ -120,28 +139,43 @@ function SubSurveyListItem(props) {
 		return choiceList.concat(mappedChoices);
 	}
 
-	return (
+	listBuckets() {
+		let buckets = [].concat(this.props.sub_survey.buckets)
+		return buckets.map(function(bucket) {
+			return(JSON.stringify(bucket))
+		})
+	}
 
-		<div className="form-group row">
+	render() {
+		console.log(this.props.sub_survey)
+		return (
             <div>
-	            <label htmlFor="type-constraint" className="col-xs-2 col-form-label">Bucket</label>
-	            <div className="col-xs-4">
-	            	{(props.type_constraint=="multiple_choice") &&
-		            	<select onChange={addBucketHandler} value={props.sub}>
-		            		{listChoices()}
-		            	</select>
-	            	}
-	            	{(props.type_constraint!=="multiple_choice") &&
-	            		<input onBlur={addBucketHandler}></input>
-	            	}
+            	<div>
+	            	<button onClick={this.viewSubSurveyHandler} disabled={!this.props.sub_survey.buckets.length}>SubSurvey</button>
+            	</div>
+            	<div>
+	            	<label htmlFor="type-constraint" className="col-xs-2 col-form-label">Bucket(s):</label>
+	            	{this.listBuckets()}
 	            </div>
+	            <div>
+	            	<label htmlFor="type-constraint" className="col-xs-2 col-form-label">Add Bucket:</label>
+		            <div className="col-xs-4">
+		            	{(this.props.type_constraint=="multiple_choice") &&
+			            	<select onChange={this.updateSelected} value={this.props.sub}>
+			            		{this.listChoices()}
+			            	</select>
+		            	}
+		            	{(this.props.type_constraint!=="multiple_choice") &&
+		            		<input onBlur={this.updateSelected}></input>
+		            	}
+		            </div>
+		            <button onClick={this.addBucketHandler}>add bucket</button>
+		        </div>
             </div>
-            <div>
-	            <button onClick={viewSubSurveyHandler}>SubSurvey</button>
-            </div>
-        </div>
-	)
+		)
+	}
 }
+
 
 function mapStateToProps(state){
     return {

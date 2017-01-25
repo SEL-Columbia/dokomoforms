@@ -25,26 +25,55 @@ const ormSelector = state => state.orm;
 
 const surveySelector = createSelector(
 	ormSelector,
-	state => state.orm,
-	ormCreateSelector(orm, (session, orm) => {
-    	console.log('Running user selector', session);
-    	return session.Survey.all().toModelArray().map(survey => {
-    		
-    		const obj = survey.ref;
+	state => state.currentSurveyId,
+	ormCreateSelector(orm, (session, currentSurveyId) => {
+    	console.log('Running survey selector', currentSurveyId);
+    	const survey = session.Survey.withId(currentSurveyId)
+        const obj = survey.ref;
 
-    		console.log('without', survey.nodes)
-    		console.log('with', survey.nodes.toRefArray())
-
-    		return Object.assign({}, obj, {
-    			nodes: survey.nodes.toRefArray()
-    		})
-
-    	})
+        const testnodes = survey.nodes.toRefArray();
+        console.log('obj', obj)
+        console.log('nodes', testnodes)
+		return Object.assign({}, obj, {
+			nodes: survey.nodes.toRefArray()
+		})
  	})
+);
+
+const nodesSelector = createSelector(
+    ormSelector,
+    state => state.orm,
+    ormCreateSelector(orm, (session, orm) => {
+        console.log('Running node selector', session);
+        return session.Node.all().toRefArray().map(node => {
+            
+            const obj = node.ref;
+
+            console.log('without', node.sub_surveys)
+            console.log('with', node.sub_surveys.toRefArray())
+
+            return Object.assign({}, obj, {
+                sub_surveys: node.sub_surveys.toRefArray()
+            })
+        })
+    })
+);
+
+const nodeSelector = createSelector(
+    ormSelector,
+    state => state.currentSurveyId,
+    ormCreateSelector(orm, (session, currentSurveyId) => {
+        console.log('Running node selector>>>>', currentSurveyId);
+        return session.Node.filter({survey: currentSurveyId}).toModelArray().map(node => {
+            const obj = node.ref;
+            console.log(obj);
+            return Object.assign({}, obj, {
+                sub_surveys: node.sub_surveys.toRefArray()
+            })
+        })
+    })
 );
 
 
 
-
-
-export default surveySelector;
+export {surveySelector, nodeSelector};

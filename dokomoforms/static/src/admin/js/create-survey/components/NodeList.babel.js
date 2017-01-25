@@ -25,13 +25,14 @@ class NodeList extends React.Component {
 
 
     componentWillMount() {
-        console.log('addNode', addNode)
+        console.log(this.props)
+        // console.log('addNode', addNode)
 
-        console.log(this.props.nodes, this.props.survey_nodes)
-        if (!this.props.survey_nodes.length) {
-            console.log('no survey nodes')
-            this.addQuestion()
-        }
+        // console.log(this.props.nodes, this.props.survey_nodes)
+        // if (!this.props.survey_nodes.length) {
+        //     console.log('no survey nodes')
+        //     this.addQuestion()
+        // }
 
         // if (!this.props.survey_nodes.length) {
 
@@ -98,15 +99,13 @@ class NodeList extends React.Component {
 
         let self = this;
         let node;
-        let nodes = this.props.nodes;
-        let nodeList = [];
+        let nodeList = [].concat(this.props.survey_nodes)
 
-        console.log('nodes before rendering', nodes, this.props.survey_nodes)
+        console.log('nodes before rendering', this.props.survey_nodes)
 
-        this.props.survey_nodes.forEach(function(nodeId, index) {
-            node = self.props.nodes[nodeId]
+        return nodeList.map(function(node, index) {
             console.log(node)
-            nodeList.push(
+            return(
                 <Node
                     parent={self.props.survey_id}
                     saved={self.props.submitting}
@@ -144,8 +143,8 @@ class NodeList extends React.Component {
         //         />
         //     )
         // });
-        console.log(nodeList);
-        return nodeList;
+        // console.log(nodeList);
+        // return nodeList;
         // return nodes.map(function(node, index){
         //     // return(
         //     //     <Node
@@ -167,6 +166,10 @@ class NodeList extends React.Component {
 
 
     addQuestion() {
+
+        let newNode = {id: utils.addId('node'), node: {}, survey: this.props.survey_id};
+
+        this.props.addNode(newNode)        
         // let nodeList = [];
         // nodeList = nodeList.concat(this.state.nodes);
         // console.log('adding node', nodeList);
@@ -184,32 +187,33 @@ class NodeList extends React.Component {
         // // this.setState({nodes: nodeList});
         // this.props.addNode(newNode);
 
-        let newNode = {
-                id: utils.addId('node'),
-                node: {}
-            };
-            // console.log('this is the newnode', newNode)
-            // nodeList.push(newNode);
-            // this.setState({nodes: nodeList});
-            console.log(newNode, this.props.survey_id)
+        // let newNode = {
+        //         id: utils.addId('node'),
+        //         node: {}
+        //     };
+        //     // console.log('this is the newnode', newNode)
+        //     // nodeList.push(newNode);
+        //     // this.setState({nodes: nodeList});
+        //     console.log(newNode, this.props.survey_id)
 
-            this.props.addNode(newNode);
+        //     this.props.addNode(newNode);
 
-            let newSurvey = {};
-            console.log('let new survey')
-            newSurvey.nodes = []
-            if (this.props.survey_nodes) {
-                console.log('you had survey nodes')
-                newSurvey.nodes = newSurvey.nodes.concat(this.props.survey_nodes)
-            }
+        //     let newSurvey = {};
+        //     console.log('let new survey')
+        //     newSurvey.nodes = []
+        //     if (this.props.survey_nodes) {
+        //         console.log('you had survey nodes')
+        //         newSurvey.nodes = newSurvey.nodes.concat(this.props.survey_nodes)
+        //     }
 
-            newSurvey.nodes.push(newNode.id)
-            this.props.updateSurveys(newSurvey, this.props.survey_id)
+        //     newSurvey.nodes.push(newNode.id)
+        //     this.props.updateSurveys(newSurvey, this.props.survey_id)
     }
 
     deleteQuestion(index) {
-        let nodeList = [];
-        // nodeList = nodeList.concat(this.state.nodes);
+        this.props.delete(node_id)
+        // let nodeList = [];
+        // nodeList = nodeList.concat(this.props.survey_nodes);
         // nodeList.splice(index, 1);
         // this.setState({nodes: nodeList}, function(){
         //     console.log('node deleted', this.state.nodes);
@@ -222,7 +226,7 @@ class NodeList extends React.Component {
 
         this.props.updateNode(id, node, 'node')
 
-        // let nodeList = [];
+        // lext nodeList = [];
         // let updated = false;
         // nodeList = nodeList.concat(this.state.nodes);
         // console.log('updating node', nodeList);
@@ -248,7 +252,7 @@ class NodeList extends React.Component {
 
 
     render() {
-        console.log('rendering nodelist', this.props.nodes)
+        console.log('rendering nodelist', this.props)
         console.log('survey id', this.props.survey_id)
         return (
             <div className="node-list">

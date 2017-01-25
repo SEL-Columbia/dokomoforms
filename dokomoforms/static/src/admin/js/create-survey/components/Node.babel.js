@@ -4,7 +4,7 @@ import { Title, FacilityLogic, MinMaxLogic } from './Logic.babel.js';
 import SubSurveyList from './SubSurveyList.babel.js';
 import {bindActionCreators} from 'redux';
 import {connect} from 'react-redux';
-import {addSurvey, updateNode, updateSurveyView} from './../redux/actions.babel.js';
+import {addSurvey, addSurveyToNode, updateNode, updateSurveyView, deleteNode} from './../redux/actions.babel.js';
 
 class Node extends React.Component {
 
@@ -44,29 +44,14 @@ class Node extends React.Component {
         }
     }
 
-    componentWillReceiveProps(nextProps) {
-        console.log('will receive props');
-        console.log(nextProps);
-        console.log(typeof nextProps.data.allow_multiple)
-        if (nextProps.sub_surveys && nextProps.sub_surveys.length) {
-            this.setState({showSubSurveys: true})
-        }
-        // if (nextProps.saved===true) {
-        //     console.log('true')
-        //     this.setState({editable: false}, function(){
-        //         this.save()
-        //     })
-        // };
-    }
-
-    shouldComponentUpdate(nextProps, nextState) {
-        if (JSON.stringify(this.props)===JSON.stringify(nextProps)
-            && JSON.stringify(this.state)===JSON.stringify(nextState)) return false;
-        else {
-            console.log('props did change', this.props, nextProps);
-            return true;
-        }
-    }
+    // shouldComponentUpdate(nextProps, nextState) {
+    //     if (JSON.stringify(this.props)===JSON.stringify(nextProps)
+    //         && JSON.stringify(this.state)===JSON.stringify(nextState)) return false;
+    //     else {
+    //         console.log('props did change', this.props, nextProps);
+    //         return true;
+    //     }
+    // }
 
     getTitleOrHintValue(property, language) {
         if (!this.props.data ||
@@ -124,7 +109,6 @@ class Node extends React.Component {
     }
 
     addSubSurveyHandler(){
-        console.log('add subsurvey being called');
         if (this.state.showSubSurveys) {
             this.addSubSurvey();
         }
@@ -142,35 +126,16 @@ class Node extends React.Component {
         }
         let newSurvey = {
             id: utils.addId('survey'),
-            buckets: [],
-            nodes: []
+            nodes: [],
+            node: this.props.id
         }
         sub_surveys.push(newSurvey.id)
-        console.log('trying to add subsurbeys!!!!!')
-        this.props.addSurvey(newSurvey, newSurvey.id);
-        console.log(this.props.id, sub_surveys)
-        this.props.updateNode(this.props.id, sub_surveys, 'sub_surveys')
+        this.props.addSurveyToNode(newSurvey)
     }
 
     goToSubSurvey(id) {
         console.log('before reducer', this.props.id)
         this.props.updateSurveyView(this.props.id, id, this.props.parent)
-        // let copy = [];
-        // copy = copy.concat(this.state.sub_surveys)
-        // let newSubSurvey = {
-        //     id: utils.addId('survey'),
-        //     buckets: [{
-        //         bucket_type: this.state.type_constraint,
-        //         buckets: [bucket]
-        //     }],
-        //     nodes: []
-        // }
-        // copy.push(newSubSurvey);
-        // this.setState({sub_surveys: copy}, function(){
-        //     console.log('added sub to node', this.state)
-        //     this.saveNode();
-        //     this.props.showSubSurvey(newSubSurvey, this.state.title)
-        // })
     }
 
 
@@ -183,7 +148,7 @@ class Node extends React.Component {
             console.log('language', language);
             displayQuestion = self.getTitleOrHintValue('title', language);
             displayHint = self.getTitleOrHintValue('hint', language);
-            console.log('display!!!', displayQuestion, displayHint)
+            console.log('display', displayQuestion, displayHint)
             key = language.toString()
             return (
                 <div key={language} className="title-group">
@@ -209,7 +174,6 @@ class Node extends React.Component {
 
 
     addTypeConstraint(event) {
-        console.log('being called.....')
         this.setState({type_constraint: event}, function(){
             console.log(this.state)
             this.saveNode()
@@ -253,8 +217,13 @@ class Node extends React.Component {
             return;
         }
         let updatedNode = Object.assign(this.props.data, node);
-        console.log('the node was saved', updatedNode);
-        this.props.updateNodeOther(updatedNode);
+        console.log('the node was saved', updatedNode, node.type_constraint);
+        if (updatedNode.type_constraint=="note") {
+            console.log('its note')
+            delete updatedNode.allow_multiple
+            delete updatedNode.allow_other
+        }
+        this.props.updateNode(this.props.id, node);
     }
 
 
@@ -263,7 +232,7 @@ class Node extends React.Component {
         let displayHint = this.getTitleOrHintValue('hint');
         console.log('rendering node!', this.props.index)
         console.log('state', this.state)
-        console.log('props???', this.props)
+        console.log('node props???', this.props)
 
         return (
             <div className="node">
@@ -297,7 +266,12 @@ class Node extends React.Component {
                     />
                 }
 
-                {(this.state.showSubSurveys===true || this.props.sub_surveys) &&
+                {(this.state.type_constraint==="integer" ||
+                    this.state.type_constraint==="decimal") &&
+                <MinMaxLogic updateLogic={this.updateLogic}></MinMaxLogic>
+                }
+
+                {(this.props.sub_surveys.length > 0) &&
                     <SubSurveyList
                         type_constraint={this.props.data.type_constraint}
                         sub_surveys={this.props.sub_surveys}
@@ -308,7 +282,7 @@ class Node extends React.Component {
                     />
                 }
 
-                <button onClick={this.props.deleteQuestion}>delete</button>
+                <button onClick={this.props.deleteNode.bind(null, this.props.id)}>delete</button>
                 <button onClick={this.saveNode}>save</button>
                 <button onClick={this.addSubSurveyHandler}>Add Subsurvey</button>
             </div>
@@ -382,16 +356,17 @@ class TypeConstraint extends React.Component {
 }
 
 function mapStateToProps(state){
-    console.log('here')
+    console.log('here', this.props)
     console.log(state)
-    return {
-        surveys: state.surveys,
-        nodes: state.nodes
-    }
+    return {}
 }
 
 function matchDispatchToProps(dispatch){
-    return bindActionCreators({addSurvey: addSurvey, updateNode: updateNode, updateSurveyView: updateSurveyView}, dispatch)
+    return bindActionCreators({addSurvey: addSurvey,
+                                addSurveyToNode: addSurveyToNode, 
+                                updateNode: updateNode,
+                                updateSurveyView: updateSurveyView,
+                                deleteNode: deleteNode}, dispatch)
 }
 
 export default connect(mapStateToProps, matchDispatchToProps)(Node);

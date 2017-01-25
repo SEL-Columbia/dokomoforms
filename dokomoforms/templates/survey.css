@@ -1,0 +1,236 @@
+// the (inline) means copy but don't process this import as less, which is correct here.
+@import (inline) "../../../../../node_modules/leaflet/dist/leaflet.css";
+@import "./bootstrap.less";
+@import "./dataTables.bootstrap.less";
+
+// start here
+
+body {
+    padding-top: 50px;
+    padding-bottom: 30px;
+    background-color: #eff2f5;
+    color: #000000;
+}
+
+.survey {
+	background-color: #fcfcfc;
+	-moz-box-shadow: 0 0 30px 5px #b1bccd;
+    -webkit-box-shadow: 0 0 30px 5px #b1bccd;
+	padding: 0px;
+	float: none;
+}
+
+.header {
+	color: white;
+	padding: 12px 12px 12px 80px;
+	font-size: 35px;
+}
+
+.survey-header {
+	background: rgb(0, 0, 0); 
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.survey-label {
+	margin-left: 5%;
+	font-size: 23px;
+}
+
+.survey-title-text {
+	background-color: #fcfcfc;
+	width: 85%;
+	padding-top: 10px;
+}
+
+
+.survey-title {
+	padding: 15px 20px 0px 25px;
+	outline: none;
+}
+
+.survey-group {
+	margin: 15px;
+}
+
+textarea, textarea.form-control {
+	font-size: 20px;
+	margin: auto;
+	float: none;
+	box-shadow: none;
+	-webkit-box-shadow: none;
+	border-radius: 3px;
+	resize: none;
+}
+
+.form-control:focus, input:focus, textarea:focus {
+	outline: none;
+    border-color: #4d4dff;
+    box-shadow: 0 0 0px 0px #b1bccd;
+	-webkit-box-shadow: 0 0 0px 0px #b1bccd;
+	transition: none;
+	-o-transition: none;
+}
+
+.dropdown-menu {
+	margin: 0px 40px;
+	width: 70%;
+}
+
+.select-default {
+	height: 37px;
+	font-size: 18px;
+	margin: 10px;
+	width: 70%;
+}
+
+.select-default select {
+    appearance:none;
+    -moz-appearance:none;
+    -webkit-appearance:none;
+}
+
+#dropdownMenu1 {
+	font-size: 18px;
+	margin: 10px 40px;
+	width: 70%;
+}
+
+#dropdownMenu2 {
+	font-size: 18px;
+	margin: 10px -50px 0px 45px;
+	width: 70%;
+}
+
+#survey-title:focus {
+	outline: none important!;
+}
+
+.node-list {
+    background: rgb(0, 0, 0); 
+    background: rgba(0, 0, 0, 0.9);
+    padding: 2px;
+    width: 100%;
+}
+
+.node {
+	background-color: #fcfcfc;
+	margin: 0px 5px 15px 5px;
+	color: black;
+	padding: 3px 10px 10px 10px;
+}
+
+.title-group {
+	height: 280px;
+	border-bottom: 1px solid gray;
+	padding: 10px;
+}
+
+.question-header {
+	padding-bottom: 10px;
+	padding-top: 5px;
+}
+
+.language-header {
+	color: #4d4dff;
+	font-size: 18px;
+	margin-right: 15px;
+}
+
+.language-dropdown {
+	margin: 10px 0px;
+	font-size: 18px;
+	padding: 0px 50px;
+}
+
+.node-dropdown {
+	margin-top: 20px;
+}
+
+.question-dropdown {
+	margin: 10px 25px;
+}
+
+input[type="radio"] {
+	margin: 0px 5px;
+}
+
+li.title {
+	font-size: 18px;
+	margin: 0px 0px 5px 10px;
+}
+
+li.language {
+	font-size: 16px;
+	margin: 0px 25px;
+}
+
+.question-number {
+	border: 2px solid #4d4dff;
+	text-align: center;
+	border-radius: 50%;
+	padding: 5px 10px;
+	font-size: 14px;
+	color: white;
+	background-color: #4d4dff; 
+}
+
+.language-text {
+	padding-bottom: 10px;
+}
+
+.title {
+	height: 40%;
+	font-size: 20px;
+	margin: 5px 10px -20px 10px;
+}
+
+.btn-submit {
+	margin: auto;
+	float: none;
+	font-size: 20px;
+	background-color: green;
+}
+
+.type-constraint {
+}
+
+.delete {
+	float: right;
+	position: relative;
+	color: red;
+	padding-top: 3px;
+	padding-left: 3px;
+	padding-right: 3px;
+	margin-right: -10px;
+	margin-left: 30px;
+	cursor: default;
+	border: none;
+	font-size: 18px;
+}
+
+div .submit {
+	margin: 30px;
+}
+
+.btn-submit {
+	color: white;
+	margin: auto;
+	float: none;
+	border: none;
+	font-size: 30px;
+}
+
+.delete:hover {
+	background-color: rgba(255, 0, 0, 1.0);
+	cursor: pointer;
+}
+
+.delete-node {
+	color: white;
+	background-color: rgba(255, 0, 0, 0.8);
+	float: none;
+}
+
+*:focus {
+	outline: none;
+}

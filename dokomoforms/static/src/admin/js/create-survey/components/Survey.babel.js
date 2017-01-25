@@ -3,7 +3,8 @@ import NodeList from './NodeList.babel.js';
 import cookies from '../../../../common/js/cookies';
 import {bindActionCreators} from 'redux';
 import {connect} from 'react-redux';
-import {updateSurveys} from './../redux/actions.babel.js';
+import {updateSurvey} from './../redux/actions.babel.js';
+import {surveySelector, nodeSelector} from './../redux/selectors.babel.js';
 
 
 class Survey extends React.Component {
@@ -29,36 +30,16 @@ class Survey extends React.Component {
         }
     }
 
-    shouldComponentUpdate(nextProps, nextState) {
-        let update = false;
-        if (JSON.stringify(this.props)!==JSON.stringify(nextProps)) {
-            console.log('survey props changed', this.props, nextProps)
-            update = true
-        }
-        if (JSON.stringify(this.state)!==JSON.stringify(nextState)) {
-            console.log('survey state changed', this.state, nextState)
-            update = true
-        }
-        return update;
-    }
-
-    showSubSurvey(subsurvey){
-        console.log('made it back to survey')
-        this.setState({current: subsurvey}, function(){
-            console.log('current updated', this.state.current)
-        })
-    }
-
-
     updateTitle(language, event) {
         let newTitle = {};
+        let survey = {};
         newTitle[language] = event.target.value;
         
         let titleObj = Object.assign({}, this.state.title, newTitle);
         this.setState({title: titleObj}, function() {
             console.log('updated title', this.state.title);
-            let new_survey = {title: this.state.title, default_language: this.state.default_language}
-            this.props.updateSurveys(new_survey, this.props.survey.id)
+            survey.title = this.state.title;
+            this.props.updateSurvey(this.props.survey.id, {title: this.state.title})
         })
     }
 
@@ -80,21 +61,12 @@ class Survey extends React.Component {
     }
 
     updateNodeList(nodelist) {
-        console.log('update nodelist being called')
-        console.log(this.state.current);
-        console.log('this state nodes', this.state.nodes)
         // console.log('nodelist before', nodelist)
         // if (index < 0) nodelist.push(node)
         // else nodelist[index] = node;
-        console.log('nodeList', nodelist);
         if (this.state.current) {
-            console.log('IFFF CURRENT')
             let newCurrent = Object.assign({}, this.state.current, {nodes: nodelist})
-            this.setState({current: newCurrent}, function(){
-                console.log('lets see how this works....')
-                console.log(this.state.current)
-                console.log(this.state.nodes)
-            })
+            this.setState({current: newCurrent})
         } else {
             console.log('before survey', this.state.nodes)
             let newnodes = [];
@@ -106,26 +78,6 @@ class Survey extends React.Component {
     }
 
     submit() {
-        // var survey2 = {
-        //     title: {English: 'other responses'},
-        //     default_language: 'English',
-        //       survey_type: 'public',
-        //       metadata: {},
-        //       nodes: [{
-        //         node: {
-        //             type_constraint: 'integer',
-        //             allow_multiple: true,
-        //             allow_other: true,
-        //             title: {'English': 'multiple responses'},
-        //             hint: {'English': 'select more than one'}
-        //         }
-        //     }]
-        // }
-        // console.log(survey2)
-        // this.props.submitToDatabase(survey2)
-        console.log('being called?')
-        // const newSurvey = function deleteExcessParams(this.props.survey)
-        // console.log('before submitting', newSurvey);
         this.props.submitToDatabase();
     }
 
@@ -185,7 +137,7 @@ class Survey extends React.Component {
 
     render() {
         console.log('rendering survey')
-        console.log(this.props.survey)
+        console.log(this.props.nodes)
         return (
             <div className="container">
             {(!this.state.current && this.props.survey) &&
@@ -209,7 +161,7 @@ class Survey extends React.Component {
                         submitted={this.props.submitted}
                         survey_id={this.props.survey.id}
                         submitting={this.state.isSubmitted}
-                        survey_nodes={this.props.survey.nodes}
+                        survey_nodes={this.props.nodes}
                         default_language={this.state.default_language}
                         updateNodeList={this.updateNodeList}
                         languages={this.state.languages}
@@ -278,11 +230,15 @@ function Languages(props){
             <div className="form-group row survey-group">
                 <label htmlFor="survey-title" className="col-xs-4 col-form-label survey-label">Languages: </label>
                 <div className="col-xs-12">
-                    Add Language: <input type="text" onBlur={languageHandler}/>
-                    Default Language:
+                    <div>
+                        Add Language: <input type="text" onBlur={languageHandler}/>
+                    </div>
+                    <div>
+                        Default Language:
                         <select onChange={props.updateDefault}>
                             {languageList()}
                         </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -290,14 +246,16 @@ function Languages(props){
 }
 
 function mapStateToProps(state){
+    console.log('state 1', state)
     return {
-        surveys: state.surveys
+        surveys: surveySelector(state),
+        nodes: nodeSelector(state)
     };
 }
 
 function mapDispatchToProps(dispatch){
     return (
-        bindActionCreators({updateSurveys: updateSurveys}, dispatch)
+        bindActionCreators({updateSurvey: updateSurvey}, dispatch)
     )
 }
 
