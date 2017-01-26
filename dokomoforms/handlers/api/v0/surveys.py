@@ -24,19 +24,25 @@ from dokomoforms.models.survey import _administrator_table
 
 # TODO: clean up this mess
 def _create_sub_survey(session, sub_survey_dict, parent_node):
-    for bucket_dict in sub_survey_dict['buckets']:
-        if bucket_dict['bucket_type'] == 'multiple_choice':
-            choice_dict = bucket_dict['bucket']
-            choice_number = choice_dict.pop('choice_number', None)
-            if choice_number is not None:
-                bucket_dict['bucket'] = parent_node.choices[choice_number]
-            choice_id = choice_dict.pop('choice_id', None)
-            if choice_id is not None:
-                bucket_dict['bucket'] = session.query(Choice).get(choice_id)
-    sub_survey_dict['buckets'] = [
-        construct_bucket(**b) for b in sub_survey_dict['buckets']
-    ]
+    # TODO:
+    # Jan 26 2016 - vr2262
+    # After discussion with @mkc1, sub_surveys should have buckets xor be
+    # repeatable. Current behavior is that buckets are required for
+    # sub_subrveys. Need to add a db constraint for this new behavior...
     repeatable = sub_survey_dict.get('repeatable', None)
+    if not repeatable:
+        for bucket_dict in sub_survey_dict['buckets']:
+            if bucket_dict['bucket_type'] == 'multiple_choice':
+                choice_dict = bucket_dict['bucket']
+                choice_number = choice_dict.pop('choice_number', None)
+                if choice_number is not None:
+                    bucket_dict['bucket'] = parent_node.choices[choice_number]
+                choice_id = choice_dict.pop('choice_id', None)
+                if choice_id is not None:
+                    bucket_dict['bucket'] = session.query(Choice).get(choice_id)
+        sub_survey_dict['buckets'] = [
+            construct_bucket(**b) for b in sub_survey_dict['buckets']
+        ]
     _cogsn = _create_or_get_survey_node
     sub_survey_dict['nodes'] = [
         _cogsn(session, node, repeatable) for node in sub_survey_dict['nodes']
