@@ -87,13 +87,13 @@ class MinMaxLogic extends React.Component {
 
     logicHandler(bound, event) {
         if (bound==='min' && this.state.max && 
-            this.state.max < event.target.value) {
+            parseInt(this.state.max) < parseInt(event.target.value)) {
             console.log('min must be less than max');
             return;
         }
         if (bound==='max' && this.state.min &&
-            this.state.min > event.target.value) {
-            console.log('max must be more than min');
+            parseInt(this.state.min) > parseInt(event.target.value)) {
+            console.log('max must be more than min', event.target.value);
             return;
         }
         this.setState({[bound]: event.target.value}, function(){

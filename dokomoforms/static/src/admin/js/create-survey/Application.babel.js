@@ -6,7 +6,7 @@ import utils from './utils.js';
 import SubSurvey from './components/SubSurvey.babel.js';
 import {bindActionCreators} from 'redux';
 import {connect} from 'react-redux';
-import {addSurvey, getNode, getSurvey, denormalize} from './redux/actions.babel.js';
+import {getNode, getSurvey, denormalize} from './redux/actions.babel.js';
 import {surveySelector, nodeSelector} from './redux/selectors.babel.js';
 
 class Application extends React.Component {
@@ -94,7 +94,7 @@ class Application extends React.Component {
 
         var test_survey = {
           title: {
-            English: 'test numbering'
+            English: 'test numbering 2'
           },
           default_language: 'English',
           survey_type: 'public',
@@ -102,12 +102,26 @@ class Application extends React.Component {
           nodes: [
             {
               node: {
-                number: 5,
-                title: {English: 'how many people in your household?'},
+                number: '123a',
+                title: {English: 'how old are you?'},
                 hint: {English: 'a hint'},
                 type_constraint: 'integer'
-              }
-            }]
+              },
+              sub_surveys: [
+                {   
+                    repeatable: true,
+                    nodes: [
+                        {
+                            repeatable: true,
+                            node: {
+                                title: {English: 'what is your name again?'},
+                                type_constraint: 'text'
+                            }
+                        }
+                    ]
+                }]
+                }
+            ]
         }
 
         
@@ -187,14 +201,13 @@ function mapStateToProps(state){
     console.log(state)
     return {
         survey: surveySelector(state),
-        node: nodeSelector(state),
         currentSurveyId: state.currentSurveyId
     }
 }
 
 function matchDispatchToProps(dispatch){
     console.log('dispatch being called')
-    return bindActionCreators({denormalize: denormalize, addSurvey: addSurvey, getNode: getNode, getSurvey: getSurvey}, dispatch)
+    return bindActionCreators({denormalize: denormalize, getNode: getNode, getSurvey: getSurvey}, dispatch)
 }
 
 export default connect(mapStateToProps, matchDispatchToProps)(Application);

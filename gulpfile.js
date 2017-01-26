@@ -331,7 +331,7 @@ gulp.task('admin-watch',
 // prod (?)
 //
 gulp.task('admin-build', ['clean'].concat(admin_tasks));
-gulp.task('survey-build', ['clean'].concat(survey_tasks));
+// gulp.task('survey-build', ['clean'].concat(survey_tasks));
 
 gulp.task('build', ['clean', 'admin-build', 'survey-build']);
 
@@ -348,6 +348,6 @@ gulp.task('dev-build', function() {
 
 // DEFAULT TASK
 
-gulp.task('watch', ['survey-watch', 'admin-watch']);
+gulp.task('watch', ['admin-watch']);
 
 gulp.task('default', ['watch']);

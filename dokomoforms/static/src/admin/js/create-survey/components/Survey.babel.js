@@ -17,7 +17,7 @@ class Survey extends React.Component {
         this.addLanguage = this.addLanguage.bind(this);
         this.updateDefault = this.updateDefault.bind(this);
         this.updateNodeList = this.updateNodeList.bind(this);
-        this.showSubSurvey = this.showSubSurvey.bind(this);
+        // this.showSubSurvey = this.showSubSurvey.bind(this);
         this.submit = this.submit.bind(this);
 
         this.state = {
@@ -165,7 +165,6 @@ class Survey extends React.Component {
                         default_language={this.state.default_language}
                         updateNodeList={this.updateNodeList}
                         languages={this.state.languages}
-                        showSubSurvey={this.showSubSurvey}
                     />
                 </div>
                 <button onClick={this.submit}>submit</button>

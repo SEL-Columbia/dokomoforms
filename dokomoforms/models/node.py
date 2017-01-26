@@ -41,6 +41,7 @@ class Node(Base):
     languages = util.languages_column('languages')
     title = util.json_column('title')
     hint = util.json_column('hint', default='{"English": ""}')
+    number = sa.Column(pg.TEXT)
     type_constraint = sa.Column(node_type_enum, nullable=False)
     logic = util.json_column('logic', default='{}')
     last_update_time = util.last_update_time()
@@ -135,6 +136,7 @@ class Question(Node):
             ('languages', self.languages),
             ('title', self.title),
             ('hint', self.hint),
+            ('number', self.number),
             ('allow_multiple', self.allow_multiple),
             ('allow_other', self.allow_multiple),
             ('type_constraint', self.type_constraint),
