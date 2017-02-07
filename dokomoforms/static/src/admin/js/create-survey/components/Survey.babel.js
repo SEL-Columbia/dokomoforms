@@ -1,10 +1,9 @@
 import React from 'react';
 import NodeList from './NodeList.babel.js';
-import cookies from '../../../../common/js/cookies';
 import {bindActionCreators} from 'redux';
 import {connect} from 'react-redux';
-import {updateSurvey} from './../redux/actions.babel.js';
-import {surveySelector, nodeSelector} from './../redux/selectors.babel.js';
+import {updateSurvey, denormalize} from './../redux/actions.babel.js';
+import {surveySelector} from './../redux/selectors.babel.js';
 
 
 class Survey extends React.Component {
@@ -15,38 +14,27 @@ class Survey extends React.Component {
 
         this.updateTitle = this.updateTitle.bind(this);
         this.addLanguage = this.addLanguage.bind(this);
-        this.updateDefault = this.updateDefault.bind(this);
-        this.updateNodeList = this.updateNodeList.bind(this);
-        // this.showSubSurvey = this.showSubSurvey.bind(this);
+        this.updateDefaultLanguage = this.updateDefaultLanguage.bind(this);
         this.submit = this.submit.bind(this);
 
         this.state = {
-            title: {},
             languages: ['English'],
             default_language: 'English',
-            survey_type: 'public',
-            nodes: [],
-            isSubmitted: false
+            survey_type: 'public'
         }
     }
 
-    updateTitle(language, event) {
-        let newTitle = {};
-        let survey = {};
-        newTitle[language] = event.target.value;
-        
-        let titleObj = Object.assign({}, this.state.title, newTitle);
-        this.setState({title: titleObj}, function() {
-            console.log('updated title', this.state.title);
-            survey.title = this.state.title;
-            this.props.updateSurvey(this.props.survey.id, {title: this.state.title})
-        })
+    shouldComponentUpdate(){
+        return true;
     }
 
-    updateDefault(event) {
-        this.setState({default_language: event.target.value}, function(){
-            console.log('set state: default language updated', this.state.default_language);
-        });
+    updateTitle(language, event) {
+        const titleObj = {English: event.target.value}
+        this.props.updateSurvey({id: this.props.survey.id, title: titleObj})
+    }
+ 
+    updateDefaultLanguage(event) {
+        this.props.updateSurvey({id: this.props.survey.id, default_language: event.target.value});
     }
 
     addLanguage(language){
@@ -60,24 +48,9 @@ class Survey extends React.Component {
         });
     }
 
-    updateNodeList(nodelist) {
-        // console.log('nodelist before', nodelist)
-        // if (index < 0) nodelist.push(node)
-        // else nodelist[index] = node;
-        if (this.state.current) {
-            let newCurrent = Object.assign({}, this.state.current, {nodes: nodelist})
-            this.setState({current: newCurrent})
-        } else {
-            console.log('before survey', this.state.nodes)
-            let newnodes = [];
-            newnodes = newnodes.concat(nodelist);
-            this.setState({nodes: newnodes}, function(){
-                console.log('nodes from survey', this.state.nodes);
-            })
-        }
-    }
-
     submit() {
+        // let a_survey = this.props.survey.denormalize(1001);
+        // console.log('aaa', a_survey)
         this.props.submitToDatabase();
     }
 
@@ -137,39 +110,34 @@ class Survey extends React.Component {
 
     render() {
         console.log('rendering survey')
-        console.log(this.props.nodes)
+        console.log(this.props.survey)
         return (
             <div className="container">
-            {(!this.state.current && this.props.survey) &&
-                <div>
-                <div className="col-lg-8 survey center-block">
-                    <div className="survey-header header">
-                        Create a Survey
+                {(this.props.survey) &&
+                    <div>
+                        <div className="col-lg-8 survey center-block">
+                            <div className="survey-header header">
+                                Create a Survey
+                            </div>
+                            <SurveyTitle 
+                                updateTitle={this.updateTitle}
+                                title={this.props.survey.title}
+                                languages={this.state.languages}
+                            />
+                            <Languages 
+                                languages={this.state.languages}
+                                addLanguage={this.addLanguage}
+                                updateDefault={this.updateDefaultLangauge}
+                            />
+                            <hr/>
+                            <NodeList
+                                default_language={this.state.default_language}
+                                languages={this.state.languages}
+                            />
+                        </div>
+                        <button onClick={this.submit}>submit</button>
                     </div>
-                    <SurveyTitle 
-                        updateTitle={this.updateTitle}
-                        languages={this.state.languages}
-                    />
-                    <hr/>
-                    <Languages 
-                        languages={this.state.languages}
-                        addLanguage={this.addLanguage}
-                        updateDefault={this.updateDefault}
-                    />
-                    <NodeList
-                        key={this.props.survey_id}
-                        submitted={this.props.submitted}
-                        survey_id={this.props.survey.id}
-                        submitting={this.state.isSubmitted}
-                        survey_nodes={this.props.nodes}
-                        default_language={this.state.default_language}
-                        updateNodeList={this.updateNodeList}
-                        languages={this.state.languages}
-                    />
-                </div>
-                <button onClick={this.submit}>submit</button>
-                </div>
-            }
+                }
         </div>
     )
 }
@@ -178,15 +146,17 @@ class Survey extends React.Component {
 
 function SurveyTitle(props) {
 
-    const languages = props.languages;
+    // const languages = props.languages;
+    const languages = ['English'];
 
     function titleList(languages){
         return props.languages.map(function(language){
+            const display = props.title ? props.title[language] : "";
             return (
                 <div className="col-xs-12 survey-title" key={language}>
                     <div className="language-text"><span className="language-header">{language}</span></div>
                     <textarea id="survey-title" className="form-control survey-title-text" rows="1"
-                        onBlur={props.updateTitle.bind(null, language)}/>
+                        onBlur={props.updateTitle.bind(null, language)} placeholder={display}/>
                 </div>
             )
         })
@@ -244,20 +214,20 @@ function Languages(props){
     )
 }
 
+
 function mapStateToProps(state){
     console.log('state 1', state)
     return {
-        surveys: surveySelector(state),
-        nodes: nodeSelector(state)
+        survey: surveySelector(state),
+        currentSurveyId: state.currentSurveyId
     };
 }
 
 function mapDispatchToProps(dispatch){
     return (
-        bindActionCreators({updateSurvey: updateSurvey}, dispatch)
+        bindActionCreators({updateSurvey: updateSurvey, denormalize: denormalize}, dispatch)
     )
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(Survey);
 
-// export default Survey;
+export default connect(mapStateToProps, mapDispatchToProps)(Survey);
