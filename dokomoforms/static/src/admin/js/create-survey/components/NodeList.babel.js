@@ -4,7 +4,7 @@ import Node from './Node.babel.js';
 import {bindActionCreators} from 'redux';
 import {connect} from 'react-redux';
 import {nodeSelector} from './../redux/selectors.babel.js';
-import {addNode} from './../redux/actions.babel.js';
+import {addNode, addQuestion} from './../redux/actions.babel.js';
 
 
 class NodeList extends React.Component {
@@ -48,6 +48,7 @@ class NodeList extends React.Component {
         const nodeId = utils.addId('node');
         let newNode = {id: nodeId, survey: surveyId};
         if (this.props.repeatable) newNode.repeatable = this.props.repeatable;
+        this.props.addQuestion({id: nodeId});
         this.props.addNode(newNode);
     }
 
@@ -76,7 +77,7 @@ function mapStateToProps(state){
 }
 
 function matchDispatchToProps(dispatch){
-    return bindActionCreators({addNode: addNode}, dispatch)
+    return bindActionCreators({addNode: addNode, addQuestion: addQuestion}, dispatch)
 }
 
 export default connect(mapStateToProps, matchDispatchToProps)(NodeList);
