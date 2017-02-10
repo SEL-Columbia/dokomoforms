@@ -8,11 +8,12 @@ import { createStore, combineReducers } from 'redux';
 import { createReducer } from 'redux-orm';
 import bootstrap from './redux/bootstrap.babel.js';
 import { orm } from './redux/models.babel.js';
-import currentSurveyIdReducer from './redux/reducers.babel.js';
+import { currentSurveyIdReducer, submittedReducer } from './redux/reducers.babel.js';
 
  const rootReducer = combineReducers({
     orm: createReducer(orm),
-    currentSurveyId: currentSurveyIdReducer
+    currentSurveyId: currentSurveyIdReducer,
+    submitted: submittedReducer
  });
 
 const store = createStore(rootReducer, bootstrap(orm));
