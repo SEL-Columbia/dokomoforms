@@ -1,31 +1,41 @@
-// export function addNode(node, survey_id) {
-//   console.log('you are adding a node!', node.id, survey_id);
-//   return {
-//     type: "ADD_NODE_TO_SURVEY",
-//     payload: {node: node, survey_id: survey_id}
-//   }
-// }
 
 export function denormalize() {
   console.log('denormal action')
   return {
-    type: "DENORMALIZE",
+    type: "SUBMIT",
     payload: {survey: 1001}
   }
 }
-export function addNode(node, surveyId) {
-  console.log('you are adding a node!');
+
+export function addNode(node) {
+  console.log('you are adding a node!', node);
   return {
-    type: "ADD_NODE_TO_SURVEY",
-    payload: {node: node, surveyId: surveyId}
+    type: "ADD_NODE",
+    payload: node
   }
 }
 
-export function updateNode(id, node) {
-  console.log('you are updating a node?!', id);
+export function addQuestion(question) {
+  console.log('you are adding a question', question);
+  return {
+    type: "ADD_QUESTION",
+    payload: question
+  }
+}
+
+export function updateNode(node) {
+  console.log('you are updating a node', node.id);
   return {
     type: "UPDATE_NODE",
-    payload: {node_id: id, node: node}
+    payload: node
+  }
+}
+
+export function updateQuestion(question) {
+  console.log('you are updating a question', question.id);
+  return {
+    type: "UPDATE_QUESTION",
+    payload: question
   }
 }
 
@@ -36,21 +46,37 @@ export function getNode(id) {
   }
 }
 
-export function addSurveyToNode(sub_survey, node_id) {
-  console.log('you are adding a survey!');
+export function addBucket(bucket) {
+  console.log('add bucket being called', bucket)
   return {
-    type: "ADD_SUBSURVEY_TO_NODE",
-    payload: {sub_survey: sub_survey, node_id: node_id}
+    type: "ADD_BUCKET",
+    payload: bucket
   }
 }
 
-// export function updateSurvey(survey) {
-//   console.log('you are updating a survey!', id);
-//   return {
-//     type: "UPDATE_SURVEY",
-//     payload: {survey: survey}
-//   }
-// }
+export function addSurvey(sub_survey) {
+  console.log('you are adding a survey!', sub_survey);
+  return {
+    type: "ADD_SURVEY",
+    payload: sub_survey
+  }
+}
+
+export function updateCurrentSurvey(surveyId) {
+  console.log('you are updating the current survey!', surveyId);
+  return {
+    type: "UPDATE_CURRENT_SURVEY",
+    payload: {surveyId: surveyId}
+  }
+}
+
+export function getParentSurvey(surveyId) {
+  console.log('you are updating the current survey!', surveyId);
+  return {
+    type: "UPDATE_CURRENT_SURVEY",
+    payload: {surveyId: surveyId}
+  }
+}
 
 export function getSurvey(id) {
   return {
@@ -59,11 +85,18 @@ export function getSurvey(id) {
   }
 }
 
-export function updateSurvey(survey_id, survey) {
-  console.log('you are updating survey', survey, survey_id)
+export function getBuckets(id) {
+  return {
+    type: "GET_BUCKETS",
+    payload: {id: id}
+  }
+}
+
+export function updateSurvey(survey) {
+  console.log('you are updating survey', survey)
   return {
     type: "UPDATE_SURVEY",
-    payload: {survey_id: survey_id, survey: survey}
+    payload: survey
   }
 }
 
@@ -87,73 +120,31 @@ export function deleteNode(node_id) {
   console.log('you are removing', node_id)
   return {
     type: "DELETE_NODE",
-    payload: {node_id: node_id}
+    payload: node_id
   }
 }
-// // // adding a new todo item
 
-// // const ADD_TODO = 'ADD_TODO'
+export function deleteBucket(id) {
+  console.log('you are removing', id)
+  return {
+    type: "DELETE_NODE",
+    payload: {id: id}
+  }
+}
 
-// // {
-// // 	type: ADD_TODO,
-// // 	text: 'Build my first Redux app'
-// // }
+export function addLogic(logic) {
+  console.log('you are adding logic', logic)
+  return {
+    type: "ADD_LOGIC",
+    payload: logic
+  }
+}
 
-// // {
-// // 	type: TOGGLE_TODO,
-// // 	index: UNIQUE INDEX of data being passed in
-// // }
-
-// // //changing the currently visisble todos
-// // {
-// // 	type: SET_VISIBILITY_FILTER,
-// // 	filter: SHOW_COMPLETED
-// // }
-
-// // // action CREATORS return an action
-
-// // function addTodo(text) {
-// // 	return {
-// // 		type: ADD_TODO,
-// // 		text
-// // 	}
-// // }
-
-// // // to initiate, pass the result to dispatch function
-
-// // dispatch(addTodo(text))
-// // dispatch(completeTodo(index))
-
-
-
-// /*
-//  * action types
-//  */
-
-// export const ADD_TODO = 'ADD_TODO'
-// export const TOGGLE_TODO = 'TOGGLE_TODO'
-// export const SET_VISIBILITY_FILTER = 'SET_VISIBILITY_FILTER'
-
-// /*
-//  * other constants
-//  */
-
-
-// /*
-//  * action creators
-//  */
-
-// export function addNode(message) {
-//   return {
-//   	type: 'ADD_NODE',
-//   	node: node
-//   };
-// }
-
-// export function updateNode(index) {
-//   return {
-//   	type: 'TOGGLE_TODO',
-//   	index: index
-//   };
-// }
+export function updateLogic(logic) {
+  console.log('you are updating logic', logic)
+  return {
+    type: "UPDATE_LOGIC",
+    payload: logic
+  }
+}
 

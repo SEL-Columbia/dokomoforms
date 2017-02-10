@@ -1,45 +1,25 @@
 import React from 'react';
 import utils from './../utils.js';
 import ReactDOM from 'react-dom';
+import {orm} from './../redux/models.babel.js';
+import {bindActionCreators} from 'redux';
+import {connect} from 'react-redux';
+import {addLogic, updateLogic} from './../redux/actions.babel.js'; 
 
-function Title(props) {
-    console.log('title', props)
-    return(
-        <div className="title">
-            <div className="form-group row">
-                <label htmlFor="question-title" className="col-xs-4 col-form-label">{props.property}</label>
-            </div>
-            <div className="form-group row col-xs-12">
-                <textarea className="form-control question-title" rows="1" placeholder={props.display}
-                    onBlur={props.update}/>
-            </div>
-        </div>
-    )
-}
 
-class FacilityLogic extends React.Component {
+class Logic extends React.Component {
 
     constructor(props) {
 
         super(props);
 
+        this.renderFacility = this.renderFacility.bind(this);
+        this.renderMinMax = this.renderMinMax.bind(this);
         this.logicHandler = this.logicHandler.bind(this);
 
-        this.state = {
-            nlat: undefined,
-            slat: undefined,
-            wlng: undefined,
-            elng: undefined
-        }
     }
 
-    logicHandler(coordinate, event) {
-        this.setState({[coordinate]: event.target.value}, function(){
-            console.log("updated logic", this.state);
-        });
-    }
-
-    render() {
+    renderFacility() {
         return(
             <div className="form-group" style={{backgroundColor:'#02c39a'}}>
                 <div className="row">
@@ -69,61 +49,86 @@ class FacilityLogic extends React.Component {
             </div>
         )
     }
-}
 
-class MinMaxLogic extends React.Component {
-
-    constructor(props) {
-
-        super(props);
-
-        this.logicHandler = this.logicHandler.bind(this);
-
-        this.state = {
-            min: undefined,
-            max: undefined
-        }
-    }
 
     logicHandler(bound, event) {
-        if (bound==='min' && this.state.max && 
-            parseInt(this.state.max) < parseInt(event.target.value)) {
-            console.log('min must be less than max');
-            return;
-        }
-        if (bound==='max' && this.state.min &&
-            parseInt(this.state.min) > parseInt(event.target.value)) {
-            console.log('max must be more than min', event.target.value);
-            return;
-        }
-        this.setState({[bound]: event.target.value}, function(){
-            console.log("updated logic", this.state);
-            if (this.state.min && this.state.max) {
-                this.props.updateLogic(this.state);
-            }
-        });
+        console.log('calling logic handler');
+        const logic = {id: this.props.id, question: this.props.id, [bound]: event.target.value};
+        if (this.props.logic) this.props.updateLogic(logic);
+        else this.props.addLogic(logic);
     }
 
-    render() {
+    renderMinMax() {
         return(
-            <div className="form-group" style={{backgroundColor:'#02c39a'}}>
-                <div className="row">
-                    <label htmlFor="north" className="col-xs-2 col-form-label">Min</label>
-                    <div className="col-xs-10">
-                        <input id="north" className="form-control question-title" onBlur={this.logicHandler.bind(null, 'min')} readOnly={this.props.saved}/>
-                    </div>
+            <div>
+                {(this.props.type_constraint=="integer" ||
+                    this.props.type_constraint=="date" ||
+                    this.props.type_consrtaint=="decimal") &&
+                    <div className="form-group" style={{backgroundColor:'#02c39a'}}>
+                        <div className="row">
+                            <label htmlFor="north" className="col-xs-2 col-form-label">Min</label>
+                            <div className="col-xs-10">
+                                <input id="north" className="form-control question-title" onBlur={this.logicHandler.bind(null, 'min')} readOnly={this.props.saved}/>
+                            </div>
+                        </div>
+                        <div className="row">
+                            <label htmlFor="south" className="col-xs-2 col-form-label">Max</label>
+                            <div className="col-xs-10">
+                                <input id="south" className="form-control question-title" onBlur={this.logicHandler.bind(null, 'max')} readOnly={this.props.saved}/>
+                            </div>
+                        </div>
                 </div>
-                <div className="row">
-                    <label htmlFor="south" className="col-xs-2 col-form-label">Max</label>
-                    <div className="col-xs-10">
-                        <input id="south" className="form-control question-title" onBlur={this.logicHandler.bind(null, 'max')} readOnly={this.props.saved}/>
-                    </div>
-                </div>
+                }
+            </div>
+        )
+    }
+
+
+    render(){
+        return(
+            <div>
+
+                {(this.props.type_constraint=="integer" ||
+                this.props.type_constraint=="date" ||
+                this.props.type_constraint=="decimal") &&
+                this.renderMinMax()
+                }
+
+                {(this.props.type_constraint=="facility") &&
+                this.renderFacility()
+                }
+            
             </div>
         )
     }
 }
 
 
-export { Title, FacilityLogic, MinMaxLogic };
 
+function mapStateToProps(state, ownProps){
+    console.log('here', ownProps);
+    console.log(state);
+    const session = orm.session(state.orm);
+    console.log('ownProps', session.Question);
+    console.log('state dot orm', session.Logic);
+    console.log(session.Logic.all().toRefArray());
+    const id = ownProps.id;
+    let logic;
+    logic = session.Question.withId(id).logic;
+    if (logic) logic = logic.ref;
+    console.log('question', session.Question.withId(id))
+    console.log('logic', logic);
+    return {
+        logic: logic
+    }
+}
+
+function matchDispatchToProps(dispatch){
+    return bindActionCreators({
+        addLogic: addLogic,
+        updateLogic: updateLogic}, 
+        dispatch
+    )
+}
+
+export default connect(mapStateToProps, matchDispatchToProps)(Logic);
