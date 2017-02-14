@@ -1,6 +1,11 @@
 import React from 'react';
 import utils from './../utils.js';
 import ReactDOM from 'react-dom';
+import {bindActionCreators} from 'redux';
+import {connect} from 'react-redux';
+import {orm} from './../redux/models.babel.js';
+import {addChoice, updateChoice, deleteChoice} from './../redux/actions.babel.js';
+
 
 class MultipleChoiceList extends React.Component {
 
@@ -9,11 +14,11 @@ class MultipleChoiceList extends React.Component {
         super(props);
 
         this.listChoices = this.listChoices.bind(this);
-        this.addChoice = this.addChoice.bind(this);
-        this.updateChoice = this.updateChoice.bind(this);
-        this.deleteChoice = this.deleteChoice.bind(this);
-        this.changeAddChoice = this.changeAddChoice.bind(this);
-        this.save = this.save.bind(this);
+        // this.updateChoice = this.updateChoice.bind(this);
+        // this.deleteChoice = this.deleteChoice.bind(this);
+        // this.changeAddChoice = this.changeAddChoice.bind(this);
+        // this.save = this.save.bind(this);
+        this.addChoiceHandler = this.addChoiceHandler.bind(this);
         this.allowOther = this.allowOther.bind(this);
 
         this.state = {
@@ -24,72 +29,29 @@ class MultipleChoiceList extends React.Component {
         }
     }
 
+
     componentWillMount(){
-        console.log('this is mounting', this.props)
-        if (!this.props.choices ||
-            !this.props.choices.length) {
-            let choiceList = [];
-            let newChoice = {id: utils.addId('choice')};
-            newChoice['English'] = '';
-            console.log(newChoice);
-            choiceList.push(newChoice);
-            this.setState({choices: choiceList});
-        }
-        else {
-            let choices = [];
-            choices = choices.concat(this.props.choices)
-            this.setState({choices: choices})
+        if (!this.props.choices.length) {
+            this.addChoiceHandler({question: this.props.questionId})
         }
     }
+
 
     allowOther() {
         let id;
         let self = this;
-        this.setState({allow_other: true}, function(){
-            this.props.allowOther(true);
-        })
-
-        // let promise = new Promise (function(resolve, reject) {
-        //     console.log('inside the promise')
-        //     let id = self.addChoice()
-        //     resolve(id);
-        // })
-        
-        // promise.then(function(val){
-        //     console.log('val', val)
-        //     self.updateChoice(val, "other")
-        // })
-        // console.log('result', this.addChoice())
-        // console.log('allow other new id', id)
-        // this.updateChoice(id, "other");
+        this.setState({allow_other: true})
     }
 
-    componentWillReceiveProps(nextProps) {
-
-        // if (!this.props.choices ||
-        //     !this.props.choices.length) {
-        //     let choiceList = [];
-        //     let newChoice = {id: utils.addId('choice')};
-        //     newChoice[this.props.default_language] = '';
-        //     choiceList.push(newChoice);
-        //     this.setState({choices: choiceList});
-        // }
-        // console.log('choices ', this.props)
-        // if (!nextProps.choices || !nextProps.choices.length) {
-        //     console.log('no')
-        //     let choiceList = [];
-        //     let newChoice = {id: utils.addId('choice')};
-        //     newChoice[this.props.default_language] = '';
-        //     choiceList.push(newChoice);
-        //     this.setState({choices: choiceList});
-        // } else {
-        //     console.log('yes')
-        //     this.setState({choices: nextProps.choices})
-        // }
-    }
 
     shouldComponentUpdate(nextProps, nextState){
         return true;
+    }
+
+
+    addChoiceHandler(){
+        let newChoice = {question: this.props.questionId};
+        this.props.addChoice(newChoice);
     }
 
 
@@ -97,95 +59,98 @@ class MultipleChoiceList extends React.Component {
         console.log('rerendering list!!');
 
         let self = this;
-        let choices = [];
+        let choiceList = [];
 
-        if (this.state.choices) {
-            choices = choices.concat(this.state.choices)
+        if (this.props.choices.length) {
+            console.log('it has choices', this.props)
+            choiceList = choiceList.concat(this.props.choices)
         }
+
         let answer;
-
-        console.log('choices before rendering', choices)
-        choices = choices.map(function(choice, index){
-            answer = choice['English'];
-            return(<Choice
-                key={choice.id} 
-                index={index+1}
-                answer={answer}
-                enabled={self.state.enableAddChoice}
-                updateChoice={self.updateChoice.bind(null, choice.id)}
-                deleteChoice={self.deleteChoice.bind(null, index)}
-                changeAddChoice={self.changeAddChoice.bind(null, choice.id)}
-                saved={self.state.saved}
-            />)
-        })
-
-        if (this.state.allow_other) {
-            console.log('allowing other')
-            choices.push(<Choice
-                key={0} 
-                index={this.state.choices.length}
-                answer={"other"}
-                saved={self.state.saved}
-            />)
-        }
-
-        console.log('after choices', choices)
-        return choices;
-    }
-
-
-    addChoice() {
-        let choiceList = [];
-        choiceList = choiceList.concat(this.state.choices);
-        console.log('adding choice', choiceList);
-        let newChoice = {id: utils.addId('choice')};
-        newChoice['English']='';
-        choiceList.push(newChoice);
-
-        this.setState({enableAddChoice: true, choices: choiceList}, function(){
-            console.log('new choice added', this.state.choices);
-            console.log('newchoice id', newChoice.id)
-        });
-    }
-
-    updateChoice(id, text) {
-        console.log('resolve', id, text)
-        let choiceList = [];
-        let updated = false;
-        choiceList = choiceList.concat(this.state.choices);
-        console.log('updating choice', choiceList);
-
-        for (var i=0; i<choiceList.length; i++) {
-            if (choiceList[i].id===id) {
-                console.log(choiceList[i]['English'], text);
-                console.log('its updating');
-                choiceList[i]['English']=text;
-                updated = true;
-                break;
-            }
-        }
-
-        if (updated===true) {
-            this.setState({choices: choiceList}, function(){
-                console.log('choice state is now updated', this.state.choices)
-                this.props.updateChoices(this.state.choices);
+        if (choiceList.length) {
+            choiceList = choiceList.map(function(choice, index){
+                answer = choice['English'] || "";
+                console.log('choice', choice)
+                return(<Choice
+                    key={choice.id} 
+                    index={index+1}
+                    answer={answer}
+                    enabled={self.state.enableAddChoice}
+                    addOrUpdateChoice={self.props.updateChoice}
+                    deleteChoice={self.props.deleteChoice}
+                    changeAddChoice={self.changeAddChoice.bind(null, choice.id)}
+                    choiceId={choice.id}
+                    questionId={self.props.questionId}
+                />)
             })
-        } else {
-            console.log('something went wrong in update');
         }
 
+        if (this.props.choices && this.state.allow_other) {
+            console.log('allowing other')
+            choiceList.push(<Choice
+                key={0} 
+                index={this.props.choices.length}
+                answer={"other"}
+            />)
+        }
+        return choiceList;
     }
+
+
+    // addChoice() {
+    //     let choiceList = [];
+    //     choiceList = choiceList.concat(this.state.choices);
+    //     console.log('adding choice', choiceList);
+    //     let newChoice = {id: utils.addId('choice')};
+    //     newChoice['English']='';
+    //     choiceList.push(newChoice);
+
+    //     this.setState({enableAddChoice: true, choices: choiceList}, function(){
+    //         console.log('new choice added', this.state.choices);
+    //         console.log('newchoice id', newChoice.id)
+    //     });
+    // }
+
+
+    // updateChoice(id, text) {
+    //     console.log('resolve', id, text)
+    //     let choiceList = [];
+    //     let updated = false;
+    //     choiceList = choiceList.concat(this.state.choices);
+    //     console.log('updating choice', choiceList);
+
+    //     for (var i=0; i<choiceList.length; i++) {
+    //         if (choiceList[i].id===id) {
+    //             console.log(choiceList[i]['English'], text);
+    //             console.log('its updating');
+    //             choiceList[i]['English']=text;
+    //             updated = true;
+    //             break;
+    //         }
+    //     }
+
+    //     if (updated===true) {
+    //         this.setState({choices: choiceList}, function(){
+    //             console.log('choice state is now updated', this.state.choices)
+    //             this.props.updateChoices(this.state.choices);
+    //         })
+    //     } else {
+    //         console.log('something went wrong in update');
+    //     }
+    // }
  
-    deleteChoice() {
-        console.log('args', arguments)
-        const index = arguments[0];
-        let choiceList = [];
-        let updated = false;
-        choiceList = choiceList.concat(this.state.choices);
-        choiceList.splice(index, 1)
-        this.setState({choices: choiceList})
-        this.props.updateChoices(this.state.choices);
-    }
+
+    // deleteChoice() {
+    //     console.log('args', arguments)
+    //     const index = arguments[0];
+    //     let choiceList = [];
+    //     let updated = false;
+    //     choiceList = choiceList.concat(this.state.choices);
+    //     choiceList.splice(index, 1)
+    //     this.setState({choices: choiceList})
+    //     this.props.updateChoices(this.state.choices);
+    // }
+
 
     changeAddChoice(id){
         return;
@@ -211,10 +176,7 @@ class MultipleChoiceList extends React.Component {
     }
 
 
-    render() {
-
-        console.log('rendering choices!!!')
-
+    render(){
         return(
             <div style={{backgroundColor:'#00a896'}}>
                 <h2>multiple choice</h2>
@@ -222,7 +184,7 @@ class MultipleChoiceList extends React.Component {
                 <div>
                     <button id="new-choice"
                         value="new choice"
-                        onClick={this.addChoice}
+                        onMouseDown={this.addChoiceHandler}
                         disabled={!this.state.enableAddChoice}
                     >add choice</button>
                     <button id="allow_other"
@@ -244,7 +206,6 @@ class Choice extends React.Component {
 
         this.choiceHandler = this.choiceHandler.bind(this);
         this.buttonHandler = this.buttonHandler.bind(this);
-        this.rendering = this.rendering.bind(this);
 
         this.state = {
             text: '',
@@ -293,29 +254,27 @@ class Choice extends React.Component {
 
 
     choiceHandler(event) {
-        if (event.target.value!==this.state.text ||
-            event.target.value!==this.props.answer) {
-            console.log('event target', event.target.value)
-            console.log('state', this.state.text)
-            console.log('props', this.props.answer)
-            this.setState({text: event.target.value}, function(){
-                console.log('state has been set', this.state.text)
-                this.save();
-            })
-        }
-    }
-
-
-    rendering() {
-        console.log("i am rendering!!!", this.props.index, this.props.saved)
+        // if (event.target.value!==this.state.text ||
+        //     event.target.value!==this.props.answer) {
+        //     console.log('event target', event.target.value)
+        //     console.log('state', this.state.text)
+        //     console.log('props', this.props.answer)
+        //     this.setState({text: event.target.value}, function(){
+        //         console.log('state has been set', this.state.text)
+        //         this.save();
+        //     })
+        // }
+        console.log('choice handler')
+        if (!event.target.value.length) return;
+        let question = {id: this.props.choiceId, 'English': event.target.value};
+        this.props.addOrUpdateChoice(question);
     }
 
 
     render() {
-        console.log('answers!!!!!', this.props)
+        console.log('props', this.props)
         return(
             <div>
-                {this.rendering()}
                 <div className="form-group" style={{backgroundColor:'#daddd8'}}>
                     <div className="row">
                         <label htmlFor="question-title" className="col-xs-2 col-form-label">{this.props.index}.</label>
@@ -325,7 +284,9 @@ class Choice extends React.Component {
                                 onBlur={this.choiceHandler} readOnly={this.props.answer==="other"}/>
                         </div>
                     </div>
-                    <button onClick={this.props.deleteChoice}>delete</button>
+                    {(this.props.deleteChoice) &&
+                        <button onClick={this.props.deleteChoice.bind(null, this.props.choiceId)}>delete</button>
+                    }
                 </div>
             </div>
         )
@@ -333,5 +294,32 @@ class Choice extends React.Component {
 }
 
 
-export default MultipleChoiceList;
+function mapStateToProps(state, ownProps){
+    const session = orm.session(state.orm);
+    console.log('ownProps', ownProps)
 
+    console.log('state dot orm', session)
+    console.log(session.Question)
+
+    let choices = session.Question.withId(ownProps.questionId).multiple_choices;
+
+    if (choices) choices = choices.toRefArray();
+    else choices = [];
+
+    console.log(choices);
+    return {
+        choices: choices
+    };
+}
+
+
+function matchDispatchToProps(dispatch){
+    return bindActionCreators({
+        addChoice: addChoice,
+        updateChoice: updateChoice,
+        deleteChoice: deleteChoice
+    }, dispatch)
+}
+
+
+export default connect(mapStateToProps, matchDispatchToProps)(MultipleChoiceList);
