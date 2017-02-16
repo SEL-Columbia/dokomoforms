@@ -1,6 +1,7 @@
 import utils from './../utils.js';
 import MultipleChoice from './MultipleChoice.babel.js';
 import Logic from './Logic.babel.js';
+import Fields from './Fields.babel.js';
 import SubSurveyList from './SubSurveyList.babel.js';
 import {bindActionCreators} from 'redux';
 import {connect} from 'react-redux';
@@ -8,9 +9,6 @@ import {nodeSelector} from './../redux/selectors.babel.js';
 import {addSurvey, addNode, updateNode, addQuestion, updateQuestion, updateCurrentSurvey, deleteNode} from './../redux/actions.babel.js';
 
 class Node extends React.Component {
-
-    // Node is currently referring to the full node object that contains the question
-    // and the associated sub-surveys
 
     constructor(props) {
         super(props);
@@ -27,10 +25,12 @@ class Node extends React.Component {
         this.listTitles = this.listTitles.bind(this);
         this.allowOther = this.allowOther.bind(this);
         this.updateNumber = this.updateNumber.bind(this);
+        // this.toggleField = this.toggleField.bind(this);
 
         this.state = {
             title: {},
-            hint: {},
+            showHint: false,
+            showLogic: false,
             allow_multiple: false,
             allow_other: false,
             type_constraint: 'text',
@@ -38,40 +38,14 @@ class Node extends React.Component {
             sub_surveys: [],
             logic: {},
             saved: false,
-            showSubSurveys: false
+            showSubSurveys: false,
         }
-    }
-
-    shouldComponentUpdate(nextProps, nextState) {
-        return true;
-        // console.log(this.props.data, nextProps.data)
-        // if (JSON.stringify(this.props.data)!==JSON.stringify(nextProps.data)) return true;
     }
 
     componentWillReceiveProps(nextProps) {
         if (!this.props.repeatable) return;
         if (this.props.repeatable=="true") this.props.updateNode({id: this.props.id, repeatable: "true"})
         if (this.props.repeatable=="false") this.props.updateNode({id: this.props.id, repeatable: "false"})
-        // if (!this.props.choices ||
-        //     !this.props.choices.length) {
-        //     let choiceList = [];
-        //     let newChoice = {id: utils.addId('choice')};
-        //     newChoice[this.props.default_language] = '';
-        //     choiceList.push(newChoice);
-        //     this.setState({choices: choiceList});
-        // }
-        // console.log('choices ', this.props)
-        // if (!nextProps.choices || !nextProps.choices.length) {
-        //     console.log('no')
-        //     let choiceList = [];
-        //     let newChoice = {id: utils.addId('choice')};
-        //     newChoice[this.props.default_language] = '';
-        //     choiceList.push(newChoice);
-        //     this.setState({choices: choiceList});
-        // } else {
-        //     console.log('yes')
-        //     this.setState({choices: nextProps.choices})
-        // }
     }
 
     getTitleOrHintValue(property, language) {
@@ -101,13 +75,6 @@ class Node extends React.Component {
         const newQuestion = {id: this.props.id, question: updatedQuestion};
 
         this.props.updateQuestion(updatedQuestion);
-        
-        // let titleObj = Object.assign({}, this.state.title, newTitle);
-        // this.setState({title: titleObj}, function() {
-        //     console.log('updated title', this.state.title);
-        //     survey.title = this.state.title;
-        //     this.props.updateSurvey(this.props.survey.id, {title: this.state.title})
-        // })
     }
 
 
@@ -193,6 +160,8 @@ class Node extends React.Component {
                             display={displayQuestion}
                             update={self.updateTitle.bind(null, language)}
                         />
+
+                    {(self.state.showHint || self.props.data.hint) &&
                         <Title
                             property={'Hint'}
                             key={key+"_h"}
@@ -200,18 +169,19 @@ class Node extends React.Component {
                             display={displayHint}
                             update={self.updateHint.bind(null, language)}
                         />
+                    }
                 </div>
             )
         }) 
     }
 
 
-    addTypeConstraint(event) {
+    addTypeConstraint(value) {
         const node = this.props.data;
-        const updatedQuestion = Object.assign(node, {type_constraint: event});
+        const updatedQuestion = Object.assign(node, {type_constraint: value});
         // console.log('updated node', updatedNode, this.props)
         this.props.updateQuestion(updatedQuestion);
-        this.setState({type_constraint: event});
+        this.setState({type_constraint: value});
         // this.props.updateNode(this.props.id, {type_constraint: event.target.value})
     }
 
@@ -229,16 +199,10 @@ class Node extends React.Component {
             const updatedQuestion = Object.assign(this.props.data, {allow_multiple: value});
             this.props.updateQuestion(updatedQuestion)
         })
-        // this.props.updateNode({id: this.props.id, allow_multiple: event.target.value})
-        // console.log('update allow_multiple', event.target.value)
-        // this.setState({allow_multiple: event.target.value}, function(){
-        //     console.log(this.state)
-        //     this.saveNode()
-        // })
     }
 
     allowOther(bool) {
-        const nodeObj = Object.assign(this.props.data, {allow_multiple: bool});
+        const nodeObj = Object.assign(this.props.data, {allow_other: bool});
         this.props.updateNode({id: this.props.node.id, question: nodeObj})
         // this.setState({allow_other: bool}, function(){
         //     console.log('allow other', bool, this.state)
@@ -252,6 +216,11 @@ class Node extends React.Component {
             this.props.updateNode(this.props.node.id, {choices: this.state.choices});
         })
     }
+
+    // toggleField(field){
+    //     console.log('togglefield', field, this.state[field])
+    //     this.setState({[field]: !this.state[field]})
+    // }
 
 
     render() {
@@ -271,24 +240,24 @@ class Node extends React.Component {
                         type_constraint={this.props.data.type_constraint}
                         addTypeConstraint={this.addTypeConstraint} 
                         saved={this.state.saved}/>
-                        <div>
-                    <label htmlFor="type-constraint" className="col-xs-2 col-form-label">Allow Multiple Responses:</label>
-                    <div className="col-xs-4">
-                        <select className="form-control type-constraint"
-                            value={this.props.data.allow_multiple || this.state.allow_multiple}
-                            onChange={this.addAllowMultiple}>
-                            <option></option>
-                            <option value={false}>no</option>
-                            <option value={true}>yes</option>
-                        </select>
+                    <div>
+                        <label htmlFor="type-constraint" className="col-xs-2 col-form-label">Allow Multiple Responses:</label>
+                        <div className="col-xs-4">
+                            <select className="form-control type-constraint"
+                                value={this.props.data.allow_multiple || this.state.allow_multiple}
+                                onChange={this.addAllowMultiple}>
+                                <option></option>
+                                <option value={false}>no</option>
+                                <option value={true}>yes</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
-            </div>
 
                 {(this.state.type_constraint=="multiple_choice" ||
                     this.props.data.type_constraint=="multiple_choice") &&
                     <MultipleChoice
-                        choices={this.props.data.choices}
+                        questionId={this.props.data.id}
                         addChoices={this.addChoices}
                         updateChoices={this.updateChoices}
                         allowOther={this.allowOther}
@@ -307,21 +276,13 @@ class Node extends React.Component {
                     />
                 }
 
-                {(this.props.sub_surveys && this.props.sub_surveys.length > 0) &&
-                    <SubSurveyList
-                        type_constraint={this.props.data.type_constraint || this.state.type_constraint}
-                        sub_surveys={this.props.sub_surveys}
-                        choices={this.props.data.choices}
-                        id={this.props.id}
-                        addSubSurvey={this.addSubSurvey}
-                        goToSubSurvey={this.goToSubSurvey}
-                    />
-                }
-
                 <Logic type_constraint={this.state.type_constraint} id={this.props.id}/>
 
                 <button onClick={this.props.deleteNode.bind(null, this.props.id)}>delete</button>
                 <button onClick={this.addSubSurvey}>Add Subsurvey</button>
+                <div className="form-group">
+                    <Fields toggleField={(field => this.setState({[field]: !this.state[field]}))}/>
+                </div>
             </div>
         );
     }
