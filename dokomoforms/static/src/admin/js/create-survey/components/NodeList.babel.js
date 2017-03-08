@@ -1,72 +1,84 @@
 import React from 'react';
 import utils from './../utils.js';
 import Node from './Node.babel.js';
-import {bindActionCreators} from 'redux';
-import {connect} from 'react-redux';
-import {nodeSelector} from './../redux/selectors.babel.js';
-import {addNode, addQuestion} from './../redux/actions.babel.js';
+import { bindActionCreators } from 'redux';
+import { connect } from 'react-redux';
+import { nodeSelector } from './../redux/selectors.babel.js';
+import { addNode, addQuestion } from './../redux/actions.babel.js';
 
 
-class NodeList extends React.Component {
+function NodeList(props) {
 
-    constructor(props) {
+    // constructor(props) {
 
-        super(props);
+    //     super(props);
 
-        this.listQuestions = this.listQuestions.bind(this);
-        this.addQuestion = this.addQuestion.bind(this);
+    //     this.listQuestions = this.listQuestions.bind(this);
+    //     this.addQuestion = this.addQuestion.bind(this);
+    // }
 
-    }
+    function listQuestions() {
 
+        console.log('nodes before rendering', props.nodes);
 
-    listQuestions() {
-
-        let self = this;
-
-        console.log('nodes before rendering', this.props.nodes)
-
-        return this.props.nodes.map(function(node, index) {
-            console.log(node)
+        return props.nodes.map(function(node, index) {
+            console.log(node);
             return(
                 <Node
-                    repeatable={self.props.repeatable}
+                    repeatable={props.repeatable}
                     key={node.id} 
                     id={node.id}
                     index={index+1}
-                    data={node.question}
                     sub_surveys={node.sub_surveys}
-                    default_language={self.props.default_language}
-                    languages={self.props.languages}
+                    default_language={props.default_language}
+                    languages={props.languages}
                 />
-            )
+            );
         });
     }
 
-
-    addQuestion() {
-        const surveyId = this.props.nodes[0].survey;
+    function addQuestion() {
+        const surveyId = props.nodes[0].survey;
         const nodeId = utils.addId('node');
-        let newNode = {id: nodeId, survey: surveyId};
-        if (this.props.repeatable) newNode.repeatable = this.props.repeatable;
-        this.props.addQuestion({id: nodeId});
-        this.props.addNode(newNode);
+        props.addQuestion({id: nodeId});
+        let newNode = {id: nodeId, survey: surveyId, question: nodeId};
+        if (props.repeatable) newNode.repeatable = props.repeatable;
+        props.addNode(newNode);
     }
 
-    render() {
-        console.log('rendering nodelist', this.props)
-        console.log('survey id', this.props.survey_id)
-        return (
+    // render() {
+    //     console.log('rendering nodelist', this.props)
+    //     console.log('survey id', this.props.survey_id)
+    //     return (
+    //         <div className="node-list">
+    //             <div className="node-list-header">
+    //                 Questions
+    //             </div>
+    //             {this.listQuestions()}
+    //             <div style={{textAlign: "center"}}>
+    //                 <button 
+    //                     onClick={this.addQuestion}
+    //                     id="add-question-btn"
+    //                 >Add Question</button>
+    //             </div>
+    //         </div>
+    //     );
+    // }
+
+    return(
             <div className="node-list">
-                <div className="header">
+                <div className="node-list-header">
                     Questions
                 </div>
-                {this.listQuestions()}
-                <button 
-                    onClick={this.addQuestion}
-                >Add Question</button>
+                {listQuestions()}
+                <div style={{textAlign: "center"}}>
+                    <button 
+                        onClick={addQuestion}
+                        id="add-question-btn"
+                    >Add Question</button>
+                </div>
             </div>
-        );
-    }
+    )
 }
 
 function mapStateToProps(state){
