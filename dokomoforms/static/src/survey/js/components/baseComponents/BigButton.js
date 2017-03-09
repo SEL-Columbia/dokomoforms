@@ -1,4 +1,4 @@
-var React = require('react');
+import React from'react';
 
 /*
  * Big 'ol button
@@ -8,22 +8,20 @@ var React = require('react');
  *  @buttonFunction: What to do on click events
  *  @text: Text of the button
  */
-module.exports = React.createClass({
-    render: function() {
-        var buttonClasses = 'btn btn-block navigate-right page_nav__next';
-        if (this.props.type) {
-            buttonClasses += ' ' + this.props.type;
-        } else {
-            buttonClasses += ' btn-primary';
-        }
-
-        return (
-            <div className='bar-padded'>
-                <button onClick={this.props.buttonFunction} className={buttonClasses}>
-                    {this.props.text}
-                </button>
-            </div>
-       );
+export default function(props){
+    var buttonClasses = 'btn btn-block navigate-right page_nav__next';
+    if (props.type) {
+        buttonClasses += ' ' + props.type;
+    } else {
+        buttonClasses += ' btn-primary';
     }
-});
+
+    return (
+        <div className='bar-padded'>
+            <button onClick={props.buttonFunction} className={buttonClasses}>
+                {props.text}
+            </button>
+        </div>
+   );
+};
 

@@ -1,18 +1,16 @@
-var React = require('react');
+import React from 'react';
 
 /*
  * Message component
  *
  * @text: text to render
  */
-module.exports = React.createClass({
-    render: function() {
-        var textClass = this.props.classes;
-        return (
-            <div className='content-padded'>
-                <p className={textClass}>{this.props.text}</p>
-            </div>
-        );
-    }
+export default function(props) {
+    var textClass = props.classes;
+    return (
+        <div className='content-padded'>
+            <p className={textClass}>{props.text}</p>
+        </div>
+    );
 });
 

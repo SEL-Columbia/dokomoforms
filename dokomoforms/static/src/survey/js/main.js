@@ -1,3 +1,5 @@
+import ReactDOM from 'react-dom';
+
 var React = require('react'),
     Application = require('./Application'),
     config = require('./conf/config'),
@@ -27,8 +29,8 @@ window.init = function(survey, url) {
         window.location.reload();
     });
 
-    React.render(
-            <Application survey={survey} />,
-            document.body
+    ReactDOM.render(
+        <Application survey={survey} />,
+        document.body
     );
 };

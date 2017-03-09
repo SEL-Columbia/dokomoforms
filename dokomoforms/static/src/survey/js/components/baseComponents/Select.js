@@ -1,5 +1,5 @@
-var React = require('react'),
-    ResponseField = require('./ResponseField.js');
+import React from 'react';
+import ResponseField from './ResponseField.js';
 
 /*
  * Select component
@@ -13,14 +13,19 @@ var React = require('react'),
  *  @onInput: What to do on valid other input
  *  @onSelect: What to do on selection
  */
-module.exports = React.createClass({
-    getInitialState: function() {
-        return {
-            showOther: this.props.initSelect && this.props.initSelect.indexOf('other') > -1
-        };
-    },
+class Select extends React.Component {
 
-    onChange: function(e) {
+    constructor(props) {
+        super(props);
+
+        this.onChange = this.onChange.bind(this);
+
+        this.state = {
+            showOther: this.props.initSelect && this.props.initSelect.indexOf('other') > -1
+        }        
+    }
+
+    onChange(e) {
         var foundOther = false;
         var options = [];
         for (var i = 0; i < e.target.selectedOptions.length; i++) {
@@ -35,9 +40,9 @@ module.exports = React.createClass({
         this.setState({
             showOther: foundOther
         });
-    },
+    }
 
-    render: function() {
+    render() {
         var size = this.props.multiSelect ?
             this.props.choices.length + 1 + 1 * this.props.withOther : 1;
         return (
@@ -78,6 +83,5 @@ module.exports = React.createClass({
                     }
                 </div>
         );
-
     }
-});
+};

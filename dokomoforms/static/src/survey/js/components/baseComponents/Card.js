@@ -1,4 +1,4 @@
-var React = require('react');
+import React from 'react';
 
 /*
  * Card component
@@ -7,25 +7,23 @@ var React = require('react');
  *  @type: Card type (class name from ratchet usually) defaults to message-primary
  *  @msg: Array of messages, each element is placed on a new line. JSX accepted
  */
-module.exports = React.createClass({
-    render: function() {
-        var messageClass = 'message-box';
-        if (this.props.type) {
-            messageClass += ' ' + this.props.type;
-        } else {
-            messageClass += ' message-primary';
-        }
-
-        return (
-            <div className='content-padded'>
-                <div className={messageClass} >
-                {this.props.messages.map(function(msg, idx) {
-                    return (
-                            <span key={idx}> {msg} <br/> </span>
-                        );
-                })}
-                </div>
-            </div>
-       );
+export default function(props) {
+    var messageClass = 'message-box';
+    if (props.type) {
+        messageClass += ' ' + props.type;
+    } else {
+        messageClass += ' message-primary';
     }
-});
+
+    return (
+        <div className='content-padded'>
+            <div className={messageClass} >
+            {props.messages.map(function(msg, idx) {
+                return (
+                        <span key={idx}> {msg} <br/> </span>
+                    );
+            })}
+            </div>
+        </div>
+   );
+};

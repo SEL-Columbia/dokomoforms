@@ -1,4 +1,4 @@
-var React = require('react');
+import React from 'react';
 
 /*
  * PhotoPreview component
@@ -10,23 +10,21 @@ var React = require('react');
  *  @onDelete: What to do when the delete button is pressed
  *  @url: The URL of the photo to display
  */
-module.exports = React.createClass({
-
-    render: function() {
+export default function(props) {
         var divStyle = {
-            backgroundImage: 'url(' + this.props.url + ')'
+            backgroundImage: 'url(' + props.url + ')'
         };
 
         return (
             <div className="photo_preview_container dark_overlay" style={divStyle} >
-                <button className="btn btn-photo-close" onClick={this.props.onClose}>
+                <button className="btn btn-photo-close" onClick={props.onClose}>
                     <span className="icon icon-close" ></span>
                 </button>
 
-                <button className="btn btn-photo-delete" onClick={this.props.onDelete}>
+                <button className="btn btn-photo-delete" onClick={props.onDelete}>
                     <span className="icon icon-trash"></span> Delete
                 </button>
              </div>
         );
     }
-});
+};

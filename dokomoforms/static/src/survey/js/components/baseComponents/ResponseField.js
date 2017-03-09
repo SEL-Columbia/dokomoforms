@@ -1,5 +1,5 @@
-var React = require('react'),
-    moment = require('moment');
+import React from 'react';
+import moment from 'moment';
 
 /*
  * ResponseField component
@@ -15,14 +15,11 @@ var React = require('react'),
  *  @placeholder: Placeholder text for input, defaults to 'Please provide a response'
  *  @initValue: Initial value for the input field
  */
-module.exports = React.createClass({
-    getInitialState: function() {
-        return {};
-    },
+export default function(props) {
 
     // Determine the input field type based on props.type
-    getResponseType: function() {
-        var type = this.props.type;
+    function getResponseType() {
+        var type = props.type;
         switch (type) {
             case 'integer':
             case 'decimal':
@@ -38,11 +35,11 @@ module.exports = React.createClass({
             default:
                 return 'text';
         }
-    },
+    }
 
     // Determine the input field step based on props.type
-    getResponseStep: function() {
-        var type = this.props.type;
+    function getResponseStep() {
+        var type = props.type;
         switch (type) {
             case 'decimal':
                 return 'any';
@@ -51,16 +48,16 @@ module.exports = React.createClass({
             default:
                 return null;
         }
-    },
+    }
 
     /*
      * Validate the answer based on props.type
      *
      * @answer: The response to be validated
      */
-    validate: function(answer) {
-        var type = this.props.type;
-        var logic = this.props.logic;
+    function validate(answer) {
+        var type = props.type;
+        var logic = props.logic;
         var val = null;
         switch (type) {
             case 'integer':
@@ -140,7 +137,7 @@ module.exports = React.createClass({
 
         return val;
 
-    },
+    }
 
     /*
      * Handle change event, validates on every change
@@ -148,8 +145,8 @@ module.exports = React.createClass({
      *
      * @event: Change event
      */
-    onChange: function(event) {
-        var value = this.validate(event.target.value);
+    function onChange(event) {
+        var value = validate(event.target.value);
         var input = event.target;
         input.setCustomValidity('');
 
@@ -158,30 +155,28 @@ module.exports = React.createClass({
             input.setCustomValidity('Invalid field.');
         }
 
-        if (this.props.onInput)
-            this.props.onInput(value, this.props.index);
-    },
-
-    render: function() {
-        return (
-            <div className='input_container'>
-                <input
-                    type={this.getResponseType()}
-                    step={this.getResponseStep()}
-                    placeholder={this.props.placeholder || 'Please provide a response.'}
-                    onChange={this.onChange}
-                    defaultValue={this.props.initValue}
-                    disabled={this.props.disabled}
-                 >
-                 {this.props.showMinus ?
-                    <span
-                        onClick={this.props.buttonFunction.bind(null, this.props.index)}
-                        disabled={this.props.disabled}
-                        className='icon icon-close question__minus'>
-                    </span>
-                    : null}
-                </input>
-            </div>
-        );
+        if (props.onInput)
+            props.onInput(value, props.index);
     }
+
+    return (
+        <div className='input_container'>
+            <input
+                type={getResponseType()}
+                step={getResponseStep()}
+                placeholder={props.placeholder || 'Please provide a response.'}
+                onChange={onChange}
+                defaultValue={props.initValue}
+                disabled={props.disabled}
+             >
+             {props.showMinus ?
+                <span
+                    onClick={props.buttonFunction.bind(null, props.index)}
+                    disabled={props.disabled}
+                    className='icon icon-close question__minus'>
+                </span>
+                : null}
+            </input>
+        </div>
+    );
 });

@@ -1,4 +1,4 @@
-var React = require('react');
+import React from 'react';
 
 /*
  * Title component
@@ -7,13 +7,11 @@ var React = require('react');
  *  @title: Title text to render in content
  *  @message: 'hint' text to render in content
  */
-module.exports = React.createClass({
-    render: function() {
-        return (
-            <div className="content-padded">
-                <h3>{this.props.title}</h3>
-                <p>{this.props.message}</p>
-            </div>
-        );
-    }
+export default function(props) {
+    return (
+        <div className="content-padded">
+            <h3>{props.title}</h3>
+            <p>{props.message}</p>
+        </div>
+    );
 });

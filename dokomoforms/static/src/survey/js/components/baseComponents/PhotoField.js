@@ -1,5 +1,5 @@
-var React = require('react'),
-    PhotoPreview = require('./PhotoPreview');
+import React from 'react';
+import PhotoPreview from './PhotoPreview';
 
 /*
  * PhotoField component
@@ -13,31 +13,38 @@ var React = require('react'),
  *  @buttonFunction: What to do on 'X' click event, index value is bound to this function
  *  @initValue: Initial value for the input field
  */
-module.exports = React.createClass({
-    getInitialState: function() {
-        return {
-            showPreview: false
-        };
-    },
+export default class PhotoField extends React.Component {
 
-    showPreview: function() {
+    constructor(props) {
+        super(props);
+
+        this.showPreview = this.showPreview.bind(this);
+        this.hidePreview = this.hidePreview.bind(this);
+        this.onDelete = this.onDelete.bind(this);
+
+        this.state = {
+            showPreview: false
+        }
+    }
+
+    showPreview() {
         this.setState({
             showPreview: true
         });
-    },
+    }
 
-    hidePreview: function() {
+    hidePreview() {
         this.setState({
             showPreview: false
         });
-    },
+    }
 
-    onDelete: function() {
+    onDelete() {
         this.hidePreview();
         this.props.buttonFunction(this.props.index);
-    },
+    }
 
-    render: function() {
+    render() {
         var preview;
         if (this.state.showPreview) {
             preview = <PhotoPreview
@@ -62,4 +69,4 @@ module.exports = React.createClass({
             </span>
         );
     }
-});
+};

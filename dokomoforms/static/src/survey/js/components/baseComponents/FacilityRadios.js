@@ -9,15 +9,20 @@ var React = require('react');
  *  @selectFunction: What to do when facility is selected
  *  @initValue: Default selected facility
  */
-module.exports = React.createClass({
-    /*
-     * Keep track of which option is selected
-     */
-    getInitialState: function() {
-        return {
+export default class FacilityRadios extends React.Component {
+
+    constructor(props) {
+        super(props);
+
+        this.onClick = this.onClick.bind(this);
+
+        /*
+        * Keep track of which option is selected
+        */
+        this.state = {
             selected: this.props.initValue
-        };
-    },
+        }
+    }
 
     /*
      * Make radio behave like single option checkbox
@@ -26,7 +31,7 @@ module.exports = React.createClass({
      *
      * @e: click event
      */
-    onClick: function(e) {
+    onClick(e) {
         var option = e.target.value;
         var checked = e.target.checked;
         var selected = option;
@@ -46,9 +51,9 @@ module.exports = React.createClass({
         this.setState({
             selected: selected
         });
-    },
+    }
 
-    render: function() {
+    render() {
         var self = this;
         var noFacilities = null;
 
@@ -96,9 +101,9 @@ module.exports = React.createClass({
                         </div>
                     );
                 })}
-                {noFacilities}
-                </div>
-               );
+            {noFacilities}
+            </div>
+        );
     }
 });
 

@@ -1,4 +1,4 @@
-var React = require('react');
+import React from'react';
 
 /*
  * Little weeny button
@@ -10,22 +10,22 @@ var React = require('react');
  *  @icon: Icon if any to show before button text
  *  @disabled: Whether or not the button should be disabled
  */
-module.exports = React.createClass({
-    render: function() {
-        var iconClass = 'icon icon-inline-left ' + this.props.icon;
+export default function(props){
+    render() {
+        var iconClass = 'icon icon-inline-left ' + props.icon;
         var classes = 'btn ';
-        classes += this.props.extraClasses || '';
+        classes += props.extraClasses || '';
         return (
             <div className='content-padded'>
                 <button className={classes}
-                    disabled={this.props.disabled}
-                    onClick={this.props.buttonFunction} >
+                    disabled={props.disabled}
+                    onClick={props.buttonFunction} >
 
-                    {this.props.icon ? <span className={iconClass}></span> : null }
-                    {this.props.text}
+                    {props.icon ? <span className={iconClass}></span> : null }
+                    {props.text}
                 </button>
             </div>
        );
     }
-});
+};
 
