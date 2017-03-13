@@ -16,18 +16,18 @@ export default function bootstrap(orm) {
         default_language: 'English'
     });
 
-    const question = Question.create({
-        id: 1
-    })
+    const node = Node.create({id: 1, survey: 1001});
 
-    const node = Node.create({id: 1, survey: 1001, question: 1})
+    const question = Question.create({
+        id: 1,
+        node: 1
+    })
 
     console.log('newest survey', survey, node, question, state)
     
     // Return the whole Redux initial state.
     return {
         orm: state,
-        currentSurveyId: 1001,
-        submitted: false
+        currentSurveyId: survey.id
     };
 }

@@ -1,32 +1,24 @@
 'use strict';
 
+import React from 'react';
+import ReactDOM from 'react-dom';
 import cookies from '../../../common/js/cookies';
 import $ from 'jquery';
 import Survey from './components/Survey.babel.js';
 import SubSurvey from './components/SubSurvey.babel.js';
-import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { orm } from './redux/models.babel.js';
 
 
-class Application extends React.Component {
+function Application(props) {
 
-    constructor(props) {
-        super(props);
-        
-        this.submitToDatabase = this.submitToDatabase.bind(this);
-    }
+    function submitToDatabase() {
 
-
-    submitToDatabase() {
-        console.log('submitting to database');
-
-        const session = orm.session(this.props.state);
+        const session = orm.session(props.state);
 
         const survey = session.Survey.withId(1001).denormalize();
 
-        console.log('survey', survey);
-        survey.survey_type = "public";
+        console.log('submitting to database', survey);
 
         $.ajax({
             type: "POST",
@@ -35,50 +27,52 @@ class Application extends React.Component {
             processData: false,
             data: JSON.stringify(survey),
             headers: {
-              'X-XSRFToken': cookies.getCookie('_xsrf')
+                'X-XSRFToken': cookies.getCookie('_xsrf')
             },
             dataType: 'json',
             success: function(response) {
-              console.log('success!!!');
+                console.log('success!!!');
             },
             error: function(response) {
                 console.log('error')
-              console.log(response.responseText);
+                console.log(response.responseText);
             }
         });
     }
-
-    render() {
-        console.log('application current survey', this.props.currentSurveyId)
-        return (
+    
+    return (
+        <div>
             <div>
-                <div>
-                    {(this.props.currentSurveyId && this.props.currentSurveyId===1001) &&
-                        <Survey
-                            surveyId={this.props.currentSurveyId}
-                            submitToDatabase={this.submitToDatabase}
-                        />
-                    }
-                </div>
-                <div>
-                    {(this.props.currentSurveyId && this.props.currentSurveyId!==1001) &&
-                        <SubSurvey
-                            surveyId={this.props.currentSurveyId}
-                            languages={this.state.languages}
-                        />
-                    }
-                </div>
+                {(props.currentSurveyId && props.currentSurveyId===1001) &&
+                    <Survey
+                        surveyId={props.currentSurveyId}
+                        submitToDatabase={submitToDatabase}
+                    />
+                }
             </div>
-        );
-    }
+            <div>
+                {(props.currentSurveyId && props.currentSurveyId!==1001) &&
+                    <SubSurvey
+                        surveyId={props.currentSurveyId}
+                        languages={['English']}
+                    />
+                }
+            </div>
+        </div>
+    );
 }
 
 function mapStateToProps(state){
-    console.log('application mapstate', state)
+    console.log('application mapstate', state);
     return {
         currentSurveyId: state.currentSurveyId,
         state: state.orm,
     };
 }
+
+Application.propTypes = {
+    currentSurveyId: React.PropTypes.number,
+    state: React.PropTypes.object
+};
 
 export default connect(mapStateToProps)(Application);
