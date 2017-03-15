@@ -1,3 +1,5 @@
+'use strict';
+
 export default function bootstrap(orm) {
     
     // Get the empty state according to our schema.

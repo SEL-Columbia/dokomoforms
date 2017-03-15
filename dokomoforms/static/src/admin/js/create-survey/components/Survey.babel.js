@@ -1,44 +1,38 @@
 import React from 'react';
 import NodeList from './NodeList.babel.js';
-import {bindActionCreators} from 'redux';
-import {connect} from 'react-redux';
-import {updateSurvey, denormalize} from './../redux/actions.babel.js';
-import {surveySelector} from './../redux/selectors.babel.js';
+import { bindActionCreators } from 'redux';
+import { connect } from 'react-redux';
+import { updateSurvey } from './../redux/actions.babel.js';
+import { surveySelector } from './../redux/selectors.babel.js';
+import { orm } from './../redux/models.babel.js';
 
 
-class Survey extends React.Component {
+function Survey(props) {
 
+    // constructor(props) {
+    //     super(props);
 
-    constructor(props) {
-        super(props);
+    //     this.updateTitle = this.updateTitle.bind(this);
+    //     this.addLanguage = this.addLanguage.bind(this);
+    //     this.updateDefaultLanguage = this.updateDefaultLanguage.bind(this);
 
-        this.updateTitle = this.updateTitle.bind(this);
-        this.addLanguage = this.addLanguage.bind(this);
-        this.updateDefaultLanguage = this.updateDefaultLanguage.bind(this);
-        this.submit = this.submit.bind(this);
+    //     this.state = {
+    //         languages: ['English'],
+    //         default_language: 'English',
+    //         survey_type: 'public',
+    //     }
+    // }
 
-        this.state = {
-            languages: ['English'],
-            default_language: 'English',
-            survey_type: 'public'
-        }
-    }
-
-    shouldComponentUpdate(){
-        return true;
-    }
-
-    updateTitle(language, event) {
-        const titleObj = {English: event.target.value}
-        this.props.updateSurvey({id: this.props.survey.id, title: titleObj})
+    function updateTitle(language, event) {
+        const titleObj = {English: event.target.value};
+        props.updateSurvey({id: props.survey.id, title: titleObj});
     }
  
-    updateDefaultLanguage(event) {
-        this.props.updateSurvey({id: this.props.survey.id, default_language: event.target.value});
+    function updateDefaultLanguage(event) {
+        props.updateSurvey({id: props.survey.id, default_language: event.target.value});
     }
 
-    addLanguage(language){
-        console.log('being called!')
+    function addLanguage(language){
         let languageList = [];
         languageList = languageList.concat(this.state.languages);
         // possible add check for duplicate
@@ -48,99 +42,37 @@ class Survey extends React.Component {
         });
     }
 
-    submit() {
-        // let a_survey = this.props.survey.denormalize(1001);
-        // console.log('aaa', a_survey)
-        this.props.submitToDatabase();
-    }
 
-    // test() {
-        // var modelSurvey = {
-        //   title: {English: 'languages survey 12',
-        //         German: 'languages survey 12'},
-        //   default_language: 'English',
-        //   languages: ['English', 'German'],
-        //   survey_type: 'public',
-        //   metadata: {},
-        //   nodes: [{
-        //       node: {
-        //         languages: ['English', 'German'],
-        //         title: {
-        //             English: 'english test',
-        //             German: 'german test'
-        //         },
-        //         hint: {
-        //             English: 'e hint',
-        //             German: 'g hint'
-        //         },
-        //         type_constraint: 'text',
-        //         logic: {}
-        //     },
-        //     {
-        //         node: {
-        //             languages: ['English', 'German'],
-        //             title: {
-        //                 English: 'english test 2',
-        //                 German: 'german test 2'
-        //             },
-        //             hint: {
-        //                 English: 'e hint',
-        //                 German: 'g hint'
-        //             },
-        //             type_constraint: 'facility',
-        //             logic: {}
-        //         }
-        //     },
-        //         node: {
-        //             type_constraint: 'facility',
-        //             allow_multiple: true,
-        //             title: {'English': 'Facility'},
-        //             hint: {'English': 'Select the facility from the list, or add a new one.'},
-        //             logic: {
-        //                 'slat': 40.477398,
-        //                 'nlat': 40.91758,
-        //                 'wlng': -74.259094,
-        //                 'elng': -73.700165,
-        //             }
-        //         }
-        //     }]
-    //     };
-    // }
-
-
-    render() {
-        console.log('rendering survey')
-        console.log(this.props.survey)
-        return (
-            <div className="container">
-                {(this.props.survey) &&
-                    <div>
-                        <div className="col-lg-8 survey center-block">
-                            <div className="survey-header header">
-                                Create a Survey
-                            </div>
-                            <SurveyTitle 
-                                updateTitle={this.updateTitle}
-                                title={this.props.survey.title}
-                                languages={this.state.languages}
-                            />
-                            <Languages 
-                                languages={this.state.languages}
-                                addLanguage={this.addLanguage}
-                                updateDefault={this.updateDefaultLangauge}
-                            />
-                            <hr/>
-                            <NodeList
-                                default_language={this.state.default_language}
-                                languages={this.state.languages}
-                            />
-                        </div>
-                        <button onClick={this.submit}>submit</button>
+    return (
+        <div className="container survey col-lg-7">
+            <div>
+                <div className="survey center-block">
+                    <div className="survey-header">
+                        Create a Survey
                     </div>
-                }
+                    <SurveyTitle 
+                        updateTitle={updateTitle}
+                        title={props.survey.title}
+                        languages={["English"]}
+                    />
+                    {/*
+                     <Languages 
+                       languages={this.state.languages}
+                       addLanguage={this.addLanguage}
+                       updateDefault={this.updateDefaultLangauge}
+                     />
+                    */}
+                    <NodeList
+                        default_language={"English"}
+                        languages={["English"]}
+                    />
+                </div>
+                <div style={{textAlign: "center", margin: "15px", fontSize: "23px"}}>
+                    <button onClick={props.submitToDatabase}>submit</button>
+                </div>
+            </div>
         </div>
     )
-}
 }
 
 
@@ -216,16 +148,16 @@ function Languages(props){
 
 
 function mapStateToProps(state){
-    console.log('state 1', state)
+    console.log('state survey', state.orm);
+
     return {
-        survey: surveySelector(state),
-        currentSurveyId: state.currentSurveyId
+        survey: surveySelector(state)
     };
 }
 
 function mapDispatchToProps(dispatch){
     return (
-        bindActionCreators({updateSurvey: updateSurvey, denormalize: denormalize}, dispatch)
+        bindActionCreators({updateSurvey: updateSurvey}, dispatch)
     )
 }
 

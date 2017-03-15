@@ -44,8 +44,8 @@ function NodeList(props) {
                     Questions
                 </div>
                 {listQuestions()}
-                <div>
-                    <button className="btn button"
+                <div className="node-list-footer">
+                    <button
                         onClick={addQuestion}
                         id="add-question-btn"
                     >Add Question</button>
