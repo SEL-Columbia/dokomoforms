@@ -1,4 +1,4 @@
-var React = require('react');
+import React from 'react';
 
 /*
  * Facility Radio component
@@ -54,8 +54,8 @@ export default class FacilityRadios extends React.Component {
     }
 
     render() {
-        var self = this;
-        var noFacilities = null;
+        const self = this;
+        let noFacilities = null;
 
         if (this.props.facilities.length === 0) {
             noFacilities = (
@@ -105,5 +105,5 @@ export default class FacilityRadios extends React.Component {
             </div>
         );
     }
-});
+};
 

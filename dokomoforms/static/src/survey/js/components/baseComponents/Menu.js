@@ -55,7 +55,7 @@ export default function(props) {
         // Wipe location info
         localStorage['location'] = JSON.stringify({});
         window.location.reload();
-    },
+    }
 
 
     function wipeAll() {
@@ -155,26 +155,25 @@ export default function(props) {
         }
     }
 
-        return (
-            <div className='title_menu'>
-                <div className='title_menu_option menu_fullscreen' onClick={toggleFullscreen} >
-                    Toggle fullscreen
-                </div>
-
-                {langMenuItem}
-
-                <div className='title_menu_option menu_restart' onClick={wipeActive} >
-                    Cancel survey
-                </div>
-                <div className='title_menu_option menu_clear' onClick={wipeAll} >
-                    Clear all saved surveys
-                </div>
-
-                {reloadFacilities}
-
-                {logOut}
-
+    return (
+        <div className='title_menu'>
+            <div className='title_menu_option menu_fullscreen' onClick={toggleFullscreen} >
+                Toggle fullscreen
             </div>
-       );
-    }
-});
+
+            {langMenuItem}
+
+            <div className='title_menu_option menu_restart' onClick={wipeActive} >
+                Cancel survey
+            </div>
+            <div className='title_menu_option menu_clear' onClick={wipeAll} >
+                Clear all saved surveys
+            </div>
+
+            {reloadFacilities}
+
+            {logOut}
+
+        </div>
+    )
+};

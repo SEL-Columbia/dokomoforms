@@ -13,7 +13,7 @@ import ResponseField from './ResponseField.js';
  *  @onInput: What to do on valid other input
  *  @onSelect: What to do on selection
  */
-class Select extends React.Component {
+export default class Select extends React.Component {
 
     constructor(props) {
         super(props);
@@ -22,7 +22,7 @@ class Select extends React.Component {
 
         this.state = {
             showOther: this.props.initSelect && this.props.initSelect.indexOf('other') > -1
-        }        
+        };        
     }
 
     onChange(e) {
@@ -43,6 +43,8 @@ class Select extends React.Component {
     }
 
     render() {
+        console.log('multi select', this.props.multiSelect);
+        console.log('props choices', this.props.choices);
         var size = this.props.multiSelect ?
             this.props.choices.length + 1 + 1 * this.props.withOther : 1;
         return (

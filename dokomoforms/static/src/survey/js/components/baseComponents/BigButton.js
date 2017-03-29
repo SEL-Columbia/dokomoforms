@@ -16,6 +16,7 @@ export default function(props){
         buttonClasses += ' btn-primary';
     }
 
+    console.log('big button', props.buttonFunction)
     return (
         <div className='bar-padded'>
             <button onClick={props.buttonFunction} className={buttonClasses}>

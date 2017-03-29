@@ -15,11 +15,19 @@ import moment from 'moment';
  *  @placeholder: Placeholder text for input, defaults to 'Please provide a response'
  *  @initValue: Initial value for the input field
  */
-export default function(props) {
+export default class ResponseField extends React.Component {
 
+    constructor(props) {
+        super(props);
+
+        this.getResponseType = this.getResponseType.bind(this);
+        this.getResponseStep = this.getResponseStep.bind(this);
+        this.validate = this.validate.bind(this);
+        this.onChange = this.onChange.bind(this);
+    }
     // Determine the input field type based on props.type
-    function getResponseType() {
-        var type = props.type;
+    getResponseType() {
+        var type = this.props.type;
         switch (type) {
             case 'integer':
             case 'decimal':
@@ -38,8 +46,8 @@ export default function(props) {
     }
 
     // Determine the input field step based on props.type
-    function getResponseStep() {
-        var type = props.type;
+    getResponseStep() {
+        var type = this.props.type;
         switch (type) {
             case 'decimal':
                 return 'any';
@@ -55,9 +63,9 @@ export default function(props) {
      *
      * @answer: The response to be validated
      */
-    function validate(answer) {
-        var type = props.type;
-        var logic = props.logic;
+    validate(answer) {
+        var type = this.props.type;
+        var logic = this.props.logic;
         var val = null;
         switch (type) {
             case 'integer':
@@ -145,8 +153,8 @@ export default function(props) {
      *
      * @event: Change event
      */
-    function onChange(event) {
-        var value = validate(event.target.value);
+    onChange(event) {
+        var value = this.validate(event.target.value);
         var input = event.target;
         input.setCustomValidity('');
 
@@ -155,28 +163,32 @@ export default function(props) {
             input.setCustomValidity('Invalid field.');
         }
 
-        if (props.onInput)
-            props.onInput(value, props.index);
+        if (this.props.onInput)
+            this.props.onInput(value, this.props.index);
     }
 
-    return (
-        <div className='input_container'>
-            <input
-                type={getResponseType()}
-                step={getResponseStep()}
-                placeholder={props.placeholder || 'Please provide a response.'}
-                onChange={onChange}
-                defaultValue={props.initValue}
-                disabled={props.disabled}
-             >
-             {props.showMinus ?
-                <span
-                    onClick={props.buttonFunction.bind(null, props.index)}
-                    disabled={props.disabled}
-                    className='icon icon-close question__minus'>
-                </span>
+    render() {
+        console.log('reponse field!', this.props.showMinus)
+
+        return (
+            <div className='input_container'>
+                <input
+                    type={this.getResponseType()}
+                    step={this.getResponseStep()}
+                    placeholder={this.props.placeholder || 'Please provide a response.'}
+                    onChange={this.onChange}
+                    defaultValue={this.props.initValue}
+                    disabled={this.props.disabled}
+                 >
+                </input>
+                {this.props.showMinus ?
+                    <span
+                        onClick={this.props.buttonFunction.bind(null, this.props.index)}
+                        disabled={this.props.disabled}
+                        className='icon icon-close question__minus'>
+                    </span>
                 : null}
-            </input>
-        </div>
-    );
-});
+            </div>
+        );
+    }
+};

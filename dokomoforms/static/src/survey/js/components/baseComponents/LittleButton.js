@@ -1,4 +1,4 @@
-import React from'react';
+import React from 'react';
 
 /*
  * Little weeny button
@@ -11,21 +11,19 @@ import React from'react';
  *  @disabled: Whether or not the button should be disabled
  */
 export default function(props){
-    render() {
-        var iconClass = 'icon icon-inline-left ' + props.icon;
-        var classes = 'btn ';
-        classes += props.extraClasses || '';
-        return (
-            <div className='content-padded'>
-                <button className={classes}
-                    disabled={props.disabled}
-                    onClick={props.buttonFunction} >
+    const iconClass = 'icon icon-inline-left ' + props.icon;
+    const classes = 'btn ';
+    classes += props.extraClasses || '';
+    return (
+        <div className='content-padded'>
+            <button className={classes}
+                disabled={props.disabled}
+                onClick={props.buttonFunction} >
 
-                    {props.icon ? <span className={iconClass}></span> : null }
-                    {props.text}
-                </button>
-            </div>
-       );
-    }
+                {props.icon ? <span className={iconClass}></span> : null }
+                {props.text}
+            </button>
+        </div>
+   );
 };
 

@@ -14,4 +14,4 @@ export default function(props) {
             <p>{props.message}</p>
         </div>
     );
-});
+};

@@ -6,11 +6,11 @@ import React from 'react';
  * @text: text to render
  */
 export default function(props) {
-    var textClass = props.classes;
+    const textClass = props.classes;
     return (
         <div className='content-padded'>
             <p className={textClass}>{props.text}</p>
         </div>
     );
-});
+};
 
