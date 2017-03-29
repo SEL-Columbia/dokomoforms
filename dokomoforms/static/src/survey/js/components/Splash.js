@@ -1,7 +1,6 @@
-var React = require('react');
-
-var Card = require('./baseComponents/Card.js');
-var BigButton = require('./baseComponents/BigButton.js');
+import React from 'react';
+import Card from './baseComponents/Card.js';
+import BigButton from './baseComponents/BigButton.js';
 
 /*
  * Splash page component
@@ -12,8 +11,24 @@ var BigButton = require('./baseComponents/BigButton.js');
  *     @surveyID: current survey id
  *     @buttonFunction: What to do when submit is clicked
  */
-module.exports = React.createClass({
-    getInitialState: function() {
+export default class Splash extends React.Component {
+
+    constructor(props){
+        super(props);
+
+        this.update = this.update.bind(this);
+        this.buttonFunction = this.buttonFunction.bind(this);
+        this.getCard = this.getCard.bind(this);
+
+
+        this.state = {
+            count: undefined,
+            online: undefined,
+            interval: undefined
+        }
+    }
+    
+    componentWillMount() {
         var self = this;
         // Get all unsynced surveys
         var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
@@ -29,15 +44,15 @@ module.exports = React.createClass({
             }
         }, 1000);
 
-        return {
+        this.setState({
             count: unsynced_submissions.length,
             online: navigator.onLine,
             interval: interval
-        };
-    },
+        })
+    }
 
     // Force react to update
-    update: function() {
+    update() {
         // Get all unsynced surveys
         var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
         // Get array of unsynced submissions to this survey
@@ -47,9 +62,9 @@ module.exports = React.createClass({
             count: unsynced_submissions.length,
             online: navigator.onLine
         });
-    },
+    }
 
-    buttonFunction: function(event) {
+    buttonFunction(event) {
         if (this.props.buttonFunction)
             this.props.buttonFunction(event);
 
@@ -63,13 +78,13 @@ module.exports = React.createClass({
             online: navigator.onLine
         });
 
-    },
+    }
 
-    componentWillUnmount: function() {
+    componentWillUnmount() {
         window.clearInterval(this.state.interval);
-    },
+    }
 
-    getCard: function() {
+    getCard() {
         var admin_email = window.ADMIN_EMAIL || '';
         var admin_email_link = 'mailto:' + admin_email;
         if (this.state.count) {
@@ -103,9 +118,9 @@ module.exports = React.createClass({
                         type={'message-primary'} />
                    );
         }
-    },
+    }
 
-    render: function() {
+    render() {
         return this.getCard();
     }
-});
+};

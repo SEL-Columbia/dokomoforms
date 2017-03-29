@@ -1,11 +1,9 @@
-var $ = require('jquery'),
-    React = require('react'),
-
-    ResponseField = require('./baseComponents/ResponseField.js'),
-    LittleButton = require('./baseComponents/LittleButton.js'),
-
-    FacilityRadios = require('./baseComponents/FacilityRadios.js'),
-    Select = require('./baseComponents/Select.js');
+import $ from 'jquery';
+import React from 'react';
+import ResponseField from './baseComponents/ResponseField.js';
+import LittleButton from './baseComponents/LittleButton.js';
+import FacilityRadios from './baseComponents/FacilityRadios.js';
+import Select from './baseComponents/Select.js';
 
 /*
  * Facilities question component
@@ -19,14 +17,21 @@ var $ = require('jquery'),
  *     @db: pouchdb database
  *     @tree: Facility Tree object
  */
-module.exports = React.createClass({
-    getInitialState: function() {
-        var answer = this.getAnswer();
-        var selectOff = answer && answer.metadata && answer.metadata.is_new;
-        return {
+export default class Facility extends React.Component {
+
+    constructor(props){
+        super(props);
+
+        this.update = this.update.bind(this);
+        this.toggleAddFacility = this.toggleAddFacility.bind(this);
+        this.selectFacility = this.selectFacility.bind(this);
+        this.getFacilities = this.getFacilities.bind(this);
+        this.getAnswer = this.getAnswer.bind(this);
+
+        this.state = {
             loc: null,
             loading: true,
-            selectFacility: !selectOff,
+            selectFacility: undefined,
             facilities: [],
             choices: [
                 {'value': 'water', 'text': 'Water'},
@@ -34,20 +39,24 @@ module.exports = React.createClass({
                 {'value': 'education', 'text': 'Education'},
                 {'value': 'health', 'text': 'Health'}
             ]
-        };
-    },
+
+        }
+    }
 
     /*
      * Deal with async call to getFacilities
      */
-    componentWillMount: function() {
-        var loc = JSON.parse(localStorage['location'] || '{}');
+    componentWillMount() {
         var self = this;
+        var selectOff = answer && answer.metadata && answer.metadata.is_new;
+        var answer = self.getAnswer();
+        var loc = JSON.parse(localStorage['location'] || '{}');
         // If we have a location fix, display the facilities,
         // otherwise start fetching location fix
         if (loc.lat) {
             self.getFacilities(loc).done(function(facilities) {
                 self.setState({
+                    selectFacility: selectOff,
                     loc: loc,
                     facilities: facilities,
                     loading: false
@@ -56,29 +65,29 @@ module.exports = React.createClass({
         } else {
             this.onLocate();
         }
-    },
+    }
     /*
      * Hack to force react to update child components
      * Gets called by parent element through 'refs' when state of something changed
      * (usually localStorage)
      */
-    update: function() {
+    update() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
         var length = answers.length === 0 ? 1 : answers.length;
         this.setState({
             questionCount: length
         });
-    },
+    }
 
     /*
      * Switch view to new Facility View
      */
-    toggleAddFacility: function() {
+    toggleAddFacility() {
         this.setState({
             selectFacility : this.state.selectFacility ? false : true
         });
-    },
+    }
 
     /*
      * Record newly chosen facility into localStorage
@@ -86,7 +95,7 @@ module.exports = React.createClass({
      * @option: The facility uuid chosen
      * @data: I have no idea why i have this?
      */
-    selectFacility: function(option, data) {
+    selectFacility(option, data) {
         console.log('Selected facility');
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
@@ -112,14 +121,14 @@ module.exports = React.createClass({
         survey[this.props.question.id] = answers;
         localStorage[this.props.surveyID] = JSON.stringify(survey);
 
-    },
+    }
 
     /*
      * Query the tree for nearby facilities near given location when possible
      *
      * @loc: The location ({lat: NUM, lng: NUM}) to query around
      */
-    getFacilities: function(loc) {
+    getFacilities(loc) {
         // console.log('getFacilities', this.props.tree);
         // var d = $.Deferred();
         // if (!loc || !loc.lat || !loc.lng || !this.props.tree || !this.props.tree.root) {
@@ -130,29 +139,29 @@ module.exports = React.createClass({
 
         console.log('Getting facilities ...');
         return this.props.tree.getNNearestFacilities(loc.lat, loc.lng, 1000, 10);
-    },
+    }
 
     /*
      * Get response from localStorage
      */
-    getAnswer: function() {
+    getAnswer() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
         console.log('Selected facility', answers[0]);
         if (answers[0]) return answers[0];
-    },
+    }
 
     /*
      * Generate objectID compatitable with Mongo for the Revisit API
      *
      * Returns an objectID string
      */
-    createObjectID: function() {
+    createObjectID() {
         return 'xxxxxxxxxxxxxxxxxxxxxxxx'.replace(/[x]/g, function() {
             var r = Math.random()*16|0;
             return r.toString(16);
         });
-    },
+    }
 
     /*
      * Deal with all new facility input fields, type is bound to function call
@@ -160,7 +169,7 @@ module.exports = React.createClass({
      * @type: Type of input that was updated
      * @value: newly supplied input
      */
-    onInput: function(type, value) {
+    onInput(type, value) {
         console.log('Dealing with input', value, type);
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
@@ -218,27 +227,27 @@ module.exports = React.createClass({
 
         survey[this.props.question.id] = answers;
         localStorage[this.props.surveyID] = JSON.stringify(survey);
-    },
+    }
 
-    onChangeGrid: function(e) {
+    onChangeGrid(e) {
         console.log(e);
         this.onInput('has_grid_power', e.target.checked);
-    },
+    }
 
-    onChangeWater: function(e) {
+    onChangeWater(e) {
         console.log(e);
         this.onInput('has_improved_water_supply', e.target.checked);
-    },
+    }
 
-    onChangeSanitation: function(e) {
+    onChangeSanitation(e) {
         console.log(e);
         this.onInput('has_improved_sanitation', e.target.checked);
-    },
+    }
 
     /*
      * Retrieve location and record into state on success.
      */
-    onLocate: function() {
+    onLocate() {
         var self = this;
         self.setState({
             loading: true
@@ -274,9 +283,9 @@ module.exports = React.createClass({
         );
 
 
-    },
+    }
 
-    render: function() {
+    render() {
         // Retrieve respone for initValues
         var answer = this.getAnswer();
         var choiceOptions = this.state.choices.map(function(choice) { return choice.value; });
@@ -402,4 +411,4 @@ module.exports = React.createClass({
             </span>
        );
     }
-});
+};

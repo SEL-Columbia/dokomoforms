@@ -1,4 +1,4 @@
-var React = require('react');
+import React from 'react';
 
 /*
  * Loading component
@@ -9,16 +9,14 @@ var React = require('react');
  *     @language: current survey language
  *     @surveyID: current survey id
  */
-module.exports = React.createClass({
-    render: function() {
-        return (
-            <div className="loading-overlay">
-                <div className="loading-content">
-                    <img src="/static/dist/survey/img/loading.gif" />
-                    <br/>
-                    <p>{this.props.message}</p>
-                </div>
+export default function(props) {
+    return (
+        <div className="loading-overlay">
+            <div className="loading-content">
+                <img src="/static/dist/survey/img/loading.gif" />
+                <br/>
+                <p>{props.message}</p>
             </div>
-       );
-    }
-});
+        </div>
+    );
+};

@@ -1,7 +1,6 @@
-var React = require('react');
-
-var ResponseField = require('./baseComponents/ResponseField.js');
-var LittleButton = require('./baseComponents/LittleButton.js');
+import React from 'react';
+import ResponseField from './baseComponents/ResponseField.js';
+import LittleButton from './baseComponents/LittleButton.js';
 
 /*
  * Question component
@@ -14,35 +13,48 @@ var LittleButton = require('./baseComponents/LittleButton.js');
  *     @surveyID: current survey id
  *     @disabled: boolean for disabling all inputs
  */
-module.exports = React.createClass({
-    getInitialState: function() {
+export default class Question extends React.Component {
+
+    constructor(props) {
+        super(props);
+
+        this.update = this.update.bind(this);
+        this.addNewInput = this.addNewInput.bind(this);
+        this.removeInput = this.removeInput.bind(this);
+        this.onInput = this.onInput.bind(this);
+        this.getAnswer = this.getAnswer.bind(this);
+
+
+        this.state = {
+            questionCount: undefined
+        }
+    }
+
+    componentWillMount(){
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
         var length = answers.length === 0 ? 1 : answers.length;
-
-        return {
-            questionCount: length
-        };
-    },
+        this.setState({questionCount: length})
+    }
 
     /*
      * Hack to force react to update child components
      * Gets called by parent element through 'refs' when state of something changed
      * (usually localStorage)
      */
-    update: function() {
+    update() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
         var length = answers.length === 0 ? 1 : answers.length;
         this.setState({
             questionCount: length
         });
-    },
+    }
 
     /*
      * Add new input if and only if they've responded to all previous inputs
      */
-    addNewInput: function() {
+    addNewInput() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
         var length = answers.length;
@@ -54,12 +66,12 @@ module.exports = React.createClass({
                 questionCount: this.state.questionCount + 1
             });
         }
-    },
+    }
 
     /*
      * Remove input and update localStorage
      */
-    removeInput: function(index) {
+    removeInput(index) {
         console.log('Remove', index);
 
         if (!(this.state.questionCount > 1))
@@ -78,13 +90,13 @@ module.exports = React.createClass({
         });
 
         //this.forceUpdate();
-    },
+    }
 
     /*
      * Record new response into localStorage, response has been validated
      * if this callback is fired
      */
-    onInput: function(value, index) {
+    onInput(value, index) {
 
         console.log('Hey', index, value);
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
@@ -102,14 +114,14 @@ module.exports = React.createClass({
         //if (value === null) {
         //    this.removeInput(index);
         //}
-    },
+    }
 
     /*
      * Get default value for an input at a given index from localStorage
      *
      * @index: The location in the answer array in localStorage to search
      */
-    getAnswer: function(index) {
+    getAnswer(index) {
         console.log('In:', index);
 
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
@@ -117,9 +129,9 @@ module.exports = React.createClass({
 
         console.log(answers, index);
         return answers[index] && answers[index].response || null;
-    },
+    }
 
-    render: function() {
+    render() {
         var children = Array.apply(null, {
             length: this.state.questionCount
         });
@@ -150,4 +162,4 @@ module.exports = React.createClass({
                 </span>
         );
     }
-});
+};

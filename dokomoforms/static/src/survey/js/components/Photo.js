@@ -1,9 +1,9 @@
-var React = require('react'),
-    PhotoField = require('./baseComponents/PhotoField'),
-    LittleButton = require('./baseComponents/LittleButton'),
-    BigButton = require('./baseComponents/BigButton'),
-    PhotoAPI = require('../api/PhotoAPI'),
-    uuid = require('node-uuid');
+import React from 'react';
+import PhotoField from './baseComponents/PhotoField';
+import LittleButton from './baseComponents/LittleButton';
+import BigButton from './baseComponents/BigButton';
+import PhotoAPI from '../api/PhotoAPI';
+import uuid from 'node-uuid';
 
 //XXX use this: navigator.vibrate(50);
 
@@ -18,47 +18,62 @@ var React = require('react'),
  *     @disabled: boolean for disabling all inputs
  *     @db: pouchdb database
  */
-module.exports = React.createClass({
-    getInitialState: function() {
+export default class Photo extends React.Component {
+    constructor(props){
+        super(props);
+
+        this.updateOrientation = this.updateOrientation.bind(this);
+        this.startStream = this.startStream.bind(this);
+        this.getCameraSources = this.getCameraSources.bind(this);
+        this.getMediaStreamTrackSourcesSuccess = this.getMediaStreamTrackSourcesSuccess.bind(this);
+        this.getMediaStreamSourcesSuccess = this.getMediaStreamSourcesSuccess.bind(this);
+        this.changeCamera = this.changeCamera.bind(this);
+        this.getPhotos = this.getPhotos.bind(this);
+        this.update = this.update.bind(this);
+        this.addNewInput = this.addNewInput.bind(this);
+        this.removeInput = this.removeInput.bind(this);
+        this.onCapture = this.onCapture.bind(this);
+
+        this.state = {
+            questionCount: undefined,
+            requested: false,
+            camera: null,
+            sources: [],
+            photos: [],
+            src: null
+        }
+    }
+
+    componentWillMount() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
         var length = answers.length ? answers.length : 1;
 
-        var camera = null;
-        var src = null;
-
-        return {
-            questionCount: length,
-            requested: false,
-            camera: camera,
-            sources: [],
-            photos: [],
-            src: src
-        };
-    },
+        this.setState({questionCount: length})
+    }
 
     // This is how you react to the render call back. Once video is mounted I can attach a source
     // and re-render the page with it using the autoPlay feature. No DOM manipulation required!!
-    componentDidMount: function() {
+    componentDidMount() {
         this.getPhotos();
         this.getCameraSources();
         // stream is started once sources are gotten
         console.log('window.orientation', window.orientation);
         // window.addEventListener('deviceorientation', this.updateOrientation, true);
-    },
+    }
 
-    componentWillUnmount: function() {
+    componentWillUnmount() {
         if (this.stream) {
 	    // https://github.com/andyet/SimpleWebRTC/issues/363#issuecomment-163178700
 	    this.stream.getTracks().forEach(function (track) { track.stop(); });
         }
-    },
+    }
 
-    updateOrientation: function(e) {
+    updateOrientation(e) {
         // console.log('orientation updated: ', e, window.orientation);
-    },
+    }
 
-    startStream: function() {
+    startStream() {
         var self = this;
         if (self.stream) {
 	    // https://github.com/andyet/SimpleWebRTC/issues/363#issuecomment-163178700
@@ -100,9 +115,9 @@ module.exports = React.createClass({
             console.log('Video failed:', err);
         });
 
-    },
+    }
 
-    getCameraSources: function() {
+    getCameraSources() {
         if (typeof MediaStreamTrack === 'undefined' ||
             typeof MediaStreamTrack.getSources === 'undefined') {
             console.log('This browser does not support MediaStreamTrack... trying MediaStream.enumerateDevices()');
@@ -121,9 +136,9 @@ module.exports = React.createClass({
         } else {
             MediaStreamTrack.getSources(this.getMediaStreamTrackSourcesSuccess);
         }
-    },
+    }
 
-    getMediaStreamTrackSourcesSuccess: function(sourceInfos) {
+    getMediaStreamTrackSourcesSuccess(sourceInfos) {
         var self = this,
             cameraSources = [],
             cameraIdx = 0,
@@ -155,9 +170,9 @@ module.exports = React.createClass({
         }, function() {
             self.startStream();
         });
-    },
+    }
 
-    getMediaStreamSourcesSuccess: function(devices) {
+    getMediaStreamSourcesSuccess(devices) {
         var self = this,
             cameraSources = [],
             cameraIdx = 0,
@@ -188,19 +203,19 @@ module.exports = React.createClass({
         }, function() {
             self.startStream();
         });
-    },
+    }
 
-    changeCamera: function(e) {
+    changeCamera(e) {
         this.setState({
             camera: e.target.value
         }, this.startStream);
-    },
+    }
 
     /*
      * Get default value for an input at a given index from localStorage
      * Use this value to query pouchDB and update state asynchronously
      */
-    getPhotos: function() {
+    getPhotos() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
         var self = this;
@@ -218,26 +233,26 @@ module.exports = React.createClass({
                 });
             });
         });
-    },
+    }
 
     /*
      * Hack to force react to update child components
      * Gets called by parent element through 'refs' when state of something changed
      * (usually localStorage)
      */
-    update: function() {
+    update() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
         var length = answers.length;
         this.setState({
             questionCount: length
         });
-    },
+    }
 
     /*
      * Add new input if and only if they've responded to all previous inputs
      */
-    addNewInput: function() {
+    addNewInput() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
         var length = answers.length;
@@ -249,12 +264,12 @@ module.exports = React.createClass({
                 questionCount: this.state.questionCount + 1
             });
         }
-    },
+    }
 
     /*
      * Remove input and update localStorage
      */
-    removeInput: function(index) {
+    removeInput(index) {
         console.log('Remove', index);
 
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
@@ -288,7 +303,7 @@ module.exports = React.createClass({
             photos: this.state.photos,
             questionCount: count
         });
-    },
+    }
 
     /*
      * Capture still and record into localStorage.
@@ -297,7 +312,7 @@ module.exports = React.createClass({
      *
      * Only updates the LAST active input field.
      */
-    onCapture: function(e) {
+    onCapture(e) {
         navigator.vibrate(80);
 
         var self = this;
@@ -345,9 +360,9 @@ module.exports = React.createClass({
         if (this.props.question.allow_multiple) {
             this.addNewInput();
         }
-    },
+    }
 
-    render: function() {
+    render() {
         var self = this;
         var children = Array.apply(null, {
             length: this.state.questionCount
@@ -406,4 +421,4 @@ module.exports = React.createClass({
             </span>
         );
     }
-});
+};

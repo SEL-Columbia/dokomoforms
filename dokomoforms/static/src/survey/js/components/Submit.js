@@ -1,7 +1,7 @@
-var React = require('react');
-var Card = require('./baseComponents/Card.js');
-var Message = require('./baseComponents/Message.js');
-var ResponseField = require('./baseComponents/ResponseField.js');
+import React from 'react';
+import Card from './baseComponents/Card.js';
+import Message from './baseComponents/Message.js';
+import ResponseField from './baseComponents/ResponseField.js';
 
 /*
  * Submit page component
@@ -11,61 +11,58 @@ var ResponseField = require('./baseComponents/ResponseField.js');
  *     @language: current survey language
  *     @surveyID: current survey id
  */
-module.exports = React.createClass({
+export default function(props) {
 
-    onInput: function(value, index) {
+    function onInput(value, index) {
         if (index === 0) {
             localStorage['submitter_name'] = value;
         } else {
             localStorage['submitter_email'] = value;
         }
-
-    },
-
-    render: function() {
-        var self = this,
-            name = localStorage['submitter_name'],
-            email = localStorage['submitter_email'],
-            logged_in = this.props.loggedIn,
-            message;
-
-        if (logged_in) {
-            message = <Message text={'You are logged in as:'} />;
-        } else {
-            message = <Message text={'Please enter your name and email id:'} />;
-        }
-
-        return (
-            <span>
-
-                {message}
-
-                <ResponseField
-                    onInput={self.onInput}
-                    type={'text'}
-                    key={'name'}
-                    placeholder={"Enumerator Name"}
-                    index={0}
-                    // disabled={logged_in}
-                    initValue={name}
-                    showMinus={false}
-                />
-
-                <ResponseField
-                    onInput={self.onInput}
-                    type={'email'}
-                    key={'email'}
-                    placeholder={"Enumerator Email"}
-                    index={1}
-                    // disabled={logged_in}
-                    initValue={email}
-                    showMinus={false}
-                />
-
-                <Card messages={['Saved surveys must be uploaded when you next have network connectivity.']}
-                    type={'message-primary'}/>
-
-            </span>
-       );
     }
-});
+
+    // let self = this;
+    const name = localStorage['submitter_name'],
+    const email = localStorage['submitter_email'];
+    const logged_in = props.loggedIn;
+    let message;
+
+    if (logged_in) {
+        message = <Message text={'You are logged in as:'} />;
+    } else {
+        message = <Message text={'Please enter your name and email id:'} />;
+    }
+
+    return (
+        <span>
+
+            {message}
+
+            <ResponseField
+                onInput={onInput}
+                type={'text'}
+                key={'name'}
+                placeholder={"Enumerator Name"}
+                index={0}
+                // disabled={logged_in}
+                initValue={name}
+                showMinus={false}
+            />
+
+            <ResponseField
+                onInput={onInput}
+                type={'email'}
+                key={'email'}
+                placeholder={"Enumerator Email"}
+                index={1}
+                // disabled={logged_in}
+                initValue={email}
+                showMinus={false}
+            />
+
+            <Card messages={['Saved surveys must be uploaded when you next have network connectivity.']}
+                type={'message-primary'}/>
+
+        </span>
+       );
+};

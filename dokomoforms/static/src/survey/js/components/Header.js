@@ -1,6 +1,6 @@
-var React = require('react'),
-    ps = require('../../../common/js/pubsub'),
-    Menu = require('./baseComponents/Menu.js');
+import React from 'react';
+import ps from '../../../common/js/pubsub';
+import Menu from './baseComponents/Menu.js';
 
 /*
  * Header component
@@ -13,30 +13,35 @@ var React = require('react'),
  *  @db: Active pouch db // XXX rather not pass this to header
  *  @surveyID: active surveyID
  */
-module.exports = React.createClass({
-    getInitialState: function() {
-        return {
-            showMenu: false
-        };
-    },
+export default class Header extends React.Component {
 
-    componentWillMount: function() {
-        var self = this;
+    constructor(props){
+        super(props);
+
+        this.onClick = this.onClick.bind(this);
+
+        this.state = {
+            showMenu: false
+        }
+    }
+
+    componentWillMount() {
+        const self = this;
         ps.subscribe('settings:language_changed', function() {
             self.setState({
                 showMenu: false
             });
         });
-    },
+    }
 
-    onClick: function() {
+    onClick() {
         this.setState({
             showMenu: this.state.showMenu ? false : true
         });
-    },
+    }
 
-    render: function() {
-        var headerClasses = 'bar bar-nav bar-nav-padded noselect';
+    render() {
+        const headerClasses = 'bar bar-nav bar-nav-padded noselect';
         if (this.state.showMenu) {
             headerClasses += ' title-extended';
         }
@@ -71,4 +76,4 @@ module.exports = React.createClass({
         );
     }
 
-});
+};

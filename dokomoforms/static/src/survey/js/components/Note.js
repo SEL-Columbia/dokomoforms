@@ -1,4 +1,4 @@
-var React = require('react');
+import React from 'react';
 
 /*
  * Note component
@@ -9,14 +9,12 @@ var React = require('react');
  *     @language: current survey language
  *     @surveyID: current survey id
  */
-module.exports = React.createClass({
+export default function(){
     // Every question component needs this method
-    update: function() {
-    },
-
-    render: function() {
-        return (
-                <span></span>
-               )
+    function update() {
     }
-});
+
+    return (
+        <span></span>
+       )
+};
