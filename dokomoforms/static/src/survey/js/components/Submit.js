@@ -22,7 +22,7 @@ export default function(props) {
     }
 
     // let self = this;
-    const name = localStorage['submitter_name'],
+    const name = localStorage['submitter_name'];
     const email = localStorage['submitter_email'];
     const logged_in = props.loggedIn;
     let message;

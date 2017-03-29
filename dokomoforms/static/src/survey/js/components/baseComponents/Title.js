@@ -13,5 +13,5 @@ export default function(props) {
             <h3>{props.title}</h3>
             <p>{props.message}</p>
         </div>
-    );
+    )
 };

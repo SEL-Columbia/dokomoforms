@@ -12,7 +12,7 @@ import React from 'react';
  */
 export default function(props){
     const iconClass = 'icon icon-inline-left ' + props.icon;
-    const classes = 'btn ';
+    let classes = 'btn ';
     classes += props.extraClasses || '';
     return (
         <div className='content-padded'>

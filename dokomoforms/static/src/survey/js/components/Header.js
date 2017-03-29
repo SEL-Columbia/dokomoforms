@@ -41,7 +41,7 @@ export default class Header extends React.Component {
     }
 
     render() {
-        const headerClasses = 'bar bar-nav bar-nav-padded noselect';
+        let headerClasses = 'bar bar-nav bar-nav-padded noselect';
         if (this.state.showMenu) {
             headerClasses += ' title-extended';
         }
