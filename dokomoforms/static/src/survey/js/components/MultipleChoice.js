@@ -1,5 +1,5 @@
-var React = require('react');
-var Select = require('./baseComponents/Select.js');
+import React from 'react';
+import Select from './baseComponents/Select.js';
 
 /*
  * Multiple choice question component
@@ -11,26 +11,29 @@ var Select = require('./baseComponents/Select.js');
  *     @surveyID: current survey id
  *     @disabled: boolean for disabling all inputs
  */
-module.exports = React.createClass({
-    getInitialState: function() {
-        return { 
-        }
-    },
+export default class MultipleChoice extends React.Component {
+
+    constructor(props) {
+        super(props);
+
+        this.update = this.update.bind(this);
+        this.onSelect = this.onSelect.bind(this);
+        this.onInput = this.onInput.bind(this);
+    }
 
     /*
      * Hack to force react to update child components
      * Gets called by parent element through 'refs' when state of something changed 
      * (usually localStorage)
      */
-    update: function() {
-    },
+    update(){console.log('forced update')};
 
     /*
      * Record all selected options into localStorage
      */
-    onSelect: function(values) {
+    onSelect(values) {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
-        answers = [];
+        var answers = [];
         values.forEach(function(value, index) {
             if (value == 'null')
                 return;
@@ -43,14 +46,13 @@ module.exports = React.createClass({
         console.log("values", values, answers)
         survey[this.props.question.id] = answers;
         localStorage[this.props.surveyID] = JSON.stringify(survey);
-
-    },
+    }
 
     /*
      * Record other response into existing slot of answer object in localStorage
      * Callback is only called on validated input
      */
-    onInput: function(value) {
+    onInput(value) {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
 
@@ -65,12 +67,12 @@ module.exports = React.createClass({
         survey[this.props.question.id] = answers;
         localStorage[this.props.surveyID] = JSON.stringify(survey);
 
-    },
+    }
 
     /*
      * Get all selected options from localStorage
      */
-    getSelection: function() {
+    getSelection() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
 
@@ -83,12 +85,13 @@ module.exports = React.createClass({
 
         console.log("values", values)
         return values;
-    },
+    }
 
     /*
      * Get other response if any from localStorage 
      */
-    getAnswer: function() {
+    getAnswer() {
+        console.log('get answer from mc', this.props, this)
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];
 
@@ -104,11 +107,12 @@ module.exports = React.createClass({
 
         console.log("response", response);
         return response;
-    },
-    
-    render: function() {
+    }
+
+    render(){
+
         var self = this;
-        var choices = this.props.question.choices.map(function(choice) {
+        var choices = self.props.question.choices.map(function(choice) {
             return { 
                 'value': choice.choice_id, 
                 'text': choice.choice_text[self.props.language] 
@@ -116,16 +120,18 @@ module.exports = React.createClass({
         });
 
         // Key is used as hack to rerender select on dontKnow state change
+        console.log('props', self.props)
+        console.log('choices', choices)
         return (<Select 
-                    key={this.props.disabled}
+                    key={self.props.disabled}
                     choices={choices}
-                    withOther={this.props.question.allow_other}
-                    multiSelect={this.props.question.allow_multiple}
-                    disabled={this.props.disabled}
-                    initValue={this.getAnswer()} 
-                    initSelect={this.getSelection()} 
-                    onSelect={this.onSelect}
-                    onInput={this.onInput}
+                    withOther={self.props.question.allow_other}
+                    multiSelect={self.props.question.allow_multiple}
+                    disabled={self.props.disabled}
+                    initValue={self.getAnswer()} 
+                    initSelect={self.getSelection()} 
+                    onSelect={self.onSelect}
+                    onInput={self.onInput}
                 />)
     }
-});
+};
