@@ -7,12 +7,14 @@ module.exports = (function() {
     let lastSurveyId = 1001;
     let lastNodeId = 1;
     let lastChoiceId = 100;
+    let lastBucketId = 200;
 
     function _addId(type) {
         let id = 0;
         if (type==='node') { id = ++lastNodeId; }
         if (type==='choice') { id = ++lastChoiceId; }
         if (type==='survey') { id = ++lastSurveyId; }
+        if (type==='bucket') { id = ++ lastBucketId; }
         return id;
     }
 
