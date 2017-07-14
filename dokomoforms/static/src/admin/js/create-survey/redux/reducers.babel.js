@@ -1,39 +1,47 @@
-import { orm } from './models.babel.js';
+import { orm, Survey } from './models.babel.js';
 import { combineReducers } from 'redux';
 
-const initialState = orm.getEmptyState();
+// const initialState = orm.getEmptyState();
 
-// function ormReducer(dbState, action) {
-//     console.log('initial state', initialState)
-//     console.log('orm reducers', orm)
-//     console.log('dbstate', dbState)
-//     const state = dbState || initialState
-//     const session = orm.session(state)
-//     console.log('session', session)
+console.log('from reducer', orm)
 
-//     const { Survey } = session;
-//     const { Node } = session;
+function submittedReducer(dbState, action) {
 
-//     console.log('survey>>>', Survey, 'node>>>>', Node)
+    const session = orm.session(state.orm);
+    console.log('ownProps', ownProps)
 
-//     switch (action.type) {
-//         case 'ADD_SURVEY':
-//             console.log('creating survey??', action.payload.survey)
-//             // SURVEY.create(action.payload.survey);
-//             // console.log('now we', session.state.Survey)
-//             // break;
 
-//             Survey.create(action.payload)
-//             console.log('state', session.state)
-//             break;
-//         // case 'ADD_NODE_TO_SURVEY':
-//         //     console.log('state', session.state)
-//         //     console.log('adding node to survey??', action.payload.surveyId)
-//         //     Survey.withId(action.payload.surveyId).nodes.add(action.payload.node)
-//         //     break;
-//     }
-//     return session.state;
-// }
+    console.log('state dot orm', session)
+    console.log(session.Survey)
+    console.log('initial state', initialState)
+    console.log('orm reducers', orm)
+    console.log('dbstate', dbState)
+    const state = dbState || initialState
+    console.log('session', session)
+
+    const { Survey } = session;
+    const { Node } = session;
+
+    console.log('survey>>>', Survey, 'node>>>>', Node)
+
+    switch (action.type) {
+        case 'ADD_SURVEY':
+            console.log('creating survey??', action.payload.survey)
+            // SURVEY.create(action.payload.survey);
+            // console.log('now we', session.state.Survey)
+            // break;
+
+            Survey.create(action.payload)
+            console.log('state', session.state)
+            break;
+        // case 'ADD_NODE_TO_SURVEY':
+        //     console.log('state', session.state)
+        //     console.log('adding node to survey??', action.payload.surveyId)
+        //     Survey.withId(action.payload.surveyId).nodes.add(action.payload.node)
+        //     break;
+    }
+    return session.state;
+}
 
 // {
 //   surveys: {
@@ -52,11 +60,35 @@ const initialState = orm.getEmptyState();
 function currentSurveyIdReducer(state = 0, action) {
     const { type, payload } = action;
     switch (type) {
-    case 'UPDATE_CURRENT_SURVEY':
-        return payload;
-    default:
-        return state;
+        case 'UPDATE_CURRENT_SURVEY':
+            console.log('current survey...', payload)
+            return payload.surveyId;
+        default:
+            return state;
     }
+}
+
+function defaultLanguageReducer(state = 0, action) {
+    const { type, payload } = action;
+    switch (type) {
+        case 'UPDATE_DEFAULT_LANGUAGE':
+            console.log('default language reducer', payload.default_language)
+            return payload.default_language;
+        default:
+            return state;
+    }
+}
+
+function submittedReducer(state, action) {
+    // console.log('stateee', state)
+    // let the_state = state || orm.getEmptyState();
+    // const session = orm.session(the_state)
+    // console.log('submitted reducer', session)
+    // const { type, payload } = action;
+    // if (action.type==='SUBMIT') {
+    //     return 'the result from the reducer'
+    // }
+    return false;
 }
 
 
@@ -80,6 +112,7 @@ function survey(dbState, action) {
             return state;
     }
 }
+
 
 function surveys(dbState, action) {
     console.log('being called surveys', action.type)
@@ -120,6 +153,7 @@ function surveys(dbState, action) {
             return state;
     }
 }
+
 
 function nodes(dbState, action) {
     console.log('being called', state)
@@ -186,4 +220,4 @@ function surveyView(state = null, action) {
 }
 
 
-export default currentSurveyIdReducer;
+export { currentSurveyIdReducer, defaultLanguageReducer };

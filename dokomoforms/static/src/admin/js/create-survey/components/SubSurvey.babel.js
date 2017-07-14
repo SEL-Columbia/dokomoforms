@@ -1,86 +1,133 @@
 import React from 'react';
 import NodeList from './NodeList.babel.js';
-import {bindActionCreators} from 'redux';
-import {connect} from 'react-redux';
-import {updateSurveyView} from './../redux/actions.babel.js';
+import BucketsList from './BucketsList.babel.js';
+import { bindActionCreators } from 'redux';
+import { connect } from 'react-redux';
+import { updateCurrentSurvey, updateSurvey } from './../redux/actions.babel.js';
+import { parentSurveySelector, parentQuestionTitleSelector, nodeSelector, surveySelector } from './../redux/selectors.babel.js';
 
-// DEFINITION:
-// a SUBSURVEY should receive from parent component:
-// 1) the question
-// 2) the answers that lead to subsurvey
-// 3) a callback function to receive subsurvey
-// a SUBSURVEY should return:
-// 1) a subsurvey object with nodes and buckets
 
-// to do:
-// sub-survey should probably display the question and answer(s) that
-// leads to it
-// should user choose bucket on this page or node page?
+function SubSurvey(props) {
 
-class SubSurvey extends React.Component {
-
-    constructor(props) {
-        super(props);
-
-        this.viewHandler = this.viewHandler.bind(this)
-
-        this.state = {
-            buckets: [],
-            nodes: []
-        };
+    if (!props.survey.buckets && (props.survey.repeatable!=="true")) {
+        props.updateSurvey({id: props.survey.id, repeatable: "true"})
     }
 
-    viewHandler(){
-        this.props.updateSurveyView(this.props.nodeId, this.props.previous, null)
+    const parentQuestion = props.parentQuestionTitle[props.default_language] || "this question has not been defined!"
+
+    if (props.survey.repeatable===undefined) {
+        // if (!props.buckets) props.updateSurvey({id: props.survey.id, repeatable: "true"});
+        // else props.updateSurvey({id: props.survey.id, repeatable: "false"});
     }
 
-    render() {
-        let q = this.props.nodes[this.props.nodeId].node.title.English;
-        console.log(q)
-        console.log('from the new view', this.props)
+    function viewPreviousSurvey(){
+        console.log('view previous survey', props.parentSurveyId);
+        props.updateCurrentSurvey(props.parentSurveyId);
+    }
+
+    function toggleRepeatable(event){
+        console.log(event.target.value);
+        props.updateSurvey({id: props.survey.id, repeatable: event.target.value});
+    }
+
+    // render() {
+        console.log('from the new subsurvey view', props)
+
         return (
             <div className="container">
                 <div className="col-lg-8 survey center-block">
-                    <div className="survey-header header">
+                    <div className="survey-header">
                         Create a Sub Survey
                     </div>
-
-                    <div>
-                        Question: {q}
-                        {(this.props.survey.buckets[0].type_constraint=='multiple_choice') &&
-                            <span>Answer: {this.props.survey.buckets[0].choice_number}</span>
-                        }
+                    <div className="survey-section">
+                        <div className="survey-group">
+                            <span id="parent-question-header">Parent Question: </span>
+                            <span id="parent-question-text">"{parentQuestion}"</span>
+                        </div>
+                        <hr />
+                        <div className="survey-group">
+                            <div className="survey-double-column">
+                                <label className="col-form-label double-column-label">Buckets:</label>
+                                {(!props.survey.buckets || !props.survey.buckets.length) &&
+                                    <div id="buckets-message">
+                                        There are no buckets!
+                                        <p />
+                                        This sub-survey must be repeatable.
+                                        <p />
+                                        The number of times this sub-survey will repeat
+                                        is based off of the survey receipient's answer
+                                        to the parent question.
+                                    </div>
+                                }
+                                {(props.survey.buckets) &&
+                                    <BucketsList 
+                                        buckets={props.survey.buckets}
+                                        type_constraint={props.survey.buckets[0].bucket_type}
+                                        deleteBucket={null}
+                                    />
+                                }
+                            </div>
+                            <div className="survey-double-column">
+                                <label className="col-form-label double-column-label">Repeatable:</label>
+                                <div className="multiple-response">
+                                    <div className="allow-multiple">
+                                        <input type="radio"
+                                                name="repeatable"
+                                                disabled={!props.survey.buckets}
+                                                value={"true"}
+                                                onChange={toggleRepeatable}
+                                                checked={props.survey.repeatable==="true"}
+                                        />
+                                        <label>Yes</label>
+                                    </div>
+                                    <div className="allow-multiple">
+                                        <input type="radio"
+                                                name="repeatable"
+                                                disabled={!props.survey.buckets}
+                                                value={"false"}
+                                                onChange={toggleRepeatable}
+                                                checked={props.survey.repeatable==="false"}/>
+                                        <label>No</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <NodeList
-                        key={this.props.survey.id}
-                        submitted={this.props.submitted}
-                        survey_id={this.props.survey.id}
-                        survey_nodes={this.props.survey.nodes}
-                        languages={this.props.languages}
-                    />
+                    <div>
+                        {/*
+                        <NodeList
+                            repeatable={props.survey.repeatable}
+                            key={props.survey.id}
+                            submitted={props.submitted}
+                            survey_id={props.survey.id}
+                            survey_nodes={props.nodes}
+                            languages={props.languages}
+                        />
+                        */}
+                        <NodeList
+                            repeatable={props.survey.repeatable}
+                            languages={props.languages}
+                        />
+                    </div>
                 </div>
-                <button onClick={this.viewHandler}>back</button>
             </div>
         );
-    }
-
 }
 
+
 function mapStateToProps(state){
-    console.log('here')
-    console.log(state)
+    console.log('map state subsurvey', state);
     return {
-        surveys: state.surveys,
-        nodes: state.nodes
-    }
+        parentQuestionTitle: parentQuestionTitleSelector(state),
+        parentSurveyId: parentSurveySelector(state),
+        survey: surveySelector(state),
+        default_language: state.default_language
+    };
 }
 
 function matchDispatchToProps(dispatch){
-    return bindActionCreators({updateSurveyView: updateSurveyView}, dispatch)
+    return bindActionCreators({updateCurrentSurvey: updateCurrentSurvey,
+                                updateSurvey: updateSurvey}, dispatch);
 }
 
 export default connect(mapStateToProps, matchDispatchToProps)(SubSurvey);
-
-// export default SubSurvey;
-

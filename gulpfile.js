@@ -11,8 +11,8 @@ var gulp = require('gulp'),
     source = require('vinyl-source-stream'),
     concat = require('gulp-concat'),
     browserify = require('browserify'),
-    babelify = require('babelify'),
     reactify = require('reactify'),
+    babelify = require('babelify'),
     streamify = require('gulp-streamify'),
     underscorify = require('node-underscorify').transform({
         templateSettings: {
@@ -32,6 +32,8 @@ var src_path = 'dokomoforms/static/src',
     common_src_path = src_path + '/common',
     admin_src_path = src_path + '/admin',
     survey_src_path = src_path + '/survey',
+    create_survey_src_path = src_path + '/admin/create-survey',
+    create_survey_dist_path = src_path + '/admin/create-survey',
     admin_dist_path = dist_path + '/admin',
     survey_dist_path = dist_path + '/survey',
     node_modules_path = 'node_modules';
@@ -107,7 +109,20 @@ var path = {
         node_modules_path + '/react/dist/react.js',
         node_modules_path + '/node-uuid/uuid.js'
     ],
+    ///////
+    CREATE_SURVEY_JS_VENDOR_SRC: [
+        node_modules_path + '/jquery/dist/jquery.js',
+        node_modules_path + '/bootstrap/dist/js/bootstrap.js',
+        node_modules_path + '/datatables/media/js/jquery.dataTables.min.js',
+        node_modules_path + '/datatables/media/js/dataTables.bootstrap.min.js',
+        node_modules_path + '/lodash-compat/index.js',
+        node_modules_path + '/react/dist/react.js',
+        node_modules_path + '/node-uuid/uuid.js'
+    ],
+    //////////
     ADMIN_JS_APP_SRC: admin_src_path + '/js/**/*.js',
+    // (\/js\/(?!create-survey).+\/.+\.js),
+    CREATE_SURVEY_JS_APP_SRC: admin_src_path + '/js/create-survey/**/*.babel.js',
     ADMIN_JS_ENTRY_POINT_PREFIX: admin_src_path + '/js/',
     // note: these are file names only, not full paths...
     // they get concat'ed with ADMIN_JS_SRC_DIR in the bundling process
@@ -117,11 +132,10 @@ var path = {
         'view-data.js',
         'view-survey.js',
         'user-admin.js',
-        'enumerator-overview.js',
-        'create-survey.js',
-        'create-survey/main.babel.js'
+        'enumerator-overview.js'
     ],
     ADMIN_JS_DIST: admin_dist_path + '/js',
+    CREATE_SURVEY_JS_DIST: create_survey_dist_path + '/js',
 
     ADMIN_IMG_SRC: admin_src_path + '/img/**/*',
     ADMIN_IMG_DIST: admin_dist_path + '/img',
@@ -136,6 +150,7 @@ var path = {
 
 
 var admin_tasks = ['admin-less', 'admin-js-vendor', 'admin-js-app', 'admin-img', 'admin-fonts'],
+    create_survey_tasks = ['admin-less', 'create-survey-js-vendor', 'create-survey-js-app'],
     survey_tasks = ['survey-less', 'survey-js-vendor', 'survey-js-app', 'survey-img', 'survey-fonts', 'survey-app-cache'];
 
 
@@ -175,6 +190,8 @@ gulp.task('survey-js-app', function() {
         debug: false,
         entries: [path.SURVEY_JS_ENTRY_POINT]
     })
+        .transform(babelify)
+        .transform(underscorify)
         .transform(reactify)
         .bundle()
         .on('error', function(err) {
@@ -254,17 +271,25 @@ gulp.task('admin-js-vendor', function() {
         .pipe(gulp.dest(path.ADMIN_JS_DIST));
 });
 
+gulp.task('create-survey-js-vendor', function() {
+    gulp.src(path.CREATE_SURVEY_JS_VENDOR_SRC)
+        .pipe(concat('vendor.js'))
+        .pipe(gulpif(env !== 'development', streamify(uglify())))
+        // .pipe(gulpif(env !== 'development', rename({
+        //     extname: '.min.js'
+        // })))
+        .pipe(gulp.dest('dokomoforms/static/dist/admin/js/create-survey'));
+});
+
 gulp.task('admin-js-app', function() {
     var tasks = path.ADMIN_JS_ENTRY_POINTS.map(function(entry) {
         // note appending of root path to entry here
-        return browserify({
-            entries: [path.ADMIN_JS_ENTRY_POINT_PREFIX + entry]
-        })
-            .transform(babelify.configure({
-                only: /.*\.babel.*/
-            }))
+            console.log(entry)
+            return browserify({
+                entries: [path.ADMIN_JS_ENTRY_POINT_PREFIX + entry]
+            })
+            // .transform(babelify)
             .transform(underscorify)
-            .transform(reactify)
             .bundle()
             .on('error', function(err) {
                 console.log(err.message);
@@ -281,9 +306,37 @@ gulp.task('admin-js-app', function() {
             //     extname: '.min.js'
             // })))
             .pipe(gulp.dest(path.ADMIN_JS_DIST));
+
     });
+    tasks = tasks.filter(function(item){return typeof item=='string'})
     return es.merge.apply(null, tasks);
 });
+
+//////////
+gulp.task('create-survey-js-app', function() {
+
+        return browserify('dokomoforms/static/src/admin/js/create-survey/main.js')
+        .transform("babelify", {presets: ["es2015", "react"]})
+        .bundle()
+        .on('error', function(err) {
+            console.log(err.message);
+            process.exit(1);
+            this.emit('end');
+        })
+        .pipe(source(path.JS_BUILD_FILENAME))
+        // rename them to have "bundle as postfix"
+        .pipe(rename({
+            extname: '.bundle.js'
+        }))
+        .pipe(gulpif(env !== 'development', streamify(uglify())))
+        .on('error', function(err) {
+            console.log(err.message);
+            this.emit('end');
+        })
+        .pipe(gulp.dest('dokomoforms/static/dist/admin/js/create-survey'));
+
+});
+/////////
 
 gulp.task('admin-less', function() {
     // admin
@@ -321,8 +374,13 @@ gulp.task('admin-watch',
             ['admin-less', 'admin-js-vendor', 'admin-js-app', 'admin-img', 'admin-fonts']);
     });
 
-
-
+gulp.task('create-survey-watch',
+    create_survey_tasks,
+    function() {
+        livereload.listen();
+        gulp.watch([path.ADMIN_LESS_SRC, path.CREATE_SURVEY_JS_APP_SRC],
+            ['admin-less', 'create-survey-js-vendor', 'create-survey-js-app']);
+    });
 
 //---------------------
 // STATIC BUILD TASKS
@@ -331,9 +389,10 @@ gulp.task('admin-watch',
 // prod (?)
 //
 gulp.task('admin-build', ['clean'].concat(admin_tasks));
-// gulp.task('survey-build', ['clean'].concat(survey_tasks));
+gulp.task('survey-build', ['clean'].concat(survey_tasks));
+gulp.task('create-survey-build', ['clean'].concat(create_survey_tasks));
 
-gulp.task('build', ['clean', 'admin-build', 'survey-build']);
+gulp.task('build', ['clean', 'admin-build', 'create-survey-build']);
 
 //
 // dev
@@ -348,6 +407,6 @@ gulp.task('dev-build', function() {
 
 // DEFAULT TASK
 
-gulp.task('watch', ['admin-watch']);
+gulp.task('watch', ['admin-watch', 'create-survey-watch']);
 
 gulp.task('default', ['watch']);

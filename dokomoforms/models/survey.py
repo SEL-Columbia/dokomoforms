@@ -281,10 +281,6 @@ class SubSurvey(Base):
             'id', 'parent_type_constraint', 'parent_survey_node_id',
             'parent_node_id'
         ),
-        sa.CheckConstraint(
-            'NOT parent_allow_multiple',
-            name='allow_multiple_question_cannot_have_sub_surveys'
-        ),
         sa.ForeignKeyConstraint(
             [
                 'parent_survey_node_id',

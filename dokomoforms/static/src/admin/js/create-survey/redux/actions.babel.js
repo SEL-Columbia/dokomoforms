@@ -1,9 +1,17 @@
 
 export function denormalize() {
-  console.log('denormal action')
+  console.log('denormalize action')
   return {
     type: "SUBMIT",
     payload: {survey: 1001}
+  }
+}
+
+export function deleteAllBuckets(survey_id) {
+  console.log('deleteBuckets')
+  return {
+    type: "DELETE_ALL_BUCKETS",
+    payload: survey_id
   }
 }
 
@@ -23,11 +31,27 @@ export function addQuestion(question) {
   }
 }
 
+export function addChoice(choice) {
+  console.log('you are adding a choice', choice);
+  return {
+    type: "ADD_CHOICE",
+    payload: choice
+  }
+}
+
 export function updateNode(node) {
   console.log('you are updating a node', node.id);
   return {
     type: "UPDATE_NODE",
     payload: node
+  }
+}
+
+export function updateChoice(choice) {
+  console.log('you are updating a choice', choice);
+  return {
+    type: "UPDATE_CHOICE",
+    payload: choice
   }
 }
 
@@ -112,7 +136,15 @@ export function deleteSurvey(survey_id) {
   console.log('you are removing', survey_id)
   return {
     type: "DELETE_SURVEY",
-    payload: {survey_id: survey_id}
+    payload: survey_id
+  }
+}
+
+export function deleteChoice(choice_id) {
+  console.log('you are removing', choice_id)
+  return {
+    type: "DELETE_CHOICE",
+    payload: choice_id
   }
 }
 
@@ -124,11 +156,11 @@ export function deleteNode(node_id) {
   }
 }
 
-export function deleteBucket(id) {
-  console.log('you are removing', id)
+export function deleteBucket(bucket_id) {
+  console.log('you are removing', bucket_id)
   return {
-    type: "DELETE_NODE",
-    payload: {id: id}
+    type: "DELETE_BUCKET",
+    payload: bucket_id
   }
 }
 
@@ -145,6 +177,14 @@ export function updateLogic(logic) {
   return {
     type: "UPDATE_LOGIC",
     payload: logic
+  }
+}
+
+export function deleteLogic(logic_id) {
+  console.log('you are deleting logic', logic_id)
+  return {
+    type: "DELETE_LOGIC",
+    payload: logic_id
   }
 }
 

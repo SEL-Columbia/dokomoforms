@@ -1,52 +1,179 @@
 // vendor
-var React = require('react'),
-    $ = require('jquery'),
-    moment = require('moment'),
-    PouchDB = require('pouchdb'),
-    ps = require('../../common/js/pubsub'),
-    cookies = require('../../common/js/cookies');
-    uuid = require('node-uuid');
+import $ from 'jquery';
+import React from 'react';
+import moment from 'moment';
+import PouchDB from 'pouchdb';
+import ps from '../../common/js/pubsub';
+import cookies from '../../common/js/cookies';
+import uuid from 'node-uuid';
 
 // pouch plugin
 // PouchDB.plugin(require('pouchdb-upsert'));
 
 // components
-var Title = require('./components/baseComponents/Title'),
-    Header = require('./components/Header'),
-    Footer = require('./components/Footer'),
-    Question = require('./components/Question'),
-    Note = require('./components/Note'),
-    MultipleChoice = require('./components/MultipleChoice'),
-    Photo = require('./components/Photo'),
-    Location = require('./components/Location'),
-    Facility = require('./components/Facility'),
-    Submit = require('./components/Submit'),
-    Splash = require('./components/Splash'),
-    Loading = require('./components/Loading'),
+import Title from './components/baseComponents/Title';
+import Header from './components/Header';
+import Footer from './components/Footer';
+import Question from './components/Question';
+import Note from './components/Note';
+import MultipleChoice from './components/MultipleChoice';
+import Photo from './components/Photo';
+import Location from './components/Location';
+import Facility from './components/Facility';
+import Submit from './components/Submit';
+import Splash from './components/Splash';
+import Loading from './components/Loading';
 
     // api services
-    PhotoAPI = require('./api/PhotoAPI'),
-    FacilityTree = require('./api/FacilityAPI');
+import PhotoAPI from './api/PhotoAPI';
+import FacilityTree from './api/FacilityAPI';
 
 /*
  * Create Single Page App with three main components
  * Header, Content, Footer
  */
-var Application = React.createClass({
-    getInitialState: function() {
+
+var utils = function(){
+    var counter = 0;
+    counter++;
+    return "_" + counter.toString();
+}
+
+class Application extends React.Component {
+
+    constructor(props){
+        super(props);
+
+        this.buildTrees = this.buildTrees.bind(this);
+        this.onSurveyStart = this.onSurveyStart.bind(this);
+        this.onNextButton = this.onNextButton.bind(this);
+        this.onPrevButton = this.onPrevButton.bind(this);
+        this.inBucket = this.inBucket.bind(this);
+        this.cloneNode = this.cloneNode.bind(this);
+        this.onSave = this.onSave.bind(this);
+        this.onSubmit = this.onSubmit.bind(this);
+        this.onCheckButton = this.onCheckButton.bind(this);
+        this.getContent = this.getContent.bind(this);
+        this.getTitle = this.getTitle.bind(this);
+        this.getMessage = this.getMessage.bind(this);
+        this.getButtonText = this.getButtonText.bind(this);
+
+        this.state = {
+            showDontKnow: false,
+            showDontKnowBox: false,
+            head: null,
+            question: null,
+            headStack: [], //XXX Stack of linked list heads
+            states: {
+                LOADING: 0,
+                SPLASH: 1,
+                QUESTION: 2,
+                SUBMIT: 3
+            },
+            language: null,
+            state: 0,
+            trees: {},
+            loggedIn: null,
+            hasFacilities: null,
+            db: null
+        }
+    }
+
+    // getInitialState: function() {
+    //     // Set up db for photos and facility tree
+    //     // var trees = {};
+    //     // var surveyDB = new PouchDB(this.props.survey.id, {
+    //     //     'auto_compaction': true
+    //     // });
+
+    //     // loading state, unless there are no facility nodes
+    //     // var init_state = 0;
+
+    //     // window.surveyDB = surveyDB;
+
+    //     // Build initial linked list
+    //     var questions = this.props.survey.nodes;
+    //     // var first_question = null;
+    //     questions.forEach(function(node, idx) {
+    //         var question = node;
+    //         question.id = question.id;
+    //         question.prev = null;
+    //         question.next = null;
+    //         if (idx > 0) {
+    //             question.prev = questions[idx - 1];
+    //         }
+
+    //         if (idx < questions.length - 1) {
+    //             question.next = questions[idx + 1];
+    //         }
+
+    //         if (idx === 0) {
+    //             first_question = question;
+    //         }
+
+    //     });
+
+    //     this.questions = questions;
+
+    //     // // Recursively construct trees
+    //     // var has_facility_node = this.buildTrees(questions, trees);
+
+    //     // if (!has_facility_node) {
+    //     //     init_state = 1;
+    //     // }
+
+    //     // set default lang -- use user pref stored in localStorage,
+    //     // falling back to survey default if the user pref is not available
+    //     // for this survey
+    //     var language = this.props.survey.default_language;
+    //     if (localStorage['default_language']
+    //         && this.props.survey.languages.indexOf(localStorage['default_language']) !== -1) {
+    //         language = localStorage['default_language'];
+    //     }
+
+    //     // user stuff
+    //     var logged_in = window.CURRENT_USER !== undefined;
+    //     if (logged_in) {
+    //         localStorage['submitter_name'] = window.CURRENT_USER.name;
+    //         localStorage['submitter_email'] = window.CURRENT_USER.email;
+    //     }
+
+    //     // return {
+    //     //     showDontKnow: false,
+    //     //     showDontKnowBox: false,
+    //     //     head: first_question,
+    //     //     question: null,
+    //     //     headStack: [], //XXX Stack of linked list heads
+    //     //     states: {
+    //     //         LOADING: 0,
+    //     //         SPLASH: 1,
+    //     //         QUESTION: 2,
+    //     //         SUBMIT: 3
+    //     //     },
+    //     //     language: language,
+    //     //     state: init_state,
+    //     //     trees: trees,
+    //     //     loggedIn: logged_in,
+    //     //     hasFacilities: null,
+    //     //     db: surveyDB
+    //     // };
+    // },
+
+    componentWillMount() {
         // Set up db for photos and facility tree
-        var trees = {};
+        // var trees = {};
+
+        var self = this;
+
         var surveyDB = new PouchDB(this.props.survey.id, {
             'auto_compaction': true
         });
 
-        // loading state, unless there are no facility nodes
-        var init_state = 0;
-
         window.surveyDB = surveyDB;
 
+
         // Build initial linked list
-        var questions = this.props.survey.nodes;
+        var questions = self.props.survey.nodes;
         var first_question = null;
         questions.forEach(function(node, idx) {
             var question = node;
@@ -67,21 +194,11 @@ var Application = React.createClass({
 
         });
 
-        this.questions = questions;
+        self.questions = questions;
 
-        // // Recursively construct trees
-        // var has_facility_node = this.buildTrees(questions, trees);
-
-        // if (!has_facility_node) {
-        //     init_state = 1;
-        // }
-
-        // set default lang -- use user pref stored in localStorage,
-        // falling back to survey default if the user pref is not available
-        // for this survey
-        var language = this.props.survey.default_language;
+        var language = self.props.survey.default_language;
         if (localStorage['default_language']
-            && this.props.survey.languages.indexOf(localStorage['default_language']) !== -1) {
+            && self.props.survey.languages.indexOf(localStorage['default_language']) !== -1) {
             language = localStorage['default_language'];
         }
 
@@ -92,61 +209,50 @@ var Application = React.createClass({
             localStorage['submitter_email'] = window.CURRENT_USER.email;
         }
 
-        return {
-            showDontKnow: false,
-            showDontKnowBox: false,
-            head: first_question,
-            question: null,
-            headStack: [], //XXX Stack of linked list heads
-            states: {
-                LOADING: 0,
-                SPLASH: 1,
-                QUESTION: 2,
-                SUBMIT: 3
-            },
-            language: language,
-            state: init_state,
-            trees: trees,
-            loggedIn: logged_in,
-            hasFacilities: null,
-            db: surveyDB
-        };
-    },
+        // /////////
 
-    componentWillMount: function() {
-        var self = this;
+        // ps.subscribe('loading:progress', function() {
+        //     // unused as of this moment, since we can't know the content-length
+        //     // due to gzipping.
+        // });
 
-        ps.subscribe('loading:progress', function() {
-            // unused as of this moment, since we can't know the content-length
-            // due to gzipping.
-        });
+        console.log('right before')
 
         ps.subscribe('loading:complete', function() {
             console.log('LOADING COMPLETE');
-            self.setState({
-                state: 1
-            });
         });
 
-        ps.subscribe('settings:language_changed', function(e, lang) {
-            self.setState({
-                language: lang
-            });
-            localStorage['default_language'] = lang;
-        });
+        // ps.subscribe('settings:language_changed', function(e, lang) {
+        //     self.setState({
+        //         language: lang
+        //     }, function(){
+        //         localStorage['default_language'] = lang;
+        //         console.log('lang state', self.state)
+        //     });
+        // });
 
-        // handle revisit:reload_facilities event by flushing existing facilities
-        // and refreshing page.
-        ps.subscribe('revisit:reload_facilities', function() {
-            localStorage.removeItem('facilities');
-            window.location.reload();
-        });
-    },
+        // // handle revisit:reload_facilities event by flushing existing facilities
+        // // and refreshing page.
+        // ps.subscribe('revisit:reload_facilities', function() {
+        //     localStorage.removeItem('facilities');
+        //     window.location.reload();
+        // });
 
-    componentDidMount: function() {
+        self.setState({
+            state: 1,
+            head: first_question,
+            language: language,
+            loggedIn: logged_in,
+            db: surveyDB
+        }, function(){
+            console.log('state set', this.footer)
+        })
+    }
+
+    componentDidMount() {
         // Recursively construct trees
-        var has_facility_node = this.buildTrees(this.questions, this.state.trees),
-            state = has_facility_node ? 0 : 1;
+        var has_facility_node = this.buildTrees(this.questions, this.state.trees);
+        var state = has_facility_node ? 0 : 1;
 
         if (!has_facility_node) {
             this.setState({
@@ -158,8 +264,10 @@ var Application = React.createClass({
             });
         }
 
+        console.log('did mount', this.state)
 
-    },
+
+    }
 
     /*
      * Create Facility Tree object at node id for every facility tree question
@@ -171,10 +279,10 @@ var Application = React.createClass({
      * NOTE: facility trees update exact same location in pouchdb (based on bounds of coordinates)
      * i.e: Multiple trees with same bounds do not increase memory usage (network usage does increase though)
      */
-    buildTrees: function(questions, trees) {
-        var self = this,
-            has_facility_node = false;
-        questions = questions || [];
+    buildTrees(questions, trees) {
+        var self = this;
+        var has_facility_node = false;
+        var questions = questions || [];
 
         questions.forEach(function(node) {
             if (node.type_constraint === 'facility') {
@@ -197,18 +305,18 @@ var Application = React.createClass({
         });
 
         return has_facility_node;
-    },
+    }
 
     /**
      * Sets the start time on the survey, to be saved with submission.
      */
-    onSurveyStart: function() {
+    onSurveyStart() {
         console.log('onSurveyStart -- setting start_time');
         var surveyID = this.props.survey.id;
         var survey = JSON.parse(localStorage[surveyID] || '{}');
         survey.start_time = new Date().toISOString();
         localStorage[surveyID] = JSON.stringify(survey);
-    },
+    }
 
     /*
      * Load next question, updates state of the Application
@@ -217,26 +325,28 @@ var Application = React.createClass({
      * Deals with branching, required and setting up dontknow footer state
      * Uses refs! (Could be removed)
      */
-    onNextButton: function() {
-        var self = this,
-            surveyID = this.props.survey.id,
-            currentState = this.state.state,
-            currentQuestion = this.state.question;
+    onNextButton() {
+        console.log('next button')
+        let self = this;
+        let surveyID = this.props.survey.id;
+        let currentState = this.state.state;
+        let currentQuestion = this.state.question;
 
         // Set up next state
-        var nextQuestion = null,
-            showDontKnow = false,
-            showDontKnowBox = false,
-            state = this.state.states.SPLASH,
-            head = this.state.head,
-            headStack = this.state.headStack;
+        let nextQuestion = null;
+        let showDontKnow = false;
+        let showDontKnowBox = false;
+        let state = this.state.states.SPLASH;
+        let head = this.state.head;
+        let headStack = this.state.headStack;
 
-        var questionID;
+        let questionID;
 
-        console.log('Current Question', currentQuestion);
+        console.log('Current Question', this.state);
 
         switch (currentState) {
             case this.state.states.LOADING:
+                console.log('states dot loading')
                 nextQuestion = null;
                 showDontKnow = false;
                 showDontKnowBox = false;
@@ -246,9 +356,12 @@ var Application = React.createClass({
 
                 // Reset Survey Linked List
                 head = this.state.headStack[0] || head;
+                console.log('head', head)
+                console.log('headstack', this.state.headStack)
                 while (head.prev) {
                     head = head.prev;
                 }
+                console.log('moved past')
                 headStack = [];
                 break;
             // On Submit page and next was pressed
@@ -271,6 +384,8 @@ var Application = React.createClass({
             // On Splash page and next was pressed
             case this.state.states.SPLASH:
 
+            console.log('state splash');
+
                 nextQuestion = this.state.head;
                 showDontKnow = nextQuestion.allow_dont_know || false;
                 showDontKnowBox = false;
@@ -280,7 +395,7 @@ var Application = React.createClass({
 
                 questionID = nextQuestion.id;
                 if (showDontKnow) {
-                    var response = this.refs.footer.getAnswer(questionID);
+                    var response = this.footer.getAnswer(questionID);
                     console.log('Footer response:', response);
                     showDontKnowBox = Boolean(response);
                 }
@@ -313,18 +428,44 @@ var Application = React.createClass({
                     return (response && response.response !== null);
                 });
 
+                console.log('answers 1', answers)
+
                 // XXX Confirm response type is answer (instead of dont-know/other)
                 var answer = answers.length && answers[0].response || null;
                 var sub_surveys = currentQuestion.sub_surveys;
 
                 // If has subsurveys then it can branch
                 if (sub_surveys) {
-                    console.log('Subsurveys:', currentQuestion.id, sub_surveys);
+                    console.log('Subsurveys:', currentQuestion.id, currentQuestion, sub_surveys);
                     console.log('Answer:', answer);
+
+
+                    /////////
+                    var answerResponse;
+                    if (currentQuestion.type_constraint=="integer") {
+                        answerResponse = answers[0].response;
+                    } else if (currentQuestion.type_constraint=="text" ||
+                        currentQuestion.type_constraint=="multiple_choice") {
+                        console.log('text answer', answers.length)
+                        answerResponse = answers.length;
+
+                    } else {
+                        answerResponse = 1;
+                    }
+
+                    var text_answers = answers;
+                    /////////
 
                     // Check which subsurvey this answer buckets into
                     var BREAK = false;
+                    // get the original length of the sub-survey before repeats are added
+                    
                     sub_surveys.forEach(function(sub) {
+                        // get the original sub node length before repetitions are added
+                        if (!sub.original_length) sub.original_length = sub.nodes.length;
+
+                        console.log('original', sub.original_length)
+
                         if (BREAK) {
                             return;
                         }
@@ -332,57 +473,114 @@ var Application = React.createClass({
 
                         // Append all subsurveys to clone of current question, update head, update headStack if in bucket
                         var inBee = self.inBucket(sub.buckets, currentQuestion.type_constraint, answer);
+
+                        console.log('inbee', inBee)
                         
-                        if (inBee) {
+
+                        // a repeatable question wont have buckets
+                        if ((!sub.buckets.length) || inBee) {
                             // Clone current element
                             var clone = self.cloneNode(currentQuestion);
                             var temp = clone.next;
 
+                        ////////////
 
-                            if (sub.repeatable && (answer > 1)) {
-                                var list = [];
-                                var copiedNode;
-                                var augmentedId;
-                                console.log('greater than 1')
-                                for (var i = 0; i < answer - 1; i++) {
+                            var original_length = sub.original_length;
+
+                            console.log('original again', original_length)
+
+                            var ids = {};
+
+                            // list is the list of reptitions. It's appended on to the original nodes list later
+                            var list = [];
+
+                            var currentResponse = answerResponse*original_length;
+                            let repetitions = 0;
+
+                            // check if the answer(s) to the question require reptitions
+                            // OR if the answer(s) to the question have been changed and require added repetitions
+                            if (currentResponse==sub.nodes.length) {
+                                console.log('the same', currentResponse, sub.nodes.length);
+                            } else {
+                                console.log('not equal', currentResponse, original_length, sub.nodes.length)
+                                repetitions = ((currentResponse-sub.nodes.length)/original_length)
+                                console.log(repetitions)
+                            }
+
+                            
+                            if (repetitions!=0) {
+                                var copiedNode,
+                                    augmentedId
+                                ;
+                                if (repetitions>0) {
+                                    for (var e = 0; e < repetitions; e++) {
+                                        for (var p = 0; p < original_length; p++) {
+                                            copiedNode = Object.assign({}, sub.nodes[p]);
+                                            console.log('copiednode', sub.nodes[p])
+                                            augmentedId = utils();
+                                            // temporariy append the ID. it needs to be unique for each question
+                                            console.log('augmented', augmentedId)
+                                            copiedNode.id = copiedNode.id + augmentedId;
+                                            console.log('list', list)
+                                            list.push(copiedNode)
+
+                                        }
+                                    }
+
+                                    sub.nodes = sub.nodes.concat(list);
+                                    list = [];
+
+                                    console.log('length', sub.nodes.length)
                                     sub.nodes.forEach(function(node){
-                                        console.log('node', node.title)
-                                        copiedNode = Object.assign({}, node);
-                                        console.log('copiednode', node)
-                                        augmentedId = i.toString()
-                                        copiedNode.id = copiedNode.id + "_" + augmentedId;
-                                        list.push(copiedNode)
+                                        console.log('after', node.id)
                                     })
 
-                                    // console.log('copiedList', copiedList)
+                                    console.log('copied list length', list.length);
+                                    console.log('node length', sub.nodes.length)
 
-                                    // list = list.concat(copiedList)
-                                    // console.log('answer', i)
-                                    // var copyList = sub.nodes.slice();
-                                    // console.log('copied list', copyList)
-                                    // list = list.concat(copyList);
-                                    // console.log('list', list)
+
+                                } else if (repetitions<0) {
+                                    // this may happen if the enumerator goes back
+                                    // and changes the initial answer to the question
+                                    let removed = repetitions * original_length;
+                                    sub.nodes.splice(removed)
+                                    console.log('removed', removed, repetitions)
+                                    console.log('sub.nodes', sub.nodes)
                                 }
-
-                                console.log('list', list)
-
-                                // list.map(function(node){
-                                //     node.node_id = uuid.v4();
-                                // })
-
-                                sub.nodes.splice.apply(sub.nodes, [-1, 0].concat(list));
-
-                                console.log('length', sub.nodes.length)
-                                sub.nodes.forEach(function(node){
-                                    console.log('after', node.node_id, node.id)
-                                })
-
-                                console.log('copied list length', list.length);
-                                console.log('node length', sub.nodes.length)
 
                             }
 
+
                             console.log('subnodes', sub.nodes)
+
+                            // let j = 0;
+                            // let k = 1;
+                            // let m = 1;
+                            // if (currentQuestion.type_constraint=="integer") {
+                            //     sub.nodes.forEach(function(node){
+                            //         node.answerText = m.toString();
+                            //         m++;
+                            //     });
+                            // } else {
+
+                            //     sub.nodes.forEach(function(node, i){
+                            //         // if (k > original_length) {
+                            //         //     j++;
+                            //         //     if (j > original_length) return;
+                            //         //     k = 1;
+                            //         // }
+                            //         // console.log('j', j, original_length)
+                            //         // if (text_answers[j]) {
+                            //         //     node.answerText = text_answers[j].response;
+                            //         // }
+                            //         // console.log(node.answerText);
+                            //         // k++;
+                            //         // console.log('k', k)
+                            //         console.log('function', node.id, i)
+                            //         node.answerText = text_answers[i].response;
+                            //     })
+
+                            // }
 
                             // link sub nodes
                             // TODO: Deal with repeatable flag here!
@@ -422,8 +620,7 @@ var Application = React.createClass({
 
                             BREAK = true; // break
                         }
-
-                    });
+                    })
 
                 }
 
@@ -445,7 +642,7 @@ var Application = React.createClass({
                 questionID = nextQuestion.id;
 
                 if (showDontKnow) {
-                    response = this.refs.footer.getAnswer(questionID);
+                    response = this.footer.getAnswer(questionID);
                     console.log('Footer response:', response);
                     showDontKnowBox = Boolean(response);
                 }
@@ -465,13 +662,13 @@ var Application = React.createClass({
 
         return;
 
-    },
+    }
 
     /*
      * Load prev question, updates state of the Application
      * if prev question is not found to SPLASH
      */
-    onPrevButton: function() {
+    onPrevButton() {
         var currentState = this.state.state;
         var currentQuestion = this.state.question;
 
@@ -518,7 +715,7 @@ var Application = React.createClass({
 
                 questionID = currentQuestion.id;
                 if (showDontKnow) {
-                    response = this.refs.footer.getAnswer(questionID);
+                    response = this.footer.getAnswer(questionID);
                     console.log('Footer response:', response);
                     showDontKnowBox = Boolean(response);
                 }
@@ -571,7 +768,7 @@ var Application = React.createClass({
                 questionID = nextQuestion.id;
 
                 if (showDontKnow) {
-                    response = this.refs.footer.getAnswer(questionID);
+                    response = this.footer.getAnswer(questionID);
                     console.log('Footer response:', response);
                     showDontKnowBox = Boolean(response);
                 }
@@ -591,7 +788,7 @@ var Application = React.createClass({
 
         return;
 
-    },
+    }
 
     /*
      * Check if response is in bucket
@@ -600,7 +797,7 @@ var Application = React.createClass({
      * @type: type of bucket
      * @resposne: answer to check if in bucket
      */
-    inBucket: function(buckets, type, response) {
+    inBucket(buckets, type, response) {
         var leftLim,
             rightLim,
             inBee,
@@ -719,14 +916,14 @@ var Application = React.createClass({
                 return false;
 
         }
-    },
+    }
 
     /*
      * Clone linked list node, arrays don't need to be cloned, only next/prev ptrs
      * @node: Current node to clone
      * @ids: Dictionay reference of currently cloned nodes, prevents recursion going on forever
      */
-    cloneNode: function(node, ids) {
+    cloneNode(node, ids) {
         var self = this;
         var clone = {
             next: null,
@@ -755,12 +952,12 @@ var Application = React.createClass({
         }
 
         return clone;
-    },
+    }
 
     /*
      * Save active survey into unsynced array
      */
-    onSave: function() {
+    onSave() {
         var survey = JSON.parse(localStorage[this.props.survey.id] || '{}');
         // Get all unsynced surveys
         var unsynced_surveys = JSON.parse(localStorage['unsynced'] || '{}');
@@ -871,13 +1068,13 @@ var Application = React.createClass({
         // Wipe location info
         localStorage['location'] = JSON.stringify({});
 
-    },
+    }
 
     /*
      * Loop through unsynced submissions for active survey and POST
      * Only modifies localStorage on success
      */
-    onSubmit: function() {
+    onSubmit() {
         var self = this;
 
         // Get all unsynced surveys
@@ -936,7 +1133,7 @@ var Application = React.createClass({
 
                     // Update splash page if still on it
                     if (self.state.state === self.state.states.SPLASH)
-                        self.refs.splash.update();
+                        self.splash.update();
                 },
 
                 error: function(err) {
@@ -1039,7 +1236,7 @@ var Application = React.createClass({
                 );
             }
         });
-    },
+    }
 
 
     /*
@@ -1047,7 +1244,7 @@ var Application = React.createClass({
      * due to app needing to resize for the increased height of the don't know
      * region
      */
-    onCheckButton: function() {
+    onCheckButton() {
         this.setState({
             showDontKnowBox: this.state.showDontKnowBox ? false : true,
             showDontKnow: this.state.showDontKnow
@@ -1055,16 +1252,17 @@ var Application = React.createClass({
 
         // Force questions to update
         if (this.state.state === this.state.states.QUESTION) {
-            this.refs.question.update();
+            console.log('trying to update')
+            this.question.update();
         }
 
-    },
+    }
 
     /*
      * Load the appropiate question based on the nextQuestion state
      * Loads splash or submit content if state is either SPLASH/SUBMIT
      */
-    getContent: function() {
+    getContent() {
         var question = this.state.question;
         var state = this.state.state;
         var survey = this.props.survey;
@@ -1076,7 +1274,7 @@ var Application = React.createClass({
                 case 'multiple_choice':
                     return (
                         <MultipleChoice
-                                ref='question'
+                                ref={(c)=>{this.question = c}}
                                 key={questionID}
                                 question={question}
                                 questionType={questionType}
@@ -1088,7 +1286,7 @@ var Application = React.createClass({
                 case 'photo':
                     return (
                         <Photo
-                                ref='question'
+                                ref={(c)=>{this.question = c}}
                                 key={questionID}
                                 question={question}
                                 questionType={questionType}
@@ -1102,7 +1300,7 @@ var Application = React.createClass({
                 case 'location':
                     return (
                         <Location
-                                ref='question'
+                                ref={(c)=>{this.question = c}}
                                 key={questionID}
                                 question={question}
                                 questionType={questionType}
@@ -1114,7 +1312,7 @@ var Application = React.createClass({
                 case 'facility':
                     return (
                         <Facility
-                                ref='question'
+                                ref={(c)=>{this.question = c}}
                                 key={questionID}
                                 question={question}
                                 questionType={questionType}
@@ -1128,7 +1326,7 @@ var Application = React.createClass({
                 case 'note':
                     return (
                         <Note
-                                ref='question'
+                                // ref={(c)=>{this.question = c}}
                                 key={questionID}
                                 question={question}
                                 questionType={questionType}
@@ -1140,7 +1338,7 @@ var Application = React.createClass({
                 default:
                     return (
                         <Question
-                                ref='question'
+                                ref={(c)=>{this.question = c}}
                                 key={questionID}
                                 question={question}
                                 questionType={questionType}
@@ -1153,7 +1351,7 @@ var Application = React.createClass({
         } else if (state === this.state.states.SUBMIT) {
             return (
                 <Submit
-                        ref='submit'
+                        // ref={(c)=>{this.submit = c}}
                         surveyID={survey.id}
                         loggedIn={this.state.loggedIn}
                         language={this.state.language}
@@ -1162,7 +1360,7 @@ var Application = React.createClass({
         } else {
             return (
                 <Splash
-                        ref='splash'
+                        // ref={(c)=>{this.splash = c}}
                         surveyID={survey.id}
                         surveyTitle={survey.title}
                         language={this.state.language}
@@ -1170,46 +1368,54 @@ var Application = React.createClass({
                     />
             );
         }
-    },
+    }
 
     /*
      * Load the appropiate title based on the question and state
      */
-    getTitle: function() {
+    getTitle() {
         var survey = this.props.survey;
         var question = this.state.question;
         var state = this.state.state;
 
+        console.log('title', question)
         if (state === this.state.states.QUESTION) {
+            if (question.number) {
+                return question.number + ".  " + question.title[this.state.language];
+            }
             return question.title[this.state.language];
         } else if (state === this.state.states.SUBMIT) {
             return 'Ready to Save?';
         } else {
             return survey.title[this.state.language];
         }
-    },
+    }
 
     /*
      * Load the appropiate 'hint' based on the question and state
      */
-    getMessage: function() {
+    getMessage() {
         var survey = this.props.survey;
         var question = this.state.question;
         var state = this.state.state;
 
         if (state === this.state.states.QUESTION) {
+            console.log('hint section', question)
+            // if (question.answerText) {
+            //     return question.hint[this.state.language] + " (" + question.answerText + ")";
+            // }
             return question.hint[this.state.language];
         } else if (state === this.state.states.SUBMIT) {
             return 'If you are satisfied with the answers to all the questions, you can save the survey now.';
         } else {
             return 'version ' + survey.version + ' | last updated ' + moment(survey.last_update_time).format('lll');
         }
-    },
+    }
 
     /*
      * Load the appropiate text in the Footer's button based on state
      */
-    getButtonText: function() {
+    getButtonText() {
         var state = this.state.state;
         if (state === this.state.states.QUESTION) {
             return 'Next Question';
@@ -1218,9 +1424,14 @@ var Application = React.createClass({
         } else {
             return 'Begin a New Survey';
         }
-    },
+    }
 
-    render: function() {
+    renderx(){
+        return(<div></div>)
+    }
+
+    render() {
+        console.log('render state?', this.onNextButton)
         var contentClasses = 'content';
         var state = this.state.state;
         var question = this.state.question;
@@ -1259,7 +1470,7 @@ var Application = React.createClass({
             <div id='wrapper'>
                 {loading}
                 <Header
-                    ref='header'
+                    ref={()=>{}}
                     buttonFunction={this.onPrevButton}
                     number={number + 1}
                     total={length + 1}
@@ -1276,7 +1487,7 @@ var Application = React.createClass({
                     {this.getContent()}
                 </div>
                 <Footer
-                    ref='footer'
+                    ref={(c)=>{this.footer = c}}
                     showDontKnow={this.state.showDontKnow}
                     showDontKnowBox={this.state.showDontKnowBox}
                     buttonFunction={this.onNextButton}
@@ -1291,6 +1502,6 @@ var Application = React.createClass({
             </div>
         );
     }
-});
+};
 
 module.exports = Application;

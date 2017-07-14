@@ -1,47 +1,39 @@
-import utils from './../utils.js';
-import SubSurvey from './SubSurvey.babel.js';
-import MultipleChoice from './MultipleChoice.babel.js';
-import { Title, FacilityLogic, MinMaxLogic } from './Logic.babel.js';
-import {bindActionCreators} from 'redux';
-import {connect} from 'react-redux';
-import {updateSurveys, getSurvey} from './../redux/actions.babel.js';
+'use strict';
 
-class SubSurveyList extends React.Component {
+import React from 'react';
+import SubSurveyListItem from './SubSurveyListItem.babel.js';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
+import { subSurveySelector } from './../redux/selectors.babel.js';
+import { orm } from './../redux/models.babel.js';
 
-	constructor(props) {
-        super(props);
 
-        this.addBucket = this.addBucket.bind(this);
-        this.goToSubSurvey = this.goToSubSurvey.bind(this)
-        this.listSubSurveys = this.listSubSurveys.bind(this)
+function SubSurveyList(props) {
 
-        this.state = {}
-    }
+	// constructor(props) {
+ //        super(props);
 
-    componentWillMount() {
-    	console.log('its mounting', this.props)
-    	if (!this.props.sub_surveys || !this.props.sub_surveys.length) {
-    		this.props.addSubSurvey()
-    	}
-    }
+ //        this.viewSubSurveyHandler = this.viewSubSurveyHandler.bind(this);
+ //        this.listSubSurveys = this.listSubSurveys.bind(this);
+ //    }
 
-    addBucket(bucket, survey_id) {
-    	this.props.updateSurveys(bucket, survey_id)
-    	// let copy = [];
-    	// copy = copy.concat(this.state.buckets)
-    	// copy.push(event.target.value)
-    	// console.log('new bucket', copy)
-    }
+    // componentWillMount() {
+    //     console.log('ssl', this.props)
+    // 	if (!this.props.sub_surveys || !this.props.sub_surveys.length) {
+    // 		this.props.addSubSurvey();
+    // 	}
+    // }
 
-    listSubSurveys(){
-    	let self = this;
+
+    function listSubSurveys() {
+    	// let self = this;
     	console.log('listSubSurveys')
     	let subList = [];
     	let renderList = [];
-    	if (this.props.sub_surveys) {
-    		console.log('it has subsurveys')
-    		console.log(this.props)
-    		subList = subList.concat(this.props.sub_surveys)
+    	if (props.sub_surveys) {
+    		console.log('it has subsurveys', props)
+    		console.log(props)
+    		subList = subList.concat(props.sub_surveys)
     	}
     	if (subList.length > 0) {
     		console.log('subList', subList)
@@ -51,140 +43,68 @@ class SubSurveyList extends React.Component {
 		        console.log('sub_survey', sub_survey)
 		        renderList.push(
 		            <SubSurveyListItem
-		            	goToSubSurvey={self.goToSubSurvey}
+                        parentQuestion={props.question_id}
 		            	key={sub_survey.id}
-		                sub_survey={sub_survey}
-		                type_constraint={self.props.type_constraint}
-		                choices={self.props.choices}
-		                addBucket={self.addBucket}
+		                sub_survey_id={sub_survey.id}
+		                type_constraint={props.type_constraint}
+		                choices={props.choices}
 		            />
 		        )
+                renderList.push(<hr />)
 			})
     	}
     	console.log(renderList);
+        renderList.splice(-1, 1)
 		return renderList;
     }
 
-    goToSubSurvey(survey_id) {
-    	console.log('props', this.props)
-    	console.log('goto subsurvey', survey_id)
-    	this.props.goToSubSurvey(survey_id)
+    function goToSubSurvey(survey_id) {
+    	console.log('props', props)
+    	console.log('go to subsurvey', survey_id)
+    	props.goToSubSurvey(survey_id)
     }
 
-	render(){
-		console.log('from subsurvey', this.props)
+	// render() {
+		console.log('from subsurvey', props)
 		return(
-			<div>
-				<span className="language-header">SubSurvey List</span>
-				{this.listSubSurveys()}
-			</div>
-		)
-	}
-}
-
-class SubSurveyListItem extends React.Component {
-
-	constructor(props) {
-		super(props)
-
-		this.viewSubSurveyHandler = this.viewSubSurveyHandler.bind(this)
-		this.addBucketHandler = this.addBucketHandler.bind(this)
-		this.listChoices = this.listChoices.bind(this)
-		this.listBuckets = this.listBuckets.bind(this)
-		this.updateSelected = this.updateSelected.bind(this)
-
-		this.state = {
-			selected: null
-		}
-	}
-
-	viewSubSurveyHandler() {
-		this.props.goToSubSurvey(this.props.sub_survey.id)
-	}
-
-	addBucketHandler(){
-		console.log('refs!', this.refs)
-		console.log('bucket handler', this.props, this.state.selected)
-
-		let bucketList = [].concat(this.props.sub_survey.buckets)
-		let newBucket = {bucket_type: this.props.type_constraint, bucket: undefined}
-		if (this.props.type_constraint=='multiple_choice') {
-			newBucket.bucket = {}
-			newBucket.bucket.choice_number = parseInt(this.state.selected);
-		} else {
-			newBucket.bucket = "[" + this.state.selected + "]";
-		}
-
-		console.log('new bucket', newBucket.bucket);
-		bucketList.push(newBucket)
-		this.props.addBucket({buckets: bucketList}, this.props.sub_survey.id)
-	}
-
-	updateSelected(event){
-		this.setState({selected: event.target.value})
-	}
-
-	listChoices() {
-		console.log('item', this.props)
-		let choiceList= [<option></option>];
-		let mappedChoices = []
-		if (this.props.choices) {
-			mappedChoices = this.props.choices.map(function(choice, index) {
-				console.log(choice.English);
-				return(
-					<option value={index}>{choice.English}</option>
-				)
-			})
-		}
-		return choiceList.concat(mappedChoices);
-	}
-
-	listBuckets() {
-		let buckets = [].concat(this.props.sub_survey.buckets)
-		return buckets.map(function(bucket) {
-			return(JSON.stringify(bucket))
-		})
-	}
-
-	render() {
-		console.log(this.props.sub_survey)
-		return (
-            <div>
-            	<div>
-	            	<button onClick={this.viewSubSurveyHandler} disabled={!this.props.sub_survey.buckets.length}>SubSurvey</button>
-            	</div>
-            	<div>
-	            	<label htmlFor="type-constraint" className="col-xs-2 col-form-label">Bucket(s):</label>
-	            	{this.listBuckets()}
-	            </div>
-	            <div>
-	            	<label htmlFor="type-constraint" className="col-xs-2 col-form-label">Add Bucket:</label>
-		            <div className="col-xs-4">
-		            	{(this.props.type_constraint=="multiple_choice") &&
-			            	<select onChange={this.updateSelected} value={this.props.sub}>
-			            		{this.listChoices()}
-			            	</select>
-		            	}
-		            	{(this.props.type_constraint!=="multiple_choice") &&
-		            		<input onBlur={this.updateSelected}></input>
-		            	}
-		            </div>
-		            <button onClick={this.addBucketHandler}>add bucket</button>
-		        </div>
+            <div className="title-group">
+                <div className="sub-survey-list">
+                    <label style={{fontSize: "25px"}}>SubSurvey List</label>
+                    <div className="sub-survey-list-items" style={{margin: "10px 20px"}}>
+                        {listSubSurveys()}
+                    </div>
+                </div>
             </div>
 		)
-	}
+	// }
 }
 
 
-function mapStateToProps(state){
+function mapStateToProps(state, ownProps){
+
+
+	console.log('state', ownProps)
+    let choices = null;
+    if (ownProps.type_constraint==='multiple_choice') {
+        console.log('sublist choices')
+        const session = orm.session(state.orm);
+        console.log('ownProps', ownProps)
+
+        console.log('state dot orm', 'subsurveylist')
+        console.log(session.Question)
+
+        choices = session.Question.withId(ownProps.question_id).multiple_choices;
+
+        if (choices) choices = choices.toRefArray();
+
+        console.log('the choices', choices);
+
+    };
+
     return {
-        surveys: state.surveys
-    }
+        choices: choices
+    };
 }
 
-function matchDispatchToProps(dispatch){
-    return bindActionCreators({getSurvey: getSurvey, updateSurveys: updateSurveys}, dispatch)
-}
 
-export default connect(mapStateToProps, matchDispatchToProps)(SubSurveyList);
+export default connect(mapStateToProps)(SubSurveyList);

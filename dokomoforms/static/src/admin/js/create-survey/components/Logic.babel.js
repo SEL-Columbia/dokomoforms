@@ -1,5 +1,3 @@
-'use strict';
-
 import React from 'react';
 import utils from './../utils.js';
 import { orm } from './../redux/models.babel.js';
@@ -17,6 +15,19 @@ function Logic(props) {
     let slatVal = "";
     let elngVal = "";
 
+    let current_type_constraint = current_type_constraint || null;
+
+    console.log('current type 1', current_type_constraint, props.type_constraint)
+
+    if (current_type_constraint!==props.type_constraint && 
+        props.logic.length) {
+        console.log('not the same type at logic');
+        props.deleteHandler()
+    }
+
+    current_type_constraint = props.type_constraint;
+    console.log('current type 2', current_type_constraint, props.type_constraint)
+
     function logicHandler(bound, event) {
         // console.log('calling logic handler', bound);
         if (Object.keys(props.logic).length===0 && props.logic.constructor===Object) {
@@ -27,14 +38,14 @@ function Logic(props) {
         }
     }
 
-    function deleteHandler(logic_id) {
+    function deleteHandler() {
         let minVal = "";
         let maxVal = "";
         let nlatVal = "";
         let wlngVal = "";
         let slatVal = "";
         let elngVal = "";
-        props.deleteLogic(logic_id);
+        props.deleteLogic(props.logic.id);
     }
 
     function renderFacility() {
@@ -113,7 +124,7 @@ function Logic(props) {
                     renderFacility()
                 }
                 <button
-                    onClick={deleteHandler.bind(null, props.logic.id)}>
+                    onClick={deleteHandler}>
                     delete bounds
                 </button>
             </div>
@@ -130,7 +141,7 @@ function mapStateToProps(state, ownProps){
     let questionLogic = session.Question.withId(ownProps.id).logic;
     console.log('questionLogic', questionLogic);
     let logic = questionLogic ? logic = Object.assign({}, questionLogic.ref) : {};
-    console.log('logic', logic);
+    console.log('logic', logic.length);
     return {
         logic: logic,
         id: ownProps.id

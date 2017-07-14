@@ -8,9 +8,11 @@ class CRUDModel extends Model {
         console.log(modelName);
         switch (action.type) {
             case 'ADD_' + modelName:
+                console.log('add', action.payload, ConcreteModel);
                 ConcreteModel.create(action.payload);
                 break;
             case 'UPDATE_' + modelName:
+                console.log('update', action.payload, ConcreteModel);
                 ConcreteModel.withId(action.payload.id).update(action.payload);
                 break;
             case 'DELETE_' + modelName:
@@ -20,6 +22,12 @@ class CRUDModel extends Model {
             case 'SUBMIT':
                 if (modelName!=='SURVEY') break;
                 ConcreteModel.withId(1001).denormalize();
+            case 'DELETE_ALL_BUCKETS':
+                if (modelName!=='SURVEY') break;
+                let testing = ConcreteModel.withId(action.payload).buckets;
+                ConcreteModel.withId(action.payload).buckets.delete();
+                let newtest = ConcreteModel.withId(action.payload).buckets;
+                console.log('testing delete all buckets', testing, newtest)
         }
         return undefined;
     }
@@ -47,6 +55,7 @@ class Question extends CRUDModel {
         delete data.node;
         return data;
     }
+
 }
 
 Question.fields = {

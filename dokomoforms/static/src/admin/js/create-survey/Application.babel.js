@@ -20,12 +20,47 @@ function Application(props) {
 
         console.log('submitting to database', survey);
 
+
+        var oisu = {
+          title: {
+            English: 'int bucket test'
+          },
+          default_language: 'English',
+          survey_type: 'public',
+          nodes: [
+            {
+              node: {
+                title: {English: 'the bucket is [5)'},
+                hint: {English: 'a hint'},
+                type_constraint: 'integer',
+              },
+              sub_surveys: [
+                    {
+                        buckets: [
+                            {
+                                bucket_type: 'integer',
+                                bucket: '[2, 5]'
+                            }
+                        ],
+                        nodes: [
+                            {
+                                node: {
+                                    title: {English: 'you picked over five - give integer answer'},
+                                    type_constraint: 'integer'
+                                }
+                            }
+                        ]
+                    },
+              ]
+            }]
+        }
+
         $.ajax({
             type: "POST",
             url: "/api/v0/surveys",
             contentType: 'application/json',
             processData: false,
-            data: JSON.stringify(survey),
+            data: JSON.stringify(oisu),
             headers: {
                 'X-XSRFToken': cookies.getCookie('_xsrf')
             },
@@ -66,7 +101,7 @@ function mapStateToProps(state){
     console.log('application mapstate', state);
     return {
         currentSurveyId: state.currentSurveyId,
-        state: state.orm,
+        state: state.orm
     };
 }
 

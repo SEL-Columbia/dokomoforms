@@ -75,7 +75,11 @@ function Survey(props) {
                             <div>
                                 <span className="double-column-label">Default Language:</span>
                                 <div>
-                                    <input onBlur={updateDefaultLanguage} defaultValue={props.survey.default_language}/>
+                                    <input
+                                        id="default-language"
+                                        onBlur={updateDefaultLanguage}
+                                        defaultValue={props.survey.default_language}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -106,6 +110,11 @@ function mapDispatchToProps(dispatch){
     return (
         bindActionCreators({updateSurvey: updateSurvey}, dispatch)
     )
+}
+
+Survey.propTypes = {
+    surveyId={props.currentSurveyId}
+    submitToDatabase={submitToDatabase}
 }
 
 

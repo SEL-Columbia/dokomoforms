@@ -34,7 +34,7 @@ const surveySelector = createSelector(
 
         let obj = survey.ref;
 
-        console.log('obj')
+        console.log('obj', survey.buckets.toRefArray())
 
         if (survey.buckets.toRefArray().length>0) {
             obj = Object.assign({}, obj, {

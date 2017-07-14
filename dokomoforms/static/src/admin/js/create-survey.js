@@ -34,7 +34,7 @@
 
 // var test_survey = {
 //   title: {
-//     English: 'the test survey 341'
+//     English: 'repeatable test'
 //   },
 //   default_language: 'English',
 //   survey_type: 'public',
@@ -169,3 +169,112 @@
 //       // ]
 //   });
 // });
+
+
+// Object {submitter_name: "test_user",
+// 	 	submitter_email: "test_creator@fixtures.com",
+// 		survey_id: "9d4c9f3d-ec45-444b-b202-7c3c83c527a0",
+// 		answers: Array[4],
+		
+
+// {submitter_name : "test_user",
+// submitter_email : "test_creator@fixtures.com",
+// survey_id: "9d4c9f3d-ec45-444b-b202-7c3c83c527a0",
+// answers:[{
+// 	response:{
+// 		response:3,
+// 		response_type: "answer",
+// 		type_constraint: "integer",
+// 		survey_node_id: "0bbbfc90-c032-448e-9409-e8319d0ec1be"
+// 	},
+// 	response:{
+// 		response: "one",
+// 		response_type: "answer",
+// 		type_constraint: "text",
+// 		survey_node_id: "f60a7e5f-76fa-4daf-8327-f21872940ccc"
+// 	}
+// 		\"response\":{\"response\":\"one\",\"response_type\":\"answer\"},\"type_constraint\":\"text\"},{\"survey_node_id\":\"0bbbfc90-c032-448e-9409-e8319d0ec1be\",\"response\":{\"response\":\"two\",\"response_type\":\"answer\"},\"type_constraint\":\"text\"},{\"survey_node_id\":\"0bbbfc90-c032-448e-9409-e8319d0ec1be\",\"response\":{\"response\":\"three\",\"response_type\":\"answer\"},\"type_constraint\":\"text\"}],\"start_time\":\"2017-01-23T19:28:01.650Z\",\"save_time\":\"2017-01-23T19:28:15.804Z\",\"submission_time\":\"\"}"
+// 	}
+
+
+
+
+// {"submitter_name":"test_user",
+// "submitter_email":"test_creator@fixtures.com",
+// "survey_id":"9d4c9f3d-ec45-444b-b202-7c3c83c527a0",
+// "answers":[
+// 	{"survey_node_id":"f60a7e5f-76fa-4daf-8327-f21872940ccc",
+// 	"response":{"response":3,
+// 		"response_type":"answer"},
+// 	"type_constraint":"integer"},
+// 	{"survey_node_id":"0bbbfc90-c032-448e-9409-e8319d0ec1be",
+// 	"response":{"response":"one",
+// 		"response_type":"answer"},
+// 	"type_constraint":"text"},
+// 	{"survey_node_id":"0bbbfc90-c032-448e-9409-e8319d0ec1be",
+// 	"response":{"response":"two",
+// 		"response_type":"answer"},
+// 	"type_constraint":"text"},
+// 	{"survey_node_id":"0bbbfc90-c032-448e-9409-e8319d0ec1be",
+// 	"response":{"response":"three",
+// 		"response_type":"answer"},
+// 		"type_constraint":"text"}
+// 	],
+// 	"start_time":"2017-01-23T19:28:01.650Z",
+// 	"save_time":"2017-01-23T19:28:15.804Z",
+// 	"submission_time":""
+// }
+
+
+// {"submitter_name":"test_user",
+// "submitter_email":"test_creator@fixtures.com",
+// "survey_id":"9d4c9f3d-ec45-444b-b202-7c3c83c527a0",
+// "answers":[
+// 	{"survey_node_id":"58d932ab-2889-4568-a160-5e8183069e26",
+// 	"response":{"response":1,"response_type":"answer"},
+// 	"type_constraint":"integer"}
+// 	,
+// 	{"survey_node_id":"51950273-8d5f-4d65-871d-6c8773116278",
+// 	"response":{"response":"uno","response_type":"answer"},
+// 	"type_constraint":"text"}],
+// "start_time":"2017-01-23T20:16:43.566Z",
+// "save_time":"2017-01-23T20:16:51.397Z",
+// "submission_time":""}
+
+
+
+// var oisu = {
+//   title: {
+//     English: 'int bucket test'
+//   },
+//   default_language: 'English',
+//   survey_type: 'public',
+//   nodes: [
+//     {
+//       node: {
+//         title: {English: 'the bucket is [5)'},
+//         hint: {English: 'a hint'},
+//         type_constraint: 'integer',
+//       },
+//       sub_surveys: [
+//             {
+//                 buckets: [
+//                     {
+//                         bucket_type: 'integer',
+//                         bucket: '[5)'
+//                     }
+//                 ],
+//                 nodes: [
+//                     {
+//                         node: {
+//                             title: {English: 'you picked over five - give integer answer'},
+//                             type_constraint: 'integer'
+//                         }
+//                     }
+//                 ]
+//             },
+//       ]
+//     }]
+// }
+
+
