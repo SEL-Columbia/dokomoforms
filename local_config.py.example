@@ -87,15 +87,6 @@ import os
 
 #######################################
 
-# persona_verification_url = 'Some URL'
-
-# Default: 'https://verifier.login.persona.org/verify'
-# Under normal circumstances you should not change this setting.
-# persona_verification_url tells the application which server to use for
-# authentication using Mozilla Persona.
-
-#######################################
-
 # revisit_url = 'some URL'
 
 # Default: 'https://revisit.global/api/v0/facilities.json'

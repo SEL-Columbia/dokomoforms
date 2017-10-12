@@ -99,7 +99,6 @@
       "dokomoforms/static/src/survey/js/Application.js": true,
       "dokomoforms/static/src/survey/js/api/FacilityAPI.js": true,
       "dokomoforms/static/src/survey/js/api/PhotoAPI.js": true,
-      "dokomoforms/static/src/common/js/persona.js": true,
       "dokomoforms/static/src/survey/js/components/Facility.js": true,
       "dokomoforms/static/src/survey/js/components/Footer.js": true,
       "dokomoforms/static/src/survey/js/components/Header.js": true,
