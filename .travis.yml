@@ -10,7 +10,7 @@ addons:
   firefox: "42.0"
 
 before_install:
-  - pip install coveralls flake8 coverage beautifulsoup4 py-dateutil pytz selenium
+  - pip install coveralls flake8 coverage beautifulsoup4 py-dateutil pytz selenium cryptography
   - gem install coveralls-lcov
 
 before_script:
