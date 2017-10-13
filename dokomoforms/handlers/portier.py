@@ -78,7 +78,7 @@ async def get_verified_email(token):
             algorithms=['RS256'],
             audience=options.minigrid_website_url,
             issuer='https://broker.portier.io',
-            leeway=3*60,
+            leeway= 3 * 60,
         )
     except Exception as exc:
         raise tornado.web.HTTPError(400)

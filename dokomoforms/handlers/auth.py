@@ -57,7 +57,6 @@ class VerifyLoginHandler(BaseHandler):
         self.redirect(self.get_argument('next', '/'))
 
 
-
 class Logout(BaseHandler):
 
     """POST here to log out."""

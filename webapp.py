@@ -152,7 +152,7 @@ class Application(tornado.web.Application):
         urls = [
             # Administrative
             url(r'/', handlers.Index, name='index'),
-            url(r'/user/login/?', handlers.Login, name='login'),
+            url(r'/verify/?', handlers.VerifyLoginHandler, name='verify'),
             url(r'/user/logout/?', handlers.Logout, name='logout'),
             url(
                 r'/user/authenticated/?',
