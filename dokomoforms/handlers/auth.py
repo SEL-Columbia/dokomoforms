@@ -2,12 +2,10 @@
 
 from collections import OrderedDict
 from datetime import datetime, timedelta
-import urllib.parse
 import uuid
 
 from sqlalchemy.orm.exc import NoResultFound
 
-from tornado.escape import json_decode
 import tornado.concurrent
 import tornado.web
 import tornado.gen
@@ -15,10 +13,9 @@ import tornado.httpclient
 
 from passlib.hash import bcrypt_sha256
 
-from dokomoforms.options import options
-from dokomoforms.handlers.portier import get_verified_email, redis_kv
+from dokomoforms.handlers.portier import get_verified_email
 from dokomoforms.handlers.util import BaseHandler, authenticated_admin
-from dokomoforms.models import User, Administrator, Email
+from dokomoforms.models import User, Email
 
 
 class VerifyLoginHandler(BaseHandler):
