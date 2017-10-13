@@ -28,3 +28,4 @@ _templates
 log/
 bower
 dokomoforms/static/dist
+package-lock.json
