@@ -36,8 +36,6 @@ class VerifyLoginHandler(BaseHandler):
     async def post(self):
         """Verify the response from the portier broker."""
         if 'error' in self.request.arguments:
-            error = self.get_argument('error')
-            description = self.get_argument('error_description')
             raise tornado.web.HTTPError(400)
         token = self.get_argument('id_token')
         email = await get_verified_email(token)
