@@ -14,6 +14,12 @@ from tornado.options import define, options
 __all__ = ('options',)
 _arg = None
 
+define(
+    'minigrid_website_url', default='http://localhost:8888',
+    help='The URL of this instance of the minigrid server.'
+)
+define('redis_url', default='redis://localhost:6379/0')
+
 # Application options
 define('demo', default=False, help='whether to run in demo mode', type=bool)
 define('port', help='run on the given port', type=int)
