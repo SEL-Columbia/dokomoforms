@@ -13,7 +13,6 @@ options.schema = 'doko_test'
 options.debug = True
 options.demo = False
 options.https = False
-options.persona_verification_url = 'http://localhost:9999/debug/persona_verify'
 options.revisit_url = 'http://localhost:9999/debug/facilities'
 
 from webapp import main

@@ -1,4 +1,4 @@
-FROM python:3.4
+FROM python:3.5
 WORKDIR /dokomo
 RUN apt-get update && apt-get install npm nodejs postgresql-client -y
 ADD package.json /tmp/package.json
