@@ -1,4 +1,5 @@
-var React = require('react');
+var React = require('react'),
+    createReactClass = require('create-react-class');
 var BigButton = require('./baseComponents/BigButton.js');
 var DontKnow = require('./baseComponents/DontKnow.js');
 var ResponseField = require('./baseComponents/ResponseField.js');
@@ -16,7 +17,7 @@ var ResponseField = require('./baseComponents/ResponseField.js');
  *  @questionID: id of active question (if any)
  *  @surveyID: id of active survey
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
     getDontKnow: function() {
         if (this.props.showDontKnow)
             return (

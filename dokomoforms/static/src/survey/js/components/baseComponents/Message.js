@@ -1,11 +1,12 @@
-var React = require('react');
+var React = require('react'),
+    createReactClass = require('create-react-class');
 
 /*
  * Message component
  *
  * @text: text to render
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
     render: function() {
         var textClass = this.props.classes;
         return (
@@ -15,4 +16,3 @@ module.exports = React.createClass({
         );
     }
 });
-

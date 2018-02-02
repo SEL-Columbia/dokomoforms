@@ -1,5 +1,5 @@
 var $ = require('jquery'),
-    uuid = require('node-uuid'),
+    uuid = require('uuid'),
     cookies = require('../../../common/js/cookies');
 
 

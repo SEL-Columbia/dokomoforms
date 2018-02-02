@@ -172,9 +172,9 @@ class DokoHTTPTest(DokoFixtureTest, LogTrapTestCase, AsyncHTTPTestCase):
         if _logged_in_user:
             patch_login = patch.object(BaseHandler, '_current_user_cookie')
 
-        with patch_xsrf as x, patch_login as l:
+        with patch_xsrf as x, patch_login as y:
             x.return_value = None
-            l.return_value = _logged_in_user
+            y.return_value = _logged_in_user
             return super().fetch(*args, **kwargs)
 
 

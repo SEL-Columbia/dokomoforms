@@ -1,4 +1,5 @@
 var React = require('react'),
+    createReactClass = require('create-react-class'),
     PhotoPreview = require('./PhotoPreview');
 
 /*
@@ -13,7 +14,7 @@ var React = require('react'),
  *  @buttonFunction: What to do on 'X' click event, index value is bound to this function
  *  @initValue: Initial value for the input field
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
     getInitialState: function() {
         return {
             showPreview: false

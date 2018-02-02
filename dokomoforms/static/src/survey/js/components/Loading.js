@@ -1,4 +1,5 @@
-var React = require('react');
+var React = require('react'),
+    createReactClass = require('create-react-class');
 
 /*
  * Loading component
@@ -9,7 +10,7 @@ var React = require('react');
  *     @language: current survey language
  *     @surveyID: current survey id
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
     render: function() {
         return (
             <div className="loading-overlay">

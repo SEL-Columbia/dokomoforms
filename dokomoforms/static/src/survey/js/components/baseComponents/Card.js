@@ -1,4 +1,5 @@
-var React = require('react');
+var React = require('react'),
+    createReactClass = require('create-react-class');
 
 /*
  * Card component
@@ -7,7 +8,7 @@ var React = require('react');
  *  @type: Card type (class name from ratchet usually) defaults to message-primary
  *  @msg: Array of messages, each element is placed on a new line. JSX accepted
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
     render: function() {
         var messageClass = 'message-box';
         if (this.props.type) {

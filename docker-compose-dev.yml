@@ -8,6 +8,6 @@ webapp-dev:
   ports:
     - "8888:8888"
 db-dev:
-  image: "mdillon/postgis:9.4"
+  image: "mdillon/postgis:9.6"
   environment:
     POSTGRES_DB: 'doko'

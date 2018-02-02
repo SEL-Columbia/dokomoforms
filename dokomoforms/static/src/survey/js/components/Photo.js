@@ -1,9 +1,10 @@
 var React = require('react'),
+    createReactClass = require('create-react-class'),
     PhotoField = require('./baseComponents/PhotoField'),
     LittleButton = require('./baseComponents/LittleButton'),
     BigButton = require('./baseComponents/BigButton'),
     PhotoAPI = require('../api/PhotoAPI'),
-    uuid = require('node-uuid');
+    uuid = require('uuid');
 
 //XXX use this: navigator.vibrate(50);
 
@@ -18,7 +19,7 @@ var React = require('react'),
  *     @disabled: boolean for disabling all inputs
  *     @db: pouchdb database
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
     getInitialState: function() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];

@@ -1,4 +1,5 @@
-var React = require('react');
+var React = require('react'),
+    createReactClass = require('create-react-class');
 
 var ResponseField = require('./baseComponents/ResponseField.js');
 var ResponseFields = require('./baseComponents/ResponseFields.js');
@@ -14,7 +15,7 @@ var Message = require('./baseComponents/Message.js');
 var Header = require('./baseComponents/Header.js');
 var Footer = require('./baseComponents/Footer.js');
 
-var Application = React.createClass({
+var Application = createReactClass({
     getInitialState: function() {
         return { showDontKnow: true }
     },

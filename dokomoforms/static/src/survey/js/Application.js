@@ -1,5 +1,6 @@
 // vendor
 var React = require('react'),
+    createReactClass = require('create-react-class'),
     $ = require('jquery'),
     moment = require('moment'),
     PouchDB = require('pouchdb'),
@@ -31,7 +32,7 @@ var Title = require('./components/baseComponents/Title'),
  * Create Single Page App with three main components
  * Header, Content, Footer
  */
-var Application = React.createClass({
+var Application = createReactClass({
     getInitialState: function() {
         // Set up db for photos and facility tree
         var trees = {};

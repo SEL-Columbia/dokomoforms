@@ -1,6 +1,7 @@
 var React = require('react'),
+    createReactClass = require('create-react-class'),
     screenfull = require('screenfull'),
-    uuid = require('node-uuid'),
+    uuid = require('uuid'),
     PhotoAPI = require('../../api/PhotoAPI.js'),
     ps = require('../../../../common/js/pubsub'),
     auth = require('../../services/auth');
@@ -15,7 +16,7 @@ var React = require('react'),
  * @db: active pouch db
  * @surveyID: active surveyID
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
 
     componentWillMount: function() {
         console.log('=======> componentWillMount');

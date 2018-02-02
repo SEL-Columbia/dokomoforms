@@ -1,4 +1,5 @@
-var React = require('react');
+var React = require('react'),
+    createReactClass = require('create-react-class');
 
 /*
  * PhotoPreview component
@@ -10,7 +11,7 @@ var React = require('react');
  *  @onDelete: What to do when the delete button is pressed
  *  @url: The URL of the photo to display
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
 
     render: function() {
         var divStyle = {

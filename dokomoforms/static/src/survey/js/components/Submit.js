@@ -1,4 +1,5 @@
-var React = require('react');
+var React = require('react'),
+    createReactClass = require('create-react-class');
 var Card = require('./baseComponents/Card.js');
 var Message = require('./baseComponents/Message.js');
 var ResponseField = require('./baseComponents/ResponseField.js');
@@ -11,7 +12,7 @@ var ResponseField = require('./baseComponents/ResponseField.js');
  *     @language: current survey language
  *     @surveyID: current survey id
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
 
     onInput: function(value, index) {
         if (index === 0) {

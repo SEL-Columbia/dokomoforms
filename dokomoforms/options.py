@@ -14,6 +14,12 @@ from tornado.options import define, options
 __all__ = ('options',)
 _arg = None
 
+define(
+    'minigrid_website_url', default='http://localhost:8888',
+    help='The URL of this instance of the minigrid server.'
+)
+define('redis_url', default='redis://localhost:6379/0')
+
 # Application options
 define('demo', default=False, help='whether to run in demo mode', type=bool)
 define('port', help='run on the given port', type=int)
@@ -29,12 +35,6 @@ define('https', default=True, help=https_help, type=bool)
 define('organization', help='the name of your organization')
 define('admin_email', help='the e-mail address of the main administrator')
 define('admin_name', help='the user name of the main administrator')
-
-persona_help = (
-    'the URL for login verification. Do not change this without a good reason.'
-)
-persona_url = 'https://verifier.login.persona.org/verify'
-define('persona_verification_url', default=persona_url, help=persona_help)
 
 revisit_url = 'https://revisit.global/api/v0/facilities.json'
 revisit_help = (

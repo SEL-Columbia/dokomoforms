@@ -1,4 +1,5 @@
 var React = require('react'),
+    createReactClass = require('create-react-class'),
     ResponseField = require('./ResponseField.js');
 
 /*
@@ -13,7 +14,7 @@ var React = require('react'),
  *  @onInput: What to do on valid other input
  *  @onSelect: What to do on selection
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
     getInitialState: function() {
         return {
             showOther: this.props.initSelect && this.props.initSelect.indexOf('other') > -1

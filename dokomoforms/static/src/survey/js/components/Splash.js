@@ -1,4 +1,5 @@
-var React = require('react');
+var React = require('react'),
+    createReactClass = require('create-react-class');
 
 var Card = require('./baseComponents/Card.js');
 var BigButton = require('./baseComponents/BigButton.js');
@@ -12,7 +13,7 @@ var BigButton = require('./baseComponents/BigButton.js');
  *     @surveyID: current survey id
  *     @buttonFunction: What to do when submit is clicked
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
     getInitialState: function() {
         var self = this;
         // Get all unsynced surveys

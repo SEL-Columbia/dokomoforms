@@ -1,4 +1,5 @@
-var React = require('react');
+var React = require('react'),
+    createReactClass = require('create-react-class');
 
 /*
  * Big 'ol button
@@ -8,7 +9,7 @@ var React = require('react');
  *  @buttonFunction: What to do on click events
  *  @text: Text of the button
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
     render: function() {
         var buttonClasses = 'btn btn-block navigate-right page_nav__next';
         if (this.props.type) {
@@ -26,4 +27,3 @@ module.exports = React.createClass({
        );
     }
 });
-

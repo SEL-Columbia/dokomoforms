@@ -1,5 +1,5 @@
 nginx:
-  image: "nginx:1.9.9"
+  image: "nginx:1.12.2"
   links:
     - "webapp:webapp"
   ports:
@@ -20,6 +20,6 @@ webapp:
     - ./local_config.py:/dokomo/local_config.py
     - /var/www
 db:
-  image: "mdillon/postgis:9.4"
+  image: "mdillon/postgis:9.6"
   environment:
     POSTGRES_DB: 'doko'

@@ -1,5 +1,6 @@
 var $ = require('jquery'),
     React = require('react'),
+    createReactClass = require('create-react-class'),
 
     ResponseField = require('./baseComponents/ResponseField.js'),
     LittleButton = require('./baseComponents/LittleButton.js'),
@@ -19,7 +20,7 @@ var $ = require('jquery'),
  *     @db: pouchdb database
  *     @tree: Facility Tree object
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
     getInitialState: function() {
         var answer = this.getAnswer();
         var selectOff = answer && answer.metadata && answer.metadata.is_new;

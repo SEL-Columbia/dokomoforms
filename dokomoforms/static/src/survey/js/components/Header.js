@@ -1,4 +1,5 @@
 var React = require('react'),
+    createReactClass = require('create-react-class'),
     ps = require('../../../common/js/pubsub'),
     Menu = require('./baseComponents/Menu.js');
 
@@ -13,7 +14,7 @@ var React = require('react'),
  *  @db: Active pouch db // XXX rather not pass this to header
  *  @surveyID: active surveyID
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
     getInitialState: function() {
         return {
             showMenu: false

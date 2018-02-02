@@ -6,7 +6,7 @@
 
 set -e
 apt-get update
-apt-get -y install xvfb iceweasel npm nodejs-legacy
+apt-get -y install xvfb iceweasel nodejs
 pip install tox
 Xvfb :1 -screen 0 1280x1280x16 &>/dev/null &
 export DISPLAY=:1.0

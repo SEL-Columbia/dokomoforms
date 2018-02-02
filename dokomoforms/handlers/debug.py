@@ -79,19 +79,6 @@ class DebugLogoutHandler(BaseHandler):
         self.write('You have logged out.')
 
 
-class DebugPersonaHandler(BaseHandler):
-
-    """For testing purposes there's no need to hit the real URL."""
-
-    def check_xsrf_cookie(self):
-        """No need for this..."""
-        pass
-
-    def post(self):
-        """The test user has logged in."""
-        self.write({'status': 'okay', 'email': 'test_creator@fixtures.com'})
-
-
 revisit_online = slow_mode = None
 facilities_file = compressed_facilities = lzs = None
 

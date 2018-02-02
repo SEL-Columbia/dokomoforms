@@ -1,4 +1,5 @@
 var React = require('react'),
+    createReactClass = require('create-react-class'),
     ResponseField = require('./ResponseField.js');
 
 /*
@@ -7,7 +8,7 @@ var React = require('react'),
  * Refer to ResponseField for use
  * XXX Remove Component
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
     render: function() {
         var children = Array.apply(null, {length: this.props.childCount});
         var self = this;
@@ -29,4 +30,3 @@ module.exports = React.createClass({
                );
     }
 });
-

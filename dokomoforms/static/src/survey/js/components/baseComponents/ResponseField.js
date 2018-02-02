@@ -1,4 +1,5 @@
 var React = require('react'),
+    createReactClass = require('create-react-class'),
     moment = require('moment');
 
 /*
@@ -15,7 +16,7 @@ var React = require('react'),
  *  @placeholder: Placeholder text for input, defaults to 'Please provide a response'
  *  @initValue: Initial value for the input field
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
     getInitialState: function() {
         return {};
     },
@@ -172,15 +173,14 @@ module.exports = React.createClass({
                     onChange={this.onChange}
                     defaultValue={this.props.initValue}
                     disabled={this.props.disabled}
-                 >
-                 {this.props.showMinus ?
+                />
+                {this.props.showMinus ?
                     <span
                         onClick={this.props.buttonFunction.bind(null, this.props.index)}
                         disabled={this.props.disabled}
                         className='icon icon-close question__minus'>
                     </span>
                     : null}
-                </input>
             </div>
         );
     }

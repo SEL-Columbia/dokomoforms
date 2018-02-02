@@ -1,4 +1,5 @@
-var React = require('react');
+var React = require('react'),
+    createReactClass = require('create-react-class');
 
 /*
  * Little weeny button
@@ -10,7 +11,7 @@ var React = require('react');
  *  @icon: Icon if any to show before button text
  *  @disabled: Whether or not the button should be disabled
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
     render: function() {
         var iconClass = 'icon icon-inline-left ' + this.props.icon;
         var classes = 'btn ';
@@ -28,4 +29,3 @@ module.exports = React.createClass({
        );
     }
 });
-

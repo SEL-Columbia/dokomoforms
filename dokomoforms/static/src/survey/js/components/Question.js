@@ -1,4 +1,5 @@
-var React = require('react');
+var React = require('react'),
+    createReactClass = require('create-react-class');
 
 var ResponseField = require('./baseComponents/ResponseField.js');
 var LittleButton = require('./baseComponents/LittleButton.js');
@@ -14,7 +15,7 @@ var LittleButton = require('./baseComponents/LittleButton.js');
  *     @surveyID: current survey id
  *     @disabled: boolean for disabling all inputs
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
     getInitialState: function() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
         var answers = survey[this.props.question.id] || [];

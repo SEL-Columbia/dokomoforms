@@ -1,4 +1,5 @@
-var React = require('react');
+var React = require('react'),
+    createReactClass = require('create-react-class');
 
 /*
  * Title component
@@ -7,7 +8,7 @@ var React = require('react');
  *  @title: Title text to render in content
  *  @message: 'hint' text to render in content
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
     render: function() {
         return (
             <div className="content-padded">

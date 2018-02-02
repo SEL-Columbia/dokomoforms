@@ -1,4 +1,5 @@
-var React = require('react');
+var React = require('react'),
+    createReactClass = require('create-react-class');
 
 /*
  * Facility Radio component
@@ -9,7 +10,7 @@ var React = require('react');
  *  @selectFunction: What to do when facility is selected
  *  @initValue: Default selected facility
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
     /*
      * Keep track of which option is selected
      */
@@ -101,4 +102,3 @@ module.exports = React.createClass({
                );
     }
 });
-

@@ -1,4 +1,5 @@
-var React = require('react');
+var React = require('react'),
+    createReactClass = require('create-react-class');
 var Select = require('./baseComponents/Select.js');
 
 /*
@@ -11,15 +12,15 @@ var Select = require('./baseComponents/Select.js');
  *     @surveyID: current survey id
  *     @disabled: boolean for disabling all inputs
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
     getInitialState: function() {
-        return { 
+        return {
         }
     },
 
     /*
      * Hack to force react to update child components
-     * Gets called by parent element through 'refs' when state of something changed 
+     * Gets called by parent element through 'refs' when state of something changed
      * (usually localStorage)
      */
     update: function() {
@@ -35,7 +36,7 @@ module.exports = React.createClass({
             if (value == 'null')
                 return;
             answers.push({
-                'response': value === 'other' ? '' : value, 
+                'response': value === 'other' ? '' : value,
                 'response_type': value === 'other' ? 'other' : 'answer'
             });
         });
@@ -86,7 +87,7 @@ module.exports = React.createClass({
     },
 
     /*
-     * Get other response if any from localStorage 
+     * Get other response if any from localStorage
      */
     getAnswer: function() {
         var survey = JSON.parse(localStorage[this.props.surveyID] || '{}');
@@ -105,25 +106,25 @@ module.exports = React.createClass({
         console.log("response", response);
         return response;
     },
-    
+
     render: function() {
         var self = this;
         var choices = this.props.question.choices.map(function(choice) {
-            return { 
-                'value': choice.choice_id, 
-                'text': choice.choice_text[self.props.language] 
+            return {
+                'value': choice.choice_id,
+                'text': choice.choice_text[self.props.language]
             }
         });
 
         // Key is used as hack to rerender select on dontKnow state change
-        return (<Select 
+        return (<Select
                     key={this.props.disabled}
                     choices={choices}
                     withOther={this.props.question.allow_other}
                     multiSelect={this.props.question.allow_multiple}
                     disabled={this.props.disabled}
-                    initValue={this.getAnswer()} 
-                    initSelect={this.getSelection()} 
+                    initValue={this.getAnswer()}
+                    initSelect={this.getSelection()}
                     onSelect={this.onSelect}
                     onInput={this.onInput}
                 />)

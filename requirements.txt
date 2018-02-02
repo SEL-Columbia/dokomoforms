@@ -1,8 +1,8 @@
-tornado==4.3
-SQLAlchemy==1.0.11
-geoalchemy2==0.2.6
-psycopg2==2.6.1
-bcrypt==2.0.0
-passlib==1.6.5
-restless==2.0.1
+tornado==4.5.2
+SQLAlchemy==1.1.14
+geoalchemy2==0.4.0
+psycopg2==2.7.3.2
+bcrypt==3.1.4
+passlib==1.7.1
+restless==2.1.1
 lzstring==1.0.3

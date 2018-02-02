@@ -3,7 +3,6 @@ var $ = require('jquery'),
     ps = require('../../common/js/pubsub'),
     SettingsModal = require('./modals/settings-modal'),
     Notification = require('./notification'),
-    persona = require('../../common/js/persona'),
     utils = require('./utils');
 
 module.exports = (function() {
@@ -14,8 +13,6 @@ module.exports = (function() {
         _globalAjaxSetup();
         _setupGlobalEventHandlers();
 
-        // setup handlers for persona events
-        persona.init();
     }
 
     /**

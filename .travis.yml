@@ -1,24 +1,33 @@
 language: python
 python:
-  - "3.4"
   - "3.5"
+  - "3.6"
 cache:
   directories:
     - $HOME/.cache/pip
     - node_modules
+sudo: required
+services:
+  - postgresql
 addons:
-  postgresql: "9.4"
-  firefox: "42.0"
+  postgresql: "9.6"
+  firefox: "56.0"
+  apt:
+    packages:
+      - postgresql-9.6-postgis-2.3
 
 before_install:
-  - pip install coveralls flake8 coverage beautifulsoup4 py-dateutil pytz selenium
+  - pip install coveralls flake8 coverage beautifulsoup4 py-dateutil pytz
+  - pip install selenium cryptography jwt redis
   - gem install coveralls-lcov
 
 before_script:
+  - bash install-postgres-10.sh
+  - sudo apt-get install postgresql-10-postgis-2.4
   - python3 -m flake8 .
   - psql -c 'create database doko;' -U postgres
   - head -c 24 /dev/urandom > cookie_secret
-  - nvm install stable
+  - nvm install 8.9.0
   - npm install npm -g
   - npm install
   - node_modules/gulp/bin/gulp.js dev-build
